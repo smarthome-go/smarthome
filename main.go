@@ -27,9 +27,24 @@ func main() {
 		log.Fatal("Failed to read config file: startup halted.")
 	}
 	config := utils.GetConfig()
+	log.Trace("Loaded config file")
 
 	// Initialize database
 	database.Init(config.Database)
+
+	database.AddUser(database.User{Username: "mik", Password: "password"})
+	database.AddUserPermission("mik", "foo")
+	database.AddUserPermission("mik", "bar")
+	database.AddUserPermission("mik", "authentication")
+	database.AddUserPermission("mik", "baz")
+	fmt.Println(database.GetUserPermissions("mik"))
+	// database.DeleteUser("mik")
+
+	users, err := database.ListUsers()
+	if err != nil {
+		log.Error("Failed to obtain user list: ", err.Error())
+	}
+	fmt.Println(users)
 
 	log.Info(fmt.Sprintf("Smarthome v%s is running.", version))
 }

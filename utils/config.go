@@ -25,6 +25,7 @@ func ReadConfigFile() error {
 		return err
 	}
 
+	// Parse config file to struct <configFile>
 	var configFile Config
 	decoder := json.NewDecoder(bytes.NewReader(content))
 	decoder.DisallowUnknownFields()
@@ -34,7 +35,6 @@ func ReadConfigFile() error {
 		return err
 	}
 	config = configFile
-	log.Debug("Loaded config file from: ", configPath)
 	return nil
 }
 
