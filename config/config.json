@@ -1,0 +1,9 @@
+{
+    "database": {
+        "username": "smarthome",
+        "password": "password",
+        "database": "smarthome",
+        "hostname": "localhost",
+        "port": 3313
+    }
+}

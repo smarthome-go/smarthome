@@ -19,3 +19,15 @@
 
 # Go workspace file
 go.work
+
+# Web files
+web/node_modules
+web/out
+
+# Build files
+build
+bin
+app
+
+# Application `junk` files
+log

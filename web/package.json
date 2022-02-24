@@ -1,0 +1,30 @@
+{
+  "name": "smarthome-web",
+  "version": "0.0.1",
+  "description": "Webinterface for Smarthome",
+  "main": "",
+  "scripts": {
+    "typescript-build": "tsc -b",
+    "postcss-build": "postcss src/css --dir out/css",
+    "postcss-watch": "postcss src/css --dir out/css --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "github.com/MikMuellerDev/smarthome"
+  },
+  "keywords": [
+    "smarthome",
+    "automation",
+    "home"
+  ],
+  "devDependencies": {
+    "autoprefixer": "^10.4.2",
+    "cssnano": "^5.0.16",
+    "postcss": "^8.4.5",
+    "postcss-cli": "^9.1.0",
+    "postcss-preset-env": "^7.2.3",
+    "postcss-sorting": "^7.0.1"
+  },
+  "author": "MikMuellerDev",
+  "license": "GPL-2.0-only"
+}
