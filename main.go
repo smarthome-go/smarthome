@@ -30,7 +30,10 @@ func main() {
 	log.Trace("Loaded config file")
 
 	// Initialize database
-	database.Init(config.Database)
+	err = database.Init(config.Database)
+	if err != nil {
+		panic(err.Error())
+	}
 
 	database.AddUser(database.User{Username: "mik", Password: "password"})
 	database.AddUserPermission("mik", "foo")
