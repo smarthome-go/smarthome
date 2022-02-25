@@ -17,7 +17,7 @@ cleanall: clean
 # Mysql Database
 mysql:
 	sudo systemctl start docker
-	cd docker && sudo docker-compose up -d
+	cd docker && docker-compose up -d
 
 # Run
 run-full: web mysql
@@ -29,7 +29,7 @@ run: web
 # Builds
 build: web all linux clean
 
-web: clean
+web: 
 	cd web && npm run typescript-build && npm run postcss-build
 
 # Build architectures

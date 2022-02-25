@@ -1,5 +1,7 @@
 package database
 
+import "errors"
+
 // Used during <Init> of the database, only called once
 // Creates the table containing <users> if it doesn't already exist
 // Can return an error if the database fails
@@ -79,7 +81,14 @@ func DeleteUser(Username string) error {
 // Will return an error if the database fails
 // Does not check for duplicate users
 func AddUser(user User) error {
-	err := InsertUser(user)
+	userExists, err := DoesUserExist(user.Username)
+	if err != nil {
+		return err
+	}
+	if userExists {
+		return errors.New("could not add user: user already exists")
+	}
+	err = InsertUser(user)
 	if err != nil {
 		return err
 	}
@@ -88,4 +97,19 @@ func AddUser(user User) error {
 		return err
 	}
 	return nil
+}
+
+// Returns <true> if a provided user exists
+// If the database fails, it returns an error
+func DoesUserExist(username string) (bool, error) {
+	userList, err := ListUsers()
+	if err != nil {
+		return false, err
+	}
+	for _, userItem := range userList {
+		if userItem.Username == username {
+			return true, nil
+		}
+	}
+	return false, nil
 }

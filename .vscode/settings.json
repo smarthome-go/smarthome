@@ -2,5 +2,20 @@
     "cSpell.words": [
         "lfshook",
         "mysql"
+    ],
+    "sqltools.connections": [
+        {
+            "mysqlOptions": {
+                "authProtocol": "default"
+            },
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 3313,
+            "driver": "MariaDB",
+            "name": "Smarthome Mariadb",
+            "database": "smarthome",
+            "username": "smarthome",
+            "password": "password"
+        }
     ]
 }

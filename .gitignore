@@ -31,3 +31,7 @@ app
 
 # Application `junk` files
 log
+.vscode/targets.log
+*.json
+.vscode/dryrun.log
+.vscode/settings.json
