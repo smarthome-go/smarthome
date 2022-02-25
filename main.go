@@ -5,13 +5,14 @@ import (
 	"net/http"
 
 	"github.com/MikMuellerDev/smarthome/database"
+	"github.com/MikMuellerDev/smarthome/middleware"
 	"github.com/MikMuellerDev/smarthome/routes"
 	"github.com/MikMuellerDev/smarthome/utils"
 	"github.com/sirupsen/logrus"
 )
 
 const version = "0.0.1"
-const port = 8082
+const port = "8082"
 
 func main() {
 	// Create new logger
@@ -22,6 +23,7 @@ func main() {
 	// Initialize <module> loggers
 	utils.InitLogger(log)
 	database.InitLogger(log)
+	middleware.InitLogger(log)
 	log.Trace("Logging initialized.")
 
 	// Read config file
@@ -41,6 +43,8 @@ func main() {
 		}
 	}
 	r := routes.NewRouter()
+	middleware.Init(true)
+	// TODO: replace with config variable for random seed
 	http.Handle("/", r)
 	err = http.ListenAndServe(fmt.Sprintf(":%s", port), nil)
 	if err != nil {
