@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"math/rand"
 	"time"
 
@@ -18,7 +17,7 @@ func StringWithCharset(length int, charset string) string {
 	for i := range randomBytes {
 		randomBytes[i] = charset[seededRand.Intn(len(charset))]
 	}
-	log.Trace(fmt.Sprintf("Generated random seed for sessions: %s", string(randomBytes)))
+	log.Trace("Generated random seed for sessions")
 	return string(randomBytes)
 }
 

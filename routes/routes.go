@@ -1,16 +1,22 @@
 package routes
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/MikMuellerDev/smarthome/middleware"
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 )
+
+var log *logrus.Logger
+
+func InitLogger(logger *logrus.Logger) {
+	log = logger
+}
 
 func NewRouter() *mux.Router {
 	r := mux.NewRouter()
-	r.HandleFunc("/", middleware.AuthRequired(test)).Methods("GET")
+	r.HandleFunc("/", middleware.AuthRequired(indexGetHandler)).Methods("GET")
 
 	// For JS and CSS components
 	outFilepath := "./web/out/"
@@ -24,6 +30,8 @@ func NewRouter() *mux.Router {
 	assetsFileserver := http.FileServer(http.Dir(assetsFilepath))
 	r.PathPrefix(assetsPathPrefix).Handler(http.StripPrefix(assetsPathPrefix, assetsFileserver))
 
-	fmt.Println("Initialized Router.")
+	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
+
+	log.Trace("Initialized Router.")
 	return r
 }

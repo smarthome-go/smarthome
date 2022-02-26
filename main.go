@@ -24,6 +24,7 @@ func main() {
 	utils.InitLogger(log)
 	database.InitLogger(log)
 	middleware.InitLogger(log)
+	routes.InitLogger(log)
 	log.Trace("Logging initialized.")
 
 	// Read config file
