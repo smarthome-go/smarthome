@@ -18,6 +18,10 @@ func NewRouter() *mux.Router {
 	r := mux.NewRouter()
 	r.HandleFunc("/", middleware.AuthRequired(indexGetHandler)).Methods("GET")
 	r.HandleFunc("/dash", middleware.AuthRequired(dashGetHandler)).Methods("GET")
+	r.HandleFunc("/login", loginGetHandler).Methods("GET")
+
+	//// API ////
+	r.HandleFunc("/api/login", loginPostHandler).Methods("POST")
 
 	// For JS and CSS components
 	outFilepath := "./web/out/"

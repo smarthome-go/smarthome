@@ -13,3 +13,7 @@ func indexGetHandler(w http.ResponseWriter, r *http.Request) {
 func dashGetHandler(w http.ResponseWriter, r *http.Request) {
 	templates.ExecuteTemplate(w, "dash.html", http.StatusOK)
 }
+
+func loginGetHandler(w http.ResponseWriter, r *http.Request) {
+	templates.ExecuteTemplate(w, "login.html", http.StatusOK)
+}
