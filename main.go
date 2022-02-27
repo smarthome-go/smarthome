@@ -7,6 +7,7 @@ import (
 	"github.com/MikMuellerDev/smarthome/database"
 	"github.com/MikMuellerDev/smarthome/middleware"
 	"github.com/MikMuellerDev/smarthome/routes"
+	"github.com/MikMuellerDev/smarthome/templates"
 	"github.com/MikMuellerDev/smarthome/utils"
 	"github.com/sirupsen/logrus"
 )
@@ -25,6 +26,7 @@ func main() {
 	database.InitLogger(log)
 	middleware.InitLogger(log)
 	routes.InitLogger(log)
+	templates.InitLogger(log)
 	log.Trace("Logging initialized.")
 
 	// Read config file
@@ -46,6 +48,7 @@ func main() {
 	r := routes.NewRouter()
 	middleware.Init(true)
 	// TODO: replace with config variable for random seed
+	templates.LoadTemplates("./web/html/*.html")
 	http.Handle("/", r)
 	err = http.ListenAndServe(fmt.Sprintf(":%s", port), nil)
 	if err != nil {

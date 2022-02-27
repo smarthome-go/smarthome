@@ -17,6 +17,7 @@ func InitLogger(logger *logrus.Logger) {
 func NewRouter() *mux.Router {
 	r := mux.NewRouter()
 	r.HandleFunc("/", middleware.AuthRequired(indexGetHandler)).Methods("GET")
+	r.HandleFunc("/dash", middleware.AuthRequired(dashGetHandler)).Methods("GET")
 
 	// For JS and CSS components
 	outFilepath := "./web/out/"
