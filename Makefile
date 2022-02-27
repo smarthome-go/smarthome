@@ -6,10 +6,12 @@ build = GOOS=$(1) GOARCH=$(2) go build -o ./bin/$(appname)$(3) $(4)
 tar = mkdir -p build && cd ../ && tar -cvzf ./$(appname)_$(1)_$(2).tar.gz $(applicationDir)/bin $(applicationDir)/web/out $(applicationDir)/web/html $(applicationDir)/web/assets && mv $(appname)_$(1)_$(2).tar.gz $(applicationDir)/build
 
 # Cleaning
-clean:
-	rm -rf web/out
+clean: cleanweb
 	rm -rf app
 	rm -rf log
+
+cleanweb:
+	rm -rf web/out
 
 cleanall: clean
 	rm -rf build bin
@@ -29,7 +31,7 @@ run: web
 # Builds
 build: web all linux clean
 
-web: 
+web: cleanweb
 	cd web && npm run typescript-build && npm run postcss-build
 
 # Build architectures

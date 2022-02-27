@@ -43,4 +43,6 @@ func loginPostHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(Response{Success: false, Message: "login failed", Error: "invalid credentials"})
 }
 
-func logoutGetHandler()
+func logoutGetHandler(w http.ResponseWriter, r *http.Request) {
+
+}
