@@ -1,0 +1,25 @@
+.text-input {
+    color: white;
+    font-size: 1rem;
+    border: 0;
+    height: 1.1876em;
+    padding: 6px 0 7px;
+    background: none;
+    box-sizing: content-box;
+    letter-spacing: inherit;
+    border-bottom: 1px rgb(148, 148, 148) solid;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+    font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+    transition: 0.4s;
+  }
+  
+  .text-input:focus {
+    border-bottom: 1px var(--clr-primary) solid;
+  }
+  
+  .text-input::placeholder {
+    color: white;
+    opacity: 0.6;
+  }
+  

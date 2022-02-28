@@ -3,3 +3,11 @@
     --clr-bg: #222222;
     --clr-text-light: #f1f1f1;
 }
+
+body {
+    background-color: var(--clr-bg);
+}
+
+h1,h2,h3,h4,div,span {
+    font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+}
