@@ -1,7 +1,99 @@
-#inner-form-body {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 25rem;
+#outer-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
+#main-body {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  width: 50rem;
+  height: 34rem;
+  margin-top: 5rem;
+}
+
+#login-form {
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+#left-body {
+  background-color: #494949;
+  display: flex;
+  height: 105%;
+  width: 40%;
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: center;
+  border-radius: 0.4rem;
+  overflow: hidden;
+}
+
+#right-body {
+  width: 60%;
+  height: 100%;
+}
+
+#smarthome-logo-div {
+  height: 6rem;
+  width: 6rem;
+  border-radius: 50%;
+  padding: 1rem;
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#smarthome-logo {
+  width: 6rem;
+  height: 6rem;
+  margin-bottom: 0.5rem;
+}
+
+#title,
+#subtitle {
+  margin-top: 0.6rem;
+}
+
+#subtitle {
+    margin-bottom: 2rem;
+}
+
+#hexagon {
+  background: var(--clr-primary);
+  background-image: linear-gradient(45deg, var(--clr-primary), #393a39);
+  -webkit-clip-path: polygon(
+    25% 5%,
+    75% 5%,
+    100% 50%,
+    75% 95%,
+    25% 95%,
+    0% 50%
+  );
+  clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0% 50%);
+  height: 15rem;
+  width: 15rem;
+  position: absolute;
+  margin-top: 20rem;
+  margin-left: 20rem;
+  z-index: -100;
+}
+
+
+#login-button {
+    color: #222;
+}
+
+#loader {
+    background-color: var(--clr-primary);
+    height: .5rem;
+    border-radius: 1rem;
+    width: 0;
+    transition: .5s;
+}

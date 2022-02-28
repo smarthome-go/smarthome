@@ -1,7 +1,8 @@
 :root   {
-    --clr-primary: #82ff8c;
+    --clr-primary: #88ff70;
     --clr-bg: #222222;
     --clr-text-light: #f1f1f1;
+    --clr-error: #ff61bd;
 }
 
 body {
@@ -9,5 +10,16 @@ body {
 }
 
 h1,h2,h3,h4,div,span {
+    color: white;
+    font-weight: 500;
     font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+    margin: 0;
+}
+
+.text-primary {
+    color: rgb(233, 233, 233);
+}
+
+.text-secondary {
+    color: rgb(196, 196, 196);
 }

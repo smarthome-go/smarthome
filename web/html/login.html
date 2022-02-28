@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -7,15 +8,34 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/login.css">
     <link rel="stylesheet" href="/static/css/input.css">
+    <link rel="stylesheet" href="/static/css/button.css">
     <link rel="stylesheet" href="/static/css/elevations.css">
+
+    <script src="/static/js/login.js"></script>
     <title>Login</title>
 </head>
+
 <body>
-    <h1>Login required</h1>
-    <img src="/assets/logo.webp">
-    <div id="inner-form-body" class="threeDp">
-        <input class="text-input" type="text" name="username" id="username" placeholder="username">
-        <input class="text-input" type="password" name="password" id="password" placeholder="password">
+    <div id="outer-body">
+        <div id="main-body" class="threeDp">
+            <div id="left-body" class="sixDp">
+                <div id="smarthome-logo-div" class="sixDp">
+                    <img id="smarthome-logo" src="/assets/logo.webp">
+                </div>
+                <h1 id="title" class="text-primary">Smarthome</h1>
+                <h4 id="subtitle" class="text-secondary">Please login to continue</h4>
+                <div id="hexagon" class="sixDp"></div>
+            </div>
+            <div id="right-body">
+                <div id="loader"></div>
+                <div id="login-form">
+                    <input type="text" class="text-input" id="username" placeholder="Username">
+                    <input type="password" class="text-input" id="password" placeholder="Password">
+                    <button id="login-button" class="button">login</button>
+                </div>
+            </div>
+        </div>
     </div>
 </body>
+
 </html>
