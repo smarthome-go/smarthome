@@ -18,7 +18,9 @@ func NewRouter() *mux.Router {
 	r := mux.NewRouter()
 	r.HandleFunc("/", middleware.AuthRequired(indexGetHandler)).Methods("GET")
 	r.HandleFunc("/dash", middleware.AuthRequired(dashGetHandler)).Methods("GET")
+	// TODO: modify loginGethandler to redirect to the dashboard if the user is alerady logged in
 	r.HandleFunc("/login", loginGetHandler).Methods("GET")
+	r.HandleFunc("/logout", logoutGetHandler).Methods("GET")
 
 	//// API ////
 	r.HandleFunc("/api/login", loginPostHandler).Methods("POST")

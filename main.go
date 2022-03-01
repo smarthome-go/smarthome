@@ -24,6 +24,8 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
+
+	// TODO: check if every module has got a corresponding logger
 	// Initialize <module> loggers
 	utils.InitLogger(log)
 	database.InitLogger(log)
@@ -38,14 +40,14 @@ func main() {
 		log.Fatal("Failed to read config file: startup halted.")
 	}
 	config := config.GetConfig()
-	log.Trace("Loaded config file")
-
 	hardware.InitConfig(config.Hardware)
+	log.Trace("Loaded config")
 
 	// Initialize database
 	if err := database.Init(config.Database); err != nil {
 		panic(err.Error())
 	}
+	// TODO: move user creation to somewhere else
 	if err := database.AddUser(database.User{Username: "admin", Password: "admin"}); err != nil {
 		if err.Error() != "could not add user: user already exists" {
 			panic(err.Error())
@@ -53,7 +55,6 @@ func main() {
 	}
 	r := routes.NewRouter()
 	middleware.Init(config.Server.Production)
-	// TODO: replace with config variable for random seed
 	templates.LoadTemplates("./web/html/*.html")
 	http.Handle("/", r)
 	log.Info(fmt.Sprintf("Smarthome v%s is running.", version))

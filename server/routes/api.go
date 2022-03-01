@@ -12,6 +12,9 @@ type PowerRequest struct {
 	PowerOn    bool   `json:"powerOn"`
 }
 
+// API endpoint for manipulating power states and (de) activating sockets
+// TODO: implement authentication middleware
+// TODO: implement permission middleware
 func powerPostHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
