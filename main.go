@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/MikMuellerDev/smarthome/core/config"
 	"github.com/MikMuellerDev/smarthome/core/database"
+	"github.com/MikMuellerDev/smarthome/core/hardware"
 	"github.com/MikMuellerDev/smarthome/core/user"
 	"github.com/MikMuellerDev/smarthome/core/utils"
 	"github.com/MikMuellerDev/smarthome/server/middleware"
@@ -29,14 +31,16 @@ func main() {
 	routes.InitLogger(log)
 	templates.InitLogger(log)
 	user.InitLogger(log)
-	log.Trace("Logging initialized.")
+	hardware.InitLogger(log)
 
 	// Read config file
-	if err := utils.ReadConfigFile(); err != nil {
+	if err := config.ReadConfigFile(); err != nil {
 		log.Fatal("Failed to read config file: startup halted.")
 	}
-	config := utils.GetConfig()
+	config := config.GetConfig()
 	log.Trace("Loaded config file")
+
+	hardware.InitConfig(config.Hardware)
 
 	// Initialize database
 	if err := database.Init(config.Database); err != nil {
@@ -48,13 +52,20 @@ func main() {
 		}
 	}
 	r := routes.NewRouter()
-	middleware.Init(true)
+	middleware.Init(config.Server.Production)
 	// TODO: replace with config variable for random seed
 	templates.LoadTemplates("./web/html/*.html")
 	http.Handle("/", r)
+
+	// TODO: Remove
+	success := hardware.ExecuteJob("s2", true)
+	fmt.Printf("Success: %t\n", success)
+	success = hardware.ExecuteJob("s2", false)
+	fmt.Printf("Success: %t\n", success)
+
+	log.Info(fmt.Sprintf("Smarthome v%s is running.", version))
 	err = http.ListenAndServe(fmt.Sprintf(":%s", port), nil)
 	if err != nil {
 		panic(err)
 	}
-	log.Info(fmt.Sprintf("Smarthome v%s is running.", version))
 }

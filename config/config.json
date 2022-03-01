@@ -1,4 +1,7 @@
 {
+    "server": {
+        "production": false
+    },
     "database": {
         "username": "smarthome",
         "password": "password",
@@ -9,8 +12,8 @@
     "hardware": {
         "nodes": [
            {
-               "name": "localhost",
-               "url": "http://localhost:8083",
+               "name": "node",
+               "url": "http://localhost:4243",
                "token": "test"
            } 
         ]
