@@ -13,7 +13,7 @@ func InitLogger(logger *logrus.Logger) {
 
 // Will return <true / false> based on authentication validity
 // <true> means valid authentication
-// Can return an error if the database fails
+// Can return an error if the database fails to return a valid result, meaning service downtime
 func ValidateLogin(username string, password string) (bool, error) {
 	users, err := database.ListUsers()
 	if err != nil {
