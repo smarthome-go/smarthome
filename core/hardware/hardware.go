@@ -28,6 +28,13 @@ func InitLogger(logger *logrus.Logger) {
 	log = logger
 }
 
+// TODO: rewrite following code:
+/*
+
+- Uses new list for results
+- The result is only needed when `Execute Job` returns, that means at the end
+
+*/
 // Specifies if a job handling loop is already running
 var handlerRunning bool
 
