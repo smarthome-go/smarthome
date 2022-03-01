@@ -56,13 +56,6 @@ func main() {
 	// TODO: replace with config variable for random seed
 	templates.LoadTemplates("./web/html/*.html")
 	http.Handle("/", r)
-
-	// TODO: Remove
-	success := hardware.ExecuteJob("s2", true)
-	fmt.Printf("Success: %t\n", success)
-	success = hardware.ExecuteJob("s2", false)
-	fmt.Printf("Success: %t\n", success)
-
 	log.Info(fmt.Sprintf("Smarthome v%s is running.", version))
 	err = http.ListenAndServe(fmt.Sprintf(":%s", port), nil)
 	if err != nil {

@@ -53,12 +53,14 @@ func sendPowerRequest(node Node, switchName string, turnOn bool) error {
 // However, the preferred method of communication is by using the API `ExecuteJob()` this way, priorities and interrupts are scheduled automatically
 // This method is internally used by `ExecuteJob`
 func setPowerOnAllNodes(switchName string, turnOn bool) error {
+	var err error = nil
 	for _, node := range hwConfig.Nodes {
-		err := sendPowerRequest(node, switchName, turnOn)
-		if err != nil {
-			return err
+		errTemp := sendPowerRequest(node, switchName, turnOn)
+		if errTemp != nil {
+			err = errTemp
+		} else {
+			log.Debug("Successfully sent power request to: ", node.Name)
 		}
-		log.Debug("Successfully sent power request to: ", node.Name)
 	}
-	return nil
+	return err
 }
