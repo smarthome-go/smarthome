@@ -3,7 +3,7 @@ package routes
 import (
 	"net/http"
 
-	"github.com/MikMuellerDev/smarthome/middleware"
+	"github.com/MikMuellerDev/smarthome/server/middleware"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 )

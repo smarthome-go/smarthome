@@ -1,6 +1,6 @@
 package utils
 
-import "github.com/MikMuellerDev/smarthome/database"
+import "github.com/MikMuellerDev/smarthome/core/database"
 
 // Will return <true / false> based on authentication validity
 // <true> means valid authentication

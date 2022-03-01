@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/MikMuellerDev/smarthome/database"
+	"github.com/MikMuellerDev/smarthome/core/database"
 )
 
 type Config struct {

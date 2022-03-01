@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/MikMuellerDev/smarthome/utils"
+	"github.com/MikMuellerDev/smarthome/core/utils"
 	"github.com/sirupsen/logrus"
 )
 

@@ -3,7 +3,7 @@ package routes
 import (
 	"net/http"
 
-	"github.com/MikMuellerDev/smarthome/templates"
+	"github.com/MikMuellerDev/smarthome/server/templates"
 )
 
 func notFoundHandler(w http.ResponseWriter, r *http.Request) {

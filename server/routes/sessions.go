@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/MikMuellerDev/smarthome/middleware"
-	"github.com/MikMuellerDev/smarthome/utils"
+	"github.com/MikMuellerDev/smarthome/core/utils"
+	"github.com/MikMuellerDev/smarthome/server/middleware"
 )
 
 // Accepts a json request like `"username": "user",  "password":"password"`

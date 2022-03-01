@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/MikMuellerDev/smarthome/database"
-	"github.com/MikMuellerDev/smarthome/middleware"
-	"github.com/MikMuellerDev/smarthome/routes"
-	"github.com/MikMuellerDev/smarthome/templates"
-	"github.com/MikMuellerDev/smarthome/utils"
+	"github.com/MikMuellerDev/smarthome/core/database"
+	"github.com/MikMuellerDev/smarthome/core/utils"
+	"github.com/MikMuellerDev/smarthome/server/middleware"
+	"github.com/MikMuellerDev/smarthome/server/routes"
+	"github.com/MikMuellerDev/smarthome/server/templates"
 	"github.com/sirupsen/logrus"
 )
 
