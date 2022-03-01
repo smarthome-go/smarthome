@@ -1,6 +1,15 @@
-package utils
+package user
 
-import "github.com/MikMuellerDev/smarthome/core/database"
+import (
+	"github.com/MikMuellerDev/smarthome/core/database"
+	"github.com/sirupsen/logrus"
+)
+
+var log *logrus.Logger
+
+func InitLogger(logger *logrus.Logger) {
+	log = logger
+}
 
 // Will return <true / false> based on authentication validity
 // <true> means valid authentication

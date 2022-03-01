@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/MikMuellerDev/smarthome/core/utils"
+	"github.com/MikMuellerDev/smarthome/core/user"
 	"github.com/MikMuellerDev/smarthome/server/middleware"
 )
 
@@ -23,7 +23,7 @@ func loginPostHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "login failed", Error: "malformed request"})
 	}
 	log.Debug(fmt.Sprintf("User `%s` is trying to authenticate", loginRequest.Username))
-	loginValid, err := utils.ValidateLogin(loginRequest.Username, loginRequest.Password)
+	loginValid, err := user.ValidateLogin(loginRequest.Username, loginRequest.Password)
 	if err != nil {
 		log.Error("User failed to login: database failure.")
 		w.WriteHeader(http.StatusInternalServerError)

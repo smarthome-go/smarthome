@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/MikMuellerDev/smarthome/core/database"
+	"github.com/MikMuellerDev/smarthome/core/user"
 	"github.com/MikMuellerDev/smarthome/core/utils"
 	"github.com/MikMuellerDev/smarthome/server/middleware"
 	"github.com/MikMuellerDev/smarthome/server/routes"
@@ -27,6 +28,7 @@ func main() {
 	middleware.InitLogger(log)
 	routes.InitLogger(log)
 	templates.InitLogger(log)
+	user.InitLogger(log)
 	log.Trace("Logging initialized.")
 
 	// Read config file

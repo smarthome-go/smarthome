@@ -7,10 +7,12 @@ import (
 	"io/ioutil"
 
 	"github.com/MikMuellerDev/smarthome/core/database"
+	"github.com/MikMuellerDev/smarthome/core/hardware"
 )
 
 type Config struct {
 	Database database.DatabaseConfig `json:"database"`
+	Hardware hardware.HardwareComfig `json:"hardware"`
 }
 
 var config Config

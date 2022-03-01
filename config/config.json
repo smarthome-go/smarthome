@@ -5,5 +5,13 @@
         "database": "smarthome",
         "hostname": "localhost",
         "port": 3313
+    "hardware": {
+        "nodes": [
+           {
+               "name": "localhost",
+               "url": "http://localhost:8083",
+               "token": "test"
+           } 
+        ]
     }
 }

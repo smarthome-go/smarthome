@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/MikMuellerDev/smarthome/core/utils"
+	"github.com/MikMuellerDev/smarthome/core/user"
 	"github.com/sirupsen/logrus"
 )
 
@@ -37,7 +37,7 @@ func AuthRequired(handler http.HandlerFunc) http.HandlerFunc {
 			handler.ServeHTTP(w, r)
 			return
 		}
-		loginValid, err := utils.ValidateLogin(username, password)
+		loginValid, err := user.ValidateLogin(username, password)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -72,7 +72,7 @@ func ApiAuthRequired(handler http.HandlerFunc) http.HandlerFunc {
 			handler.ServeHTTP(w, r)
 			return
 		}
-		loginValid, err := utils.ValidateLogin(username, password)
+		loginValid, err := user.ValidateLogin(username, password)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
