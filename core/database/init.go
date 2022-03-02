@@ -11,8 +11,7 @@ import (
 
 func Init(databaseConfig DatabaseConfig) error {
 	config = databaseConfig
-	err := createDatabase()
-	if err != nil {
+	if err := createDatabase(); err != nil {
 		return err
 	}
 	dbTemp, err := connection()
@@ -20,20 +19,19 @@ func Init(databaseConfig DatabaseConfig) error {
 		return err
 	}
 	db = dbTemp
-	err = createUserTable()
-	if err != nil {
+	if err := createUserTable(); err != nil {
 		return err
 	}
-	err = createPermissionTable()
-	if err != nil {
+	if err := createSwitchTable(); err != nil {
 		return err
 	}
-	err = initializePermissions()
-	if err != nil {
+	if err := createPermissionTable(); err != nil {
 		return err
 	}
-	err = createHasPermissionTable()
-	if err != nil {
+	if err := initializePermissions(); err != nil {
+		return err
+	}
+	if err := createHasPermissionTable(); err != nil {
 		return err
 	}
 	return nil
