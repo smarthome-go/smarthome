@@ -15,7 +15,9 @@ func createHasPermissionTable() error {
 		Username VARCHAR(20),
 		Permission VARCHAR(30),
 		CONSTRAINT Username FOREIGN KEY (Username)
-		REFERENCES users(Username)
+		REFERENCES users(Username),
+		CONSTRAINT Permission FOREIGN KEY (Permission)
+		REFERENCES permissions(Permission)
 	)
 	`
 	_, err := db.Exec(query)
@@ -44,6 +46,7 @@ func createPermissionTable() error {
 	return nil
 }
 
+// Creates permissions defined in `schemas.go` and inserts them into the permissions table
 func initializePermissions() error {
 	query, err := db.Prepare(`
 	INSERT INTO
@@ -68,7 +71,7 @@ func initializePermissions() error {
 			return err
 		}
 		if rowsAffected > 0 {
-			log.Debug("Created new permission: ", permission.Name)
+			log.Debug("Inserted new permission into permissions table: ", permission.Permission)
 		}
 	}
 	return nil
