@@ -8,7 +8,7 @@ import (
 // Used during <Init> of the database, only called once
 // Creates the table containing <permissions> if it doesn't exists already
 // Can return an error if the database fails
-func createPermissionsTable() error {
+func createHasPermissionTable() error {
 	query := `
 	CREATE TABLE IF NOT EXISTS
 	hasPermission(
@@ -20,7 +20,56 @@ func createPermissionsTable() error {
 	`
 	_, err := db.Exec(query)
 	if err != nil {
+		log.Error("Could not create hasPermission table. Failed to execute query: ", err.Error())
+	}
+	return nil
+}
+
+// Used during <init> of the database, only called once
+// May return an error if the database fails
+func createPermissionTable() error {
+	query := `
+  CREATE TABLE
+  IF NOT EXISTS
+  permissions(
+	  Permission VARCHAR(30) PRIMARY KEY,
+	  Name VARCHAR(100),
+	  Description text
+	)
+  `
+	_, err := db.Exec(query)
+	if err != nil {
 		log.Error("Could not create permissions table. Failed to execute query: ", err.Error())
+	}
+	return nil
+}
+
+func initializePermissions() error {
+	query, err := db.Prepare(`
+	INSERT INTO
+	permissions(Permission, Name, Description)
+	VALUES(?, ?, ?)
+	ON DUPLICATE KEY UPDATE
+	Name=VALUES(Name)`)
+	if err != nil {
+		log.Error("Failed to create permission: preparing query failed: ", err.Error())
+		return err
+	}
+	permissions := GetPermissions()
+	for _, permission := range permissions {
+		res, err := query.Exec(permission.Permission, permission.Name, permission.Description)
+		if err != nil {
+			log.Error("Failed to create permission: executing query failed: ", err.Error())
+			return err
+		}
+		rowsAffected, err := res.RowsAffected()
+		if err != nil {
+			log.Error("Failed to obtain rows affected: ", err.Error())
+			return err
+		}
+		if rowsAffected > 0 {
+			log.Debug("Created new permission: ", permission.Name)
+		}
 	}
 	return nil
 }
@@ -112,7 +161,7 @@ func GetUserPermissions(username string) ([]string, error) {
 func doesPermissionExist(permission string) bool {
 	permissions := GetPermissions()
 	for _, permissionItem := range permissions {
-		if permissionItem == permission {
+		if permissionItem.Permission == permission {
 			return true
 		}
 	}

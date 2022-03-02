@@ -24,7 +24,15 @@ func Init(databaseConfig DatabaseConfig) error {
 	if err != nil {
 		return err
 	}
-	err = createPermissionsTable()
+	err = createPermissionTable()
+	if err != nil {
+		return err
+	}
+	err = initializePermissions()
+	if err != nil {
+		return err
+	}
+	err = createHasPermissionTable()
 	if err != nil {
 		return err
 	}
