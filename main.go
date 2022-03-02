@@ -15,7 +15,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const version = "0.0.1"
+const version = "0.0.2"
 const port = "8082"
 
 func main() {
@@ -28,6 +28,7 @@ func main() {
 	// TODO: check if every module has got a corresponding logger
 	// Initialize <module> loggers
 	utils.InitLogger(log)
+	config.InitLogger(log)
 	database.InitLogger(log)
 	middleware.InitLogger(log)
 	routes.InitLogger(log)
@@ -51,6 +52,15 @@ func main() {
 	if err := database.AddUser(database.User{Username: "admin", Password: "admin"}); err != nil {
 		if err.Error() != "could not add user: user already exists" {
 			panic(err.Error())
+		}
+	}
+	// TODO: move this somewhere else
+	for _, room := range config.Rooms {
+		for _, switchItem := range room.Switches {
+			if err := database.CreateSwitch(switchItem.Id, switchItem.Name); err != nil {
+				log.Error("Could not create switches from config file:")
+				panic(err.Error())
+			}
 		}
 	}
 	r := routes.NewRouter()

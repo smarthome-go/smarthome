@@ -14,15 +14,15 @@ func createHasPermissionTable() error {
 	hasPermission(
 		Username VARCHAR(20),
 		Permission VARCHAR(30),
-		CONSTRAINT Username FOREIGN KEY (Username)
-		REFERENCES users(Username),
-		CONSTRAINT Permission FOREIGN KEY (Permission)
-		REFERENCES permissions(Permission)
+		CONSTRAINT HasPermissionUsername FOREIGN KEY (Username)
+		REFERENCES user(Username),
+		CONSTRAINT HasPermissionPermission FOREIGN KEY (Permission)
+		REFERENCES permission(Permission)
 	)
 	`
 	_, err := db.Exec(query)
 	if err != nil {
-		log.Error("Could not create hasPermission table. Failed to execute query: ", err.Error())
+		log.Error("Could not create hasPermission table: Executing query failed: ", err.Error())
 	}
 	return nil
 }
@@ -33,7 +33,7 @@ func createPermissionTable() error {
 	query := `
   CREATE TABLE
   IF NOT EXISTS
-  permissions(
+  permission(
 	  Permission VARCHAR(30) PRIMARY KEY,
 	  Name VARCHAR(100),
 	  Description text
@@ -41,7 +41,7 @@ func createPermissionTable() error {
   `
 	_, err := db.Exec(query)
 	if err != nil {
-		log.Error("Could not create permissions table. Failed to execute query: ", err.Error())
+		log.Error("Could not create permissions table: Executing query failed: ", err.Error())
 	}
 	return nil
 }
@@ -50,7 +50,7 @@ func createPermissionTable() error {
 func initializePermissions() error {
 	query, err := db.Prepare(`
 	INSERT INTO
-	permissions(Permission, Name, Description)
+	permission(Permission, Name, Description)
 	VALUES(?, ?, ?)
 	ON DUPLICATE KEY UPDATE
 	Name=VALUES(Name)`)

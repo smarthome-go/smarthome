@@ -12,13 +12,14 @@ import (
 )
 
 type ServerConfig struct {
-	Production bool
+	Production bool `json:"production"`
 }
 
 type Config struct {
 	Server   ServerConfig            `json:"server"`
 	Database database.DatabaseConfig `json:"database"`
 	Hardware hardware.HardwareConfig `json:"hardware"`
+	Rooms    []database.Room         `json:"rooms"`
 }
 
 var config Config

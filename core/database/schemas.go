@@ -6,6 +6,8 @@ type User struct {
 	Password string
 }
 
+// Permission-related
+
 type Permission struct {
 	Permission  string
 	Name        string
@@ -22,4 +24,17 @@ func GetPermissions() []Permission {
 		},
 	}
 	return permissions
+}
+
+// Rooms and Switches
+type Switch struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type Room struct {
+	Id          string   `json:"id"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Switches    []Switch `json:"switches"`
 }

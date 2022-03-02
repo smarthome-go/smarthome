@@ -9,14 +9,14 @@ func createUserTable() error {
 	query := `
 	CREATE TABLE
 	IF NOT EXISTS
-	users(
+	user(
 		Username VARCHAR(20) PRIMARY KEY,
 		Password text
 	)
 	`
 	_, err := db.Exec(query)
 	if err != nil {
-		log.Error("Failed to create user Table: ", err.Error())
+		log.Error("Failed to create user table: Executing query failed: ", err.Error())
 		return err
 	}
 	return nil
@@ -25,7 +25,7 @@ func createUserTable() error {
 // Lists users which are currently in the Database
 // Returns an empty list with an error when failing
 func ListUsers() ([]User, error) {
-	query := `SELECT Username, Password FROM users`
+	query := `SELECT Username, Password FROM user`
 	res, err := db.Query(query)
 	if err != nil {
 		log.Error("Could not list users. Failed to execute query: ", err.Error())
@@ -46,7 +46,7 @@ func ListUsers() ([]User, error) {
 // Creates a new user based on a the supplied `User` struct
 // Won't panic if user already exists, but will change password
 func InsertUser(user User) error {
-	query, err := db.Prepare("INSERT INTO users(Username, Password) VALUES(?,?) ON DUPLICATE KEY UPDATE Password=VALUES(Password)")
+	query, err := db.Prepare("INSERT INTO user(Username, Password) VALUES(?,?) ON DUPLICATE KEY UPDATE Password=VALUES(Password)")
 	if err != nil {
 		log.Error("Could not create user. Failed to prepare query: ", err.Error())
 		return err
@@ -63,7 +63,7 @@ func InsertUser(user User) error {
 // The function does not validate the existence of this username itself, so additional checks should be done beforehand
 func DeleteUser(Username string) error {
 	query, err := db.Prepare(`
-	DELETE FROM users WHERE Username=? 
+	DELETE FROM user WHERE Username=? 
 	`)
 	if err != nil {
 		log.Error("Could not delete user. Failed to prepare query: ", err.Error())
