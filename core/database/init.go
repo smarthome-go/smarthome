@@ -31,13 +31,10 @@ func Init(databaseConfig DatabaseConfig) error {
 	if err := createHasPermissionTable(); err != nil {
 		return err
 	}
-	if err := createSwitchTable(); err != nil {
-		return err
-	}
 	if err := createRoomTable(); err != nil {
 		return err
 	}
-	if err := createBelongsToRoomTable(); err != nil {
+	if err := createSwitchTable(); err != nil {
 		return err
 	}
 	if err := createHasSwitchPermissionTable(); err != nil {

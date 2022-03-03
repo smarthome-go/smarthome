@@ -56,8 +56,12 @@ func main() {
 	}
 	// TODO: move this somewhere else
 	for _, room := range config.Rooms {
+		if err := database.CreateRoom(room.Id, room.Name, room.Description); err != nil {
+			log.Error("Could not create rooms from config file")
+			panic(err.Error())
+		}
 		for _, switchItem := range room.Switches {
-			if err := database.CreateSwitch(switchItem.Id, switchItem.Name); err != nil {
+			if err := database.CreateSwitch(switchItem.Id, switchItem.Name, room.Id); err != nil {
 				log.Error("Could not create switches from config file:")
 				panic(err.Error())
 			}

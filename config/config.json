@@ -25,8 +25,35 @@
             "description": "test description",
             "switches": [
                 {
+                    "id": "s1",
+                    "name": "Lamp1"
+                },
+                {
                     "id": "s2",
-                    "name": "Desk lamp"
+                    "name": "Lamp2"
+                }
+            ]
+        },
+        {
+            "id": "testroom 2",
+            "name": "Test Room 2",
+            "description": "test description 2",
+            "switches": [
+                {
+                    "id": "s3",
+                    "name": "Lamp3"
+                },
+                {
+                    "id":"s4",
+                    "name": "Lamp4"
+                },
+                {
+                    "id": "s5",
+                    "name": "Lamp5"
+                },
+                {
+                    "id": "s6",
+                    "name": "Lamp6"
                 }
             ]
         }

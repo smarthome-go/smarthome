@@ -9,7 +9,10 @@ func createSwitchTable() error {
 	CREATE TABLE IF NOT EXISTS
 	switch(
 		Id VARCHAR(2) PRIMARY KEY,
-		Name VARCHAR(30)
+		Name VARCHAR(30),
+		RoomId VARCHAR(30),
+		CONSTRAINT SwitchRoomId FOREIGN KEY (RoomId)
+		REFERENCES room(Id)
 	) 
 	`
 	_, err := db.Exec(query)
@@ -41,15 +44,17 @@ func createHasSwitchPermissionTable() error {
 	return nil
 }
 
-func CreateSwitch(Id string, Name string) error {
+// Creates a new switch
+// Will return an error if the database fails
+func CreateSwitch(Id string, Name string, RoomId string) error {
 	query, err := db.Prepare(`
-	INSERT INTO switch(Id, Name) VALUES(?,?) ON DUPLICATE KEY UPDATE Name=Values(Name)
+	INSERT INTO switch(Id, Name, RoomId) VALUES(?,?,?) ON DUPLICATE KEY UPDATE Name=Values(Name)
 	`)
 	if err != nil {
 		log.Error("Failed to add switch: preparing query failed: ", err.Error())
 		return err
 	}
-	res, err := query.Exec(Id, Name)
+	res, err := query.Exec(Id, Name, RoomId)
 	if err != nil {
 		log.Error("Failed to add switch: executing query failed: ", err.Error())
 		return err
@@ -63,4 +68,15 @@ func CreateSwitch(Id string, Name string) error {
 		log.Debug(fmt.Sprintf("Added switch `%s` with name `%s`", Id, Name))
 	}
 	return nil
+}
+
+func listSwitches() ([]Switch, error) {
+	query := `
+	SELECT Id, Name, RoomId FROM switch
+	`
+	res, err := db.Exec(query)
+	if err != nil {
+		log.Error()
+		return err
+	}
 }

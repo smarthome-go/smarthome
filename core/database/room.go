@@ -1,5 +1,7 @@
 package database
 
+import "fmt"
+
 func createRoomTable() error {
 	query := `
 	CREATE TABLE IF NOT EXISTS room(
@@ -16,21 +18,26 @@ func createRoomTable() error {
 	return nil
 }
 
-func createBelongsToRoomTable() error {
-	query := `
-	CREATE TABLE IF NOT EXISTS belongsToRoom(
-		RoomId VARCHAR(30),
-		SwitchId VARCHAR(2),
-		CONSTRAINT RoomId FOREIGN KEY (RoomId)
-		REFERENCES room(Id),
-		CONSTRAINT SwitchId FOREIGN KEY (SwitchId)
-		REFERENCES switch(Id)
-	)
-	`
-	_, err := db.Exec(query)
+func CreateRoom(RoomId string, Name string, Description string) error {
+	query, err := db.Prepare(`
+	INSERT INTO room(Id, Name, Description) VALUES(?,?,?) ON DUPLICATE KEY UPDATE Name=VALUES(Name), Description=VALUES(Description)
+	`)
 	if err != nil {
-		log.Error("Failed to create belongsToRoom table: ", err.Error())
+		log.Error("Could not create room: preparing query failed: ", err.Error())
 		return err
+	}
+	res, err := query.Exec(RoomId, Name, Description)
+	if err != nil {
+		log.Error("Could not create room: executing query failed: ", err.Error())
+		return err
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		log.Error("Could not get result of createRoom: obtaining rowsAffected failed: ", err.Error())
+		return err
+	}
+	if rowsAffected > 0 {
+		log.Debug(fmt.Sprintf("Added room `%s` with name `%s`", RoomId, Name))
 	}
 	return nil
 }
