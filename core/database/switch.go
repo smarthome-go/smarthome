@@ -209,3 +209,23 @@ func SetPowerState(switchId string, isPoweredOn bool) (bool, error) {
 	}
 	return true, nil
 }
+
+func GetPowerStates() ([]PowerState, error) {
+	res, err := db.Query(`
+	SELECT Id, Power FROM switch
+	`)
+	if err != nil {
+		log.Error("Failed to list powerstates: failed to execute query: ", err.Error())
+	}
+	powerStates := make([]PowerState, 0)
+	for res.Next() {
+		var powerState PowerState
+		err := res.Scan(&powerState.SwitchId, &powerState.PowerOn)
+		if err != nil {
+			log.Error("Failed to list powerstates: failed to scan query: ", err.Error())
+			return []PowerState{}, err
+		}
+		powerStates = append(powerStates, powerState)
+	}
+	return powerStates, nil
+}

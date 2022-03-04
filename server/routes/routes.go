@@ -27,10 +27,11 @@ func NewRouter() *mux.Router {
 
 	/// Public endpoints without authentication ///
 	r.HandleFunc("/api/power/list", getSwitches).Methods("GET")
+	r.HandleFunc("/api/power/states", getPowerStates).Methods("GET")
 
 	/// Api / Power (with authentication) ///
-	r.HandleFunc("/api/power/set", middleware.ApiAuthRequired(powerPostHandler)).Methods("POST")
-	r.HandleFunc("/api/power/list/personal", middleware.ApiAuthRequired(getUserSwitches)).Methods("GET")
+	r.HandleFunc("/api/power/set", middleware.ApiAuthRequired(middleware.Permission(powerPostHandler, "setPower"))).Methods("POST")
+	r.HandleFunc("/api/power/list/personal", middleware.ApiAuthRequired(middleware.Permission(getUserSwitches, "getUserSwitches"))).Methods("GET")
 
 	/// Get personal permissions ///
 	r.HandleFunc("/api/user/permissions/personal", middleware.ApiAuthRequired(getUserPermissions))

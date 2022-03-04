@@ -56,6 +56,12 @@ func main() {
 			return
 		}
 	}
+	if err := database.AddUserPermission("mik", "getUserSwitches"); err != nil {
+		log.Fatal(err.Error())
+	}
+	if err := database.AddUserPermission("mik", "setPower"); err != nil {
+		log.Fatal(err.Error())
+	}
 	if err := database.AddUserSwitchPermission("mik", "s1"); err != nil {
 		log.Error("Could not add switch to switchPermissions of the user")
 		panic(err.Error())
@@ -72,8 +78,11 @@ func main() {
 	}
 
 	fmt.Printf("mik has permission `s2`: %t\n", a)
-	success, err := database.SetPowerState("s2", true)
-	fmt.Println("success: %t", success)
+	success, err := database.SetPowerState("s22", true)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("success: %t\n", success)
 
 	r := routes.NewRouter()
 	middleware.Init(config.Server.Production)

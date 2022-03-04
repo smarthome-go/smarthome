@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+
+	"github.com/MikMuellerDev/smarthome/core/database"
 )
 
 type HardwareRequest struct {
@@ -23,7 +25,7 @@ func InitConfig(hwConf HardwareConfig) {
 
 // This function is used to deliver the job to the hardware node
 // Returns an error if the job fails to execute on the hardware
-// However, the preferred method of communication is by using the API `ExecuteJob()` this way, priorities and interrupts are scheduled automatically
+// However, the preferred method of communication is by using the API `SetPower()` this way, priorities and interrupts are scheduled automatically
 func sendPowerRequest(node Node, switchName string, turnOn bool) error {
 	// TODO: make hardware node software better, best would be non-python
 	requestBody, err := json.Marshal(HardwareRequest{
@@ -62,5 +64,6 @@ func setPowerOnAllNodes(switchName string, turnOn bool) error {
 			log.Debug("Successfully sent power request to: ", node.Name)
 		}
 	}
+	database.SetPowerState(switchName, turnOn)
 	return err
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/core/user"
 	"github.com/sirupsen/logrus"
 )
@@ -16,11 +17,10 @@ func InitLogger(logger *logrus.Logger) {
 	log = logger
 }
 
-type ResponseStruct struct {
-	Success   bool
-	ErrorCode int
-	Title     string
-	Message   string
+type Response struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+	Error   string `json:"error"`
 }
 
 func AuthRequired(handler http.HandlerFunc) http.HandlerFunc {
@@ -79,7 +79,8 @@ func ApiAuthRequired(handler http.HandlerFunc) http.HandlerFunc {
 			log.Trace("user session invalid, no query present")
 			log.Trace("Invalid Session, not serving", r.URL.Path)
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(ResponseStruct{false, 401, "access denied, please authenticate", "authentication required"})
+			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(Response{false, "access denied, please authenticate", "authentication required"})
 			return
 		}
 		loginValid, err := user.ValidateLogin(username, password)
@@ -98,7 +99,7 @@ func ApiAuthRequired(handler http.HandlerFunc) http.HandlerFunc {
 		} else {
 			log.Trace("bad credentials, invalid Session: not serving", r.URL.Path)
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(ResponseStruct{false, 401, "access denied, please authenticate", "invalid credentials"})
+			json.NewEncoder(w).Encode(Response{false, "access denied, please authenticate", "invalid credentials"})
 			return
 		}
 	}
@@ -152,5 +153,34 @@ func getUserFromQuery(r *http.Request) (string, bool, error) {
 		return username, true, nil
 	} else {
 		return "", false, nil
+	}
+}
+
+//
+func Permission(handler http.HandlerFunc, permissionToCheck string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		username, err := GetUserFromCurrentSession(r)
+		log.Trace(fmt.Sprintf("Checking permission: `%s` for user: `%s`", permissionToCheck, username))
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			log.Error("failed to get username from query")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(Response{false, "access denied, please authenticate", "invalid credentials"})
+			return
+		}
+		hasPermission, err := database.UserHasPermission(username, permissionToCheck)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "database error"})
+			return
+		}
+		if !hasPermission {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(Response{Success: false, Message: "permission denied", Error: "you lack permission to access this ressource"})
+			return
+		}
+		handler.ServeHTTP(w, r)
 	}
 }

@@ -22,6 +22,16 @@ func GetPermissions() []Permission {
 			Name:        "Authentication",
 			Description: "Allows the user to authenticate",
 		},
+		{
+			Permission:  "getUserSwitches",
+			Name:        "Get Personal Switches",
+			Description: "Get all allowed switches for current user.",
+		},
+		{
+			Permission:  "setPower",
+			Name:        "Set Power",
+			Description: "Interact with switches",
+		},
 	}
 	return permissions
 }
@@ -31,6 +41,11 @@ type Switch struct {
 	Id     string `json:"id"`
 	Name   string `json:"name"`
 	RoomId string `json:"roomId"`
+}
+
+type PowerState struct {
+	SwitchId string `json:"switch"`
+	PowerOn  bool   `json:"powerOn"`
 }
 
 type Room struct {

@@ -15,7 +15,6 @@ type PowerRequest struct {
 }
 
 // API endpoint for manipulating power states and (de) activating sockets
-// TODO: implement authentication middleware
 // TODO: implement permission middleware
 func powerPostHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -28,6 +27,7 @@ func powerPostHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
+
 	err = hardware.SetPower(request.SwitchName, request.PowerOn)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -84,4 +84,16 @@ func getUserPermissions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json.NewEncoder(w).Encode(permissions)
+}
+
+func getPowerStates(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	powerStates, err := database.GetPowerStates()
+	if err != nil {
+		log.Error("Could not list powerstates: database failure: ", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "database error"})
+		return
+	}
+	json.NewEncoder(w).Encode(powerStates)
 }
