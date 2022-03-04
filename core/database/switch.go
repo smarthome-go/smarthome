@@ -229,3 +229,7 @@ func GetPowerStates() ([]PowerState, error) {
 	}
 	return powerStates, nil
 }
+
+func UserHasSwitchPermission(username string, switchName string) {
+
+}

@@ -27,7 +27,8 @@ func powerPostHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-
+	// TODO: impl hasPermissions
+	// userHasPermission, err := database.UserHasSwitchPermission(user)
 	err = hardware.SetPower(request.SwitchName, request.PowerOn)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
