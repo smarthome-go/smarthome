@@ -93,6 +93,5 @@ func ListSwitches() ([]Switch, error) {
 
 func ListUserSwitches() ([]Switch, error) {
 	query, err := db.Prepare(`
-	SELECT Id, Name, RoomId FROM switch JOIN hasSwitchPermission ON user.Username=hasSwitchPermission.Username
-	`)
+	SELECT Id, Name, RoomId FROM switch JOIN hasSwitchPermission ON hasSwitchPermission.Switch=switch.Id WHERE hasSwitchPermission.Username=?`)
 }
