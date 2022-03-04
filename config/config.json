@@ -1,6 +1,6 @@
 {
     "server": {
-        "production": false
+        "production": true
     },
     "database": {
         "username": "smarthome",

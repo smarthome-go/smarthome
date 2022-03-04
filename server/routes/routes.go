@@ -25,9 +25,15 @@ func NewRouter() *mux.Router {
 	//// API ////
 	r.HandleFunc("/api/login", loginPostHandler).Methods("POST")
 
-	/// Api / Power ///
-	r.HandleFunc("/api/power/set", powerPostHandler).Methods("POST")
+	/// Public endpoints without authentication ///
 	r.HandleFunc("/api/power/list", getSwitches).Methods("GET")
+
+	/// Api / Power (with authentication) ///
+	r.HandleFunc("/api/power/set", middleware.ApiAuthRequired(powerPostHandler)).Methods("POST")
+	r.HandleFunc("/api/power/list/personal", middleware.ApiAuthRequired(getUserSwitches)).Methods("GET")
+
+	/// Get personal permissions ///
+	r.HandleFunc("/api/user/permissions/personal", middleware.ApiAuthRequired(getUserPermissions))
 
 	// For JS and CSS components
 	outFilepath := "./web/out/"
@@ -43,6 +49,6 @@ func NewRouter() *mux.Router {
 
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 
-	log.Trace("Initialized Router.")
+	log.Debug("Initialized Router.")
 	return r
 }

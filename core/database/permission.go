@@ -89,8 +89,7 @@ func AddUserPermission(username string, permission string) error {
 		return err
 	}
 	if alreadyHasPermission {
-		log.Warn("Will not add permission: User already has requested permission: ", permission)
-		return errors.New("failed to add permission: user is already in possession of permissions")
+		return nil
 	}
 	query, err := db.Prepare("INSERT INTO hasPermission(Username, Permission) VALUES(?,?) ON DUPLICATE KEY UPDATE Permission=VALUES(Permission)")
 	if err != nil {

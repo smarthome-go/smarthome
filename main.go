@@ -42,31 +42,39 @@ func main() {
 	}
 	config := config.GetConfig()
 	hardware.InitConfig(config.Hardware)
-	log.Trace("Loaded config")
+	log.Debug("Loaded and successfully initialized config")
 
 	// Initialize database
-	if err := database.Init(config.Database); err != nil {
+	if err := database.Init(config.Database, config.Rooms); err != nil {
 		panic(err.Error())
 	}
-	// TODO: move user creation to somewhere else
-	if err := database.AddUser(database.User{Username: "admin", Password: "admin"}); err != nil {
-		if err.Error() != "could not add user: user already exists" {
-			panic(err.Error())
-		}
-	}
 	// TODO: move this somewhere else
-	for _, room := range config.Rooms {
-		if err := database.CreateRoom(room.Id, room.Name, room.Description); err != nil {
-			log.Error("Could not create rooms from config file")
-			panic(err.Error())
-		}
-		for _, switchItem := range room.Switches {
-			if err := database.CreateSwitch(switchItem.Id, switchItem.Name, room.Id); err != nil {
-				log.Error("Could not create switches from config file:")
-				panic(err.Error())
-			}
+
+	if userAlreadyExists, _ := database.DoesUserExist("mik"); !userAlreadyExists {
+		if err := database.AddUser(database.User{Username: "mik", Password: "test"}); err != nil {
+			log.Error("Could not create a new user in the database: ", err.Error())
+			return
 		}
 	}
+	if err := database.AddUserSwitchPermission("mik", "s1"); err != nil {
+		log.Error("Could not add switch to switchPermissions of the user")
+		panic(err.Error())
+	}
+	if err := database.AddUserSwitchPermission("mik", "s2"); err != nil {
+		log.Error("Could not add switch to switchPermissions of the user")
+		panic(err.Error())
+	}
+
+	fmt.Println(database.GetUserSwitchPermissions("mik"))
+	a, err := database.UserHasSwitchPermission("mik", "s2")
+	if err != nil {
+		panic(err.Error())
+	}
+
+	fmt.Printf("mik has permission `s2`: %t\n", a)
+	success, err := database.SetPowerState("s2", true)
+	fmt.Println("success: %t", success)
+
 	r := routes.NewRouter()
 	middleware.Init(config.Server.Production)
 	templates.LoadTemplates("./web/html/*.html")

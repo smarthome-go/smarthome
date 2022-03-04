@@ -9,7 +9,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-func Init(databaseConfig DatabaseConfig) error {
+func Init(databaseConfig DatabaseConfig, rooms []Room) error {
 	config = databaseConfig
 	if err := createDatabase(); err != nil {
 		return err
@@ -40,6 +40,12 @@ func Init(databaseConfig DatabaseConfig) error {
 	if err := createHasSwitchPermissionTable(); err != nil {
 		return err
 	}
+	if err := initAdminUser(); err != nil {
+		return err
+	}
+	if err := initSwitchesRooms(rooms); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -61,10 +67,43 @@ func createDatabase() error {
 		return err
 	}
 	if rowsAffected == 1 {
-		log.Info(fmt.Sprintf("Successfully initialized database `%s`: %d rows affected", config.Database, rowsAffected))
+		log.Info(fmt.Sprintf("Successfully initialized database `%s`", config.Database))
 	} else {
 		log.Debug(fmt.Sprintf("Using existing database `%s`", config.Database))
 	}
 	defer dbTemp.Close()
+	return nil
+}
+
+func initAdminUser() error {
+	// TODO: move user creation to somewhere else
+	if err := AddUser(User{
+		Username: "admin",
+		Password: "admin",
+	}); err != nil {
+		if err.Error() != "could not add user: user already exists" {
+			return err
+		}
+	}
+	return nil
+}
+
+func initSwitchesRooms(rooms []Room) error {
+	for _, room := range rooms {
+		if err := CreateRoom(room.Id, room.Name, room.Description); err != nil {
+			log.Error("Could not create rooms from config file")
+			return err
+		}
+		for _, switchItem := range room.Switches {
+			if err := CreateSwitch(switchItem.Id, switchItem.Name, room.Id); err != nil {
+				log.Error("Could not create switches from config file:")
+				return err
+			}
+			if err := AddUserSwitchPermission("admin", switchItem.Id); err != nil {
+				log.Error("Could not add switch to switchPermissions of the admin user")
+				return err
+			}
+		}
+	}
 	return nil
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/core/hardware"
+	"github.com/MikMuellerDev/smarthome/server/middleware"
 )
 
 type PowerRequest struct {
@@ -47,4 +48,40 @@ func getSwitches(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json.NewEncoder(w).Encode(switches)
+}
+
+func getUserSwitches(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
+		return
+	}
+	switches, err := database.ListUserSwitches(username)
+	if err != nil {
+		log.Error("Exception in getUserSwitches: database failure: ", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "database error"})
+		return
+	}
+	json.NewEncoder(w).Encode(switches)
+}
+
+func getUserPermissions(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
+		return
+	}
+	permissions, err := database.GetUserPermissions(username)
+	if err != nil {
+		log.Error("Exception in getUserPermissions: database failure: ", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "database error"})
+		return
+	}
+	json.NewEncoder(w).Encode(permissions)
 }
