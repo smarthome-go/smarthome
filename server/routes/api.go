@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/core/hardware"
 )
 
@@ -33,4 +34,17 @@ func powerPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json.NewEncoder(w).Encode(Response{Success: true, Message: "power action successful", Error: ""})
+}
+
+// Returns a list of available switches
+func getSwitches(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	switches, err := database.ListSwitches()
+	if err != nil {
+		log.Error("Exception in getSwitches: database failure: ", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "database error"})
+		return
+	}
+	json.NewEncoder(w).Encode(switches)
 }

@@ -26,7 +26,8 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/login", loginPostHandler).Methods("POST")
 
 	/// Api / Power ///
-	r.HandleFunc("/api/power", powerPostHandler).Methods("POST")
+	r.HandleFunc("/api/power/set", powerPostHandler).Methods("POST")
+	r.HandleFunc("/api/power/list", getSwitches).Methods("GET")
 
 	// For JS and CSS components
 	outFilepath := "./web/out/"

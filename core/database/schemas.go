@@ -28,8 +28,9 @@ func GetPermissions() []Permission {
 
 // Rooms and Switches
 type Switch struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
+	Id     string `json:"id"`
+	Name   string `json:"name"`
+	RoomId string `json:"roomId"`
 }
 
 type Room struct {

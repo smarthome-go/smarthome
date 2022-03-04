@@ -70,13 +70,29 @@ func CreateSwitch(Id string, Name string, RoomId string) error {
 	return nil
 }
 
-func listSwitches() ([]Switch, error) {
+func ListSwitches() ([]Switch, error) {
 	query := `
 	SELECT Id, Name, RoomId FROM switch
 	`
-	res, err := db.Exec(query)
+	res, err := db.Query(query)
 	if err != nil {
-		log.Error()
-		return err
+		log.Error("Could not list switches: failed to execute query: ", err.Error())
+		return []Switch{}, err
 	}
+
+	var switches []Switch
+	for res.Next() {
+		var switchItem Switch
+		if err := res.Scan(&switchItem.Id, &switchItem.Name, &switchItem.RoomId); err != nil {
+			log.Error("Could not list switches: Failed to scan results: ", err.Error())
+		}
+		switches = append(switches, switchItem)
+	}
+	return switches, nil
+}
+
+func ListUserSwitches() ([]Switch, error) {
+	query, err := db.Prepare(`
+	SELECT Id, Name, RoomId FROM switch JOIN hasSwitchPermission ON user.Username=hasSwitchPermission.Username
+	`)
 }
