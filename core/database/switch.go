@@ -70,6 +70,7 @@ func CreateSwitch(Id string, Name string, RoomId string) error {
 	if rowsAffected > 0 {
 		log.Debug(fmt.Sprintf("Added switch `%s` with name `%s`", Id, Name))
 	}
+	defer query.Close()
 	return nil
 }
 
@@ -115,6 +116,7 @@ func ListUserSwitches(username string) ([]Switch, error) {
 		}
 		switches = append(switches, switchItem)
 	}
+	defer query.Close()
 	return switches, nil
 }
 
@@ -141,6 +143,7 @@ func AddUserSwitchPermission(username string, switchId string) error {
 		log.Error("Failed to add switch permission to user: executing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	return nil
 }
 
@@ -168,6 +171,7 @@ func GetUserSwitchPermissions(username string) ([]string, error) {
 		}
 		permissions = append(permissions, permission)
 	}
+	defer query.Close()
 	return permissions, nil
 }
 
@@ -207,6 +211,7 @@ func SetPowerState(switchId string, isPoweredOn bool) (bool, error) {
 	if rowsAffected == 0 {
 		return false, nil
 	}
+	defer query.Close()
 	return true, nil
 }
 

@@ -94,6 +94,10 @@ func main() {
 	}
 	fmt.Printf("success: %t\n", success)
 
+	database.AddUserPermission("mik", "deleteOldLogs")
+	database.AddUserPermission("mik", "deleteAllLogs")
+	database.AddUserPermission("mik", "listLogs")
+
 	r := routes.NewRouter()
 	middleware.Init(config.Server.Production)
 	templates.LoadTemplates("./web/html/*.html")

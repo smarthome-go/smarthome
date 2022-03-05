@@ -1,6 +1,9 @@
 package database
 
-import "fmt"
+import (
+	"database/sql"
+	"fmt"
+)
 
 // Creates (if not exists) the table containing internal (mostly non-error) loggin events
 // For example a user logging in or altering power states
@@ -42,6 +45,7 @@ func AddLogEvent(name string, description string, level int) error {
 		log.Error("Failed to add log event: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	return nil
 }
 
@@ -80,4 +84,30 @@ func FlushAllLogs() error {
 	}
 	log.Debug(fmt.Sprintf("Successfully flushed all log messages: deleted %d messages", deletedMessages))
 	return nil
+}
+
+func GetLogs() ([]LogEvent, error) {
+	query := `SELECT Id, Name, Description, Level, Date FROM logs`
+	res, err := db.Query(query)
+	if err != nil {
+		log.Error("Could not get all logs: failed to execute query: ", err.Error())
+		return []LogEvent{}, err
+	}
+	logs := make([]LogEvent, 0)
+	for res.Next() {
+		var logItem LogEvent
+		var logTime sql.NullTime
+		err := res.Scan(&logItem.Id, &logItem.Name, &logItem.Description, &logItem.Level, &logTime)
+		if err != nil {
+			log.Error("Could not list all logs: Failed to scan results ", err.Error())
+			return []LogEvent{}, err
+		}
+		if !logTime.Valid {
+			log.Error("Invalid time column when scanning logs")
+		} else {
+			logItem.Date = logTime.Time
+			logs = append(logs, logItem)
+		}
+	}
+	return logs, err
 }

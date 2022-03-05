@@ -39,5 +39,6 @@ func CreateRoom(RoomId string, Name string, Description string) error {
 	if rowsAffected > 0 {
 		log.Debug(fmt.Sprintf("Added room `%s` with name `%s`", RoomId, Name))
 	}
+	defer query.Close()
 	return nil
 }

@@ -152,3 +152,16 @@ func flushAllLogs(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully flushed logs", Error: ""})
 }
+
+// Returns a list of logging items in the logging table
+func listLogs(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	logs, err := database.GetLogs()
+	if err != nil {
+		log.Error("Failed to list logs: database failure: ", err.Error())
+		w.WriteHeader(http.StatusBadGateway)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "failed to get logs: database failure"})
+		return
+	}
+	json.NewEncoder(w).Encode(logs)
+}

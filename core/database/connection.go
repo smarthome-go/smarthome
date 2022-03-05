@@ -8,7 +8,7 @@ import (
 )
 
 func databaseConnectionString() string {
-	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", config.Username, config.Password, config.Hostname, config.Port, config.Database)
+	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true", config.Username, config.Password, config.Hostname, config.Port, config.Database)
 }
 
 func connection() (*sql.DB, error) {

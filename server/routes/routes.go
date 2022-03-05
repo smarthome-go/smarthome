@@ -35,11 +35,15 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/power/list/personal", middleware.ApiAuthRequired(middleware.Permission(getUserSwitches, "getUserSwitches"))).Methods("GET")
 
 	// Logs for the admin user
-	r.HandleFunc("/api/logs/delete/old", middleware.ApiAuthRequired(middleware.Permission(flushOldLogs, "flushOldLogs"))).Methods("DELETE")
-	r.HandleFunc("/api/logs/delete/all", middleware.ApiAuthRequired(middleware.Permission(flushAllLogs, "flushAllLogs"))).Methods("DELETE")
+	r.HandleFunc("/api/logs/delete/old", middleware.ApiAuthRequired(middleware.Permission(flushOldLogs, "deleteOldLogs"))).Methods("DELETE")
+	r.HandleFunc("/api/logs/delete/all", middleware.ApiAuthRequired(middleware.Permission(flushAllLogs, "deleteAllLogs"))).Methods("DELETE")
+	r.HandleFunc("/api/logs/get", middleware.ApiAuthRequired(middleware.Permission(listLogs, "listLogs"))).Methods("GET")
 
 	// Get personal permissions
 	r.HandleFunc("/api/user/permissions/personal", middleware.ApiAuthRequired(getUserPermissions))
+
+	// Profile picture upload test
+	r.HandleFunc("/profile/upload", handleProfileUpload).Methods("POST")
 
 	/// Static files ///
 	// For JS and CSS components

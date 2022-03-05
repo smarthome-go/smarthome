@@ -56,6 +56,7 @@ func InsertUser(user User) error {
 		log.Error("Could not create user. Failed to execute query: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	return nil
 }
 
@@ -74,6 +75,7 @@ func DeleteUser(Username string) error {
 		log.Error("Could not delete user. Failed to execute query: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	return nil
 }
 

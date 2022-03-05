@@ -74,6 +74,7 @@ func initializePermissions() error {
 			log.Debug("Inserted new permission into permissions table: ", permission.Permission)
 		}
 	}
+	defer query.Close()
 	return nil
 }
 
@@ -102,6 +103,7 @@ func AddUserPermission(username string, permission string) error {
 		return err
 	}
 	log.Debug(fmt.Sprintf("Successfully added permission: `%s` to user: `%s`", permission, username))
+	defer query.Close()
 	return nil
 }
 
@@ -131,6 +133,7 @@ func RemoveUserPermission(username string, permission string) error {
 		return err
 	}
 	log.Debug(fmt.Sprintf("Successfully removed permission: `%s` from user: `%s`", permission, username))
+	defer query.Close()
 	return nil
 }
 
@@ -156,6 +159,7 @@ func GetUserPermissions(username string) ([]string, error) {
 		}
 		permissions = append(permissions, permission)
 	}
+	defer query.Close()
 	return permissions, nil
 }
 

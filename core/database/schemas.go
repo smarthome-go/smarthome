@@ -1,5 +1,7 @@
 package database
 
+import "time"
+
 // Used in user.go
 type User struct {
 	Username string
@@ -33,14 +35,19 @@ func GetPermissions() []Permission {
 			Description: "Interact with switches",
 		},
 		{
-			Permission:  "flushOldLogs",
+			Permission:  "deleteOldLogs",
 			Name:        "Flush Old Logs",
 			Description: "Delete logs events which are older than 30 days",
 		},
 		{
-			Permission:  "flushAllLogs",
+			Permission:  "deleteAllLogs",
 			Name:        "Flush All Logs",
 			Description: "Delete all log event records",
+		},
+		{
+			Permission:  "listLogs",
+			Name:        "List Logs",
+			Description: "List all internal logs",
 		},
 		{
 			Permission:  "*",
@@ -68,4 +75,13 @@ type Room struct {
 	Name        string   `json:"name"`
 	Description string   `json:"description"`
 	Switches    []Switch `json:"switches"`
+}
+
+// Loggin
+type LogEvent struct {
+	Id          int       `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Level       int       `json:"level"`
+	Date        time.Time `json:"date"`
 }
