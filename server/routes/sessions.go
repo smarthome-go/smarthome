@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/MikMuellerDev/smarthome/core/event"
 	"github.com/MikMuellerDev/smarthome/core/user"
 	"github.com/MikMuellerDev/smarthome/server/middleware"
 )
@@ -22,7 +23,6 @@ func loginPostHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "login failed", Error: "malformed request"})
 	}
-	log.Debug(fmt.Sprintf("User `%s` is trying to authenticate", loginRequest.Username))
 	loginValid, err := user.ValidateLogin(loginRequest.Username, loginRequest.Password)
 	if err != nil {
 		log.Error("User failed to login: database failure.")
@@ -36,11 +36,14 @@ func loginPostHandler(w http.ResponseWriter, r *http.Request) {
 		session.Values["username"] = loginRequest.Username
 		session.Save(r, w)
 		w.WriteHeader(http.StatusNoContent)
+		log.Debug(fmt.Sprintf("User %s logged in successfully", loginRequest.Username))
+		go event.Info("Successful login", fmt.Sprintf("%s logged in", loginRequest.Username))
 		return
 	}
-	log.Warn("Login failed: invalid credentials")
+	log.Debug("Login failed: invalid credentials")
 	w.WriteHeader(http.StatusForbidden)
 	json.NewEncoder(w).Encode(Response{Success: false, Message: "login failed", Error: "invalid credentials"})
+	go event.Warn("Failed Login", fmt.Sprintf("Someone is tying to login to the account %s", loginRequest.Username))
 }
 
 // TODO: implement following function

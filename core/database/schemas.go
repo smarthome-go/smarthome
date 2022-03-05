@@ -32,6 +32,16 @@ func GetPermissions() []Permission {
 			Name:        "Set Power",
 			Description: "Interact with switches",
 		},
+		{
+			Permission:  "flushOldLogs",
+			Name:        "Flush Old Logs",
+			Description: "Delete logs events which are older than 30 days",
+		},
+		{
+			Permission:  "flushAllLogs",
+			Name:        "Flush All Logs",
+			Description: "Delete all log event records",
+		},
 	}
 	return permissions
 }

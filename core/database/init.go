@@ -46,6 +46,9 @@ func Init(databaseConfig DatabaseConfig, rooms []Room) error {
 	if err := initSwitchesRooms(rooms); err != nil {
 		return err
 	}
+	if err := createLoggingEventTable(); err != nil {
+		return err
+	}
 	return nil
 }
 

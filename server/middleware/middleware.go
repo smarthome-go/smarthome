@@ -140,13 +140,12 @@ func GetUserFromCurrentSession(r *http.Request) (string, error) {
 // Returns a string for the username,
 // a boolean that indicates if the credentials are valid and an error for database failure
 func getUserFromQuery(r *http.Request) (string, bool, error) {
-	log.Debug("Using `getUserFromQuery`, this is likely a new session")
 	query := r.URL.Query()
 	username := query.Get("username")
 	password := query.Get("password")
 	loginValid, err := user.ValidateLogin(username, password)
 	if err != nil {
-		log.Error("Could not use GetUserFromQuery: failed to login", err.Error())
+		log.Error("Could not use GetUserFromQuery: failed validate login credentials due to database failure", err.Error())
 		return "", false, err
 	}
 	if loginValid {
@@ -160,7 +159,6 @@ func getUserFromQuery(r *http.Request) (string, bool, error) {
 func Permission(handler http.HandlerFunc, permissionToCheck string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username, err := GetUserFromCurrentSession(r)
-		log.Trace(fmt.Sprintf("Checking permission: `%s` for user: `%s`", permissionToCheck, username))
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			log.Error("failed to get username from query")
@@ -172,13 +170,13 @@ func Permission(handler http.HandlerFunc, permissionToCheck string) http.Handler
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "database error"})
+			json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "failed to check permission to access this ressource"})
 			return
 		}
 		if !hasPermission {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(Response{Success: false, Message: "permission denied", Error: "you lack permission to access this ressource"})
+			json.NewEncoder(w).Encode(Response{Success: false, Message: "permission denied", Error: "missing permission to access this ressource, contact your administrator"})
 			return
 		}
 		handler.ServeHTTP(w, r)

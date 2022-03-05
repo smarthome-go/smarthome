@@ -6,6 +6,7 @@ import (
 
 	"github.com/MikMuellerDev/smarthome/core/config"
 	"github.com/MikMuellerDev/smarthome/core/database"
+	"github.com/MikMuellerDev/smarthome/core/event"
 	"github.com/MikMuellerDev/smarthome/core/hardware"
 	"github.com/MikMuellerDev/smarthome/core/user"
 	"github.com/MikMuellerDev/smarthome/core/utils"
@@ -15,7 +16,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const version = "0.0.2"
+const version = "0.0.3"
 const port = "8082"
 
 func main() {
@@ -35,6 +36,7 @@ func main() {
 	templates.InitLogger(log)
 	user.InitLogger(log)
 	hardware.InitLogger(log)
+	event.InitLogger(log)
 
 	// Read config file
 	if err := config.ReadConfigFile(); err != nil {
@@ -76,6 +78,14 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
+
+	if !config.Server.Production {
+		// If the server is in development mode, all logs should be flushed
+		database.FlushAllLogs()
+	}
+
+	log.Info("Flushing logs older than 30 days")
+	database.FlushOldLogs()
 
 	fmt.Printf("mik has permission `s2`: %t\n", a)
 	success, err := database.SetPowerState("s22", true)

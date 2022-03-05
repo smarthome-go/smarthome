@@ -18,6 +18,7 @@ func NewRouter() *mux.Router {
 	r := mux.NewRouter()
 	r.HandleFunc("/", middleware.AuthRequired(indexGetHandler)).Methods("GET")
 	r.HandleFunc("/dash", middleware.AuthRequired(dashGetHandler)).Methods("GET")
+
 	// TODO: modify loginGethandler to redirect to the dashboard if the user is alerady logged in
 	r.HandleFunc("/login", loginGetHandler).Methods("GET")
 	r.HandleFunc("/logout", logoutGetHandler).Methods("GET")
@@ -25,17 +26,22 @@ func NewRouter() *mux.Router {
 	//// API ////
 	r.HandleFunc("/api/login", loginPostHandler).Methods("POST")
 
-	/// Public endpoints without authentication ///
+	// Public endpoints without authentication
 	r.HandleFunc("/api/power/list", getSwitches).Methods("GET")
 	r.HandleFunc("/api/power/states", getPowerStates).Methods("GET")
 
-	/// Api / Power (with authentication) ///
+	// Api / Power (with authentication)
 	r.HandleFunc("/api/power/set", middleware.ApiAuthRequired(middleware.Permission(powerPostHandler, "setPower"))).Methods("POST")
 	r.HandleFunc("/api/power/list/personal", middleware.ApiAuthRequired(middleware.Permission(getUserSwitches, "getUserSwitches"))).Methods("GET")
 
-	/// Get personal permissions ///
+	// Logs for the admin user
+	r.HandleFunc("/api/logs/delete/old", middleware.ApiAuthRequired(middleware.Permission(flushOldLogs, "flushOldLogs"))).Methods("DELETE")
+	r.HandleFunc("/api/logs/delete/all", middleware.ApiAuthRequired(middleware.Permission(flushAllLogs, "flushAllLogs"))).Methods("DELETE")
+
+	// Get personal permissions
 	r.HandleFunc("/api/user/permissions/personal", middleware.ApiAuthRequired(getUserPermissions))
 
+	/// Static files ///
 	// For JS and CSS components
 	outFilepath := "./web/out/"
 	staticPathPrefix := "/static"

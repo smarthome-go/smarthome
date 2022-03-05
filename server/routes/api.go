@@ -2,9 +2,11 @@ package routes
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/MikMuellerDev/smarthome/core/database"
+	"github.com/MikMuellerDev/smarthome/core/event"
 	"github.com/MikMuellerDev/smarthome/core/hardware"
 	"github.com/MikMuellerDev/smarthome/server/middleware"
 )
@@ -15,7 +17,6 @@ type PowerRequest struct {
 }
 
 // API endpoint for manipulating power states and (de) activating sockets
-// TODO: implement permission middleware
 func powerPostHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
@@ -27,8 +28,24 @@ func powerPostHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	// TODO: impl hasPermissions
-	// userHasPermission, err := database.UserHasSwitchPermission(user)
+	username, err := middleware.GetUserFromCurrentSession(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
+		return
+	}
+	userHasPermission, err := database.UserHasSwitchPermission(username, request.SwitchName)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "failed to check permission for this switch"})
+		return
+	}
+	if !userHasPermission {
+		log.Debug("User requested to use a switch but lacks permission to use it")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "permission denied", Error: "missing permission to interact with this switch, contact your administrator"})
+		return
+	}
 	err = hardware.SetPower(request.SwitchName, request.PowerOn)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -36,6 +53,11 @@ func powerPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json.NewEncoder(w).Encode(Response{Success: true, Message: "power action successful", Error: ""})
+	if request.PowerOn {
+		go event.Info("User Activated Switch", fmt.Sprintf("%s activated switch %s", username, request.SwitchName))
+	} else {
+		go event.Info("User Deactivated Switch", fmt.Sprintf("%s deactivated switch %s", username, request.SwitchName))
+	}
 }
 
 // Returns a list of available switches
@@ -51,6 +73,7 @@ func getSwitches(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(switches)
 }
 
+// Only returns switches which the user has access to
 func getUserSwitches(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(r)
@@ -69,6 +92,7 @@ func getUserSwitches(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(switches)
 }
 
+// Returns a list of strings which resemble permissions
 func getUserPermissions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(r)
@@ -87,6 +111,8 @@ func getUserPermissions(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(permissions)
 }
 
+// Returns a list of power states
+// {SwitchId: string, Power: bool}
 func getPowerStates(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	powerStates, err := database.GetPowerStates()
@@ -97,4 +123,32 @@ func getPowerStates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json.NewEncoder(w).Encode(powerStates)
+}
+
+// Triggers deletion of internal server logs which are older than 30 days
+// Should only be accessible to an admin user
+func flushOldLogs(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	err := database.FlushOldLogs()
+	if err != nil {
+		log.Error("Exception in flushOldLogs: database failure: ", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "failed to flush logs: database failure"})
+		return
+	}
+	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully flushed logs older than 30 days", Error: ""})
+}
+
+// Triggers deletion of ALL internal server logs
+// Should only be accessible to an admin user
+func flushAllLogs(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	err := database.FlushAllLogs()
+	if err != nil {
+		log.Error("Exception in flushOldLogs: database failure: ", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "failed to flush logs: database failure"})
+		return
+	}
+	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully flushed logs", Error: ""})
 }
