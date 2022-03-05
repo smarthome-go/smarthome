@@ -178,7 +178,7 @@ func UserHasPermission(username string, permission string) (bool, error) {
 		return false, err
 	}
 	for _, permissionItem := range existentPermissions {
-		if permissionItem == permission {
+		if permissionItem == "*" || permissionItem == permission {
 			return true, nil
 		}
 	}

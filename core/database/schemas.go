@@ -42,6 +42,11 @@ func GetPermissions() []Permission {
 			Name:        "Flush All Logs",
 			Description: "Delete all log event records",
 		},
+		{
+			Permission:  "*",
+			Name:        "Permission WIldcard *",
+			Description: "Allows all permissions",
+		},
 	}
 	return permissions
 }

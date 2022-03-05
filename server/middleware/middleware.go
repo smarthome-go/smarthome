@@ -27,9 +27,7 @@ func AuthRequired(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		session, _ := Store.Get(r, "session")
 		value, ok := session.Values["valid"]
-
 		valid, okParse := value.(bool)
-
 		query := r.URL.Query()
 		username := query.Get("username")
 		password := query.Get("password")
@@ -40,7 +38,7 @@ func AuthRequired(handler http.HandlerFunc) http.HandlerFunc {
 		}
 		loginValid, err := user.ValidateLogin(username, password)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusBadGateway)
 			return
 		}
 		if loginValid {
@@ -79,13 +77,13 @@ func ApiAuthRequired(handler http.HandlerFunc) http.HandlerFunc {
 			log.Trace("user session invalid, no query present")
 			log.Trace("Invalid Session, not serving", r.URL.Path)
 			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(Response{false, "access denied, please authenticate", "authentication required"})
 			return
 		}
 		loginValid, err := user.ValidateLogin(username, password)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusBadGateway)
 			return
 		}
 		if loginValid {
@@ -99,6 +97,7 @@ func ApiAuthRequired(handler http.HandlerFunc) http.HandlerFunc {
 		} else {
 			log.Trace("bad credentials, invalid Session: not serving", r.URL.Path)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(Response{false, "access denied, please authenticate", "invalid credentials"})
 			return
 		}
@@ -163,13 +162,13 @@ func Permission(handler http.HandlerFunc, permissionToCheck string) http.Handler
 			w.Header().Set("Content-Type", "application/json")
 			log.Error("failed to get username from query")
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(Response{false, "access denied, please authenticate", "invalid credentials"})
+			json.NewEncoder(w).Encode(Response{false, "access denied, invalid session", "clear your browser's cookies"})
 			return
 		}
 		hasPermission, err := database.UserHasPermission(username, permissionToCheck)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusBadGateway)
 			json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "failed to check permission to access this ressource"})
 			return
 		}

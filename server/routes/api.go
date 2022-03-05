@@ -36,7 +36,7 @@ func powerPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	userHasPermission, err := database.UserHasSwitchPermission(username, request.SwitchName)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadGateway)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "failed to check permission for this switch"})
 		return
 	}
@@ -48,7 +48,7 @@ func powerPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err = hardware.SetPower(request.SwitchName, request.PowerOn)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadGateway)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "hardware error", Error: "failed to communicate with hardware"})
 		return
 	}
@@ -66,7 +66,7 @@ func getSwitches(w http.ResponseWriter, r *http.Request) {
 	switches, err := database.ListSwitches()
 	if err != nil {
 		log.Error("Exception in getSwitches: database failure: ", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadGateway)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "database error"})
 		return
 	}
@@ -85,7 +85,7 @@ func getUserSwitches(w http.ResponseWriter, r *http.Request) {
 	switches, err := database.ListUserSwitches(username)
 	if err != nil {
 		log.Error("Exception in getUserSwitches: database failure: ", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadGateway)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "database error"})
 		return
 	}
@@ -104,7 +104,7 @@ func getUserPermissions(w http.ResponseWriter, r *http.Request) {
 	permissions, err := database.GetUserPermissions(username)
 	if err != nil {
 		log.Error("Exception in getUserPermissions: database failure: ", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadGateway)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "database error"})
 		return
 	}
@@ -118,7 +118,7 @@ func getPowerStates(w http.ResponseWriter, r *http.Request) {
 	powerStates, err := database.GetPowerStates()
 	if err != nil {
 		log.Error("Could not list powerstates: database failure: ", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadGateway)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "database error"})
 		return
 	}
@@ -132,7 +132,7 @@ func flushOldLogs(w http.ResponseWriter, r *http.Request) {
 	err := database.FlushOldLogs()
 	if err != nil {
 		log.Error("Exception in flushOldLogs: database failure: ", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadGateway)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "failed to flush logs: database failure"})
 		return
 	}
@@ -146,7 +146,7 @@ func flushAllLogs(w http.ResponseWriter, r *http.Request) {
 	err := database.FlushAllLogs()
 	if err != nil {
 		log.Error("Exception in flushOldLogs: database failure: ", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadGateway)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "failed to flush logs: database failure"})
 		return
 	}

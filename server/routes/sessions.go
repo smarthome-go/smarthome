@@ -12,7 +12,6 @@ import (
 
 // Accepts a json request like `"username": "user",  "password":"password"`
 // If the credentials are valid, a new session is created and the user is saved, otherwise a 401 is returned
-// Can return a `500` internal server error if the database fails
 func loginPostHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var loginRequest LoginRequest
@@ -26,7 +25,7 @@ func loginPostHandler(w http.ResponseWriter, r *http.Request) {
 	loginValid, err := user.ValidateLogin(loginRequest.Username, loginRequest.Password)
 	if err != nil {
 		log.Error("User failed to login: database failure.")
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadGateway)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "login failed", Error: "could not validate login: internal error: database failure"})
 		return
 	}
@@ -41,7 +40,7 @@ func loginPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Debug("Login failed: invalid credentials")
-	w.WriteHeader(http.StatusForbidden)
+	w.WriteHeader(http.StatusUnauthorized)
 	json.NewEncoder(w).Encode(Response{Success: false, Message: "login failed", Error: "invalid credentials"})
 	go event.Warn("Failed Login", fmt.Sprintf("Someone is tying to login to the account %s", loginRequest.Username))
 }
