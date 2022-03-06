@@ -108,7 +108,7 @@ func getAvatar(w http.ResponseWriter, r *http.Request) {
 	}
 	fileBytes, err := ioutil.ReadFile(filepath)
 	if err != nil {
-		log.Error("Could display avatar: could not read image", err.Error())
+		log.Error("Could not display avatar: could not read image", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write(make([]byte, 0))
 		return
