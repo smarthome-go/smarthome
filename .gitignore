@@ -34,3 +34,4 @@ log
 .vscode/targets.log
 .vscode/dryrun.log
 .vscode/settings.json
+data/avatars
