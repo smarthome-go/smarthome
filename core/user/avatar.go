@@ -44,10 +44,21 @@ func UploadAvatar(username string, filename string, file multipart.File) error {
 	// generates a unique hash based on the username and filename combination
 	hashPrefix := md5.Sum([]byte(fmt.Sprintf("%s%s", username, filename)))
 	filepath := fmt.Sprintf("./data/avatars/%x_%s", hashPrefix, filename)
-	newFile, err := os.Create(filepath)
+	var newFile *os.File
+	newFile, err = os.Create(filepath)
 	if err != nil {
-		log.Error("Could not upload file: could not create file: ", err.Error())
-		return err
+		if err := os.Mkdir("./data", 0775); err != nil {
+			log.Debug("Could not create data directory: likely exists")
+		}
+		if err := os.Mkdir("./data/avatars", 0775); err != nil {
+			log.Error("Could not upload file: could not create new directory: ", err.Error())
+			return err
+		}
+		newFile, err = os.Create(filepath)
+		if err != nil {
+			log.Error("Could not upload file: could not create file inside new directory: ", err.Error())
+			return err
+		}
 	}
 	defer newFile.Close()
 	// Copy the uploaded file to the newly created file on the filesystem

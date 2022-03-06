@@ -54,7 +54,7 @@ func handleAvatarUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	// Do the actual setup
 	if err := user.UploadAvatar(username, handler.Filename, file); err != nil {
-		log.Error("Could not update database entry: backend failed:", err.Error())
+		log.Error("Could not update database entry: backend failed: ", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "avatar upload failed", Error: "internal server error"})
 		return
