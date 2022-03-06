@@ -3,7 +3,8 @@ package routes
 import (
 	"net/http"
 
-	"github.com/MikMuellerDev/smarthome/server/middleware"
+	// `mdl`` is shorter than `middleware`
+	mdl "github.com/MikMuellerDev/smarthome/server/middleware"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 )
@@ -16,37 +17,37 @@ func InitLogger(logger *logrus.Logger) {
 
 func NewRouter() *mux.Router {
 	r := mux.NewRouter()
-	r.HandleFunc("/", middleware.AuthRequired(indexGetHandler)).Methods("GET")
-	r.HandleFunc("/dash", middleware.AuthRequired(dashGetHandler)).Methods("GET")
+	// Auth: middleware that checks if the user is logged in, will redirect to `/login` if the user is not logged in
+	// ApiAuth: middleware that checks if the user is logged in for API request, will return JSON errors if the user is not logged in
+	r.HandleFunc("/", mdl.Auth(indexGetHandler)).Methods("GET")
+	r.HandleFunc("/dash", mdl.Auth(dashGetHandler)).Methods("GET")
 
 	// TODO: modify loginGethandler to redirect to the dashboard if the user is alerady logged in
 	r.HandleFunc("/login", loginGetHandler).Methods("GET")
 	r.HandleFunc("/logout", logoutGetHandler).Methods("GET")
-
-	//// API ////
 	r.HandleFunc("/api/login", loginPostHandler).Methods("POST")
 
-	// Public endpoints without authentication
+	//// API ////
+	// Api / Power (with authentication)
+	// TODO: write documentation at each if the methods
 	r.HandleFunc("/api/power/list", getSwitches).Methods("GET")
 	r.HandleFunc("/api/power/states", getPowerStates).Methods("GET")
-
-	// Api / Power (with authentication)
-	r.HandleFunc("/api/power/set", middleware.ApiAuth(middleware.Permission(powerPostHandler, "setPower"))).Methods("POST")
-	r.HandleFunc("/api/power/list/personal", middleware.ApiAuth(middleware.Permission(getUserSwitches, "getUserSwitches"))).Methods("GET")
+	r.HandleFunc("/api/power/set", mdl.ApiAuth(mdl.Perm(powerPostHandler, "setPower"))).Methods("POST")
+	r.HandleFunc("/api/power/list/personal", mdl.ApiAuth(mdl.Perm(getUserSwitches, "getUserSwitches"))).Methods("GET")
 
 	// Logs for the admin user
-	r.HandleFunc("/api/logs/delete/old", middleware.ApiAuth(middleware.Permission(flushOldLogs, "deleteOldLogs"))).Methods("DELETE")
-	r.HandleFunc("/api/logs/delete/all", middleware.ApiAuth(middleware.Permission(flushAllLogs, "deleteAllLogs"))).Methods("DELETE")
-	r.HandleFunc("/api/logs/get", middleware.ApiAuth(middleware.Permission(listLogs, "listLogs"))).Methods("GET")
+	r.HandleFunc("/api/logs/delete/old", mdl.ApiAuth(mdl.Perm(flushOldLogs, "deleteOldLogs"))).Methods("DELETE")
+	r.HandleFunc("/api/logs/delete/all", mdl.ApiAuth(mdl.Perm(flushAllLogs, "deleteAllLogs"))).Methods("DELETE")
+	r.HandleFunc("/api/logs/get", mdl.ApiAuth(mdl.Perm(listLogs, "listLogs"))).Methods("GET")
 
-	// Get personal permissions
-	r.HandleFunc("/api/user/permissions/personal", middleware.ApiAuth(getUserPermissions))
+	// List personal permissions
+	r.HandleFunc("/api/user/permissions/personal", mdl.ApiAuth(getUserPermissions))
 
 	// Customization for the user
 	// Profile picture upload test
-	r.HandleFunc("/api/user/avatar", middleware.ApiAuth(getAvatar)).Methods("GET")
-	r.HandleFunc("/api/user/avatar/upload", middleware.ApiAuth(middleware.Permission(handleAvatarUpload, "uploadAvatar"))).Methods("POST")
-	r.HandleFunc("/api/user/avatar/delete", middleware.ApiAuth(middleware.Permission(deleteAvatar, "deleteAvatar"))).Methods("DELETE")
+	r.HandleFunc("/api/user/avatar", mdl.ApiAuth(getAvatar)).Methods("GET")
+	r.HandleFunc("/api/user/avatar/upload", mdl.ApiAuth(mdl.Perm(handleAvatarUpload, "uploadAvatar"))).Methods("POST")
+	r.HandleFunc("/api/user/avatar/delete", mdl.ApiAuth(mdl.Perm(deleteAvatar, "deleteAvatar"))).Methods("DELETE")
 
 	/// Static files ///
 	// For JS and CSS components

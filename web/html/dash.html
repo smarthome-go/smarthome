@@ -8,10 +8,23 @@
     <link rel="stylesheet" href="/static/css/dash.css">
     <link rel="stylesheet" href="/static/css/elevations.css">
     <script src="/static/js/dash.js"></script>
-    <script src="/static/js/loadingScreen.js"></script>
     <title>Smarthome</title>
 </head>
 <body>
-    <h1>Dashboard</h1>
+    <nav>
+        <h1>Dashboard</h1>
+        <img src="/api/user/avatar" id="avatar">
+    </nav>
+
+    <br>
+    <!-- Temporarely to demonstrate image uploading -->
+    <form
+      enctype="multipart/form-data"
+      action="/api/user/avatar/upload"
+      method="post">
+      <input type="file" name="file" />
+      <input type="submit" value="upload" />
+    </form>
 </body>
 </html>
+

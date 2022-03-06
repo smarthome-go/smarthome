@@ -26,7 +26,7 @@ type Response struct {
 // Checks if a user is already logged in (session)
 // If not, it checks for a url query `username=x&password=y` in order to authenticate the user
 // If both methods fail, the user is redirected to `/login`
-func AuthRequired(handler http.HandlerFunc) http.HandlerFunc {
+func Auth(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		session, _ := Store.Get(r, "session")
 		loginValidTemp, loginValidOkTemp := session.Values["valid"]
@@ -170,7 +170,7 @@ func getUserFromQuery(r *http.Request) (string, bool, error) {
 // TODO: for development: add a warning message in the SQL-backend if the wanted permission does not exist,
 // TODO: this can later be done in a goroutine in order to maximize performance
 // TODO: This would not be important for the user so goroutines would be ok
-func Permission(handler http.HandlerFunc, permissionToCheck string) http.HandlerFunc {
+func Perm(handler http.HandlerFunc, permissionToCheck string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username, err := GetUserFromCurrentSession(r)
 		if err != nil {
