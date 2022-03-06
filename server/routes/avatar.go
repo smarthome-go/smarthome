@@ -28,6 +28,7 @@ func handleAvatarUpload(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// File to large or invalid file
 		log.Debug("Could not retrieve file: ", err.Error())
+		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to obtain file", Error: "failed to obtain file: could not get file from request"})
 		return
 	}

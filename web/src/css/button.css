@@ -28,10 +28,11 @@
   text-decoration: none;
   text-align: center;
   color: white;
+  color: var(--clr-text-on-primary)
 }
 
 .button {
-  color: white;
+  color: var(--clr-text-on-primary)
 }
 
 @media (max-width: 47.5rem) {
@@ -40,4 +41,9 @@
     font-size: 0.8rem;
     min-width: 40px;
   }
+}
+
+button.deactivated {
+  filter: saturate(0%) brightness(50%);
+  cursor: not-allowed;
 }

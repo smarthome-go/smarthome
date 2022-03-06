@@ -52,7 +52,7 @@ func InsertUser(user User) error {
 		log.Error("Could not create user. Failed to prepare query: ", err.Error())
 		return err
 	}
-	_, err = query.Exec(user.Username, user.Password, "./web/assets/default.png")
+	_, err = query.Exec(user.Username, user.Password, "./web/assets/avatar/default.png")
 	if err != nil {
 		log.Error("Could not create user. Failed to execute query: ", err.Error())
 		return err

@@ -173,6 +173,7 @@ func getUserFromQuery(r *http.Request) (string, bool, error) {
 func Perm(handler http.HandlerFunc, permissionToCheck string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username, err := GetUserFromCurrentSession(r)
+		log.Trace(fmt.Sprintf("Checking permission `%s` for user `%s`", permissionToCheck, username))
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			log.Error("failed to get username from query")
