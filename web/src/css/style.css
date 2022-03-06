@@ -1,44 +1,54 @@
-:root   {
-    --clr-primary: #88ff70;
-    --clr-bg: #222;
-    --clr-text-light: #f1f1f1;
-    --clr-error: #ff61bd;
-    --clr-text-on-primary: #222;
+:root {
+  --clr-primary: #88ff70;
+  --clr-bg: #222;
+  --clr-text-light: #f1f1f1;
+  --clr-error: #ff61bd;
+  --clr-text-on-primary: #222;
 }
 
 body {
-    background-color: var(--clr-bg);
-    margin: 0;
+  background-color: var(--clr-bg);
+  margin: 0;
 }
 
-h1,h2,h3,h4,div,span {
-    color: white;
-    font-weight: 500;
-    font-family: "Roboto", "Helvetica", "Arial", sans-serif;
-    margin: 0;
+h1,
+h2,
+h3,
+h4,
+div,
+span {
+  color: white;
+  font-weight: 500;
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  margin: 0;
 }
 
 .text-primary {
-    color: rgb(233, 233, 233);
+  color: rgb(233, 233, 233);
 }
 
 .text-secondary {
-    color: rgb(196, 196, 196);
+  color: rgb(196, 196, 196);
 }
 
 #avatar {
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-image: url("/api/user/avatar");
 }
 
 /* Navbar at the top of the screen */
 nav {
-    height: 3rem;
-    width: 100%;
-    box-shadow: 0 3px 4px 0 rgba(0, 0, 0, 0.14), 0 3px 3px -2px rgba(0, 0, 0, 0.12), 0 1px 8px 0 rgba(0, 0, 0, 0.20);
-    background-color: rgba(255, 255, 255, 0.08);
-    display: flex;
-    justify-content: space-evenly;
-    align-items: center;
+  height: 3rem;
+  width: 100%;
+  box-shadow: 0 3px 4px 0 rgba(0, 0, 0, 0.14),
+    0 3px 3px -2px rgba(0, 0, 0, 0.12), 0 1px 8px 0 rgba(0, 0, 0, 0.2);
+  background-color: rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
 }
