@@ -11,7 +11,8 @@ func createUserTable() error {
 	IF NOT EXISTS
 	user(
 		Username VARCHAR(20) PRIMARY KEY,
-		Password text
+		Password text,
+		AvatarPath text
 	)
 	`
 	_, err := db.Exec(query)
@@ -25,7 +26,7 @@ func createUserTable() error {
 // Lists users which are currently in the Database
 // Returns an empty list with an error when failing
 func ListUsers() ([]User, error) {
-	query := `SELECT Username, Password FROM user`
+	query := `SELECT Username, Password, AvatarPath FROM user`
 	res, err := db.Query(query)
 	if err != nil {
 		log.Error("Could not list users. Failed to execute query: ", err.Error())
@@ -34,9 +35,9 @@ func ListUsers() ([]User, error) {
 	var userList []User
 	for res.Next() {
 		var user User
-		err := res.Scan(&user.Username, &user.Password)
+		err := res.Scan(&user.Username, &user.Password, &user.AvatarPath)
 		if err != nil {
-			log.Error("Failed tp scan user values from database results: ", err.Error())
+			log.Error("Failed to scan user values from database results: ", err.Error())
 		}
 		userList = append(userList, user)
 	}
@@ -46,12 +47,12 @@ func ListUsers() ([]User, error) {
 // Creates a new user based on a the supplied `User` struct
 // Won't panic if user already exists, but will change password
 func InsertUser(user User) error {
-	query, err := db.Prepare("INSERT INTO user(Username, Password) VALUES(?,?) ON DUPLICATE KEY UPDATE Password=VALUES(Password)")
+	query, err := db.Prepare("INSERT INTO user(Username, Password, AvatarPath) VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE Password=VALUES(Password)")
 	if err != nil {
 		log.Error("Could not create user. Failed to prepare query: ", err.Error())
 		return err
 	}
-	_, err = query.Exec(user.Username, user.Password)
+	_, err = query.Exec(user.Username, user.Password, "./web/assets/default.png")
 	if err != nil {
 		log.Error("Could not create user. Failed to execute query: ", err.Error())
 		return err
@@ -114,4 +115,74 @@ func DoesUserExist(username string) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+func GetUserByUsername(username string) (User, error) {
+	query, err := db.Prepare(`
+	SELECT Username, Password, AvatarUrl
+	FROM user
+	WHERE Username=? 
+	`)
+	if err != nil {
+		log.Error("Could not get user by username: failed to prepare query: ", err.Error())
+		return User{}, err
+	}
+	res, err := query.Query(username)
+	if err != nil {
+		log.Error("Could not get user by username: failed to execute query: ", err.Error())
+		return User{}, err
+	}
+	user := User{}
+	for res.Next() {
+		err := res.Scan(&user.Username, &user.Password, &user.AvatarPath)
+		if err != nil {
+			log.Error("Failed to get user by username: failed to scan query: ", err.Error())
+			return User{}, err
+		}
+	}
+	return user, nil
+}
+
+func GetAvatarPathByUsername(username string) (string, error) {
+	query, err := db.Prepare(`
+	SELECT AvatarPath
+	FROM user
+	WHERE Username=? 
+	`)
+	if err != nil {
+		log.Error("Could not get avatar path by username: failed to prepare query: ", err.Error())
+		return "", err
+	}
+	res, err := query.Query(username)
+	if err != nil {
+		log.Error("Could not get avatar path by username: failed to execute query: ", err.Error())
+		return "", err
+	}
+	var avatarPath string
+	for res.Next() {
+		err := res.Scan(&avatarPath)
+		if err != nil {
+			log.Error("Failed to get avatar path by username: failed to scan query: ", err.Error())
+			return "", err
+		}
+	}
+	return avatarPath, nil
+}
+
+func SetUserAvatarPath(username string, avatarPath string) error {
+	query, err := db.Prepare(`
+	UPDATE user
+	SET AvatarPath=?
+	WHERE Username=?
+	`)
+	if err != nil {
+		log.Error("Failed to set AvatarPath for user: preparing query failed: ", err.Error())
+		return err
+	}
+	_, err = query.Exec(avatarPath, username)
+	if err != nil {
+		log.Error("Failed to set AvatarPath for user: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
 }

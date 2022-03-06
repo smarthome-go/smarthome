@@ -24,7 +24,7 @@ type Config struct {
 
 var config Config
 
-const configPath = "./config/config.json"
+const configPath = "./data/config/config.json"
 
 var log *logrus.Logger
 

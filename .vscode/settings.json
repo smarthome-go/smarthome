@@ -3,7 +3,8 @@
         "alerady",
         "lfshook",
         "mysql",
-        "Smarthome"
+        "Smarthome",
+        "webp"
     ],
     "sqltools.connections": [
         {

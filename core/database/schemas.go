@@ -4,8 +4,9 @@ import "time"
 
 // Used in user.go
 type User struct {
-	Username string
-	Password string
+	Username   string
+	Password   string
+	AvatarPath string
 }
 
 // Permission-related
@@ -48,6 +49,16 @@ func GetPermissions() []Permission {
 			Permission:  "listLogs",
 			Name:        "List Logs",
 			Description: "List all internal logs",
+		},
+		{
+			Permission:  "uploadAvatar",
+			Name:        "Upload Avatar",
+			Description: "Allows the user to upload a customized avatar",
+		},
+		{
+			Permission:  "deleteAvatar",
+			Name:        "Delete Avatar",
+			Description: "Allows the user to delete their customized avatar",
 		},
 		{
 			Permission:  "*",

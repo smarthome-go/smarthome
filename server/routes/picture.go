@@ -2,14 +2,23 @@ package routes
 
 import (
 	"encoding/json"
-	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
-	"os"
+	"strings"
+
+	"github.com/MikMuellerDev/smarthome/core/database"
+	"github.com/MikMuellerDev/smarthome/core/user"
+	"github.com/MikMuellerDev/smarthome/server/middleware"
 )
 
-func handleProfileUpload(w http.ResponseWriter, r *http.Request) {
+func handleAvatarUpload(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
+		return
+	}
 	// Max upload size: 10 MB
 	maxUploadSize := 10485760
 	r.ParseMultipartForm(int64(maxUploadSize))
@@ -21,33 +30,86 @@ func handleProfileUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer file.Close()
-	fmt.Printf("Uploaded File: %+v\n", handler.Filename)
-	fmt.Printf("File Size: %+v\n", handler.Size)
-	fmt.Printf("MIME Header: %+v\n", handler.Header)
-
 	// If the file is too large, reject the request
 	if handler.Size > int64(maxUploadSize) {
-		log.Error("file is over max filesize")
 		w.WriteHeader(http.StatusRequestEntityTooLarge)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "file too large", Error: "could not use file: filesize too large"})
 		return
 	}
-	// Create new profile file
-	newFile, err := os.Create(handler.Filename)
-	if err != nil {
-		log.Error("Could not upload file: could not create file: ", err.Error())
+	// Check if the filename matches allowed formats (png / webp / jpeg / jpg / ico / svg)
+	allowedFileEndings := []string{"png", "webp", "jpeg", "jpg", "ico", "svg"}
+	fileEnding := strings.Split(handler.Filename, ".")[len(strings.Split(handler.Filename, "."))-1]
+	var fileEndingValid bool
+	for _, value := range allowedFileEndings {
+		if fileEnding == value {
+			fileEndingValid = true
+		}
+	}
+	if !fileEndingValid {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "avatar upload failed", Error: "invalid file type. allowed types are: [png / webp / jpeg / jpg / ico / svg]"})
+		return
+	}
+	// Do the actual setup
+	if err := user.UploadAvatar(username, handler.Filename, file); err != nil {
+		log.Error("Could not update database entry: backend failed:", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "file upload failed", Error: "could not create file"})
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "avatar upload failed", Error: "internal server error"})
 		return
 	}
-	defer newFile.Close()
+	json.NewEncoder(w).Encode(Response{Success: true, Message: "avatar uploaded successfully", Error: ""})
+}
 
-	// Copy the uploaded file to the newly created file on the filesystem
-	if _, err := io.Copy(newFile, file); err != nil {
-		log.Error("Could not copy file: ", err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+func deleteAvatar(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
+	filepathBefore, err := database.GetAvatarPathByUsername(username)
+	if err != nil {
+		log.Error("Could remove avatar: ", err.Error())
+		w.WriteHeader(http.StatusBadGateway)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "avatar removal failed", Error: "database error"})
+		return
+	}
+	// Check if the user has a custom avatar
+	if filepathBefore == "./web/assets/avatar/default.png" {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "avatar removal failed", Error: "the default avatar cannot be removed"})
+		return
+	}
+	if err := user.RemoveAvatar(username); err != nil {
+		log.Error("Could remove avatar: ", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "avatar removal failed", Error: "internal server error"})
+		return
+	}
+	json.NewEncoder(w).Encode(Response{Success: true, Message: "avatar removed successfully", Error: ""})
+}
 
-	fmt.Fprintf(w, "Successfully Uploaded File\n")
+func getAvatar(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "image/png")
+	username, err := middleware.GetUserFromCurrentSession(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
+		return
+	}
+	var filepath string
+	filepath, err = database.GetAvatarPathByUsername(username)
+	if err != nil {
+		log.Error("Could not get avatar image: panic serving default image: ", err.Error())
+		filepath = "./web/assets/avatar/default.png"
+	}
+	fileBytes, err := ioutil.ReadFile(filepath)
+	if err != nil {
+		log.Error("Could display avatar: could not read image", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write(make([]byte, 0))
+		return
+	}
+	w.Write(fileBytes)
 }
