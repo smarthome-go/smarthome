@@ -113,57 +113,6 @@ func ApiAuth(handler http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-// TODO: rewrite this method
-/*
-func _ApiAuth(handler http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		session, _ := Store.Get(r, "session")
-		value, ok := session.Values["valid"]
-		valid, okParse := value.(bool)
-
-		query := r.URL.Query()
-		username := query.Get("username")
-		password := query.Get("password")
-
-		// The last part checks if the user has the intention to authenticate again
-		// This could be the case if another user wants to log in from the same connection
-		if ok && okParse && valid && username == "" {
-			log.Trace(fmt.Sprintf("Valid Session, serving %s", r.URL.Path))
-			handler.ServeHTTP(w, r)
-			return
-		}
-		if username == "" {
-			log.Trace("user session invalid, no query present")
-			log.Trace("Invalid Session, not serving", r.URL.Path)
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(Response{false, "access denied, please authenticate", "authentication required"})
-			return
-		}
-		loginValid, err := user.ValidateLogin(username, password)
-		if err != nil {
-			w.WriteHeader(http.StatusBadGateway)
-			return
-		}
-		if loginValid {
-			session, _ := Store.Get(r, "session")
-			session.Values["valid"] = true
-			session.Values["username"] = username
-			session.Save(r, w)
-			log.Trace(fmt.Sprintf("valid query: Session Saved. Serving %s", r.URL.Path))
-			handler.ServeHTTP(w, r)
-			return
-		} else {
-			log.Trace("bad credentials, invalid Session: not serving", r.URL.Path)
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(Response{false, "access denied, please authenticate", "invalid credentials"})
-			return
-		}
-	}
-}
-*/
-
 // Parses the session and returns the currently logged in user
 // If no user is logged in but is trying to authenticate with URL-queries,
 // this function will call `getUserFromQuery` internally in order to get the username
