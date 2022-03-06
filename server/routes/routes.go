@@ -31,22 +31,22 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/power/states", getPowerStates).Methods("GET")
 
 	// Api / Power (with authentication)
-	r.HandleFunc("/api/power/set", middleware.ApiAuthRequired(middleware.Permission(powerPostHandler, "setPower"))).Methods("POST")
-	r.HandleFunc("/api/power/list/personal", middleware.ApiAuthRequired(middleware.Permission(getUserSwitches, "getUserSwitches"))).Methods("GET")
+	r.HandleFunc("/api/power/set", middleware.ApiAuth(middleware.Permission(powerPostHandler, "setPower"))).Methods("POST")
+	r.HandleFunc("/api/power/list/personal", middleware.ApiAuth(middleware.Permission(getUserSwitches, "getUserSwitches"))).Methods("GET")
 
 	// Logs for the admin user
-	r.HandleFunc("/api/logs/delete/old", middleware.ApiAuthRequired(middleware.Permission(flushOldLogs, "deleteOldLogs"))).Methods("DELETE")
-	r.HandleFunc("/api/logs/delete/all", middleware.ApiAuthRequired(middleware.Permission(flushAllLogs, "deleteAllLogs"))).Methods("DELETE")
-	r.HandleFunc("/api/logs/get", middleware.ApiAuthRequired(middleware.Permission(listLogs, "listLogs"))).Methods("GET")
+	r.HandleFunc("/api/logs/delete/old", middleware.ApiAuth(middleware.Permission(flushOldLogs, "deleteOldLogs"))).Methods("DELETE")
+	r.HandleFunc("/api/logs/delete/all", middleware.ApiAuth(middleware.Permission(flushAllLogs, "deleteAllLogs"))).Methods("DELETE")
+	r.HandleFunc("/api/logs/get", middleware.ApiAuth(middleware.Permission(listLogs, "listLogs"))).Methods("GET")
 
 	// Get personal permissions
-	r.HandleFunc("/api/user/permissions/personal", middleware.ApiAuthRequired(getUserPermissions))
+	r.HandleFunc("/api/user/permissions/personal", middleware.ApiAuth(getUserPermissions))
 
 	// Customization for the user
 	// Profile picture upload test
-	r.HandleFunc("/api/user/avatar", middleware.ApiAuthRequired(getAvatar)).Methods("GET")
-	r.HandleFunc("/api/user/avatar/upload", middleware.ApiAuthRequired(middleware.Permission(handleAvatarUpload, "uploadAvatar"))).Methods("POST")
-	r.HandleFunc("/api/user/avatar/delete", middleware.ApiAuthRequired(middleware.Permission(deleteAvatar, "deleteAvatar"))).Methods("DELETE")
+	r.HandleFunc("/api/user/avatar", middleware.ApiAuth(getAvatar)).Methods("GET")
+	r.HandleFunc("/api/user/avatar/upload", middleware.ApiAuth(middleware.Permission(handleAvatarUpload, "uploadAvatar"))).Methods("POST")
+	r.HandleFunc("/api/user/avatar/delete", middleware.ApiAuth(middleware.Permission(deleteAvatar, "deleteAvatar"))).Methods("DELETE")
 
 	/// Static files ///
 	// For JS and CSS components

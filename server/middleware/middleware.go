@@ -31,15 +31,15 @@ func AuthRequired(handler http.HandlerFunc) http.HandlerFunc {
 		session, _ := Store.Get(r, "session")
 		loginValidTemp, loginValidOkTemp := session.Values["valid"]
 		loginValid, loginValidOk := loginValidTemp.(bool)
-		if loginValidOkTemp && loginValidOk && loginValid {
+		query := r.URL.Query()
+		username := query.Get("username")
+		password := query.Get("password")
+		if loginValidOkTemp && loginValidOk && loginValid && username == "" {
 			// The session is valid: allow access
 			handler.ServeHTTP(w, r)
 			return
 		}
 		// Check potential credentials if the session is invalid
-		query := r.URL.Query()
-		username := query.Get("username")
-		password := query.Get("password")
 		if username == "" {
 			log.Trace(fmt.Sprintf("Invalid Session, redirecting %s to /login", r.URL.Path))
 			http.Redirect(w, r, "/login", http.StatusFound)
@@ -61,8 +61,61 @@ func AuthRequired(handler http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+func ApiAuth(handler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		session, _ := Store.Get(r, "session")
+		loginValidTemp, loginValidOkTemp := session.Values["valid"]
+		loginValid, loginValidOk := loginValidTemp.(bool)
+		query := r.URL.Query()
+		username := query.Get("username")
+		password := query.Get("password")
+		if loginValidOkTemp && loginValidOk && loginValid && username == "" {
+			// The last part (`username == ""`) checks if the user has the intention to authenticate again
+			// This could be the case if another user wants to log in from the same connection
+			log.Trace(fmt.Sprintf("Valid Session, serving %s", r.URL.Path))
+			handler.ServeHTTP(w, r)
+			return
+		}
+		if username == "" {
+			// Session is invalid and no authentication query is present
+			log.Trace("user session invalid, no query present")
+			log.Trace("Invalid Session, not serving", r.URL.Path)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(Response{false, "access denied, please authenticate", "authentication required"})
+			return
+		}
+		validCredentials, err := user.ValidateLogin(username, password)
+		if err != nil {
+			// The database could not verify the given credentials
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadGateway)
+			json.NewEncoder(w).Encode(Response{false, "could not authenticate: failed to validate credentials", "database failure"})
+			return
+		}
+		if validCredentials {
+			// Supplied credentials were valid and the session should be saved
+			session, _ := Store.Get(r, "session")
+			session.Values["valid"] = true
+			session.Values["username"] = username
+			session.Save(r, w)
+			log.Trace(fmt.Sprintf("valid query: serving %s", r.URL.Path))
+			handler.ServeHTTP(w, r)
+			return
+		} else {
+			// The database could validate the credentials but they were invalid
+			log.Trace("bad credentials, invalid Session: not serving", r.URL.Path)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(Response{false, "access denied, wrong username or password", "invalid credentials"})
+			return
+		}
+	}
+}
+
 // TODO: rewrite this method
-func ApiAuthRequired(handler http.HandlerFunc) http.HandlerFunc {
+/*
+func _ApiAuth(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		session, _ := Store.Get(r, "session")
 		value, ok := session.Values["valid"]
@@ -109,6 +162,7 @@ func ApiAuthRequired(handler http.HandlerFunc) http.HandlerFunc {
 		}
 	}
 }
+*/
 
 // Parses the session and returns the currently logged in user
 // If no user is logged in but is trying to authenticate with URL-queries,
