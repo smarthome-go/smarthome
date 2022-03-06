@@ -11,6 +11,8 @@ import (
 	"github.com/MikMuellerDev/smarthome/server/middleware"
 )
 
+// Accepts the upload of an image of following allowed formats (png / webp / jpeg / jpg)
+// This image should ideally be in a 1:1 aspect ratio
 func handleAvatarUpload(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(r)
@@ -36,8 +38,8 @@ func handleAvatarUpload(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "file too large", Error: "could not use file: filesize too large"})
 		return
 	}
-	// Check if the filename matches allowed formats (png / webp / jpeg / jpg / ico / svg)
-	allowedFileEndings := []string{"png", "webp", "jpeg", "jpg", "ico", "svg"}
+	// Check if the filename matches allowed formats (png / webp / jpeg / jpg)
+	allowedFileEndings := []string{"png", "webp", "jpeg", "jpg"}
 	fileEnding := strings.Split(handler.Filename, ".")[len(strings.Split(handler.Filename, "."))-1]
 	var fileEndingValid bool
 	for _, value := range allowedFileEndings {
@@ -47,7 +49,7 @@ func handleAvatarUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	if !fileEndingValid {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "avatar upload failed", Error: "invalid file type. allowed types are: [png / webp / jpeg / jpg / ico / svg]"})
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "avatar upload failed", Error: "invalid file type. allowed types are: [png / webp / jpeg / jpg]"})
 		return
 	}
 	// Do the actual setup

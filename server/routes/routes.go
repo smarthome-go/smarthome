@@ -42,12 +42,11 @@ func NewRouter() *mux.Router {
 	// Get personal permissions
 	r.HandleFunc("/api/user/permissions/personal", middleware.ApiAuthRequired(getUserPermissions))
 
+	// Customization for the user
 	// Profile picture upload test
+	r.HandleFunc("/api/user/avatar", middleware.ApiAuthRequired(getAvatar)).Methods("GET")
 	r.HandleFunc("/api/user/avatar/upload", middleware.ApiAuthRequired(middleware.Permission(handleAvatarUpload, "uploadAvatar"))).Methods("POST")
 	r.HandleFunc("/api/user/avatar/delete", middleware.ApiAuthRequired(middleware.Permission(deleteAvatar, "deleteAvatar"))).Methods("DELETE")
-
-	// Customization for the user
-	r.HandleFunc("/api/user/avatar", middleware.ApiAuthRequired(getAvatar)).Methods("GET")
 
 	/// Static files ///
 	// For JS and CSS components
