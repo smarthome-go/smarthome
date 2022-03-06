@@ -23,27 +23,33 @@ type Response struct {
 	Error   string `json:"error"`
 }
 
+// Checks if a user is already logged in (session)
+// If not, it checks for a url query `username=x&password=y` in order to authenticate the user
+// If both methods fail, the user is redirected to `/login`
 func AuthRequired(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		session, _ := Store.Get(r, "session")
-		value, ok := session.Values["valid"]
-		valid, okParse := value.(bool)
-		query := r.URL.Query()
-		username := query.Get("username")
-		password := query.Get("password")
-
-		if ok && okParse && valid {
+		loginValidTemp, loginValidOkTemp := session.Values["valid"]
+		loginValid, loginValidOk := loginValidTemp.(bool)
+		if loginValidOkTemp && loginValidOk && loginValid {
+			// The session is valid: allow access
 			handler.ServeHTTP(w, r)
 			return
 		}
-		loginValid, err := user.ValidateLogin(username, password)
+		// Check potential credentials if the session is invalid
+		query := r.URL.Query()
+		username := query.Get("username")
+		password := query.Get("password")
+		if username == "" {
+			log.Trace(fmt.Sprintf("Invalid Session, redirecting %s to /login", r.URL.Path))
+			http.Redirect(w, r, "/login", http.StatusFound)
+		}
+		validCredentials, err := user.ValidateLogin(username, password)
 		if err != nil {
 			w.WriteHeader(http.StatusBadGateway)
 			return
 		}
-		if loginValid {
-			// Saves session
-			session, _ := Store.Get(r, "session")
+		if validCredentials {
 			session.Values["valid"] = true
 			session.Values["username"] = username
 			session.Save(r, w)
@@ -55,7 +61,7 @@ func AuthRequired(handler http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-//
+// TODO: rewrite this method
 func ApiAuthRequired(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		session, _ := Store.Get(r, "session")
@@ -73,7 +79,7 @@ func ApiAuthRequired(handler http.HandlerFunc) http.HandlerFunc {
 			handler.ServeHTTP(w, r)
 			return
 		}
-		if username == "" && password == "" {
+		if username == "" {
 			log.Trace("user session invalid, no query present")
 			log.Trace("Invalid Session, not serving", r.URL.Path)
 			w.Header().Set("Content-Type", "application/json")

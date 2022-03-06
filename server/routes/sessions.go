@@ -45,7 +45,16 @@ func loginPostHandler(w http.ResponseWriter, r *http.Request) {
 	go event.Warn("Failed Login", fmt.Sprintf("Someone is tying to login to the account %s", loginRequest.Username))
 }
 
-// TODO: implement following function
+// `destroys` the user session and then redirects back to the login page
 func logoutGetHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "not implemented")
+	session, err := middleware.Store.Get(r, "session")
+	if err != nil {
+		// No user is logged in
+		http.Redirect(w, r, "/login", http.StatusFound)
+	}
+	session.Values["valid"] = false
+	session.Values["username"] = ""
+	session.Save(r, w)
+	log.Trace("A user logged out")
+	http.Redirect(w, r, "/login", http.StatusFound)
 }
