@@ -16,6 +16,7 @@ run-full: web mysql
 clean: cleanweb
 	rm -rf app
 	rm -rf log
+	rm -rf docker/app
 
 cleanweb:
 	rm -rf web/out
@@ -30,6 +31,15 @@ mysql:
 
 # Builds
 build: web all linux clean
+
+docker: cleanall web
+	GOOS=linux GOARCH=amd64 go build -o smarthome -ldflags '-extldflags "-fno-PIC -static"' -buildmode pie -tags 'osusergo netgo static_build' 
+	mkdir docker/app
+	rsync -rv --exclude=data/avatars data docker/app/
+	rsync -rv --exclude=web/src web docker/app/
+	cp smarthome docker/app/
+	sudo systemctl start docker
+	cd docker && sudo docker build . -t mikmuellerdev/smarthome
 
 web: cleanweb
 	cd web && npm run typescript-build && npm run postcss-build

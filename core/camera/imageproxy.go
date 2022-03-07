@@ -1,0 +1,5 @@
+package camera
+
+// THIS FILE SHOULD FETCH AN IMAGE FROM A GIVEN URL IN ORDER TO RETURN A BYTE ARRAY AND AN IMAGE
+
+// Todo: setup camera sql table(s)

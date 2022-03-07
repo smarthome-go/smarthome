@@ -27,7 +27,7 @@ web/out
 # Build files
 build
 bin
-app
+smarthome
 
 # Application `junk` files
 log
@@ -35,3 +35,6 @@ log
 .vscode/dryrun.log
 .vscode/settings.json
 data/avatars
+
+# docker build files
+docker/app

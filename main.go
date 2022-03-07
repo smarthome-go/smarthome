@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
+	"strconv"
+	"time"
 
 	"github.com/MikMuellerDev/smarthome/core/config"
 	"github.com/MikMuellerDev/smarthome/core/database"
@@ -17,7 +20,8 @@ import (
 )
 
 const version = "0.0.3"
-const port = "8082"
+
+var port = 8082
 
 func main() {
 	// Create new logger
@@ -45,9 +49,56 @@ func main() {
 	hardware.InitConfig(config.Hardware)
 	log.Debug("Loaded and successfully initialized config")
 
+	// check for environment variables
+	if dbUsername, dbUsernameOk := os.LookupEnv("SMARTHOME_DB_USER"); dbUsernameOk {
+		log.Debug("Selected SMARTHOME_DB_USER over value from config file")
+		config.Database.Username = dbUsername
+	}
+	if dbPassword, dbPasswordOk := os.LookupEnv("SMARTHOME_DB_PASSWORD"); dbPasswordOk {
+		log.Debug("Selected SMARTHOME_DB_PASSWORD over value from config file")
+		config.Database.Password = dbPassword
+	}
+	if dbDatabase, dbDatabaseOk := os.LookupEnv("SMARTHOME_DB_DATABASE"); dbDatabaseOk {
+		log.Debug("Selected SMARTHOME_DB_DATABASE over value from config file")
+		config.Database.Database = dbDatabase
+	}
+	if dbHostname, dbHostnameOk := os.LookupEnv("SMARTHOME_DB_HOSTNAME"); dbHostnameOk {
+		log.Debug("Selected SMARTHOME_DB_HOSTNAME over value from config file")
+		config.Database.Hostname = dbHostname
+	}
+	if webPort, webPortOk := os.LookupEnv("SMARTHOME_PORT"); webPortOk {
+		webPortInt, err := strconv.Atoi(webPort)
+		if err != nil {
+			log.Warn("Could not parse `SMARTHOME_PORT` to int, using 8082")
+		} else {
+			log.Debug("Selected `SMARTHOME_PORT` over default")
+			port = webPortInt
+		}
+	}
+	if dbPort, dbPortOk := os.LookupEnv("SMARTHOME_DB_PORT"); dbPortOk {
+		portInt, err := strconv.Atoi(dbPort)
+		if err != nil {
+			log.Warn("Could not parse `SMARTHOME_DB_PORT` to int, using value from config.json")
+		} else {
+			log.Debug("Selected SMARTHOME_DB_PORT over value from config file")
+			config.Database.Port = portInt
+		}
+	}
+
 	// Initialize database
-	if err := database.Init(config.Database, config.Rooms); err != nil {
-		panic(err.Error())
+	var dbErr error = nil
+	for i := 0; i <= 5; i++ {
+		dbErr = database.Init(config.Database, config.Rooms)
+		if dbErr == nil {
+			break
+		} else {
+			log.Warn("Failed to connect to database, retrying in 2 seconds")
+			time.Sleep(time.Second * 5)
+		}
+	}
+	if dbErr != nil {
+		log.Error("Failed to connect to database after 10 retries, exiting now")
+		panic(dbErr.Error())
 	}
 
 	// TODO: Move this to for example the makefile (via curl and API): only used during development
@@ -107,7 +158,7 @@ func main() {
 	templates.LoadTemplates("./web/html/**/*.html")
 	http.Handle("/", r)
 	log.Info(fmt.Sprintf("Smarthome v%s is running.", version))
-	err = http.ListenAndServe(fmt.Sprintf(":%s", port), nil)
+	err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
 		panic(err)
 	}

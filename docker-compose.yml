@@ -1,0 +1,33 @@
+version: '3.7'
+services:
+  smarthome:
+    image: mikmuellerdev/smarthome:latest
+    container_name: smarthome
+    depends_on:
+      - "smarthome-mariadb"
+    hostname: smarthome
+    environment:
+      - SMARTHOME_DB_HOSTNAME=smarthome-mariadb
+      - SMARTHOME_DB_PASSWORD=password
+      - SMARTHOME_DB_USER=smarthome
+      - SMARTHOME_DB_DATABASE=smarthome
+      - SMARTHOME_DB_PORT=3306
+      - SMARTHOME_PORT=80
+    ports:
+    - 8123:80
+    restart: unless-stopped
+
+  smarthome-mariadb:
+    image: mariadb
+    container_name: smarthome-mariadb
+    hostname: smarthome-db
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MARIADB_ROOT_PASSWORD=password
+      - TZ=Europe/Berlin
+      - MYSQL_DATABASE=smarthome
+      - MYSQL_USER=smarthome
+      - MYSQL_PASSWORD=password
+    ports:
+      - 3313:3306
+    restart: unless-stopped
