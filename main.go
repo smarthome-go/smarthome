@@ -63,11 +63,11 @@ func main() {
 	if _, err := database.AddUserPermission("mik", "setPower"); err != nil {
 		log.Fatal(err.Error())
 	}
-	if err := database.AddUserSwitchPermission("mik", "s1"); err != nil {
+	if _, err := database.AddUserSwitchPermission("mik", "s1"); err != nil {
 		log.Error("Could not add switch to switchPermissions of the user")
 		panic(err.Error())
 	}
-	if err := database.AddUserSwitchPermission("mik", "s2"); err != nil {
+	if _, err := database.AddUserSwitchPermission("mik", "s2"); err != nil {
 		log.Error("Could not add switch to switchPermissions of the user")
 		panic(err.Error())
 	}
@@ -99,6 +99,7 @@ func main() {
 	database.AddUserPermission("mik", "uploadAvatar")
 	database.AddUserPermission("mik", "deleteAvatar")
 	database.AddUserPermission("mik", "addUserPermission")
+	database.AddUserPermission("mik", "removeUserPermission")
 	database.AddUserPermission("admin", "*")
 
 	r := routes.NewRouter()

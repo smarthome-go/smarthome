@@ -21,6 +21,12 @@ type UserPermissionRequest struct {
 	Permission string `json:"permission"`
 }
 
+// TODO: check if `Switch` is called somewhat else in other places
+type UserSwitchPermissionRequest struct {
+	Username string `json:"username"`
+	Switch   string `json:"switch"`
+}
+
 // API endpoint for manipulating power states and (de) activating sockets
 // Authentication, permission and switch permission is needed to interact with this endpoint
 func powerPostHandler(w http.ResponseWriter, r *http.Request) {
@@ -197,8 +203,8 @@ func addUserPermission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !modified {
-		w.WriteHeader(http.StatusNotModified)
-		json.NewEncoder(w).Encode(Response{Success: true, Message: "user is already in possession of this permission", Error: ""})
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(Response{Success: true, Message: "user is already in possession of this permission"})
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
@@ -230,10 +236,51 @@ func removeUserPermission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !modified {
-		w.WriteHeader(http.StatusNotModified)
+		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(Response{Success: true, Message: "user does not have this permission"})
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
+	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully removed permission from user"})
+}
+
+// TODO: add all request body docs
+// Add a switchPermission to a given user, admin authentication required
+// Request body: `{"username": "x", "switch": "y"}`
+// Response body: Response
+func addSwitchPermission(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request UserSwitchPermissionRequest
+	err := decoder.Decode(&request)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	switchExists, err := database.DoesSwitchExist(request.Switch)
+	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to add switch permission", Error: "database failure"})
+		return
+	}
+	if !switchExists {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not add switch permission to user", Error: "invalid switch permission type: not found"})
+		return
+	}
+	modified, err := database.AddUserSwitchPermission(request.Username, request.Switch)
+	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to add switch permission", Error: "database failure"})
+		return
+	}
+	if !modified {
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(Response{Success: true, Message: "user is already in possession of this switch permission"})
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully added switch permission to user"})
 }

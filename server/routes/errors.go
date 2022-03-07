@@ -16,7 +16,7 @@ func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 
 // If a `405 - method not allowed` error occurs, this endpoint will return the error in a JSON format, no authentication required
 func methodNotAllowedHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusMethodNotAllowed)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusMethodNotAllowed)
 	json.NewEncoder(w).Encode(Response{Success: false, Message: fmt.Sprintf("The method `%s` is invalid: method not allowed", r.Method), Error: "method not allowed"})
 }

@@ -4,19 +4,19 @@ import "time"
 
 // Used in user.go
 type User struct {
-	Username   string
-	Password   string
-	AvatarPath string
+	Username   string `json:"username"`
+	Password   string `json:"password"`
+	AvatarPath string `json:"avatarPath"`
 }
 
 // Permission-related
-
 type Permission struct {
-	Permission  string
-	Name        string
-	Description string
+	Permission  string `json:"permission"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
+// TODO: Move to separate permissionsSchema.go file
 func GetPermissions() []Permission {
 	permissions := []Permission{
 		{
@@ -66,6 +66,16 @@ func GetPermissions() []Permission {
 			Description: "Adds a given permission to a given user",
 		},
 		{
+			Permission:  "removeUserPermission",
+			Name:        "Remove Permission from User",
+			Description: "Removes a given permission from a user",
+		},
+		{
+			Permission:  "addSwitchPermission",
+			Name:        "Add Switch Permission",
+			Description: "Add a switch permission to a user",
+		},
+		{
 			Permission:  "*",
 			Name:        "Permission WIldcard *",
 			Description: "Allows all permissions",
@@ -86,6 +96,7 @@ type PowerState struct {
 	PowerOn  bool   `json:"powerOn"`
 }
 
+// TODO: add documentation comments
 type Room struct {
 	Id          string   `json:"id"`
 	Name        string   `json:"name"`
@@ -93,7 +104,7 @@ type Room struct {
 	Switches    []Switch `json:"switches"`
 }
 
-// Loggin
+// internal logging-related
 type LogEvent struct {
 	Id          int       `json:"id"`
 	Name        string    `json:"name"`

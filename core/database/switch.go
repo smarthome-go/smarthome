@@ -121,30 +121,30 @@ func ListUserSwitches(username string) ([]Switch, error) {
 }
 
 // Adds a given switchId to a given user
-// If this permission already resides inside the table, it is ignored and `no` error is returned
-func AddUserSwitchPermission(username string, switchId string) error {
+// If this permission already resides inside the table, it is ignored and modified=false, error=nil is returned
+func AddUserSwitchPermission(username string, switchId string) (bool, error) {
 	userAlreadyHasPermission, err := UserHasSwitchPermission(username, switchId)
 	if err != nil {
-		log.Error("Failed to add permission: Could not validate the existence of switch: ", err.Error())
-		return err
+		log.Error("Failed to add permission: Could not validate the preexistence of a switchPermission: ", err.Error())
+		return false, err
 	}
 	if userAlreadyHasPermission {
-		return nil
+		return false, nil
 	}
 	query, err := db.Prepare(`
 	INSERT INTO hasSwitchPermission(Username, Switch) VALUES(?,?)
 	`)
 	if err != nil {
 		log.Error("Could not add switch permission to user: preparing query failed: ", err.Error())
-		return err
+		return false, err
 	}
 	_, err = query.Exec(username, switchId)
 	if err != nil {
 		log.Error("Failed to add switch permission to user: executing query failed: ", err.Error())
-		return err
+		return false, err
 	}
 	defer query.Close()
-	return nil
+	return true, nil
 }
 
 // Returns a list of strings which resemble switch permissions
@@ -233,4 +233,20 @@ func GetPowerStates() ([]PowerState, error) {
 		powerStates = append(powerStates, powerState)
 	}
 	return powerStates, nil
+}
+
+// Returns (exists, error), returns an error if the database fails
+// TODO: use before setting power in API
+func DoesSwitchExist(switchId string) (bool, error) {
+	switches, err := ListSwitches()
+	if err != nil {
+		log.Error("Cold not validate existence of switch: fatabase failure: ", err.Error())
+		return false, err
+	}
+	for _, switchItem := range switches {
+		if switchItem.Id == switchId {
+			return true, nil
+		}
+	}
+	return false, nil
 }

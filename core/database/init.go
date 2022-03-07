@@ -102,7 +102,7 @@ func initSwitchesRooms(rooms []Room) error {
 				log.Error("Could not create switches from config file:")
 				return err
 			}
-			if err := AddUserSwitchPermission("admin", switchItem.Id); err != nil {
+			if _, err := AddUserSwitchPermission("admin", switchItem.Id); err != nil {
 				log.Error("Could not add switch to switchPermissions of the admin user")
 				return err
 			}
