@@ -79,7 +79,6 @@ func createDatabase() error {
 }
 
 func initAdminUser() error {
-	// TODO: move user creation to somewhere else (makefile)
 	if err := AddUser(User{
 		Username: "admin",
 		Password: "admin",
@@ -87,6 +86,10 @@ func initAdminUser() error {
 		if err.Error() != "could not add user: user already exists" {
 			return err
 		}
+	}
+	if _, err := AddUserPermission("admin", "*"); err != nil {
+		log.Error("Failed to create admin user: permission setup failed: ", err.Error())
+		return err
 	}
 	return nil
 }

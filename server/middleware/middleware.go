@@ -44,7 +44,7 @@ func Auth(handler http.HandlerFunc) http.HandlerFunc {
 			log.Trace(fmt.Sprintf("Invalid Session, redirecting %s to /login", r.URL.Path))
 			http.Redirect(w, r, "/login", http.StatusFound)
 		}
-		validCredentials, err := user.ValidateLogin(username, password)
+		validCredentials, err := user.ValidateCredentials(username, password)
 		if err != nil {
 			w.WriteHeader(http.StatusBadGateway)
 			return
@@ -85,7 +85,7 @@ func ApiAuth(handler http.HandlerFunc) http.HandlerFunc {
 			json.NewEncoder(w).Encode(Response{false, "access denied, please authenticate", "authentication required"})
 			return
 		}
-		validCredentials, err := user.ValidateLogin(username, password)
+		validCredentials, err := user.ValidateCredentials(username, password)
 		if err != nil {
 			// The database could not verify the given credentials
 			w.Header().Set("Content-Type", "application/json")
@@ -151,7 +151,7 @@ func getUserFromQuery(r *http.Request) (string, bool, error) {
 	query := r.URL.Query()
 	username := query.Get("username")
 	password := query.Get("password")
-	loginValid, err := user.ValidateLogin(username, password)
+	loginValid, err := user.ValidateCredentials(username, password)
 	if err != nil {
 		log.Error("Could not use GetUserFromQuery: failed validate login credentials due to database failure", err.Error())
 		return "", false, err

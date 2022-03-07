@@ -1,6 +1,10 @@
 package database
 
-import "errors"
+import (
+	"errors"
+
+	"golang.org/x/crypto/bcrypt"
+)
 
 // Used during <Init> of the database, only called once
 // Creates the table containing <users> if it doesn't already exist
@@ -92,6 +96,12 @@ func AddUser(user User) error {
 	if userExists {
 		return errors.New("could not add user: user already exists")
 	}
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Error("Failed to create new user: password hashing failed", err.Error())
+		return err
+	}
+	user.Password = string(hashedPassword)
 	err = InsertUser(user)
 	if err != nil {
 		return err

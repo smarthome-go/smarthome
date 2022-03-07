@@ -22,7 +22,7 @@ func loginPostHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "login failed", Error: "malformed request"})
 	}
-	loginValid, err := user.ValidateLogin(loginRequest.Username, loginRequest.Password)
+	loginValid, err := user.ValidateCredentials(loginRequest.Username, loginRequest.Password)
 	if err != nil {
 		log.Error("User failed to login: database failure.")
 		w.WriteHeader(http.StatusBadGateway)

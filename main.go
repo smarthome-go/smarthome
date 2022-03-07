@@ -103,6 +103,7 @@ func main() {
 
 	// TODO: Move this to for example the makefile (via curl and API): only used during development
 	if userAlreadyExists, _ := database.DoesUserExist("mik"); !userAlreadyExists {
+		// if err := database.AddUser(database.User{Username: "mik", Password: "test"}); err != nil {
 		if err := database.AddUser(database.User{Username: "mik", Password: "test"}); err != nil {
 			log.Error("Could not create a new user in the database: ", err.Error())
 			return
@@ -151,7 +152,6 @@ func main() {
 	database.AddUserPermission("mik", "deleteAvatar")
 	database.AddUserPermission("mik", "addUserPermission")
 	database.AddUserPermission("mik", "removeUserPermission")
-	database.AddUserPermission("admin", "*")
 
 	r := routes.NewRouter()
 	middleware.Init(config.Server.Production)
