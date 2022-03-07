@@ -21,6 +21,7 @@ func loginPostHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "login failed", Error: "malformed request"})
+		return
 	}
 	loginValid, err := user.ValidateCredentials(loginRequest.Username, loginRequest.Password)
 	if err != nil {
