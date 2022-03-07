@@ -166,10 +166,6 @@ func getUserFromQuery(r *http.Request) (string, bool, error) {
 // Middleware for checking if a user has permission to access a given route
 // The permission to check is given as a second argument as a string
 // Make sure that the permission to check exists before checking it here
-
-// TODO: for development: add a warning message in the SQL-backend if the wanted permission does not exist,
-// TODO: this can later be done in a goroutine in order to maximize performance
-// TODO: This would not be important for the user so goroutines would be ok
 func Perm(handler http.HandlerFunc, permissionToCheck string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username, err := GetUserFromCurrentSession(r)

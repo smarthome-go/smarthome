@@ -12,7 +12,7 @@ import (
 )
 
 // Accepts the upload of an image of following allowed formats (png / webp / jpeg / jpg)
-// This image should ideally be in a 1:1 aspect ratio
+// Image should ideally be in `1:1` aspect ratio, authentication required`
 func handleAvatarUpload(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(r)
@@ -63,6 +63,7 @@ func handleAvatarUpload(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(Response{Success: true, Message: "avatar uploaded successfully", Error: ""})
 }
 
+// Deletes the user's currently saved avatar and sets it to default, authentication required
 func deleteAvatar(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(r)
@@ -93,6 +94,7 @@ func deleteAvatar(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(Response{Success: true, Message: "avatar removed successfully", Error: ""})
 }
 
+// Returns the user's current avatar as an image, authentication required
 func getAvatar(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "image/png")
 	username, err := middleware.GetUserFromCurrentSession(r)

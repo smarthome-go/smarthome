@@ -45,7 +45,7 @@ func loginPostHandler(w http.ResponseWriter, r *http.Request) {
 	go event.Warn("Failed Login", fmt.Sprintf("Someone is tying to login to the account %s", loginRequest.Username))
 }
 
-// `destroys` the user session and then redirects back to the login page
+// invalidates the user session and then redirects back to the login page
 func logoutGetHandler(w http.ResponseWriter, r *http.Request) {
 	session, err := middleware.Store.Get(r, "session")
 	if err != nil {

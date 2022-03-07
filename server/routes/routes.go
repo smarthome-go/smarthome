@@ -22,14 +22,14 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/", mdl.Auth(indexGetHandler)).Methods("GET")
 	r.HandleFunc("/dash", mdl.Auth(dashGetHandler)).Methods("GET")
 
-	// TODO: modify loginGethandler to redirect to the dashboard if the user is alerady logged in
+	// User profile (settings)
+	r.HandleFunc("/profile", mdl.Auth(userProfileGetHandler)).Methods("GET")
+
 	r.HandleFunc("/login", loginGetHandler).Methods("GET")
 	r.HandleFunc("/logout", logoutGetHandler).Methods("GET")
 	r.HandleFunc("/api/login", loginPostHandler).Methods("POST")
 
 	//// API ////
-	// Api / Power (with authentication)
-	// TODO: write documentation at each if the methods
 	r.HandleFunc("/api/power/list", getSwitches).Methods("GET")
 	r.HandleFunc("/api/power/states", getPowerStates).Methods("GET")
 	r.HandleFunc("/api/power/set", mdl.ApiAuth(mdl.Perm(powerPostHandler, "setPower"))).Methods("POST")
@@ -63,6 +63,7 @@ func NewRouter() *mux.Router {
 	r.PathPrefix(assetsPathPrefix).Handler(http.StripPrefix(assetsPathPrefix, assetsFileserver))
 
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
+	r.MethodNotAllowedHandler = http.HandlerFunc(methodNotAllowedHandler)
 
 	log.Debug("Initialized Router.")
 	return r

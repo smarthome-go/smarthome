@@ -79,7 +79,7 @@ func createDatabase() error {
 }
 
 func initAdminUser() error {
-	// TODO: move user creation to somewhere else
+	// TODO: move user creation to somewhere else (makefile)
 	if err := AddUser(User{
 		Username: "admin",
 		Password: "admin",

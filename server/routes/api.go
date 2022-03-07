@@ -17,6 +17,7 @@ type PowerRequest struct {
 }
 
 // API endpoint for manipulating power states and (de) activating sockets
+// Authentication, permission and switch permission is needed to interact with this endpoint
 func powerPostHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
@@ -60,7 +61,7 @@ func powerPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Returns a list of available switches
+// Returns a list of available switches as JSON to the user, no authentication required
 func getSwitches(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	switches, err := database.ListSwitches()
@@ -73,7 +74,7 @@ func getSwitches(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(switches)
 }
 
-// Only returns switches which the user has access to
+// Only returns switches which the user has access to, authentication required
 func getUserSwitches(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(r)
@@ -92,7 +93,7 @@ func getUserSwitches(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(switches)
 }
 
-// Returns a list of strings which resemble permissions
+// Returns a list of strings which resemble permissions of the currently logged in user, authentication required
 func getUserPermissions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(r)
@@ -111,7 +112,7 @@ func getUserPermissions(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(permissions)
 }
 
-// Returns a list of power states
+// Returns a list of power states, no authentication required
 // {SwitchId: string, Power: bool}
 func getPowerStates(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -125,8 +126,7 @@ func getPowerStates(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(powerStates)
 }
 
-// Triggers deletion of internal server logs which are older than 30 days
-// Should only be accessible to an admin user
+// Triggers deletion of internal server logs which are older than 30 days, admin authentication required
 func flushOldLogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err := database.FlushOldLogs()
@@ -139,8 +139,7 @@ func flushOldLogs(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully flushed logs older than 30 days", Error: ""})
 }
 
-// Triggers deletion of ALL internal server logs
-// Should only be accessible to an admin user
+// Triggers deletion of ALL internal server logs, admin authentication required
 func flushAllLogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err := database.FlushAllLogs()
@@ -153,7 +152,7 @@ func flushAllLogs(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully flushed logs", Error: ""})
 }
 
-// Returns a list of logging items in the logging table
+// Returns a list of logging items in the logging table, admin authentication required
 func listLogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	logs, err := database.GetLogs()

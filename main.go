@@ -26,7 +26,6 @@ func main() {
 		panic(err.Error())
 	}
 
-	// TODO: check if every module has got a corresponding logger
 	// Initialize <module> loggers
 	utils.InitLogger(log)
 	config.InitLogger(log)
@@ -50,8 +49,8 @@ func main() {
 	if err := database.Init(config.Database, config.Rooms); err != nil {
 		panic(err.Error())
 	}
-	// TODO: move this somewhere else
 
+	// TODO: Move this to for example the makefile (via curl and API): only used during development
 	if userAlreadyExists, _ := database.DoesUserExist("mik"); !userAlreadyExists {
 		if err := database.AddUser(database.User{Username: "mik", Password: "test"}); err != nil {
 			log.Error("Could not create a new user in the database: ", err.Error())
@@ -102,7 +101,7 @@ func main() {
 
 	r := routes.NewRouter()
 	middleware.Init(config.Server.Production)
-	templates.LoadTemplates("./web/html/*.html")
+	templates.LoadTemplates("./web/html/**/*.html")
 	http.Handle("/", r)
 	log.Info(fmt.Sprintf("Smarthome v%s is running.", version))
 	err = http.ListenAndServe(fmt.Sprintf(":%s", port), nil)

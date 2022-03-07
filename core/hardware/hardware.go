@@ -4,8 +4,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// TODO: implement powerstates in a separate SQL table or just in RAM
-
 type Node struct {
 	Name  string `json:"name"`
 	Url   string `json:"url"`
