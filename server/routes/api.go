@@ -218,13 +218,8 @@ func removeUserPermission(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	err = database.RemoveUserPermission(request.Username, request.Permission)
+	modified, err := database.RemoveUserPermission(request.Username, request.Permission)
 	if err != nil {
-		if err.Error() == "user is not in posession of permission: will not remove abundant permission" {
-			w.WriteHeader(http.StatusNotModified)
-			json.NewEncoder(w).Encode(Response{Success: true, Message: "user does not have this permission"})
-			return
-		}
 		if err.Error() == "permission not found error: unknown permission type" {
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			json.NewEncoder(w).Encode(Response{Success: false, Message: "could not remove permission from user", Error: "invalid permission type"})
@@ -232,6 +227,11 @@ func removeUserPermission(w http.ResponseWriter, r *http.Request) {
 		}
 		w.WriteHeader(http.StatusBadGateway)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to remove permission", Error: "database failure"})
+		return
+	}
+	if !modified {
+		w.WriteHeader(http.StatusNotModified)
+		json.NewEncoder(w).Encode(Response{Success: true, Message: "user does not have this permission"})
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

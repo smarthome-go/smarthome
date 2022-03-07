@@ -110,33 +110,33 @@ func AddUserPermission(username string, permission string) (bool, error) {
 
 // Attempts to remove a provided permission from a provided user
 // Fails if permission does not exist or if the database fails
-// Warns and returns an error if the user does not have the permission
-func RemoveUserPermission(username string, permission string) error {
+// Warns and returns `false` for the `modified` boolean the user does not have the permission
+func RemoveUserPermission(username string, permission string) (bool, error) {
 	if !doesPermissionExist(permission) {
 		log.Warn("Will not remove permission: Unknown permission type: ", permission)
-		return errors.New("permission not found error: unknown permission type")
+		return false, errors.New("permission not found error: unknown permission type")
 	}
 	hasPermission, err := UserHasPermission(username, permission)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if !hasPermission {
 		log.Warn("Will not remove abundant permission: User does not have requested permission: ", permission)
-		return errors.New("user is not in posession of permission: will not remove abundant permission")
+		return false, nil
 	}
 	query, err := db.Prepare("DELETE FROM hasPermission WHERE username=? AND Permission=?")
 	if err != nil {
 		log.Error("Could not remove permission: Failed to prepare query: ", err.Error())
-		return err
+		return false, err
 	}
 	_, err = query.Exec(username, permission)
 	if err != nil {
 		log.Error("Failed to remove permission: Failed to execute query: ", err.Error())
-		return err
+		return false, err
 	}
 	log.Debug(fmt.Sprintf("Successfully removed permission: `%s` from user: `%s`", permission, username))
 	defer query.Close()
-	return nil
+	return true, nil
 }
 
 // Returns a list of permissions assigned to a given user, if it exists
