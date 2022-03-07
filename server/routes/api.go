@@ -16,6 +16,11 @@ type PowerRequest struct {
 	PowerOn    bool   `json:"powerOn"`
 }
 
+type UserPermissionRequest struct {
+	Username   string `json:"username"`
+	Permission string `json:"permission"`
+}
+
 // API endpoint for manipulating power states and (de) activating sockets
 // Authentication, permission and switch permission is needed to interact with this endpoint
 func powerPostHandler(w http.ResponseWriter, r *http.Request) {
@@ -53,7 +58,7 @@ func powerPostHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "hardware error", Error: "failed to communicate with hardware"})
 		return
 	}
-	json.NewEncoder(w).Encode(Response{Success: true, Message: "power action successful", Error: ""})
+	json.NewEncoder(w).Encode(Response{Success: true, Message: "power action successful"})
 	if request.PowerOn {
 		go event.Info("User Activated Switch", fmt.Sprintf("%s activated switch %s", username, request.SwitchName))
 	} else {
@@ -136,7 +141,7 @@ func flushOldLogs(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "failed to flush logs: database failure"})
 		return
 	}
-	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully flushed logs older than 30 days", Error: ""})
+	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully flushed logs older than 30 days"})
 }
 
 // Triggers deletion of ALL internal server logs, admin authentication required
@@ -149,7 +154,7 @@ func flushAllLogs(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "failed to flush logs: database failure"})
 		return
 	}
-	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully flushed logs", Error: ""})
+	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully flushed logs"})
 }
 
 // Returns a list of logging items in the logging table, admin authentication required
@@ -163,4 +168,72 @@ func listLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json.NewEncoder(w).Encode(logs)
+}
+
+// Adds a given permission to a given user, admin authentication required
+// Takes a JSON body as `input` `{"username": "", "permission": ""}`
+// If the permission is invalid, a `422` is returned
+// TODO: test following endpoint against all scenarios
+func addUserPermission(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request UserPermissionRequest
+	err := decoder.Decode(&request)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	modified, err := database.AddUserPermission(request.Username, request.Permission)
+	if err != nil {
+		if err.Error() == "permission not found error: unknown permission type" {
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			json.NewEncoder(w).Encode(Response{Success: false, Message: "could not add permission to user", Error: "invalid permission type"})
+			return
+		}
+		w.WriteHeader(http.StatusBadGateway)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to add permission", Error: "database failure"})
+		return
+	}
+	if !modified {
+		w.WriteHeader(http.StatusNotModified)
+		json.NewEncoder(w).Encode(Response{Success: true, Message: "user is already in possession of this permission", Error: ""})
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(Response{Success: true, Message: fmt.Sprintf("successfully added permission `%s` to user `%s`", request.Permission, request.Username)})
+}
+
+// TODO: test following endpoint against all scenarios
+// TODO: implement a boolean for permission removal that can be checked here
+func removeUserPermission(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request UserPermissionRequest
+	err := decoder.Decode(&request)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	err = database.RemoveUserPermission(request.Username, request.Permission)
+	if err != nil {
+		if err.Error() == "user is not in posession of permission: will not remove abundant permission" {
+			w.WriteHeader(http.StatusNotModified)
+			json.NewEncoder(w).Encode(Response{Success: true, Message: "user does not have this permission"})
+			return
+		}
+		if err.Error() == "permission not found error: unknown permission type" {
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			json.NewEncoder(w).Encode(Response{Success: false, Message: "could not remove permission from user", Error: "invalid permission type"})
+			return
+		}
+		w.WriteHeader(http.StatusBadGateway)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to remove permission", Error: "database failure"})
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully removed permission from user"})
 }

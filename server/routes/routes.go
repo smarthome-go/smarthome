@@ -40,14 +40,15 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/logs/delete/all", mdl.ApiAuth(mdl.Perm(flushAllLogs, "deleteAllLogs"))).Methods("DELETE")
 	r.HandleFunc("/api/logs/get", mdl.ApiAuth(mdl.Perm(listLogs, "listLogs"))).Methods("GET")
 
-	// List personal permissions
-	r.HandleFunc("/api/user/permissions/personal", mdl.ApiAuth(getUserPermissions))
-
 	// Customization for the user
 	// Profile picture upload test
 	r.HandleFunc("/api/user/avatar", mdl.ApiAuth(getAvatar)).Methods("GET")
 	r.HandleFunc("/api/user/avatar/upload", mdl.ApiAuth(mdl.Perm(handleAvatarUpload, "uploadAvatar"))).Methods("POST")
 	r.HandleFunc("/api/user/avatar/delete", mdl.ApiAuth(mdl.Perm(deleteAvatar, "deleteAvatar"))).Methods("DELETE")
+
+	// Permissions
+	r.HandleFunc("/api/user/permissions/personal", mdl.ApiAuth(getUserPermissions))
+	r.HandleFunc("/api/user/permissions/add", mdl.ApiAuth(mdl.Perm(addUserPermission, "addUserPermission"))).Methods("POST")
 
 	/// Static files ///
 	// For JS and CSS components

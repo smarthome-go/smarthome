@@ -49,7 +49,7 @@ func handleAvatarUpload(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if !fileEndingValid {
-		w.WriteHeader(http.StatusUnprocessableEntity)
+		w.WriteHeader(http.StatusUnsupportedMediaType)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "avatar upload failed", Error: "invalid file type. allowed types are: [png / webp / jpeg / jpg]"})
 		return
 	}
@@ -60,7 +60,7 @@ func handleAvatarUpload(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "avatar upload failed", Error: "internal server error"})
 		return
 	}
-	json.NewEncoder(w).Encode(Response{Success: true, Message: "avatar uploaded successfully", Error: ""})
+	json.NewEncoder(w).Encode(Response{Success: true, Message: "avatar uploaded successfully"})
 }
 
 // Deletes the user's currently saved avatar and sets it to default, authentication required
@@ -91,7 +91,7 @@ func deleteAvatar(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "avatar removal failed", Error: "internal server error"})
 		return
 	}
-	json.NewEncoder(w).Encode(Response{Success: true, Message: "avatar removed successfully", Error: ""})
+	json.NewEncoder(w).Encode(Response{Success: true, Message: "avatar removed successfully"})
 }
 
 // Returns the user's current avatar as an image, authentication required

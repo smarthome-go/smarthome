@@ -57,10 +57,10 @@ func main() {
 			return
 		}
 	}
-	if err := database.AddUserPermission("mik", "getUserSwitches"); err != nil {
+	if _, err := database.AddUserPermission("mik", "getUserSwitches"); err != nil {
 		log.Fatal(err.Error())
 	}
-	if err := database.AddUserPermission("mik", "setPower"); err != nil {
+	if _, err := database.AddUserPermission("mik", "setPower"); err != nil {
 		log.Fatal(err.Error())
 	}
 	if err := database.AddUserSwitchPermission("mik", "s1"); err != nil {
@@ -98,6 +98,8 @@ func main() {
 	database.AddUserPermission("mik", "listLogs")
 	database.AddUserPermission("mik", "uploadAvatar")
 	database.AddUserPermission("mik", "deleteAvatar")
+	database.AddUserPermission("mik", "addUserPermission")
+	database.AddUserPermission("admin", "*")
 
 	r := routes.NewRouter()
 	middleware.Init(config.Server.Production)

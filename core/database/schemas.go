@@ -61,6 +61,11 @@ func GetPermissions() []Permission {
 			Description: "Allows the user to delete their customized avatar",
 		},
 		{
+			Permission:  "addUserPermission",
+			Name:        "Add Permission to user",
+			Description: "Adds a given permission to a given user",
+		},
+		{
 			Permission:  "*",
 			Name:        "Permission WIldcard *",
 			Description: "Allows all permissions",
