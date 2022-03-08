@@ -82,7 +82,7 @@ func GetPermissions() []Permission {
 		},
 		{
 			Permission:  "*",
-			Name:        "Permission WIldcard *",
+			Name:        "Permission Wildcard *",
 			Description: "Allows all permissions",
 		},
 	}
