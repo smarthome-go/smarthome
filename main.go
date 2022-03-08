@@ -152,6 +152,8 @@ func main() {
 	database.AddUserPermission("mik", "deleteAvatar")
 	database.AddUserPermission("mik", "addUserPermission")
 	database.AddUserPermission("mik", "removeUserPermission")
+	database.AddUserPermission("mik", "removeSwitchPermission")
+	database.AddUserPermission("mik", "addSwitchPermission")
 
 	r := routes.NewRouter()
 	middleware.Init(config.Server.Production)

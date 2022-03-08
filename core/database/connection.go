@@ -27,3 +27,14 @@ func connection() (*sql.DB, error) {
 	log.Debug(fmt.Sprintf("Successfully connected to database `%s`", config.Database))
 	return dbTemp, nil
 }
+
+// TODO: add in a scheduler which runs every hour
+func CheckDatabase() error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelfunc()
+	if err := db.PingContext(ctx); err != nil {
+		log.Error("Database health check failed: ", err.Error())
+		return err
+	}
+	return nil
+}

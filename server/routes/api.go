@@ -12,8 +12,8 @@ import (
 )
 
 type PowerRequest struct {
-	SwitchName string `json:"switch"`
-	PowerOn    bool   `json:"powerOn"`
+	Switch  string `json:"switch"`
+	PowerOn bool   `json:"powerOn"`
 }
 
 type UserPermissionRequest struct {
@@ -27,15 +27,14 @@ type UserSwitchPermissionRequest struct {
 	Switch   string `json:"switch"`
 }
 
-// API endpoint for manipulating power states and (de) activating sockets
-// Authentication, permission and switch permission is needed to interact with this endpoint
+// API endpoint for manipulating power states and (de) activating sockets, authentication required
+// Permission and switch permission is needed to interact with this endpoint
 func powerPostHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	var request PowerRequest
-	err := decoder.Decode(&request)
-	if err != nil {
+	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
@@ -46,7 +45,7 @@ func powerPostHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
-	userHasPermission, err := database.UserHasSwitchPermission(username, request.SwitchName)
+	userHasPermission, err := database.UserHasSwitchPermission(username, request.Switch)
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "failed to check permission for this switch"})
@@ -58,17 +57,16 @@ func powerPostHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "permission denied", Error: "missing permission to interact with this switch, contact your administrator"})
 		return
 	}
-	err = hardware.SetPower(request.SwitchName, request.PowerOn)
-	if err != nil {
+	if err := hardware.SetPower(request.Switch, request.PowerOn); err != nil {
 		w.WriteHeader(http.StatusBadGateway)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "hardware error", Error: "failed to communicate with hardware"})
 		return
 	}
 	json.NewEncoder(w).Encode(Response{Success: true, Message: "power action successful"})
 	if request.PowerOn {
-		go event.Info("User Activated Switch", fmt.Sprintf("%s activated switch %s", username, request.SwitchName))
+		go event.Info("User Activated Switch", fmt.Sprintf("%s activated switch %s", username, request.Switch))
 	} else {
-		go event.Info("User Deactivated Switch", fmt.Sprintf("%s deactivated switch %s", username, request.SwitchName))
+		go event.Info("User Deactivated Switch", fmt.Sprintf("%s deactivated switch %s", username, request.Switch))
 	}
 }
 
@@ -105,6 +103,7 @@ func getUserSwitches(w http.ResponseWriter, r *http.Request) {
 }
 
 // Returns a list of strings which resemble permissions of the currently logged in user, authentication required
+// Request: empty | Response: `["a", "b", "c"]`
 func getUserPermissions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(r)
@@ -124,7 +123,7 @@ func getUserPermissions(w http.ResponseWriter, r *http.Request) {
 }
 
 // Returns a list of power states, no authentication required
-// {SwitchId: string, Power: bool}
+// Request: empty | Response: `[{"switchId": "x", power: false}, {...}]`
 func getPowerStates(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	powerStates, err := database.GetPowerStates()
@@ -138,10 +137,10 @@ func getPowerStates(w http.ResponseWriter, r *http.Request) {
 }
 
 // Triggers deletion of internal server logs which are older than 30 days, admin authentication required
+// Request: empty | Response: Response
 func flushOldLogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	err := database.FlushOldLogs()
-	if err != nil {
+	if err := database.FlushOldLogs(); err != nil {
 		log.Error("Exception in flushOldLogs: database failure: ", err.Error())
 		w.WriteHeader(http.StatusBadGateway)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "failed to flush logs: database failure"})
@@ -151,10 +150,10 @@ func flushOldLogs(w http.ResponseWriter, r *http.Request) {
 }
 
 // Triggers deletion of ALL internal server logs, admin authentication required
+// Request: empty | Response: Response
 func flushAllLogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	err := database.FlushAllLogs()
-	if err != nil {
+	if err := database.FlushAllLogs(); err != nil {
 		log.Error("Exception in flushOldLogs: database failure: ", err.Error())
 		w.WriteHeader(http.StatusBadGateway)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "failed to flush logs: database failure"})
@@ -177,16 +176,14 @@ func listLogs(w http.ResponseWriter, r *http.Request) {
 }
 
 // Adds a given permission to a given user, admin authentication required
-// Takes a JSON body as `input` `{"username": "", "permission": ""}`
 // If the permission is invalid, a `422` is returned
-// TODO: test following endpoint against all scenarios
+// Request: `{"username": "", "permission": ""}` | Response: Response
 func addUserPermission(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	var request UserPermissionRequest
-	err := decoder.Decode(&request)
-	if err != nil {
+	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
@@ -203,7 +200,7 @@ func addUserPermission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !modified {
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusConflict)
 		json.NewEncoder(w).Encode(Response{Success: true, Message: "user is already in possession of this permission"})
 		return
 	}
@@ -211,15 +208,15 @@ func addUserPermission(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(Response{Success: true, Message: fmt.Sprintf("successfully added permission `%s` to user `%s`", request.Permission, request.Username)})
 }
 
-// TODO: test following endpoint against all scenarios
-// TODO: implement a boolean for permission removal that can be checked here
+// Todo: unit tests for some of the subfunction
+// Removes a given permission from a user, admin authentication required
+// Request: `{"username": "x", "permission": "y"}` | Response: Response
 func removeUserPermission(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	var request UserPermissionRequest
-	err := decoder.Decode(&request)
-	if err != nil {
+	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
@@ -236,7 +233,7 @@ func removeUserPermission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !modified {
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusConflict)
 		json.NewEncoder(w).Encode(Response{Success: true, Message: "user does not have this permission"})
 		return
 	}
@@ -246,15 +243,13 @@ func removeUserPermission(w http.ResponseWriter, r *http.Request) {
 
 // TODO: add all request body docs
 // Add a switchPermission to a given user, admin authentication required
-// Request body: `{"username": "x", "switch": "y"}`
-// Response body: Response
+// Request: `{"username": "x", "switch": "y"}` | Response: Response
 func addSwitchPermission(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	var request UserSwitchPermissionRequest
-	err := decoder.Decode(&request)
-	if err != nil {
+	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
@@ -277,7 +272,7 @@ func addSwitchPermission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !modified {
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusConflict)
 		json.NewEncoder(w).Encode(Response{Success: true, Message: "user is already in possession of this switch permission"})
 		return
 	}
@@ -286,3 +281,53 @@ func addSwitchPermission(w http.ResponseWriter, r *http.Request) {
 }
 
 // TODO: split into either a submodlue or separate files, should be in a subfolder in server/api or server/routes/api and /server/routes/ui
+// Removes a given switch permission from a given user, admin authentication required
+// Request: `{"username": "x", "switch": "y"}` | Response: Response
+func removeSwitchPermission(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request UserSwitchPermissionRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	switchExists, err := database.DoesSwitchExist(request.Switch)
+	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to remove switch permission", Error: "database failure"})
+		return
+	}
+	if !switchExists {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not remove switch permission from user", Error: "invalid switch permission type: not found"})
+		return
+	}
+	modified, err := database.RemoveUserSwitchPermission(request.Username, request.Switch)
+	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to remove switch permission", Error: "database failure"})
+		return
+	}
+	if !modified {
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(Response{Success: true, Message: "user does not have this switch permission"})
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully removed switch permission from user"})
+}
+
+// Runs a healthcheck of most systems on which the appplication relies on, will be used by e.g `Uptime Kuma`, no authentication required
+// TODO: also check the hardware nodes
+func healthCheck(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if err := database.CheckDatabase(); err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		log.Error("Healthcheck failed: ", err.Error())
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "healthcheck failed: database downtime", Error: err.Error()})
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}

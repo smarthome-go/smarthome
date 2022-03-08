@@ -22,6 +22,9 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/", mdl.Auth(indexGetHandler)).Methods("GET")
 	r.HandleFunc("/dash", mdl.Auth(dashGetHandler)).Methods("GET")
 
+	// Healthcheck for uptime monitoring
+	r.HandleFunc("/health", healthCheck).Methods("GET")
+
 	// User profile (settings)
 	r.HandleFunc("/profile", mdl.Auth(userProfileGetHandler)).Methods("GET")
 
@@ -48,11 +51,12 @@ func NewRouter() *mux.Router {
 
 	// Permissions
 	r.HandleFunc("/api/user/permissions/personal", mdl.ApiAuth(getUserPermissions))
-	r.HandleFunc("/api/user/permissions/add", mdl.ApiAuth(mdl.Perm(addUserPermission, "addUserPermission"))).Methods("POST")
+	r.HandleFunc("/api/user/permissions/add", mdl.ApiAuth(mdl.Perm(addUserPermission, "addUserPermission"))).Methods("PUT")
 	r.HandleFunc("/api/user/permissions/delete", mdl.ApiAuth(mdl.Perm(removeUserPermission, "removeUserPermission"))).Methods("DELETE")
 
 	// Switch Permissions
-	r.HandleFunc("/api/user/permissions/switch/add", mdl.ApiAuth(mdl.Perm(addSwitchPermission, "addSwitchPermission"))).Methods("POST")
+	r.HandleFunc("/api/user/permissions/switch/add", mdl.ApiAuth(mdl.Perm(addSwitchPermission, "addSwitchPermission"))).Methods("PUT")
+	r.HandleFunc("/api/user/permissions/switch/delete", mdl.ApiAuth(mdl.Perm(removeSwitchPermission, "removeSwitchPermission"))).Methods("DELETE")
 
 	/// Static files ///
 	// For JS and CSS components

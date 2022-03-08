@@ -76,6 +76,11 @@ func GetPermissions() []Permission {
 			Description: "Add a switch permission to a user",
 		},
 		{
+			Permission:  "removeSwitchPermission",
+			Name:        "Remove Switch Permission",
+			Description: "Removes a given switch permission from a user",
+		},
+		{
 			Permission:  "*",
 			Name:        "Permission WIldcard *",
 			Description: "Allows all permissions",

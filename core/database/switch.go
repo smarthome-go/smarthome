@@ -121,6 +121,7 @@ func ListUserSwitches(username string) ([]Switch, error) {
 }
 
 // Adds a given switchId to a given user
+// The existence of the switch should be validated beforehand
 // If this permission already resides inside the table, it is ignored and modified=false, error=nil is returned
 func AddUserSwitchPermission(username string, switchId string) (bool, error) {
 	userAlreadyHasPermission, err := UserHasSwitchPermission(username, switchId)
@@ -144,6 +145,28 @@ func AddUserSwitchPermission(username string, switchId string) (bool, error) {
 		return false, err
 	}
 	defer query.Close()
+	return true, nil
+}
+
+// TODO: check naming consistency of `ADD / CREATE` and `DELETE / REMOVE`
+func RemoveUserSwitchPermission(username string, switchId string) (bool, error) {
+	userHasPermission, err := UserHasSwitchPermission(username, switchId)
+	if err != nil {
+		log.Error("Failed to remove permission from user: failed to check if user has permission")
+		return false, err
+	}
+	if !userHasPermission {
+		return false, nil
+	}
+	query, err := db.Prepare(`DELETE FROM hasSwitchPermission WHERE Username=? AND Switch=?`)
+	if err != nil {
+		log.Error("Failed to remove switch permission from user: failed to prepare query: ", err.Error())
+		return false, err
+	}
+	if _, err = query.Exec(username, switchId); err != nil {
+		log.Error("Failed to remove switch permission from user: executing query failed: ", err.Error())
+		return false, nil
+	}
 	return true, nil
 }
 
