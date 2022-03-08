@@ -5,6 +5,7 @@
         "lfshook",
         "mysql",
         "Smarthome",
+        "untis",
         "webp"
     ],
     "sqltools.connections": [

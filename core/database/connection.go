@@ -29,6 +29,11 @@ func connection() (*sql.DB, error) {
 }
 
 // TODO: add in a scheduler which runs every hour
+// TODO: add rpi check
+// TODO: add camera check
+// TODO: add weather check
+// TODO: add untis check
+// TODO: add self-check of errors in the last time using the internal logs of the last hour
 func CheckDatabase() error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelfunc()
