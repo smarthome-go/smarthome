@@ -284,3 +284,5 @@ func addSwitchPermission(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully added switch permission to user"})
 }
+
+// TODO: split into either a submodlue or separate files, should be in a subfolder in server/api or server/routes/api and /server/routes/ui
