@@ -159,6 +159,7 @@ func main() {
 	templates.LoadTemplates("./web/html/**/*.html")
 	http.Handle("/", r)
 	log.Info(fmt.Sprintf("Smarthome v%s is running.", version))
+	go event.Info("System Started", "The Smarthome server completed startup.")
 	err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
 		panic(err)

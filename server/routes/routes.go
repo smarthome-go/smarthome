@@ -61,6 +61,11 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/user/permissions/switch/add", mdl.ApiAuth(mdl.Perm(addSwitchPermission, "addSwitchPermission"))).Methods("PUT")
 	r.HandleFunc("/api/user/permissions/switch/delete", mdl.ApiAuth(mdl.Perm(removeSwitchPermission, "removeSwitchPermission"))).Methods("DELETE")
 
+	// Creating and removing users
+	// TODO :list users
+	r.HandleFunc("/api/user/add", mdl.ApiAuth(mdl.Perm(addUser, "addUser"))).Methods("POST")
+	r.HandleFunc("/api/user/delete", mdl.ApiAuth(mdl.Perm(deleteUser, "removeUser"))).Methods("DELETE")
+
 	/// Static files ///
 	// For JS and CSS components
 	outFilepath := "./web/out/"

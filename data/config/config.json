@@ -13,7 +13,7 @@
         "nodes": [
             {
                 "name": "node",
-                "url": "http://localhost:4243",
+                "url": "http://192.168.178.43",
                 "token": "test"
             }
         ]
@@ -30,6 +30,18 @@
                 },
                 {
                     "id": "s2",
+                    "name": "Lamp2"
+                },
+                {
+                    "id": "s3",
+                    "name": "Lamp2"
+                },
+                {
+                    "id": "n4",
+                    "name": "Lamp2"
+                },
+                {
+                    "id": "s5",
                     "name": "Lamp2"
                 }
             ]

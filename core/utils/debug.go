@@ -8,7 +8,8 @@ import (
 )
 
 type DebugInfo struct {
-	DatabaseOnline         bool
+	DatabaseOnline         bool                 `json:"databaseOnline"`
+	DatabaseStats          database.DBStatus    `json:"databaseStats"`
 	CpuCores               uint8                `json:"cpuCores"`
 	Goroutines             uint16               `json:"goroutines"`
 	MemoryUsage            uint16               `json:"memoryUsage"`
@@ -24,6 +25,7 @@ func SysInfo() DebugInfo {
 	err := database.CheckDatabase()
 	return DebugInfo{
 		DatabaseOnline:         err == nil,
+		DatabaseStats:          database.GetDatabaseStats(),
 		CpuCores:               uint8(runtime.NumCPU()),
 		Goroutines:             uint16(runtime.NumGoroutine()),
 		MemoryUsage:            uint16(m.Alloc / 1024 / 1024),

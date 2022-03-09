@@ -139,6 +139,21 @@ func RemoveUserPermission(username string, permission string) (bool, error) {
 	return true, nil
 }
 
+// Removes all permissions of a given user, used when deleting a user in order to prevent foreign key failure
+// Does not validate username, additional checks required, returns an error if the database fails
+func RemoveAllPermissionsOfUser(username string) error {
+	query, err := db.Prepare(`DELETE FROM hasPermission WHERE Username=?`)
+	if err != nil {
+		log.Error("Could not delete all permissions of user: preparing query failed: ", err.Error())
+		return err
+	}
+	if _, err = query.Exec(username); err != nil {
+		log.Error("Could not delete all permissions of user: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}
+
 // Returns a list of permissions assigned to a given user, if it exists
 func GetUserPermissions(username string) ([]string, error) {
 	var permissions []string
@@ -185,6 +200,10 @@ func UserHasPermission(username string, permission string) (bool, error) {
 	}
 	for _, permissionItem := range existentPermissions {
 		if permissionItem == "*" || permissionItem == permission {
+			if !doesPermissionExist(permission) {
+				log.Warn(fmt.Sprintf("failed to check permission `%s` for user `%s`: permission does not exist", permission, username))
+				return false, nil
+			}
 			return true, nil
 		}
 	}

@@ -43,7 +43,7 @@ func loginPostHandler(w http.ResponseWriter, r *http.Request) {
 	log.Debug("Login failed: invalid credentials")
 	w.WriteHeader(http.StatusUnauthorized)
 	json.NewEncoder(w).Encode(Response{Success: false, Message: "login failed", Error: "invalid credentials"})
-	go event.Warn("Failed Login", fmt.Sprintf("Someone is tying to login to the account %s", loginRequest.Username))
+	go event.Warn("Failed Login", fmt.Sprintf("Someone is tying to login to the account of %s", loginRequest.Username))
 }
 
 // invalidates the user session and then redirects back to the login page

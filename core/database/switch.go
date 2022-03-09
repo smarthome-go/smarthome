@@ -147,6 +147,7 @@ func AddUserSwitchPermission(username string, switchId string) (bool, error) {
 }
 
 // TODO: check naming consistency of `ADD / CREATE` and `DELETE / REMOVE`
+// Removes a switch permission from a user, but does not delete if from the switch permission list
 func RemoveUserSwitchPermission(username string, switchId string) (bool, error) {
 	userHasPermission, err := UserHasSwitchPermission(username, switchId)
 	if err != nil {
@@ -166,6 +167,21 @@ func RemoveUserSwitchPermission(username string, switchId string) (bool, error) 
 		return false, nil
 	}
 	return true, nil
+}
+
+// Removes all switch permission of a given user, used when deleing a user
+// Does not validate the existence of said user
+func RemoveAllSwitchPermissionsOfUser(username string) error {
+	query, err := db.Prepare(`DELETE FROM hasSwitchPermission WHERE Username=?`)
+	if err != nil {
+		log.Error("Failed to remove all switch permissions of user: preparing query failed: ", err.Error())
+		return err
+	}
+	if _, err := query.Exec(username); err != nil {
+		log.Error("Failed to remove all switch permissions of user: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
 }
 
 // Returns a list of strings which resemble switch permissions

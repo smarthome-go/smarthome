@@ -10,11 +10,16 @@ import (
 	"github.com/MikMuellerDev/smarthome/core/database"
 )
 
+// Will remove the current avatar of a user unless it is set to `default`
 func RemoveAvatar(username string) error {
 	// Get current file path
 	filepath, err := database.GetAvatarPathByUsername(username)
 	if err != nil {
 		return err
+	}
+	if filepath == "./web/assets/avatar/default.png" {
+		log.Debug("Will not remove default avatar picture")
+		return nil
 	}
 	// Remove file from filesystem
 	if err := os.Remove(filepath); err != nil {
@@ -27,6 +32,7 @@ func RemoveAvatar(username string) error {
 	return nil
 }
 
+// Accepts a username, filename and multipart file and creates and processes the file
 func UploadAvatar(username string, filename string, file multipart.File) error {
 	// Remove the old image first, if it exists
 	filepathBefore, err := database.GetAvatarPathByUsername(username)

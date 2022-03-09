@@ -86,6 +86,15 @@ func GetPermissions() []Permission {
 			Description: "Obtain debug information about the system",
 		},
 		{
+			Permission:  "addUser",
+			Name:        "Add User",
+			Description: "Create a new user",
+		},
+		{
+			Permission:  "removeUser",
+			Name:        "Delete User",
+			Description: "Delete a given user"},
+		{
 			Permission:  "*",
 			Name:        "Permission Wildcard *",
 			Description: "Allows all permissions",

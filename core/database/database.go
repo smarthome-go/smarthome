@@ -28,6 +28,10 @@ type DBStatus struct {
 	Idle            int `json:""`
 }
 
-func GetDatabaseStats() sql.DBStats {
-	return db.Stats()
+func GetDatabaseStats() DBStatus {
+	return DBStatus{
+		OpenConnections: db.Stats().OpenConnections,
+		InUse:           db.Stats().InUse,
+		Idle:            db.Stats().Idle,
+	}
 }

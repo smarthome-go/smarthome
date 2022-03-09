@@ -37,3 +37,15 @@ func ValidateCredentials(username string, password string) (bool, error) {
 	}
 	return false, nil
 }
+
+func DeleteUser(username string) error {
+	if err := RemoveAvatar(username); err != nil {
+		log.Error("Failed to delete user: removing avatar failed: ", err.Error())
+		return err
+	}
+	if err := database.DeleteUser(username); err != nil {
+		log.Error("Failed to delete user: fatabase error: ", err.Error())
+		return err
+	}
+	return nil
+}

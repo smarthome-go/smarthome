@@ -8,6 +8,7 @@ import (
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/core/event"
 	"github.com/MikMuellerDev/smarthome/core/hardware"
+	"github.com/MikMuellerDev/smarthome/core/user"
 	"github.com/MikMuellerDev/smarthome/core/utils"
 	"github.com/MikMuellerDev/smarthome/server/middleware"
 )
@@ -26,6 +27,15 @@ type UserPermissionRequest struct {
 type UserSwitchPermissionRequest struct {
 	Username string `json:"username"`
 	Switch   string `json:"switch"`
+}
+
+type AddUserRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type RemoveUserRequest struct {
+	Username string `json:"username"`
 }
 
 // API endpoint for manipulating power states and (de) activating sockets, authentication required
@@ -61,6 +71,7 @@ func powerPostHandler(w http.ResponseWriter, r *http.Request) {
 	if err := hardware.SetPower(request.Switch, request.PowerOn); err != nil {
 		w.WriteHeader(http.StatusBadGateway)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "hardware error", Error: "failed to communicate with hardware"})
+		go event.Error("Hardware Error", fmt.Sprintf("The hardware failed while %s tried to interact with switch %s.", username, request.Switch))
 		return
 	}
 	json.NewEncoder(w).Encode(Response{Success: true, Message: "power action successful"})
@@ -147,6 +158,7 @@ func flushOldLogs(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "failed to flush logs: database failure"})
 		return
 	}
+	go event.Info("Flushed Old Logs", "Logs which are older than 30 days were deleted.")
 	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully flushed logs older than 30 days"})
 }
 
@@ -206,6 +218,7 @@ func addUserPermission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
+	go event.Info("Added User Permission", fmt.Sprintf("Added permission %s to user %s.", request.Permission, request.Username))
 	json.NewEncoder(w).Encode(Response{Success: true, Message: fmt.Sprintf("successfully added permission `%s` to user `%s`", request.Permission, request.Username)})
 }
 
@@ -239,6 +252,7 @@ func removeUserPermission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
+	go event.Info("Removed User Permission", fmt.Sprintf("Removed permission %s from user %s.", request.Permission, request.Username))
 	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully removed permission from user"})
 }
 
@@ -278,6 +292,7 @@ func addSwitchPermission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
+	go event.Info("Added Switch Permission", fmt.Sprintf("Added switch permission %s to user %s.", request.Switch, request.Username))
 	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully added switch permission to user"})
 }
 
@@ -317,7 +332,72 @@ func removeSwitchPermission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
+	go event.Info("Removed Switch Permission", fmt.Sprintf("Removed switch permission %s from user %s.", request.Switch, request.Username))
 	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully removed switch permission from user"})
+}
+
+// Creates a new user and gives him a provided password
+// Request: `{"username": "x", "password": "y"}`
+func addUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request AddUserRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	userAlreadyExists, err := database.DoesUserExist(request.Username)
+	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to add user", Error: "database failure"})
+		return
+	}
+	if userAlreadyExists {
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to add user", Error: "user already exists"})
+		return
+	}
+	if err = database.AddUser(database.User{Username: request.Username, Password: request.Password}); err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to add user", Error: "database failure"})
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully created new user"})
+}
+
+// Deletes a user given a valid username
+// This also needs to delete any data that depends on this user in terms of a foreign key
+func deleteUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request RemoveUserRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	userDoesExist, err := database.DoesUserExist(request.Username)
+	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to remove user", Error: "database failure"})
+		return
+	}
+	if !userDoesExist {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to delete user", Error: "no user exists with given username"})
+		return
+	}
+	if err := user.DeleteUser(request.Username); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to remove user", Error: "backend failure"})
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully deleted user"})
 }
 
 // Runs a healthcheck of most systems on which the appplication relies on, will be used by e.g `Uptime Kuma`, no authentication required
