@@ -25,7 +25,7 @@ func SetPower(switchName string, turnOn bool) error {
 // Used for adding a job to a queue, keeps track of daemons and spawns them if needed
 // Waits until the daemon quits, waiting for all (and the new) job(s) to be completed.
 func addJobToQueue(switchName string, turnOn bool, id int64) {
-	item := PowerJob{SwitchName: switchName, TurnOn: turnOn, Id: id}
+	item := PowerJob{SwitchName: switchName, Power: turnOn, Id: id}
 	jobQueue = append(jobQueue, item)
 	if !daemonRunning {
 		jobsWithErrorInHandlerCount = 0
@@ -53,7 +53,7 @@ func jobDaemon(ch chan bool) {
 			break
 		}
 		currentJob := jobQueue[0]
-		err := setPowerOnAllNodes(currentJob.SwitchName, currentJob.TurnOn)
+		err := setPowerOnAllNodes(currentJob.SwitchName, currentJob.Power)
 		jobResults = append(jobResults, JobResult{Id: currentJob.Id, Error: err})
 		if err != nil {
 			jobsWithErrorInHandlerCount += 1
