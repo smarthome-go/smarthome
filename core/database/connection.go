@@ -34,6 +34,7 @@ func connection() (*sql.DB, error) {
 // TODO: add weather check
 // TODO: add untis check
 // TODO: add self-check of errors in the last time using the internal logs of the last hour
+// TODO: use `db.QueryRow() at some locations`
 func CheckDatabase() error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelfunc()
