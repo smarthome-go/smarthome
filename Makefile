@@ -22,7 +22,8 @@ cleanweb:
 	rm -rf web/out
 
 cleanall: clean
-	rm -rf build bin
+	rm -rf build
+	rm -f smarthome
 
 # Mysql Database
 mysql:

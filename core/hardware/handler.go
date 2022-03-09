@@ -87,18 +87,22 @@ func consumeResult(id int64) JobResult {
 	return returnValue
 }
 
+// Returns the number of currently pending jobs in the queue
 func GetPendingJobCount() int {
 	return len(jobQueue)
 }
 
+// Returns the number of registered failed jobs of the last running daemon (can also be the current daemon)
+func GetJobsWithErrorInHandler() uint16 {
+	return jobsWithErrorInHandlerCount
+}
+
+// Returns the current state of the job queue
 func GetPendingJobs() []PowerJob {
 	return jobQueue
 }
 
+// Returns the current state of the results queue
 func GetResults() []JobResult {
 	return jobResults
-}
-
-func GetJobsWithErrorInHandler() uint16 {
-	return jobsWithErrorInHandlerCount
 }
