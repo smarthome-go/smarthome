@@ -31,7 +31,6 @@ func main() {
 	}
 
 	// Initialize <module> loggers
-	utils.InitLogger(log)
 	config.InitLogger(log)
 	database.InitLogger(log)
 	middleware.InitLogger(log)

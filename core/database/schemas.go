@@ -81,6 +81,11 @@ func GetPermissions() []Permission {
 			Description: "Removes a given switch permission from a user",
 		},
 		{
+			Permission:  "getDebugInfo",
+			Name:        "Get Debug Info",
+			Description: "Obtain debug information about the system",
+		},
+		{
 			Permission:  "*",
 			Name:        "Permission Wildcard *",
 			Description: "Allows all permissions",

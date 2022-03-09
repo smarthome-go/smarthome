@@ -5,12 +5,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var log *logrus.Logger
-
-func InitLogger(logger *logrus.Logger) {
-	log = logger
-}
-
 func NewLogger(logLevel logrus.Level) (*logrus.Logger, error) {
 	// Create new logger
 	logger := logrus.New()

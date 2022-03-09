@@ -8,6 +8,7 @@ import (
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/core/event"
 	"github.com/MikMuellerDev/smarthome/core/hardware"
+	"github.com/MikMuellerDev/smarthome/core/utils"
 	"github.com/MikMuellerDev/smarthome/server/middleware"
 )
 
@@ -330,4 +331,11 @@ func healthCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+}
+
+// Reading system debug information, admin authentication required
+// Todo: read information from database for example
+func debugInfo(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(utils.SysInfo())
 }

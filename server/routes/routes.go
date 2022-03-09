@@ -25,6 +25,9 @@ func NewRouter() *mux.Router {
 	// Healthcheck for uptime monitoring
 	r.HandleFunc("/health", healthCheck).Methods("GET")
 
+	// Debug information about the system
+	r.HandleFunc("/api/debug", mdl.ApiAuth(mdl.Perm(debugInfo, "getDebugInfo"))).Methods("GET")
+
 	// User profile (settings)
 	r.HandleFunc("/profile", mdl.Auth(userProfileGetHandler)).Methods("GET")
 
