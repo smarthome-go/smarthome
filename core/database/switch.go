@@ -50,9 +50,7 @@ func createHasSwitchPermissionTable() error {
 // Creates a new switch
 // Will return an error if the database fails
 func CreateSwitch(Id string, Name string, RoomId string) error {
-	query, err := db.Prepare(`
-	INSERT INTO switch(Id, Name, Power, RoomId) VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE Name=Values(Name)
-	`)
+	query, err := db.Prepare(`INSERT INTO switch(Id, Name, Power, RoomId) VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE Name=Values(Name)`)
 	if err != nil {
 		log.Error("Failed to add switch: preparing query failed: ", err.Error())
 		return err

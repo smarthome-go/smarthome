@@ -21,3 +21,13 @@ type DatabaseConfig struct {
 func InitLogger(logger *logrus.Logger) {
 	log = logger
 }
+
+type DBStatus struct {
+	OpenConnections int `json:"openConnections"`
+	InUse           int `json:""`
+	Idle            int `json:""`
+}
+
+func GetDatabaseStats() sql.DBStats {
+	return db.Stats()
+}
