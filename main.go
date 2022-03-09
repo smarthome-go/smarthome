@@ -42,7 +42,7 @@ func main() {
 
 	// Read config file
 	if err := config.ReadConfigFile(); err != nil {
-		log.Fatal("Failed to read config file: startup halted.")
+		log.Fatal("Failed to read config file: startup halted: ", err.Error())
 	}
 	config := config.GetConfig()
 	hardware.InitConfig(config.Hardware)
@@ -111,59 +111,14 @@ func main() {
 		panic(dbErr.Error())
 	}
 
-	// TODO: Move this to for example the makefile (via curl and API): only used during development
-	if userAlreadyExists, _ := database.DoesUserExist("mik"); !userAlreadyExists {
-		// if err := database.AddUser(database.User{Username: "mik", Password: "test"}); err != nil {
-		if err := database.AddUser(database.User{Username: "mik", Password: "test"}); err != nil {
-			log.Error("Could not create a new user in the database: ", err.Error())
-			return
-		}
-	}
-	if _, err := database.AddUserPermission("mik", "getUserSwitches"); err != nil {
-		log.Fatal(err.Error())
-	}
-	if _, err := database.AddUserPermission("mik", "setPower"); err != nil {
-		log.Fatal(err.Error())
-	}
-	if _, err := database.AddUserSwitchPermission("mik", "s1"); err != nil {
-		log.Error("Could not add switch to switchPermissions of the user")
-		panic(err.Error())
-	}
-	if _, err := database.AddUserSwitchPermission("mik", "s2"); err != nil {
-		log.Error("Could not add switch to switchPermissions of the user")
-		panic(err.Error())
-	}
-
-	fmt.Println(database.GetUserSwitchPermissions("mik"))
-	a, err := database.UserHasSwitchPermission("mik", "s2")
-	if err != nil {
-		panic(err.Error())
-	}
-
 	if !config.Server.Production {
 		// If the server is in development mode, all logs should be flushed
 		database.FlushAllLogs()
 	}
 
+	// Flush old logs
 	log.Info("Flushing logs older than 30 days")
 	database.FlushOldLogs()
-
-	fmt.Printf("mik has permission `s2`: %t\n", a)
-	success, err := database.SetPowerState("s22", true)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("success: %t\n", success)
-
-	database.AddUserPermission("mik", "deleteOldLogs")
-	database.AddUserPermission("mik", "deleteAllLogs")
-	database.AddUserPermission("mik", "listLogs")
-	database.AddUserPermission("mik", "uploadAvatar")
-	database.AddUserPermission("mik", "deleteAvatar")
-	database.AddUserPermission("mik", "addUserPermission")
-	database.AddUserPermission("mik", "removeUserPermission")
-	database.AddUserPermission("mik", "removeSwitchPermission")
-	database.AddUserPermission("mik", "addSwitchPermission")
 
 	r := routes.NewRouter()
 	middleware.Init(config.Server.Production)

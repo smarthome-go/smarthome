@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/core/hardware"
@@ -34,10 +35,15 @@ func InitLogger(logger *logrus.Logger) {
 
 func ReadConfigFile() error {
 	// Read file from <configPath> on disk
+	// If this file does not exist, create a new blank one
 	content, err := ioutil.ReadFile(configPath)
 	if err != nil {
-		log.Error("Failed to read config file: ", err.Error())
-		return err
+		if errCreate := createNewConfigFile(); errCreate != nil {
+			log.Error("Failed to read config file: ", err.Error())
+			log.Fatal("Failed to initialize config: could not read or create a config file: ", errCreate.Error())
+			return err
+		}
+		log.Info("Failed to read config file: but managed to create a new config file")
 	}
 
 	// Parse config file to struct <configFile>
@@ -50,6 +56,54 @@ func ReadConfigFile() error {
 		return err
 	}
 	config = configFile
+	return nil
+}
+
+// Creates an empty config file, can return an error if it fails
+func createNewConfigFile() error {
+	config := Config{
+		Server: ServerConfig{
+			Production: false,
+		},
+		Database: database.DatabaseConfig{
+			Username: "smarthome",
+			Password: "password",
+			Hostname: "smarthome-mariadb",
+			Database: "smarthome",
+			Port:     3306,
+		},
+		Hardware: hardware.HardwareConfig{
+			Nodes: []hardware.Node{
+				{
+					Name:  "change_it",
+					Url:   "http://localhost:4243",
+					Token: "change_it",
+				},
+			},
+		},
+		Rooms: []database.Room{{
+			Id:          "change_it",
+			Name:        "My Room",
+			Description: "This is my room",
+			Switches: []database.Switch{{
+				Id:   "s1",
+				Name: "My Switch",
+			}},
+		}},
+	}
+	fileContent, err := json.MarshalIndent(config, "", " ")
+	if err != nil {
+		log.Error("Failed to create config file: creating file content from JSON failed: ", err.Error())
+		return err
+	}
+	if err := os.MkdirAll("./data/config", 0644); err != nil {
+		log.Error("Failed to create new config file: creating data directory failed: ", err.Error())
+		return err
+	}
+	if err = ioutil.WriteFile("data/config/config.json", fileContent, 0644); err != nil {
+		log.Error("Failed to write file to disk: ", err.Error())
+		return err
+	}
 	return nil
 }
 
