@@ -44,7 +44,7 @@ func NewRouter() *mux.Router {
 	// Logs for the admin user
 	r.HandleFunc("/api/logs/delete/old", mdl.ApiAuth(mdl.Perm(flushOldLogs, "deleteOldLogs"))).Methods("DELETE")
 	r.HandleFunc("/api/logs/delete/all", mdl.ApiAuth(mdl.Perm(flushAllLogs, "deleteAllLogs"))).Methods("DELETE")
-	r.HandleFunc("/api/logs/get", mdl.ApiAuth(mdl.Perm(listLogs, "listLogs"))).Methods("GET")
+	r.HandleFunc("/api/logs", mdl.ApiAuth(mdl.Perm(listLogs, "listLogs"))).Methods("GET")
 
 	// Customization for the user
 	// Profile picture upload test
