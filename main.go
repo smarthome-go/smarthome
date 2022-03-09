@@ -19,12 +19,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const version = "0.0.3"
+const version = "0.0.4"
 
 var port = 8082
 
 func main() {
-	// Create new logger
+	// Create logger
 	log, err := utils.NewLogger(logrus.TraceLevel)
 	if err != nil {
 		panic(err.Error())
@@ -48,7 +48,18 @@ func main() {
 	hardware.InitConfig(config.Hardware)
 	log.Debug("Loaded and successfully initialized config")
 
-	// check for environment variables
+	// Environment variables
+	/*
+		`SMARTHOME_ADMIN_PASSWORD`: If set, the admin user that is created on first launch will get this password instead of `admin`
+		`SMARTHOME_DB_DATABASE`   : Sets the database name
+		`SMARTHOME_DB_HOSTNAME`   : Sets the database hostname
+		`SMARTHOME_DB_PASSWORD`   : Sets the database user's password
+		`SMARTHOME_DB_USER`       : Sets the database user
+	*/
+	newAdminPassword := "admin"
+	if adminPassword, adminPasswordOk := os.LookupEnv("SMARTHOME_ADMIN_PASSWORD"); adminPasswordOk {
+		newAdminPassword = adminPassword
+	}
 	if dbUsername, dbUsernameOk := os.LookupEnv("SMARTHOME_DB_USER"); dbUsernameOk {
 		log.Debug("Selected SMARTHOME_DB_USER over value from config file")
 		config.Database.Username = dbUsername
@@ -87,7 +98,7 @@ func main() {
 	// Initialize database
 	var dbErr error = nil
 	for i := 0; i <= 5; i++ {
-		dbErr = database.Init(config.Database, config.Rooms)
+		dbErr = database.Init(config.Database, config.Rooms, newAdminPassword)
 		if dbErr == nil {
 			break
 		} else {

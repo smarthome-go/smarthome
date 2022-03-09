@@ -9,7 +9,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-func Init(databaseConfig DatabaseConfig, rooms []Room) error {
+func Init(databaseConfig DatabaseConfig, rooms []Room, adminPassword string) error {
 	config = databaseConfig
 	if err := createDatabase(); err != nil {
 		return err
@@ -40,7 +40,7 @@ func Init(databaseConfig DatabaseConfig, rooms []Room) error {
 	if err := createHasSwitchPermissionTable(); err != nil {
 		return err
 	}
-	if err := initAdminUser(); err != nil {
+	if err := initAdminUser(adminPassword); err != nil {
 		return err
 	}
 	if err := initSwitchesRooms(rooms); err != nil {
@@ -78,10 +78,10 @@ func createDatabase() error {
 	return nil
 }
 
-func initAdminUser() error {
+func initAdminUser(password string) error {
 	if err := AddUser(User{
 		Username: "admin",
-		Password: "admin",
+		Password: password,
 	}); err != nil {
 		if err.Error() != "could not add user: user already exists" {
 			return err
