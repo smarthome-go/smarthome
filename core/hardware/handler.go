@@ -71,8 +71,8 @@ func jobDaemon(ch chan bool) {
 }
 
 // This `garbage collector` consumes the result after it has been passed to the client
-// TODO: In the current state, a client is able to abort his request which leads to the result residing inside the slice
-// After removing the wanted result from the slice, it is returned for further processing
+// If a client cancels a request, the according response is not consumed. This response is cleared when a new handler is launched
+// After removing the desired result from the slice, it is returned for further processing
 func consumeResult(id int64) JobResult {
 	var resultsTemp []JobResult = make([]JobResult, 0)
 	var returnValue JobResult
