@@ -38,12 +38,15 @@ func ReadConfigFile() error {
 	// If this file does not exist, create a new blank one
 	content, err := ioutil.ReadFile(configPath)
 	if err != nil {
-		if errCreate := createNewConfigFile(); errCreate != nil {
+		configTemp, errCreate := createNewConfigFile()
+		if errCreate != nil {
 			log.Error("Failed to read config file: ", err.Error())
 			log.Fatal("Failed to initialize config: could not read or create a config file: ", errCreate.Error())
 			return err
 		}
+		config = configTemp
 		log.Info("Failed to read config file: but managed to create a new config file")
+		return nil
 	}
 
 	// Parse config file to struct <configFile>
@@ -60,7 +63,7 @@ func ReadConfigFile() error {
 }
 
 // Creates an empty config file, can return an error if it fails
-func createNewConfigFile() error {
+func createNewConfigFile() (Config, error) {
 	config := Config{
 		Server: ServerConfig{
 			Production: false,
@@ -94,17 +97,17 @@ func createNewConfigFile() error {
 	fileContent, err := json.MarshalIndent(config, "", " ")
 	if err != nil {
 		log.Error("Failed to create config file: creating file content from JSON failed: ", err.Error())
-		return err
+		return Config{}, err
 	}
 	if err := os.MkdirAll("./data/config", 0644); err != nil {
 		log.Error("Failed to create new config file: creating data directory failed: ", err.Error())
-		return err
+		return Config{}, err
 	}
 	if err = ioutil.WriteFile("data/config/config.json", fileContent, 0644); err != nil {
 		log.Error("Failed to write file to disk: ", err.Error())
-		return err
+		return Config{}, err
 	}
-	return nil
+	return config, nil
 }
 
 func GetConfig() Config {

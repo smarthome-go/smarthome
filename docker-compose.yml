@@ -7,6 +7,7 @@ services:
       - "smarthome-mariadb"
     hostname: smarthome
     environment:
+      - SMARTHOME_ADMIN_PASSWORD=password
       - SMARTHOME_DB_HOSTNAME=smarthome-mariadb
       - SMARTHOME_DB_PASSWORD=password
       - SMARTHOME_DB_USER=smarthome
@@ -28,6 +29,4 @@ services:
       - MYSQL_DATABASE=smarthome
       - MYSQL_USER=smarthome
       - MYSQL_PASSWORD=password
-    ports:
-      - 3313:3306
     restart: unless-stopped
