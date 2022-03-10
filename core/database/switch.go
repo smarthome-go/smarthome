@@ -276,7 +276,6 @@ func GetPowerStates() ([]PowerState, error) {
 }
 
 // Returns (exists, error), err when the database fails
-// TODO: use before setting power in API
 func DoesSwitchExist(switchId string) (bool, error) {
 	switches, err := ListSwitches()
 	if err != nil {

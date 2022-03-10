@@ -56,10 +56,21 @@ func powerPostHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
+	switchExists, err := database.DoesSwitchExist(request.Switch)
+	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to check existence of this switch", Error: "database error"})
+		return
+	}
+	if !switchExists {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to set power: invalid switch id", Error: "switch not found"})
+		return
+	}
 	userHasPermission, err := database.UserHasSwitchPermission(username, request.Switch)
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "failed to check permission for this switch"})
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to check permission for this switch", Error: "database error"})
 		return
 	}
 	if !userHasPermission {
