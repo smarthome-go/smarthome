@@ -103,6 +103,7 @@ func AddUser(user User) error {
 	if userExists {
 		return errors.New("could not add user: user already exists")
 	}
+	// Generates a new password hash based on a provided computational `cost`
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		log.Error("Failed to create new user: password hashing failed", err.Error())

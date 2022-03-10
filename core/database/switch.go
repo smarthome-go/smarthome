@@ -227,6 +227,8 @@ func UserHasSwitchPermission(username string, switchId string) (bool, error) {
 	return false, nil
 }
 
+// Used when marking a power state of a switch
+// Does not check the validity of the switch Id
 func SetPowerState(switchId string, isPoweredOn bool) (bool, error) {
 	query, err := db.Prepare(`
 	UPDATE switch SET Power=? WHERE Id=? 
@@ -252,6 +254,7 @@ func SetPowerState(switchId string, isPoweredOn bool) (bool, error) {
 	return true, nil
 }
 
+// Returns a list of PowerStates
 func GetPowerStates() ([]PowerState, error) {
 	res, err := db.Query(`
 	SELECT Id, Power FROM switch
@@ -272,7 +275,7 @@ func GetPowerStates() ([]PowerState, error) {
 	return powerStates, nil
 }
 
-// Returns (exists, error), returns an error if the database fails
+// Returns (exists, error), err when the database fails
 // TODO: use before setting power in API
 func DoesSwitchExist(switchId string) (bool, error) {
 	switches, err := ListSwitches()
