@@ -46,46 +46,37 @@ func GetPermissions() []Permission {
 			Description: "List all internal logs",
 		},
 		{
-			// User is allowed tp upload a custom avatar
+			// User is allowed to upload a custom avatar
 			Permission:  "changeAvatar",
 			Name:        "Upload / Delete / Change Avatar",
 			Description: "Allows the user to customize their avatar",
 		},
 		{
-			Permission:  "addUserPermission",
-			Name:        "Add Permission to user",
-			Description: "Adds a given permission to a given user",
+			// (Admin) is allowed to add / delete permissions to / from users
+			Permission:  "changeUserPermissions",
+			Name:        "Change User Permissions",
+			Description: "Add / delete permissions to / from users",
 		},
 		{
-			Permission:  "removeUserPermission",
-			Name:        "Remove Permission from User",
-			Description: "Removes a given permission from a user",
+			// (Admin) is allowed to add / delete switch permissions to / from users
+			Permission:  "changeSwitchPermissions",
+			Name:        "Change User Switch Permissions",
+			Description: "Add / delete switch permissions to / from users",
 		},
 		{
-			Permission:  "addSwitchPermission",
-			Name:        "Add Switch Permission",
-			Description: "Add a switch permission to a user",
-		},
-		{
-			Permission:  "removeSwitchPermission",
-			Name:        "Remove Switch Permission",
-			Description: "Removes a given switch permission from a user",
-		},
-		{
+			// (Admin) is allowed to read debug information from the server
 			Permission:  "getDebugInfo",
-			Name:        "Get Debug Info",
+			Name:        "Display Debug Info",
 			Description: "Obtain debug information about the system",
 		},
 		{
-			Permission:  "addUser",
-			Name:        "Add User",
-			Description: "Create a new user",
+			// (Admin) is allowed to create new users or delete users
+			Permission:  "changeUsers",
+			Name:        "Add / Delete users",
+			Description: "Create a new user or delete users",
 		},
 		{
-			Permission:  "removeUser",
-			Name:        "Delete User",
-			Description: "Delete a given user"},
-		{
+			// WARNING: This allows a user to do everything, should only be allowed to the `admin` user
 			Permission:  "*",
 			Name:        "Permission Wildcard *",
 			Description: "Allows all permissions",

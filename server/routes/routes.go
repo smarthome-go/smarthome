@@ -54,17 +54,17 @@ func NewRouter() *mux.Router {
 
 	// Permissions
 	r.HandleFunc("/api/user/permissions/personal", mdl.ApiAuth(getUserPermissions))
-	r.HandleFunc("/api/user/permissions/add", mdl.ApiAuth(mdl.Perm(addUserPermission, "addUserPermission"))).Methods("PUT")
-	r.HandleFunc("/api/user/permissions/delete", mdl.ApiAuth(mdl.Perm(removeUserPermission, "removeUserPermission"))).Methods("DELETE")
+	r.HandleFunc("/api/user/permissions/add", mdl.ApiAuth(mdl.Perm(addUserPermission, "changeUserPermissions"))).Methods("PUT")
+	r.HandleFunc("/api/user/permissions/delete", mdl.ApiAuth(mdl.Perm(removeUserPermission, "changeUserPermissions"))).Methods("DELETE")
 
 	// Switch Permissions
-	r.HandleFunc("/api/user/permissions/switch/add", mdl.ApiAuth(mdl.Perm(addSwitchPermission, "addSwitchPermission"))).Methods("PUT")
-	r.HandleFunc("/api/user/permissions/switch/delete", mdl.ApiAuth(mdl.Perm(removeSwitchPermission, "removeSwitchPermission"))).Methods("DELETE")
+	r.HandleFunc("/api/user/permissions/switch/add", mdl.ApiAuth(mdl.Perm(addSwitchPermission, "changeSwitchPermissions"))).Methods("PUT")
+	r.HandleFunc("/api/user/permissions/switch/delete", mdl.ApiAuth(mdl.Perm(removeSwitchPermission, "changeSwitchPermissions"))).Methods("DELETE")
 
 	// Creating and removing users
 	// TODO :list users
-	r.HandleFunc("/api/user/add", mdl.ApiAuth(mdl.Perm(addUser, "addUser"))).Methods("POST")
-	r.HandleFunc("/api/user/delete", mdl.ApiAuth(mdl.Perm(deleteUser, "removeUser"))).Methods("DELETE")
+	r.HandleFunc("/api/user/add", mdl.ApiAuth(mdl.Perm(addUser, "changeUsers"))).Methods("POST")
+	r.HandleFunc("/api/user/delete", mdl.ApiAuth(mdl.Perm(deleteUser, "changeUsers"))).Methods("DELETE")
 
 	/// Static files ///
 	// For JS and CSS components
