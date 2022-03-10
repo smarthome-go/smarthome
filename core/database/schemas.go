@@ -1,6 +1,8 @@
 package database
 
-import "time"
+import (
+	"time"
+)
 
 // Identified by a username, has a password and an avatar path
 type User struct {
@@ -35,9 +37,19 @@ type Room struct {
 
 // internal logging-related
 type LogEvent struct {
-	Id          int       `json:"id"`
+	Id          uint      `json:"id"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	Level       int       `json:"level"`
 	Date        time.Time `json:"date"`
+}
+
+// User notification
+
+type Notification struct {
+	Id          uint   `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Date        time.Time
+	// Username is left out due to not being required in the service layer
 }

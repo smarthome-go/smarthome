@@ -85,6 +85,7 @@ func ApiAuth(handler http.HandlerFunc) http.HandlerFunc {
 			json.NewEncoder(w).Encode(Response{false, "access denied, please authenticate", "authentication required"})
 			return
 		}
+		// TODO: implement a check that prevents a user from authenticating with the same credentials multiple times
 		validCredentials, err := user.ValidateCredentials(username, password)
 		if err != nil {
 			// The database could not verify the given credentials

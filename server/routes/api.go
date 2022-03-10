@@ -38,6 +38,10 @@ type RemoveUserRequest struct {
 	Username string `json:"username"`
 }
 
+type NotificationCountResponse struct {
+	NotificationCount uint16 `json:"count"`
+}
+
 // API endpoint for manipulating power states and (de) activating sockets, authentication required
 // Permission and switch permission is needed to interact with this endpoint
 func powerPostHandler(w http.ResponseWriter, r *http.Request) {
@@ -429,4 +433,40 @@ func healthCheck(w http.ResponseWriter, r *http.Request) {
 func debugInfo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(utils.SysInfo())
+}
+
+// Returns a uin16 that indicates the number of notifications the current user has, no authentication required
+func getNotificationCount(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
+		return
+	}
+	notificationCount, err := database.GetUserNotificationCount(username)
+	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed get notification count", Error: "database failure"})
+		return
+	}
+	json.NewEncoder(w).Encode(NotificationCountResponse{NotificationCount: notificationCount})
+}
+
+// Returns a list containing notifications of the current user
+func getNotifications(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
+		return
+	}
+	notifications, err := database.GetUserNotifications(username)
+	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed get notification count", Error: "database failure"})
+		return
+	}
+	json.NewEncoder(w).Encode(notifications)
 }

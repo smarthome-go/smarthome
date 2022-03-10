@@ -10,13 +10,16 @@ import (
 // Can return an error if the database fails
 func createHasPermissionTable() error {
 	query := `
-	CREATE TABLE IF NOT EXISTS
+	CREATE TABLE
+	IF NOT EXISTS
 	hasPermission(
 		Username VARCHAR(20),
 		Permission VARCHAR(30),
-		CONSTRAINT HasPermissionUsername FOREIGN KEY (Username)
+		CONSTRAINT HasPermissionUsername
+		FOREIGN KEY (Username)
 		REFERENCES user(Username),
-		CONSTRAINT HasPermissionPermission FOREIGN KEY (Permission)
+		CONSTRAINT HasPermissionPermission
+		FOREIGN KEY (Permission)
 		REFERENCES permission(Permission)
 	)
 	`

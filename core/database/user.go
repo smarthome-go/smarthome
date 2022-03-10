@@ -110,12 +110,13 @@ func AddUser(user User) error {
 		return err
 	}
 	user.Password = string(hashedPassword)
-	err = InsertUser(user)
-	if err != nil {
+	if err = InsertUser(user); err != nil {
 		return err
 	}
-	_, err = AddUserPermission(user.Username, "authentication")
-	if err != nil {
+	if _, err = AddUserPermission(user.Username, "authentication"); err != nil {
+		return err
+	}
+	if err = AddNotification(user.Username, "Hello!", "Welcome to Smarthome, the privacy-focused home automation system."); err != nil {
 		return err
 	}
 	return nil

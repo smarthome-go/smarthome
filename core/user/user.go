@@ -38,6 +38,7 @@ func ValidateCredentials(username string, password string) (bool, error) {
 	return false, nil
 }
 
+// Removes a user, also removes everything that depends on the user (permissions, switchPermissions)
 func DeleteUser(username string) error {
 	if err := RemoveAvatar(username); err != nil {
 		log.Error("Failed to delete user: removing avatar failed: ", err.Error())
@@ -49,3 +50,5 @@ func DeleteUser(username string) error {
 	}
 	return nil
 }
+
+// TODO: move create user in here

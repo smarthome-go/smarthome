@@ -4,7 +4,9 @@ import "fmt"
 
 func createRoomTable() error {
 	query := `
-	CREATE TABLE IF NOT EXISTS room(
+	CREATE TABLE
+	IF NOT EXISTS
+	room(
 		Id VARCHAR(30) PRIMARY KEY,
 		Name VARCHAR(50),
 		Description text
@@ -20,7 +22,12 @@ func createRoomTable() error {
 
 func CreateRoom(RoomId string, Name string, Description string) error {
 	query, err := db.Prepare(`
-	INSERT INTO room(Id, Name, Description) VALUES(?,?,?) ON DUPLICATE KEY UPDATE Name=VALUES(Name), Description=VALUES(Description)
+	INSERT INTO
+	room(Id, Name, Description)
+	VALUES(?,?,?)
+	ON DUPLICATE KEY
+	UPDATE Name=VALUES(Name),
+	Description=VALUES(Description)
 	`)
 	if err != nil {
 		log.Error("Could not create room: preparing query failed: ", err.Error())

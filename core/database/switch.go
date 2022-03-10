@@ -8,13 +8,15 @@ import (
 // If the database fails, this function can return an error
 func createSwitchTable() error {
 	query := `
-	CREATE TABLE IF NOT EXISTS
+	CREATE TABLE
+	IF NOT EXISTS
 	switch(
 		Id VARCHAR(2) PRIMARY KEY,
 		Name VARCHAR(30),
 		Power BOOLEAN,
 		RoomId VARCHAR(30),
-		CONSTRAINT SwitchRoomId FOREIGN KEY (RoomId)
+		CONSTRAINT SwitchRoomId
+		FOREIGN KEY (RoomId)
 		REFERENCES room(Id)
 	) 
 	`
@@ -29,13 +31,16 @@ func createSwitchTable() error {
 // Stores the n:m relation between the user and their switch-permissions
 func createHasSwitchPermissionTable() error {
 	query := `
-	CREATE TABLE IF NOT EXISTS
+	CREATE TABLE
+	IF NOT EXISTS
 	hasSwitchPermission(
 		Username VARCHAR(20),
 		Switch VARCHAR(2),
-		CONSTRAINT HasSwitchPermissionUsername FOREIGN KEY (Username)
+		CONSTRAINT HasSwitchPermissionUsername
+		FOREIGN KEY (Username)
 		REFERENCES user(Username),
-		CONSTRAINT HasSwitchPermissionSwitch FOREIGN KEY (Switch)
+		CONSTRAINT HasSwitchPermissionSwitch
+		FOREIGN KEY (Switch)
 		REFERENCES switch(Id)
 	)
 	`

@@ -66,6 +66,11 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/user/add", mdl.ApiAuth(mdl.Perm(addUser, "changeUsers"))).Methods("POST")
 	r.HandleFunc("/api/user/delete", mdl.ApiAuth(mdl.Perm(deleteUser, "changeUsers"))).Methods("DELETE")
 
+	// Notification-related
+	r.HandleFunc("/api/user/notifications/count", mdl.ApiAuth(getNotificationCount)).Methods("GET")
+	r.HandleFunc("/api/user/notifications", mdl.ApiAuth(getNotifications)).Methods("GET")
+	// TODO: add removal functions
+
 	/// Static files ///
 	// For JS and CSS components
 	outFilepath := "./web/out/"

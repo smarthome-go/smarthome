@@ -9,7 +9,9 @@ import (
 // For example a user logging in or altering power states
 func createLoggingEventTable() error {
 	query := `
-	 CREATE TABLE IF NOT EXISTS logs(
+	 CREATE TABLE
+	 IF NOT EXISTS
+	 logs(
 		 Id INT AUTO_INCREMENT,
 		 Name VARCHAR(100),
 		 Description TEXT,
@@ -26,9 +28,11 @@ func createLoggingEventTable() error {
 	return nil
 }
 
+// Add a logged internal event based on `name, description, and level`
 func AddLogEvent(name string, description string, level int) error {
 	query, err := db.Prepare(`
-	INSERT INTO logs(
+	INSERT INTO
+	logs(
 		Id,
 		Name,
 		Description,

@@ -13,9 +13,11 @@ func InitLogger(logger *logrus.Logger) {
 	log = logger
 }
 
+// Adds a log event to the database and prints it to the console
+// Used by the other functions below
 func logEvent(name string, description string, level int) error {
 	err := database.AddLogEvent(name, description, level)
-	log.Trace(fmt.Printf("[EVENT](%d) %s: %s", level, name, description))
+	log.Trace(fmt.Sprintf("[EVENT](%d) %s: %s", level, name, description))
 	if err != nil {
 		log.Error("Could not log event: failed to communicate with database", err.Error())
 		return err

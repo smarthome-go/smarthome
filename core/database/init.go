@@ -40,6 +40,9 @@ func Init(databaseConfig DatabaseConfig, rooms []Room, adminPassword string) err
 	if err := createHasSwitchPermissionTable(); err != nil {
 		return err
 	}
+	if err := CreateNotificationTable(); err != nil {
+		return err
+	}
 	if err := initAdminUser(adminPassword); err != nil {
 		return err
 	}
