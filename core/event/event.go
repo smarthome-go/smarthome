@@ -1,6 +1,8 @@
 package event
 
 import (
+	"fmt"
+
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/sirupsen/logrus"
 )
@@ -13,6 +15,7 @@ func InitLogger(logger *logrus.Logger) {
 
 func logEvent(name string, description string, level int) error {
 	err := database.AddLogEvent(name, description, level)
+	log.Trace(fmt.Printf("[EVENT](%d) %s: %s", level, name, description))
 	if err != nil {
 		log.Error("Could not log event: failed to communicate with database", err.Error())
 		return err
