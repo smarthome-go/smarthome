@@ -23,7 +23,7 @@ func InitConfig(hwConf HardwareConfig) {
 	hwConfig = hwConf
 }
 
-// This function is used to deliver the job to the hardware node
+// Delivers a power job to a given hardware node
 // Returns an error if the job fails to execute on the hardware
 // However, the preferred method of communication is by using the API `SetPower()` this way, priorities and interrupts are scheduled automatically
 func sendPowerRequest(node Node, switchName string, turnOn bool) error {

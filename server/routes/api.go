@@ -425,7 +425,7 @@ func healthCheck(w http.ResponseWriter, r *http.Request) {
 }
 
 // Reading system debug information, admin authentication required
-// Todo: read information from database for example
+// Todo: read raspberry pi information
 func debugInfo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(utils.SysInfo())
