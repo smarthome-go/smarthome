@@ -49,8 +49,8 @@ func NewRouter() *mux.Router {
 	// Customization for the user
 	// Profile picture upload test
 	r.HandleFunc("/api/user/avatar", mdl.ApiAuth(getAvatar)).Methods("GET")
-	r.HandleFunc("/api/user/avatar/upload", mdl.ApiAuth(mdl.Perm(handleAvatarUpload, "uploadAvatar"))).Methods("POST")
-	r.HandleFunc("/api/user/avatar/delete", mdl.ApiAuth(mdl.Perm(deleteAvatar, "deleteAvatar"))).Methods("DELETE")
+	r.HandleFunc("/api/user/avatar/upload", mdl.ApiAuth(mdl.Perm(handleAvatarUpload, "changeAvatar"))).Methods("POST")
+	r.HandleFunc("/api/user/avatar/delete", mdl.ApiAuth(mdl.Perm(deleteAvatar, "changeAvatar"))).Methods("DELETE")
 
 	// Permissions
 	r.HandleFunc("/api/user/permissions/personal", mdl.ApiAuth(getUserPermissions))
