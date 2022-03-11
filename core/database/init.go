@@ -49,6 +49,9 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 	if err := createLoggingEventTable(); err != nil {
 		return err
 	}
+	if err := CreateCameraTable(); err != nil {
+		return err
+	}
 	return nil
 }
 
