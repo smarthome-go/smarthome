@@ -33,6 +33,7 @@ func main() {
 
 	// Initialize <module> loggers
 	config.InitLogger(log)
+	camera.InitLogger(log)
 	database.InitLogger(log)
 	middleware.InitLogger(log)
 	routes.InitLogger(log)
