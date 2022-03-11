@@ -12,7 +12,6 @@ func InitLogger(logger *logrus.Logger) {
 	log = logger
 }
 
-// ADD ERROR HANDLING
 func TestImageProxy() {
 	url := "https://mik-mueller.de/assets/Untitled.png"
 	byt, _ := fetchImageBytes(url)
