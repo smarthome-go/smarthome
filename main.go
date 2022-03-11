@@ -57,6 +57,7 @@ func main() {
 		`SMARTHOME_DB_PASSWORD`   : Sets the database user's password
 		`SMARTHOME_DB_USER`       : Sets the database user
 	*/
+
 	newAdminPassword := "admin"
 	if adminPassword, adminPasswordOk := os.LookupEnv("SMARTHOME_ADMIN_PASSWORD"); adminPasswordOk {
 		newAdminPassword = adminPassword
@@ -86,6 +87,7 @@ func main() {
 			port = webPortInt
 		}
 	}
+
 	if dbPort, dbPortOk := os.LookupEnv("SMARTHOME_DB_PORT"); dbPortOk {
 		portInt, err := strconv.Atoi(dbPort)
 		if err != nil {
@@ -98,6 +100,7 @@ func main() {
 
 	// Initialize database
 	var dbErr error = nil
+
 	for i := 0; i <= 5; i++ {
 		dbErr = database.Init(configStruct.Database, newAdminPassword)
 		if dbErr == nil {
@@ -107,24 +110,26 @@ func main() {
 			time.Sleep(time.Second * 5)
 		}
 	}
+
 	if dbErr != nil {
-		log.Error("Failed to connect to database after 10 retries, exiting now")
+		log.Error("Failed to connect to database after 5 retries, exiting now")
 		panic(dbErr.Error())
 	}
 
-	// Run a potential setup file
+	// Run setup file if it exists
 	if err := config.RunSetup(); err != nil {
 		log.Fatal("Could not run setup: ", err.Error())
 	}
 
+	// If the server is in development mode, all logs should be flushed
 	if !configStruct.Server.Production {
-		// If the server is in development mode, all logs should be flushed
 		if err := database.FlushAllLogs(); err != nil {
 			log.Fatal("Failed to flush logs: ", err.Error())
 		}
 	}
 
-	// Flush old logs
+	// Always flush old logs
+	// TODO: move deletion of old logs to a scheduler
 	log.Info("Flushing logs older than 30 days")
 	if err := database.FlushOldLogs(); err != nil {
 		log.Fatal("Failed to flush logs older that 30 days: ", err.Error())
@@ -134,10 +139,10 @@ func main() {
 	middleware.Init(configStruct.Server.Production)
 	templates.LoadTemplates("./web/html/**/*.html")
 	http.Handle("/", r)
+
 	go event.Info("System Started", "The Smarthome server completed startup.")
 	log.Info(fmt.Sprintf("Smarthome v%s is running.", version))
-	err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
-	if err != nil {
+	if err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
 		panic(err)
 	}
 }

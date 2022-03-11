@@ -19,6 +19,9 @@
 
 # Go workspace file
 go.work
+.vscode/targets.log
+.vscode/dryrun.log
+.vscode/settings.json
 
 # Web files
 web/node_modules
@@ -29,12 +32,9 @@ build
 bin
 smarthome
 
-# Application `junk` files
-log
-.vscode/targets.log
-.vscode/dryrun.log
-.vscode/settings.json
+# Redundant Smarthome files
 data/avatars
+log
 
 # docker build files
 docker/app
