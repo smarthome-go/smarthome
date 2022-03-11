@@ -17,8 +17,28 @@ type Setup struct {
 
 const setupPath = "./data/config/setup.json"
 
-// TODO: add some sort of web import / export later
 // Used for setting up a smarthome server quickly
+// Reads a setup file at startup and starts functions that initialize those values in the database
+// Used for quick setup of a smarthome instance
+func RunSetup() error {
+	setup, shouldProceed, err := readSetupFile()
+	if err != nil {
+		log.Error("Failed to run setup: ", err.Error())
+		return err
+	}
+	if !shouldProceed {
+		log.Debug("No setup file found: starting without setup.")
+		return nil
+	}
+	err = createRoomsInDatabase(setup.Rooms)
+	if err != nil {
+		log.Error("Failed to run setup: could not create entries in database: ", err.Error())
+	}
+	log.Info("Successfully ran setup")
+	return nil
+}
+
+// TODO: add some sort of web import / export later
 // Returns the setup struct, a bool that indicates that a setup file has been read and an error
 func readSetupFile() (Setup, bool, error) {
 	log.Trace("Looking for `setup.json`")
@@ -39,7 +59,7 @@ func readSetupFile() (Setup, bool, error) {
 	return setupTemp, true, nil
 }
 
-// TODO: add a runner which parses the setup file
+// Takes the specified `rooms` and creates according database entries
 func createRoomsInDatabase(rooms []database.Room) error {
 	for _, room := range rooms {
 		if err := database.CreateRoom(room.Id, room.Name, room.Description); err != nil {
@@ -57,25 +77,5 @@ func createRoomsInDatabase(rooms []database.Room) error {
 			}
 		}
 	}
-	return nil
-}
-
-// Reads a setup file at startup and initialize according database entries
-// Used for quick setup of a smarthome instance
-func RunSetup() error {
-	setup, shouldProceed, err := readSetupFile()
-	if err != nil {
-		log.Error("Failed to run setup: ", err.Error())
-		return err
-	}
-	if !shouldProceed {
-		log.Debug("No setup file found: starting without setup.")
-		return nil
-	}
-	err = createRoomsInDatabase(setup.Rooms)
-	if err != nil {
-		log.Error("Failed to run setup: could not create entries in database: ", err.Error())
-	}
-	log.Info("Successfully ran setup")
 	return nil
 }

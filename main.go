@@ -130,9 +130,6 @@ func main() {
 		log.Fatal("Failed to flush logs older that 30 days: ", err.Error())
 	}
 
-	// TODO: remove this
-	camera.TestImageProxy()
-
 	r := routes.NewRouter()
 	middleware.Init(configStruct.Server.Production)
 	templates.LoadTemplates("./web/html/**/*.html")
