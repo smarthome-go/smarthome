@@ -26,7 +26,7 @@ func loginPostHandler(w http.ResponseWriter, r *http.Request) {
 	loginValid, err := user.ValidateCredentials(loginRequest.Username, loginRequest.Password)
 	if err != nil {
 		log.Error("User failed to login: database failure.")
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "login failed", Error: "could not validate login: internal error: database failure"})
 		return
 	}

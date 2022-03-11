@@ -71,6 +71,10 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/user/notifications", mdl.ApiAuth(getNotifications)).Methods("GET")
 	// TODO: add removal functions
 
+	// TODO: remove this one below
+	// Test camera module here
+	r.HandleFunc("/api/camera/test", TestImageProxy).Methods("GET")
+
 	/// Static files ///
 	// For JS and CSS components
 	outFilepath := "./web/out/"

@@ -3,15 +3,15 @@ package camera
 import (
 	"bytes"
 	"fmt"
+	"image"
 	"image/jpeg"
 	"image/png"
 	"io/ioutil"
 	"net/http"
 
 	"github.com/pkg/errors"
+	"golang.org/x/image/webp"
 )
-
-// THIS FILE SHOULD FETCH AN IMAGE FROM A GIVEN URL IN ORDER TO RETURN A BYTE ARRAY AND AN IMAGE
 
 // Todo: setup camera sql table(s)
 
@@ -26,32 +26,52 @@ func fetchImageBytes(url string) ([]byte, error) {
 	if response.StatusCode != 200 {
 		fmt.Printf("Received non 200 response code\n")
 	}
-	body, err := ioutil.ReadAll(response.Body)
+	imageData, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return make([]byte, 0), err
 	}
-	return body, nil
+	imageMegabytes := len(imageData) / 1024 / 1024
+	if imageMegabytes > int(maxImageSize) {
+		log.Warn("Failed to fetch image with a size over 2MB")
+		errors.New("image data to large: will only fetch below 2MB")
+		return nil, errors.New("failed to fetch image: size to large")
+	}
+	return imageData, nil
 }
 
-// Converts the fetched bytes to a PNG image
-// TODO: test and modify the code
+// Converts the fetched bytes (any of the following formats) to PNG bytes, supported media types are `png, jpeg, and webp`
 func convertBytesToPng(imageBytes []byte) ([]byte, error) {
 	contentType := http.DetectContentType(imageBytes)
+	var intermediateImage image.Image
 	switch contentType {
 	case "image/png":
+		log.Trace("Image is already in target format:(`image/png`)")
 		return imageBytes, nil
-	case "image/jpeg":
-		img, err := jpeg.Decode(bytes.NewReader(imageBytes))
+	case "image/webp":
+		log.Trace("Image is not in target format:(`image/webp`)")
+		intermediateImageTemp, err := webp.Decode(bytes.NewReader(imageBytes))
 		if err != nil {
+			log.Error("Could not decode image: ", err.Error())
+			return nil, errors.Wrap(err, "unable to decode webp")
+		}
+		intermediateImage = intermediateImageTemp
+	case "image/jpeg":
+		log.Trace("Image is not in target format:(`image/jpeg`)")
+		intermediateImageTemp, err := jpeg.Decode(bytes.NewReader(imageBytes))
+		if err != nil {
+			log.Error("Could not decode image: ", err.Error())
 			return nil, errors.Wrap(err, "unable to decode jpeg")
 		}
-		buf := new(bytes.Buffer)
-		if err := png.Encode(buf, img); err != nil {
-			return nil, errors.Wrap(err, "unable to encode png")
-		}
-
-		return buf.Bytes(), nil
+		intermediateImage = intermediateImageTemp
+	default:
+		log.Error(fmt.Sprintf("Unable to convert `%#v` to `image/png`: incompatible media type: ", contentType))
+		return nil, errors.New("Unable to convert to `image/png`: incompatible source media type")
 	}
+	buffer := new(bytes.Buffer)
+	if err := png.Encode(buffer, intermediateImage); err != nil {
+		log.Error("Could not decode image: ", err.Error())
+		return nil, errors.Wrap(err, "unable to encode png")
+	}
+	return buffer.Bytes(), nil
 
-	return nil, fmt.Errorf("unable to convert %#v to png", contentType)
 }

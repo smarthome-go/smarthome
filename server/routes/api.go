@@ -63,7 +63,7 @@ func powerPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	switchExists, err := database.DoesSwitchExist(request.Switch)
 	if err != nil {
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to check existence of this switch", Error: "database error"})
 		return
 	}
@@ -74,7 +74,7 @@ func powerPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	userHasPermission, err := database.UserHasSwitchPermission(username, request.Switch)
 	if err != nil {
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to check permission for this switch", Error: "database error"})
 		return
 	}
@@ -85,7 +85,7 @@ func powerPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := hardware.SetPower(request.Switch, request.PowerOn); err != nil {
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "hardware error", Error: "failed to communicate with hardware"})
 		go event.Error("Hardware Error", fmt.Sprintf("The hardware failed while %s tried to interact with switch %s.", username, request.Switch))
 		return
@@ -104,7 +104,7 @@ func getSwitches(w http.ResponseWriter, r *http.Request) {
 	switches, err := database.ListSwitches()
 	if err != nil {
 		log.Error("Exception in getSwitches: database failure: ", err.Error())
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "database error"})
 		return
 	}
@@ -116,14 +116,14 @@ func getUserSwitches(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	switches, err := database.ListUserSwitches(username)
 	if err != nil {
 		log.Error("Exception in getUserSwitches: database failure: ", err.Error())
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "database error"})
 		return
 	}
@@ -143,7 +143,7 @@ func getUserPermissions(w http.ResponseWriter, r *http.Request) {
 	permissions, err := database.GetUserPermissions(username)
 	if err != nil {
 		log.Error("Exception in getUserPermissions: database failure: ", err.Error())
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "database error"})
 		return
 	}
@@ -157,7 +157,7 @@ func getPowerStates(w http.ResponseWriter, r *http.Request) {
 	powerStates, err := database.GetPowerStates()
 	if err != nil {
 		log.Error("Could not list powerstates: database failure: ", err.Error())
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "database error"})
 		return
 	}
@@ -170,7 +170,7 @@ func flushOldLogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := database.FlushOldLogs(); err != nil {
 		log.Error("Exception in flushOldLogs: database failure: ", err.Error())
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "failed to flush logs: database failure"})
 		return
 	}
@@ -184,7 +184,7 @@ func flushAllLogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := database.FlushAllLogs(); err != nil {
 		log.Error("Exception in flushOldLogs: database failure: ", err.Error())
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "failed to flush logs: database failure"})
 		return
 	}
@@ -197,7 +197,7 @@ func listLogs(w http.ResponseWriter, r *http.Request) {
 	logs, err := database.GetLogs()
 	if err != nil {
 		log.Error("Failed to list logs: database failure: ", err.Error())
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "failed to get logs: database failure"})
 		return
 	}
@@ -224,7 +224,7 @@ func addUserPermission(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(Response{Success: false, Message: "could not add permission to user", Error: "invalid permission type"})
 			return
 		}
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to add permission", Error: "database failure"})
 		return
 	}
@@ -258,7 +258,7 @@ func removeUserPermission(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(Response{Success: false, Message: "could not remove permission from user", Error: "invalid permission type"})
 			return
 		}
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to remove permission", Error: "database failure"})
 		return
 	}
@@ -287,7 +287,7 @@ func addSwitchPermission(w http.ResponseWriter, r *http.Request) {
 	}
 	switchExists, err := database.DoesSwitchExist(request.Switch)
 	if err != nil {
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to add switch permission", Error: "database failure"})
 		return
 	}
@@ -298,7 +298,7 @@ func addSwitchPermission(w http.ResponseWriter, r *http.Request) {
 	}
 	modified, err := database.AddUserSwitchPermission(request.Username, request.Switch)
 	if err != nil {
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to add switch permission", Error: "database failure"})
 		return
 	}
@@ -327,7 +327,7 @@ func removeSwitchPermission(w http.ResponseWriter, r *http.Request) {
 	}
 	switchExists, err := database.DoesSwitchExist(request.Switch)
 	if err != nil {
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to remove switch permission", Error: "database failure"})
 		return
 	}
@@ -338,7 +338,7 @@ func removeSwitchPermission(w http.ResponseWriter, r *http.Request) {
 	}
 	modified, err := database.RemoveUserSwitchPermission(request.Username, request.Switch)
 	if err != nil {
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to remove switch permission", Error: "database failure"})
 		return
 	}
@@ -366,7 +366,7 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 	}
 	userAlreadyExists, err := database.DoesUserExist(request.Username)
 	if err != nil {
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to add user", Error: "database failure"})
 		return
 	}
@@ -376,7 +376,7 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err = database.AddUser(database.User{Username: request.Username, Password: request.Password}); err != nil {
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to add user", Error: "database failure"})
 		return
 	}
@@ -398,7 +398,7 @@ func deleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 	userDoesExist, err := database.DoesUserExist(request.Username)
 	if err != nil {
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to remove user", Error: "database failure"})
 		return
 	}
@@ -421,7 +421,7 @@ func deleteUser(w http.ResponseWriter, r *http.Request) {
 func healthCheck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := database.CheckDatabase(); err != nil {
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		log.Error("Healthcheck failed: ", err.Error())
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "healthcheck failed: database downtime", Error: err.Error()})
 		return
@@ -447,7 +447,7 @@ func getNotificationCount(w http.ResponseWriter, r *http.Request) {
 	}
 	notificationCount, err := database.GetUserNotificationCount(username)
 	if err != nil {
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed get notification count", Error: "database failure"})
 		return
 	}
@@ -465,7 +465,7 @@ func getNotifications(w http.ResponseWriter, r *http.Request) {
 	}
 	notifications, err := database.GetUserNotifications(username)
 	if err != nil {
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed get notification count", Error: "database failure"})
 		return
 	}
@@ -481,4 +481,7 @@ func TestImageProxy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", http.DetectContentType(imageData))
+	if _, err := w.Write(imageData); err != nil {
+		log.Error(err.Error())
+	}
 }

@@ -79,7 +79,7 @@ func deleteAvatar(w http.ResponseWriter, r *http.Request) {
 	filepathBefore, err := database.GetAvatarPathByUsername(username)
 	if err != nil {
 		log.Error("Could remove avatar: ", err.Error())
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "avatar removal failed", Error: "database error"})
 		return
 	}
@@ -99,8 +99,9 @@ func deleteAvatar(w http.ResponseWriter, r *http.Request) {
 }
 
 // Returns the user's current avatar as an image, authentication required
+// TODO: automatically detect content type
+// TODO: Test autodetect of content type
 func getAvatar(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "image/png")
 	username, err := middleware.GetUserFromCurrentSession(r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -114,6 +115,7 @@ func getAvatar(w http.ResponseWriter, r *http.Request) {
 		filepath = "./web/assets/avatar/default.png"
 	}
 	fileBytes, err := ioutil.ReadFile(filepath)
+	w.Header().Set("Content-Type", http.DetectContentType(fileBytes))
 	if err != nil {
 		log.Error("Could not display avatar: could not read image", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)

@@ -46,7 +46,7 @@ func Auth(handler http.HandlerFunc) http.HandlerFunc {
 		}
 		validCredentials, err := user.ValidateCredentials(username, password)
 		if err != nil {
-			w.WriteHeader(http.StatusBadGateway)
+			w.WriteHeader(http.StatusServiceUnavailable)
 			return
 		}
 		if validCredentials {
@@ -94,7 +94,7 @@ func ApiAuth(handler http.HandlerFunc) http.HandlerFunc {
 		if err != nil {
 			// The database could not verify the given credentials
 			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadGateway)
+			w.WriteHeader(http.StatusServiceUnavailable)
 			json.NewEncoder(w).Encode(Response{false, "could not authenticate: failed to validate credentials", "database failure"})
 			return
 		}
@@ -189,7 +189,7 @@ func Perm(handler http.HandlerFunc, permissionToCheck string) http.HandlerFunc {
 		hasPermission, err := database.UserHasPermission(username, permissionToCheck)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadGateway)
+			w.WriteHeader(http.StatusServiceUnavailable)
 			json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "failed to check permission to access this ressource"})
 			return
 		}

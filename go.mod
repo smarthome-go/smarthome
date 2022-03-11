@@ -14,5 +14,6 @@ require (
 require (
 	github.com/gorilla/securecookie v1.1.1
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
+	golang.org/x/image v0.0.0-20220302094943-723b81ca9867
 	golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1 // indirect
 )
