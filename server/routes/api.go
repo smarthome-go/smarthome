@@ -11,6 +11,7 @@ import (
 	"github.com/MikMuellerDev/smarthome/core/user"
 	"github.com/MikMuellerDev/smarthome/core/utils"
 	"github.com/MikMuellerDev/smarthome/server/middleware"
+	"github.com/MikMuellerDev/smarthome/services/camera"
 )
 
 type PowerRequest struct {
@@ -469,4 +470,15 @@ func getNotifications(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json.NewEncoder(w).Encode(notifications)
+}
+
+// TEST IMAGE FETCHING MODULE
+func TestImageProxy(w http.ResponseWriter, r *http.Request) {
+	imageData, err := camera.TestReturn()
+	if err != nil {
+		log.Error("Failed to test proxy: ", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", http.DetectContentType(imageData))
 }

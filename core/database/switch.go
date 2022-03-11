@@ -234,6 +234,7 @@ func UserHasSwitchPermission(username string, switchId string) (bool, error) {
 
 // Used when marking a power state of a switch
 // Does not check the validity of the switch Id
+// The returned boolean indicates if the power state had changed
 func SetPowerState(switchId string, isPoweredOn bool) (bool, error) {
 	query, err := db.Prepare(`
 	UPDATE switch SET Power=? WHERE Id=? 

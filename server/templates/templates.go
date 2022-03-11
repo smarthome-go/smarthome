@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"net/http"
 
+	"github.com/MikMuellerDev/smarthome/core/event"
 	"github.com/sirupsen/logrus"
 )
 
@@ -22,5 +23,8 @@ func LoadTemplates(pattern string) {
 }
 
 func ExecuteTemplate(responseWriter http.ResponseWriter, templateName string, data interface{}) {
-	templates.ExecuteTemplate(responseWriter, templateName, data)
+	if err := templates.ExecuteTemplate(responseWriter, templateName, data); err != nil {
+		log.Error("Could not render template: ", err.Error())
+		go event.Fatal("System Compromised", "Failed to render template: "+err.Error())
+	}
 }

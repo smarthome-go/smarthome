@@ -34,7 +34,11 @@ func loginPostHandler(w http.ResponseWriter, r *http.Request) {
 		session, _ := middleware.Store.Get(r, "session")
 		session.Values["valid"] = true
 		session.Values["username"] = loginRequest.Username
-		session.Save(r, w)
+		if err := session.Save(r, w); err != nil {
+			log.Error("Failed to save session: ", err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to authenticate", Error: "could not save session after successful authentication"})
+		}
 		w.WriteHeader(http.StatusNoContent)
 		log.Debug(fmt.Sprintf("User %s logged in successfully", loginRequest.Username))
 		go event.Info("Successful login", fmt.Sprintf("%s logged in", loginRequest.Username))
@@ -55,7 +59,11 @@ func logoutGetHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	session.Values["valid"] = false
 	session.Values["username"] = ""
-	session.Save(r, w)
+	if err := session.Save(r, w); err != nil {
+		log.Error("Failed to save session: ", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to authenticate", Error: "could not save session after successful authentication"})
+	}
 	log.Trace("A user logged out")
 	http.Redirect(w, r, "/login", http.StatusFound)
 }

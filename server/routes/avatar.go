@@ -23,7 +23,11 @@ func handleAvatarUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	// Max upload size: 10 MB
 	maxUploadSize := 10485760
-	r.ParseMultipartForm(int64(maxUploadSize))
+	if err := r.ParseMultipartForm(int64(maxUploadSize)); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to upload avatar", Error: "could not parse form"})
+		return
+	}
 	file, handler, err := r.FormFile("file")
 	if err != nil {
 		// File to large or invalid file
@@ -113,8 +117,14 @@ func getAvatar(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Error("Could not display avatar: could not read image", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(make([]byte, 0))
+		if _, err := w.Write(make([]byte, 0)); err != nil {
+			log.Error("Failed to return avatar image: writing response bytes failed: ", err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
-	w.Write(fileBytes)
+	if _, err := w.Write(fileBytes); err != nil {
+		log.Error("Failed to return avatar image: writing response bytes failed: ", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }

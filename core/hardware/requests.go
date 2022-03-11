@@ -64,6 +64,9 @@ func setPowerOnAllNodes(switchName string, turnOn bool) error {
 			log.Debug("Successfully sent power request to: ", node.Name)
 		}
 	}
-	database.SetPowerState(switchName, turnOn)
+	if _, err := database.SetPowerState(switchName, turnOn); err != nil {
+		log.Error("Failed to set power after addressing all nodes: updating database entry failed: ", err.Error())
+		return err
+	}
 	return err
 }

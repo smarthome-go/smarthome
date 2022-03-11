@@ -52,7 +52,11 @@ func Auth(handler http.HandlerFunc) http.HandlerFunc {
 		if validCredentials {
 			session.Values["valid"] = true
 			session.Values["username"] = username
-			session.Save(r, w)
+			if err := session.Save(r, w); err != nil {
+				log.Error("Failed to save session: ", err.Error())
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to authenticate", Error: "could not save session after successful authentication"})
+			}
 			handler.ServeHTTP(w, r)
 			return
 		}
@@ -99,7 +103,11 @@ func ApiAuth(handler http.HandlerFunc) http.HandlerFunc {
 			session, _ := Store.Get(r, "session")
 			session.Values["valid"] = true
 			session.Values["username"] = username
-			session.Save(r, w)
+			if err := session.Save(r, w); err != nil {
+				log.Error("Failed to save session: ", err.Error())
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to authenticate", Error: "could not save session after successful authentication"})
+			}
 			log.Trace(fmt.Sprintf("valid query: serving %s", r.URL.Path))
 			handler.ServeHTTP(w, r)
 			return

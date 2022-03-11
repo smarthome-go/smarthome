@@ -26,25 +26,37 @@ func logEvent(name string, description string, level int) error {
 }
 
 func Trace(name string, description string) {
-	logEvent(name, description, 0)
+	if err := logEvent(name, description, 0); err != nil {
+		log.Error("Failed to log trace event")
+	}
 }
 
 func Debug(name string, description string) {
-	logEvent(name, description, 1)
+	if err := logEvent(name, description, 1); err != nil {
+		log.Error("Failed to log debug event")
+	}
 }
 
 func Info(name string, description string) {
-	logEvent(name, description, 2)
+	if err := logEvent(name, description, 2); err != nil {
+		log.Error("Failed to log info event")
+	}
 }
 
 func Warn(name string, description string) {
-	logEvent(name, description, 3)
+	if err := logEvent(name, description, 3); err != nil {
+		log.Error("Failed to log warn event")
+	}
 }
 
 func Error(name string, description string) {
-	logEvent(name, description, 4)
+	if err := logEvent(name, description, 4); err != nil {
+		log.Error("Failed to log error event")
+	}
 }
 
 func Fatal(name string, description string) {
-	logEvent(name, description, 5)
+	if err := logEvent(name, description, 5); err != nil {
+		log.Error("Failed to log fatal event")
+	}
 }

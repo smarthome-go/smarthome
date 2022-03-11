@@ -115,12 +115,16 @@ func main() {
 
 	if !config.Server.Production {
 		// If the server is in development mode, all logs should be flushed
-		database.FlushAllLogs()
+		if err := database.FlushAllLogs(); err != nil {
+			log.Fatal("Failed to flush logs: ", err.Error())
+		}
 	}
 
 	// Flush old logs
 	log.Info("Flushing logs older than 30 days")
-	database.FlushOldLogs()
+	if err := database.FlushOldLogs(); err != nil {
+		log.Fatal("Failed to flush logs older that 30 days: ", err.Error())
+	}
 
 	camera.TestImageProxy()
 
