@@ -17,11 +17,7 @@ type HardwareRequest struct {
 	Token   string `json:"token"`
 }
 
-var hwConfig HardwareConfig
-
-func InitConfig(hwConf HardwareConfig) {
-	hwConfig = hwConf
-}
+var nodes []Node
 
 // Delivers a power job to a given hardware node
 // Returns an error if the job fails to execute on the hardware
@@ -56,7 +52,7 @@ func sendPowerRequest(node Node, switchName string, turnOn bool) error {
 // This method is internally used by `ExecuteJob`
 func setPowerOnAllNodes(switchName string, turnOn bool) error {
 	var err error = nil
-	for _, node := range hwConfig.Nodes {
+	for _, node := range nodes {
 		errTemp := sendPowerRequest(node, switchName, turnOn)
 		if errTemp != nil {
 			err = errTemp

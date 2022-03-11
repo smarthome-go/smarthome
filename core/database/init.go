@@ -9,7 +9,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-func Init(databaseConfig DatabaseConfig, rooms []Room, adminPassword string) error {
+func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 	config = databaseConfig
 	if err := createDatabase(); err != nil {
 		return err
@@ -44,9 +44,6 @@ func Init(databaseConfig DatabaseConfig, rooms []Room, adminPassword string) err
 		return err
 	}
 	if err := initAdminUser(adminPassword); err != nil {
-		return err
-	}
-	if err := initSwitchesRooms(rooms); err != nil {
 		return err
 	}
 	if err := createLoggingEventTable(); err != nil {
@@ -93,26 +90,6 @@ func initAdminUser(password string) error {
 	if _, err := AddUserPermission("admin", "*"); err != nil {
 		log.Error("Failed to create admin user: permission setup failed: ", err.Error())
 		return err
-	}
-	return nil
-}
-
-func initSwitchesRooms(rooms []Room) error {
-	for _, room := range rooms {
-		if err := CreateRoom(room.Id, room.Name, room.Description); err != nil {
-			log.Error("Could not create rooms from config file")
-			return err
-		}
-		for _, switchItem := range room.Switches {
-			if err := CreateSwitch(switchItem.Id, switchItem.Name, room.Id); err != nil {
-				log.Error("Could not create switches from config file:")
-				return err
-			}
-			if _, err := AddUserSwitchPermission("admin", switchItem.Id); err != nil {
-				log.Error("Could not add switch to switchPermissions of the admin user")
-				return err
-			}
-		}
 	}
 	return nil
 }

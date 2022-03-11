@@ -46,8 +46,7 @@ func main() {
 	if err := config.ReadConfigFile(); err != nil {
 		log.Fatal("Failed to read config file: startup halted: ", err.Error())
 	}
-	config := config.GetConfig()
-	hardware.InitConfig(config.Hardware)
+	configStruct := config.GetConfig()
 	log.Debug("Loaded and successfully initialized config")
 
 	// Environment variables
@@ -64,19 +63,19 @@ func main() {
 	}
 	if dbUsername, dbUsernameOk := os.LookupEnv("SMARTHOME_DB_USER"); dbUsernameOk {
 		log.Debug("Selected SMARTHOME_DB_USER over value from config file")
-		config.Database.Username = dbUsername
+		configStruct.Database.Username = dbUsername
 	}
 	if dbPassword, dbPasswordOk := os.LookupEnv("SMARTHOME_DB_PASSWORD"); dbPasswordOk {
 		log.Debug("Selected SMARTHOME_DB_PASSWORD over value from config file")
-		config.Database.Password = dbPassword
+		configStruct.Database.Password = dbPassword
 	}
 	if dbDatabase, dbDatabaseOk := os.LookupEnv("SMARTHOME_DB_DATABASE"); dbDatabaseOk {
 		log.Debug("Selected SMARTHOME_DB_DATABASE over value from config file")
-		config.Database.Database = dbDatabase
+		configStruct.Database.Database = dbDatabase
 	}
 	if dbHostname, dbHostnameOk := os.LookupEnv("SMARTHOME_DB_HOSTNAME"); dbHostnameOk {
 		log.Debug("Selected SMARTHOME_DB_HOSTNAME over value from config file")
-		config.Database.Hostname = dbHostname
+		configStruct.Database.Hostname = dbHostname
 	}
 	if webPort, webPortOk := os.LookupEnv("SMARTHOME_PORT"); webPortOk {
 		webPortInt, err := strconv.Atoi(webPort)
@@ -93,14 +92,14 @@ func main() {
 			log.Warn("Could not parse `SMARTHOME_DB_PORT` to int, using value from config.json")
 		} else {
 			log.Debug("Selected SMARTHOME_DB_PORT over value from config file")
-			config.Database.Port = portInt
+			configStruct.Database.Port = portInt
 		}
 	}
 
 	// Initialize database
 	var dbErr error = nil
 	for i := 0; i <= 5; i++ {
-		dbErr = database.Init(config.Database, config.Rooms, newAdminPassword)
+		dbErr = database.Init(configStruct.Database, newAdminPassword)
 		if dbErr == nil {
 			break
 		} else {
@@ -113,7 +112,12 @@ func main() {
 		panic(dbErr.Error())
 	}
 
-	if !config.Server.Production {
+	// Run a potential setup file
+	if err := config.RunSetup(); err != nil {
+		log.Fatal("Could not run setup: ", err.Error())
+	}
+
+	if !configStruct.Server.Production {
 		// If the server is in development mode, all logs should be flushed
 		if err := database.FlushAllLogs(); err != nil {
 			log.Fatal("Failed to flush logs: ", err.Error())
@@ -126,14 +130,15 @@ func main() {
 		log.Fatal("Failed to flush logs older that 30 days: ", err.Error())
 	}
 
+	// TODO: remove this
 	camera.TestImageProxy()
 
 	r := routes.NewRouter()
-	middleware.Init(config.Server.Production)
+	middleware.Init(configStruct.Server.Production)
 	templates.LoadTemplates("./web/html/**/*.html")
 	http.Handle("/", r)
-	log.Info(fmt.Sprintf("Smarthome v%s is running.", version))
 	go event.Info("System Started", "The Smarthome server completed startup.")
+	log.Info(fmt.Sprintf("Smarthome v%s is running.", version))
 	err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
 		panic(err)

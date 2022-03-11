@@ -33,6 +33,13 @@ type Room struct {
 	Name        string   `json:"name"`
 	Description string   `json:"description"`
 	Switches    []Switch `json:"switches"`
+	Cameras     []Camera `json:"cameras"`
+}
+
+// Camera struct, used in `config.rooms.cameras``
+type Camera struct {
+	Url  string `json:"url"`
+	Name string `json:"name"`
 }
 
 // internal logging-related

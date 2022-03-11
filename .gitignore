@@ -39,3 +39,6 @@ data/avatars
 # docker build files
 docker/app
 112312312312312.png
+
+# Setup file
+data/config/setup.json

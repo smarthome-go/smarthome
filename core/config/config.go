@@ -8,19 +8,18 @@ import (
 	"os"
 
 	"github.com/MikMuellerDev/smarthome/core/database"
-	"github.com/MikMuellerDev/smarthome/core/hardware"
 	"github.com/sirupsen/logrus"
 )
 
 type ServerConfig struct {
-	Production bool `json:"production"`
+	Production bool   `json:"production"`
+	Port       uint16 `json:"port"`
 }
 
+// TODO: finish moving config system to setup.json
 type Config struct {
 	Server   ServerConfig            `json:"server"`
 	Database database.DatabaseConfig `json:"database"`
-	Hardware hardware.HardwareConfig `json:"hardware"`
-	Rooms    []database.Room         `json:"rooms"`
 }
 
 var config Config
@@ -48,8 +47,7 @@ func ReadConfigFile() error {
 		log.Info("Failed to read config file: but managed to create a new config file")
 		return nil
 	}
-
-	// Parse config file to struct <configFile>
+	// Parse config file to struct <Config>
 	var configFile Config
 	decoder := json.NewDecoder(bytes.NewReader(content))
 	decoder.DisallowUnknownFields()
@@ -75,26 +73,8 @@ func createNewConfigFile() (Config, error) {
 			Database: "smarthome",
 			Port:     3306,
 		},
-		Hardware: hardware.HardwareConfig{
-			Nodes: []hardware.Node{
-				{
-					Name:  "change_it",
-					Url:   "http://localhost:4243",
-					Token: "change_it",
-				},
-			},
-		},
-		Rooms: []database.Room{{
-			Id:          "change_it",
-			Name:        "My Room",
-			Description: "This is my room",
-			Switches: []database.Switch{{
-				Id:   "s1",
-				Name: "My Switch",
-			}},
-		}},
 	}
-	fileContent, err := json.MarshalIndent(config, "", " ")
+	fileContent, err := json.MarshalIndent(config, "", "	")
 	if err != nil {
 		log.Error("Failed to create config file: creating file content from JSON failed: ", err.Error())
 		return Config{}, err

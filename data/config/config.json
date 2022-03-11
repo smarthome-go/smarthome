@@ -1,6 +1,7 @@
 {
     "server": {
-        "production": false
+        "production": false,
+        "port": 8082
     },
     "database": {
         "username": "smarthome",
@@ -8,58 +9,5 @@
         "database": "smarthome",
         "hostname": "localhost",
         "port": 3313
-    },
-    "hardware": {
-        "nodes": [
-            {
-                "name": "node",
-                "url": "http://192.168.178.43",
-                "token": "test"
-            }
-        ]
-    },
-    "rooms": [
-        {
-            "id": "testroom",
-            "name": "Test Room",
-            "description": "test description",
-            "switches": [
-                {
-                    "id": "s1",
-                    "name": "Lamp1"
-                },
-                {
-                    "id": "s2",
-                    "name": "Lamp2"
-                },
-                {
-                    "id": "s3",
-                    "name": "Lamp2"
-                },
-                {
-                    "id": "n4",
-                    "name": "Lamp2"
-                },
-                {
-                    "id": "s5",
-                    "name": "Lamp2"
-                }
-            ]
-        },
-        {
-            "id": "testroom 2",
-            "name": "Test Room 2",
-            "description": "test description 2",
-            "switches": [
-                {
-                    "id": "s3",
-                    "name": "Lamp3"
-                },
-                {
-                    "id":"s4",
-                    "name": "Lamp4"
-                }
-            ]
-        }
-    ]
+    }
 }

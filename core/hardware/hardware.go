@@ -10,10 +10,6 @@ type Node struct {
 	Token string `json:"token"`
 }
 
-type HardwareConfig struct {
-	Nodes []Node `json:"nodes"`
-}
-
 type PowerJob struct {
 	Id         int64  `json:"id"`
 	SwitchName string `json:"switchName"`
