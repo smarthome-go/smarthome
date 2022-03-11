@@ -38,8 +38,10 @@ type Room struct {
 
 // Camera struct, used in `config.rooms.cameras``
 type Camera struct {
-	Url  string `json:"url"`
-	Name string `json:"name"`
+	Id     int    `json:"id"`
+	RoomId string `json:"roomId"`
+	Url    string `json:"url"`
+	Name   string `json:"name"`
 }
 
 // internal logging-related
