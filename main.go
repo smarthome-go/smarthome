@@ -16,6 +16,7 @@ import (
 	"github.com/MikMuellerDev/smarthome/server/middleware"
 	"github.com/MikMuellerDev/smarthome/server/routes"
 	"github.com/MikMuellerDev/smarthome/server/templates"
+	"github.com/MikMuellerDev/smarthome/services/camera"
 	"github.com/sirupsen/logrus"
 )
 
@@ -120,6 +121,8 @@ func main() {
 	log.Info("Flushing logs older than 30 days")
 	database.FlushOldLogs()
 
+	camera.TestImageProxy()
+
 	r := routes.NewRouter()
 	middleware.Init(config.Server.Production)
 	templates.LoadTemplates("./web/html/**/*.html")
@@ -131,3 +134,5 @@ func main() {
 		panic(err)
 	}
 }
+
+// TODO: make a separate logging module which would eliminate the need to initialize a new logger for each module
