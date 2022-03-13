@@ -17,6 +17,7 @@ type HardwareRequest struct {
 	Token   string `json:"token"`
 }
 
+// TODO: replace with DB
 var nodes []Node
 
 // Delivers a power job to a given hardware node
