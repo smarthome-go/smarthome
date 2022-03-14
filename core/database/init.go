@@ -52,6 +52,9 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 	if err := CreateCameraTable(); err != nil {
 		return err
 	}
+	if err := CreateHardwareNodeTable(); err != nil {
+		return err
+	}
 	return nil
 }
 

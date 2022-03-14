@@ -5,7 +5,7 @@ import (
 )
 
 // Creates the table containing switches
-// If the database fails, this function can return an error
+// If the database fails, this function returns an error
 func createSwitchTable() error {
 	query := `
 	CREATE TABLE
@@ -54,13 +54,21 @@ func createHasSwitchPermissionTable() error {
 
 // Creates a new switch
 // Will return an error if the database fails
-func CreateSwitch(Id string, Name string, RoomId string) error {
-	query, err := db.Prepare(`INSERT INTO switch(Id, Name, Power, RoomId) VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE Name=Values(Name)`)
+func CreateSwitch(id string, name string, roomId string) error {
+	query, err := db.Prepare(`
+	INSERT INTO
+	switch(
+		Id, Name, Power, RoomId
+	)
+	VALUES(?,?,?,?)
+	ON DUPLICATE KEY
+	UPDATE Name=VALUES(Name)
+	`)
 	if err != nil {
 		log.Error("Failed to add switch: preparing query failed: ", err.Error())
 		return err
 	}
-	res, err := query.Exec(Id, Name, false, RoomId)
+	res, err := query.Exec(id, name, false, roomId)
 	if err != nil {
 		log.Error("Failed to add switch: executing query failed: ", err.Error())
 		return err
@@ -71,9 +79,30 @@ func CreateSwitch(Id string, Name string, RoomId string) error {
 		return err
 	}
 	if rowsAffected > 0 {
-		log.Debug(fmt.Sprintf("Added switch `%s` with name `%s`", Id, Name))
+		log.Debug(fmt.Sprintf("Added switch `%s` with name `%s`", id, name))
 	}
 	defer query.Close()
+	return nil
+}
+
+// Delete a given switch after all data which depends on this switch has been deleted
+func DeleteSwitch(switchId string) error {
+	if err := RemoveSwitchFromPermissions(switchId); err != nil {
+		log.Error("Failed to remove switch: dependencies could not be removed: ", err.Error())
+	}
+	query, err := db.Prepare(`
+	DELETE FROM
+	switch
+	WHERE Id=?
+	`)
+	if err != nil {
+		log.Error("Failed to remove switch: preparing query failed: ", err.Error())
+		return err
+	}
+	if _, err = query.Exec(switchId); err != nil {
+		log.Error("Failed to remove switch: executing query failed: ", err.Error())
+		return err
+	}
 	return nil
 }
 
@@ -121,115 +150,6 @@ func ListUserSwitches(username string) ([]Switch, error) {
 	}
 	defer query.Close()
 	return switches, nil
-}
-
-// Adds a given switchId to a given user
-// The existence of the switch should be validated beforehand
-// If this permission already resides inside the table, it is ignored and modified=false, error=nil is returned
-func AddUserSwitchPermission(username string, switchId string) (bool, error) {
-	userAlreadyHasPermission, err := UserHasSwitchPermission(username, switchId)
-	if err != nil {
-		log.Error("Failed to add permission: Could not validate the preexistence of a switchPermission: ", err.Error())
-		return false, err
-	}
-	if userAlreadyHasPermission {
-		return false, nil
-	}
-	query, err := db.Prepare(`
-	INSERT INTO hasSwitchPermission(Username, Switch) VALUES(?,?)
-	`)
-	if err != nil {
-		log.Error("Could not add switch permission to user: preparing query failed: ", err.Error())
-		return false, err
-	}
-	_, err = query.Exec(username, switchId)
-	if err != nil {
-		log.Error("Failed to add switch permission to user: executing query failed: ", err.Error())
-		return false, err
-	}
-	defer query.Close()
-	return true, nil
-}
-
-// TODO: check naming consistency of `ADD / CREATE` and `DELETE / REMOVE`
-// Removes a switch permission from a user, but does not delete if from the switch permission list
-func RemoveUserSwitchPermission(username string, switchId string) (bool, error) {
-	userHasPermission, err := UserHasSwitchPermission(username, switchId)
-	if err != nil {
-		log.Error("Failed to remove permission from user: failed to check if user has permission")
-		return false, err
-	}
-	if !userHasPermission {
-		return false, nil
-	}
-	query, err := db.Prepare(`DELETE FROM hasSwitchPermission WHERE Username=? AND Switch=?`)
-	if err != nil {
-		log.Error("Failed to remove switch permission from user: failed to prepare query: ", err.Error())
-		return false, err
-	}
-	if _, err = query.Exec(username, switchId); err != nil {
-		log.Error("Failed to remove switch permission from user: executing query failed: ", err.Error())
-		return false, nil
-	}
-	return true, nil
-}
-
-// Removes all switch permission of a given user, used when deleing a user
-// Does not validate the existence of said user
-func RemoveAllSwitchPermissionsOfUser(username string) error {
-	query, err := db.Prepare(`DELETE FROM hasSwitchPermission WHERE Username=?`)
-	if err != nil {
-		log.Error("Failed to remove all switch permissions of user: preparing query failed: ", err.Error())
-		return err
-	}
-	if _, err := query.Exec(username); err != nil {
-		log.Error("Failed to remove all switch permissions of user: executing query failed: ", err.Error())
-		return err
-	}
-	return nil
-}
-
-// Returns a list of strings which resemble switch permissions
-func GetUserSwitchPermissions(username string) ([]string, error) {
-	query, err := db.Prepare(`
-	SELECT Switch FROM hasSwitchPermission WHERE Username=?
-	`)
-	if err != nil {
-		log.Error("Could not list user switch permissions: failed to prepare query: ", err.Error())
-		return make([]string, 0), err
-	}
-	res, err := query.Query(username)
-	if err != nil {
-		log.Error("Could not list user switch permissions: failed to execute query: ", err.Error())
-		return make([]string, 0), err
-	}
-	permissions := make([]string, 0)
-	for res.Next() {
-		var permission string
-		err := res.Scan(&permission)
-		if err != nil {
-			log.Error("Could get userSwitchPermissions. Failed to scan query: ", err.Error())
-			return permissions, err
-		}
-		permissions = append(permissions, permission)
-	}
-	defer query.Close()
-	return permissions, nil
-}
-
-// Will return a boolean if a user has a switch permission
-func UserHasSwitchPermission(username string, switchId string) (bool, error) {
-	permissions, err := GetUserSwitchPermissions(username)
-	if err != nil {
-		log.Error("Failed to check for user permission: ", err.Error())
-		return false, err
-	}
-	for _, permission := range permissions {
-		if permission == switchId {
-			return true, nil
-		}
-	}
-	return false, nil
 }
 
 // Used when marking a power state of a switch

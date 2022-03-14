@@ -20,8 +20,7 @@ func createLoggingEventTable() error {
 		 PRIMARY KEY (Id)
 	 )
 	 `
-	_, err := db.Exec(query)
-	if err != nil {
+	if _, err := db.Exec(query); err != nil {
 		log.Error("Could not create logging table: Executing query failed: ", err.Error())
 		return err
 	}
@@ -44,8 +43,7 @@ func AddLogEvent(name string, description string, level int) error {
 		log.Error("Failed to add log event: preparing query failed: ", err.Error())
 		return err
 	}
-	_, err = query.Exec(name, description, level)
-	if err != nil {
+	if _, err = query.Exec(name, description, level); err != nil {
 		log.Error("Failed to add log event: preparing query failed: ", err.Error())
 		return err
 	}
@@ -91,7 +89,10 @@ func FlushAllLogs() error {
 }
 
 func GetLogs() ([]LogEvent, error) {
-	query := `SELECT Id, Name, Description, Level, Date FROM logs`
+	query := `
+	SELECT
+	Id, Name, Description, Level, Date
+	FROM logs`
 	res, err := db.Query(query)
 	if err != nil {
 		log.Error("Could not get all logs: failed to execute query: ", err.Error())
@@ -101,7 +102,13 @@ func GetLogs() ([]LogEvent, error) {
 	for res.Next() {
 		var logItem LogEvent
 		var logTime sql.NullTime
-		err := res.Scan(&logItem.Id, &logItem.Name, &logItem.Description, &logItem.Level, &logTime)
+		err := res.Scan(
+			&logItem.Id,
+			&logItem.Name,
+			&logItem.Description,
+			&logItem.Level,
+			&logTime,
+		)
 		if err != nil {
 			log.Error("Could not list all logs: Failed to scan results ", err.Error())
 			return []LogEvent{}, err

@@ -54,11 +54,17 @@ type LogEvent struct {
 }
 
 // User notification
-
 type Notification struct {
 	Id          uint   `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Date        time.Time
 	// Username is left out due to not being required in the service layer
+}
+
+// Hardware node
+type HardwareNode struct {
+	Name  string `json:"name"`
+	Url   string `json:"url"`
+	Token string `json:"token"`
 }

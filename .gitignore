@@ -21,7 +21,6 @@
 go.work
 .vscode/targets.log
 .vscode/dryrun.log
-.vscode/settings.json
 
 # Web files
 web/node_modules
@@ -41,3 +40,4 @@ docker/app
 
 # Setup file
 data/config/setup.json
+.vscode/settings.json

@@ -2,6 +2,18 @@ package hardware
 
 import "time"
 
+/*
+Feature-spec of the handler:
+- can handle async request, for example concurrent users or one user toggling power in the frontend fast
+	- ideal for async job requests, like frontend
+- Acts synchronous if one power job is awaited after the other
+	- ideal for normal scripting
+
+Time to complete:
+(n) synchronous requests  -> n * repeats * 20 ms
+(n) asynchronous requests -> n * (repeats * 20 ms + cooldown) - cooldown
+*/
+
 // If a job daemon loop is already running
 var daemonRunning bool
 
@@ -11,6 +23,9 @@ var jobQueue []PowerJob = make([]PowerJob, 0)
 // temporarely stores the result of each executed job
 var jobResults []JobResult = make([]JobResult, 0)
 var jobsWithErrorInHandlerCount uint16
+
+// Time to be waited after each job (in milliseconds)
+const cooldown = 500
 
 // Main interface for interacting with the queuing system
 // Usage: SetPower("s1", true)
@@ -66,7 +81,10 @@ func jobDaemon(ch chan bool) {
 			}
 		}
 		jobQueue = tempQueue
-		time.Sleep(500 * time.Millisecond)
+		// Only sleep if other jobs are in the current queue
+		if len(jobQueue) > 0 {
+			time.Sleep(cooldown * time.Millisecond)
+		}
 	}
 }
 
