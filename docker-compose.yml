@@ -13,20 +13,21 @@ services:
       - SMARTHOME_DB_USER=smarthome
       - SMARTHOME_DB_DATABASE=smarthome
       - SMARTHOME_DB_PORT=3306
-      - SMARTHOME_PORT=80
+      - SMARTHOME_PORT=80 #Override the port on which smarthome runs on internally
     ports:
-    - 8123:80
+    - 8123:80 #should be the same as SMARTHOME_PORT
     restart: unless-stopped
+    volumes:
+      - smarthome_data:/app/data/
 
   smarthome-mariadb:
     image: mariadb
     container_name: smarthome-mariadb
     hostname: smarthome-db
     environment:
-      - MYSQL_ROOT_PASSWORD=password
       - MARIADB_ROOT_PASSWORD=password
       - TZ=Europe/Berlin
-      - MYSQL_DATABASE=smarthome
-      - MYSQL_USER=smarthome
-      - MYSQL_PASSWORD=password
+      - MARIADDB_DATABASE=smarthome
+      - MARIADDB_USER=smarthome
+      - MARIADDB_PASSWORD=password
     restart: unless-stopped
