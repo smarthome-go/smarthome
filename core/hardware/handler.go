@@ -14,7 +14,7 @@ Time to complete:
 (n) asynchronous requests -> n * (repeats * 20 ms + cooldown) - cooldown
 */
 
-// If a job daemon loop is already running
+// Whether a job daemon loop is already running
 var daemonRunning bool
 
 // Contains the queue for all pending jobs
