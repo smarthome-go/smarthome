@@ -143,7 +143,8 @@ func DoesUserExist(username string) (bool, error) {
 // Returns a user struct based on a username, does not check if the user exists, additional checks needed beforehand
 func GetUserByUsername(username string) (User, error) {
 	query, err := db.Prepare(`
-	SELECT Username, Password, AvatarUrl
+	SELECT
+	Username, Firstname, Surname, PrimaryColor, Password, AvatarUrl
 	FROM user
 	WHERE Username=? 
 	`)

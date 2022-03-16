@@ -8,7 +8,15 @@ addLoadEvent(function () {
 
   //   Detect screen size and open the navbar if it matches
   if (window.matchMedia("(min-width: 1500px)").matches) {
-      navbar.classList.remove("closed")
+    navbar.classList.remove("closed");
+  }
+
+  window.onresize = () => {
+    if (window.matchMedia("(min-width: 1500px)").matches) {
+      navbar.classList.remove("closed");
+    } else {
+      navbar.classList.add("closed");
+    }
   };
 
   //   Header
