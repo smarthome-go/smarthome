@@ -6,11 +6,14 @@ addLoadEvent(function () {
   const navbar = navbars[0];
   navbar.className = "nav closed";
 
+  //   Detect screen size and open the navbar if it matches
+  if (window.matchMedia("(min-width: 1500px)").matches) {
+      navbar.classList.remove("closed")
+  };
+
   //   Header
   const avatarImage = document.createElement("div");
   avatarImage.className = "nav__header__avatar__image__src";
-  
-
 
   const avatarImageDiv = document.createElement("div");
   avatarImageDiv.className = "nav__header__avatar__image";

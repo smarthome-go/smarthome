@@ -42,6 +42,10 @@
       cursor: pointer;
       transition: var(--tran-03);
       z-index: 20000;
+
+      @media (min-width: 1500px) {
+        display: none;
+      }
     }
 
     &__avatar {
@@ -57,7 +61,7 @@
         &__src {
           min-width: 2.5rem;
           height: 2.5rem;
-          border-radius: 0.3rem;
+          border-radius: 50%;
           background-image: url("/api/user/avatar");
           background-position: center;
           background-repeat: no-repeat;

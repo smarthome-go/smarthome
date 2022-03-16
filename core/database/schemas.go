@@ -6,9 +6,12 @@ import (
 
 // Identified by a username, has a password and an avatar path
 type User struct {
-	Username   string `json:"username"`
-	Password   string `json:"password"`
-	AvatarPath string `json:"avatarPath"`
+	Username     string `json:"username"`
+	Firstname    string `json:"firstname"`
+	Surname      string `json:"surname"`
+	PrimaryColor string `json:"primaryColor"`
+	Password     string `json:"password"`
+	AvatarPath   string `json:"avatarPath"`
 	// TODO: add bg image, frontend themes and colors
 }
 

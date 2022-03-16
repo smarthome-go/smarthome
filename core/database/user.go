@@ -15,6 +15,9 @@ func createUserTable() error {
 	IF NOT EXISTS
 	user(
 		Username VARCHAR(20) PRIMARY KEY,
+		Firstname VARCHAR(20),
+		Surname VARCHAR(20),
+		PrimaryColor CHAR(6),
 		Password text,
 		AvatarPath text
 	)
