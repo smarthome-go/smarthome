@@ -144,7 +144,7 @@ func DoesUserExist(username string) (bool, error) {
 func GetUserByUsername(username string) (User, error) {
 	query, err := db.Prepare(`
 	SELECT
-	Username, Firstname, Surname, PrimaryColor, Password, AvatarUrl
+	Username, Firstname, Surname, PrimaryColor, AvatarUrl
 	FROM user
 	WHERE Username=? 
 	`)
@@ -159,7 +159,7 @@ func GetUserByUsername(username string) (User, error) {
 	}
 	user := User{}
 	for res.Next() {
-		err := res.Scan(&user.Username, &user.Password, &user.AvatarPath)
+		err := res.Scan(&user.Username, &user.Firstname, &user.Surname, &user.PrimaryColor, &user.AvatarPath)
 		if err != nil {
 			log.Error("Failed to get user by username: failed to scan query: ", err.Error())
 			return User{}, err
