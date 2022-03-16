@@ -1,0 +1,198 @@
+.nav {
+  box-shadow: 0 1px 1px 0 rgba(0, 0, 0, 0.14),
+    0 2px 1px -1px rgba(0, 0, 0, 0.12), 0 1px 3px 0 rgba(0, 0, 0, 0.2);
+  padding: 1rem;
+  z-index: 1000;
+  position: fixed;
+  width: 13rem;
+  height: 100%;
+  background-color: var(--clr-navbar-bg);
+  box-sizing: border-box;
+  top: 0;
+  left: 0;
+
+  &__text {
+    color: var(--clr-text-light);
+    transition: var(--tran-02);
+    white-space: nowrap;
+  }
+
+  &__header {
+    cursor: pointer;
+    position: relative;
+    display: block;
+    border-radius: 0.3rem;
+    padding: 0.5rem 0;
+
+    &__toggle {
+      transform: translateY(-50%) rotate(180deg);
+      position: absolute;
+      top: 50%;
+      right: -25px;
+      height: 25px;
+      width: 25px;
+      color: var(--clr-text-light);
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: var(--tran-03);
+      z-index: 20000;
+    }
+
+    &__avatar {
+      padding-left: 0.4rem;
+      display: flex;
+      align-items: center;
+
+      &__image {
+        min-width: 2.5rem;
+        display: flex;
+        justify-content: center;
+
+        &__src {
+          min-width: 2.5rem;
+          height: 2.5rem;
+          border-radius: 0.3rem;
+          background-image: url("/api/user/avatar");
+          background-position: center;
+          background-repeat: no-repeat;
+          background-size: cover;
+        }
+      }
+
+      &__text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        margin-left: 0.6rem;
+
+        &__main {
+          font-weight: 600;
+        }
+      }
+    }
+  }
+
+  &__menubar {
+    height: calc(100% - 55px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow-y: scroll;
+
+    &__menu {
+      margin-top: 2rem;
+
+      &__links {
+        padding: 0;
+        margin: 0;
+
+        &__item {
+          padding-right: 1px;
+          height: 50px;
+          list-style: none;
+          display: flex;
+          align-items: center;
+          margin-top: 10px;
+
+          a {
+            list-style: none;
+            background-color: transparent;
+            display: flex;
+            align-items: center;
+            height: 100%;
+            width: 100%;
+            border-radius: 0.3rem;
+            text-decoration: none;
+            transition: var(--tran-03);
+
+            i {
+              min-width: 50px;
+              border-radius: 0.4rem;
+              height: 100%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 20px;
+              color: var(--clr-text-light);
+              transition: var(--tran-02);
+            }
+
+            span {
+              margin-left: 0.3rem;
+              color: var(--clr-text-light);
+            }
+          }
+          a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+          }
+        }
+
+        &__item.active {
+          pointer-events: none;
+          a:hover {
+            background-color: transparent;
+            cursor: default;
+          }
+
+          i:hover {
+            background-color: transparent;
+            cursor: default;
+          }
+
+          a {
+            background-color: rgba(255, 255, 255, 0.1);
+          }
+        }
+      }
+    }
+
+    &__bottom {
+      margin-top: auto;
+    }
+  }
+
+  &__menubar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.nav.closed {
+  width: 5.3rem;
+
+  .nav__header {
+    &__toggle {
+      transform: translateY(-50%) rotate(0deg);
+    }
+  }
+
+  &__menubar {
+    &__menu {
+      &__links {
+        &__item {
+          i:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+          }
+        }
+
+        &__item.active {
+          i {
+            background-color: transparent;
+          }
+          a {
+            background-color: rgba(255, 255, 255, 0.1);
+          }
+        }
+      }
+    }
+  }
+}
+
+.nav.closed .nav__text {
+  opacity: 0;
+}
