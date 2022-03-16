@@ -85,7 +85,7 @@ func createDatabase() error {
 }
 
 func initAdminUser(password string) error {
-	if err := AddUser(User{
+	if err := AddUser(FullUser{
 		Username: "admin",
 		Password: password,
 	}); err != nil {

@@ -15,9 +15,9 @@ func createUserTable() error {
 	IF NOT EXISTS
 	user(
 		Username VARCHAR(20) PRIMARY KEY,
-		Firstname VARCHAR(20),
-		Surname VARCHAR(20),
-		PrimaryColor CHAR(6),
+		Firstname VARCHAR(20) DEFAULT "Firstname",
+		Surname VARCHAR(20) DEFAULT "Surname",
+		PrimaryColor CHAR(7) DEFAULT "#ffffff",
 		Password text,
 		AvatarPath text
 	)
@@ -32,6 +32,7 @@ func createUserTable() error {
 
 // Lists users which are currently in the Database
 // Returns an empty list with an error when failing
+// Returns conventional users without a password entry
 func ListUsers() ([]User, error) {
 	query := `SELECT Username, Password, AvatarPath FROM user`
 	res, err := db.Query(query)
@@ -42,7 +43,7 @@ func ListUsers() ([]User, error) {
 	var userList []User
 	for res.Next() {
 		var user User
-		err := res.Scan(&user.Username, &user.Password, &user.AvatarPath)
+		err := res.Scan(&user.Username, &user.Firstname, &user.Surname, &user.PrimaryColor, &user.AvatarPath)
 		if err != nil {
 			log.Error("Failed to scan user values from database results: ", err.Error())
 		}
@@ -53,7 +54,7 @@ func ListUsers() ([]User, error) {
 
 // Creates a new user based on a the supplied `User` struct
 // Won't panic if user already exists, but will change password
-func InsertUser(user User) error {
+func InsertUser(user FullUser) error {
 	query, err := db.Prepare("INSERT INTO user(Username, Password, AvatarPath) VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE Password=VALUES(Password)")
 	if err != nil {
 		log.Error("Could not create user. Failed to prepare query: ", err.Error())
@@ -98,7 +99,7 @@ func DeleteUser(Username string) error {
 // Will return an error if the database fails
 // Does not check for duplicate users
 // TODO: loop over a given set of permission in here that every user should have | OR do the permission templating in another function or frontend (preferred)
-func AddUser(user User) error {
+func AddUser(user FullUser) error {
 	userExists, err := DoesUserExist(user.Username)
 	if err != nil {
 		return err
@@ -141,9 +142,10 @@ func DoesUserExist(username string) (bool, error) {
 }
 
 // Returns a user struct based on a username, does not check if the user exists, additional checks needed beforehand
+// Does not populate the password field
 func GetUserByUsername(username string) (User, error) {
 	query, err := db.Prepare(`
-	SELECT Username, Password, AvatarUrl
+	SELECT Username, Firstname, Surname, PrimaryColor, AvatarUrl
 	FROM user
 	WHERE Username=? 
 	`)
@@ -158,7 +160,7 @@ func GetUserByUsername(username string) (User, error) {
 	}
 	user := User{}
 	for res.Next() {
-		err := res.Scan(&user.Username, &user.Password, &user.AvatarPath)
+		err := res.Scan(&user.Username, &user.Firstname, &user.Surname, &user.PrimaryColor, &user.AvatarPath)
 		if err != nil {
 			log.Error("Failed to get user by username: failed to scan query: ", err.Error())
 			return User{}, err
@@ -166,6 +168,8 @@ func GetUserByUsername(username string) (User, error) {
 	}
 	return user, nil
 }
+
+func GetUserPasswordHash(username string) (string, error)
 
 // Returns the path of the avatar image of a given user, does not check if the user exists, additional checks needed beforehand
 func GetAvatarPathByUsername(username string) (string, error) {

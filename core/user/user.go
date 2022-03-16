@@ -16,6 +16,7 @@ func InitLogger(logger *logrus.Logger) {
 // <true> means valid authentication
 // Can return an error if the database fails to return a valid result, meaning service downtime
 func ValidateCredentials(username string, password string) (bool, error) {
+	// TODO: create a dedicated function in the database for this
 	users, err := database.ListUsers()
 	if err != nil {
 		log.Error("Could not validate login due to database error: ", err.Error())

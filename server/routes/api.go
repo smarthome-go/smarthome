@@ -375,7 +375,7 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to add user", Error: "user already exists"})
 		return
 	}
-	if err = database.AddUser(database.User{Username: request.Username, Password: request.Password}); err != nil {
+	if err = database.AddUser(database.FullUser{Username: request.Username, Password: request.Password}); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to add user", Error: "database failure"})
 		return

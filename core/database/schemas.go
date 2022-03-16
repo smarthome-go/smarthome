@@ -5,7 +5,7 @@ import (
 )
 
 // Identified by a username, has a password and an avatar path
-type User struct {
+type FullUser struct {
 	Username     string `json:"username"`
 	Firstname    string `json:"firstname"`
 	Surname      string `json:"surname"`
@@ -13,6 +13,14 @@ type User struct {
 	Password     string `json:"password"`
 	AvatarPath   string `json:"avatarPath"`
 	// TODO: add bg image, frontend themes and colors
+}
+
+type User struct {
+	Username     string `json:"username"`
+	Firstname    string `json:"firstname"`
+	Surname      string `json:"surname"`
+	PrimaryColor string `json:"primaryColor"`
+	AvatarPath   string `json:"avatarPath"`
 }
 
 // Identified by a Switch Id, has a name and belongs to a room
