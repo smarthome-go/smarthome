@@ -1,11 +1,9 @@
-window.onload = async () => {
-  const avatar = document.getElementById("avatar") as HTMLDivElement;
-  avatar.style.backgroundImage = `url('/api/user/avatar?${Date.now()}')`;
+addLoadEvent(()=> {
   const file = document.getElementById("file") as HTMLInputElement;
   file.onchange = async () => {
     showUploadDialog();
   };
-};
+});
 
 function showUploadDialog() {
   const div = document.createElement("div");
@@ -65,8 +63,6 @@ function showUploadDialog() {
     }
     div.style.opacity = "0";
     div.style.marginTop = "-100vh";
-    const avatar = document.getElementById("avatar") as HTMLDivElement;
-    avatar.style.backgroundImage = `url('/api/user/avatar?${Date.now()}')`;
     setTimeout(() => {
         div.remove();
     }, 500)

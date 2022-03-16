@@ -9,6 +9,8 @@ addLoadEvent(function () {
   //   Header
   const avatarImage = document.createElement("div");
   avatarImage.className = "nav__header__avatar__image__src";
+  
+
 
   const avatarImageDiv = document.createElement("div");
   avatarImageDiv.className = "nav__header__avatar__image";

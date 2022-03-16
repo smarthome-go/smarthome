@@ -99,8 +99,6 @@ func deleteAvatar(w http.ResponseWriter, r *http.Request) {
 }
 
 // Returns the user's current avatar as an image, authentication required
-// TODO: automatically detect content type
-// TODO: Test autodetect of content type
 func getAvatar(w http.ResponseWriter, r *http.Request) {
 	username, err := middleware.GetUserFromCurrentSession(r)
 	if err != nil {
@@ -116,6 +114,8 @@ func getAvatar(w http.ResponseWriter, r *http.Request) {
 	}
 	fileBytes, err := ioutil.ReadFile(filepath)
 	w.Header().Set("Content-Type", http.DetectContentType(fileBytes))
+	// Set cache validity of image to 6 hours
+	w.Header().Set("Cache-Control", "max-age=21600")
 	if err != nil {
 		log.Error("Could not display avatar: could not read image", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
