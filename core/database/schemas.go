@@ -75,7 +75,8 @@ type Notification struct {
 
 // Hardware node
 type HardwareNode struct {
-	Name  string `json:"name"`
-	Url   string `json:"url"`
-	Token string `json:"token"`
+	Name   string `json:"name"`
+	Online bool   `json:"online"`
+	Url    string `json:"url"`
+	Token  string `json:"token"`
 }

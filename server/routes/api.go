@@ -87,7 +87,7 @@ func powerPostHandler(w http.ResponseWriter, r *http.Request) {
 	if err := hardware.SetPower(request.Switch, request.PowerOn); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "hardware error", Error: "failed to communicate with hardware"})
-		go event.Error("Hardware Error", fmt.Sprintf("The hardware failed while %s tried to interact with switch %s.", username, request.Switch))
+		go event.Warn("Hardware Error", fmt.Sprintf("The hardware failed while %s tried to interact with switch %s.", username, request.Switch))
 		return
 	}
 	json.NewEncoder(w).Encode(Response{Success: true, Message: "power action successful"})

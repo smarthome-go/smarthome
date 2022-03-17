@@ -1,6 +1,8 @@
 package database
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // Creates the table (unless it exists) which contains the hardware node
 // If the database fails, this function returns an error
@@ -11,6 +13,7 @@ func CreateHardwareNodeTable() error {
 	IF NOT EXISTS
 	hardware(
 		Url VARCHAR(50),
+		Online BOOLEAN DEFAULT TRUE,
 		Name VARCHAR(30),
 		Token VARCHAR(100),
 		PRIMARY KEY (url)
@@ -28,9 +31,9 @@ func CreateHardwareNode(name string, url string, token string) error {
 	query, err := db.Prepare(`
 	INSERT INTO
 	hardware(
-		Url, Name, Token
+		Url, Online, Name, Token
 	)
-	VALUES(?, ?, ?)
+	VALUES(?, DEFAULT, ?, ?)
 	ON DUPLICATE KEY
 	UPDATE Name=VALUES(Name)
 	`)
@@ -55,6 +58,24 @@ func CreateHardwareNode(name string, url string, token string) error {
 	return nil
 }
 
+// Updates the online / offline state of a given node (url)
+func SetNodeOnline(nodeUrl string, online bool) error {
+	query, err := db.Prepare(`
+	UPDATE hardware
+	SET Online=?
+	WHERE Url=?
+	`)
+	if err != nil {
+		log.Error("Failed to mark uptime status of node: preparing query failed: ", err.Error())
+		return err
+	}
+	if _, err := query.Exec(online, nodeUrl); err != nil {
+		log.Error("Failed to mark uptime status of node: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}
+
 // Deletes a node given its url
 func DeleteHardwareNode(url string) error {
 	query, err := db.Prepare(`
@@ -73,10 +94,11 @@ func DeleteHardwareNode(url string) error {
 	return nil
 }
 
+// Returns a list of hardware nodes
 func GetHardwareNodes() ([]HardwareNode, error) {
 	query := `
 	SELECT
-	Url, Name, Token
+	Url, Online, Name, Token
 	FROM hardware
 	`
 	res, err := db.Query(query)
@@ -89,6 +111,7 @@ func GetHardwareNodes() ([]HardwareNode, error) {
 		var node HardwareNode
 		if err := res.Scan(
 			&node.Url,
+			&node.Online,
 			&node.Name,
 			&node.Token,
 		); err != nil {
