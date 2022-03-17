@@ -485,3 +485,21 @@ func TestImageProxy(w http.ResponseWriter, r *http.Request) {
 		log.Error(err.Error())
 	}
 }
+
+// Returns the user's personal data
+func getUserDetails(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
+		return
+	}
+	userData, err := database.GetUserByUsername(username)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed get user data", Error: "database failure"})
+		return
+	}
+	json.NewEncoder(w).Encode(userData)
+}

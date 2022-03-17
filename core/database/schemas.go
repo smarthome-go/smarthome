@@ -20,7 +20,6 @@ type User struct {
 	Firstname    string `json:"firstname"`
 	Surname      string `json:"surname"`
 	PrimaryColor string `json:"primaryColor"`
-	AvatarPath   string `json:"avatarPath"`
 }
 
 // Identified by a Switch Id, has a name and belongs to a room

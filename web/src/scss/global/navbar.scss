@@ -1,6 +1,4 @@
 .nav {
-  box-shadow: 0 1px 1px 0 rgba(0, 0, 0, 0.14),
-    0 2px 1px -1px rgba(0, 0, 0, 0.12), 0 1px 3px 0 rgba(0, 0, 0, 0.2);
   padding: 1rem;
   z-index: 1000;
   position: fixed;
@@ -10,6 +8,72 @@
   box-sizing: border-box;
   top: 0;
   left: 0;
+
+  @media (max-width: 47rem) {
+    padding-top: 0;
+    width: 100%;
+
+    .nav__header {
+      width: 4rem;
+      display: flex;
+
+      &__toggle {
+        width: 30px;
+        height: 30px;
+        transform: translateY(-50%) rotate(-90deg);
+      }
+
+      &__avatar__text {
+        display: none;
+      }
+    }
+  }
+
+  &__bell {
+    @media (max-width: 47rem) {
+      margin-top: -3.1rem;
+      margin-left: 87%;
+
+      padding-left: 0.78rem;
+      justify-content: center;
+
+      &__text {
+        display: none;
+      }
+    }
+
+    display: flex;
+    align-items: center;
+    padding-left: 1.3rem;
+    height: 50px;
+    border-radius: 0.4rem;
+    cursor: pointer;
+
+    &__icon {
+      font-size: 1rem;
+    }
+
+    &__text {
+      padding-left: 0.6rem;
+    }
+
+    &__indicator {
+      position: relative;
+      font-size: 0.7rem;
+      border-radius: 50%;
+      background-color: var(--clr-primary);
+      text-align: center;
+      min-width: 0.8rem;
+      height: 0.8rem;
+      color: #222;
+      left: -0.2rem;
+      top: -0.5rem;
+    }
+  }
+
+  &__bell:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
 
   &__text {
     color: var(--clr-text-light);
@@ -41,7 +105,7 @@
       font-size: 0.8rem;
       cursor: pointer;
       transition: var(--tran-03);
-      z-index: 20000;
+      z-index: 1500;
 
       @media (min-width: 1500px) {
         display: none;
@@ -83,14 +147,14 @@
   }
 
   &__menubar {
-    height: calc(100% - 55px);
+    height: calc(100% - 55px - 50px);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     overflow-y: scroll;
 
     &__menu {
-      margin-top: 2rem;
+      margin-top: 1rem;
 
       &__links {
         padding: 0;
@@ -175,6 +239,18 @@
     }
   }
 
+  @media (max-width: 40rem) {
+    flex-direction: column;
+    width: 100%;
+    height: 4rem;
+
+    .nav__header {
+      &__toggle {
+        transform: translateY(-50%) rotate(90deg);
+      }
+    }
+  }
+
   &__menubar {
     &__menu {
       &__links {
@@ -199,4 +275,78 @@
 
 .nav.closed .nav__text {
   opacity: 0;
+}
+
+// Notification drawer
+.notifications {
+  z-index: -500;
+  position: absolute;
+  width: 25rem;
+  height: 100%;
+  box-sizing: border-box;
+  top: 0;
+  left: 0;
+  margin-left: 13rem;
+  transition: var(--tran-03);
+  background-color: var(--clr-notifications-bg);
+
+  &__container {
+    padding: 5rem 1rem;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: 1rem;
+
+    &__item {
+      width: 20rem;
+      min-height: 2rem;
+      border-radius: 0.2rem;
+      background-color: #3a3b3c;
+      padding: 1rem;
+
+      display: flex;
+      flex-direction: column;
+
+      h3 {
+        font-weight: 600;
+      }
+
+      span {
+        margin-top: .5rem;
+      }
+
+      &__title.dummy {
+        background-color: rgba(0, 0, 0, 0.2);
+        height: 1rem;
+        width: 5rem;
+        margin-bottom: .8rem;
+      }
+
+      &__description.dummy {
+        height: .8rem;
+        width: 90%;
+        background-color: rgba(0, 0, 0, 0.1);
+        margin-bottom: .5rem;
+      }
+
+      &__description.dummy.large {
+        width: 100%;
+      }
+    }
+  }
+}
+
+.notifications.hidden {
+  width: 0;
+  opacity: 0;
+  z-index: -700;
+
+  .notifications__container__item {
+    width: 10rem;
+    opacity: 0;
+  }
+}
+
+.notifications.small {
+  margin-left: 5.3rem;
 }

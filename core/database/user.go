@@ -33,7 +33,7 @@ func createUserTable() error {
 // Lists users which are currently in the Database
 // Returns an empty list with an error when failing
 func ListUsers() ([]User, error) {
-	query := `SELECT Username, Firstname, Surname, PrimaryColor, AvatarPath FROM user`
+	query := `SELECT Username, Firstname, Surname, PrimaryColor FROM user`
 	res, err := db.Query(query)
 	if err != nil {
 		log.Error("Could not list users. Failed to execute query: ", err.Error())
@@ -42,7 +42,7 @@ func ListUsers() ([]User, error) {
 	var userList []User
 	for res.Next() {
 		var user User
-		err := res.Scan(&user.Username, &user.Firstname, &user.Surname, &user.PrimaryColor, &user.AvatarPath)
+		err := res.Scan(&user.Username, &user.Firstname, &user.Surname, &user.PrimaryColor)
 		if err != nil {
 			log.Error("Failed to scan user values from database results: ", err.Error())
 		}
@@ -145,7 +145,7 @@ func DoesUserExist(username string) (bool, error) {
 func GetUserByUsername(username string) (User, error) {
 	query, err := db.Prepare(`
 	SELECT
-	Username, Firstname, Surname, PrimaryColor, AvatarUrl
+	Username, Firstname, Surname, PrimaryColor
 	FROM user
 	WHERE Username=? 
 	`)
@@ -160,7 +160,7 @@ func GetUserByUsername(username string) (User, error) {
 	}
 	user := User{}
 	for res.Next() {
-		err := res.Scan(&user.Username, &user.Firstname, &user.Surname, &user.PrimaryColor, &user.AvatarPath)
+		err := res.Scan(&user.Username, &user.Firstname, &user.Surname, &user.PrimaryColor)
 		if err != nil {
 			log.Error("Failed to get user by username: failed to scan query: ", err.Error())
 			return User{}, err

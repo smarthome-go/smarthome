@@ -8,6 +8,9 @@
   // Navbar-specific
   --clr-navbar-bg: #242526;
 
+  // Notification-specific
+  --clr-notifications-bg: #202122;
+
   // Transitions
   --tran-02: all 0.2s ease;
   --tran-03: all 0.3s ease;
@@ -31,7 +34,7 @@ h3,
 h4,
 div,
 span {
-  color: white;
+  color: var(--clr-text-light);
   font-weight: 500;
   font-family: "Roboto", "Helvetica", "Arial", sans-serif;
   margin: 0;
