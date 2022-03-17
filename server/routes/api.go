@@ -43,6 +43,10 @@ type NotificationCountResponse struct {
 	NotificationCount uint16 `json:"count"`
 }
 
+type DeleteNotificationByIdRequest struct {
+	Id uint `json:"id"`
+}
+
 // API endpoint for manipulating power states and (de) activating sockets, authentication required
 // Permission and switch permission is needed to interact with this endpoint
 func powerPostHandler(w http.ResponseWriter, r *http.Request) {
@@ -502,4 +506,29 @@ func getUserDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json.NewEncoder(w).Encode(userData)
+}
+
+// Delete a given notification from the current user
+func deleteUserNotificationById(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request DeleteNotificationByIdRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	username, err := middleware.GetUserFromCurrentSession(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
+		return
+	}
+	if err := database.DeleteNotificationFromUserById(request.Id, username); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to delete notification", Error: "database failure"})
+		return
+	}
+	json.NewEncoder(w).Encode(Response{Success: true, Message: "Successfully sent deletion request"})
 }

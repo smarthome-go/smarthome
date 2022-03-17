@@ -33,8 +33,7 @@
     @media (max-width: 47rem) {
       margin-top: -3.1rem;
       margin-left: 87%;
-
-      padding-left: 0.78rem;
+      padding-left: 1rem;
       justify-content: center;
 
       &__text {
@@ -44,7 +43,7 @@
 
     display: flex;
     align-items: center;
-    padding-left: 1.3rem;
+    padding-left: 1.2rem;
     height: 50px;
     border-radius: 0.4rem;
     cursor: pointer;
@@ -277,7 +276,19 @@
   opacity: 0;
 }
 
-// Notification drawer
+// ==== Notification drawer ==== //
+@keyframes load {
+  0% {
+    background-color: #3a3b3c;
+  }
+  50% {
+    background-color: #2f3031;
+  }
+  100% {
+    background-color: #3a3b3c;
+  }
+}
+
 .notifications {
   z-index: -500;
   position: absolute;
@@ -303,35 +314,54 @@
       border-radius: 0.2rem;
       background-color: #3a3b3c;
       padding: 1rem;
+      overflow-y: hidden;
+      transition: var(--tran-03);
 
       display: flex;
       flex-direction: column;
+
+      &__delete {
+        position: absolute;
+        margin-left: 75%;
+        margin-top: -.5rem;
+        margin-bottom: -1rem;
+        padding: 0.5rem;
+      }
+
+      &__delete:hover {
+        color: var(--clr-error);
+      }
 
       h3 {
         font-weight: 600;
       }
 
       span {
-        margin-top: .5rem;
+        margin-top: 0.5rem;
       }
 
       &__title.dummy {
         background-color: rgba(0, 0, 0, 0.2);
         height: 1rem;
         width: 5rem;
-        margin-bottom: .8rem;
+        margin-bottom: 0.8rem;
       }
 
       &__description.dummy {
-        height: .8rem;
+        height: 0.8rem;
         width: 90%;
         background-color: rgba(0, 0, 0, 0.1);
-        margin-bottom: .5rem;
+        margin-bottom: 0.5rem;
       }
 
       &__description.dummy.large {
         width: 100%;
       }
+    }
+    &__item.dummy {
+      animation-duration: 2s;
+      animation-name: load;
+      animation-iteration-count: infinite;
     }
   }
 }

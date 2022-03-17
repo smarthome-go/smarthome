@@ -64,7 +64,13 @@ addLoadEvent(async function () {
 
   const indicator = document.createElement("span");
   indicator.className = "nav__bell__indicator";
+  if (data.notificationCount > 0) {
+    indicator.style.opacity = "1";
+  } else {
+    indicator.style.opacity = "0";
+  }
   indicator.innerText = `${data.notificationCount}`;
+
 
   const bellDiv = document.createElement("div");
   bellDiv.className = "nav__bell";
@@ -232,14 +238,29 @@ async function showNotificationDrawer() {
     data.notificationCount = data.notifications.length;
 
     // Remove dummy notifications first
-    for (let elem of container.children) {
-      // Only remove dummy elements
-      if (elem.classList.contains("dummy")) {
-        elem.remove();
-      }
+    while (container.firstChild) {
+      container.removeChild(container.firstChild);
     }
 
     for (let notification of data.notifications) {
+      const deleteIcon = document.createElement("i");
+      deleteIcon.className =
+        "notifications__container__item__delete fa-solid fa-trash-can";
+
+      deleteIcon.onclick = async () => {
+        const success = await deleteNotification(notification.id);
+        if (success) {
+          data.notifications.pop();
+          updateNotificationMarker()
+          outer.style.minHeight = "0";
+          outer.style.height = "0";
+          outer.style.padding = "0";
+          outer.style.opacity = "0";
+          await sleep(200);
+          outer.remove();
+        }
+      };
+
       const title = document.createElement("h3");
       title.innerText = notification.name;
 
@@ -249,6 +270,7 @@ async function showNotificationDrawer() {
       const outer = document.createElement("div");
       outer.className = "notifications__container__item oneDp";
 
+      outer.appendChild(deleteIcon);
       outer.appendChild(title);
       outer.appendChild(description);
 
@@ -261,4 +283,27 @@ async function showNotificationDrawer() {
     checkmark.className = "fa-solid fa-check";
     container.appendChild(checkmark);
   }
+}
+
+function updateNotificationMarker() {
+  data.notificationCount = data.notifications.length;
+  const notificationIndicator = document.getElementsByClassName(
+    "nav__bell__indicator"
+  )[0] as HTMLSpanElement;
+  notificationIndicator.innerText = `${data.notificationCount}`;
+  if (data.notificationCount > 0) {
+    notificationIndicator.style.opacity = "1";
+  } else {
+    notificationIndicator.style.opacity = "0";
+  }
+}
+
+async function deleteNotification(id: number): Promise<boolean> {
+  const res = await fetch("/api/user/notifications/delete", {
+    method: "DELETE",
+    body: JSON.stringify({
+      id: id,
+    }),
+  });
+  return (await res.json()).success;
 }

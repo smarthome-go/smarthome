@@ -72,7 +72,9 @@ func NewRouter() *mux.Router {
 
 	// Notification-related
 	r.HandleFunc("/api/user/notifications/count", mdl.ApiAuth(getNotificationCount)).Methods("GET")
+	r.HandleFunc("/api/user/notifications/delete", mdl.ApiAuth(deleteUserNotificationById)).Methods("DELETE")
 	r.HandleFunc("/api/user/notifications", mdl.ApiAuth(getNotifications)).Methods("GET")
+
 	// TODO: add removal functions
 
 	// TODO: remove this one below

@@ -63,6 +63,8 @@ async function getNotifications() {
 /*
 UTILS
 */
+const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
 function addLoadEvent(func: () => void) {
   const oldOnLoad: any = window.onload;
   if (typeof window.onload != "function") {

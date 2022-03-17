@@ -76,17 +76,18 @@ func DeleteAllNotificationsFromUser(username string) error {
 }
 
 // Deletes a given notification, can return an error
-func DeleteNotificationById(notificationId uint) error {
+func DeleteNotificationFromUserById(notificationId uint, username string) error {
 	query, err := db.Prepare(`
 	DELETE FROM
 	notifications
 	WHERE Id=?
+	AND Username=?
 	`)
 	if err != nil {
 		log.Error("Failed to delete notification by id: preparing query failed: ", err.Error())
 		return err
 	}
-	_, err = query.Exec(notificationId)
+	_, err = query.Exec(notificationId, username)
 	if err != nil {
 		log.Error("Failed to delete notification by id: executing query failed: ", err.Error())
 		return err
