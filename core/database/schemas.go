@@ -66,6 +66,7 @@ type LogEvent struct {
 // User notification
 type Notification struct {
 	Id          uint   `json:"id"`
+	Priority    uint8  `json:"priority"` // Includes 1: info, 2: warning, 3: alert
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Date        time.Time

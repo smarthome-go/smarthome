@@ -59,7 +59,7 @@ addLoadEvent(async function () {
   const notificationText = document.createElement("span");
   notificationText.className = "nav__bell__text nav__text";
   notificationText.innerText = `notification${
-    data.notificationCount > 1 ? "s" : ""
+    data.notificationCount > 1 || data.notificationCount == 0 ? "s" : ""
   }`;
 
   const indicator = document.createElement("span");
@@ -70,7 +70,6 @@ addLoadEvent(async function () {
     indicator.style.opacity = "0";
   }
   indicator.innerText = `${data.notificationCount}`;
-
 
   const bellDiv = document.createElement("div");
   bellDiv.className = "nav__bell";
@@ -231,7 +230,8 @@ async function showNotificationDrawer() {
   )[0] as HTMLDivElement;
 
   // Check if the notifications are up to date
-  if (data.notificationCount != data.notifications.length) {
+  if (!data.notificationsLoaded) {
+    data.notificationsLoaded = true;
     // The notifications are not up to date and will be updated
     const notifications: Notification[] = await getNotifications();
     data.notifications = notifications;
@@ -242,22 +242,32 @@ async function showNotificationDrawer() {
       container.removeChild(container.firstChild);
     }
 
+    // If there are 0 notifications, add a indicator that nothing is there
+    addDoneMarker();
+
     for (let notification of data.notifications) {
       const deleteIcon = document.createElement("i");
       deleteIcon.className =
         "notifications__container__item__delete fa-solid fa-trash-can";
 
+      const priorityIcon = document.createElement("i");
+      priorityIcon.className = "notifications__container__item__priority"
+
       deleteIcon.onclick = async () => {
         const success = await deleteNotification(notification.id);
         if (success) {
           data.notifications.pop();
-          updateNotificationMarker()
+          updateNotificationMarker();
           outer.style.minHeight = "0";
           outer.style.height = "0";
           outer.style.padding = "0";
           outer.style.opacity = "0";
           await sleep(200);
           outer.remove();
+
+          if (data.notificationCount == 0) {
+            addDoneMarker();
+          }
         }
       };
 
@@ -273,15 +283,24 @@ async function showNotificationDrawer() {
       outer.appendChild(deleteIcon);
       outer.appendChild(title);
       outer.appendChild(description);
+      outer.appendChild(priorityIcon);
+
+      if (notification.priority == 1) {
+        outer.style.borderLeft = "solid 1px var(--clr-primary)";
+        priorityIcon.className += " fa-solid fa-circle-info"
+        priorityIcon.style.color = "var(--clr-primary)"
+      } else if (notification.priority == 2) {
+        outer.style.borderLeft = "solid 1px var(--clr-warn)";
+        priorityIcon.className += " fa-solid fa-triangle-exclamation"
+        priorityIcon.style.color = "var(--clr-warn)"
+      } else if (notification.priority == 3) {
+        outer.style.borderLeft = "solid 1px var(--clr-error)";
+        priorityIcon.className += " fa-solid fa-circle-exclamation"
+        priorityIcon.style.color = "var(--clr-error)"
+      }
 
       container.appendChild(outer);
     }
-  }
-
-  if (data.notificationCount == 0) {
-    const checkmark = document.createElement("i");
-    checkmark.className = "fa-solid fa-check";
-    container.appendChild(checkmark);
   }
 }
 
@@ -306,4 +325,23 @@ async function deleteNotification(id: number): Promise<boolean> {
     }),
   });
   return (await res.json()).success;
+}
+
+function addDoneMarker() {
+  if (data.notificationCount == 0) {
+    const checkmark = document.createElement("i");
+    checkmark.className =
+      "notifications__container__checkmark fa-solid fa-check";
+
+    const checkmarkText = document.createElement("span");
+    checkmarkText.className = "notifications__container__checkmark-text";
+    checkmarkText.innerText = "All caught up, no notifications.";
+
+    const container = document.getElementsByClassName(
+      "notifications__container"
+    )[0] as HTMLDivElement;
+
+    container.appendChild(checkmark);
+    container.appendChild(checkmarkText);
+  }
 }

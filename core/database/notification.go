@@ -16,6 +16,7 @@ func CreateNotificationTable() error {
 	notifications(
 		Id INT AUTO_INCREMENT,
 		Username VARCHAR(20),
+		Priority INT,
 		Name VARCHAR(100),
 		Description TEXT,
 		Date DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -33,23 +34,28 @@ func CreateNotificationTable() error {
 }
 
 // Adds a new notification to a user's `inbox`, can return an error if the database fails
-func AddNotification(receiverUsername string, name string, description string) error {
+func AddNotification(receiverUsername string, name string, description string, priority uint8) error {
+	if priority > 3 || priority < 1 {
+		log.Error("Invalid Priority range")
+		return errors.New("failed to send notification: invalid priority range")
+	}
 	query, err := db.Prepare(`
 	INSERT INTO
 	notifications(
 		Id,
 		Username,
+		Priority,
 		Name,
 		Description,
 		Date
 	)
-	VALUES (DEFAULT, ?, ?, ?, DEFAULT)
+	VALUES (DEFAULT, ?, ?, ?, ?, DEFAULT)
 	`)
 	if err != nil {
 		log.Error("Failed to add notification: preparing query failed: ", err.Error())
 		return err
 	}
-	_, err = query.Exec(receiverUsername, name, description)
+	_, err = query.Exec(receiverUsername, priority, name, description)
 	if err != nil {
 		log.Error("Failed to add notification: executing query failed: ", err.Error())
 		return err
@@ -121,7 +127,7 @@ func GetUserNotificationCount(username string) (uint16, error) {
 // Returns a list containing the permissions of a given user
 func GetUserNotifications(username string) ([]Notification, error) {
 	query, err := db.Prepare(`
-	SELECT Id, Name, Description, Date
+	SELECT Id, Priority, Name, Description, Date
 	FROM notifications
 	WHERE Username=?
 	`)
@@ -139,6 +145,7 @@ func GetUserNotifications(username string) ([]Notification, error) {
 		var notificationTime sql.NullTime
 		err := res.Scan(
 			&notificationItem.Id,
+			&notificationItem.Priority,
 			&notificationItem.Name,
 			&notificationItem.Description,
 			&notificationTime,

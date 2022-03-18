@@ -12,15 +12,17 @@ var data: Data = {
     surname: "",
     username: "",
   },
-  notificationCount: 0,
   notifications: [],
+  notificationCount: 0,
+  notificationsLoaded: false,
 };
 
 // Global data interface
 interface Data {
-  notificationCount: number;
-  notifications: Notification[];
   userData: UserData;
+  notifications: Notification[];
+  notificationCount: number;
+  notificationsLoaded: boolean;
 }
 
 // User data fetched from the server
@@ -33,6 +35,7 @@ interface UserData {
 
 interface Notification {
   id: number;
+  priority: number
   name: string;
   description: string;
   time: string;
@@ -57,7 +60,7 @@ async function getUserData(): Promise<UserData> {
 
 async function getNotifications() {
   const res = await fetch("/api/user/notifications");
-  return await res.json()
+  return await res.json();
 }
 
 /*

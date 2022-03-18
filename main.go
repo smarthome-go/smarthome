@@ -140,6 +140,10 @@ func main() {
 	templates.LoadTemplates("./web/html/**/*.html")
 	http.Handle("/", r)
 
+	database.AddNotification("admin", "Scheduler", "Scheduler ran successfully.", 1)
+	database.AddNotification("admin", "Tasks", "You have 24 hours left to finish the task 'clean cat litter box'.", 2)
+	database.AddNotification("admin", "Scheduler", "Your scheduler failed to run: systems error.", 3)
+
 	go event.Info("System Started", "The Smarthome server completed startup.")
 	log.Info(fmt.Sprintf("Smarthome v%s is running.", version))
 	if err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
