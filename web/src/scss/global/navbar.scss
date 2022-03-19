@@ -8,6 +8,7 @@
   box-sizing: border-box;
   top: 0;
   left: 0;
+  user-select: none;
 
   @media (max-width: 47rem) {
     padding-top: 0;

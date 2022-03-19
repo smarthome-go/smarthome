@@ -169,7 +169,7 @@ addLoadEvent(async function () {
   notificationContainer.className = "notifications__container";
 
   // Add dummy elements (will later be removed)
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < data.notificationCount; i++) {
     const dummyNotificationTitle = document.createElement("div");
     dummyNotificationTitle.className =
       "notifications__container__item__title dummy";
