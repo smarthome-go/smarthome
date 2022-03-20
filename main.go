@@ -13,6 +13,7 @@ import (
 	"github.com/MikMuellerDev/smarthome/core/hardware"
 	"github.com/MikMuellerDev/smarthome/core/user"
 	"github.com/MikMuellerDev/smarthome/core/utils"
+	"github.com/MikMuellerDev/smarthome/server/api"
 	"github.com/MikMuellerDev/smarthome/server/middleware"
 	"github.com/MikMuellerDev/smarthome/server/routes"
 	"github.com/MikMuellerDev/smarthome/server/templates"
@@ -36,6 +37,7 @@ func main() {
 	camera.InitLogger(log)
 	database.InitLogger(log)
 	middleware.InitLogger(log)
+	api.InitLogger(log)
 	routes.InitLogger(log)
 	templates.InitLogger(log)
 	user.InitLogger(log)
