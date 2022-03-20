@@ -57,7 +57,18 @@ func AddUserPermission(w http.ResponseWriter, r *http.Request) {
 	validPermission := database.DoesPermissionExist(request.Permission)
 	if !validPermission {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not remove permission from user", Error: "invalid permission type"})
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not add permission to user", Error: "invalid permission type"})
+		return
+	}
+	userExists, err := database.DoesUserExist(request.Username)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to add permission", Error: "database failure"})
+		return
+	}
+	if !userExists {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not add permission to user", Error: "invalid user"})
 		return
 	}
 	modified, err := database.AddUserPermission(request.Username, database.PermissionType(request.Permission))
@@ -93,6 +104,17 @@ func RemoveUserPermission(w http.ResponseWriter, r *http.Request) {
 	if !validPermission {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not remove permission from user", Error: "invalid permission type"})
+		return
+	}
+	userExists, err := database.DoesUserExist(request.Username)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to remove permission", Error: "database failure"})
+		return
+	}
+	if !userExists {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not remove permission from user", Error: "invalid user"})
 		return
 	}
 	modified, err := database.RemoveUserPermission(request.Username, database.PermissionType(request.Permission))
@@ -135,6 +157,17 @@ func AddSwitchPermission(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not add switch permission to user", Error: "invalid switch permission type: not found"})
 		return
 	}
+	userExists, err := database.DoesUserExist(request.Username)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to add switch permission", Error: "database failure"})
+		return
+	}
+	if !userExists {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not add switch permission from user", Error: "invalid user"})
+		return
+	}
 	modified, err := database.AddUserSwitchPermission(request.Username, request.Switch)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
@@ -173,6 +206,17 @@ func RemoveSwitchPermission(w http.ResponseWriter, r *http.Request) {
 	if !switchExists {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not remove switch permission from user", Error: "invalid switch permission type: not found"})
+		return
+	}
+	userExists, err := database.DoesUserExist(request.Username)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to remove switch permission", Error: "database failure"})
+		return
+	}
+	if !userExists {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not remove switch permission from user", Error: "invalid user"})
 		return
 	}
 	modified, err := database.RemoveUserSwitchPermission(request.Username, request.Switch)
