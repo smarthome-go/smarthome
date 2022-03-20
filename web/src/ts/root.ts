@@ -15,6 +15,7 @@ var data: Data = {
   notifications: [],
   notificationCount: 0,
   notificationsLoaded: false,
+  notificationDoneMarkerAdded: false
 };
 
 // Global data interface
@@ -23,6 +24,7 @@ interface Data {
   notifications: Notification[];
   notificationCount: number;
   notificationsLoaded: boolean;
+  notificationDoneMarkerAdded: boolean
 }
 
 // User data fetched from the server

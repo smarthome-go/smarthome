@@ -253,9 +253,11 @@ async function showNotificationDrawer() {
       const priorityIcon = document.createElement("i");
       priorityIcon.className = "notifications__container__item__priority"
 
+      let isDeleted = false
       deleteIcon.onclick = async () => {
         const success = await deleteNotification(notification.id);
-        if (success) {
+        if (success && !isDeleted) {
+          isDeleted = true
           data.notifications.pop();
           updateNotificationMarker();
           outer.style.minHeight = "0";
@@ -335,7 +337,8 @@ async function deleteAllNotifications(): Promise<boolean> {
 }
 
 function addDoneMarker() {
-  if (data.notificationCount == 0) {
+  if (data.notificationCount == 0 && !data.notificationDoneMarkerAdded) {
+    data.notificationDoneMarkerAdded = true
     const checkmark = document.createElement("i");
     checkmark.className =
       "notifications__container__checkmark fa-solid fa-check";
