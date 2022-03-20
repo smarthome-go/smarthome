@@ -307,6 +307,7 @@
   transition: var(--tran-03);
   background-color: var(--clr-notifications-bg);
   overflow-y: scroll;
+  overflow-x: hidden;
   
   .notifications::-webkit-scrollbar-button {
     display:none;
@@ -318,6 +319,16 @@
     align-items: center;
     flex-direction: column;
     gap: 1rem;
+
+    &__delete {
+      font-size: .9rem;
+      cursor: pointer;
+      margin-left: auto;
+    }
+
+    &__delete:hover {
+      text-decoration: underline;
+    }
 
     &__checkmark {
       margin-top: 3rem;

@@ -144,7 +144,7 @@ func main() {
 	templates.LoadTemplates("./web/html/**/*.html")
 	http.Handle("/", r)
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 2; i++ {
 		database.AddNotification("admin", "Scheduler", "Scheduler ran successfully.", 1)
 		database.AddNotification("admin", "Tasks", "You have 24 hours left to finish the task 'clean cat litter box'.", 2)
 		database.AddNotification("admin", "Scheduler", "Your scheduler failed to run: systems error.", 3)

@@ -245,19 +245,46 @@ async function showNotificationDrawer() {
     // If there are 0 notifications, add a indicator that nothing is there
     addDoneMarker();
 
+    const deleteAllText = document.createElement("span");
+    deleteAllText.innerText = "DELETE ALL";
+    deleteAllText.className = "notifications__container__delete";
+    if (data.notificationCount > 0) {
+      container.appendChild(deleteAllText);
+    }
+
+    deleteAllText.onclick = async () => {
+      const success = await deleteAllNotifications();
+      if (success) {
+        while (container.firstChild) {
+          data.notifications.pop();
+          updateNotificationMarker();
+          const element = container.firstChild as HTMLElement
+          element.style.transform = "translate(100%, 0)"
+          element.style.minHeight = "0";
+          element.style.height = "0";
+          element.style.padding = "0";
+          element.style.opacity = "0";
+          await sleep(100)
+          container.removeChild(container.firstChild);
+          await sleep(100)
+        }
+        addDoneMarker()
+      }
+    };
+
     for (let notification of data.notifications) {
       const deleteIcon = document.createElement("i");
       deleteIcon.className =
         "notifications__container__item__delete fa-solid fa-trash-can";
 
       const priorityIcon = document.createElement("i");
-      priorityIcon.className = "notifications__container__item__priority"
+      priorityIcon.className = "notifications__container__item__priority";
 
-      let isDeleted = false
+      let isDeleted = false;
       deleteIcon.onclick = async () => {
         const success = await deleteNotification(notification.id);
         if (success && !isDeleted) {
-          isDeleted = true
+          isDeleted = true;
           data.notifications.pop();
           updateNotificationMarker();
           outer.style.minHeight = "0";
@@ -266,7 +293,6 @@ async function showNotificationDrawer() {
           outer.style.opacity = "0";
           await sleep(200);
           outer.remove();
-
           if (data.notificationCount == 0) {
             addDoneMarker();
           }
@@ -289,16 +315,16 @@ async function showNotificationDrawer() {
 
       if (notification.priority == 1) {
         outer.style.borderLeft = "solid 1px var(--clr-primary)";
-        priorityIcon.className += " fa-solid fa-circle-info"
-        priorityIcon.style.color = "var(--clr-primary)"
+        priorityIcon.className += " fa-solid fa-circle-info";
+        priorityIcon.style.color = "var(--clr-primary)";
       } else if (notification.priority == 2) {
         outer.style.borderLeft = "solid 1px var(--clr-warn)";
-        priorityIcon.className += " fa-solid fa-triangle-exclamation"
-        priorityIcon.style.color = "var(--clr-warn)"
+        priorityIcon.className += " fa-solid fa-triangle-exclamation";
+        priorityIcon.style.color = "var(--clr-warn)";
       } else if (notification.priority == 3) {
         outer.style.borderLeft = "solid 1px var(--clr-error)";
-        priorityIcon.className += " fa-solid fa-circle-exclamation"
-        priorityIcon.style.color = "var(--clr-error)"
+        priorityIcon.className += " fa-solid fa-circle-exclamation";
+        priorityIcon.style.color = "var(--clr-error)";
       }
 
       container.appendChild(outer);
@@ -338,7 +364,7 @@ async function deleteAllNotifications(): Promise<boolean> {
 
 function addDoneMarker() {
   if (data.notificationCount == 0 && !data.notificationDoneMarkerAdded) {
-    data.notificationDoneMarkerAdded = true
+    data.notificationDoneMarkerAdded = true;
     const checkmark = document.createElement("i");
     checkmark.className =
       "notifications__container__checkmark fa-solid fa-check";
