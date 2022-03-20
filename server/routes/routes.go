@@ -45,8 +45,8 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/power/list/personal", mdl.ApiAuth(mdl.Perm(api.GetUserSwitches, database.PermissionGetUserSwitches))).Methods("GET")
 
 	// Logs for the admin user
-	r.HandleFunc("/api/logs/delete/old", mdl.ApiAuth(mdl.Perm(api.FlushOldLogs, database.PermissionDeleteOldLogs))).Methods("DELETE")
-	r.HandleFunc("/api/logs/delete/all", mdl.ApiAuth(mdl.Perm(api.FlushAllLogs, database.PermissionDeleteAllLogs))).Methods("DELETE")
+	r.HandleFunc("/api/logs/delete/old", mdl.ApiAuth(mdl.Perm(api.FlushOldLogs, database.PermissionDeleteLogs))).Methods("DELETE")
+	r.HandleFunc("/api/logs/delete/all", mdl.ApiAuth(mdl.Perm(api.FlushAllLogs, database.PermissionDeleteLogs))).Methods("DELETE")
 	r.HandleFunc("/api/logs", mdl.ApiAuth(mdl.Perm(api.ListLogs, database.PermissionListLogs))).Methods("GET")
 
 	// Customization for the user
