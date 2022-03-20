@@ -49,7 +49,7 @@ async function loadData() {
 }
 
 async function getNotificationCount(): Promise<number> {
-  const res = await fetch(`/api/user/notifications/count`);
+  const res = await fetch(`/api/user/notification/count`);
   return (await res.json()).count;
 }
 
@@ -59,7 +59,7 @@ async function getUserData(): Promise<UserData> {
 }
 
 async function getNotifications() {
-  const res = await fetch("/api/user/notifications");
+  const res = await fetch("/api/user/notification/list");
   return await res.json();
 }
 

@@ -318,11 +318,18 @@ function updateNotificationMarker() {
 }
 
 async function deleteNotification(id: number): Promise<boolean> {
-  const res = await fetch("/api/user/notifications/delete", {
+  const res = await fetch("/api/user/notification/delete", {
     method: "DELETE",
     body: JSON.stringify({
       id: id,
     }),
+  });
+  return (await res.json()).success;
+}
+
+async function deleteAllNotifications(): Promise<boolean> {
+  const res = await fetch("/api/user/notification/delete/all", {
+    method: "DELETE",
   });
   return (await res.json()).success;
 }

@@ -76,3 +76,19 @@ func DeleteUserNotificationById(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewEncoder(w).Encode(Response{Success: true, Message: "Successfully sent deletion request"})
 }
+
+func DeleteAllUserNotifications(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
+		return
+	}
+	if err := database.DeleteAllNotificationsFromUser(username); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to delete all notifications", Error: "database failure"})
+		return
+	}
+	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully deleted all notifications"})
+}
