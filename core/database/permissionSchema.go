@@ -9,6 +9,7 @@ type Permission struct {
 
 type PermissionType string
 
+// Different types of permissions
 const (
 	PermissionAuthentication          PermissionType = "authentication"
 	PermissionGetUserSwitches         PermissionType = "getUserSwitches"
@@ -21,6 +22,7 @@ const (
 	PermissionChangeSwitchPermissions PermissionType = "changeSwitchPermissions"
 	PermissionGetDebugInfo            PermissionType = "getDebugInfo"
 	PermissionChangeUsers             PermissionType = "changeUsers"
+	PermissionListUsers               PermissionType = "listUsers"
 
 	// Dangerous
 	PermissionWildCard PermissionType = "*"
@@ -93,6 +95,12 @@ var (
 			Permission:  PermissionChangeUsers,
 			Name:        "Add / Delete users",
 			Description: "Create a new user or delete users",
+		},
+		{
+			// (Admin) is allowed to list all users
+			Permission:  PermissionListUsers,
+			Name:        "List users",
+			Description: "See a list of all users",
 		},
 		{
 			// WARNING: This allows a user to do everything, should only be allowed to the `admin` user

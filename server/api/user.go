@@ -19,7 +19,7 @@ type RemoveUserRequest struct {
 }
 
 // Creates a new user and gives him a provided password
-// Request: `{"username": "x", "password": "y"}`
+// Request: `{"username": "x", "password": "y"}`, admin auth required
 func AddUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
@@ -52,6 +52,7 @@ func AddUser(w http.ResponseWriter, r *http.Request) {
 
 // Deletes a user given a valid username
 // This also needs to delete any data that depends on this user in terms of a foreign key
+// Admin auth required
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
@@ -82,7 +83,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully deleted user"})
 }
 
-// Returns the user's personal data
+// Returns the user's personal data, auth required
 func GetUserDetails(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(r)
@@ -94,8 +95,20 @@ func GetUserDetails(w http.ResponseWriter, r *http.Request) {
 	userData, err := database.GetUserByUsername(username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed get user data", Error: "database failure"})
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to get user data", Error: "database failure"})
 		return
 	}
 	json.NewEncoder(w).Encode(userData)
+}
+
+// Returns a list of users and their metadata, admin auth required
+func ListUsers(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	users, err := database.ListUsers()
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to list users", Error: "database failure"})
+		return
+	}
+	json.NewEncoder(w).Encode(users)
 }
