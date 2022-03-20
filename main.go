@@ -11,6 +11,7 @@ import (
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/core/event"
 	"github.com/MikMuellerDev/smarthome/core/hardware"
+	"github.com/MikMuellerDev/smarthome/core/homescript"
 	"github.com/MikMuellerDev/smarthome/core/user"
 	"github.com/MikMuellerDev/smarthome/core/utils"
 	"github.com/MikMuellerDev/smarthome/server/api"
@@ -21,7 +22,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const version = "0.0.4"
+const version = "0.0.5"
 
 var port = 8082
 
@@ -43,6 +44,7 @@ func main() {
 	user.InitLogger(log)
 	hardware.InitLogger(log)
 	event.InitLogger(log)
+	homescript.InitLogger(log)
 
 	// Read config file
 	if err := config.ReadConfigFile(); err != nil {

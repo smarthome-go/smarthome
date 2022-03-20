@@ -54,13 +54,14 @@ func AddUserPermission(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	modified, err := database.AddUserPermission(request.Username, request.Permission)
+	validPermission := database.DoesPermissionExist(request.Permission)
+	if !validPermission {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not remove permission from user", Error: "invalid permission type"})
+		return
+	}
+	modified, err := database.AddUserPermission(request.Username, database.PermissionType(request.Permission))
 	if err != nil {
-		if err.Error() == "permission not found error: unknown permission type" {
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			json.NewEncoder(w).Encode(Response{Success: false, Message: "could not add permission to user", Error: "invalid permission type"})
-			return
-		}
 		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to add permission", Error: "database failure"})
 		return
@@ -88,13 +89,14 @@ func RemoveUserPermission(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	modified, err := database.RemoveUserPermission(request.Username, request.Permission)
+	validPermission := database.DoesPermissionExist(request.Permission)
+	if !validPermission {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not remove permission from user", Error: "invalid permission type"})
+		return
+	}
+	modified, err := database.RemoveUserPermission(request.Username, database.PermissionType(request.Permission))
 	if err != nil {
-		if err.Error() == "permission not found error: unknown permission type" {
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			json.NewEncoder(w).Encode(Response{Success: false, Message: "could not remove permission from user", Error: "invalid permission type"})
-			return
-		}
 		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to remove permission", Error: "database failure"})
 		return

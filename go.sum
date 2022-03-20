@@ -1,3 +1,9 @@
+github.com/MikMuellerDev/homescript v0.1.1-beta h1:VH8KOyDP9Sgiwq5y3YjTCpN/8+rYMnbIIG2CjKTscoI=
+github.com/MikMuellerDev/homescript v0.1.1-beta/go.mod h1:G//I3KBaq2q+fz7mQvHoBg9ZLMPI+APuJd6HBlxv848=
+github.com/MikMuellerDev/homescript v0.2.0-beta h1:KE89iVE4gRHT9JNAfslH3RrsA9s+KRgkd5VOlKqDEgM=
+github.com/MikMuellerDev/homescript v0.2.0-beta/go.mod h1:G//I3KBaq2q+fz7mQvHoBg9ZLMPI+APuJd6HBlxv848=
+github.com/MikMuellerDev/homescript-dev v0.0.0-20220320114034-ab038230c2a1 h1:GPCIHp77iMaPJLCDCV5bZLLvJQxi1ioEotbzaHHjwVk=
+github.com/MikMuellerDev/homescript-dev v0.0.0-20220320114034-ab038230c2a1/go.mod h1:1IAAXx3jHN9ISHeHNa/lQKqQ2ov8ka5Wpt+YH9s/v1k=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/go-sql-driver/mysql v1.6.0 h1:BCTh4TKNUYmOmMUcQ3IipzF5prigylS7XXjEkfCHuOE=

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	// `mdl`` is shorter than `middleware`
+	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/server/api"
 	mdl "github.com/MikMuellerDev/smarthome/server/middleware"
 	"github.com/gorilla/mux"
@@ -28,7 +29,7 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/health", api.HealthCheck).Methods("GET")
 
 	// Debug information about the system
-	r.HandleFunc("/api/debug", mdl.ApiAuth(mdl.Perm(api.DebugInfo, "getDebugInfo"))).Methods("GET")
+	r.HandleFunc("/api/debug", mdl.ApiAuth(mdl.Perm(api.DebugInfo, database.PermissionGetDebugInfo))).Methods("GET")
 
 	// User profile (settings)
 	r.HandleFunc("/profile", mdl.Auth(userProfileGetHandler)).Methods("GET")
@@ -40,33 +41,33 @@ func NewRouter() *mux.Router {
 	//// API ////
 	r.HandleFunc("/api/power/list", api.GetSwitches).Methods("GET")
 	r.HandleFunc("/api/power/states", api.GetPowerStates).Methods("GET")
-	r.HandleFunc("/api/power/set", mdl.ApiAuth(mdl.Perm(api.PowerPostHandler, "setPower"))).Methods("POST")
-	r.HandleFunc("/api/power/list/personal", mdl.ApiAuth(mdl.Perm(api.GetUserSwitches, "getUserSwitches"))).Methods("GET")
+	r.HandleFunc("/api/power/set", mdl.ApiAuth(mdl.Perm(api.PowerPostHandler, database.PermissionSetPower))).Methods("POST")
+	r.HandleFunc("/api/power/list/personal", mdl.ApiAuth(mdl.Perm(api.GetUserSwitches, database.PermissionGetUserSwitches))).Methods("GET")
 
 	// Logs for the admin user
-	r.HandleFunc("/api/logs/delete/old", mdl.ApiAuth(mdl.Perm(api.FlushOldLogs, "deleteOldLogs"))).Methods("DELETE")
-	r.HandleFunc("/api/logs/delete/all", mdl.ApiAuth(mdl.Perm(api.FlushAllLogs, "deleteAllLogs"))).Methods("DELETE")
-	r.HandleFunc("/api/logs", mdl.ApiAuth(mdl.Perm(api.ListLogs, "listLogs"))).Methods("GET")
+	r.HandleFunc("/api/logs/delete/old", mdl.ApiAuth(mdl.Perm(api.FlushOldLogs, database.PermissionDeleteOldLogs))).Methods("DELETE")
+	r.HandleFunc("/api/logs/delete/all", mdl.ApiAuth(mdl.Perm(api.FlushAllLogs, database.PermissionDeleteAllLogs))).Methods("DELETE")
+	r.HandleFunc("/api/logs", mdl.ApiAuth(mdl.Perm(api.ListLogs, database.PermissionListLogs))).Methods("GET")
 
 	// Customization for the user
 	// Profile picture upload test
 	r.HandleFunc("/api/user/avatar", mdl.ApiAuth(getAvatar)).Methods("GET")
-	r.HandleFunc("/api/user/avatar/upload", mdl.ApiAuth(mdl.Perm(handleAvatarUpload, "changeAvatar"))).Methods("POST")
-	r.HandleFunc("/api/user/avatar/delete", mdl.ApiAuth(mdl.Perm(deleteAvatar, "changeAvatar"))).Methods("DELETE")
+	r.HandleFunc("/api/user/avatar/upload", mdl.ApiAuth(mdl.Perm(handleAvatarUpload, database.PermissionChangeAvatar))).Methods("POST")
+	r.HandleFunc("/api/user/avatar/delete", mdl.ApiAuth(mdl.Perm(deleteAvatar, database.PermissionChangeAvatar))).Methods("DELETE")
 
 	// Permissions
 	r.HandleFunc("/api/user/permissions/personal", mdl.ApiAuth(api.GetUserPermissions))
-	r.HandleFunc("/api/user/permissions/add", mdl.ApiAuth(mdl.Perm(api.AddUserPermission, "changeUserPermissions"))).Methods("PUT")
-	r.HandleFunc("/api/user/permissions/delete", mdl.ApiAuth(mdl.Perm(api.RemoveUserPermission, "changeUserPermissions"))).Methods("DELETE")
+	r.HandleFunc("/api/user/permissions/add", mdl.ApiAuth(mdl.Perm(api.AddUserPermission, database.PermissionChangeUserPermissions))).Methods("PUT")
+	r.HandleFunc("/api/user/permissions/delete", mdl.ApiAuth(mdl.Perm(api.RemoveUserPermission, database.PermissionChangeUserPermissions))).Methods("DELETE")
 
 	// Switch Permissions
-	r.HandleFunc("/api/user/permissions/switch/add", mdl.ApiAuth(mdl.Perm(api.AddSwitchPermission, "changeSwitchPermissions"))).Methods("PUT")
-	r.HandleFunc("/api/user/permissions/switch/delete", mdl.ApiAuth(mdl.Perm(api.RemoveSwitchPermission, "changeSwitchPermissions"))).Methods("DELETE")
+	r.HandleFunc("/api/user/permissions/switch/add", mdl.ApiAuth(mdl.Perm(api.AddSwitchPermission, database.PermissionChangeSwitchPermissions))).Methods("PUT")
+	r.HandleFunc("/api/user/permissions/switch/delete", mdl.ApiAuth(mdl.Perm(api.RemoveSwitchPermission, database.PermissionChangeSwitchPermissions))).Methods("DELETE")
 
 	// Creating and removing users
 	// TODO :list users
-	r.HandleFunc("/api/user/add", mdl.ApiAuth(mdl.Perm(api.AddUser, "changeUsers"))).Methods("POST")
-	r.HandleFunc("/api/user/delete", mdl.ApiAuth(mdl.Perm(api.DeleteUser, "changeUsers"))).Methods("DELETE")
+	r.HandleFunc("/api/user/add", mdl.ApiAuth(mdl.Perm(api.AddUser, database.PermissionChangeUsers))).Methods("POST")
+	r.HandleFunc("/api/user/delete", mdl.ApiAuth(mdl.Perm(api.DeleteUser, database.PermissionChangeUsers))).Methods("DELETE")
 
 	// Get personal details
 	r.HandleFunc("/api/user/data", mdl.ApiAuth(api.GetUserDetails)).Methods("GET")

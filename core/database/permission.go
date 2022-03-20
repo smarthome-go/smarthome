@@ -1,7 +1,6 @@
 package database
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -83,12 +82,7 @@ func initializePermissions() error {
 
 // Adds a permission to a user, if database fails, then an error is returned
 // Does not check for username so additional checks should be completed beforehand
-func AddUserPermission(username string, permission string) (bool, error) {
-	if !doesPermissionExist(permission) {
-		log.Warn("Will not add permission: Unknown permission type: ", permission)
-		// do not change error message: used in api
-		return false, errors.New("permission not found error: unknown permission type")
-	}
+func AddUserPermission(username string, permission PermissionType) (bool, error) {
 	alreadyHasPermission, err := UserHasPermission(username, permission)
 	if err != nil {
 		return false, err
@@ -114,11 +108,7 @@ func AddUserPermission(username string, permission string) (bool, error) {
 // Attempts to remove a provided permission from a provided user
 // Fails if permission does not exist or if the database fails
 // Warns and returns `false` for the `modified` boolean the user does not have the permission
-func RemoveUserPermission(username string, permission string) (bool, error) {
-	if !doesPermissionExist(permission) {
-		log.Warn("Will not remove permission: Unknown permission type: ", permission)
-		return false, errors.New("permission not found error: unknown permission type")
-	}
+func RemoveUserPermission(username string, permission PermissionType) (bool, error) {
 	hasPermission, err := UserHasPermission(username, permission)
 	if err != nil {
 		return false, err
@@ -184,10 +174,10 @@ func GetUserPermissions(username string) ([]string, error) {
 }
 
 // Checks the validity of a given permission string
-func doesPermissionExist(permission string) bool {
+func DoesPermissionExist(permission string) bool {
 	permissions := GetPermissions()
 	for _, permissionItem := range permissions {
-		if permissionItem.Permission == permission {
+		if string(permissionItem.Permission) == permission {
 			return true
 		}
 	}
@@ -195,23 +185,16 @@ func doesPermissionExist(permission string) bool {
 }
 
 // Checks if a provided user is in possession of a provided permission, can return an error, if the database fails
-func UserHasPermission(username string, permission string) (bool, error) {
+func UserHasPermission(username string, permission PermissionType) (bool, error) {
 	existentPermissions, err := GetUserPermissions(username)
 	if err != nil {
 		log.Error("Checking user permissions failed: Could not retrive permissions: ", err.Error())
 		return false, err
 	}
 	for _, permissionItem := range existentPermissions {
-		if permissionItem == "*" || permissionItem == permission {
-			if !doesPermissionExist(permission) {
-				log.Warn(fmt.Sprintf("failed to check permission `%s` for user `%s`: permission does not exist", permission, username))
-				return false, nil
-			}
+		if permissionItem == "*" || permissionItem == string(permission) {
 			return true, nil
 		}
-	}
-	if !doesPermissionExist(permission) {
-		log.Warn(fmt.Sprintf("failed to check permission `%s` for user `%s`: permission does not exist", permission, username))
 	}
 	return false, nil
 }

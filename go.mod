@@ -11,7 +11,10 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 )
 
+require github.com/MikMuellerDev/homescript v0.2.0-beta // indirect
+
 require (
+	github.com/MikMuellerDev/homescript-dev v0.0.0-20220320114034-ab038230c2a1
 	github.com/gorilla/securecookie v1.1.1
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
 	golang.org/x/image v0.0.0-20220302094943-723b81ca9867

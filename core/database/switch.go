@@ -181,6 +181,7 @@ func SetPowerState(switchId string, isPoweredOn bool) (bool, error) {
 }
 
 // Returns a list of PowerStates
+// Can return a database error
 func GetPowerStates() ([]PowerState, error) {
 	res, err := db.Query(`
 	SELECT Id, Power FROM switch
@@ -199,6 +200,27 @@ func GetPowerStates() ([]PowerState, error) {
 		powerStates = append(powerStates, powerState)
 	}
 	return powerStates, nil
+}
+
+// Returns the power state of a given switch as a boolean
+// Does not check if the switch exists.
+// If the switch does not exist, an error is returned
+func GetPowerStateOfSwitch(switchId string) (bool, error) {
+	query, err := db.Prepare(`
+	SELECT Power
+	FROM switch
+	WHERE Id=?
+	`)
+	if err != nil {
+		log.Error("Failed to get switch power state: preparing query failed: ", err.Error())
+		return false, err
+	}
+	var powerState bool
+	err = query.QueryRow(switchId).Scan(&powerState)
+	if err != nil {
+		log.Error("Failed to get switch power state: executing query failed: ", err.Error())
+	}
+	return powerState, err
 }
 
 // Returns (exists, error), err when the database fails
