@@ -13,8 +13,8 @@ const (
 	PermissionAuthentication          PermissionType = "authentication"
 	PermissionGetUserSwitches         PermissionType = "getUserSwitches"
 	PermissionSetPower                PermissionType = "setPower"
-	PermissionDeleteOldLogs           PermissionType = "deleteOldLogs"
-	PermissionDeleteAllLogs           PermissionType = "deleteAllLogs"
+	PermissionAddLogEvent             PermissionType = "addLogEvent"
+	PermissionDeleteLogs              PermissionType = "deleteLogs"
 	PermissionListLogs                PermissionType = "listLogs"
 	PermissionChangeAvatar            PermissionType = "changeAvatar"
 	PermissionChangeUserPermissions   PermissionType = "changeUserPermissions"
@@ -26,8 +26,8 @@ const (
 	PermissionWildCard PermissionType = "*"
 )
 
-func GetPermissions() []Permission {
-	permissions := []Permission{
+var (
+	Permissions = []Permission{
 		{
 			// User is allowed to authenticate and login, if disabled, a user is `disabled`
 			Permission:  PermissionAuthentication,
@@ -47,16 +47,16 @@ func GetPermissions() []Permission {
 			Description: "Interact with switches",
 		},
 		{
-			// (Admin) is allowed to delete logs older than 30 days
-			Permission:  PermissionDeleteOldLogs,
-			Name:        "Flush Old Logs",
-			Description: "Delete logs events which are older than 30 days",
+			// (Admin) is allowed to use the internal logging system
+			Permission:  PermissionAddLogEvent,
+			Name:        "Add Log Event",
+			Description: "Use the internal logging system",
 		},
 		{
-			// (Admin) is allowed to delete all logs
-			Permission:  PermissionDeleteAllLogs,
-			Name:        "Flush All Logs",
-			Description: "Delete all log event records",
+			// (Admin) is allowed to delete logs older than 30 days
+			Permission:  PermissionDeleteLogs,
+			Name:        "Flush Logs All or Old",
+			Description: "Delete logs events which are older than 30 days or delete all log events",
 		},
 		{
 			// (Admin) is allowed to request logs
@@ -101,5 +101,4 @@ func GetPermissions() []Permission {
 			Description: "Allows all permissions",
 		},
 	}
-	return permissions
-}
+)

@@ -60,8 +60,7 @@ func initializePermissions() error {
 		log.Error("Failed to create permission: preparing query failed: ", err.Error())
 		return err
 	}
-	permissions := GetPermissions()
-	for _, permission := range permissions {
+	for _, permission := range Permissions {
 		res, err := query.Exec(permission.Permission, permission.Name, permission.Description)
 		if err != nil {
 			log.Error("Failed to create permission: executing query failed: ", err.Error())
@@ -175,8 +174,7 @@ func GetUserPermissions(username string) ([]string, error) {
 
 // Checks the validity of a given permission string
 func DoesPermissionExist(permission string) bool {
-	permissions := GetPermissions()
-	for _, permissionItem := range permissions {
+	for _, permissionItem := range Permissions {
 		if string(permissionItem.Permission) == permission {
 			return true
 		}
