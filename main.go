@@ -22,11 +22,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const version = "0.0.5"
-
 var port = 8082
 
 func main() {
+	utils.Version = "0.0.5"
+
 	// Create logger
 	log, err := utils.NewLogger(logrus.TraceLevel)
 	if err != nil {
@@ -151,7 +151,7 @@ func main() {
 	}
 
 	event.Info("System Started", "The Smarthome server completed startup.")
-	log.Info(fmt.Sprintf("Smarthome v%s is running.", version))
+	log.Info(fmt.Sprintf("Smarthome v%s is running.", utils.Version))
 	if err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
 		panic(err)
 	}
