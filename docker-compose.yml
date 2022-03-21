@@ -27,7 +27,10 @@ services:
     environment:
       - MARIADB_ROOT_PASSWORD=password
       - TZ=Europe/Berlin
-      - MARIADDB_DATABASE=smarthome
-      - MARIADDB_USER=smarthome
-      - MARIADDB_PASSWORD=password
+      - MARIADB_DATABASE=smarthome
+      - MARIADB_USER=smarthome
+      - MARIADB_PASSWORD=password
     restart: unless-stopped
+  
+volumes:
+  smarthome_data:

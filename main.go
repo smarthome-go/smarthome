@@ -25,7 +25,7 @@ import (
 var port = 8082
 
 func main() {
-	utils.Version = "0.0.5"
+	utils.Version = "0.0.6"
 
 	// Create logger
 	log, err := utils.NewLogger(logrus.TraceLevel)
@@ -51,6 +51,9 @@ func main() {
 		log.Fatal("Failed to read config file: startup halted: ", err.Error())
 	}
 	configStruct := config.GetConfig()
+	if configStruct.Server.Port != 0 {
+		port = int(configStruct.Server.Port)
+	}
 	log.Debug("Loaded and successfully initialized config")
 
 	// Environment variables

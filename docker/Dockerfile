@@ -1,6 +1,7 @@
 FROM amd64/debian:stable-slim
 
 ADD ./app /app
+ADD homescript /bin/
 WORKDIR /app/
 
 RUN export DEBIAN_FRONTEND=noninteractive && apt update && apt install -yq \

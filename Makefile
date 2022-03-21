@@ -1,9 +1,14 @@
 appname := smarthome
 workingdir := smarthome
 sources := $(wildcard *.go)
+homescript_cli_version := v0.2.2-beta
 
-build = GOOS=$(1) GOARCH=$(2) go build -o ./bin/$(appname)$(3) $(4)
-tar = mkdir -p build && cd ../ && tar -cvzf ./$(appname)_$(1)_$(2).tar.gz $(applicationDir)/bin $(applicationDir)/web/out $(applicationDir)/web/html $(applicationDir)/web/assets && mv $(appname)_$(1)_$(2).tar.gz $(applicationDir)/build
+build = GOOS=$(1) GOARCH=$(2) go build -o $(appname) $(4)
+tar = mkdir -p build && cd ../ && tar -cvzf ./$(appname)_$(1)_$(2).tar.gz $(workingdir)/$(appname) $(workingdir)/web/out $(workingdir)/web/html $(workingdir)/web/assets && mv $(appname)_$(1)_$(2).tar.gz $(workingdir)/build
+
+.PHONY: all linux
+
+all:	linux
 
 # Run
 run: web
@@ -15,8 +20,12 @@ run-full: web mysql
 # Cleaning
 clean: cleanweb
 	rm -rf app
+	rm -rf bin
 	rm -rf log
 	rm -rf docker/app
+	rm -rf docker/homescript
+	rm -rf docker/homescript_linux_amd64.tar.gz
+	rm -rf docker/smarthome
 
 cleanweb:
 	rm -rf web/out
@@ -39,8 +48,10 @@ docker: cleanall web
 	# rsync -rv --exclude=data/avatars data docker/app/
 	rsync -rv --exclude=web/src web docker/app/
 	cp smarthome docker/app/
-	sudo systemctl start docker
-	cd docker && sudo docker build . -t mikmuellerdev/smarthome
+	cd docker && wget "https://github.com/MikMuellerDev/homescript-cli/releases/download/$(homescript_cli_version)/homescript_linux_amd64.tar.gz"
+	cd docker && tar -xvf homescript_linux_amd64.tar.gz
+	cd docker && mv bin/homescript .
+	cd docker && docker build . -t mikmuellerdev/smarthome
 
 web: cleanweb
 	cd web && npm run build
