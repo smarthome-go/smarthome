@@ -116,3 +116,22 @@ func GetPowerStates(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewEncoder(w).Encode(powerStates)
 }
+
+// Returns the wanted response for the frontend
+func GetUserRoomsWithSwitches(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(r)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
+		return
+	}
+	rooms, err := database.ListPersonalRoomsAll(username)
+	if err != nil {
+		log.Error("Could not list user rooms: database failure: ", err.Error())
+		w.WriteHeader(http.StatusServiceUnavailable)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "database error"})
+		return
+	}
+	json.NewEncoder(w).Encode(rooms)
+}

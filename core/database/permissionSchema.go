@@ -12,7 +12,6 @@ type PermissionType string
 // Different types of permissions
 const (
 	PermissionAuthentication          PermissionType = "authentication"
-	PermissionGetUserSwitches         PermissionType = "getUserSwitches"
 	PermissionSetPower                PermissionType = "setPower"
 	PermissionAddLogEvent             PermissionType = "addLogEvent"
 	PermissionDeleteLogs              PermissionType = "deleteLogs"
@@ -35,12 +34,6 @@ var (
 			Permission:  PermissionAuthentication,
 			Name:        "Authentication",
 			Description: "Allows the user to authenticate",
-		},
-		{
-			// User is allowed to request a list of their personal switches (which they have access to)
-			Permission:  PermissionGetUserSwitches,
-			Name:        "Get Personal Switches",
-			Description: "Get all allowed switches for current user.",
 		},
 		{
 			// User is allowed to request power jobs, interact with outlets, still dependent on switch permissions

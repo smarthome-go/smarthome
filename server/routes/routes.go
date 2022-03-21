@@ -23,7 +23,7 @@ func NewRouter() *mux.Router {
 	// ApiAuth: middleware that checks if the user is logged in for API request, will return JSON errors if the user is not logged in
 	r.HandleFunc("/", mdl.Auth(indexGetHandler)).Methods("GET")
 	r.HandleFunc("/dash", mdl.Auth(dashGetHandler)).Methods("GET")
-	r.HandleFunc("/light", mdl.Auth(dashGetHandler)).Methods("GET")
+	r.HandleFunc("/power", mdl.Auth(powerGetHandler)).Methods("GET")
 
 	// Healthcheck for uptime monitoring
 	r.HandleFunc("/health", api.HealthCheck).Methods("GET")
@@ -39,10 +39,14 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/login", loginPostHandler).Methods("POST")
 
 	//// API ////
+	// Power
 	r.HandleFunc("/api/power/list", api.GetSwitches).Methods("GET")
 	r.HandleFunc("/api/power/states", api.GetPowerStates).Methods("GET")
 	r.HandleFunc("/api/power/set", mdl.ApiAuth(mdl.Perm(api.PowerPostHandler, database.PermissionSetPower))).Methods("POST")
-	r.HandleFunc("/api/power/list/personal", mdl.ApiAuth(mdl.Perm(api.GetUserSwitches, database.PermissionGetUserSwitches))).Methods("GET")
+	r.HandleFunc("/api/power/list/personal", mdl.ApiAuth(api.GetUserSwitches)).Methods("GET")
+
+	// Rooms
+	r.HandleFunc("/api/room/list", mdl.ApiAuth(api.GetUserRoomsWithSwitches)).Methods("GET")
 
 	// Logs for the admin user
 	r.HandleFunc("/api/logs/delete/old", mdl.ApiAuth(mdl.Perm(api.FlushOldLogs, database.PermissionDeleteLogs))).Methods("DELETE")

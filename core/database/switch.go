@@ -130,7 +130,12 @@ func ListSwitches() ([]Switch, error) {
 // Same as `ListSwitches()` but takes a user sting as a filter
 func ListUserSwitches(username string) ([]Switch, error) {
 	query, err := db.Prepare(`
-	SELECT Id, Name, RoomId FROM switch JOIN hasSwitchPermission ON hasSwitchPermission.Switch=switch.Id WHERE hasSwitchPermission.Username=?`)
+	SELECT Id, Name, RoomId
+	FROM switch
+	JOIN hasSwitchPermission
+	ON hasSwitchPermission.Switch=switch.Id
+	WHERE hasSwitchPermission.Username=?`,
+	)
 	if err != nil {
 		log.Error("Could not list user switches: preparing query failed.", err.Error())
 		return []Switch{}, err

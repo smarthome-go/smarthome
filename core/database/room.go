@@ -2,6 +2,7 @@ package database
 
 import "fmt"
 
+// Initializes the table containing the rooms
 func createRoomTable() error {
 	query := `
 	CREATE TABLE
@@ -20,6 +21,7 @@ func createRoomTable() error {
 	return nil
 }
 
+// Creates a new room
 func CreateRoom(RoomId string, Name string, Description string) error {
 	query, err := db.Prepare(`
 	INSERT INTO
@@ -48,4 +50,81 @@ func CreateRoom(RoomId string, Name string, Description string) error {
 	}
 	defer query.Close()
 	return nil
+}
+
+// Returns a list of rooms, excludes metadata like switches and cameras
+func ListRooms() ([]Room, error) {
+	query := `
+	SELECT
+	Id, Name, Description
+	FROM room
+	`
+	res, err := db.Query(query)
+	if err != nil {
+		log.Error("Failed to list rooms: executing statement failed: ", err.Error())
+		return nil, err
+	}
+	rooms := make([]Room, 0)
+	for res.Next() {
+		var roomTemp Room
+		if err := res.Scan(&roomTemp.Id, &roomTemp.Name, &roomTemp.Description); err != nil {
+			log.Error("Failed to list rooms: failed to scan results: ", err.Error())
+			return nil, err
+		}
+		rooms = append(rooms, roomTemp)
+	}
+	return rooms, nil
+}
+
+func listPersonalRoomsWithoutMetadata(username string) ([]Room, error) {
+	query := `
+	SELECT DISTINCT
+	room.Id, room.Name, room.Description
+	FROM room
+	JOIN switch
+	ON switch.RoomId=room.Id
+	JOIN hasSwitchPermission
+	ON switch.Id=hasSwitchPermission.Switch
+	`
+	res, err := db.Query(query)
+	if err != nil {
+		log.Error("Failed to list personal rooms: executing statement failed: ", err.Error())
+		return nil, err
+	}
+	rooms := make([]Room, 0)
+	for res.Next() {
+		roomTemp := Room{
+			Cameras:  make([]Camera, 0),
+			Switches: make([]Switch, 0),
+		}
+		if err := res.Scan(&roomTemp.Id, &roomTemp.Name, &roomTemp.Description); err != nil {
+			log.Error("Failed to list personal rooms: failed to scan results: ", err.Error())
+			return nil, err
+		}
+		rooms = append(rooms, roomTemp)
+	}
+	return rooms, nil
+}
+
+// Returns a complete list of rooms, includes metadata like switches
+func ListPersonalRoomsAll(username string) ([]Room, error) {
+	rooms, err := listPersonalRoomsWithoutMetadata(username)
+	if err != nil {
+		return nil, err
+	}
+	switches, err := ListUserSwitches(username)
+	if err != nil {
+		return nil, err
+	}
+	for index, room := range rooms {
+		rooms[index].Switches = make([]Switch, 0)
+		for _, switchItem := range switches {
+			if switchItem.RoomId == room.Id {
+				rooms[index].Switches = append(rooms[index].Switches, switchItem)
+			}
+		}
+	}
+	fmt.Println(switches)
+	fmt.Println(rooms)
+	return rooms, nil
 }

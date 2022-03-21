@@ -17,6 +17,11 @@ func dashGetHandler(w http.ResponseWriter, r *http.Request) {
 	templates.ExecuteTemplate(w, "dash.html", http.StatusOK)
 }
 
+// Serves HTML for power
+func powerGetHandler(w http.ResponseWriter, r *http.Request) {
+	templates.ExecuteTemplate(w, "power.html", http.StatusOK)
+}
+
 // If not user is logged in, it serves the HTML for the login page
 // Otherwise the user is redirected to the dashboard
 func loginGetHandler(w http.ResponseWriter, r *http.Request) {
