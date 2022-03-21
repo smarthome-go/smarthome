@@ -15,23 +15,25 @@ import (
 type Executor struct {
 	ScriptName string
 	Username   string
+	Output     string
 }
 
-func (self Executor) Exit(code int) {
+func (self *Executor) Exit(code int) {
 	// TODO: implement an actual quit
 }
 
 // Prints to the console
-func (self Executor) Print(args ...string) {
+func (self *Executor) Print(args ...string) {
 	var output string
 	for _, arg := range args {
+		self.Output += arg
 		output += arg
 	}
 	log.Info(fmt.Sprintf("[Homescript] script: '%s' user: '%s': %s", self.ScriptName, self.Username, output))
 }
 
 // Returns a boolean if the requested switch is on or off
-func (self Executor) SwitchOn(switchId string) (bool, error) {
+func (self *Executor) SwitchOn(switchId string) (bool, error) {
 	powerState, err := hardware.GetPowerState(switchId)
 	if err != nil {
 		log.Error(fmt.Sprintf("[Homescript] ERROR: script: '%s' user: '%s': failed to read power state: %s", self.ScriptName, self.Username, err.Error()))
@@ -40,7 +42,7 @@ func (self Executor) SwitchOn(switchId string) (bool, error) {
 }
 
 // Changes the power state on said switch
-func (self Executor) Switch(switchId string, powerOn bool) error {
+func (self *Executor) Switch(switchId string, powerOn bool) error {
 	err := hardware.SetSwitchPowerAll(switchId, powerOn, self.Username)
 	if err != nil {
 		log.Error(fmt.Sprintf("[Homescript] ERROR: script: '%s' user: '%s': failed to set power: %s", self.ScriptName, self.Username, err.Error()))
@@ -55,12 +57,12 @@ func (self Executor) Switch(switchId string, powerOn bool) error {
 }
 
 // Sends a mode request to a given radiGo server
-func (self Executor) Play(server string, mode string) error {
+func (self *Executor) Play(server string, mode string) error {
 	return errors.New("The feature 'radiGo' is not yet implemented")
 }
 
 // Sends a notification to the current user
-func (self Executor) Notify(
+func (self *Executor) Notify(
 	title string,
 	description string,
 	level interpreter.LogLevel,
@@ -78,7 +80,7 @@ func (self Executor) Notify(
 }
 
 // Adds a log entry to the internal logging system
-func (self Executor) Log(
+func (self *Executor) Log(
 	title string,
 	description string,
 	level interpreter.LogLevel,
@@ -113,24 +115,24 @@ func (self Executor) Log(
 }
 
 // Returns the name of the user who is currently running the script
-func (self Executor) GetUser() string {
+func (self *Executor) GetUser() string {
 	return self.Username
 }
 
 // TODO: Will later be implemented, should return the weather as a human-readable string
-func (self Executor) GetWeather() (string, error) {
+func (self *Executor) GetWeather() (string, error) {
 	log.Error(fmt.Sprintf("[Homescript] ERROR: script: '%s' user: '%s': weather is not implemented yet", self.ScriptName, self.Username))
 	return "rainy", nil
 }
 
 // TODO: Will later be implemented, should return the temperature in Celsius
-func (self Executor) GetTemperature() (int, error) {
+func (self *Executor) GetTemperature() (int, error) {
 	log.Error(fmt.Sprintf("[Homescript] ERROR: script: '%s' user: '%s': temperature is not implemented yet", self.ScriptName, self.Username))
 	return 42, nil
 }
 
 // Returns the current time variables
-func (self Executor) GetDate() (int, int, int, int, int, int) {
+func (self *Executor) GetDate() (int, int, int, int, int, int) {
 	now := time.Now()
 	return now.Year(), int(now.Month()), now.Day(), now.Hour(), now.Minute(), now.Second()
 }

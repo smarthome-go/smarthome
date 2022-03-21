@@ -11,7 +11,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 )
 
-require github.com/MikMuellerDev/homescript v0.2.0-beta // indirect
+require github.com/MikMuellerDev/homescript v0.2.1-beta // indirect
 
 require (
 	github.com/MikMuellerDev/homescript-dev v0.0.0-20220320114034-ab038230c2a1
