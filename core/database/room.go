@@ -124,7 +124,5 @@ func ListPersonalRoomsAll(username string) ([]Room, error) {
 			}
 		}
 	}
-	fmt.Println(switches)
-	fmt.Println(rooms)
 	return rooms, nil
 }

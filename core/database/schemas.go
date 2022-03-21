@@ -24,9 +24,10 @@ type User struct {
 
 // Identified by a Switch Id, has a name and belongs to a room
 type Switch struct {
-	Id     string `json:"id"`
-	Name   string `json:"name"`
-	RoomId string `json:"roomId"`
+	Id      string `json:"id"`
+	Name    string `json:"name"`
+	RoomId  string `json:"roomId"`
+	PowerOn bool   `json:"powerOn"`
 }
 
 //Contains the switch id and a matching boolean

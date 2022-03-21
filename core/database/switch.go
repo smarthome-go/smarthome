@@ -130,7 +130,7 @@ func ListSwitches() ([]Switch, error) {
 // Same as `ListSwitches()` but takes a user sting as a filter
 func ListUserSwitches(username string) ([]Switch, error) {
 	query, err := db.Prepare(`
-	SELECT Id, Name, RoomId
+	SELECT Id, Name, RoomId, Power
 	FROM switch
 	JOIN hasSwitchPermission
 	ON hasSwitchPermission.Switch=switch.Id
@@ -148,7 +148,7 @@ func ListUserSwitches(username string) ([]Switch, error) {
 	switches := make([]Switch, 0)
 	for res.Next() {
 		var switchItem Switch
-		if err := res.Scan(&switchItem.Id, &switchItem.Name, &switchItem.RoomId); err != nil {
+		if err := res.Scan(&switchItem.Id, &switchItem.Name, &switchItem.RoomId, &switchItem.PowerOn); err != nil {
 			log.Error("Could not list user switches: Failed to scan results: ", err.Error())
 		}
 		switches = append(switches, switchItem)
