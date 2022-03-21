@@ -18,12 +18,8 @@ func createUserTable() error {
 		Firstname VARCHAR(20) DEFAULT " ",
 		Surname VARCHAR(20)   DEFAULT " ", 
 		PrimaryColor CHAR(7)  DEFAULT "#ff00ff",
-		PrimaryRoomId VARCHAR(30),
 		Password text,
-		AvatarPath text,
-		CONSTRAINT UserPrimaryRoomId
-		FOREIGN KEY (PrimaryRoomId)
-		REFERENCES room(Id)
+		AvatarPath text
 	)
 	`
 	_, err := db.Exec(query)

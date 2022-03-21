@@ -19,9 +19,6 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 		return err
 	}
 	db = dbTemp
-	if err := createRoomTable(); err != nil {
-		return err
-	}
 	if err := createUserTable(); err != nil {
 		return err
 	}
@@ -32,6 +29,9 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 		return err
 	}
 	if err := createHasPermissionTable(); err != nil {
+		return err
+	}
+	if err := createRoomTable(); err != nil {
 		return err
 	}
 	if err := createSwitchTable(); err != nil {
