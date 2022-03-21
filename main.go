@@ -154,7 +154,7 @@ func main() {
 	}
 
 	event.Info("System Started", "The Smarthome server completed startup.")
-	log.Info(fmt.Sprintf("Smarthome v%s is running.", utils.Version))
+	log.Info(fmt.Sprintf("Smarthome v%s is running on port %d", utils.Version, port))
 	if err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
 		panic(err)
 	}
