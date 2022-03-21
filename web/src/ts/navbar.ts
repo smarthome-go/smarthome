@@ -264,9 +264,9 @@ async function showNotificationDrawer() {
           element.style.height = "0";
           element.style.padding = "0";
           element.style.opacity = "0";
-          await sleep(100)
+          await sleep(20)
           container.removeChild(container.firstChild);
-          await sleep(100)
+          await sleep(20)
         }
         addDoneMarker()
       }
