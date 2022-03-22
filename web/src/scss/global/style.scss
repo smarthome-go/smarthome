@@ -27,6 +27,10 @@ main {
   @media (min-width: 1500px) {
     margin-left: 13rem;
   }
+
+  @media (max-width: 47rem) {
+    margin-left: 0;
+  }
 }
 
 h1,

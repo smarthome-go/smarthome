@@ -7,8 +7,11 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-
   padding-left: 3rem;
+
+  @media (max-width: 47rem) {
+    margin-top: 4rem;
+  }
 
   &__option {
     border-radius: 0.4rem;
@@ -35,14 +38,59 @@
   position: fixed;
   margin-top: 3rem;
   height: calc(100% - 3rem);
-  width: 100%;
   display: flex;
+
+  @media (max-width: 47rem) {
+    position: absolute;
+    flex-direction: column;
+  }
 }
 
 #switches {
-  width: 50%;
+  width: 75%;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 1rem;
+  padding: 2rem;
+
+  @media (max-width: 47rem) {
+    width: 100%;
+  }
+
+  .switch-outer {
+    height: 3rem;
+    min-width: 20rem;
+    border-radius: 0.3rem;
+    padding: 1rem;
+    gap: 1rem;
+    display: flex;
+    align-items: center;
+  }
 }
 
 #cameras {
-  width: 50%;
+  width: 25%;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+
+  @media (max-width: 47rem) {
+    width: 100%;
+    padding: 0;
+  }
+
+  .camera {
+    width: 90%;
+    min-width: 10rem;
+
+    @media (max-width: 47rem) {
+      min-width: 10rem;
+    }
+
+    height: 14rem;
+    border-radius: 0.4rem;
+  }
 }

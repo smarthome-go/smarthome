@@ -25,9 +25,13 @@ function setCurrentRoom(room: Room, rooms: Room[]) {
   const roomNavBar = document.getElementById("room-nav") as HTMLDivElement;
 
   const switches = document.getElementById("switches") as HTMLDivElement;
+  while (switches.firstChild) {
+    switches.removeChild(switches.firstChild)
+  }
 
   for (let switchItem of room.switches) {
     const innerContainer = document.createElement("div");
+    innerContainer.className = "switch-outer threeDp"
 
     let switchL;
     const switchE = document.createElement("input");
@@ -50,9 +54,13 @@ function setCurrentRoom(room: Room, rooms: Room[]) {
     innerContainer.appendChild(labelText);
 
     switchE.addEventListener("change", async function () {
-      console.log;
+      console.log(switchE.checked);
     });
 
+    const switchLabel = document.createElement("span")
+    switchLabel.innerHTML = switchItem.name
+
+    innerContainer.appendChild(switchLabel)
     switchDiv.appendChild(innerContainer)
   }
 
