@@ -25,37 +25,83 @@ function createRoomDiv(room: Room): HTMLDivElement {
   return main;
 }
 
-function displayCurrent(rooms: Room[]) {
-    const main = document.getElementsByTagName("main")[0] as HTMLDivElement;
-    const currentRoom = window.location.href.split("/").pop()
-    if (currentRoom != "default") {
-        for (let room of rooms) {
-            if (room.id == currentRoom) {
-                const roomDiv = createRoomDiv(room);
-                main.appendChild(roomDiv)
-                console.log("Found current room");
-                return
-            }
-        }
-    }
-    let roomWithMaxSwitches: Room = {
-        id: "",
-        description: "",
-        name: "",
-        switches: [],
-    }
-    for (let room of rooms) {
-        if (room.switches.length > roomWithMaxSwitches.switches.length) {
-            roomWithMaxSwitches = room
-        }
-    }
+function setCurrentRoom(room: Room, rooms: Room[]) {
+  window.localStorage.setItem("current-room", room.id);
+  const main = document.getElementById("current-room") as HTMLDivElement;
+  const roomNavBar = document.getElementById("room-nav") as HTMLDivElement;
+  while (main.firstChild) {
+    main.removeChild(main.firstChild);
+  }
 
-    console.log("Using fallback room with maximum number of switches");
-    const roomDiv = createRoomDiv(roomWithMaxSwitches);
-    main.appendChild(roomDiv)
+  const roomDiv = createRoomDiv(room);
+  main.appendChild(roomDiv);
+
+  while (roomNavBar.firstChild) {
+    roomNavBar.removeChild(roomNavBar.firstChild);
+  }
+
+  for (let roomItem of rooms) {
+    const optionText = document.createElement("span") as HTMLSpanElement;
+    optionText.innerText = roomItem.name;
+
+    const option = document.createElement("div");
+    option.className = "room-nav__option";
+    if (roomItem.id == room.id) {
+      option.classList.add("active");
+    } else {
+      option.onclick = () => {
+        setCurrentRoom(roomItem, rooms);
+      };
+    }
+    option.appendChild(optionText);
+
+    roomNavBar.appendChild(option);
+  }
 }
-
 addLoadEvent(async () => {
   const rooms = await getRooms();
-  displayCurrent(rooms)
+
+  const main = document.getElementById("current-room") as HTMLDivElement;
+
+  const currentRoom = window.localStorage.getItem("current-room");
+  if (currentRoom != null) {
+    for (let room of rooms) {
+      if (room.id == currentRoom) {
+        setCurrentRoom(room, rooms);
+        return
+      }
+    }
+    setCurrentRoom(rooms[0], rooms);
+  } else {
+    let roomWithMaxSwitches: Room = {
+      id: "",
+      description: "",
+      name: "",
+      switches: [],
+    };
+    for (let room of rooms) {
+      if (room.switches.length > roomWithMaxSwitches.switches.length) {
+        roomWithMaxSwitches = room;
+      }
+    }
+    setCurrentRoom(roomWithMaxSwitches, rooms);
+  }
+
+  // const roomNavBar = document.getElementById("room-nav") as HTMLDivElement
+  // for (let room of rooms) {
+  //   const optionText = document.createElement("span") as HTMLSpanElement
+  //   optionText.innerText = room.name
+
+  //   const option = document.createElement("div")
+  //   option.className = "room-nav__option"
+  //   if (room.id == roomWithMaxSwitches.id) {
+  //     option.classList.add("active")
+  //   } else {
+  //     option.onclick = () => {
+  //       setCurrentRoom(room, rooms)
+  //     }
+  //   }
+  //   option.appendChild(optionText)
+
+  // roomNavBar.appendChild(option)
 });

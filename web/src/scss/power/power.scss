@@ -1,0 +1,42 @@
+.room-nav {
+  position: fixed;
+  height: 3rem;
+  width: 100%;
+  background-color: var(--clr-navbar-bg);
+  z-index: -1000;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  padding-left: 3rem;
+
+  &__option {
+    border-radius: 0.4rem;
+    cursor: pointer;
+    min-width: 5rem;
+    padding: 0 0.5rem;
+    height: 80%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__option:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  &__option.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-bottom: var(--clr-primary);
+  }
+}
+
+#current-room {
+  position: fixed;
+  margin-top: 3rem;
+  height: calc(100% - 3rem);
+  width: 100%;
+  display: flex;
+  background-color: aquamarine;
+  display: flex;
+}

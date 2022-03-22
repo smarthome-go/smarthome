@@ -110,7 +110,7 @@ addLoadEvent(async function () {
     },
     {
       label: "Power",
-      link: "/power/default",
+      link: "/power",
       icon: "fa-solid fa-lightbulb",
     },
     {
