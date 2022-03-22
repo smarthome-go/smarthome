@@ -18,23 +18,43 @@ async function getRooms(): Promise<Room[]> {
   return body;
 }
 
-function createRoomDiv(room: Room): HTMLDivElement {
-  const main = document.createElement("div");
-  main.className = "room";
-
-  return main;
-}
-
 function setCurrentRoom(room: Room, rooms: Room[]) {
   window.localStorage.setItem("current-room", room.id);
   const main = document.getElementById("current-room") as HTMLDivElement;
+  const switchDiv = document.getElementById("switches") as HTMLDivElement;
   const roomNavBar = document.getElementById("room-nav") as HTMLDivElement;
-  while (main.firstChild) {
-    main.removeChild(main.firstChild);
-  }
 
-  const roomDiv = createRoomDiv(room);
-  main.appendChild(roomDiv);
+  const switches = document.getElementById("switches") as HTMLDivElement;
+
+  for (let switchItem of room.switches) {
+    const innerContainer = document.createElement("div");
+
+    let switchL;
+    const switchE = document.createElement("input");
+    switchE.type = "checkbox";
+    switchE.checked = switchItem.powerOn;
+    switchE.id = switchItem.id;
+
+    const switchS = document.createElement("span");
+    switchS.className = "slider round sixDp";
+
+    switchL = document.createElement("label");
+    switchL.className = "switch";
+    switchL.appendChild(switchE);
+    switchL.appendChild(switchS);
+
+    const labelText = document.createElement("span");
+    labelText.className = "outletName";
+
+    innerContainer.appendChild(switchL);
+    innerContainer.appendChild(labelText);
+
+    switchE.addEventListener("change", async function () {
+      console.log;
+    });
+
+    switchDiv.appendChild(innerContainer)
+  }
 
   while (roomNavBar.firstChild) {
     roomNavBar.removeChild(roomNavBar.firstChild);
@@ -60,7 +80,10 @@ function setCurrentRoom(room: Room, rooms: Room[]) {
 }
 addLoadEvent(async () => {
   const rooms = await getRooms();
-
+  if (rooms.length === 0) {
+    alert("It seems like you don't have any switches configured.");
+    return;
+  }
   const main = document.getElementById("current-room") as HTMLDivElement;
 
   const currentRoom = window.localStorage.getItem("current-room");
@@ -68,7 +91,7 @@ addLoadEvent(async () => {
     for (let room of rooms) {
       if (room.id == currentRoom) {
         setCurrentRoom(room, rooms);
-        return
+        return;
       }
     }
     setCurrentRoom(rooms[0], rooms);
@@ -86,22 +109,4 @@ addLoadEvent(async () => {
     }
     setCurrentRoom(roomWithMaxSwitches, rooms);
   }
-
-  // const roomNavBar = document.getElementById("room-nav") as HTMLDivElement
-  // for (let room of rooms) {
-  //   const optionText = document.createElement("span") as HTMLSpanElement
-  //   optionText.innerText = room.name
-
-  //   const option = document.createElement("div")
-  //   option.className = "room-nav__option"
-  //   if (room.id == roomWithMaxSwitches.id) {
-  //     option.classList.add("active")
-  //   } else {
-  //     option.onclick = () => {
-  //       setCurrentRoom(room, rooms)
-  //     }
-  //   }
-  //   option.appendChild(optionText)
-
-  // roomNavBar.appendChild(option)
 });

@@ -19,6 +19,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-direction: column;
   }
 
   &__option:hover {
@@ -27,7 +28,6 @@
 
   &__option.active {
     background-color: rgba(255, 255, 255, 0.1);
-    border-bottom: var(--clr-primary);
   }
 }
 
@@ -37,6 +37,12 @@
   height: calc(100% - 3rem);
   width: 100%;
   display: flex;
-  background-color: aquamarine;
-  display: flex;
+}
+
+#switches {
+  width: 50%;
+}
+
+#cameras {
+  width: 50%;
 }
