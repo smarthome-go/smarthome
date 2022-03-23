@@ -1,107 +1,97 @@
 #current-room {
-  display: flex;
-  height: 100%;
-
-  #switches {
-    width: 100%;
-    padding: 2rem;
     display: flex;
-    flex-wrap: wrap;
-    align-content: flex-start;
-    gap: 1rem;
+    height: 100%;
 
-    @media (max-width: 47rem) {
-      width: 100%;
-    }
-
-    .switch-outer {
-      width: 20rem;
-      height: 3.5rem;
-      border-radius: 0.4rem;
-      user-select: none;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1rem;
-      padding: 0.5rem 1rem;
-
-      @media (max-width: 47rem) {
+    #switches {
         width: 100%;
-      }
-
-      &__left {
+        padding: 2rem;
         display: flex;
-        align-items: center;
+        flex-wrap: wrap;
+        align-content: flex-start;
         gap: 1rem;
-      }
+
+        @media (max-width: 47rem) {
+            width: 100%;
+        }
+
+        .switch-outer {
+            width: 20rem;
+            height: 3.5rem;
+            border-radius: 0.4rem;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.5rem 1rem;
+
+            @media (max-width: 47rem) {
+                width: 100%;
+            }
+
+            &__left {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+            }
+        }
     }
-  }
 }
 
 .room-nav {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  height: 3rem;
-  padding-left: 2rem;
-  user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    height: 3rem;
+    padding-left: 2rem;
+    user-select: none;
 
-  &__option {
-    padding: 0.5rem 0.7rem;
-    min-width: 5rem;
-    text-align: center;
-    border-radius: 0.4rem;
-    cursor: pointer;
-    transition: var(--tran-02);
-  }
+    &__option {
+        padding: 0.5rem 0.7rem;
+        min-width: 5rem;
+        text-align: center;
+        border-radius: 0.4rem;
+        cursor: pointer;
+        transition: var(--tran-02);
+    }
 
-  &__option.active {
-    // background-color: rgba(255, 255, 255, 0.1);
-    text-underline-offset: 0.4rem;
-    text-decoration: underline var(--clr-primary);
-  }
+    &__option.active {
+        // background-color: rgba(255, 255, 255, 0.1);
+        text-underline-offset: 0.4rem;
+        text-decoration: underline var(--clr-primary);
+    }
 
-  &__option:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-  }
+    &__option:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
 }
-
 
 // LOADER
 .loader {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  position: relative;
-  animation: rotate 1s linear infinite
-}
-.loader::before {
-  content: "";
-  box-sizing: border-box;
-  position: absolute;
-  inset: 0px;
-  border-radius: 50%;
-  border: 2px solid var(--clr-primary);
-  animation: prixClipFix 2s linear infinite ;
+    width: 2rem;
+    height: 2rem;
+    border: 2px solid var(--clr-primary);
+    border-bottom-color: transparent;
+    border-radius: 50%;
+    display: inline-block;
+    box-sizing: border-box;
+    animation: rotation 1s linear infinite;
+    transition: opacity 0.2s;
 }
 
-@keyframes rotate {
-  100%   {transform: rotate(360deg)}
-}
-
-@keyframes prixClipFix {
-    0%   {clip-path:polygon(50% 50%,0 0,0 0,0 0,0 0,0 0)}
-    25%  {clip-path:polygon(50% 50%,0 0,100% 0,100% 0,100% 0,100% 0)}
-    50%  {clip-path:polygon(50% 50%,0 0,100% 0,100% 100%,100% 100%,100% 100%)}
-    75%  {clip-path:polygon(50% 50%,0 0,100% 0,100% 100%,0 100%,0 100%)}
-    100% {clip-path:polygon(50% 50%,0 0,100% 0,100% 100%,0 100%,0 0)}
+@keyframes rotation {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .loader.disabled {
-  opacity: 0;
-  animation: none
+    opacity: 0;
 }
 
-.loader.error::before {
-  border: 2px solid var(--clr-error);
+.loader.error {
+    border: 2px solid var(--clr-error);
 }

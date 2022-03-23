@@ -51,6 +51,7 @@ function setCurrentRoom(room: Room, rooms: Room[]) {
     for (let switchItem of room.switches) {
         const loader = document.createElement("span")
         loader.className = "loader disabled"
+        loader.style.animation = "none"
 
         const switchCheckBox = document.createElement("input")
         switchCheckBox.type = "checkbox"
@@ -66,19 +67,27 @@ function setCurrentRoom(room: Room, rooms: Room[]) {
         switchLabel.appendChild(slider)
 
         switchCheckBox.addEventListener("change", async function () {
+            loader.style.animation = "rotation 1s linear infinite"
             loader.classList.remove("disabled")
             console.log(switchCheckBox.checked)
-            const success = await setPower(switchItem.id, switchCheckBox.checked)
+            const success = await setPower(
+                switchItem.id,
+                switchCheckBox.checked
+            )
             if (success) {
-              loader.classList.add("disabled")
+                loader.classList.add("disabled")
             } else {
-              loader.classList.add("error")
-              await sleep(1000)
-              loader.classList.add("disabled")
-              loader.classList.remove("error")
-              // TODO: add a better popup
-              alert(`An error occurred during set power of ${switchItem.name}`)
+                loader.classList.add("error")
+                await sleep(1000)
+                loader.classList.add("disabled")
+                loader.classList.remove("error")
+                // TODO: add a better popup
+                alert(
+                    `An error occurred during set power of ${switchItem.name}`
+                )
             }
+            await sleep(100)
+            loader.style.animation = "none"
         })
 
         const name = document.createElement("span")
@@ -111,8 +120,12 @@ function setCurrentRoom(room: Room, rooms: Room[]) {
         if (roomItem.id == room.id) {
             option.classList.add("active")
         } else {
-            option.onclick = () => {
-                setCurrentRoom(roomItem, rooms)
+            option.onclick = async () => {
+                const roomsTemp: Room[] = await getRooms()
+                for (let roomTemp of roomsTemp) {
+                    if (roomItem.id == roomTemp.id)
+                        setCurrentRoom(roomTemp, roomsTemp)
+                }
             }
         }
         option.appendChild(optionText)
