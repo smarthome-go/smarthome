@@ -9,7 +9,7 @@ import (
 // Will later be used in `core/user`
 
 // Creates the notification table unless it exists, returns an error if the database fails
-func CreateNotificationTable() error {
+func createNotificationTable() error {
 	query := `
 	CREATE TABLE
 	IF NOT EXISTS

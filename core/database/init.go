@@ -40,7 +40,7 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 	if err := createHasSwitchPermissionTable(); err != nil {
 		return err
 	}
-	if err := CreateNotificationTable(); err != nil {
+	if err := createNotificationTable(); err != nil {
 		return err
 	}
 	if err := initAdminUser(adminPassword); err != nil {
@@ -49,10 +49,13 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 	if err := createLoggingEventTable(); err != nil {
 		return err
 	}
-	if err := CreateCameraTable(); err != nil {
+	if err := createCameraTable(); err != nil {
 		return err
 	}
-	if err := CreateHardwareNodeTable(); err != nil {
+	if err := createHardwareNodeTable(); err != nil {
+		return err
+	}
+	if err := createHomescriptTable(); err != nil {
 		return err
 	}
 	return nil

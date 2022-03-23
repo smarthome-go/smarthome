@@ -1,6 +1,6 @@
 package database
 
-func CreateCameraTable() error {
+func createCameraTable() error {
 	query := `
 	CREATE TABLE
 	IF NOT EXISTS

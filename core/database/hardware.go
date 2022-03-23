@@ -7,7 +7,7 @@ import (
 // Creates the table (unless it exists) which contains the hardware node
 // If the database fails, this function returns an error
 // The node's primary is its url
-func CreateHardwareNodeTable() error {
+func createHardwareNodeTable() error {
 	query := `
 	CREATE TABLE
 	IF NOT EXISTS

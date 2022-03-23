@@ -38,7 +38,7 @@ func createPermissionTable() error {
   permission(
 	  Permission VARCHAR(30) PRIMARY KEY,
 	  Name VARCHAR(100),
-	  Description text
+	  Description TEXT
 	)
   `
 	_, err := db.Exec(query)
