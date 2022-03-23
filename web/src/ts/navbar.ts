@@ -4,7 +4,7 @@ addLoadEvent(async function () {
     return;
   }
   const navbar = navbars[0];
-  navbar.className = "nav closed threeDp";
+  navbar.className = "nav closed";
 
   // Fetch user data before setting text content
   await loadData();
@@ -47,6 +47,9 @@ addLoadEvent(async function () {
     navbar.classList.toggle("closed");
   };
 
+  const bg = document.createElement("div");
+  bg.className = "threeDp nav__bg";
+
   const header = document.createElement("header") as HTMLHtmlElement;
   header.className = "nav__header";
   header.appendChild(headerAvatarTextDiv);
@@ -58,8 +61,8 @@ addLoadEvent(async function () {
 
   const notificationText = document.createElement("span");
   notificationText.className = "nav__bell__text nav__text";
-  notificationText.innerText = `notification${
-    data.notificationCount > 1 || data.notificationCount == 0 ? "s" : ""
+  notificationText.innerText = `Notification${
+    data.notificationCount !== 1 ? "s" : ""
   }`;
 
   const indicator = document.createElement("span");
@@ -153,7 +156,7 @@ addLoadEvent(async function () {
   icon.className = "fa-solid fa-arrow-right-from-bracket";
 
   const label = document.createElement("span");
-  label.innerText = "logout";
+  label.innerText = "Logout";
 
   const itemA = document.createElement("a");
   itemA.href = "logout";
@@ -192,11 +195,11 @@ addLoadEvent(async function () {
   notificationDrawer.className = "notifications hidden small";
   notificationDrawer.appendChild(notificationContainer);
 
+  navbar.appendChild(bg);
   navbar.appendChild(header);
   navbar.appendChild(bellDiv);
   navbar.appendChild(menuBar);
-
-  document.body.appendChild(notificationDrawer);
+  navbar.appendChild(notificationDrawer);
 
   setTimeout(() => {
     navbar.style.transition = "var(--tran-03)";

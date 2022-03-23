@@ -4,11 +4,16 @@
   position: fixed;
   width: 13rem;
   height: 100%;
-  background-color: var(--clr-navbar-bg);
   box-sizing: border-box;
   top: 0;
   left: 0;
   user-select: none;
+
+  &__bg {
+    background-color: var(--clr-navbar-bg);
+    position: absolute;
+    inset: 0;
+  }
 
   @media (max-width: 47rem) {
     padding-top: 0;
@@ -42,12 +47,14 @@
       }
     }
 
+    position: relative;
     display: flex;
     align-items: center;
     padding-left: 1.2rem;
     height: 50px;
     border-radius: 0.4rem;
     cursor: pointer;
+    overflow-x: hidden;
 
     &__icon {
       font-size: 1rem;
@@ -152,11 +159,12 @@
   }
 
   &__menubar {
-    height: calc(100% - 55px - 50px);
+    position: relative;
+    height: calc(100% - 105px);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    overflow-y: scroll;
+    overflow-x: hidden;
 
     &__menu {
       margin-top: 1rem;
@@ -239,10 +247,16 @@
 .nav.closed {
   width: 5.3rem;
 
-  .nav__header {
-    &__toggle {
-      transform: translateY(-50%) rotate(0deg);
-    }
+  .nav__header__toggle {
+    transform: translateY(-50%) rotate(0deg);
+  }
+
+  .nav__text {
+    pointer-events: none;
+  }
+
+  .nav__header__avatar__text {
+    opacity: 0;
   }
 
   @media (max-width: 47rem) {
@@ -254,13 +268,6 @@
       &__toggle {
         transform: translateY(-50%) rotate(90deg);
       }
-    }
-  }
-
-  .nav__bell {
-    &__text {
-      opacity: 0;
-      display: none;
     }
   }
 
@@ -286,10 +293,6 @@
   }
 }
 
-.nav.closed .nav__text {
-  opacity: 0;
-}
-
 // ==== Notification drawer ==== //
 @keyframes load {
   0% {
@@ -309,18 +312,28 @@
   height: 100%;
   box-sizing: border-box;
   top: 0;
-  left: 0;
-  margin-left: 13rem;
-  transition: var(--tran-03);
+  right: 0;
+  transform: translateX(100%);
+  transition: transform .3s;
   background-color: var(--clr-notifications-bg);
-  overflow-y: scroll;
+  overflow-y: auto;
   overflow-x: hidden;
+  z-index: -100;
+
+  &.hidden {
+    transform: translateX(0);
+  }
 
   @media (max-width: 47rem) {
-    margin: 4rem 0;
     width: 100%;
-    height: 100%;
-    padding: 0;
+    height: calc(100vh - 4rem);
+    transform: translateX(0) translateY(100%);
+    top: unset;
+    bottom: 0;
+
+    &.hidden {
+      transform: translateY(0);
+    }
   }
 
   .notifications::-webkit-scrollbar-button {
@@ -414,25 +427,5 @@
       animation-name: load;
       animation-iteration-count: infinite;
     }
-  }
-}
-
-.notifications.hidden {
-  width: 0;
-  opacity: 0;
-  z-index: -700;
-
-  .notifications__container__item {
-    width: 10rem;
-    opacity: 0;
-  }
-}
-
-.notifications.small {
-  margin-left: 5.3rem;
-
-  @media (max-width: 47rem) {
-    margin: 4rem 0;
-    width: 100%;
   }
 }
