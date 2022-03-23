@@ -16,7 +16,7 @@
 
         .switch-outer {
             width: 20rem;
-            height: 3.5rem;
+            height: 4rem;
             border-radius: 0.4rem;
             user-select: none;
             display: flex;
@@ -42,12 +42,12 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    height: 3rem;
+    height: 4rem;
     padding-left: 2rem;
     user-select: none;
 
     &__option {
-        padding: 0.5rem 0.7rem;
+        padding: 0.9rem 0.7rem;
         min-width: 5rem;
         text-align: center;
         border-radius: 0.4rem;
@@ -56,7 +56,6 @@
     }
 
     &__option.active {
-        // background-color: rgba(255, 255, 255, 0.1);
         text-underline-offset: 0.4rem;
         text-decoration: underline var(--clr-primary);
     }
