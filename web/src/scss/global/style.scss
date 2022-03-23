@@ -40,7 +40,8 @@ main {
 
   @media (max-width: 47rem) {
     margin-left: 0;
-    margin-top: 4rem;
+    padding-top: 4rem;
+    box-sizing: border-box;
     width: 100%;
   }
 }
