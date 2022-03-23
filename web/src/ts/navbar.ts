@@ -1,3 +1,22 @@
+const links = [
+  {
+    label: "Dashboard",
+    link: "/dash",
+    icon: "fa-solid fa-house",
+  },
+  {
+    label: "Rooms",
+    link: "/rooms",
+    icon: "fa-solid fa-table-cells-large",
+  },
+  {
+    label: "Profile",
+    link: "/profile",
+    icon: "fa-solid fa-user",
+  },
+];
+
+
 addLoadEvent(async function () {
   const navbars = document.getElementsByTagName("nav");
   if (!navbars) {
@@ -104,24 +123,6 @@ addLoadEvent(async function () {
   menuBar.appendChild(menu);
   menuBar.appendChild(bottomMenu);
   menuBar.className = "nav__menubar";
-
-  const links = [
-    {
-      label: "Home",
-      link: "/dash",
-      icon: "fa-solid fa-house",
-    },
-    {
-      label: "Power",
-      link: "/power",
-      icon: "fa-solid fa-lightbulb",
-    },
-    {
-      label: "Profile",
-      link: "/profile",
-      icon: "fa-solid fa-user",
-    },
-  ];
 
   for (let link of links) {
     const item = document.createElement("li");

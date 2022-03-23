@@ -18,8 +18,8 @@ func dashGetHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // Serves HTML for power
-func powerGetHandler(w http.ResponseWriter, r *http.Request) {
-	templates.ExecuteTemplate(w, "power.html", http.StatusOK)
+func roomsGetHandler(w http.ResponseWriter, r *http.Request) {
+	templates.ExecuteTemplate(w, "rooms.html", http.StatusOK)
 }
 
 // If not user is logged in, it serves the HTML for the login page
