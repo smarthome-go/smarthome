@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/core/homescript"
 	"github.com/MikMuellerDev/smarthome/server/middleware"
 )
@@ -53,4 +54,22 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		Message: "Homescript ran successfully",
 		Output:  output,
 	})
+}
+
+// Returns a list of homescripts which are owned by the current user
+func ListPersonalHomescripts(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
+		return
+	}
+	homescriptList, err := database.ListHomescriptOfUser(username)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to list personal homescript", Error: "database failure"})
+		return
+	}
+	json.NewEncoder(w).Encode(homescriptList)
 }

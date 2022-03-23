@@ -84,6 +84,7 @@ func NewRouter() *mux.Router {
 
 	// Homescript-related
 	r.HandleFunc("/api/homescript/run/live", mdl.ApiAuth(mdl.Perm(api.RunHomescriptString, database.PermissionRunHomescript))).Methods("POST")
+	r.HandleFunc("/api/homescript/list/personal", mdl.ApiAuth(api.ListPersonalHomescripts)).Methods("GET")
 
 	// TODO: add removal functions
 
