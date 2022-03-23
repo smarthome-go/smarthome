@@ -35,3 +35,28 @@ func GetDatabaseStats() DBStatus {
 		Idle:            db.Stats().Idle,
 	}
 }
+
+func DeleteTables() error {
+	tables := []string{
+		"DROP TABLE IF EXISTS camera",
+		"DROP TABLE IF EXISTS hardware",
+		"DROP TABLE IF EXISTS hasPermission",
+		"DROP TABLE IF EXISTS hasSwitchPermission",
+		"DROP TABLE IF EXISTS logs",
+		"DROP TABLE IF EXISTS notifications",
+		"DROP TABLE IF EXISTS permission",
+		"DROP TABLE IF EXISTS rooms",
+		"DROP TABLE IF EXISTS switch",
+		"DROP TABLE IF EXISTS user",
+	}
+
+	for _, query := range tables {
+		_, err := db.Exec(query)
+		if err != nil {
+			log.Error("Failed to drop all tables: executing query failed: ", err.Error())
+			return err
+		}
+	}
+	log.Warn("Database has been deleted")
+	return nil
+}
