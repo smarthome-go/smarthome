@@ -22,17 +22,26 @@
 body {
   background-color: var(--clr-bg);
   margin: 0;
+  height: 100%;
 }
 
 main {
   margin-left: 5.3rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: calc(100% - 5.3rem);
+  position: absolute;
+
   @media (min-width: 1500px) {
     margin-left: 13rem;
+    width: calc(100% - 13rem);
   }
 
   @media (max-width: 47rem) {
     margin-left: 0;
     margin-top: 4rem;
+    width: 100%;
   }
 }
 
