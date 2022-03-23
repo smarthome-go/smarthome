@@ -82,6 +82,9 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/user/notification/delete/all", mdl.ApiAuth(api.DeleteAllUserNotifications)).Methods("DELETE")
 	r.HandleFunc("/api/user/notification/list", mdl.ApiAuth(api.GetNotifications)).Methods("GET")
 
+	// Homescript-related
+	r.HandleFunc("/api/homescript/run/live", mdl.ApiAuth(mdl.Perm(api.RunHomescriptString, database.PermissionRunHomescript))).Methods("POST")
+
 	// TODO: add removal functions
 
 	// TODO: remove this one below
