@@ -17,7 +17,7 @@ func createUserTable() error {
 		Username VARCHAR(20) PRIMARY KEY,
 		Firstname VARCHAR(20) DEFAULT " ",
 		Surname VARCHAR(20)   DEFAULT " ", 
-		PrimaryColor CHAR(7)  DEFAULT "#ff00ff",
+		PrimaryColor CHAR(7)  DEFAULT "#88ff70",
 		Password text,
 		AvatarPath text
 	)
@@ -54,12 +54,23 @@ func ListUsers() ([]User, error) {
 // Creates a new user based on a the supplied `User` struct
 // Won't panic if user already exists, but will change password
 func InsertUser(user FullUser) error {
-	query, err := db.Prepare("INSERT INTO user(Username, Password, AvatarPath) VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE Password=VALUES(Password)")
+	query, err := db.Prepare(`
+	INSERT INTO
+	user(Username, Firstname, Surname, PrimaryColor, Password, AvatarPath)
+	VALUES(?, ?, ?, ?, ?, ?)
+	ON DUPLICATE KEY UPDATE Password=VALUES(Password)`)
 	if err != nil {
 		log.Error("Could not create user. Failed to prepare query: ", err.Error())
 		return err
 	}
-	_, err = query.Exec(user.Username, user.Password, "./web/assets/avatar/default.png")
+	_, err = query.Exec(
+		user.Username,
+		user.Firstname,
+		user.Surname,
+		user.PrimaryColor,
+		user.Password,
+		"./web/assets/avatar/default.png",
+	)
 	if err != nil {
 		log.Error("Could not create user. Failed to execute query: ", err.Error())
 		return err
