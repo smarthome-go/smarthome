@@ -208,15 +208,16 @@
 
         &__item.active {
           pointer-events: none;
-          a:hover {
-            background-color: transparent;
-            cursor: default;
-          }
-
+          a:hover,
           i:hover {
             background-color: transparent;
             cursor: default;
           }
+
+          // i:hover {
+          // background-color: transparent;
+          // cursor: default;
+          // }
 
           a {
             background-color: rgba(255, 255, 255, 0.1);
@@ -244,7 +245,7 @@
     }
   }
 
-  @media (max-width: 40rem) {
+  @media (max-width: 47rem) {
     flex-direction: column;
     width: 100%;
     height: 4rem;

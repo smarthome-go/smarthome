@@ -6,6 +6,8 @@
   --clr-text-light: #cccccc;
   --clr-text-on-primary: #222;
 
+  --clr-hover: rgba(255, 255, 255, 0.1): 
+
   // Navbar-specific
   --clr-navbar-bg: #242526;
 
@@ -30,6 +32,7 @@ main {
 
   @media (max-width: 47rem) {
     margin-left: 0;
+    margin-top: 4rem;
   }
 }
 
