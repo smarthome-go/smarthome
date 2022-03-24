@@ -10,6 +10,14 @@ type Homescript struct {
 	Code                string `json:"code"`
 }
 
+type HomescriptFrontend struct {
+	Name                string `json:"name"`
+	Description         string `json:"description"`
+	QuickActionsEnabled bool   `json:"quickActionsEnabled"`
+	SchedulerEnabled    bool   `json:"schedulerEnabled"`
+	Code                string `json:"code"`
+}
+
 // Creates the table containing Homescript code and metadata
 // If the database fails, this function returns an error
 func createHomescriptTable() error {
@@ -32,6 +40,38 @@ func createHomescriptTable() error {
 	_, err := db.Exec(query)
 	if err != nil {
 		log.Error("Failed to create Homescript Table: Executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}
+
+// Modifies the metadata of a given homescript
+// Does not check the validity of the homescript's id
+func ModifyHomescriptById(id, string, homescript HomescriptFrontend) error {
+	query, err := db.Prepare(`
+	UPDATE homescript
+	SET 
+	Name=?,
+	Description=?,
+	QuickLaunchEnabled=?,
+	SchedulerEnabled=?,
+	Code=?
+	WHERE Id=?
+	`)
+	if err != nil {
+		log.Error("Failed to update homescript item: preparing query failed: ", err.Error())
+		return err
+	}
+	_, err = query.Exec(
+		homescript.Name,
+		homescript.Description,
+		homescript.QuickActionsEnabled,
+		homescript.SchedulerEnabled,
+		homescript.Code,
+		id,
+	)
+	if err != nil {
+		log.Error("Failed to update homescript item: executing query failed: ", err.Error())
 		return err
 	}
 	return nil
