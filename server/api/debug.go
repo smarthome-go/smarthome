@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/MikMuellerDev/smarthome/core/database"
@@ -17,6 +18,21 @@ func HealthCheck(w http.ResponseWriter, r *http.Request) {
 		log.Error("Healthcheck failed: ", err.Error())
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "healthcheck failed: database downtime", Error: err.Error()})
 		return
+	}
+	nodes, err := database.GetHardwareNodes()
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		log.Error("Healthcheck failed: ", err.Error())
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "healthcheck failed: failed to get node information", Error: err.Error()})
+		return
+	}
+	for _, node := range nodes {
+		if !node.Online && node.Enabled {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			log.Error(fmt.Sprintf("Healthcheck failed: node %s is offline", node.Url))
+			json.NewEncoder(w).Encode(Response{Success: false, Message: "healthcheck failed: one or more nodes offline", Error: fmt.Sprintf("Node '%s' %s is offline", node.Name, node.Url)})
+			return
+		}
 	}
 	w.WriteHeader(http.StatusOK)
 }

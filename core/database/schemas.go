@@ -73,11 +73,3 @@ type Notification struct {
 	Date        time.Time `json:"date"`
 	// Username is left out due to not being required in the service layer
 }
-
-// Hardware node
-type HardwareNode struct {
-	Name   string `json:"name"`
-	Online bool   `json:"online"`
-	Url    string `json:"url"`
-	Token  string `json:"token"`
-}

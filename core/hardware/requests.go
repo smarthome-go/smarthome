@@ -121,3 +121,18 @@ func setPowerOnAllNodes(switchName string, powerOn bool) error {
 	}
 	return err
 }
+
+// Check all nodes for uptime
+func RunNodeCheck() error {
+	nodes, err := database.GetHardwareNodes()
+	if err != nil {
+		log.Error("Failed to check nodes: ", err.Error())
+	}
+	for _, node := range nodes {
+		if err := checkNodeOnline(node); err != nil {
+			log.Error("Failed to check node: checkNodeOnline failed: ", err.Error())
+			return nil
+		}
+	}
+	return nil
+}

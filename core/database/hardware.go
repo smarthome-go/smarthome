@@ -4,6 +4,15 @@ import (
 	"fmt"
 )
 
+// Hardware node
+type HardwareNode struct {
+	Name    string `json:"name"`
+	Online  bool   `json:"online"`
+	Enabled bool   `json:"enabled"` // Can be used to temporarely deactivate a node in case of maintenance
+	Url     string `json:"url"`
+	Token   string `json:"token"`
+}
+
 // Creates the table (unless it exists) which contains the hardware node
 // If the database fails, this function returns an error
 // The node's primary is its url
@@ -14,6 +23,7 @@ func createHardwareNodeTable() error {
 	hardware(
 		Url VARCHAR(50),
 		Online BOOLEAN DEFAULT TRUE,
+		Enabled BOOLEAN DEFAULT TRUE,
 		Name VARCHAR(30),
 		Token VARCHAR(100),
 		PRIMARY KEY (url)
@@ -31,9 +41,9 @@ func CreateHardwareNode(name string, url string, token string) error {
 	query, err := db.Prepare(`
 	INSERT INTO
 	hardware(
-		Url, Online, Name, Token
+		Url, Online, Enabled, Name, Token
 	)
-	VALUES(?, DEFAULT, ?, ?)
+	VALUES(?, DEFAULT, DEFAULT, ?, ?)
 	ON DUPLICATE KEY
 	UPDATE Name=VALUES(Name)
 	`)
@@ -98,7 +108,7 @@ func DeleteHardwareNode(url string) error {
 func GetHardwareNodes() ([]HardwareNode, error) {
 	query := `
 	SELECT
-	Url, Online, Name, Token
+	Url, Online, Enabled, Name, Token
 	FROM hardware
 	`
 	res, err := db.Query(query)
@@ -112,6 +122,7 @@ func GetHardwareNodes() ([]HardwareNode, error) {
 		if err := res.Scan(
 			&node.Url,
 			&node.Online,
+			&node.Enabled,
 			&node.Name,
 			&node.Token,
 		); err != nil {
@@ -122,3 +133,5 @@ func GetHardwareNodes() ([]HardwareNode, error) {
 	}
 	return nodes, nil
 }
+
+// TODO: add modify node function
