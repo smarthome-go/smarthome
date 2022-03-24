@@ -40,10 +40,10 @@ func NewRouter() *mux.Router {
 
 	//// API ////
 	// Power
-	r.HandleFunc("/api/power/list", api.GetSwitches).Methods("GET")
+	r.HandleFunc("/api/switch/list", api.GetSwitches).Methods("GET")
+	r.HandleFunc("/api/switch/list/personal", mdl.ApiAuth(api.GetUserSwitches)).Methods("GET")
 	r.HandleFunc("/api/power/states", api.GetPowerStates).Methods("GET")
 	r.HandleFunc("/api/power/set", mdl.ApiAuth(mdl.Perm(api.PowerPostHandler, database.PermissionSetPower))).Methods("POST")
-	r.HandleFunc("/api/power/list/personal", mdl.ApiAuth(api.GetUserSwitches)).Methods("GET")
 
 	// Rooms
 	r.HandleFunc("/api/room/list/personal", mdl.ApiAuth(api.GetUserRoomsWithSwitches)).Methods("GET")
