@@ -38,7 +38,7 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	output, hmsErrors := homescript.Run(username, "live", request.Code)
-	if hmsErrors != nil && len(hmsErrors) > 0 {
+	if len(hmsErrors) > 0 {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		json.NewEncoder(w).Encode(HomescriptResponse{
 			Success: false,
