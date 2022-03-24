@@ -153,6 +153,29 @@ func main() {
 		database.AddNotification("admin", "Scheduler", "Your scheduler failed to run: systems error.", 3)
 	}
 
+	// database.CreateNewHomescript(
+	// 	database.Homescript{
+	// 		Id:                  "test",
+	// 		Owner:               "admin",
+	// 		Name:                "hello",
+	// 		Description:         "hello",
+	// 		QuickActionsEnabled: false,
+	// 		SchedulerEnabled:    false,
+	// 		Code:                "print('hello world')",
+	// 	},
+	// )
+
+	database.ModifyHomescriptById(
+		"test",
+		database.HomescriptFrontend{
+			Name:                "new name",
+			Description:         "new description",
+			QuickActionsEnabled: false,
+			SchedulerEnabled:    false,
+			Code:                "lol",
+		},
+	)
+
 	event.Info("System Started", "The Smarthome server completed startup.")
 	log.Info(fmt.Sprintf("Smarthome v%s is running on port %d", utils.Version, port))
 	if err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {

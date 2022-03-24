@@ -47,13 +47,13 @@ func createHomescriptTable() error {
 
 // Modifies the metadata of a given homescript
 // Does not check the validity of the homescript's id
-func ModifyHomescriptById(id, string, homescript HomescriptFrontend) error {
+func ModifyHomescriptById(id string, homescript HomescriptFrontend) error {
 	query, err := db.Prepare(`
 	UPDATE homescript
 	SET 
 	Name=?,
 	Description=?,
-	QuickLaunchEnabled=?,
+	QuickActionsEnabled=?,
 	SchedulerEnabled=?,
 	Code=?
 	WHERE Id=?
