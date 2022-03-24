@@ -3,6 +3,7 @@ package homescript
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/MikMuellerDev/homescript/homescript/interpreter"
@@ -10,6 +11,7 @@ import (
 	"github.com/MikMuellerDev/smarthome/core/event"
 	"github.com/MikMuellerDev/smarthome/core/hardware"
 	"github.com/MikMuellerDev/smarthome/core/user"
+	"github.com/MikMuellerDev/smarthome/core/utils"
 )
 
 type Executor struct {
@@ -114,6 +116,16 @@ func (self *Executor) Log(
 	return nil
 }
 
+// Executes another Homescript based on its Id
+func (self Executor) Exec(homescriptId string) (string, error) {
+	output, exitCode, err := RunById(self.Username, homescriptId)
+	if err != nil {
+		log.Error(fmt.Sprintf("[Homescript] ERROR: script: '%s' user: '%s': called homescript failed with exit code %d : %s", self.ScriptName, self.Username, exitCode, err.Error()))
+		return output, err
+	}
+	return output, nil
+}
+
 // Returns the name of the user who is currently running the script
 func (self *Executor) GetUser() string {
 	return self.Username
@@ -135,4 +147,24 @@ func (self *Executor) GetTemperature() (int, error) {
 func (self *Executor) GetDate() (int, int, int, int, int, int) {
 	now := time.Now()
 	return now.Year(), int(now.Month()), now.Day(), now.Hour(), now.Minute(), now.Second()
+}
+
+func (self *Executor) GetDebugInfo() (string, error) {
+	debugInfo := utils.SysInfo()
+	var output string
+	output += fmt.Sprintf("%s\n", strings.Repeat("\u2015", 45))
+	output += fmt.Sprintf(" Smarthome Server Version: %s │ v%s\n", strings.Repeat(" ", 30-len("Smarthome Server Version: ")), debugInfo.ServerVersion)
+	var databaseOnlineString = "\x1b[1;31mNO\x1b[1;0m"
+	if debugInfo.DatabaseOnline {
+		databaseOnlineString = "\x1b[1;32mYES\x1b[1;0m"
+	}
+	output += fmt.Sprintf(" Database Online: %s │ %- 10s\n", strings.Repeat(" ", 30-len("Database Online: ")), databaseOnlineString)
+	output += fmt.Sprintf(" Compiled with: %s │ %- 10s\n", strings.Repeat(" ", 30-len("Compiled with: ")), debugInfo.GoVersion)
+	output += fmt.Sprintf(" CPU Cores: %s │ %d\n", strings.Repeat(" ", 30-len("CPU Cores: ")), debugInfo.CpuCores)
+	output += fmt.Sprintf(" Current Goroutines: %s │ %d\n", strings.Repeat(" ", 30-len("Current Goroutines: ")), debugInfo.Goroutines)
+	output += fmt.Sprintf(" Current Memory Usage: %s │ %d\n", strings.Repeat(" ", 30-len("Current Memory Usage: ")), debugInfo.MemoryUsage)
+	output += fmt.Sprintf(" Current Power Jobs: %s │ %d\n", strings.Repeat(" ", 30-len("Current Power Jobs: ")), debugInfo.PowerJobCount)
+	output += fmt.Sprintf(" Last Power Job Error Count: %s │ %d\n", strings.Repeat(" ", 30-len("Last Power Job Error Count: ")), debugInfo.PowerJobWithErrorCount)
+	output += fmt.Sprintf("%s", strings.Repeat("\u2015", 45))
+	return output, nil
 }

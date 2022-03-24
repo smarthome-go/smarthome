@@ -148,3 +148,71 @@ func ListHomescriptOfUser(username string) ([]Homescript, error) {
 	}
 	return homescriptList, nil
 }
+
+// Lists all Homescript files in the database
+func ListHomescriptFiles() ([]Homescript, error) {
+	query, err := db.Prepare(`
+	SELECT
+	Id, Owner, Name, Description, QuickActionsEnabled, SchedulerEnabled, Code
+	FROM homescript
+	`)
+	if err != nil {
+		log.Error("Failed to list homescript files: preparing query failed: ", err.Error())
+		return nil, err
+	}
+	res, err := query.Query()
+	if err != nil {
+		log.Error("Failed to list homescript files: executing query failed: ", err.Error())
+		return nil, err
+	}
+	var homescriptList []Homescript = make([]Homescript, 0)
+	for res.Next() {
+		var homescript Homescript
+		err := res.Scan(
+			&homescript.Id,
+			&homescript.Owner,
+			&homescript.Name,
+			&homescript.Description,
+			&homescript.QuickActionsEnabled,
+			&homescript.SchedulerEnabled,
+			&homescript.Code,
+		)
+		if err != nil {
+			log.Error("Failed to list homescript files: scanning results failed: ", err.Error())
+			return nil, err
+		}
+		homescriptList = append(homescriptList, homescript)
+	}
+	return homescriptList, nil
+}
+
+// Returns a Homescript given its id
+// Returns Homescript, has been found, error
+func GetUserHomescriptById(homescriptId string, username string) (Homescript, bool, error) {
+	homescripts, err := ListHomescriptOfUser(username)
+	if err != nil {
+		log.Error("Failed to get Homescript by id: ", err.Error())
+		return Homescript{}, false, err
+	}
+	for _, homescriptItem := range homescripts {
+		if homescriptItem.Id == homescriptId {
+			return homescriptItem, true, nil
+		}
+	}
+	return Homescript{}, false, nil
+}
+
+// Checks if a Homescript with an id exists in the database
+func DoesHomescriptExist(homescriptId string) (bool, error) {
+	homescripts, err := ListHomescriptFiles()
+	if err != nil {
+		log.Error("Failed to check existence of Homescript: ", err.Error())
+		return false, err
+	}
+	for _, homescriptItem := range homescripts {
+		if homescriptItem.Id == homescriptId {
+			return true, nil
+		}
+	}
+	return false, nil
+}

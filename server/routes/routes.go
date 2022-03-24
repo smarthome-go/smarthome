@@ -87,6 +87,7 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/user/notification/list", mdl.ApiAuth(api.GetNotifications)).Methods("GET")
 
 	// Homescript-related
+	r.HandleFunc("/api/homescript/add", mdl.ApiAuth(mdl.Perm(api.CreateNewHomescript, database.PermissionModifyHomescript))).Methods("POST")
 	r.HandleFunc("/api/homescript/run/live", mdl.ApiAuth(mdl.Perm(api.RunHomescriptString, database.PermissionRunHomescript))).Methods("POST")
 	r.HandleFunc("/api/homescript/list/personal", mdl.ApiAuth(api.ListPersonalHomescripts)).Methods("GET")
 

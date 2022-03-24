@@ -23,6 +23,7 @@ const (
 	PermissionChangeUsers             PermissionType = "changeUsers"
 	PermissionListUsers               PermissionType = "listUsers"
 	PermissionRunHomescript           PermissionType = "runHomescript"
+	PermissionModifyHomescript        PermissionType = "modifyHomescript"
 
 	// Dangerous
 	PermissionWildCard PermissionType = "*"
@@ -101,6 +102,11 @@ var (
 			Permission:  PermissionRunHomescript,
 			Name:        "Run Homescript",
 			Description: "Run predefined Homescript files or send live code to be executed by the server",
+		},
+		{
+			Permission:  PermissionModifyHomescript,
+			Name:        "Modify Homescript",
+			Description: "Create / Modify / Delete own Homescripts",
 		},
 		{
 			// WARNING: This allows a user to do everything, should only be allowed to the `admin` user
