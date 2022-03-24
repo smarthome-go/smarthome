@@ -1,7 +1,7 @@
 appname := smarthome
 workingdir := smarthome
 sources := $(wildcard *.go)
-homescript_cli_version := v0.2.2-beta
+homescript_cli_version := v0.2.3-beta
 
 build = GOOS=$(1) GOARCH=$(2) go build -o $(appname) $(4)
 tar = mkdir -p build && cd ../ && tar -cvzf ./$(appname)_$(1)_$(2).tar.gz $(workingdir)/$(appname) $(workingdir)/web/out $(workingdir)/web/html $(workingdir)/web/assets && mv $(appname)_$(1)_$(2).tar.gz $(workingdir)/build
