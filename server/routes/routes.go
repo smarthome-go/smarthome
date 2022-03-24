@@ -21,18 +21,22 @@ func NewRouter() *mux.Router {
 	r := mux.NewRouter()
 	// Auth: middleware that checks if the user is logged in, will redirect to `/login` if the user is not logged in
 	// ApiAuth: middleware that checks if the user is logged in for API request, will return JSON errors if the user is not logged in
+
+	// Dashboard
 	r.HandleFunc("/", mdl.Auth(indexGetHandler)).Methods("GET")
 	r.HandleFunc("/dash", mdl.Auth(dashGetHandler)).Methods("GET")
+
+	// Rooms
 	r.HandleFunc("/rooms", mdl.Auth(roomsGetHandler)).Methods("GET")
+
+	// User profile (settings)
+	r.HandleFunc("/profile", mdl.Auth(userProfileGetHandler)).Methods("GET")
 
 	// Healthcheck for uptime monitoring
 	r.HandleFunc("/health", api.HealthCheck).Methods("GET")
 
 	// Debug information about the system
 	r.HandleFunc("/api/debug", mdl.ApiAuth(mdl.Perm(api.DebugInfo, database.PermissionGetDebugInfo))).Methods("GET")
-
-	// User profile (settings)
-	r.HandleFunc("/profile", mdl.Auth(userProfileGetHandler)).Methods("GET")
 
 	r.HandleFunc("/login", loginGetHandler).Methods("GET")
 	r.HandleFunc("/logout", logoutGetHandler).Methods("GET")
