@@ -18,7 +18,7 @@ func TestImageProxy(w http.ResponseWriter, r *http.Request) {
 	imageData, err := camera.TestReturn()
 	if err != nil {
 		log.Error("Failed to test proxy: ", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadGateway)
 		return
 	}
 	w.Header().Set("Content-Type", http.DetectContentType(imageData))
