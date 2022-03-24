@@ -10,9 +10,16 @@ tar = mkdir -p build && cd ../ && tar -cvzf ./$(appname)_$(1)_$(2).tar.gz $(work
 
 all:	linux
 
+# Setup
+setup:
+	go mod tidy
+	cd web && npm i
+
+
 # Run
 run: web
-	go run .
+	go run . &
+	cd web && npm run watch
 
 run-full: web mysql
 	go run .
