@@ -1,0 +1,38 @@
+.nav {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 13rem;
+    user-select: none;
+    box-sizing: border-box;
+    padding: 1rem;
+
+    &__bg {
+        position: absolute;
+        inset: 0;
+        background-color: var(--clr-bg);
+    }
+
+    &__header {
+        position: relative;
+        display: flex;
+        gap: .6rem;
+        padding-block: .5rem;
+
+        &__avatar {
+            background-position: center;
+            background-size: cover;
+            background-repeat: no-repeat;
+            border-radius: 50%;
+            aspect-ratio: 1;
+            height: 2.5rem;
+        }
+        &__texts {
+            display: flex;
+            flex-direction: column;
+
+            &__full { font-weight: 600; }
+        }
+    }
+}

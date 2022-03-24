@@ -98,16 +98,22 @@ func NewRouter() *mux.Router {
 
 	/// Static files ///
 	// For JS and CSS components
-	outFilepath := "./web/out/"
-	staticPathPrefix := "/static"
+	outFilepath := "web/build/dist/"
+	staticPathPrefix := "/dist"
 	outFileserver := http.FileServer(http.Dir(outFilepath))
 	r.PathPrefix(staticPathPrefix).Handler(http.StripPrefix(staticPathPrefix, outFileserver))
 
-	// Other assets, such as PNG or JPEG
-	assetsFilepath := "./web/assets/"
+	// Other assets, such as images
+	assetsFilepath := "web/build/assets/"
 	assetsPathPrefix := "/assets"
 	assetsFileserver := http.FileServer(http.Dir(assetsFilepath))
 	r.PathPrefix(assetsPathPrefix).Handler(http.StripPrefix(assetsPathPrefix, assetsFileserver))
+
+	// Node modules used in frontend
+	externalFilepath := "web/build/assets/"
+	externalPathPrefix := "/external"
+	externalFileserver := http.FileServer(http.Dir(externalFilepath))
+	r.PathPrefix(externalPathPrefix).Handler(http.StripPrefix(externalPathPrefix, externalFileserver))
 
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 	r.MethodNotAllowedHandler = http.HandlerFunc(methodNotAllowedHandler)

@@ -7,7 +7,7 @@ import (
 // Identified by a username, has a password and an avatar path
 type FullUser struct {
 	Username     string `json:"username"`
-	Firstname    string `json:"firstname"`
+	Firstname    string `json:"forename"`
 	Surname      string `json:"surname"`
 	PrimaryColor string `json:"primaryColor"`
 	Password     string `json:"password"`
@@ -17,7 +17,7 @@ type FullUser struct {
 
 type User struct {
 	Username     string `json:"username"`
-	Firstname    string `json:"firstname"`
+	Firstname    string `json:"forename"`
 	Surname      string `json:"surname"`
 	PrimaryColor string `json:"primaryColor"`
 }
@@ -66,11 +66,11 @@ type LogEvent struct {
 
 // User notification
 type Notification struct {
-	Id          uint   `json:"id"`
-	Priority    uint8  `json:"priority"` // Includes 1: info, 2: warning, 3: alert
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Date        time.Time
+	Id          uint      `json:"id"`
+	Priority    uint8     `json:"priority"` // Includes 1: info, 2: warning, 3: alert
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Date        time.Time `json:"date"`
 	// Username is left out due to not being required in the service layer
 }
 

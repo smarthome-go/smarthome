@@ -16,7 +16,7 @@ func createUserTable() error {
 	user(
 		Username VARCHAR(20) PRIMARY KEY,
 		Firstname VARCHAR(20) DEFAULT " ",
-		Surname VARCHAR(20)   DEFAULT " ", 
+		Surname VARCHAR(20)   DEFAULT " ",
 		PrimaryColor CHAR(7)  DEFAULT "#88ff70",
 		Password text,
 		AvatarPath text
@@ -69,7 +69,7 @@ func InsertUser(user FullUser) error {
 		user.Surname,
 		user.PrimaryColor,
 		user.Password,
-		"./web/assets/avatar/default.png",
+		"web/build/assets/avatar/default.png",
 	)
 	if err != nil {
 		log.Error("Could not create user. Failed to execute query: ", err.Error())
@@ -93,7 +93,7 @@ func DeleteUser(username string) error {
 		return err
 	}
 	query, err := db.Prepare(`
-	DELETE FROM user WHERE Username=? 
+	DELETE FROM user WHERE Username=?
 	`)
 	if err != nil {
 		log.Error("Could not delete user. Failed to prepare query: ", err.Error())
@@ -161,7 +161,7 @@ func GetUserByUsername(username string) (User, error) {
 	SELECT
 	Username, Firstname, Surname, PrimaryColor
 	FROM user
-	WHERE Username=? 
+	WHERE Username=?
 	`)
 	if err != nil {
 		log.Error("Could not get user by username: failed to prepare query: ", err.Error())
@@ -204,7 +204,7 @@ func GetAvatarPathByUsername(username string) (string, error) {
 	query, err := db.Prepare(`
 	SELECT AvatarPath
 	FROM user
-	WHERE Username=? 
+	WHERE Username=?
 	`)
 	if err != nil {
 		log.Error("Could not get avatar path by username: failed to prepare query: ", err.Error())

@@ -24,7 +24,7 @@ go.work
 
 # Web files
 web/node_modules
-web/out
+web/build
 
 # Build files
 build
