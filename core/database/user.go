@@ -82,11 +82,14 @@ func InsertUser(user FullUser) error {
 // Deletes a User based on a given Username, can return an error if the database fails
 // The function does not validate the existence of this username itself, so additional checks should be done beforehand
 // The avatar is removed in `core/user/user`
-func DeleteUser(Username string) error {
-	if err := RemoveAllPermissionsOfUser(Username); err != nil {
+func DeleteUser(username string) error {
+	if err := RemoveAllPermissionsOfUser(username); err != nil {
 		return err
 	}
-	if err := RemoveAllSwitchPermissionsOfUser(Username); err != nil {
+	if err := RemoveAllSwitchPermissionsOfUser(username); err != nil {
+		return err
+	}
+	if err := DeleteAllNotificationsFromUser(username); err != nil {
 		return err
 	}
 	query, err := db.Prepare(`
@@ -96,7 +99,7 @@ func DeleteUser(Username string) error {
 		log.Error("Could not delete user. Failed to prepare query: ", err.Error())
 		return err
 	}
-	_, err = query.Exec(Username)
+	_, err = query.Exec(username)
 	if err != nil {
 		log.Error("Could not delete user. Failed to execute query: ", err.Error())
 		return err
