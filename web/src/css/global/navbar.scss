@@ -10,6 +10,8 @@
     display: flex;
     flex-direction: column;
     white-space: nowrap;
+    transition-property: width, height;
+    transition-duration: .3s;
 
     &.closed { width: 5.125rem; }
 
@@ -38,6 +40,7 @@
             font-size: .8rem;
             padding-block-start: .1rem;
             transform: rotate(180deg);
+            transition: transform .3s;
 
             .nav.closed & { transform: rotate(0deg); }
         }
@@ -51,6 +54,7 @@
         padding-block: .5rem;
         padding-left: .4rem;
         cursor: pointer;
+        overflow-x: hidden;
 
         &__avatar {
             background-position: center;
@@ -66,8 +70,6 @@
             gap: .2rem;
             pointer-events: none;
 
-            .nav.closed & { opacity: 0; }
-
             &__full { font-weight: 600; }
         }
     }
@@ -81,6 +83,7 @@
         gap: .3rem;
         height: 3.125rem;
         cursor: pointer;
+        transition: background-color .2s;
 
         &:hover { background-color: var(--clr-hover); }
 
@@ -134,6 +137,7 @@
             color: var(--clr-text);
             margin-top: .625rem;
             border-radius: .4rem;
+            transition: background-color .2s;
 
             &:hover, &.active { background-color: var(--clr-hover); }
 
