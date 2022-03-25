@@ -1,5 +1,5 @@
-# smarthome
- 
+# Smarthome
+### Version: `v0.0.8-beta`
 ### The `setup.json`
 Most of the configuration of the smarthome server can be achieved using the `setup.json` file.
 This file is scanned and evaluated at startup.
