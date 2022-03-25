@@ -165,16 +165,21 @@ func main() {
 	// 	},
 	// )
 
-	database.ModifyHomescriptById(
-		"test",
-		database.HomescriptFrontend{
-			Name:                "new name",
-			Description:         "new description",
-			QuickActionsEnabled: false,
-			SchedulerEnabled:    false,
-			Code:                "lol",
-		},
-	)
+	// database.ModifyHomescriptById(
+	// 	"test",
+	// 	database.HomescriptFrontend{
+	// 		Name:                "new name",
+	// 		Description:         "new description",
+	// 		QuickActionsEnabled: false,
+	// 		SchedulerEnabled:    false,
+	// 		Code:                "lol",
+	// 	},
+	// )
+
+	// err = database.DeleteHomescriptById("test")
+	// if err != nil {
+	// 	panic(err.Error())
+	// }
 
 	event.Info("System Started", "The Smarthome server completed startup.")
 	log.Info(fmt.Sprintf("Smarthome v%s is running on port %d", utils.Version, port))

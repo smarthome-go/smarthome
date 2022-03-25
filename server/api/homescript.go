@@ -27,8 +27,12 @@ type AddHomescriptRequest struct {
 	Code                string `json:"code"`
 }
 
-type HomescriptRequest struct {
+type HomescriptLiveRunRequest struct {
 	Code string `json:"code"`
+}
+
+type HomescriptIdRequest struct {
+	Id string `json:"id"`
 }
 
 // Runs any given Homescript as a string
@@ -42,7 +46,7 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 	}
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
-	var request HomescriptRequest
+	var request HomescriptLiveRunRequest
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
@@ -141,4 +145,83 @@ func CreateNewHomescript(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully created new homescript"})
+}
+
+// Deletes a Homescript by its Id, checks if it exists and if the user has permission to delete it
+func DeleteHomescriptById(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
+		return
+	}
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request HomescriptIdRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	_, exists, err := database.GetUserHomescriptById(request.Id, username)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to delete homescript: could not validate existence", Error: "database failure"})
+		return
+	}
+	if !exists {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to delete homescript", Error: "not found / permission denied: no data is associated to this id"})
+		return
+	}
+	if err := database.DeleteHomescriptById(request.Id); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to delete homescript", Error: "database failure"})
+		return
+	}
+	json.NewEncoder(w).Encode(Response{Success: true, Message: "failed to delete homescript"})
+}
+
+// Modifies the metadata of a given homescript
+func ModifyHomescript(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
+		return
+	}
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request AddHomescriptRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	_, exists, err := database.GetUserHomescriptById(request.Id, username)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to modify homescript: could not validate existence", Error: "database failure"})
+		return
+	}
+	if !exists {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to modify homescript", Error: "not found / permission denied: no data is associated to this id"})
+		return
+	}
+	homescriptMetadata := database.HomescriptFrontend{
+		Name:                request.Name,
+		Description:         request.Description,
+		QuickActionsEnabled: request.QuickActionsEnabled,
+		SchedulerEnabled:    request.SchedulerEnabled,
+		Code:                request.Code,
+	}
+	if err := database.ModifyHomescriptById(request.Id, homescriptMetadata); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to modify homescript", Error: "database failure"})
+		return
+	}
+	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully modified homescript"})
 }

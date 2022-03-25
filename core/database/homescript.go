@@ -216,3 +216,21 @@ func DoesHomescriptExist(homescriptId string) (bool, error) {
 	}
 	return false, nil
 }
+
+// Deletes a homescript by its Id, does not check if the user has access to the homescript
+func DeleteHomescriptById(homescriptId string) error {
+	query, err := db.Prepare(`
+	DELETE FROM
+	homescript
+	WHERE Id=?
+	`)
+	if err != nil {
+		log.Error("Failed to delete homescript by id: preparing query failed")
+		return err
+	}
+	if _, err := query.Exec(homescriptId); err != nil {
+		log.Error("Failed to delete homescript by id: executing query failed")
+		return err
+	}
+	return nil
+}
