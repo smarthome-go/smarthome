@@ -2,7 +2,7 @@ package camera
 
 func TestReturn() ([]byte, error) {
 	url := "https://mik-mueller.de/assets/icon_1.png"
-	byt, err := fetchImageBytes(url)
+	byt, err := fetchImageBytes(url, 1)
 	if err != nil {
 		return nil, err
 	}

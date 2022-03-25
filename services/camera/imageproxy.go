@@ -8,6 +8,7 @@ import (
 	"image/png"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/pkg/errors"
 	"golang.org/x/image/webp"
@@ -17,8 +18,9 @@ import (
 
 // Fetches an image given an url, returns the image data as `[]byte`
 // WIll return an error if connection or parsing problems occur
-func fetchImageBytes(url string) ([]byte, error) {
-	response, err := http.Get(url)
+func fetchImageBytes(url string, timeout int) ([]byte, error) {
+	client := http.Client{Timeout: time.Second * time.Duration(timeout)}
+	response, err := client.Get(url)
 	if err != nil {
 		log.Error("Failed to fetch image through proxy: ", err.Error())
 		return make([]byte, 0), err
