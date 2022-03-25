@@ -14,11 +14,36 @@
         background-color: var(--clr-bg);
     }
 
+    &__toggle {
+        position: absolute;
+        right: 0;
+        top: 2rem;
+        color: var(--clr-text);
+        background-color: var(--clr-hover);
+        border-radius: 50%;
+        cursor: pointer;
+        height: 1.5625rem;
+        aspect-ratio: 1;
+        transform: translateX(50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        i {
+            font-size: .8rem;
+            padding-block-start: .1rem;
+            transform: rotate(180deg);
+        }
+    }
+
     &__header {
         position: relative;
         display: flex;
+        align-items: center;
         gap: .6rem;
         padding-block: .5rem;
+        padding-inline-start: .4rem;
+        cursor: pointer;
 
         &__avatar {
             background-position: center;
@@ -31,8 +56,53 @@
         &__texts {
             display: flex;
             flex-direction: column;
+            gap: .2rem;
 
             &__full { font-weight: 600; }
+        }
+    }
+
+    &__bell {
+        position: relative;
+        overflow-x: hidden;
+        border-radius: .3rem;
+        display: flex;
+        align-items: center;
+        gap: .3rem;
+        height: 3.125rem;
+        cursor: pointer;
+
+        &:hover { background-color: var(--clr-hover); }
+
+        &__icon {
+            height: 100%;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            &__i {
+                font-size: 1.25rem;
+                position: relative;
+
+                &__indicator {
+                    position: absolute;
+                    font-size: .6rem;
+                    border-radius: 50%;
+                    background-color: var(--clr-primary);
+                    height: .8rem;
+                    aspect-ratio: 1;
+                    padding: .1rem;
+                    top: 0;
+                    right: 0;
+                    transform: translate(50%, -50%);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    span { color: var(--clr-text-on-primary); }
+                }
+            }
         }
     }
 }

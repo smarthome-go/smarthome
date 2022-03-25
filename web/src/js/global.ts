@@ -40,6 +40,7 @@ export var data: Data = {
 export async function fetchData() {
     data.userData = await fetchUserData()
     data.notificationCount = await fetchNotificationCount()
+    console.log('Fetched data:', data)
 }
 
 export async function fetchUserData(): Promise<UserData> {
@@ -51,7 +52,7 @@ export async function fetchNotifications(): Promise<Notification[]> {
 }
 
 export async function fetchNotificationCount(): Promise<number> {
-    return await (await fetch('/api/user/notification/count')).json()
+    return (await (await fetch('/api/user/notification/count')).json()).count
 }
 
 export const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms))
