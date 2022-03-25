@@ -16,7 +16,6 @@ func InitLogger(logger *logrus.Logger) {
 // <true> means valid authentication
 // Can return an error if the database fails to return a valid result, meaning service downtime
 func ValidateCredentials(username string, password string) (bool, error) {
-	// TODO: create a dedicated function in the database for this
 	userExists, err := database.DoesUserExist(username)
 	if err != nil {
 		log.Error("Failed to validate password: could not check if user exists: ", err.Error())
@@ -55,5 +54,3 @@ func DeleteUser(username string) error {
 	}
 	return nil
 }
-
-// TODO: move create user in here

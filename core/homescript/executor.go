@@ -20,10 +20,6 @@ type Executor struct {
 	Output     string
 }
 
-func (self *Executor) Exit(code int) {
-	// TODO: implement an actual quit
-}
-
 // Prints to the console
 func (self *Executor) Print(args ...string) {
 	var output string
