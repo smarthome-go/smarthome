@@ -25,11 +25,9 @@ if not re.match(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d
         f"\x1b[31mThe version: '{VERSION}' is not a valid SemVer version.\x1b[0m")
     quit()
 
-# Add a leading 'v' after the check has passed
-FULL_VERSION = "v" + VERSION
 
 with open(main_go_path, "w") as main_go:
-    main_go.write(content.replace(old_version, FULL_VERSION))
+    main_go.write(content.replace(old_version, VERSION))
 
 # The Docker motd
 with open(docker_motd_path, "r") as docker_motd:
@@ -38,7 +36,7 @@ with open(docker_motd_path, "r") as docker_motd:
     print(f"Found old version in {docker_motd_path}:", old_version)
 
 with open(docker_motd_path, "w") as main_go:
-    main_go.write(content.replace(old_version, FULL_VERSION))
+    main_go.write(content.replace(old_version, VERSION))
     
 # The NPM `package.json`
 with open(package_json_path, "r") as package_json:
@@ -47,7 +45,7 @@ with open(package_json_path, "r") as package_json:
     print(f"Found old version in {package_json_path}:", old_version)
 
 with open(package_json_path, "w") as package_json:
-    package_json.write(content.replace(old_version, FULL_VERSION))
+    package_json.write(content.replace(old_version, VERSION))
     
 # The NPM `package.json`
 with open(readme_path, "r") as readme:
@@ -56,6 +54,6 @@ with open(readme_path, "r") as readme:
     print(f"Found old version in {readme_path}:", old_version)
     
 with open(readme_path, "w") as readme:
-    readme.write(content.replace(old_version, FULL_VERSION))
+    readme.write(content.replace(old_version, VERSION))
     
-print(f"Version has been upgraded from '{old_version}' to '{FULL_VERSION}'")
+print(f"Version has been upgraded from '{old_version}' to '{VERSION}'")
