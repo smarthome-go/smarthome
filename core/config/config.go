@@ -16,7 +16,6 @@ type ServerConfig struct {
 	Port       uint16 `json:"port"`
 }
 
-// TODO: finish moving config system to setup.json
 type Config struct {
 	Server   ServerConfig            `json:"server"`
 	Database database.DatabaseConfig `json:"database"`

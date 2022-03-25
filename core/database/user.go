@@ -111,7 +111,6 @@ func DeleteUser(username string) error {
 // Helper function to create a User which is given a set of basic permissions
 // Will return an error if the database fails
 // Does not check for duplicate users
-// TODO: loop over a given set of permission in here that every user should have | OR do the permission templating in another function or frontend (preferred)
 func AddUser(user FullUser) error {
 	userExists, err := DoesUserExist(user.Username)
 	if err != nil {
@@ -141,7 +140,6 @@ func AddUser(user FullUser) error {
 
 // Returns <true> if a provided user exists
 // If the database fails, it returns an error
-// TODO: rewrite to QueryRow
 func DoesUserExist(username string) (bool, error) {
 	userList, err := ListUsers()
 	if err != nil {

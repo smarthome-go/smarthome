@@ -12,7 +12,7 @@ type FullUser struct {
 	PrimaryColor string `json:"primaryColor"`
 	Password     string `json:"password"`
 	AvatarPath   string `json:"avatarPath"`
-	// TODO: add bg image, frontend themes and colors
+	// TODO: add bg image and frontend themes
 }
 
 type User struct {

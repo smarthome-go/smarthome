@@ -11,6 +11,7 @@ func databaseConnectionString() string {
 	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true", config.Username, config.Password, config.Hostname, config.Port, config.Database)
 }
 
+// Setups the connection to the datbase, then checks if it was successful via the ping
 func connection() (*sql.DB, error) {
 	dbTemp, err := sql.Open("mysql", databaseConnectionString())
 	if err != nil {
@@ -28,13 +29,7 @@ func connection() (*sql.DB, error) {
 	return dbTemp, nil
 }
 
-// TODO: add in a scheduler which runs every hour
-// TODO: add rpi check
-// TODO: add camera check
-// TODO: add weather check
-// TODO: add untis check
-// TODO: add self-check of errors in the last time using the internal logs of the last hour
-// TODO: use `db.QueryRow() at some locations`
+// Executes a ping to the database in order to check if it is online
 func CheckDatabase() error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelfunc()
