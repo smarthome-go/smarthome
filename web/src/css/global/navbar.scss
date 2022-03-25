@@ -7,6 +7,8 @@
     user-select: none;
     box-sizing: border-box;
     padding: 1rem;
+    display: flex;
+    flex-direction: column;
 
     &__bg {
         position: absolute;
@@ -42,7 +44,7 @@
         align-items: center;
         gap: .6rem;
         padding-block: .5rem;
-        padding-inline-start: .4rem;
+        padding-left: .4rem;
         cursor: pointer;
 
         &__avatar {
@@ -65,7 +67,7 @@
     &__bell {
         position: relative;
         overflow-x: hidden;
-        border-radius: .3rem;
+        border-radius: .4rem;
         display: flex;
         align-items: center;
         gap: .3rem;
@@ -102,6 +104,38 @@
 
                     span { color: var(--clr-text-on-primary); }
                 }
+            }
+        }
+    }
+
+    &__menubar {
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        flex-direction: column;
+        overflow-x: hidden;
+        flex-grow: 1;
+        padding-top: 1rem;
+
+        &__item {
+            height: 3.125rem;
+            display: flex;
+            align-items: center;
+            gap: .3rem;
+            text-decoration: none;
+            color: var(--clr-text);
+            margin-top: .625rem;
+            border-radius: .4rem;
+
+            &:hover, &.active { background-color: var(--clr-hover); }
+
+            i {
+                height: 100%;
+                aspect-ratio: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.25rem;
             }
         }
     }

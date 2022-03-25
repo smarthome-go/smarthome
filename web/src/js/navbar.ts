@@ -1,20 +1,36 @@
 import { data, fetchData } from './global'
 
-const links = [
+interface Link {
+    label: string,
+    uri: string,
+    icon: string,
+    position: 'top' | 'bottom',
+}
+
+const links: Link[] = [
     {
         label: "Dashboard",
-        link: "/dash",
+        uri: "/dash",
         icon: "fa-solid fa-house",
+        position: 'top',
     },
     {
         label: "Rooms",
-        link: "/rooms",
+        uri: "/rooms",
         icon: "fa-solid fa-table-cells-large",
+        position: 'top',
     },
     {
         label: "Profile",
-        link: "/profile",
+        uri: "/profile",
         icon: "fa-solid fa-user",
+        position: 'top',
+    },
+    {
+        label: "Logout",
+        uri: "/logout",
+        icon: "fa-solid fa-arrow-right-from-bracket",
+        position: 'bottom',
     },
 ]
 
@@ -91,4 +107,36 @@ async function main() {
     bellText.className = 'nav__bell__text'
     bellText.innerText = data.notificationCount === 1 ? 'Notification' : 'Notifications'
     bell.appendChild(bellText)
+
+    // TODO: Notification Drawer
+
+    // Menubar
+    const menubar = document.createElement('div')
+    menubar.className = 'nav__menubar'
+    navbar.appendChild(menubar)
+
+    const menubarTop = document.createElement('div')
+    menubar.appendChild(menubarTop)
+
+    const menubarBottom = document.createElement('div')
+    menubar.appendChild(menubarBottom)
+
+    for (const link of links) {
+        const item = document.createElement('a')
+        item.className = 'nav__menubar__item'
+        if (link.uri === window.location.pathname)
+            item.classList.add('active')
+        else item.href = link.uri
+        if (link.position === 'top')
+            menubarTop.appendChild(item)
+        else menubarBottom.appendChild(item)
+
+        const icon = document.createElement('i')
+        icon.className = link.icon
+        item.appendChild(icon)
+
+        const text = document.createElement('span')
+        text.innerText = link.label
+        item.appendChild(text)
+    }
 }
