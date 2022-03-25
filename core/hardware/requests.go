@@ -79,8 +79,23 @@ func sendPowerRequest(node database.HardwareNode, switchName string, powerOn boo
 		return err
 	}
 	if res.StatusCode != 200 {
-		// TODO: check firmware version of the power nodes, analyze errors
-		log.Error(fmt.Sprintf("Received non 200 status code: %d", res.StatusCode))
+		// TODO: check firmware version of the hardware nodes
+		switch res.StatusCode {
+		case 400:
+			log.Error(fmt.Sprintf("Power request to node '%s' failed with code '400/bad-request': smarthome has sent a request that the node could not process", node.Name))
+		case 401:
+			log.Error(fmt.Sprintf("Power request to node '%s' failed with code '401/unauthorized': token configuration is likely invalid", node.Name))
+		case 422:
+			log.Error(fmt.Sprintf("Power request to node '%s' failed with code 422/unprocessable-entity: the requested switch is not configured on the node", node.Name))
+		case 423:
+			log.Error(fmt.Sprintf("Power request to node '%s' failed with code 423/locked: node is currently in use by another service", node.Name))
+		case 500:
+			log.Error(fmt.Sprintf("Power request to node '%s' failed with code 500/internal-server-error: undefined error which could not be matched", node.Name))
+		case 503:
+			log.Error(fmt.Sprintf("Power request to node '%s' failed with code 503/service-unavailable: node is currently in maintenance mode", node.Name))
+		default:
+			log.Error(fmt.Sprintf("Power request to node '%s' failed with unknown status code: %s", node.Name, res.Status))
+		}
 		return errors.New("set power failed: non 200 status code")
 	}
 	defer res.Body.Close()
