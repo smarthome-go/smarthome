@@ -1,7 +1,7 @@
           ########
        ###        ###        Smarthome: A completely self-built Smarthome-system written in Go    
      ###            ###      Issues   : github.com/MikMuellerDev/smarthome
-   ###                ###    Version  : v0.0.8-beta
+   ###                ###    Version  : 0.0.8-beta
  ###                    ###
    |# #########@        |   
    |                    |     ___  __  __    _    ___  _____  _  _   ___   __  __  ___
@@ -9,3 +9,4 @@
    |        @@@@@@@@@@@@|    \__ \| |\/| | / _ \ |   /  | |  | __ || (_) || |\/| || _|
    |                    |    |___/|_|  |_|/_/ \_\|_|_\  |_|  |_||_| \___/ |_|  |_||___|
    @ ################## @
+
