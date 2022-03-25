@@ -12,8 +12,12 @@ with open(main_go_path, "r") as main_go:
     old_version = content.split("utils.Version = \"")[1].split("\"\n")[0]
     print(f"Found old version in {main_go_path}:", old_version)
 
-VERSION = input(
+try:
+    VERSION = input(
     f"Current version: {old_version}\nNew version (without 'v' prefix): ")
+except KeyboardInterrupt:
+    print("\nCanceled by user")
+    quit()
 
 if not re.match(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$", VERSION):
     print(
