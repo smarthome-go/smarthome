@@ -79,7 +79,7 @@ func sendPowerRequest(node database.HardwareNode, switchName string, powerOn boo
 		return err
 	}
 	if res.StatusCode != 200 {
-		// TODO: check firmware version of the hardware nodes
+		// TODO: check firmware version of the hardware nodes at startup / in the healthcheck
 		switch res.StatusCode {
 		case 400:
 			log.Error(fmt.Sprintf("Power request to node '%s' failed with code '400/bad-request': smarthome has sent a request that the node could not process", node.Name))
