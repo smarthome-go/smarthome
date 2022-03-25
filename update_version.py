@@ -27,7 +27,6 @@ if not re.match(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d
 # Add a leading 'v' after the check has passed
 FULL_VERSION = "v" + VERSION
 
-
 with open(main_go_path, "w") as main_go:
     main_go.write(content.replace(old_version, FULL_VERSION))
 
