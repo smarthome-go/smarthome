@@ -31,7 +31,6 @@ func (self *Executor) Print(args ...string) {
 		self.Output += arg
 		output += arg
 	}
-	log.Info(fmt.Sprintf("[Homescript] script: '%s' user: '%s': %s", self.ScriptName, self.Username, output))
 }
 
 // Returns a boolean if the requested switch is on or off
@@ -152,7 +151,7 @@ func (self *Executor) GetDate() (int, int, int, int, int, int) {
 func (self *Executor) GetDebugInfo() (string, error) {
 	debugInfo := utils.SysInfo()
 	var output string
-	output += fmt.Sprintf("%s\n", strings.Repeat("\u2015", 45))
+	output += fmt.Sprintf("\n%s\n", strings.Repeat("\u2015", 45))
 	output += fmt.Sprintf(" Smarthome Server Version: %s │ v%s\n", strings.Repeat(" ", 30-len("Smarthome Server Version: ")), debugInfo.ServerVersion)
 	var databaseOnlineString = "\x1b[1;31mNO\x1b[1;0m"
 	if debugInfo.DatabaseOnline {
