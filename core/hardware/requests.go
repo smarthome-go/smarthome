@@ -61,7 +61,6 @@ func checkNodeOnline(node database.HardwareNode) error {
 // Delivers a power job to a given hardware node
 // Returns an error if the job fails to execute on the hardware
 // However, the preferred method of communication is by using the API `SetPower()` this way, priorities and interrupts are scheduled automatically
-// TODO: add field in the node table for marking a node as unavailable (unavailable nodes will be excluded from the normal power request)
 // A check if  a node is online again can be still executed afterwards
 func sendPowerRequest(node database.HardwareNode, switchName string, powerOn bool) error {
 	requestBody, err := json.Marshal(HardwareRequest{
@@ -102,6 +101,11 @@ func setPowerOnAllNodes(switchName string, powerOn bool) error {
 		return err
 	}
 	for _, node := range nodes {
+		if !node.Online && node.Enabled {
+			go checkNodeOnline(node)
+			log.Warn(fmt.Sprintf("Skipping node: '%s' because it is currently marked as offline", node.Name))
+			continue
+		}
 		errTemp := sendPowerRequest(node, switchName, powerOn)
 		if errTemp != nil {
 			// If the request failed, check the node and mark it as offline
