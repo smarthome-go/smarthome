@@ -197,7 +197,7 @@ func GetPowerStates() ([]PowerState, error) {
 	powerStates := make([]PowerState, 0)
 	for res.Next() {
 		var powerState PowerState
-		err := res.Scan(&powerState.SwitchId, &powerState.PowerOn)
+		err := res.Scan(&powerState.Switch, &powerState.PowerOn)
 		if err != nil {
 			log.Error("Failed to list powerstates: failed to scan query: ", err.Error())
 			return []PowerState{}, err

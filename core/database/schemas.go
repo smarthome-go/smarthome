@@ -33,8 +33,8 @@ type Switch struct {
 //Contains the switch id and a matching boolean
 // Used when requesting global power states
 type PowerState struct {
-	SwitchId string `json:"switch"`
-	PowerOn  bool   `json:"powerOn"`
+	Switch  string `json:"switch"`
+	PowerOn bool   `json:"powerOn"`
 }
 
 // Identified by a unique Id, has a Name and Description

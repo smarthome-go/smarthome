@@ -9,9 +9,9 @@ import (
 )
 
 type PowerJob struct {
-	Id         int64  `json:"id"`
-	SwitchName string `json:"switchName"`
-	Power      bool   `json:"power"`
+	Id     int64  `json:"id"`
+	Switch string `json:"switch"`
+	Power  bool   `json:"power"`
 }
 
 type JobResult struct {
