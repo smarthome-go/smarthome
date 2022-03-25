@@ -6,6 +6,7 @@ import re
 docker_motd_path = "docker/motd"
 package_json_path = "web/package.json"
 main_go_path = "main.go"
+readme_path = "README.md"
 
 with open(main_go_path, "r") as main_go:
     content = main_go.read()
@@ -47,5 +48,14 @@ with open(package_json_path, "r") as package_json:
 
 with open(package_json_path, "w") as package_json:
     package_json.write(content.replace(old_version, FULL_VERSION))
+    
+# The NPM `package.json`
+with open(readme_path, "r") as readme:
+    content = readme.read()
+    old_version = content.split("### Version: `")[1].split("`\n")[0]
+    print(f"Found old version in {readme_path}:", old_version)
+    
+with open(readme_path, "w") as readme:
+    readme.write(content.replace(old_version, FULL_VERSION))
     
 print(f"Version has been upgraded from '{old_version}' to '{FULL_VERSION}'")
