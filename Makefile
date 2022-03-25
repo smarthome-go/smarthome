@@ -1,7 +1,7 @@
 appname := smarthome
 workingdir := smarthome
 sources := $(wildcard *.go)
-homescript_cli_version := v0.2.4-beta
+homescript_cli_version := v0.3.0-beta
 
 build = GOOS=$(1) GOARCH=$(2) go build -o $(appname) $(4)
 tar = mkdir -p build && cd ../ && tar -cvzf ./$(appname)_$(1)_$(2).tar.gz $(workingdir)/$(appname) $(workingdir)/web/out $(workingdir)/web/html $(workingdir)/web/assets && mv $(appname)_$(1)_$(2).tar.gz $(workingdir)/build
@@ -15,6 +15,9 @@ setup:
 	go mod tidy
 	cd web && npm i
 
+# Updating the current version in all locations
+version:
+	python3 update_version.py
 
 # Run
 run: web
@@ -30,6 +33,7 @@ clean: cleanweb
 	rm -rf bin
 	rm -rf log
 	rm -rf docker/app
+	rm -rf docker/bin
 	rm -rf docker/homescript
 	rm -rf docker/homescript_linux_amd64.tar.gz
 	rm -rf docker/smarthome
