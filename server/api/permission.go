@@ -14,8 +14,6 @@ type UserPermissionRequest struct {
 	Username   string `json:"username"`
 	Permission string `json:"permission"`
 }
-
-// TODO: check if `Switch` is called somewhat else in other places
 type UserSwitchPermissionRequest struct {
 	Username string `json:"username"`
 	Switch   string `json:"switch"`
@@ -133,7 +131,6 @@ func RemoveUserPermission(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully removed permission from user"})
 }
 
-// TODO: add all request body docs
 // Add a switchPermission to a given user, admin authentication required
 // Request: `{"username": "x", "switch": "y"}` | Response: Response
 func AddSwitchPermission(w http.ResponseWriter, r *http.Request) {
@@ -184,7 +181,6 @@ func AddSwitchPermission(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully added switch permission to user"})
 }
 
-// TODO: split into either a submodlue or separate files, should be in a subfolder in server/api or server/routes/api and /server/routes/ui
 // Removes a given switch permission from a given user, admin authentication required
 // Request: `{"username": "x", "switch": "y"}` | Response: Response
 func RemoveSwitchPermission(w http.ResponseWriter, r *http.Request) {

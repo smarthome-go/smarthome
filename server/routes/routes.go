@@ -93,9 +93,8 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/homescript/run/live", mdl.ApiAuth(mdl.Perm(api.RunHomescriptString, database.PermissionRunHomescript))).Methods("POST")
 	r.HandleFunc("/api/homescript/list/personal", mdl.ApiAuth(api.ListPersonalHomescripts)).Methods("GET")
 
-	// TODO: add removal functions
-
 	// TODO: remove this one below
+	// TODO: add camera modification / management features
 	// Test camera module here
 	r.HandleFunc("/api/camera/test", api.TestImageProxy).Methods("GET")
 
