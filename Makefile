@@ -1,7 +1,6 @@
 appname := smarthome
 workingdir := smarthome
 sources := $(wildcard *.go)
-homescript_cli_version := v0.3.0-beta
 
 build = GOOS=$(1) GOARCH=$(2) go build -o $(appname) $(4)
 tar = mkdir -p build && cd ../ && tar -cvzf ./$(appname)_$(1)_$(2).tar.gz $(workingdir)/$(appname) $(workingdir)/web/out $(workingdir)/web/html $(workingdir)/web/assets && mv $(appname)_$(1)_$(2).tar.gz $(workingdir)/build
@@ -62,9 +61,6 @@ docker: cleanall web
 	# rsync -rv --exclude=data/avatars data docker/app/
 	rsync -rv --exclude=web/src web docker/app/
 	cp smarthome docker/app/
-	cd docker && wget "https://github.com/MikMuellerDev/homescript-cli/releases/download/$(homescript_cli_version)/homescript_linux_amd64.tar.gz"
-	cd docker && tar -xvf homescript_linux_amd64.tar.gz
-	cd docker && mv bin/homescript .
 	cd docker && docker build . -t mikmuellerdev/smarthome
 
 web: cleanweb
