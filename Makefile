@@ -19,6 +19,9 @@ setup:
 version:
 	python3 update_version.py
 
+# Change version on build
+release: cleanall version build
+
 # Run
 run: web
 	go run . &
