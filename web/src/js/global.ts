@@ -37,10 +37,21 @@ export var data: Data = {
     notificationDoneMarkerAdded: false
 }
 
+let isFetching = false
+let hasFetched = false
+
 export async function fetchData() {
+    if (hasFetched) return
+    if (isFetching) {
+        while (isFetching) await sleep(5)
+        return
+    }
+    isFetching = true
     data.userData = await fetchUserData()
     data.notificationCount = await fetchNotificationCount()
     console.log('Fetched data:', data)
+    isFetching = false
+    hasFetched = true
 }
 
 export async function fetchUserData(): Promise<UserData> {
