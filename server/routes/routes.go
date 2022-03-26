@@ -110,7 +110,7 @@ func NewRouter() *mux.Router {
 	r.PathPrefix(assetsPathPrefix).Handler(http.StripPrefix(assetsPathPrefix, assetsFileserver))
 
 	// Node modules used in frontend
-	externalFilepath := "web/build/assets/"
+	externalFilepath := "web/build/external/"
 	externalPathPrefix := "/external"
 	externalFileserver := http.FileServer(http.Dir(externalFilepath))
 	r.PathPrefix(externalPathPrefix).Handler(http.StripPrefix(externalPathPrefix, externalFileserver))

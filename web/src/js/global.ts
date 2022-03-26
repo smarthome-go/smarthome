@@ -1,3 +1,7 @@
+import { MDCRipple } from '@material/ripple/index'
+for (const button of document.getElementsByClassName('mdc-button'))
+    MDCRipple.attachTo(button)
+
 // Global data interface
 export interface Data {
     userData: UserData
