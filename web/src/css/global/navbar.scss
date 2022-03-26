@@ -1,3 +1,5 @@
+@use 'sass.scss' as *;
+
 .nav {
     position: fixed;
     left: 0;
@@ -9,11 +11,26 @@
     padding: 1rem;
     display: flex;
     flex-direction: column;
+    & > * { flex-shrink: 0; }
     white-space: nowrap;
     transition-property: width, height;
     transition-duration: .3s;
 
-    &.closed { width: 5.125rem; }
+    @include mobile {
+        bottom: auto;
+        width: auto;
+        right: 0;
+        padding-block: 0;
+        height: 100%;
+    }
+    &.closed {
+        width: 5.125rem;
+
+        @include mobile {
+            width: auto;
+            height: 3.5rem;
+        }
+    }
 
     &__bg {
         position: absolute;
@@ -35,6 +52,13 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        z-index: 10;
+
+        @include mobile {
+            top: 1.75rem;
+            left: 5rem;
+            transform: translateY(-50%) rotate(90deg) scale(120%);
+        }
 
         i {
             font-size: .8rem;
@@ -56,6 +80,8 @@
         cursor: pointer;
         overflow-x: hidden;
 
+        @include mobile { width: min-content; }
+
         &__avatar {
             background-position: center;
             background-size: cover;
@@ -69,6 +95,8 @@
             flex-direction: column;
             gap: .2rem;
             pointer-events: none;
+
+            @include mobile { display: none; }
 
             &__full { font-weight: 600; }
         }
@@ -86,6 +114,16 @@
         transition: background-color .2s;
 
         &:hover { background-color: var(--clr-hover); }
+        @include mobile {
+            width: min-content;
+            position: absolute;
+            top: 1.75rem;
+            right: 1rem;
+            transform: translate(200%, -50%);
+            transition: transform .2s;
+
+            .nav.closed & { transform: translateY(-50%); }
+        }
 
         &__icon {
             height: 100%;
@@ -117,6 +155,10 @@
                 }
             }
         }
+
+        &__text {
+            @include mobile { display: none; }
+        }
     }
 
     &__menubar {
@@ -127,6 +169,10 @@
         overflow-x: hidden;
         flex-grow: 1;
         padding-top: 1rem;
+        @include mobile {
+            flex-shrink: 1;
+            overflow-y: hidden;
+        }
 
         &__item {
             height: 3.125rem;
@@ -170,8 +216,19 @@
     padding: 1rem;
     overflow-y: auto;
     overflow-x: hidden;
+    @include mobile {
+        top: auto;
+        left: 0;
+        width: auto;
+        height: calc(100vh - 3.5rem);
+        box-sizing: border-box;
+        transform: translateY(100%);
+    }
 
-    &.hidden { transform: translateX(0%); }
+    &.hidden {
+        transform: translateX(0%);
+        @include mobile { transform: translateY(0%); }
+    }
 
     &__delete {
         cursor: pointer;
