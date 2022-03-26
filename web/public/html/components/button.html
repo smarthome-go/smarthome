@@ -1,0 +1,8 @@
+{{ define "Button" }}
+<button type="button" id="right__form__button" class="mdc-button mdc-button--raised">
+    {{ if ne .Icon nil }}
+    <i class="fa-solid {{ .Icon }} mdc-button__icon" aria-hidden="true"></i>
+    {{ end }}
+    <span class="mdc-button__label">{{ .Label }}</span>
+</button>
+{{ end }}

@@ -144,7 +144,7 @@ func main() {
 
 	r := routes.NewRouter()
 	middleware.Init(configStruct.Server.Production)
-	templates.LoadTemplates("web/build/html/*.html")
+	templates.LoadTemplates("web/build/html/*.html", "web/build/html/components/*.html")
 	http.Handle("/", r)
 
 	for i := 0; i < 2; i++ {
