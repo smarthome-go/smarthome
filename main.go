@@ -12,6 +12,7 @@ import (
 	"github.com/MikMuellerDev/smarthome/core/event"
 	"github.com/MikMuellerDev/smarthome/core/hardware"
 	"github.com/MikMuellerDev/smarthome/core/homescript"
+	"github.com/MikMuellerDev/smarthome/core/scheduler"
 	"github.com/MikMuellerDev/smarthome/core/user"
 	"github.com/MikMuellerDev/smarthome/core/utils"
 	"github.com/MikMuellerDev/smarthome/server/api"
@@ -45,6 +46,7 @@ func main() {
 	hardware.InitLogger(log)
 	event.InitLogger(log)
 	homescript.InitLogger(log)
+	scheduler.InitLogger(log)
 
 	// Read config file
 	if err := config.ReadConfigFile(); err != nil {
@@ -180,6 +182,38 @@ func main() {
 	// if err != nil {
 	// 	panic(err.Error())
 	// }
+
+	scheduler.Init()
+
+	database.CreateNewHomescript(database.Homescript{
+		Id:                  "test",
+		Owner:               "admin",
+		Name:                "test",
+		Description:         "this is a test",
+		QuickActionsEnabled: false,
+		SchedulerEnabled:    true,
+		Code:                "switch('s2', on)",
+	})
+
+	if err := scheduler.CreateNewAutomation(
+		"test automation",
+		"this is a description",
+		19,
+		23,
+		[]scheduler.Day{
+			scheduler.Monday,
+			scheduler.TuesDay,
+			scheduler.Wednesday,
+			scheduler.Thursday,
+			scheduler.Friday,
+			scheduler.Saturday,
+			scheduler.Sunday,
+		},
+		"test",
+		"admin",
+	); err != nil {
+		log.Error(err.Error())
+	}
 
 	event.Info("System Started", "The Smarthome server completed startup.")
 	log.Info(fmt.Sprintf("Smarthome v%s is running on port %d", utils.Version, port))

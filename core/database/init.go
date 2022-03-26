@@ -58,6 +58,9 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 	if err := createHomescriptTable(); err != nil {
 		return err
 	}
+	if err := createAutomationTable(); err != nil {
+		return err
+	}
 	return nil
 }
 
