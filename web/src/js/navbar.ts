@@ -1,4 +1,5 @@
 import { data, fetchData } from './global'
+import { createDrawer, toggleDrawer } from './notifications'
 
 interface Link {
     label: string,
@@ -87,6 +88,7 @@ async function main() {
     // Bell
     const bell = document.createElement('div')
     bell.className = 'nav__bell'
+    bell.onclick = () => toggleDrawer(notifications)
     navbar.appendChild(bell)
 
     const bellIconContainer = document.createElement('div')
@@ -108,7 +110,9 @@ async function main() {
     bellText.innerText = data.notificationCount === 1 ? 'Notification' : 'Notifications'
     bell.appendChild(bellText)
 
-    // TODO: Notification Drawer
+    // Notification Drawer
+    const notifications = createDrawer()
+    navbar.appendChild(notifications)
 
     // Menubar
     const menubar = document.createElement('div')

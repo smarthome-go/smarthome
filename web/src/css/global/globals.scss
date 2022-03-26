@@ -4,11 +4,20 @@
     --clr-warn: #ffda61;
     --clr-primary: #88ff70;
     --clr-text: #cccccc;
+    --clr-text-faint: #949494;
     --clr-text-on-primary: #222;
     --clr-hover: #ffffff1a;
+
+    --clr-fake-text-light: #ffffff1a;
+    --clr-fake-text: #0000001a;
+    --clr-fake-text-dark: #0003;
 }
 
 .nav { --clr-bg: #242526; }
+.notification {
+    --clr-bg: #3a3b3c;
+    --clr-bg-dark: #2f3031;
+}
 .notifications { --clr-bg: #202122; }
 
 body {
