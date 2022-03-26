@@ -1,4 +1,18 @@
 {
+  "name": "smarthome-web",
+  "version": "0.0.11-beta",
+  "description": "Web interface for Smarthome",
+  "author": "MikMuellerDev",
+  "license": "GPL-2.0-only",
+  "repository": {
+    "type": "git",
+    "url": "github.com/MikMuellerDev/smarthome"
+  },
+  "keywords": [
+    "smarthome",
+    "automation",
+    "home"
+  ],
   "scripts": {
     "watch": "NODE_ENV=development snowpack build",
     "build": "snowpack build"
