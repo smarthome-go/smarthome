@@ -198,8 +198,8 @@ func main() {
 	if err := scheduler.CreateNewAutomation(
 		"test automation",
 		"this is a description",
-		19,
-		23,
+		22,
+		8,
 		[]scheduler.Day{
 			scheduler.Monday,
 			scheduler.TuesDay,

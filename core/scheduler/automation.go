@@ -46,7 +46,7 @@ func CreateNewAutomation(
 	}
 	log.Debug(fmt.Sprintf("Created new automation '%s' for user '%s", name, owner))
 
-	// Prepare a job for gocron
+	// Prepare a job for go-cron
 	automationJob := scheduler.Cron(cronExpression)
 	automationJob.Tag(fmt.Sprintf("%d", newAutomationId))
 
@@ -67,7 +67,7 @@ func automationRunnerFunc(automationId uint) {
 		return
 	}
 	if !jobFound {
-		log.Error(fmt.Sprintf("Automation with the Id :'%d' could not be executed: Id not found in database", automationId))
+		log.Error(fmt.Sprintf("Automation with the Id: '%d' could not be executed: Id not found in database", automationId))
 		event.Error(
 			"Automation Failure",
 			fmt.Sprintf("Automation with the Id: '%d' could not be executed because it could not be found in the database", automationId),

@@ -98,5 +98,5 @@ func GetAutomationById(id uint) (Automation, bool, error) {
 		}
 		return Automation{}, false, err
 	}
-	return Automation{}, false, nil
+	return automation, true, nil
 }
