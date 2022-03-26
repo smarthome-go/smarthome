@@ -10,27 +10,27 @@ interface Link {
 
 const links: Link[] = [
     {
-        label: "Dashboard",
-        uri: "/dash",
-        icon: "fa-solid fa-house",
+        label: 'Dashboard',
+        uri: '/dash',
+        icon: 'fa-solid fa-house',
         position: 'top',
     },
     {
-        label: "Rooms",
-        uri: "/rooms",
-        icon: "fa-solid fa-table-cells-large",
+        label: 'Rooms',
+        uri: '/rooms',
+        icon: 'fa-solid fa-table-cells-large',
         position: 'top',
     },
     {
-        label: "Profile",
-        uri: "/profile",
-        icon: "fa-solid fa-user",
+        label: 'Profile',
+        uri: '/profile',
+        icon: 'fa-solid fa-user',
         position: 'top',
     },
     {
-        label: "Logout",
-        uri: "/logout",
-        icon: "fa-solid fa-arrow-right-from-bracket",
+        label: 'Logout',
+        uri: '/logout',
+        icon: 'fa-solid fa-arrow-right-from-bracket',
         position: 'bottom',
     },
 ]
@@ -142,5 +142,14 @@ async function main() {
         const text = document.createElement('span')
         text.innerText = link.label
         item.appendChild(text)
+    }
+
+    // Open navbar on large screens
+    if (window.matchMedia('screen and (min-width: 93.75rem)').matches)
+        navbar.classList.remove('closed')
+    window.onresize = () => {
+        if (window.matchMedia('screen and (min-width: 93.75rem)').matches)
+            navbar.classList.remove('closed')
+        else navbar.classList.add('closed')
     }
 }

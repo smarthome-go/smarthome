@@ -26,10 +26,10 @@ export interface Notification {
 // Global datastore, it populated when the page loads
 export var data: Data = {
     userData: {
-        forename: "",
-        primaryColor: "",
-        surname: "",
-        username: "",
+        forename: '',
+        primaryColor: '',
+        surname: '',
+        username: '',
     },
     notifications: [],
     notificationCount: 0,

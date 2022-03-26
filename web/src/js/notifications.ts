@@ -43,9 +43,7 @@ export async function toggleDrawer(drawer: HTMLDivElement) {
     data.notificationCount = data.notifications.length
 
     // Remove dummy notifications
-    while (drawer.firstChild) {
-        drawer.removeChild(drawer.firstChild)
-    }
+    drawer.innerHTML = ''
 
     if (data.notificationCount === 0) {
         addDoneMarker(drawer)
@@ -80,7 +78,7 @@ export async function toggleDrawer(drawer: HTMLDivElement) {
         line.className = 'notification__line'
         line.style.setProperty(
             '--clr-priority',
-            notification.priority === 1 ? 'var(--clr-primary)' // TODO: maybe separate success color
+            notification.priority === 1 ? 'var(--clr-success)'
                 : notification.priority === 2 ? 'var(--clr-warn)'
                     : 'var(--clr-error)'
         )
@@ -120,11 +118,16 @@ function updateIndicator() {
     const indicator = document.getElementsByClassName('nav__bell__icon__i__indicator')[0] as HTMLSpanElement
     indicator.innerHTML = `<span>${data.notificationCount}</span>`
     indicator.style.opacity = data.notificationCount === 0 ? '0' : '1'
+
+    const bellText = document.getElementsByClassName('nav__bell__text')[0] as HTMLSpanElement
+    bellText.innerText = data.notificationCount === 1 ? 'Notification' : 'Notifications'
 }
 
 function addDoneMarker(drawer: HTMLDivElement) {
     if (data.notificationCount !== 0 || data.notificationDoneMarkerAdded) return
     data.notificationDoneMarkerAdded = true
+    drawer.innerHTML = ''
+
     const icon = document.createElement('i')
     icon.className = 'notifications__check fa-solid fa-check'
     drawer.appendChild(icon)

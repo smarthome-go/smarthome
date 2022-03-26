@@ -53,11 +53,16 @@
         align-items: center;
         justify-content: center;
         z-index: 10;
+        transition: opacity .3s;
 
         @include mobile {
             top: 1.75rem;
             left: 5rem;
             transform: translateY(-50%) rotate(90deg) scale(120%);
+        }
+        @include widescreen {
+            opacity: 0;
+            pointer-events: none;
         }
 
         i {
@@ -264,6 +269,7 @@
     transition: transform .2s;
     width: 100%;
     box-sizing: border-box;
+    user-select: text;
 
     &.dummy {
         animation-iteration-count: infinite;
@@ -297,7 +303,10 @@
         position: absolute;
         border-radius: .3rem;
         overflow: hidden;
-        inset: 0;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: .5rem;
 
         &::before {
             content: '';

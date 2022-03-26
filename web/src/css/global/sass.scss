@@ -3,3 +3,9 @@
         @content;
     }
 }
+
+@mixin widescreen {
+    @media screen and (min-width: 93.75rem) {
+        @content;
+    }
+}
