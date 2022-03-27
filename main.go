@@ -12,7 +12,7 @@ import (
 	"github.com/MikMuellerDev/smarthome/core/event"
 	"github.com/MikMuellerDev/smarthome/core/hardware"
 	"github.com/MikMuellerDev/smarthome/core/homescript"
-	"github.com/MikMuellerDev/smarthome/core/scheduler"
+	"github.com/MikMuellerDev/smarthome/core/scheduler/automation"
 	"github.com/MikMuellerDev/smarthome/core/user"
 	"github.com/MikMuellerDev/smarthome/core/utils"
 	"github.com/MikMuellerDev/smarthome/server/api"
@@ -65,7 +65,7 @@ func main() {
 	hardware.InitLogger(log)
 	event.InitLogger(log)
 	homescript.InitLogger(log)
-	scheduler.InitLogger(log)
+	automation.InitLogger(log)
 
 	// Read config file
 	if err := config.ReadConfigFile(); err != nil {
@@ -202,7 +202,7 @@ func main() {
 	// 	panic(err.Error())
 	// }
 
-	scheduler.Init()
+	automation.Init()
 
 	database.AddUser(
 		database.FullUser{

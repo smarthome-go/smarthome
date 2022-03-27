@@ -5,7 +5,8 @@ import (
 	"net/http"
 
 	"github.com/MikMuellerDev/smarthome/core/database"
-	"github.com/MikMuellerDev/smarthome/core/scheduler"
+	"github.com/MikMuellerDev/smarthome/core/scheduler/automation"
+	scheduler "github.com/MikMuellerDev/smarthome/core/scheduler/automation"
 	"github.com/MikMuellerDev/smarthome/server/middleware"
 )
 
@@ -16,6 +17,10 @@ type NewAutomationRequest struct {
 	Minute       uint    `json:"minute"` // 60 >= m >= 0 | Can only be used with hour, specifies the exact minute on which the automation will run
 	Days         []uint8 `json:"days"`   //  6 >= d >= 0 | Can contain 7 elements at maximum, value `0` represents Sunday, value `6` represents Saturday
 	HomescriptId string  `json:"homescriptId"`
+}
+
+type DeleteAutomationRequest struct {
+	Id uint `json:"id"`
 }
 
 // Returns a list of all automations set up by the current user
@@ -113,4 +118,40 @@ func CreateNewAutomation(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully added new automation"})
 }
 
-// TODO: modify and delete automations
+// Stops, then removes the given automation from the system
+func RemoveAutomation(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
+		return
+	}
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request DeleteAutomationRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	_, doesExists, err := automation.GetUserAutomationById(username, request.Id) // Checks if the automation exists and if the user is allowed to delete it
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to delete automation", Error: "backend failure"})
+		return
+	}
+	if !doesExists {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to delete automation", Error: "invalid id / not found"})
+		return
+	}
+	if err := automation.RemoveAutomation(request.Id); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to delete automation", Error: "backend failure"})
+		return
+	}
+	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully deleted automation"})
+}
+
+// TODO: modify automations

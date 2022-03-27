@@ -142,6 +142,38 @@ func GetUserAutomations(username string) ([]Automation, error) {
 		}
 		automations = append(automations, automation)
 	}
+	defer res.Close()
+	return automations, nil
+}
+
+// Returns a list with automations of all users
+// Used for activating persistent automations when the server starts
+func GetAutomations() ([]Automation, error) {
+	res, err := db.Query(`
+	SELECT
+	Id, Name, Description, CronExpression, HomescriptId, Owner
+	FROM automation
+	`)
+	if err != nil {
+		log.Error("Failed to list all automations: executing query failed: ", err.Error())
+		return nil, err
+	}
+	automations := make([]Automation, 0)
+	for res.Next() {
+		var automation Automation
+		if err := res.Scan(
+			&automation.Id,
+			&automation.Name,
+			&automation.Description,
+			&automation.CronExpression,
+			&automation.HomescriptId,
+			&automation.Owner,
+		); err != nil {
+			log.Error("Failed to list all automations: scanning for results failed: ", err.Error())
+		}
+		automations = append(automations, automation)
+	}
+	defer res.Close()
 	return automations, nil
 }
 
