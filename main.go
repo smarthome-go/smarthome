@@ -235,6 +235,22 @@ func main() {
 		log.Error(err.Error())
 	}
 
+	fmt.Println(database.GetUserAutomations("admin"))
+
+	if err := database.ModifyAutomation(
+		1,
+		database.AutomationWithoutIdAndUsername{
+			Name:           "",
+			Description:    "",
+			CronExpression: "",
+			HomescriptId:   "test",
+			Owner:          "admin",
+		},
+	); err != nil {
+		log.Error(err.Error())
+	}
+	fmt.Println(database.DeleteAutomationById(3))
+
 	event.Info("System Started", "The Smarthome server completed startup.")
 	log.Info(fmt.Sprintf("Smarthome v%s is running on port %d", utils.Version, port))
 	if err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
