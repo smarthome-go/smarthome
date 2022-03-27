@@ -21,7 +21,7 @@ func InitLogger(logger *logrus.Logger) {
 }
 
 // Generates a cron expression based on hour, minute, and a slice of days on which the action will run
-func generateCronExpression(hour uint8, minute uint8, days []uint8) (string, error) {
+func GenerateCronExpression(hour uint8, minute uint8, days []uint8) (string, error) {
 	output := [5]string{"", "", "*", "*", ""}
 	output[0] = fmt.Sprintf("%d", minute)
 	output[1] = fmt.Sprintf("%d", hour)

@@ -1,6 +1,7 @@
 package automation
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/MikMuellerDev/smarthome/core/database"
@@ -29,7 +30,7 @@ func CreateNewAutomation(
 ) error {
 	// Generate a cron expression based on the input data
 	// The `days` slice should not be longer than 7
-	cronExpression, err := generateCronExpression(
+	cronExpression, err := GenerateCronExpression(
 		hour,
 		minute,
 		days,
@@ -78,7 +79,7 @@ func RemoveAutomation(automationId uint) error {
 		log.Error("Failed to remove automation item: could not stop job: ", err.Error())
 		return err
 	}
-	log.Trace(fmt.Printf("Deactivated and removed automation '%d'", automationId))
+	log.Trace(fmt.Sprintf("Deactivated and removed automation '%d'", automationId))
 	return nil
 }
 
@@ -142,12 +143,25 @@ func GetUserAutomationById(username string, automationId uint) (Automation, bool
 	return Automation{}, false, nil
 }
 
-// TODO: add modify automation
+// Changes the metadata of a given automation and then restarts it so it uses the updated values
 func ModifyAutomationById(automationId uint, newAutomation database.AutomationWithoutIdAndUsername) error {
+	if !IsValidCronExpression(newAutomation.CronExpression) {
+		log.Error("Failed to modify automation: invalid cron expression provided")
+		return errors.New("failed to modify automation: invalid cron expression provided")
+	}
 	if err := database.ModifyAutomation(automationId, newAutomation); err != nil {
 		log.Error("Failed to modify automation by id: ", err.Error())
 		return err
 	}
 	// After the metadata has been changed, restart the scheduler
+	if err := scheduler.RemoveByTag(fmt.Sprintf("%d", automationId)); err != nil {
+		log.Error("Failed to remove automation item: could not stop job: ", err.Error())
+		return err
+	}
+	// Restart the scheduler after the old one was disabled
+	automationJob := scheduler.Cron(newAutomation.CronExpression)
+	automationJob.Tag(fmt.Sprintf("%d", automationId))
+	automationJob.Do(automationRunnerFunc, automationId)
+	log.Debug(fmt.Sprintf("Automation %d has been modified and restarted", automationId))
 	return nil
 }

@@ -18,7 +18,6 @@ type AutomationWithoutIdAndUsername struct {
 	Description    string
 	CronExpression string
 	HomescriptId   string
-	Owner          string
 }
 
 // Creates a new table containing the automation jobs
