@@ -18,7 +18,7 @@ type HomescriptResponse struct {
 	Errors   []homescript.HomescriptError `json:"error"`
 }
 
-type AddHomescriptRequest struct {
+type CreateHomescriptRequest struct {
 	Id                  string `json:"id"`
 	Name                string `json:"name"`
 	Description         string `json:"description"`
@@ -113,7 +113,7 @@ func CreateNewHomescript(w http.ResponseWriter, r *http.Request) {
 	}
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
-	var request AddHomescriptRequest
+	var request CreateHomescriptRequest
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
@@ -194,7 +194,7 @@ func ModifyHomescript(w http.ResponseWriter, r *http.Request) {
 	}
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
-	var request AddHomescriptRequest
+	var request CreateHomescriptRequest
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
