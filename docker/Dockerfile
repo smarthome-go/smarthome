@@ -1,7 +1,7 @@
 FROM amd64/debian:stable-slim
 
 LABEL author="MikMuellerDev"
-LABEL version="0.0.11-beta"
+LABEL version="0.0.12-beta"
 
 RUN useradd -M smarthome
 
