@@ -26,7 +26,7 @@ import (
 var port = 8082
 
 func main() {
-	utils.Version = "0.0.15-beta"
+	utils.Version = "0.0.16-beta"
 
 	// Create logger
 	logLevel := logrus.TraceLevel
