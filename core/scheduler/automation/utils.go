@@ -141,3 +141,13 @@ func GetUserAutomationById(username string, automationId uint) (Automation, bool
 	}
 	return Automation{}, false, nil
 }
+
+// TODO: add modify automation
+func ModifyAutomationById(automationId uint, newAutomation database.AutomationWithoutIdAndUsername) error {
+	if err := database.ModifyAutomation(automationId, newAutomation); err != nil {
+		log.Error("Failed to modify automation by id: ", err.Error())
+		return err
+	}
+	// After the metadata has been changed, restart the scheduler
+	return nil
+}
