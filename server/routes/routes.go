@@ -87,11 +87,15 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/user/notification/list", mdl.ApiAuth(api.GetNotifications)).Methods("GET")
 
 	// Homescript-related
-	r.HandleFunc("/api/homescript/add", mdl.ApiAuth(mdl.Perm(api.CreateNewHomescript, database.PermissionModifyHomescript))).Methods("POST")
-	r.HandleFunc("/api/homescript/modify", mdl.ApiAuth(mdl.Perm(api.ModifyHomescript, database.PermissionModifyHomescript))).Methods("PUT")
-	r.HandleFunc("/api/homescript/delete", mdl.ApiAuth(mdl.Perm(api.DeleteHomescriptById, database.PermissionModifyHomescript))).Methods("DELETE")
-	r.HandleFunc("/api/homescript/run/live", mdl.ApiAuth(mdl.Perm(api.RunHomescriptString, database.PermissionRunHomescript))).Methods("POST")
+	r.HandleFunc("/api/homescript/add", mdl.ApiAuth(mdl.Perm(api.CreateNewHomescript, database.PermissionHomescript))).Methods("POST")
+	r.HandleFunc("/api/homescript/modify", mdl.ApiAuth(mdl.Perm(api.ModifyHomescript, database.PermissionHomescript))).Methods("PUT")
+	r.HandleFunc("/api/homescript/delete", mdl.ApiAuth(mdl.Perm(api.DeleteHomescriptById, database.PermissionHomescript))).Methods("DELETE")
+	r.HandleFunc("/api/homescript/run/live", mdl.ApiAuth(mdl.Perm(api.RunHomescriptString, database.PermissionHomescript))).Methods("POST")
 	r.HandleFunc("/api/homescript/list/personal", mdl.ApiAuth(api.ListPersonalHomescripts)).Methods("GET")
+
+	// Automations-related
+	r.HandleFunc("/api/automations/list/personal", mdl.ApiAuth(mdl.Perm(api.GetUserAutomations, database.PermissionAutomation))).Methods("GET")
+	r.HandleFunc("/api/automations/add", mdl.ApiAuth(mdl.Perm(api.CreateNewAutomation, database.PermissionAutomation))).Methods("POST")
 
 	// TODO: remove this one below
 	// TODO: add camera modification / management features

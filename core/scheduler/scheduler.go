@@ -10,18 +10,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type Day uint8
-
-const (
-	Sunday Day = iota
-	Monday
-	TuesDay
-	Wednesday
-	Thursday
-	Friday
-	Saturday
-)
-
 // The main scheduler which will run all jobs
 var scheduler *gocron.Scheduler
 
@@ -32,7 +20,7 @@ func InitLogger(logger *logrus.Logger) {
 }
 
 // Generates a cron expression based on hour, minute, and a slice of days on which the action will run
-func generateCronExpression(hour uint8, minute uint8, days []Day) (string, error) {
+func generateCronExpression(hour uint8, minute uint8, days []uint8) (string, error) {
 	output := [5]string{"", "", "*", "*", ""}
 	output[0] = fmt.Sprintf("%d", minute)
 	output[1] = fmt.Sprintf("%d", hour)
@@ -41,7 +29,7 @@ func generateCronExpression(hour uint8, minute uint8, days []Day) (string, error
 		return "", fmt.Errorf("Amount of days should not be greater than 7")
 	}
 	if len(days) == 7 {
-		// Set the days to '*' when all days are included in the slice
+		// Set the days to '*' when all days are included in the slice, does not check for duplicate days
 		output[4] = "*"
 		return strings.Join(output[:], " "), nil
 	}
@@ -54,17 +42,37 @@ func generateCronExpression(hour uint8, minute uint8, days []Day) (string, error
 	return strings.Join(output[:], " "), nil
 }
 
+// Generates a human-readable string from a given cron expression
+func generateHumanReadableCronExpression(expr string) (string, error) {
+	descriptor, err := cron.NewDescriptor()
+	if err != nil {
+		log.Error("Failed to parse cron expression into human readable format: ", err.Error())
+		return "", err
+	}
+	output, err := descriptor.ToDescription(expr, cron.Locale_en)
+	if err != nil {
+		log.Error("Failed to parse cron expression into human readable format: ", err.Error())
+		return "", err
+	}
+	return output, nil
+}
+
+// Validates a given cron expression, returns false if the given cron expression is invalid
+func IsValidCronExpression(expr string) bool {
+	descriptor, err := cron.NewDescriptor()
+	if err != nil {
+		return false
+	}
+	if _, err = descriptor.ToDescription(expr, cron.Locale_en); err != nil {
+		return false
+	}
+	return true
+}
+
 // Initializes the scheduler
 func Init() error {
-	// Creates the scheduler
 	scheduler = gocron.NewScheduler(time.Local)
 	scheduler.TagsUnique()
-
-	exprDesc, _ := cron.NewDescriptor()
-	cronExpr, _ := generateCronExpression(15, 10, []Day{Saturday, Friday})
-	desc, _ := exprDesc.ToDescription(cronExpr, cron.LocaleAll)
-	fmt.Printf("The scheduler will run: %s\n", desc)
-
 	scheduler.StartAsync()
 	return nil
 }

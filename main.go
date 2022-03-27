@@ -29,7 +29,26 @@ func main() {
 	utils.Version = "0.0.12-beta"
 
 	// Create logger
-	log, err := utils.NewLogger(logrus.TraceLevel)
+	logLevel := logrus.TraceLevel
+	if newLogLevel, newLogLevelOk := os.LookupEnv("SMARTHOME_LOG_LEVEL"); newLogLevelOk {
+		switch newLogLevel {
+		case "TRACE":
+			logLevel = logrus.TraceLevel
+		case "DEBUG":
+			logLevel = logrus.DebugLevel
+		case "INFO":
+			logLevel = logrus.InfoLevel
+		case "WARN":
+			logLevel = logrus.WarnLevel
+		case "ERROR":
+			logLevel = logrus.ErrorLevel
+		case "FATAL":
+			logLevel = logrus.FatalLevel
+		default:
+			fmt.Printf("Invalid log level from environment variable: '%s'. Using TRACE\n", newLogLevel)
+		}
+	}
+	log, err := utils.NewLogger(logLevel)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -214,42 +233,6 @@ func main() {
 		SchedulerEnabled:    true,
 		Code:                "switch('s2', on)",
 	})
-
-	if err := scheduler.CreateNewAutomation(
-		"test automation",
-		"this is a description",
-		1,
-		0,
-		[]scheduler.Day{
-			scheduler.Monday,
-			scheduler.TuesDay,
-			scheduler.Wednesday,
-			scheduler.Thursday,
-			scheduler.Friday,
-			scheduler.Saturday,
-			scheduler.Sunday,
-		},
-		"test",
-		"admin",
-	); err != nil {
-		log.Error(err.Error())
-	}
-
-	fmt.Println(database.GetUserAutomations("admin"))
-
-	if err := database.ModifyAutomation(
-		1,
-		database.AutomationWithoutIdAndUsername{
-			Name:           "",
-			Description:    "",
-			CronExpression: "",
-			HomescriptId:   "test",
-			Owner:          "admin",
-		},
-	); err != nil {
-		log.Error(err.Error())
-	}
-	fmt.Println(database.DeleteAutomationById(3))
 
 	event.Info("System Started", "The Smarthome server completed startup.")
 	log.Info(fmt.Sprintf("Smarthome v%s is running on port %d", utils.Version, port))

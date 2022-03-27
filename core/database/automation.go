@@ -5,7 +5,7 @@ import "database/sql"
 // Contains the database backend for static automation
 
 type Automation struct {
-	Id             int
+	Id             uint
 	Name           string
 	Description    string
 	CronExpression string

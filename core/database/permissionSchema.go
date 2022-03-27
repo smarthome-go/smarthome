@@ -22,8 +22,8 @@ const (
 	PermissionGetDebugInfo            PermissionType = "getDebugInfo"
 	PermissionChangeUsers             PermissionType = "changeUsers"
 	PermissionListUsers               PermissionType = "listUsers"
-	PermissionRunHomescript           PermissionType = "runHomescript"
-	PermissionModifyHomescript        PermissionType = "modifyHomescript"
+	PermissionHomescript              PermissionType = "homescript"
+	PermissionAutomation              PermissionType = "automation"
 
 	// Dangerous
 	PermissionWildCard PermissionType = "*"
@@ -98,15 +98,16 @@ var (
 			Description: "See a list of all users",
 		},
 		{
-			// User is allowed to run Homescript, scheduler homescript excluded
-			Permission:  PermissionRunHomescript,
-			Name:        "Run Homescript",
-			Description: "Run predefined Homescript files or send live code to be executed by the server",
+			// User is allowed to run, add, delete, and modify Homescript, scheduler homescript excluded
+			Permission:  PermissionHomescript,
+			Name:        "Use Homescript",
+			Description: "List, add, delete, run, and modify Homescripts",
 		},
 		{
-			Permission:  PermissionModifyHomescript,
-			Name:        "Modify Homescript",
-			Description: "Create / Modify / Delete own Homescripts",
+			// Allows the user to set up, modify, delete, and view personal automations
+			Permission:  PermissionAutomation,
+			Name:        "Use Automations",
+			Description: "List, add, delete, and modify automations",
 		},
 		{
 			// WARNING: This allows a user to do everything, should only be allowed to the `admin` user
