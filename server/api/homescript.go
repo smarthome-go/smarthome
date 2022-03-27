@@ -180,7 +180,7 @@ func DeleteHomescriptById(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to delete homescript", Error: "database failure"})
 		return
 	}
-	json.NewEncoder(w).Encode(Response{Success: true, Message: "failed to delete homescript"})
+	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully deleted homescript"})
 }
 
 // Modifies the metadata of a given homescript
