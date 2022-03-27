@@ -1,6 +1,6 @@
 {
   "name": "smarthome-web",
-  "version": "0.0.13-beta",
+  "version": "0.0.14-beta",
   "description": "Webinterface for Smarthome",
   "main": "",
   "scripts": {
