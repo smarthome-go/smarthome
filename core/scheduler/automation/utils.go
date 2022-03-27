@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/MikMuellerDev/smarthome/core/database"
+	"github.com/MikMuellerDev/smarthome/core/user"
 )
 
 type Automation struct {
@@ -15,6 +16,7 @@ type Automation struct {
 	CronDescription string
 	HomescriptId    string
 	Owner           string
+	Enabled         bool
 }
 
 // Creates a new automation item
@@ -27,6 +29,7 @@ func CreateNewAutomation(
 	days []uint8,
 	homescriptId string,
 	owner string,
+	enabled bool,
 ) error {
 	// Generate a cron expression based on the input data
 	// The `days` slice should not be longer than 7
@@ -47,6 +50,7 @@ func CreateNewAutomation(
 			CronExpression: cronExpression,
 			HomescriptId:   homescriptId,
 			Owner:          owner,
+			Enabled:        enabled,
 		},
 	)
 	if err != nil {
@@ -59,9 +63,26 @@ func CreateNewAutomation(
 		log.Error("Could not create automation: failed to generate human readable string: ", err.Error())
 		return err
 	}
-	log.Debug(fmt.Sprintf("Created new automation '%s' for user '%s. It will run %s", name, owner, cronDescription))
+	if enabled {
+		user.Notify(
+			owner,
+			"Automation Added",
+			fmt.Sprintf("Automation '%s' has been added", name),
+			1,
+		)
+		log.Debug(fmt.Sprintf("Created new automation '%s' for user '%s. It will run %s", name, owner, cronDescription))
+	} else {
+		user.Notify(
+			owner,
+			"Inactive Automation Added",
+			fmt.Sprintf("Automation '%s' has been added but is currently disabled", name),
+			2,
+		)
+		log.Trace(fmt.Sprintf("Added automation '%d' which is currently disabled, not adding to scheduler", newAutomationId))
+		return nil
+	}
 
-	// Prepare a job for go-cron
+	// Prepare the job for go-cron
 	automationJob := scheduler.Cron(cronExpression)
 	automationJob.Tag(fmt.Sprintf("%d", newAutomationId))
 	automationJob.Do(automationRunnerFunc, newAutomationId)
@@ -71,15 +92,30 @@ func CreateNewAutomation(
 // Removes an automation from the database and prevents its further execution
 // Does not check if the job exists, checks should be completed beforehand
 func RemoveAutomation(automationId uint) error {
+	previousAutomation, _, err := database.GetAutomationById(automationId)
+	if err != nil {
+		log.Error("Failed tp remove automation item: database failure: ", err.Error())
+		return err
+	}
 	if err := database.DeleteAutomationById(automationId); err != nil {
 		log.Error("Failed to remove automation item: database failure: ", err.Error())
 		return err
+	}
+	if !previousAutomation.Enabled { // A disabled automation cannot be removed from the scheduler, so return here
+		log.Trace(fmt.Sprintf("Removed already disabled automation '%d'", automationId))
+		return nil
 	}
 	if err := scheduler.RemoveByTag(fmt.Sprintf("%d", automationId)); err != nil {
 		log.Error("Failed to remove automation item: could not stop job: ", err.Error())
 		return err
 	}
 	log.Trace(fmt.Sprintf("Deactivated and removed automation '%d'", automationId))
+	user.Notify(
+		previousAutomation.Owner,
+		"Removed Automation",
+		fmt.Sprintf("The Automation '%s' has been removed from the system", previousAutomation.Name),
+		1,
+	)
 	return nil
 }
 
@@ -107,6 +143,7 @@ func GetUserAutomations(username string) ([]Automation, error) {
 				CronDescription: cronDescription,
 				HomescriptId:    automation.HomescriptId,
 				Owner:           automation.Owner,
+				Enabled:         automation.Enabled,
 			},
 		)
 	}
@@ -138,6 +175,7 @@ func GetUserAutomationById(username string, automationId uint) (Automation, bool
 			CronDescription: cronDescription,
 			HomescriptId:    automation.HomescriptId,
 			Owner:           automation.Owner,
+			Enabled:         automation.Enabled,
 		}, true, nil
 	}
 	return Automation{}, false, nil
@@ -149,19 +187,50 @@ func ModifyAutomationById(automationId uint, newAutomation database.AutomationWi
 		log.Error("Failed to modify automation: invalid cron expression provided")
 		return errors.New("failed to modify automation: invalid cron expression provided")
 	}
+	automationBefore, _, err := database.GetAutomationById(automationId)
+	if err != nil {
+		log.Error("Failed to modify automation by id: could not get previous state due to database failure: ", err.Error())
+		return err
+	}
 	if err := database.ModifyAutomation(automationId, newAutomation); err != nil {
-		log.Error("Failed to modify automation by id: ", err.Error())
+		log.Error("Failed to modify automation by id: database failure during modification: ", err.Error())
 		return err
 	}
-	// After the metadata has been changed, restart the scheduler
-	if err := scheduler.RemoveByTag(fmt.Sprintf("%d", automationId)); err != nil {
-		log.Error("Failed to remove automation item: could not stop job: ", err.Error())
-		return err
+	if automationBefore.Enabled { // If the automation was enabled before it was modified, remove it
+		// After the metadata has been changed, restart the scheduler
+		if err := scheduler.RemoveByTag(fmt.Sprintf("%d", automationId)); err != nil {
+			log.Error("Failed to remove automation item: could not stop job: ", err.Error())
+			return err
+		}
 	}
-	// Restart the scheduler after the old one was disabled
-	automationJob := scheduler.Cron(newAutomation.CronExpression)
-	automationJob.Tag(fmt.Sprintf("%d", automationId))
-	automationJob.Do(automationRunnerFunc, automationId)
-	log.Debug(fmt.Sprintf("Automation %d has been modified and restarted", automationId))
+	if newAutomation.Enabled {
+		// Restart the scheduler after the old one was disabled
+		// Only add the scheduler if it is enabled in the new version
+		automationJob := scheduler.Cron(newAutomation.CronExpression)
+		automationJob.Tag(fmt.Sprintf("%d", automationId))
+		automationJob.Do(automationRunnerFunc, automationId)
+		log.Debug(fmt.Sprintf("Automation %d has been modified and restarted", automationId))
+
+		if !automationBefore.Enabled {
+			log.Trace(fmt.Sprintf("Automation with id %d has been activated", automationId))
+			user.Notify(
+				automationBefore.Owner,
+				"Automation Activated",
+				fmt.Sprintf("Automation '%s' has been activated", newAutomation.Name),
+				1,
+			)
+		}
+	} else {
+		if automationBefore.Enabled {
+			log.Trace(fmt.Sprintf("Automation with id %d has been disabled", automationId))
+			user.Notify(
+				automationBefore.Owner,
+				"Automation Temporarely Disabled",
+				fmt.Sprintf("Automation '%s' has been disabled", automationBefore.Name),
+				2,
+			)
+		}
+		log.Debug(fmt.Sprintf("Automation %d has been modified but not started due to being disabled", automationId))
+	}
 	return nil
 }

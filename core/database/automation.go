@@ -5,19 +5,21 @@ import "database/sql"
 // Contains the database backend for static automation
 
 type Automation struct {
-	Id             uint
-	Name           string
-	Description    string
-	CronExpression string
-	HomescriptId   string
-	Owner          string
+	Id             uint   `json:"id"`
+	Name           string `json:"name"`
+	Description    string `json:"description"`
+	CronExpression string `json:"cronExpression"`
+	HomescriptId   string `json:"homescriptId"`
+	Owner          string `json:"owner"`
+	Enabled        bool   `json:"enabled"`
 }
 
 type AutomationWithoutIdAndUsername struct {
-	Name           string
-	Description    string
-	CronExpression string
-	HomescriptId   string
+	Name           string `json:"name"`
+	Description    string `json:"description"`
+	CronExpression string `json:"cronExpression"`
+	HomescriptId   string `json:"homescriptId"`
+	Enabled        bool   `json:"enabled"`
 }
 
 // Creates a new table containing the automation jobs
@@ -32,6 +34,7 @@ func createAutomationTable() error {
 		CronExpression VARCHAR(100),
 		HomescriptId VARCHAR(30),
 		Owner VARCHAR(20),
+		Enabled BOOL,
 		PRIMARY KEY(Id),
 		FOREIGN KEY (HomescriptId)
 		REFERENCES homescript(Id),
@@ -51,9 +54,9 @@ func CreateNewAutomation(automation Automation) (uint, error) {
 	query, err := db.Prepare(`
 	INSERT INTO
 	automation(
-		Id, Name, Description, CronExpression, HomescriptId, Owner
+		Id, Name, Description, CronExpression, HomescriptId, Owner, Enabled
 	)	
-	VALUES(DEFAULT, ?, ?, ?, ?, ?)
+	VALUES(DEFAULT, ?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		log.Error("Failed to create new automation: preparing query failed: ", err.Error())
@@ -64,6 +67,7 @@ func CreateNewAutomation(automation Automation) (uint, error) {
 		automation.CronExpression,
 		automation.HomescriptId,
 		automation.Owner,
+		automation.Enabled,
 	)
 	if err != nil {
 		log.Error("Failed to create new automation: executing query failed: ", err.Error())
@@ -82,7 +86,7 @@ func CreateNewAutomation(automation Automation) (uint, error) {
 func GetAutomationById(id uint) (Automation, bool, error) {
 	query, err := db.Prepare(`
 	SELECT
-	Id, Name, Description, CronExpression, HomescriptId, Owner
+	Id, Name, Description, CronExpression, HomescriptId, Owner, Enabled
 	FROM automation
 	WHERE Id=?
 	`)
@@ -98,6 +102,7 @@ func GetAutomationById(id uint) (Automation, bool, error) {
 		&automation.CronExpression,
 		&automation.HomescriptId,
 		&automation.Owner,
+		&automation.Enabled,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -113,7 +118,7 @@ func GetAutomationById(id uint) (Automation, bool, error) {
 func GetUserAutomations(username string) ([]Automation, error) {
 	query, err := db.Prepare(`
 	SELECT
-	Id, Name, Description, CronExpression, HomescriptId, Owner
+	Id, Name, Description, CronExpression, HomescriptId, Owner, Enabled
 	FROM automation
 	WHERE Owner=?
 	`)
@@ -136,6 +141,7 @@ func GetUserAutomations(username string) ([]Automation, error) {
 			&automation.CronExpression,
 			&automation.HomescriptId,
 			&automation.Owner,
+			&automation.Enabled,
 		); err != nil {
 			log.Error("Failed to list user automations: scanning for results failed: ", err.Error())
 		}
@@ -150,7 +156,7 @@ func GetUserAutomations(username string) ([]Automation, error) {
 func GetAutomations() ([]Automation, error) {
 	res, err := db.Query(`
 	SELECT
-	Id, Name, Description, CronExpression, HomescriptId, Owner
+	Id, Name, Description, CronExpression, HomescriptId, Owner, Enabled
 	FROM automation
 	`)
 	if err != nil {
@@ -167,6 +173,7 @@ func GetAutomations() ([]Automation, error) {
 			&automation.CronExpression,
 			&automation.HomescriptId,
 			&automation.Owner,
+			&automation.Enabled,
 		); err != nil {
 			log.Error("Failed to list all automations: scanning for results failed: ", err.Error())
 		}
@@ -185,7 +192,8 @@ func ModifyAutomation(automationId uint, newItem AutomationWithoutIdAndUsername)
 	Name=?,
 	Description=?,
 	CronExpression=?,
-	HomescriptId=?
+	HomescriptId=?,
+	Enabled=?
 	WHERE Id=?
 	`)
 	if err != nil {
@@ -197,6 +205,7 @@ func ModifyAutomation(automationId uint, newItem AutomationWithoutIdAndUsername)
 		newItem.Description,
 		newItem.CronExpression,
 		newItem.HomescriptId,
+		newItem.Enabled,
 		automationId,
 	)
 	if err != nil {

@@ -79,17 +79,23 @@ func startSavedAutomations() error {
 		log.Error("Failed to activate automation system: database failure whilst starting saved automations: ", err.Error())
 		return err // This is a critical error which can not be recovered
 	}
+	var activatedItems uint = 0
 	for _, automation := range automations {
 		if !IsValidCronExpression(automation.CronExpression) {
 			log.Error(fmt.Sprintf("Could not activate automation '%d': invalid cron expression", automation.Id))
 			continue // non-critical error
 		}
+		if !automation.Enabled {
+			log.Debug(fmt.Sprintf("Skipping activation of automation %d: automation is disabled", automation.Id))
+			continue // Skip disabled automations
+		}
 		automationJob := scheduler.Cron(automation.CronExpression)
 		automationJob.Tag(fmt.Sprintf("%d", automation.Id))
 		automationJob.Do(automationRunnerFunc, automation.Id)
+		activatedItems += 1
 		log.Debug(fmt.Sprintf("Successfully activated automation '%d' of user '%s'", automation.Id, automation.Owner))
 	}
-	log.Debug(fmt.Sprintf("Activated saved automations: registered %d total automation jobs", len(automations)))
+	log.Debug(fmt.Sprintf("Activated saved automations: registered %d total automation jobs", activatedItems))
 	return nil
 }
 

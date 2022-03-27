@@ -30,8 +30,17 @@ func automationRunnerFunc(automationId uint) {
 		)
 		return
 	}
-	fmt.Printf("automation '%d' is running.\n", automationId)
-
+	if !job.Enabled {
+		log.Info(fmt.Sprintf("Automations %d canceled because it is deactivated", automationId))
+		user.Notify(
+			job.Owner,
+			"Automation Suspended",
+			fmt.Sprintf("Automation '%s' was not executed because it is currently disabled. If you want to disable this automation completely, delete it. If the automation should run, enable it.", job.Name),
+			user.NotificationLevelWarn,
+		)
+		return
+	}
+	log.Debug(fmt.Sprintf("Automation '%d' is running.\n", automationId))
 	_, scriptExists, err := database.GetUserHomescriptById(job.HomescriptId, job.Owner)
 	if err != nil {
 		log.Error(fmt.Sprintf("Automation with Id: '%d' failed because its Homescript Id could not be retrieved from the database: %s", automationId, err.Error()))
@@ -50,7 +59,7 @@ func automationRunnerFunc(automationId uint) {
 		user.Notify(
 			job.Owner,
 			"Automation Failure",
-			fmt.Sprintf("Your automation with the Id: '%d' failed because its Homescript Id: '%s' is invalid. Contact your administrator.", automationId, job.HomescriptId),
+			fmt.Sprintf("Automation '%s' failed because its Homescript Id: '%s' is invalid. Contact your administrator.", job.Name, job.HomescriptId),
 			user.NotificationLevelError,
 		)
 		return
@@ -65,7 +74,7 @@ func automationRunnerFunc(automationId uint) {
 		user.Notify(
 			job.Owner,
 			"Automation Failure",
-			fmt.Sprintf("Automation with Id: '%d' failed. Error: %s", automationId, err.Error()),
+			fmt.Sprintf("Automation '%s' failed during execution. Error: %s", job.Name, err.Error()),
 			user.NotificationLevelError,
 		)
 		return

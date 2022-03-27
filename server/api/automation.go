@@ -17,6 +17,7 @@ type NewAutomationRequest struct {
 	Minute       uint    `json:"minute"` // 60 >= m >= 0 | Can only be used with hour, specifies the exact minute on which the automation will run
 	Days         []uint8 `json:"days"`   //  6 >= d >= 0 | Can contain 7 elements at maximum, value `0` represents Sunday, value `6` represents Saturday
 	HomescriptId string  `json:"homescriptId"`
+	Enabled      bool    `json:"enabled"`
 }
 
 type ModifyAutomationRequest struct {
@@ -27,6 +28,7 @@ type ModifyAutomationRequest struct {
 	Minute       uint    `json:"minute"`
 	Days         []uint8 `json:"days"`
 	HomescriptId string  `json:"homescriptId"`
+	Enabled      bool    `json:"enabled"`
 }
 
 type DeleteAutomationRequest struct {
@@ -120,6 +122,7 @@ func CreateNewAutomation(w http.ResponseWriter, r *http.Request) {
 		request.Days,
 		request.HomescriptId,
 		username,
+		request.Enabled,
 	); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to create new automation", Error: "backend failure"})
@@ -252,6 +255,7 @@ func ModifyAutomation(w http.ResponseWriter, r *http.Request) {
 		Description:    request.Description,
 		CronExpression: cronExpr,
 		HomescriptId:   request.HomescriptId,
+		Enabled:        request.Enabled,
 	}
 	if err := automation.ModifyAutomationById(request.Id, newAutomation); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
