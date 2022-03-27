@@ -185,6 +185,16 @@ func main() {
 
 	scheduler.Init()
 
+	database.AddUser(
+		database.FullUser{
+			Username:     "test",
+			Firstname:    "test",
+			Surname:      "test",
+			PrimaryColor: "#fff",
+			Password:     "test",
+		},
+	)
+
 	database.CreateNewHomescript(database.Homescript{
 		Id:                  "test",
 		Owner:               "admin",
@@ -195,11 +205,21 @@ func main() {
 		Code:                "switch('s2', on)",
 	})
 
+	database.CreateNewHomescript(database.Homescript{
+		Id:                  "test_2",
+		Owner:               "test",
+		Name:                "test_2",
+		Description:         "this is test 2",
+		QuickActionsEnabled: false,
+		SchedulerEnabled:    true,
+		Code:                "switch('s2', on)",
+	})
+
 	if err := scheduler.CreateNewAutomation(
 		"test automation",
 		"this is a description",
-		22,
-		8,
+		1,
+		0,
 		[]scheduler.Day{
 			scheduler.Monday,
 			scheduler.TuesDay,

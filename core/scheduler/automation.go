@@ -104,18 +104,18 @@ func automationRunnerFunc(automationId uint) {
 		log.Warn(fmt.Sprintf("Automation with Id: '%d' failed because the Homescript: '%s' could not be executed", automationId, job.HomescriptId))
 		event.Error(
 			"Automation Failure",
-			fmt.Sprintf("Automation with Id: '%d' failed because the Homescript: '%s' failed with exit code %d. Error: %s", automationId, job.HomescriptId, exitCode, err.Error()),
+			fmt.Sprintf("Automation with Id: '%d' failed. Error: %s", automationId, err.Error()),
 		)
 		user.Notify(
 			job.Owner,
 			"Automation Failure",
-			fmt.Sprintf("Automation with Id: '%d' failed because the Homescript: '%s' failed with exit code %d. Error: %s", automationId, job.HomescriptId, exitCode, err.Error()),
+			fmt.Sprintf("Automation with Id: '%d' failed. Error: %s", automationId, err.Error()),
 			user.NotificationLevelError,
 		)
 		return
 	}
 	event.Debug(
 		"Automation Finished Successfully",
-		fmt.Sprintf("Automation '%d' of user '%s' has executed successfully. Output: '%s'", automationId, job.Owner, output),
+		fmt.Sprintf("Automation '%d' of user '%s' has executed successfully. Exit code: %d, Output: '%s'", automationId, job.Owner, exitCode, output),
 	)
 }
