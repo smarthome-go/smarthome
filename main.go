@@ -1,3 +1,5 @@
+// Smarthome: A completely self-built Smarthome-system written in Go
+// https://github.com/MikMuellerDev/smarthome
 package main
 
 import (
@@ -23,7 +25,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var port = 8082
+var port = 8082 // Port used during development, can be overridden by config file or environment variables
 
 func main() {
 	utils.Version = "0.0.16-beta"
@@ -126,7 +128,7 @@ func main() {
 		}
 	}
 
-	// Initialize database
+	// Initialize database, try 5 times before giving up
 	var dbErr error = nil
 
 	for i := 0; i <= 5; i++ {
@@ -163,70 +165,12 @@ func main() {
 		log.Fatal("Failed to flush logs older that 30 days: ", err.Error())
 	}
 
+	automation.Init() // Initializes the automation scheduler
+
 	r := routes.NewRouter()
 	middleware.Init(configStruct.Server.Production)
 	templates.LoadTemplates("./web/html/**/*.html")
 	http.Handle("/", r)
-
-	// database.CreateNewHomescript(
-	// 	database.Homescript{
-	// 		Id:                  "test",
-	// 		Owner:               "admin",
-	// 		Name:                "hello",
-	// 		Description:         "hello",
-	// 		QuickActionsEnabled: false,
-	// 		SchedulerEnabled:    false,
-	// 		Code:                "print('hello world')",
-	// 	},
-	// )
-
-	// database.ModifyHomescriptById(
-	// 	"test",
-	// 	database.HomescriptFrontend{
-	// 		Name:                "new name",
-	// 		Description:         "new description",
-	// 		QuickActionsEnabled: false,
-	// 		SchedulerEnabled:    false,
-	// 		Code:                "lol",
-	// 	},
-	// )
-
-	// err = database.DeleteHomescriptById("test")
-	// if err != nil {
-	// 	panic(err.Error())
-	// }
-
-	automation.Init()
-
-	database.AddUser(
-		database.FullUser{
-			Username:     "test",
-			Firstname:    "test",
-			Surname:      "test",
-			PrimaryColor: "#fff",
-			Password:     "test",
-		},
-	)
-
-	database.CreateNewHomescript(database.Homescript{
-		Id:                  "test",
-		Owner:               "admin",
-		Name:                "test",
-		Description:         "this is a test",
-		QuickActionsEnabled: false,
-		SchedulerEnabled:    true,
-		Code:                "switch('s2', on)",
-	})
-
-	database.CreateNewHomescript(database.Homescript{
-		Id:                  "test_2",
-		Owner:               "test",
-		Name:                "test_2",
-		Description:         "this is test 2",
-		QuickActionsEnabled: false,
-		SchedulerEnabled:    true,
-		Code:                "switch('s2', on)",
-	})
 
 	event.Info("System Started", "The Smarthome server completed startup.")
 	log.Info(fmt.Sprintf("Smarthome v%s is running on port %d", utils.Version, port))
@@ -234,5 +178,3 @@ func main() {
 		panic(err)
 	}
 }
-
-// TODO: make a separate logging module which would eliminate the need to initialize a new logger for each module
