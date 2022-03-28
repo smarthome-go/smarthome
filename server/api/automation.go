@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/MikMuellerDev/smarthome/core/database"
@@ -33,6 +34,10 @@ type ModifyAutomationRequest struct {
 
 type DeleteAutomationRequest struct {
 	Id uint `json:"id"`
+}
+
+type AutomationActivationRequest struct {
+	Enabled bool `json:"enabled"`
 }
 
 // Returns a list of all automations set up by the current user
@@ -263,4 +268,61 @@ func ModifyAutomation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully modified automation"})
+}
+
+// Activate or deactivate the entire automation system
+func ChangeActivationAutomation(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request AutomationActivationRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	serverConfig, found, err := database.GetServerConfiguration()
+	if err != nil || !found {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to change activation state of automations", Error: "database failure"})
+		return
+	}
+	if serverConfig.AutomationEnabled == request.Enabled {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to change activation state of automations", Error: fmt.Sprintf("current activation mode of automation is already set to %t", serverConfig.AutomationEnabled)})
+		return
+	}
+	if request.Enabled {
+		if err := automation.ActivateAutomationSystem(); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to activate automations", Error: "internal server error"})
+			return
+		}
+	} else {
+		if err := automation.DeactivateAutomationSystem(); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to deactivate automations", Error: "internal server error"})
+			return
+		}
+	}
+	if err := database.SetAutomationSystemActivation(request.Enabled); err != nil {
+		// If this fails, rollback the change
+		if !request.Enabled {
+			if err := automation.ActivateAutomationSystem(); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to activate automations", Error: "internal server error"})
+				return
+			}
+		} else {
+			if err := automation.DeactivateAutomationSystem(); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to deactivate automations", Error: "internal server error"})
+				return
+			}
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to (de) activate automations but managed to rollback", Error: "database failure"})
+		return
+	}
+	json.NewEncoder(w).Encode(Response{Success: true, Message: fmt.Sprintf("successfully set activation mode of automations to %t", request.Enabled)})
 }

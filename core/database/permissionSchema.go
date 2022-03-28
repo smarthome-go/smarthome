@@ -24,6 +24,7 @@ const (
 	PermissionListUsers               PermissionType = "listUsers"
 	PermissionHomescript              PermissionType = "homescript"
 	PermissionAutomation              PermissionType = "automation"
+	PermissionActivateAutomation      PermissionType = "activateAutomation"
 
 	// Dangerous
 	PermissionWildCard PermissionType = "*"
@@ -104,10 +105,16 @@ var (
 			Description: "List, add, delete, run, and modify Homescripts",
 		},
 		{
-			// Allows the user to set up, modify, delete, and view personal automations
+			// User is allowed to set up, modify, delete, and view personal automations
 			Permission:  PermissionAutomation,
 			Name:        "Use Automations",
 			Description: "List, add, delete, and modify automations",
+		},
+		{
+			// (Admin) is allowed to toggle the state of the automations system
+			Permission:  PermissionActivateAutomation,
+			Name:        "(De) Activate Automation System",
+			Description: "Enable / Disable the entire automation system",
 		},
 		{
 			// WARNING: This allows a user to do everything, should only be allowed to the `admin` user

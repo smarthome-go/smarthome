@@ -73,17 +73,7 @@ func IsValidCronExpression(expr string) bool {
 // Activates all jobs saved in the database, will be used when the server was restarted
 // If a non-critical error occurs, for example the failure to setup a job, it will be returned
 // This function will not cancel directly if an error occurs in order to preserve the automation system's uptime
-func startSavedAutomations() error {
-	// Check if the automation system is disabled
-	serverConfig, err := database.GetServerConfiguration()
-	if err != nil {
-		log.Error("Failed to activate saved automations: could not retrieve server configuration: ", err.Error())
-		return err
-	}
-	if !serverConfig.AutomationEnabled {
-		log.Error("Skipping activation of automations: automation system is currently disabled: ", err.Error())
-		return nil
-	}
+func ActivateAutomationSystem() error {
 	automations, err := database.GetAutomations()
 	if err != nil {
 		log.Error("Failed to activate automation system: database failure whilst starting saved automations: ", err.Error())
@@ -109,16 +99,47 @@ func startSavedAutomations() error {
 	return nil
 }
 
-// Initializes the scheduler
-func Init() error {
-	scheduler = gocron.NewScheduler(time.Local)
-	scheduler.TagsUnique()
-	if err := startSavedAutomations(); err != nil {
-		log.Error("Failed to activate automation system: could not activate persistent jobs: ", err.Error())
+// Stops all jobs in the automation scheduler
+func DeactivateAutomationSystem() error {
+	automations, err := database.GetAutomations()
+	if err != nil {
+		log.Error("Failed to deactivate automation system: database failure whilst deactivating automations: ", err.Error())
+		return err // This is a critical error which can not be recovered from
 	}
-	scheduler.StartAsync()
-	log.Info("Successfully activated automation scheduler system")
+	for _, automation := range automations {
+		if automation.Enabled {
+			if err := scheduler.RemoveByTag(fmt.Sprintf("%d", automation.Id)); err != nil {
+				log.Error(fmt.Sprintf("Failed to deactivate automation '%d': could not stop scheduler: %s", automation.Id, err.Error()))
+				continue
+			}
+			log.Debug(fmt.Sprintf("Successfully deactivated automation '%d' of user '%s'", automation.Id, automation.Owner))
+		}
+	}
+	log.Debug("Successfully disabled automation system")
 	return nil
 }
 
-// TODO: add set automationSystemEnabled(bool) function
+// Initializes the scheduler
+func Init() error {
+	serverConfig, found, err := database.GetServerConfiguration()
+	if err != nil {
+		log.Error("Failed to initialize scheduler: could not retrieve server configuration: ", err.Error())
+		return err
+	}
+	if !found {
+		log.Error("Failed to initialize scheduler: could not retrieve server configuration: no results in query")
+		return err
+	}
+	scheduler = gocron.NewScheduler(time.Local)
+	scheduler.TagsUnique()
+	if serverConfig.AutomationEnabled {
+		if err := ActivateAutomationSystem(); err != nil {
+			log.Error("Failed to activate automation system: could not activate persistent jobs: ", err.Error())
+		}
+		log.Info("Successfully activated automation scheduler system")
+	} else {
+		log.Info("Not activating scheduler automation system because it is disabled")
+	}
+	scheduler.StartAsync()
+	return nil
+}

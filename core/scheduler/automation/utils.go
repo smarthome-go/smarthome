@@ -81,7 +81,15 @@ func CreateNewAutomation(
 		log.Trace(fmt.Sprintf("Added automation '%d' which is currently disabled, not adding to scheduler", newAutomationId))
 		return nil
 	}
+	serverConfig, found, err := database.GetServerConfiguration()
+	if err != nil || !found {
+		log.Error("Failed to setup new automation: could not retrieve server configuration due to database failure")
+		return errors.New("failed to setup new automation: could not retrieve server configuration due to database failure")
+	}
+	if !serverConfig.AutomationEnabled { // If the automation scheduler is disabled, do not add the scheduler
+		return nil
 
+	}
 	// Prepare the job for go-cron
 	automationJob := scheduler.Cron(cronExpression)
 	automationJob.Tag(fmt.Sprintf("%d", newAutomationId))
@@ -101,7 +109,12 @@ func RemoveAutomation(automationId uint) error {
 		log.Error("Failed to remove automation item: database failure: ", err.Error())
 		return err
 	}
-	if !previousAutomation.Enabled { // A disabled automation cannot be removed from the scheduler, so return here
+	serverConfig, found, err := database.GetServerConfiguration()
+	if err != nil || !found {
+		log.Error("Failed to remove automation: could not retrieve server configuration due to database failure")
+		return errors.New("failed to remove automation: could not retrieve server configuration due to database failure")
+	}
+	if !previousAutomation.Enabled || !serverConfig.AutomationEnabled { // A disabled automation cannot be removed from the scheduler, so return here
 		log.Trace(fmt.Sprintf("Removed already disabled automation '%d'", automationId))
 		return nil
 	}

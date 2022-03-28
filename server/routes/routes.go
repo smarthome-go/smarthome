@@ -98,6 +98,7 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/automation/add", mdl.ApiAuth(mdl.Perm(api.CreateNewAutomation, database.PermissionAutomation))).Methods("POST")
 	r.HandleFunc("/api/automation/delete", mdl.ApiAuth(mdl.Perm(api.RemoveAutomation, database.PermissionAutomation))).Methods("DELETE")
 	r.HandleFunc("/api/automation/modify", mdl.ApiAuth(mdl.Perm(api.ModifyAutomation, database.PermissionAutomation))).Methods("PUT")
+	r.HandleFunc("/api/automation/state", mdl.ApiAuth(mdl.Perm(api.ChangeActivationAutomation, database.PermissionActivateAutomation))).Methods("PUT")
 
 	// TODO: remove this one below
 	// TODO: add camera modification / management features
