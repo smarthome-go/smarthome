@@ -78,6 +78,12 @@ func CreateSwitch(id string, name string, roomId string, watts uint16) error {
 		Id, Name, Power, RoomId, Watts
 	)
 	VALUES(?, ?, DEFAULT, ?, ?)
+	ON DUPLICATE KEY
+	UPDATE
+	Name=VALUES(Name),
+	Power=VALUES(Power),
+	RoomId=VALUES(RoomId),
+	Watts=VALUES(Watts)
 	`)
 	if err != nil {
 		log.Error("Failed to add switch: preparing query failed: ", err.Error())

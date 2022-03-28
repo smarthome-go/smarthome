@@ -1,5 +1,7 @@
 package database
 
+import "database/sql"
+
 type Schedule struct {
 	Id             uint   `json:"id"`
 	Name           string `json:"name"`
@@ -53,7 +55,6 @@ func CreateNewSchedule(schedule Schedule) (uint, error) {
 		return 0, err
 	}
 	res, err := query.Exec(
-		schedule.Id,
 		schedule.Name,
 		schedule.Owner,
 		schedule.Hour,
@@ -70,4 +71,154 @@ func CreateNewSchedule(schedule Schedule) (uint, error) {
 		return 0, err
 	}
 	return uint(newId), nil
+}
+
+// Returns a schedule struct which matches the given id
+// If the id does not match a struct, a `false`` is returned
+func GetScheduleById(id uint) (Schedule, bool, error) {
+	query, err := db.Prepare(`
+	SELECT
+	Id, Name, Owner, Hour, Minute, HomescriptCode
+	FROM schedule
+	WHERE Id=?
+	`)
+	if err != nil {
+		log.Error("Failed to get schedule by id: preparing query failed: ", err.Error())
+		return Schedule{}, false, err
+	}
+	var schedule Schedule
+	if err := query.QueryRow(id).Scan(
+		&schedule.Id,
+		&schedule.Name,
+		&schedule.Owner,
+		&schedule.Hour,
+		&schedule.Minute,
+		&schedule.HomescriptCode,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return Schedule{}, false, nil
+		}
+		log.Error("Failed to get schedule by id: executing query failed: ", err.Error())
+		return Schedule{}, false, err
+	}
+	return schedule, true, nil
+}
+
+// Returns a list containing schedules of a given user
+func GetUserSchedules(username string) ([]Schedule, error) {
+	schedules := make([]Schedule, 0)
+	query, err := db.Prepare(`
+	SELECT
+	Id, Name, Owner, Hour, Minute, HomescriptCode
+	FROM schedule
+	WHERE Owner=?
+	`)
+	if err != nil {
+		log.Error("Failed to list user schedules: preparing query failed: ", err.Error())
+		return nil, err
+	}
+	res, err := query.Query(username)
+	if err != nil {
+		log.Error("Failed to list user schedules: executing query failed: ", err.Error())
+		return nil, err
+	}
+	for res.Next() {
+		var schedule Schedule
+		if err := res.Scan(
+			&schedule.Id,
+			&schedule.Name,
+			&schedule.Owner,
+			&schedule.Hour,
+			&schedule.Minute,
+			&schedule.HomescriptCode,
+		); err != nil {
+			log.Error("Failed to list user schedules: scanning results of query failed: ", err.Error())
+			return nil, err
+		}
+		schedules = append(schedules, schedule)
+	}
+	return schedules, nil
+}
+
+// Returns a list of schedules of all users, used for activating schedules at the start of the server
+func GetSchedules() ([]Schedule, error) {
+	schedules := make([]Schedule, 0)
+	query, err := db.Prepare(`
+	SELECT
+	Id, Name, Owner, Hour, Minute, HomescriptCode
+	FROM schedule
+	`)
+	if err != nil {
+		log.Error("Failed to list schedules: preparing query failed: ", err.Error())
+		return nil, err
+	}
+	res, err := query.Query()
+	if err != nil {
+		log.Error("Failed to list schedules: executing query failed: ", err.Error())
+		return nil, err
+	}
+	for res.Next() {
+		var schedule Schedule
+		if err := res.Scan(
+			&schedule.Id,
+			&schedule.Name,
+			&schedule.Owner,
+			&schedule.Hour,
+			&schedule.Minute,
+			&schedule.HomescriptCode,
+		); err != nil {
+			log.Error("Failed to list schedules: scanning results of query failed: ", err.Error())
+			return nil, err
+		}
+		schedules = append(schedules, schedule)
+	}
+	return schedules, nil
+}
+
+// Modifies the metadata of a given schedule
+// Does not validate the provided metadata
+func ModifySchedule(id uint, newItem ScheduleWithoudIdAndUsername) error {
+	query, err := db.Prepare(`
+	UPDATE schedule
+	SET
+	Name=?,
+	Hour=?,
+	Minute=?,
+	HomescriptCode=?
+	WHERE Id=?
+	`)
+	if err != nil {
+		log.Error("Failed to modify schedule: preparing query failed: ", err.Error())
+		return err
+	}
+	if _, err := query.Exec(
+		newItem.Name,
+		newItem.Hour,
+		newItem.Minute,
+		newItem.HomescriptCode,
+		id,
+	); err != nil {
+		log.Error("Failed to modify schedule: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}
+
+// Deletes a schedule item given its Id
+// Does not validate the validity of the provided Id
+func DeleteScheduleById(id uint) error {
+	query, err := db.Prepare(`
+	DELETE FROM
+	schedule
+	WHERE Id=?
+	`)
+	if err != nil {
+		log.Error("Failed to delete schedule by id: preparing query failed: ", err.Error())
+		return err
+	}
+	if _, err := query.Exec(id); err != nil {
+		log.Error("Failed to delete schedule by id: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
 }
