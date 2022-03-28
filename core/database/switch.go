@@ -4,6 +4,22 @@ import (
 	"fmt"
 )
 
+// Identified by a Switch Id, has a name and belongs to a room
+type Switch struct {
+	Id      string `json:"id"`
+	Name    string `json:"name"`
+	RoomId  string `json:"roomId"`
+	PowerOn bool   `json:"powerOn"`
+	Watts   uint16 `json:"watts"`
+}
+
+//Contains the switch id and a matching boolean
+// Used when requesting global power states
+type PowerState struct {
+	Switch  string `json:"switch"`
+	PowerOn bool   `json:"powerOn"`
+}
+
 // Creates the table containing switches
 // If the database fails, this function returns an error
 func createSwitchTable() error {
@@ -13,8 +29,9 @@ func createSwitchTable() error {
 	switch(
 		Id VARCHAR(2) PRIMARY KEY,
 		Name VARCHAR(30),
-		Power BOOLEAN,
+		Power BOOLEAN DEFAULT FALSE,
 		RoomId VARCHAR(30),
+		Watts INT,
 		CONSTRAINT SwitchRoomId
 		FOREIGN KEY (RoomId)
 		REFERENCES room(Id)
@@ -54,21 +71,19 @@ func createHasSwitchPermissionTable() error {
 
 // Creates a new switch
 // Will return an error if the database fails
-func CreateSwitch(id string, name string, roomId string) error {
+func CreateSwitch(id string, name string, roomId string, watts uint16) error {
 	query, err := db.Prepare(`
 	INSERT INTO
 	switch(
-		Id, Name, Power, RoomId
+		Id, Name, Power, RoomId, Watts
 	)
-	VALUES(?,?,?,?)
-	ON DUPLICATE KEY
-	UPDATE Name=VALUES(Name)
+	VALUES(?, ?, DEFAULT, ?, ?)
 	`)
 	if err != nil {
 		log.Error("Failed to add switch: preparing query failed: ", err.Error())
 		return err
 	}
-	res, err := query.Exec(id, name, false, roomId)
+	res, err := query.Exec(id, name, roomId, watts)
 	if err != nil {
 		log.Error("Failed to add switch: executing query failed: ", err.Error())
 		return err
@@ -109,7 +124,7 @@ func DeleteSwitch(switchId string) error {
 // Returns a list of available switches with their attributes
 func ListSwitches() ([]Switch, error) {
 	query := `
-	SELECT Id, Name, RoomId FROM switch
+	SELECT Id, Name, RoomId, Watts FROM switch
 	`
 	res, err := db.Query(query)
 	if err != nil {
@@ -119,7 +134,12 @@ func ListSwitches() ([]Switch, error) {
 	switches := make([]Switch, 0)
 	for res.Next() {
 		var switchItem Switch
-		if err := res.Scan(&switchItem.Id, &switchItem.Name, &switchItem.RoomId); err != nil {
+		if err := res.Scan(
+			&switchItem.Id,
+			&switchItem.Name,
+			&switchItem.RoomId,
+			&switchItem.Watts,
+		); err != nil {
 			log.Error("Could not list switches: Failed to scan results: ", err.Error())
 		}
 		switches = append(switches, switchItem)
@@ -130,7 +150,7 @@ func ListSwitches() ([]Switch, error) {
 // Same as `ListSwitches()` but takes a user sting as a filter
 func ListUserSwitches(username string) ([]Switch, error) {
 	query, err := db.Prepare(`
-	SELECT Id, Name, RoomId, Power
+	SELECT Id, Name, RoomId, Power, Watts
 	FROM switch
 	JOIN hasSwitchPermission
 	ON hasSwitchPermission.Switch=switch.Id
@@ -148,7 +168,13 @@ func ListUserSwitches(username string) ([]Switch, error) {
 	switches := make([]Switch, 0)
 	for res.Next() {
 		var switchItem Switch
-		if err := res.Scan(&switchItem.Id, &switchItem.Name, &switchItem.RoomId, &switchItem.PowerOn); err != nil {
+		if err := res.Scan(
+			&switchItem.Id,
+			&switchItem.Name,
+			&switchItem.RoomId,
+			&switchItem.PowerOn,
+			&switchItem.Watts,
+		); err != nil {
 			log.Error("Could not list user switches: Failed to scan results: ", err.Error())
 		}
 		switches = append(switches, switchItem)
@@ -162,7 +188,9 @@ func ListUserSwitches(username string) ([]Switch, error) {
 // The returned boolean indicates if the power state had changed
 func SetPowerState(switchId string, isPoweredOn bool) (bool, error) {
 	query, err := db.Prepare(`
-	UPDATE switch SET Power=? WHERE Id=? 
+	UPDATE switch
+	SET Power=?
+	WHERE Id=? 
 	`)
 	if err != nil {
 		log.Error("Could not alter power state: preparing query failed: ", err.Error())
@@ -189,7 +217,9 @@ func SetPowerState(switchId string, isPoweredOn bool) (bool, error) {
 // Can return a database error
 func GetPowerStates() ([]PowerState, error) {
 	res, err := db.Query(`
-	SELECT Id, Power FROM switch
+	SELECT 
+	Id, Power
+	FROM switch
 	`)
 	if err != nil {
 		log.Error("Failed to list powerstates: failed to execute query: ", err.Error())

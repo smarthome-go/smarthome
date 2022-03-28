@@ -22,21 +22,6 @@ type User struct {
 	PrimaryColor string `json:"primaryColor"`
 }
 
-// Identified by a Switch Id, has a name and belongs to a room
-type Switch struct {
-	Id      string `json:"id"`
-	Name    string `json:"name"`
-	RoomId  string `json:"roomId"`
-	PowerOn bool   `json:"powerOn"`
-}
-
-//Contains the switch id and a matching boolean
-// Used when requesting global power states
-type PowerState struct {
-	Switch  string `json:"switch"`
-	PowerOn bool   `json:"powerOn"`
-}
-
 // Identified by a unique Id, has a Name and Description
 // When used in config file, the Switches slice is also populated
 type Room struct {

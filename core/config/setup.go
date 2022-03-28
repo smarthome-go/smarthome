@@ -70,7 +70,7 @@ func createRoomsInDatabase(rooms []database.Room) error {
 			return err
 		}
 		for _, switchItem := range room.Switches {
-			if err := database.CreateSwitch(switchItem.Id, switchItem.Name, room.Id); err != nil {
+			if err := database.CreateSwitch(switchItem.Id, switchItem.Name, room.Id, switchItem.Watts); err != nil {
 				log.Error("Could not create switches from setup file: ", err.Error())
 				return err
 			}
