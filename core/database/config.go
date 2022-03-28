@@ -11,11 +11,19 @@ func CreateConfigTable() error {
 	CREATE TABLE
 	IF NOT EXISTS
 	configuration(
-		AutomationEnabled BOOL DEFAULT TRUE,
-		LockDownMode BOOL DEFAULT FALSE
-	`)
+		AutomationEnabled BOOLEAN DEFAULT TRUE,
+		LockDownMode BOOLEAN DEFAULT FALSE
+	)`)
 	if err != nil {
 		log.Error("Failed to create server configuration table: executing query failed: ", err.Error())
+		return err
+	}
+	if _, err := db.Exec(`
+	INSERT INTO
+	configuration(AutomationEnabled, LockDownMode)
+	VALUES(TRUE, FALSE)
+	`); err != nil {
+		log.Error("Failed to create configuration: insert failed: executing query failed: ", err.Error())
 		return err
 	}
 	return nil

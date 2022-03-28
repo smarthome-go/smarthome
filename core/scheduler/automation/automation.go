@@ -27,7 +27,7 @@ func GenerateCronExpression(hour uint8, minute uint8, days []uint8) (string, err
 	output[1] = fmt.Sprintf("%d", hour)
 	if len(days) > 7 {
 		log.Error("The maximum amount of days allowed are 7")
-		return "", fmt.Errorf("Amount of days should not be greater than 7")
+		return "", fmt.Errorf("amount of days should not be greater than 7")
 	}
 	if len(days) == 7 {
 		// Set the days to '*' when all days are included in the slice, does not check for duplicate days
@@ -74,6 +74,16 @@ func IsValidCronExpression(expr string) bool {
 // If a non-critical error occurs, for example the failure to setup a job, it will be returned
 // This function will not cancel directly if an error occurs in order to preserve the automation system's uptime
 func startSavedAutomations() error {
+	// Check if the automation system is disabled
+	serverConfig, err := database.GetServerConfiguration()
+	if err != nil {
+		log.Error("Failed to activate saved automations: could not retrieve server configuration: ", err.Error())
+		return err
+	}
+	if !serverConfig.AutomationEnabled {
+		log.Error("Skipping activation of automations: automation system is currently disabled: ", err.Error())
+		return nil
+	}
 	automations, err := database.GetAutomations()
 	if err != nil {
 		log.Error("Failed to activate automation system: database failure whilst starting saved automations: ", err.Error())
@@ -110,3 +120,5 @@ func Init() error {
 	log.Info("Successfully activated automation scheduler system")
 	return nil
 }
+
+// TODO: add set automationSystemEnabled(bool) function
