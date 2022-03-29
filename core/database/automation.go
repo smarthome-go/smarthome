@@ -82,7 +82,7 @@ func CreateNewAutomation(automation Automation) (uint, error) {
 }
 
 // Returns a Automation struct which matches the given Id
-// If the id does not match a struct, an error is returned
+// If the id does not match a struct, a `false`` is returned
 func GetAutomationById(id uint) (Automation, bool, error) {
 	query, err := db.Prepare(`
 	SELECT
@@ -113,7 +113,7 @@ func GetAutomationById(id uint) (Automation, bool, error) {
 	return automation, true, nil
 }
 
-// Returns a list with automations of a given user
+// Returns a list containing automations of a given user
 // Does not check the validity of the user
 func GetUserAutomations(username string) ([]Automation, error) {
 	query, err := db.Prepare(`
@@ -185,7 +185,7 @@ func GetAutomations() ([]Automation, error) {
 
 // Modifies the metadata of a given automation item
 // Does not validate the provided metadata
-func ModifyAutomation(automationId uint, newItem AutomationWithoutIdAndUsername) error {
+func ModifyAutomation(id uint, newItem AutomationWithoutIdAndUsername) error {
 	query, err := db.Prepare(`
 	UPDATE automation
 	SET
@@ -206,7 +206,7 @@ func ModifyAutomation(automationId uint, newItem AutomationWithoutIdAndUsername)
 		newItem.CronExpression,
 		newItem.HomescriptId,
 		newItem.Enabled,
-		automationId,
+		id,
 	)
 	if err != nil {
 		log.Error("Failed to modify automation: executing query failed: ", err.Error())
@@ -218,7 +218,7 @@ func ModifyAutomation(automationId uint, newItem AutomationWithoutIdAndUsername)
 
 // Deletes an automation item given its Id
 // Does not validate the validity of the provided Id
-func DeleteAutomationById(automationId uint) error {
+func DeleteAutomationById(id uint) error {
 	query, err := db.Prepare(`
 	DELETE FROM
 	automation
@@ -228,7 +228,7 @@ func DeleteAutomationById(automationId uint) error {
 		log.Error("Failed to delete automation by Id: preparing query failed: ", err.Error())
 		return err
 	}
-	if _, err := query.Exec(automationId); err != nil {
+	if _, err := query.Exec(id); err != nil {
 		log.Error("Failed to delete automation by Id: executing query failed: ", err.Error())
 		return err
 	}
