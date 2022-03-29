@@ -12,26 +12,26 @@ import (
 // Is called when the scheduler executes the given automation
 // The automationRunnerFunc automatically tries to fetch the needed configuration from the provided id
 // Error handling in this function works by logging to the internal event system and notifying the user about their automation's failure
-func automationRunnerFunc(automationId uint) {
-	job, jobFound, err := database.GetAutomationById(automationId)
+func automationRunnerFunc(id uint) {
+	job, jobFound, err := database.GetAutomationById(id)
 	if err != nil {
-		log.Error(fmt.Sprintf("Automation with the Id '%d' could not be executed: database failure: %s", automationId, err.Error()))
+		log.Error(fmt.Sprintf("Automation with the Id '%d' could not be executed: database failure: %s", id, err.Error()))
 		event.Error(
 			"Automation Failure",
-			fmt.Sprintf("Automation with the Id: '%d' could not be executed due to database failure: %s", automationId, err.Error()),
+			fmt.Sprintf("Automation with the Id: '%d' could not be executed due to database failure: %s", id, err.Error()),
 		)
 		return
 	}
 	if !jobFound {
-		log.Error(fmt.Sprintf("Automation with the Id: '%d' could not be executed: Id not found in database", automationId))
+		log.Error(fmt.Sprintf("Automation with the Id: '%d' could not be executed: Id not found in database", id))
 		event.Error(
 			"Automation Failure",
-			fmt.Sprintf("Automation with the Id: '%d' could not be executed because it could not be found in the database", automationId),
+			fmt.Sprintf("Automation with the Id: '%d' could not be executed because it could not be found in the database", id),
 		)
 		return
 	}
 	if !job.Enabled {
-		log.Info(fmt.Sprintf("Automations %d canceled because it is deactivated", automationId))
+		log.Info(fmt.Sprintf("Automations %d canceled because it is deactivated", id))
 		user.Notify(
 			job.Owner,
 			"Automation Suspended",
@@ -40,21 +40,21 @@ func automationRunnerFunc(automationId uint) {
 		)
 		return
 	}
-	log.Debug(fmt.Sprintf("Automation '%d' is running.\n", automationId))
+	log.Debug(fmt.Sprintf("Automation '%d' is running.\n", id))
 	_, scriptExists, err := database.GetUserHomescriptById(job.HomescriptId, job.Owner)
 	if err != nil {
-		log.Error(fmt.Sprintf("Automation with Id: '%d' failed because its Homescript Id could not be retrieved from the database: %s", automationId, err.Error()))
+		log.Error(fmt.Sprintf("Automation with Id: '%d' failed because its Homescript Id could not be retrieved from the database: %s", id, err.Error()))
 		event.Error(
 			"Automation Failure",
-			fmt.Sprintf("Automation with the Id: '%d' could not be executed because it s Homescript Id could not be retrieved from the database: %s", automationId, err.Error()),
+			fmt.Sprintf("Automation with the Id: '%d' could not be executed because it s Homescript Id could not be retrieved from the database: %s", id, err.Error()),
 		)
 		return
 	}
 	if !scriptExists {
-		log.Error(fmt.Sprintf("Automation with Id: '%d' failed because its Homescript Id: '%s' is invalid", automationId, job.HomescriptId))
+		log.Error(fmt.Sprintf("Automation with Id: '%d' failed because its Homescript Id: '%s' is invalid", id, job.HomescriptId))
 		event.Error(
 			"Automation Failure",
-			fmt.Sprintf("Automation with the Id: '%d' failed because its Homescript Id: '%s' is invalid. This indicates a bad configuration.", automationId, job.HomescriptId),
+			fmt.Sprintf("Automation with the Id: '%d' failed because its Homescript Id: '%s' is invalid. This indicates a bad configuration.", id, job.HomescriptId),
 		)
 		user.Notify(
 			job.Owner,
@@ -66,10 +66,10 @@ func automationRunnerFunc(automationId uint) {
 	}
 	output, exitCode, err := homescript.RunById(job.Owner, job.HomescriptId)
 	if err != nil {
-		log.Warn(fmt.Sprintf("Automation with Id: '%d' failed because the Homescript: '%s' could not be executed", automationId, job.HomescriptId))
+		log.Warn(fmt.Sprintf("Automation with Id: '%d' failed because the Homescript: '%s' could not be executed", id, job.HomescriptId))
 		event.Error(
 			"Automation Failure",
-			fmt.Sprintf("Automation with Id: '%d' failed. Error: %s", automationId, err.Error()),
+			fmt.Sprintf("Automation with Id: '%d' failed. Error: %s", id, err.Error()),
 		)
 		user.Notify(
 			job.Owner,
@@ -81,6 +81,6 @@ func automationRunnerFunc(automationId uint) {
 	}
 	event.Debug(
 		"Automation Finished Successfully",
-		fmt.Sprintf("Automation '%d' of user '%s' has executed successfully. Exit code: %d, Output: '%s'", automationId, job.Owner, exitCode, output),
+		fmt.Sprintf("Automation '%d' of user '%s' has executed successfully. Exit code: %d, Output: '%s'", id, job.Owner, exitCode, output),
 	)
 }

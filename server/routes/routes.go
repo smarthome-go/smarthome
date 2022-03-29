@@ -121,6 +121,6 @@ func NewRouter() *mux.Router {
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 	r.MethodNotAllowedHandler = http.HandlerFunc(methodNotAllowedHandler)
 
-	log.Debug("Initialized Router.")
+	log.Debug("Initialized Router")
 	return r
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/MikMuellerDev/smarthome/core/hardware"
 	"github.com/MikMuellerDev/smarthome/core/homescript"
 	"github.com/MikMuellerDev/smarthome/core/scheduler/automation"
+	"github.com/MikMuellerDev/smarthome/core/scheduler/scheduler"
 	"github.com/MikMuellerDev/smarthome/core/user"
 	"github.com/MikMuellerDev/smarthome/core/utils"
 	"github.com/MikMuellerDev/smarthome/server/api"
@@ -69,6 +70,7 @@ func main() {
 	event.InitLogger(log)
 	homescript.InitLogger(log)
 	automation.InitLogger(log)
+	scheduler.InitLogger(log)
 
 	// Read config file
 	if err := config.ReadConfigFile(); err != nil {
@@ -192,14 +194,23 @@ func main() {
 	}
 
 	automation.Init() // Initializes the automation scheduler
+	scheduler.Init()  // Initializes the normal scheduler
 
 	r := routes.NewRouter()
 	middleware.Init(configStruct.Server.Production)
 	templates.LoadTemplates("./web/html/**/*.html")
 	http.Handle("/", r)
 
+	scheduler.CreateNewSchedule(database.Schedule{
+		Name:           "test",
+		Owner:          "admin",
+		Hour:           20,
+		Minute:         15,
+		HomescriptCode: "print('hello')",
+	})
+
 	event.Info("System Started", fmt.Sprintf("The Smarthome server completed startup in %.2f seconds", time.Since(startTime).Seconds()))
-	log.Info(fmt.Sprintf("Smarthome v%s is running on port %d", utils.Version, port))
+	log.Info(fmt.Sprintf("Smarthome v%s is running on http://localhost:%d", utils.Version, port))
 	if err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
 		panic(err)
 	}

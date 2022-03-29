@@ -4,24 +4,6 @@ import (
 	"time"
 )
 
-// Identified by a username, has a password and an avatar path
-type FullUser struct {
-	Username     string `json:"username"`
-	Firstname    string `json:"firstname"`
-	Surname      string `json:"surname"`
-	PrimaryColor string `json:"primaryColor"`
-	Password     string `json:"password"`
-	AvatarPath   string `json:"avatarPath"`
-	// TODO: add bg image and frontend themes
-}
-
-type User struct {
-	Username     string `json:"username"`
-	Firstname    string `json:"firstname"`
-	Surname      string `json:"surname"`
-	PrimaryColor string `json:"primaryColor"`
-}
-
 // Identified by a unique Id, has a Name and Description
 // When used in config file, the Switches slice is also populated
 type Room struct {

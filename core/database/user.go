@@ -6,6 +6,26 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Identified by a username, has a password and an avatar path
+type FullUser struct {
+	Username         string `json:"username"`
+	Firstname        string `json:"firstname"`
+	Surname          string `json:"surname"`
+	PrimaryColor     string `json:"primaryColor"`
+	Password         string `json:"password"`
+	AvatarPath       string `json:"avatarPath"`
+	SchedulerEnabled bool   `json:"schedulerEnabled"`
+	// TODO: add bg image and frontend themes
+}
+
+type User struct {
+	Username         string `json:"username"`
+	Firstname        string `json:"firstname"`
+	Surname          string `json:"surname"`
+	PrimaryColor     string `json:"primaryColor"`
+	SchedulerEnabled bool   `json:"schedulerEnabled"`
+}
+
 // Used during <Init> of the database, only called once
 // Creates the table containing <users> if it doesn't already exist
 // Can return an error if the database fails
@@ -18,6 +38,7 @@ func createUserTable() error {
 		Firstname VARCHAR(20) DEFAULT " ",
 		Surname VARCHAR(20)   DEFAULT " ", 
 		PrimaryColor CHAR(7)  DEFAULT "#88ff70",
+		SchedulerEnabled BOOLEAN DEFAULT TRUE,
 		Password text,
 		AvatarPath text
 	)
@@ -33,7 +54,10 @@ func createUserTable() error {
 // Lists users which are currently in the Database
 // Returns an empty list with an error when failing
 func ListUsers() ([]User, error) {
-	query := `SELECT Username, Firstname, Surname, PrimaryColor FROM user`
+	query := `
+	SELECT
+	Username, Firstname, Surname, PrimaryColor, SchedulerEnabled
+	FROM user`
 	res, err := db.Query(query)
 	if err != nil {
 		log.Error("Could not list users. Failed to execute query: ", err.Error())
@@ -42,7 +66,13 @@ func ListUsers() ([]User, error) {
 	var userList []User
 	for res.Next() {
 		var user User
-		err := res.Scan(&user.Username, &user.Firstname, &user.Surname, &user.PrimaryColor)
+		err := res.Scan(
+			&user.Username,
+			&user.Firstname,
+			&user.Surname,
+			&user.PrimaryColor,
+			&user.SchedulerEnabled,
+		)
 		if err != nil {
 			log.Error("Failed to scan user values from database results: ", err.Error())
 		}
@@ -56,8 +86,8 @@ func ListUsers() ([]User, error) {
 func InsertUser(user FullUser) error {
 	query, err := db.Prepare(`
 	INSERT INTO
-	user(Username, Firstname, Surname, PrimaryColor, Password, AvatarPath)
-	VALUES(?, ?, ?, ?, ?, ?)
+	user(Username, Firstname, Surname, PrimaryColor, Password, AvatarPath, SchedulerEnabled)
+	VALUES(?, ?, ?, ?, ?, ?, DEFAULT)
 	ON DUPLICATE KEY UPDATE Password=VALUES(Password)`)
 	if err != nil {
 		log.Error("Could not create user. Failed to prepare query: ", err.Error())
@@ -157,7 +187,7 @@ func DoesUserExist(username string) (bool, error) {
 func GetUserByUsername(username string) (User, error) {
 	query, err := db.Prepare(`
 	SELECT
-	Username, Firstname, Surname, PrimaryColor
+	Username, Firstname, Surname, PrimaryColor, SchedulerEnabled
 	FROM user
 	WHERE Username=? 
 	`)
@@ -172,7 +202,13 @@ func GetUserByUsername(username string) (User, error) {
 	}
 	user := User{}
 	for res.Next() {
-		err := res.Scan(&user.Username, &user.Firstname, &user.Surname, &user.PrimaryColor)
+		err := res.Scan(
+			&user.Username,
+			&user.Firstname,
+			&user.Surname,
+			&user.PrimaryColor,
+			&user.SchedulerEnabled,
+		)
 		if err != nil {
 			log.Error("Failed to get user by username: failed to scan query: ", err.Error())
 			return User{}, err
@@ -184,7 +220,10 @@ func GetUserByUsername(username string) (User, error) {
 // Returns the password of a given user
 func GetUserPasswordHash(username string) (string, error) {
 	query, err := db.Prepare(`
-	SELECT Password FROM user WHERE Username=?
+	SELECT
+	Password
+	FROM user
+	WHERE Username=?
 	`)
 	if err != nil {
 		log.Error("Failed to get user password hash: preparing query failed: ", err.Error())
