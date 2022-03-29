@@ -16,7 +16,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt update && apt install -yq \
   curl \
   && apt autoclean && apt autoremove && rm -rf /var/lib/apt/lists/*
 
-RUN curl -L https://github.com/MikMuellerDev/homescript-cli/releases/download/v0.3.1-beta/homescript_linux_amd64.tar.gz -o /tmp/homescript
+RUN curl -L https://github.com/MikMuellerDev/homescript-cli/releases/download/v0.4.0-beta/homescript_linux_amd64.tar.gz -o /tmp/homescript
 
 WORKDIR /usr/bin
 RUN tar -xvf /tmp/homescript
