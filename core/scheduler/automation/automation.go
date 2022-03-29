@@ -123,11 +123,11 @@ func DeactivateAutomationSystem() error {
 func Init() error {
 	serverConfig, found, err := database.GetServerConfiguration()
 	if err != nil {
-		log.Error("Failed to initialize scheduler: could not retrieve server configuration: ", err.Error())
+		log.Error("Failed to initialize automation scheduler: could not retrieve server configuration: ", err.Error())
 		return err
 	}
 	if !found {
-		log.Error("Failed to initialize scheduler: could not retrieve server configuration: no results in query")
+		log.Error("Failed to initialize automation scheduler: could not retrieve server configuration: no results in query")
 		return err
 	}
 	scheduler = gocron.NewScheduler(time.Local)

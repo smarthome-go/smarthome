@@ -13,7 +13,7 @@ func CreateConfigTable() error {
 	CREATE TABLE
 	IF NOT EXISTS
 	configuration(
-		Id INT PRIMARY KEY DEFAULT 0,
+		Id INT PRIMARY KEY,
 		AutomationEnabled BOOLEAN DEFAULT TRUE,
 		LockDownMode BOOLEAN DEFAULT FALSE
 	)`)
