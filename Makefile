@@ -1,6 +1,7 @@
 appname := smarthome
 workingdir := smarthome
 sources := $(wildcard *.go)
+version := 0.0.18-beta
 
 build = GOOS=$(1) GOARCH=$(2) go build -o $(appname) $(4)
 tar = mkdir -p build && cd ../ && tar -cvzf ./$(appname)_$(1)_$(2).tar.gz $(workingdir)/$(appname) $(workingdir)/web/out $(workingdir)/web/html $(workingdir)/web/assets && mv $(appname)_$(1)_$(2).tar.gz $(workingdir)/build
@@ -61,7 +62,7 @@ docker: cleanall web
 	# rsync -rv --exclude=data/avatars data docker/app/
 	rsync -rv --exclude=web/src --exclude=web/node_modules --exclude=web/*.json web docker/app/
 	cp smarthome docker/app/
-	cd docker && docker build . -t mikmuellerdev/smarthome
+	cd docker && docker build . -t mikmuellerdev/smarthome:$(version)
 
 web: cleanweb
 	cd web && npm run build

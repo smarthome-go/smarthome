@@ -29,7 +29,7 @@ import (
 var port = 8082 // Port used during development, can be overridden by config file or environment variables
 
 func main() {
-	utils.Version = "0.0.17-beta"
+	utils.Version = "0.0.18-beta"
 
 	startTime := time.Now()
 	// Create logger
