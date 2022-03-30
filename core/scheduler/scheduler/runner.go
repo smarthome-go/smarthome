@@ -47,17 +47,17 @@ func scheduleRunnerFunc(id uint) {
 		return
 	}
 	log.Debug(fmt.Sprintf("Schedule '%d' is running", id))
-	output, exitCode, hmsErrors := homescript.Run(
+	_, exitCode, hmsErrors := homescript.Run(
 		owner.Username,
 		fmt.Sprintf("schedule_%d_job.hms", id),
 		job.HomescriptCode,
 	)
 	if len(hmsErrors) > 0 {
-		log.Error("Executing scheduler's homescript failed: ", err.Error())
+		log.Error("Executing scheduler's homescript failed: ", hmsErrors[0].ErrorType)
 		user.Notify(
 			owner.Username,
 			"Schedule Failed",
-			fmt.Sprintf("Schedule '%s' failed due to homescript error. Homescript terminated with exit code %d. Output: %s, Error: %s", job.Name, exitCode, output, hmsErrors[0].Message),
+			fmt.Sprintf("Schedule '%s' failed due to homescript error. Homescript terminated with exit code %d. Error: %s", job.Name, exitCode, hmsErrors[0].Message),
 			user.NotificationLevelError,
 		)
 		event.Error(

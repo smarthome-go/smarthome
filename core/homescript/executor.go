@@ -33,7 +33,7 @@ func (self *Executor) Print(args ...string) {
 func (self *Executor) SwitchOn(switchId string) (bool, error) {
 	powerState, err := hardware.GetPowerState(switchId)
 	if err != nil {
-		log.Error(fmt.Sprintf("[Homescript] ERROR: script: '%s' user: '%s': failed to read power state: %s", self.ScriptName, self.Username, err.Error()))
+		log.Debug(fmt.Sprintf("[Homescript] ERROR: script: '%s' user: '%s': failed to read power state: %s", self.ScriptName, self.Username, err.Error()))
 	}
 	return powerState, err
 }
@@ -42,7 +42,7 @@ func (self *Executor) SwitchOn(switchId string) (bool, error) {
 func (self *Executor) Switch(switchId string, powerOn bool) error {
 	err := hardware.SetSwitchPowerAll(switchId, powerOn, self.Username)
 	if err != nil {
-		log.Error(fmt.Sprintf("[Homescript] ERROR: script: '%s' user: '%s': failed to set power: %s", self.ScriptName, self.Username, err.Error()))
+		log.Debug(fmt.Sprintf("[Homescript] ERROR: script: '%s' user: '%s': failed to set power: %s", self.ScriptName, self.Username, err.Error()))
 		return err
 	}
 	onOffText := "on"
@@ -105,7 +105,7 @@ func (self *Executor) Log(
 	case 5:
 		event.Fatal(title, description)
 	default:
-		log.Error(fmt.Sprintf("[Homescript] ERROR: script: '%s' user: '%s': failed to log event: invalid level", self.ScriptName, self.Username))
+		log.Debug(fmt.Sprintf("[Homescript] ERROR: script: '%s' user: '%s': failed to log event: invalid level", self.ScriptName, self.Username))
 		return fmt.Errorf("Failed to add log event: invalid logging level <%d>: valid logging levels are 1, 2, 3, 4, or 5", level)
 	}
 	return nil
@@ -115,7 +115,7 @@ func (self *Executor) Log(
 func (self Executor) Exec(homescriptId string) (string, error) {
 	output, exitCode, err := RunById(self.Username, homescriptId)
 	if err != nil {
-		log.Error(fmt.Sprintf("[Homescript] ERROR: script: '%s' user: '%s': called homescript failed with exit code %d : %s", self.ScriptName, self.Username, exitCode, err.Error()))
+		log.Debug(fmt.Sprintf("[Homescript] ERROR: script: '%s' user: '%s': called homescript failed with exit code %d : %s", self.ScriptName, self.Username, exitCode, err.Error()))
 		return output, err
 	}
 	return output, nil
@@ -128,13 +128,13 @@ func (self *Executor) GetUser() string {
 
 // TODO: Will later be implemented, should return the weather as a human-readable string
 func (self *Executor) GetWeather() (string, error) {
-	log.Error(fmt.Sprintf("[Homescript] ERROR: script: '%s' user: '%s': weather is not implemented yet", self.ScriptName, self.Username))
+	log.Warn(fmt.Sprintf("[Homescript] ERROR: script: '%s' user: '%s': weather is not implemented yet", self.ScriptName, self.Username))
 	return "rainy", nil
 }
 
 // TODO: Will later be implemented, should return the temperature in Celsius
 func (self *Executor) GetTemperature() (int, error) {
-	log.Error(fmt.Sprintf("[Homescript] ERROR: script: '%s' user: '%s': temperature is not implemented yet", self.ScriptName, self.Username))
+	log.Warn(fmt.Sprintf("[Homescript] ERROR: script: '%s' user: '%s': temperature is not implemented yet", self.ScriptName, self.Username))
 	return 42, nil
 }
 
