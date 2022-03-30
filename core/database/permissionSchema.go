@@ -25,6 +25,7 @@ const (
 	PermissionHomescript              PermissionType = "homescript"
 	PermissionAutomation              PermissionType = "automation"
 	PermissionActivateAutomation      PermissionType = "activateAutomation"
+	PermissionModifyLocation          PermissionType = "changeLocation"
 
 	// Dangerous
 	PermissionWildCard PermissionType = "*"
@@ -115,6 +116,12 @@ var (
 			Permission:  PermissionActivateAutomation,
 			Name:        "(De) Activate Automation System",
 			Description: "Enable / Disable the entire automation system",
+		},
+		{
+			// (Admin) is allowed to modify the servers geolocation
+			Permission:  PermissionModifyLocation,
+			Name:        "Modify Server Location",
+			Description: "Modify the geolocation of the server",
 		},
 		{
 			// WARNING: This allows a user to do everything, should only be allowed to the `admin` user

@@ -1,10 +1,14 @@
 package database
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
 type ServerConfig struct {
-	AutomationEnabled bool `json:"automationEnabled"` // Sets the global state of the server's automation system
-	LockDownMode      bool `json:"lockDownMode"`      // If enabled, the server is unable to change power states and will not allow power actions
+	AutomationEnabled bool    `json:"automationEnabled"` // Sets the global state of the server's automation system
+	LockDownMode      bool    `json:"lockDownMode"`      // If enabled, the server is unable to change power states and will not allow power actions
+	Latitude          float32 `json:"latitude"`          // Used for calculating the sunset / sunrise and for openweathermap
+	Longitude         float32 `json:"longitude"`
 }
 
 // Creates the table that contains the server configuration
@@ -15,7 +19,9 @@ func CreateConfigTable() error {
 	configuration(
 		Id INT PRIMARY KEY,
 		AutomationEnabled BOOLEAN DEFAULT TRUE,
-		LockDownMode BOOLEAN DEFAULT FALSE
+		LockDownMode BOOLEAN DEFAULT FALSE,
+		Latitude FLOAT(32) DEFAULT 0.0,
+		Longitude FLOAT(32) DeFAULT 0.0
 	)`)
 	if err != nil {
 		log.Error("Failed to create server configuration table: executing query failed: ", err.Error())
@@ -45,12 +51,14 @@ func GetServerConfiguration() (ServerConfig, bool, error) {
 	var config ServerConfig
 	err := db.QueryRow(`
 	SELECT
-	AutomationEnabled, LockDownMode
+	AutomationEnabled, LockDownMode, Latitude, Longitude
 	FROM configuration
 	WHERE Id=0
 	`).Scan(
 		&config.AutomationEnabled,
 		&config.LockDownMode,
+		&config.Latitude,
+		&config.Longitude,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -70,6 +78,8 @@ func SetServerConfiguration(config ServerConfig) error {
 	SET
 	AutomationEnabled=?,
 	LockDownMode=?
+	Latitude=?,
+	Longitude=?
 	WHERE Id=0
 	`)
 	if err != nil {
@@ -105,4 +115,22 @@ func SetAutomationSystemActivation(enabled bool) error {
 	return nil
 }
 
-// TODO: create server config / at startup
+// Changes the location of the server
+func UpdateLocation(lat float32, lon float32) error {
+	query, err := db.Prepare(`
+	UPDATE configuration
+	SET
+	Latitude=?,
+	Longitude=?
+	WHERE Id=0
+	`)
+	if err != nil {
+		log.Error("Failed to update the servers location: preparing query failed: ", err.Error())
+		return err
+	}
+	if _, err := query.Exec(lat, lon); err != nil {
+		log.Error("Failed to update the servers location: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}

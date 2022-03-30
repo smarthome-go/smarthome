@@ -100,6 +100,9 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/automation/modify", mdl.ApiAuth(mdl.Perm(api.ModifyAutomation, database.PermissionAutomation))).Methods("PUT")
 	r.HandleFunc("/api/automation/state", mdl.ApiAuth(mdl.Perm(api.ChangeActivationAutomation, database.PermissionActivateAutomation))).Methods("PUT")
 
+	// Admin-specific
+	r.HandleFunc("/api/config/location/modify", mdl.ApiAuth(mdl.Perm(api.UpdateLocation, database.PermissionModifyLocation))).Methods("PUT")
+
 	// TODO: remove this one below
 	// TODO: add camera modification / management features
 	// Test camera module here
@@ -121,6 +124,6 @@ func NewRouter() *mux.Router {
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 	r.MethodNotAllowedHandler = http.HandlerFunc(methodNotAllowedHandler)
 
-	log.Debug("Initialized Router")
+	log.Debug("Successfully initialized router")
 	return r
 }
