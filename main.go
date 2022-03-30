@@ -201,13 +201,25 @@ func main() {
 	templates.LoadTemplates("./web/html/**/*.html")
 	http.Handle("/", r)
 
-	scheduler.CreateNewSchedule(database.Schedule{
-		Name:           "test",
-		Owner:          "admin",
-		Hour:           20,
-		Minute:         15,
-		HomescriptCode: "print('hello')",
+	// scheduler.CreateNewSchedule(database.Schedule{
+	// 	Name:           "test",
+	// 	Owner:          "admin",
+	// 	Hour:           17,
+	// 	Minute:         13,
+	// 	HomescriptCode: "switch('s2', !switchOn('s2')) \n switch('s2', !switchOn('s2'))",
+	// })
+
+	database.CreateNewHomescript(database.Homescript{
+		Id:                  "test",
+		Owner:               "admin",
+		Name:                "test",
+		Description:         "test",
+		QuickActionsEnabled: false,
+		SchedulerEnabled:    false,
+		Code:                "switch('s2', on)",
 	})
+
+	automation.CreateNewAutomation("test", "test", 19, 5, []uint8{1, 2, 3, 4, 5}, "test", "admin", true, database.TimingSunset)
 
 	event.Info("System Started", fmt.Sprintf("The Smarthome server completed startup in %.2f seconds", time.Since(startTime).Seconds()))
 	log.Info(fmt.Sprintf("Smarthome v%s is running on http://localhost:%d", utils.Version, port))

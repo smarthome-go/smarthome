@@ -14,8 +14,9 @@ func CreateNewSchedule(schedule database.Schedule) error {
 		return err
 	}
 	// Prepare the job for go-cron
-	automationJob := scheduler.At(fmt.Sprintf("%02d:%02d", schedule.Hour, schedule.Minute))
+	automationJob := scheduler.Every(1).Day().At(fmt.Sprintf("%02d:%02d", schedule.Hour, schedule.Minute))
 	automationJob.Tag(fmt.Sprintf("%d", newScheduleId))
+	automationJob.LimitRunsTo(1)
 	automationJob.Do(scheduleRunnerFunc, newScheduleId)
 	log.Trace(fmt.Sprintf("Successfully added and setup schedule '%d'", newScheduleId))
 	return nil
@@ -34,3 +35,5 @@ func RemoveScheduleById(id uint) error {
 	log.Trace(fmt.Sprintf("Successfully removed and aborted schedule '%d'", id))
 	return nil
 }
+
+// Modify an already set up sc

@@ -45,8 +45,9 @@ func startSavedSchedules() error {
 	}
 	for _, schedule := range schedules {
 		// Prepare the job for go-cron
-		automationJob := scheduler.At(fmt.Sprintf("%02d:%02d", schedule.Hour, schedule.Minute))
+		automationJob := scheduler.Every(1).Day().At(fmt.Sprintf("%02d:%02d", schedule.Hour, schedule.Minute))
 		automationJob.Tag(fmt.Sprintf("%d", schedule.Id))
+		automationJob.LimitRunsTo(1)
 		automationJob.Do(scheduleRunnerFunc, schedule.Id)
 		log.Trace(fmt.Sprintf("Successfully setup schedule '%d'", schedule.Id))
 	}
