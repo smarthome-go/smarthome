@@ -195,7 +195,7 @@ func main() {
 
 	r := routes.NewRouter()
 	middleware.Init(configStruct.Server.Production)
-	templates.LoadTemplates("./web/html/**/*.html")
+	templates.LoadTemplates("./web/dist/html/*.html")
 	http.Handle("/", r)
 
 	event.Info("System Started", fmt.Sprintf("The Smarthome server completed startup in %.2f seconds", time.Since(startTime).Seconds()))

@@ -1,0 +1,13 @@
+@use 'sass:color';
+
+@use '@material/theme/index' as theme with (
+  $background: #fff,
+  $surface: #fff,
+  $error: #b00020,
+);
+
+html,
+body {
+  background-color: theme.$surface;
+  color: theme.$on-surface;
+}
