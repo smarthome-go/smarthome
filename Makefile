@@ -59,7 +59,7 @@ docker: cleanall web
 	GOOS=linux GOARCH=amd64 go build -o smarthome -ldflags '-extldflags "-fno-PIC -static"' -buildmode pie -tags 'osusergo netgo static_build' 
 	mkdir docker/app
 	# rsync -rv --exclude=data/avatars data docker/app/
-	rsync -rv --exclude=web/src web docker/app/
+	rsync -rv --exclude=web/src --exclude=web/node_modules --exclude=web/*.json web docker/app/
 	cp smarthome docker/app/
 	cd docker && docker build . -t mikmuellerdev/smarthome
 
