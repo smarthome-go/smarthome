@@ -51,7 +51,7 @@
     }
 </script>
 
-<main class="paper-container">
+<main>
     <div id="left" class="mdc-elevation--z4">
         <img src={Logo} alt="logo" />
         <h4>Smarthome</h4>
