@@ -7,29 +7,30 @@ import (
 
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/core/scheduler/automation"
-	scheduler "github.com/MikMuellerDev/smarthome/core/scheduler/automation"
 	"github.com/MikMuellerDev/smarthome/server/middleware"
 )
 
 type NewAutomationRequest struct {
-	Name         string  `json:"name"`
-	Description  string  `json:"description"`
-	Hour         uint    `json:"hour"`   // 24 >= h >= 0 | Can only be used with minute, specifies the exact hour in which the automation will run, 0 is midnight, 15 is 3PM, 3 is 3AM -> 24h format
-	Minute       uint    `json:"minute"` // 60 >= m >= 0 | Can only be used with hour, specifies the exact minute on which the automation will run
-	Days         []uint8 `json:"days"`   //  6 >= d >= 0 | Can contain 7 elements at maximum, value `0` represents Sunday, value `6` represents Saturday
-	HomescriptId string  `json:"homescriptId"`
-	Enabled      bool    `json:"enabled"`
+	Name         string              `json:"name"`
+	Description  string              `json:"description"`
+	Hour         uint                `json:"hour"`   // 24 >= h >= 0 | Can only be used with minute, specifies the exact hour in which the automation will run, 0 is midnight, 15 is 3PM, 3 is 3AM -> 24h format
+	Minute       uint                `json:"minute"` // 60 >= m >= 0 | Can only be used with hour, specifies the exact minute on which the automation will run
+	Days         []uint8             `json:"days"`   //  6 >= d >= 0 | Can contain 7 elements at maximum, value `0` represents Sunday, value `6` represents Saturday
+	HomescriptId string              `json:"homescriptId"`
+	Enabled      bool                `json:"enabled"`
+	TimingMode   database.TimingMode `json:"timingMode"`
 }
 
 type ModifyAutomationRequest struct {
-	Id           uint    `json:"id"`
-	Name         string  `json:"name"`
-	Description  string  `json:"description"`
-	Hour         uint    `json:"hour"`
-	Minute       uint    `json:"minute"`
-	Days         []uint8 `json:"days"`
-	HomescriptId string  `json:"homescriptId"`
-	Enabled      bool    `json:"enabled"`
+	Id           uint                `json:"id"`
+	Name         string              `json:"name"`
+	Description  string              `json:"description"`
+	Hour         uint                `json:"hour"`
+	Minute       uint                `json:"minute"`
+	Days         []uint8             `json:"days"`
+	HomescriptId string              `json:"homescriptId"`
+	Enabled      bool                `json:"enabled"`
+	TimingMode   database.TimingMode `json:"timingMode"`
 }
 
 type DeleteAutomationRequest struct {
@@ -49,7 +50,7 @@ func GetUserAutomations(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
-	automations, err := scheduler.GetUserAutomations(username)
+	automations, err := automation.GetUserAutomations(username)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to list personal automations", Error: "internal server error"})
@@ -114,12 +115,17 @@ func CreateNewAutomation(w http.ResponseWriter, r *http.Request) {
 		}
 		containsDays = append(containsDays, day) // If the day is not already present, add it
 	}
+	if request.TimingMode != database.TimingNormal && request.TimingMode != database.TimingSunrise && request.TimingMode != database.TimingSunset {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to create new automation", Error: "invalid timing mode"})
+		return
+	}
 	if request.Hour > 24 || request.Minute > 60 { // Checks the minute and hour, values below 0 are checked implicitly through `uint`
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to create new automation", Error: "invalid hour and / or minute"})
 		return
 	}
-	if err := scheduler.CreateNewAutomation(
+	if err := automation.CreateNewAutomation(
 		request.Name,
 		request.Description,
 		uint8(request.Hour),
@@ -128,7 +134,9 @@ func CreateNewAutomation(w http.ResponseWriter, r *http.Request) {
 		request.HomescriptId,
 		username,
 		request.Enabled,
+		request.TimingMode,
 	); err != nil {
+		log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to create new automation", Error: "backend failure"})
 		return
@@ -172,7 +180,7 @@ func RemoveAutomation(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully deleted automation"})
 }
 
-// TODO: modify automations
+// Modifies a existing automation, also restarts the schedule
 func ModifyAutomation(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(r)
@@ -261,6 +269,7 @@ func ModifyAutomation(w http.ResponseWriter, r *http.Request) {
 		CronExpression: cronExpr,
 		HomescriptId:   request.HomescriptId,
 		Enabled:        request.Enabled,
+		TimingMode:     request.TimingMode,
 	}
 	if err := automation.ModifyAutomationById(request.Id, newAutomation); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

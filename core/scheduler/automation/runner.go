@@ -40,6 +40,23 @@ func automationRunnerFunc(id uint) {
 		)
 		return
 	}
+	// If the timing mode is set to either 'sunrise' or 'sunset', a new time should be generated
+	if job.TimingMode != database.TimingNormal {
+		if err := updateJobTime(id, job.TimingMode == database.TimingSunrise); err != nil {
+			log.Error("Failed to run automation: could not update next launch time: ", err.Error())
+			event.Error(
+				"Automation Failure",
+				fmt.Sprintf("Automation %d failed because its next launch time could not be adjusted: %s", id, err.Error()),
+			)
+			user.Notify(
+				job.Owner,
+				"Automation Failure",
+				fmt.Sprintf("Automation %d failed because its next launch time could not be adjusted: %s", id, err.Error()),
+				user.NotificationLevelError,
+			)
+			return
+		}
+	}
 	log.Debug(fmt.Sprintf("Automation '%d' is running.\n", id))
 	_, scriptExists, err := database.GetUserHomescriptById(job.HomescriptId, job.Owner)
 	if err != nil {

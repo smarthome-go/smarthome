@@ -17,6 +17,7 @@ type Automation struct {
 	HomescriptId    string
 	Owner           string
 	Enabled         bool
+	TimingMode      database.TimingMode
 }
 
 // Creates a new automation item
@@ -30,6 +31,7 @@ func CreateNewAutomation(
 	homescriptId string,
 	owner string,
 	enabled bool,
+	timingMode database.TimingMode,
 ) error {
 	// Generate a cron expression based on the input data
 	// The `days` slice should not be longer than 7
@@ -51,12 +53,12 @@ func CreateNewAutomation(
 			HomescriptId:   homescriptId,
 			Owner:          owner,
 			Enabled:        enabled,
+			TimingMode:     timingMode,
 		},
 	)
 	if err != nil {
 		log.Error("Could not create automation: database failure: ", err.Error())
 		return err
-
 	}
 	cronDescription, err := generateHumanReadableCronExpression(cronExpression)
 	if err != nil {
@@ -89,6 +91,14 @@ func CreateNewAutomation(
 	if !serverConfig.AutomationEnabled { // If the automation scheduler is disabled, do not add the scheduler
 		return nil
 
+	}
+	if timingMode != database.TimingNormal {
+		// Add a dummy scheduler so that the modify function does not fail
+		automationJob := scheduler.Cron(cronExpression)
+		automationJob.Tag(fmt.Sprintf("%d", newAutomationId))
+		automationJob.Do(func() {})
+		// If the timing mode is set to either `sunrise` or `sunset`, do not activate the automation, update it instead
+		return updateJobTime(newAutomationId, timingMode == database.TimingSunrise)
 	}
 	// Prepare the job for go-cron
 	automationJob := scheduler.Cron(cronExpression)
@@ -157,6 +167,7 @@ func GetUserAutomations(username string) ([]Automation, error) {
 				HomescriptId:    automation.HomescriptId,
 				Owner:           automation.Owner,
 				Enabled:         automation.Enabled,
+				TimingMode:      automation.TimingMode,
 			},
 		)
 	}
@@ -189,6 +200,7 @@ func GetUserAutomationById(username string, automationId uint) (Automation, bool
 			HomescriptId:    automation.HomescriptId,
 			Owner:           automation.Owner,
 			Enabled:         automation.Enabled,
+			TimingMode:      automation.TimingMode,
 		}, true, nil
 	}
 	return Automation{}, false, nil

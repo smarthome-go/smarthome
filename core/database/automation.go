@@ -4,22 +4,32 @@ import "database/sql"
 
 // Contains the database backend for static automation
 
+type TimingMode string
+
+const (
+	TimingNormal  TimingMode = "normal"  // Will not change, automation will always execute based on this time
+	TimingSunrise TimingMode = "sunrise" // Uses the local time for sunrise, each run of a set automation will update the actual time and regenerate a cron expression
+	TimingSunset  TimingMode = "sunset"  // Same as above, just for sunset
+)
+
 type Automation struct {
-	Id             uint   `json:"id"`
-	Name           string `json:"name"`
-	Description    string `json:"description"`
-	CronExpression string `json:"cronExpression"`
-	HomescriptId   string `json:"homescriptId"`
-	Owner          string `json:"owner"`
-	Enabled        bool   `json:"enabled"`
+	Id             uint       `json:"id"`
+	Name           string     `json:"name"`
+	Description    string     `json:"description"`
+	CronExpression string     `json:"cronExpression"`
+	HomescriptId   string     `json:"homescriptId"`
+	Owner          string     `json:"owner"`
+	Enabled        bool       `json:"enabled"`
+	TimingMode     TimingMode `json:"timingMode"`
 }
 
 type AutomationWithoutIdAndUsername struct {
-	Name           string `json:"name"`
-	Description    string `json:"description"`
-	CronExpression string `json:"cronExpression"`
-	HomescriptId   string `json:"homescriptId"`
-	Enabled        bool   `json:"enabled"`
+	Name           string     `json:"name"`
+	Description    string     `json:"description"`
+	CronExpression string     `json:"cronExpression"`
+	HomescriptId   string     `json:"homescriptId"`
+	Enabled        bool       `json:"enabled"`
+	TimingMode     TimingMode `json:"timingMode"`
 }
 
 // Creates a new table containing the automation jobs
@@ -35,6 +45,7 @@ func createAutomationTable() error {
 		HomescriptId VARCHAR(30),
 		Owner VARCHAR(20),
 		Enabled BOOL,
+		TimingMode ENUM('normal', 'sunrise', 'sunset'),
 		PRIMARY KEY(Id),
 		FOREIGN KEY (HomescriptId)
 		REFERENCES homescript(Id),
@@ -54,9 +65,9 @@ func CreateNewAutomation(automation Automation) (uint, error) {
 	query, err := db.Prepare(`
 	INSERT INTO
 	automation(
-		Id, Name, Description, CronExpression, HomescriptId, Owner, Enabled
+		Id, Name, Description, CronExpression, HomescriptId, Owner, Enabled, TimingMode
 	)	
-	VALUES(DEFAULT, ?, ?, ?, ?, ?, ?)
+	VALUES(DEFAULT, ?, ?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		log.Error("Failed to create new automation: preparing query failed: ", err.Error())
@@ -68,6 +79,7 @@ func CreateNewAutomation(automation Automation) (uint, error) {
 		automation.HomescriptId,
 		automation.Owner,
 		automation.Enabled,
+		automation.TimingMode,
 	)
 	if err != nil {
 		log.Error("Failed to create new automation: executing query failed: ", err.Error())
@@ -86,7 +98,7 @@ func CreateNewAutomation(automation Automation) (uint, error) {
 func GetAutomationById(id uint) (Automation, bool, error) {
 	query, err := db.Prepare(`
 	SELECT
-	Id, Name, Description, CronExpression, HomescriptId, Owner, Enabled
+	Id, Name, Description, CronExpression, HomescriptId, Owner, Enabled, TimingMode
 	FROM automation
 	WHERE Id=?
 	`)
@@ -103,6 +115,7 @@ func GetAutomationById(id uint) (Automation, bool, error) {
 		&automation.HomescriptId,
 		&automation.Owner,
 		&automation.Enabled,
+		&automation.TimingMode,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -118,7 +131,7 @@ func GetAutomationById(id uint) (Automation, bool, error) {
 func GetUserAutomations(username string) ([]Automation, error) {
 	query, err := db.Prepare(`
 	SELECT
-	Id, Name, Description, CronExpression, HomescriptId, Owner, Enabled
+	Id, Name, Description, CronExpression, HomescriptId, Owner, Enabled, TimingMode
 	FROM automation
 	WHERE Owner=?
 	`)
@@ -142,6 +155,7 @@ func GetUserAutomations(username string) ([]Automation, error) {
 			&automation.HomescriptId,
 			&automation.Owner,
 			&automation.Enabled,
+			&automation.TimingMode,
 		); err != nil {
 			log.Error("Failed to list user automations: scanning for results failed: ", err.Error())
 		}
@@ -156,7 +170,7 @@ func GetUserAutomations(username string) ([]Automation, error) {
 func GetAutomations() ([]Automation, error) {
 	res, err := db.Query(`
 	SELECT
-	Id, Name, Description, CronExpression, HomescriptId, Owner, Enabled
+	Id, Name, Description, CronExpression, HomescriptId, Owner, Enabled, TimingMode
 	FROM automation
 	`)
 	if err != nil {
@@ -174,6 +188,7 @@ func GetAutomations() ([]Automation, error) {
 			&automation.HomescriptId,
 			&automation.Owner,
 			&automation.Enabled,
+			&automation.TimingMode,
 		); err != nil {
 			log.Error("Failed to list all automations: scanning for results failed: ", err.Error())
 		}
@@ -193,7 +208,8 @@ func ModifyAutomation(id uint, newItem AutomationWithoutIdAndUsername) error {
 	Description=?,
 	CronExpression=?,
 	HomescriptId=?,
-	Enabled=?
+	Enabled=?,
+	TimingMode=?
 	WHERE Id=?
 	`)
 	if err != nil {
@@ -206,6 +222,7 @@ func ModifyAutomation(id uint, newItem AutomationWithoutIdAndUsername) error {
 		newItem.CronExpression,
 		newItem.HomescriptId,
 		newItem.Enabled,
+		newItem.TimingMode,
 		id,
 	)
 	if err != nil {
