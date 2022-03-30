@@ -55,7 +55,7 @@
     <div id="left" class="mdc-elevation--z4">
         <img src={Logo} alt="logo" />
         <h4>Smarthome</h4>
-        <p>Please login to continue</p>
+        <p class="text-hint">Please login to continue</p>
         <svg
             xmlns="http://www.w3.org/2000/svg"
             id="hexagon"
@@ -169,7 +169,7 @@
         border-radius: 0 0.4rem 0.4rem 0;
         width: 60%;
         height: 100%;
-        padding-top: 3rem;
+        padding-top: 5rem;
         box-sizing: border-box;
         z-index: -10;
         position: relative;
