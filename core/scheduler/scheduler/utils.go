@@ -59,3 +59,13 @@ func ModifyScheduleById(id uint, newSchedule database.Schedule) error {
 	log.Trace(fmt.Sprintf("Successfully added and setup schedule after modification'%d'", id))
 	return nil
 }
+
+// Gets a schedule based on its id and its owner's username
+func GetUserScheduleById(id uint, username string) (database.Schedule, bool, error) {
+	automations, err := database.GetUserSchedules(username)
+	if err != nil {
+		log.Error("Failed to list user schedules: database error")
+		return database.Schedule{}, false, err
+	}
+	return database.Schedule{}, false, nil
+}
