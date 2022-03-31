@@ -36,4 +36,26 @@ func RemoveScheduleById(id uint) error {
 	return nil
 }
 
-// Modify an already set up sc
+// Modify an already set up schedule
+func ModifyScheduleById(id uint, newSchedule database.Schedule) error {
+	if err := database.ModifySchedule(id, database.ScheduleWithoudIdAndUsername{
+		Name:           newSchedule.Name,
+		Hour:           newSchedule.Hour,
+		Minute:         newSchedule.Minute,
+		HomescriptCode: newSchedule.HomescriptCode,
+	}); err != nil {
+		log.Error("Failed to modify schedule by id: ", err.Error())
+		return err
+	}
+	if err := scheduler.RemoveByTag(fmt.Sprintf("%d", id)); err != nil {
+		log.Error("Failed to modify schedule: could not abort schedule: ", err.Error())
+		return err
+	}
+	// Prepare the job for go-cron
+	automationJob := scheduler.Every(1).Day().At(fmt.Sprintf("%02d:%02d", newSchedule.Hour, newSchedule.Minute))
+	automationJob.Tag(fmt.Sprintf("%d", id))
+	automationJob.LimitRunsTo(1)
+	automationJob.Do(scheduleRunnerFunc, id)
+	log.Trace(fmt.Sprintf("Successfully added and setup schedule after modification'%d'", id))
+	return nil
+}

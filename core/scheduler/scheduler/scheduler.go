@@ -24,7 +24,7 @@ func InitLogger(logger *logrus.Logger) {
 // - [x] Store jobs in the database
 // - [x] Start jobs which have not been executed from the database
 // - [x] Make a scheduler runner
-// - [ ] Make already set up scheduler editable
+// - [x] Make already set up scheduler editable
 // - [x] Add database schema
 func Init() error {
 	scheduler = gocron.NewScheduler(time.Local)

@@ -161,31 +161,6 @@ func main() {
 		}
 	}
 
-	// BEGIN REMOVE ME
-	tmp, err := database.CreateNewSchedule(database.Schedule{
-		Name:           "test",
-		Owner:          "admin",
-		Hour:           1,
-		Minute:         1,
-		HomescriptCode: "print('hello')",
-	})
-	if err != nil {
-		log.Error(err.Error())
-	}
-	fmt.Println(database.GetScheduleById(tmp))
-	fmt.Println(database.GetUserSchedules("admin"))
-	fmt.Println(database.GetSchedules())
-	if err := database.ModifySchedule(tmp, database.ScheduleWithoudIdAndUsername{
-		Name:           "test 2",
-		Hour:           2,
-		Minute:         2,
-		HomescriptCode: "exit(12)",
-	}); err != nil {
-		log.Error(err.Error())
-	}
-	fmt.Println(database.DeleteScheduleById(tmp))
-	// END REMOVE ME
-
 	// Always flush old logs
 	// TODO: move deletion of old logs to a scheduler
 	log.Info("Flushing logs older than 30 days")
@@ -200,26 +175,6 @@ func main() {
 	middleware.Init(configStruct.Server.Production)
 	templates.LoadTemplates("./web/html/**/*.html")
 	http.Handle("/", r)
-
-	// scheduler.CreateNewSchedule(database.Schedule{
-	// 	Name:           "test",
-	// 	Owner:          "admin",
-	// 	Hour:           17,
-	// 	Minute:         13,
-	// 	HomescriptCode: "switch('s2', !switchOn('s2')) \n switch('s2', !switchOn('s2'))",
-	// })
-
-	database.CreateNewHomescript(database.Homescript{
-		Id:                  "test",
-		Owner:               "admin",
-		Name:                "test",
-		Description:         "test",
-		QuickActionsEnabled: false,
-		SchedulerEnabled:    false,
-		Code:                "switch('s2', on)",
-	})
-
-	automation.CreateNewAutomation("test", "test", 19, 5, []uint8{1, 2, 3, 4, 5}, "test", "admin", true, database.TimingSunset)
 
 	event.Info("System Started", fmt.Sprintf("The Smarthome server completed startup in %.2f seconds", time.Since(startTime).Seconds()))
 	log.Info(fmt.Sprintf("Smarthome v%s is running on http://localhost:%d", utils.Version, port))
