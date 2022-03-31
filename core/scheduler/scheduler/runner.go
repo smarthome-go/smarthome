@@ -72,4 +72,7 @@ func scheduleRunnerFunc(id uint) {
 		fmt.Sprintf("Schedule '%s' has been executed successfully", job.Name),
 		1,
 	)
+	event.Info("Scheduler Executed Successfully",
+		fmt.Sprintf("Schedule '%s' of user '%s' has been executed successfully", job.Name, job.Owner),
+	)
 }

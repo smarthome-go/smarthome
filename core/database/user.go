@@ -281,3 +281,22 @@ func SetUserAvatarPath(username string, avatarPath string) error {
 	}
 	return nil
 }
+
+// Set whether the scheduler is enabled for the current user
+func SetUserSchedulerEnabled(username string, enabled bool) error {
+	query, err := db.Prepare(`
+	UPDATE user
+	SET SchedulerEnabled=?
+	WHERE Username=?
+	`)
+	if err != nil {
+		log.Error("Failed to set SchedulerEnabled for user: preparing query failed: ", err.Error())
+		return err
+	}
+	_, err = query.Exec(enabled, username)
+	if err != nil {
+		log.Error("Failed to set SchedulerEnabled for user: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}

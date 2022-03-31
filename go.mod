@@ -12,11 +12,13 @@ require (
 )
 
 require (
-	github.com/MikMuellerDev/homescript v0.2.4-beta
+	github.com/MikMuellerDev/homescript v0.2.5-beta
 	github.com/lnquy/cron v1.1.1
 )
 
 require (
+	github.com/BenJetson/humantime v0.0.0-20200514023344-f59ec2835a87 // indirect
+	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 )

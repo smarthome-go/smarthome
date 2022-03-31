@@ -24,6 +24,7 @@ const (
 	PermissionListUsers               PermissionType = "listUsers"
 	PermissionHomescript              PermissionType = "homescript"
 	PermissionAutomation              PermissionType = "automation"
+	PermissionScheduler               PermissionType = "scheduler"
 	PermissionActivateAutomation      PermissionType = "activateAutomation"
 	PermissionModifyLocation          PermissionType = "changeLocation"
 
@@ -110,6 +111,12 @@ var (
 			Permission:  PermissionAutomation,
 			Name:        "Use Automations",
 			Description: "List, add, delete, and modify automations",
+		},
+		{
+			// User is allowed to set up, modify, delete, and view personal schedules
+			Permission:  PermissionScheduler,
+			Name:        "Use the Scheduler",
+			Description: "List, add, delete, and modify schedules",
 		},
 		{
 			// (Admin) is allowed to toggle the state of the automations system

@@ -98,7 +98,14 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/automation/add", mdl.ApiAuth(mdl.Perm(api.CreateNewAutomation, database.PermissionAutomation))).Methods("POST")
 	r.HandleFunc("/api/automation/delete", mdl.ApiAuth(mdl.Perm(api.RemoveAutomation, database.PermissionAutomation))).Methods("DELETE")
 	r.HandleFunc("/api/automation/modify", mdl.ApiAuth(mdl.Perm(api.ModifyAutomation, database.PermissionAutomation))).Methods("PUT")
-	r.HandleFunc("/api/automation/state", mdl.ApiAuth(mdl.Perm(api.ChangeActivationAutomation, database.PermissionActivateAutomation))).Methods("PUT")
+	r.HandleFunc("/api/automation/state/global", mdl.ApiAuth(mdl.Perm(api.ChangeActivationAutomation, database.PermissionActivateAutomation))).Methods("PUT")
+
+	// Schedule-related
+	r.HandleFunc("/api/scheduler/list/personal", mdl.ApiAuth(mdl.Perm(api.GetUserSchedules, database.PermissionScheduler))).Methods("GET")
+	r.HandleFunc("/api/scheduler/add", mdl.ApiAuth(mdl.Perm(api.CreateNewSchedule, database.PermissionScheduler))).Methods("POST")
+	r.HandleFunc("/api/scheduler/delete", mdl.ApiAuth(mdl.Perm(api.RemoveSchedule, database.PermissionScheduler))).Methods("DELETE")
+	r.HandleFunc("/api/scheduler/modify", mdl.ApiAuth(mdl.Perm(api.ModifySchedule, database.PermissionScheduler))).Methods("PUT")
+	r.HandleFunc("/api/scheduler/state/personal", mdl.ApiAuth(mdl.Perm(api.SetUserSchedulerEnabled, database.PermissionScheduler))).Methods("PUT")
 
 	// Admin-specific
 	r.HandleFunc("/api/config/location/modify", mdl.ApiAuth(mdl.Perm(api.UpdateLocation, database.PermissionModifyLocation))).Methods("PUT")

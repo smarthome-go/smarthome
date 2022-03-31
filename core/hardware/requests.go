@@ -12,7 +12,7 @@ import (
 	"github.com/MikMuellerDev/smarthome/core/event"
 )
 
-type HardwareRequest struct {
+type PowerRequest struct {
 	Switch string `json:"switch"`
 	Power  bool   `json:"power"`
 }
@@ -63,7 +63,7 @@ func checkNodeOnline(node database.HardwareNode) error {
 // However, the preferred method of communication is by using the API `SetPower()` this way, priorities and interrupts are scheduled automatically
 // A check if  a node is online again can be still executed afterwards
 func sendPowerRequest(node database.HardwareNode, switchName string, powerOn bool) error {
-	requestBody, err := json.Marshal(HardwareRequest{
+	requestBody, err := json.Marshal(PowerRequest{
 		Switch: switchName,
 		Power:  powerOn,
 	})

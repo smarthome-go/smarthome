@@ -1,5 +1,9 @@
+github.com/BenJetson/humantime v0.0.0-20200514023344-f59ec2835a87 h1:UUvEtU5s6cajK5FypRJLVKmz7bGFvP1pixwG3L3K6tI=
+github.com/BenJetson/humantime v0.0.0-20200514023344-f59ec2835a87/go.mod h1:qp6zpJhsVh3L2Q1PKiL3CdDXnhBHd4LUE0idvgEEltU=
 github.com/MikMuellerDev/homescript v0.2.4-beta h1:MHaDaC9rwiOxwq9tCiqCVHrbSZDTJfzic7Sz5wFTpE4=
 github.com/MikMuellerDev/homescript v0.2.4-beta/go.mod h1:G//I3KBaq2q+fz7mQvHoBg9ZLMPI+APuJd6HBlxv848=
+github.com/MikMuellerDev/homescript v0.2.5-beta h1:wP/pfG8skGjFunniOgPBKDPnRdQbjAZTiy71PDmYpy0=
+github.com/MikMuellerDev/homescript v0.2.5-beta/go.mod h1:G//I3KBaq2q+fz7mQvHoBg9ZLMPI+APuJd6HBlxv848=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -13,6 +17,8 @@ github.com/gorilla/securecookie v1.1.1 h1:miw7JPhV+b/lAHSXz4qd/nN9jRiAFV5FwjeKyC
 github.com/gorilla/securecookie v1.1.1/go.mod h1:ra0sb63/xPlUeL+yeDciTfxMRAA+MP+HVt/4epWDjd4=
 github.com/gorilla/sessions v1.2.1 h1:DHd3rPN5lE3Ts3D8rKkQ8x/0kqfeNmBAaiSi+o7FsgI=
 github.com/gorilla/sessions v1.2.1/go.mod h1:dk2InVEVJ0sfLlnXv9EAgkf6ecYs/i80K/zI+bUmuGM=
+github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b h1:wDUNC2eKiL35DbLvsDhiblTUXHxcOPwQSCzi7xpQUN4=
+github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b/go.mod h1:VzxiSdG6j1pi7rwGm/xYI5RbtpBgM8sARDXlvEvxlu0=
 github.com/lnquy/cron v1.1.1 h1:iaDX1ublgQ9LBhA8l9BVU+FrTE1PPSPAuvAdhgdnXgA=
 github.com/lnquy/cron v1.1.1/go.mod h1:hu2Y7H68/8oKk6T4+K4qdbopbnaP4rGltK3ylWiiDss=
 github.com/nathan-osman/go-sunrise v1.0.0 h1:mvjoVmXjmiHDSwKRA5t4T/1rNuHQDhodfQoxrUU39ck=
