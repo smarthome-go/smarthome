@@ -7,7 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func initDB() error {
+func initDB(args ...bool) error {
 	database.InitLogger(logrus.New())
 	if err := database.Init(database.DatabaseConfig{
 		Username: "smarthome",
@@ -18,6 +18,12 @@ func initDB() error {
 	}, "admin",
 	); err != nil {
 		return err
+	}
+	if len(args) > 0 {
+		if err := database.DeleteTables(); err != nil {
+			return err
+		}
+		initDB()
 	}
 	return nil
 }

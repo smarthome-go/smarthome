@@ -58,8 +58,8 @@ func addJobToQueue(switchId string, turnOn bool, id int64) {
 
 // Executes each job one after another
 // Jobs can be added while the daemon is running
-// If all jobs are completed, the daemon terminates itself in order to save ressources
-// If a new job should be executed whilst no daemon is active, a new daemon is required.
+// If all jobs are completed, the daemon terminates itself in order to save resources
+// If a new job should be executed whilst no daemon is active, a new daemon is created.
 func jobDaemon(ch chan bool) {
 	for {
 		if len(jobQueue) == 0 {
