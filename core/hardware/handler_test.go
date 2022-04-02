@@ -17,7 +17,13 @@ func TestSetPower(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
-	if err := database.CreateHardwareNode("test", "http://localhost", ""); err != nil {
+	if err := database.CreateHardwareNode(database.HardwareNode{
+		Name:    "test",
+		Online:  false,
+		Enabled: false,
+		Url:     "http://localhost",
+		Token:   "",
+	}); err != nil {
 		t.Error(err.Error())
 		return
 	}

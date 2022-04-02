@@ -61,7 +61,7 @@ func ListRooms() ([]Room, error) {
 	`
 	res, err := db.Query(query)
 	if err != nil {
-		log.Error("Failed to list rooms: executing statement failed: ", err.Error())
+		log.Error("Failed to list rooms: executing query failed: ", err.Error())
 		return nil, err
 	}
 	rooms := make([]Room, 0)
@@ -88,7 +88,7 @@ func listPersonalRoomsWithoutMetadata(username string) ([]Room, error) {
 	`
 	res, err := db.Query(query)
 	if err != nil {
-		log.Error("Failed to list personal rooms: executing statement failed: ", err.Error())
+		log.Error("Failed to list personal rooms: executing query failed: ", err.Error())
 		return nil, err
 	}
 	rooms := make([]Room, 0)

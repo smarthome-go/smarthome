@@ -93,9 +93,11 @@ func createRoomsInDatabase(rooms []database.Room) error {
 func createHardwareNodesInDatabase(nodes []database.HardwareNode) error {
 	for _, node := range nodes {
 		if err := database.CreateHardwareNode(
-			node.Name,
-			node.Url,
-			node.Token,
+			database.HardwareNode{
+				Name:  node.Name,
+				Url:   node.Url,
+				Token: node.Token,
+			},
 		); err != nil {
 			log.Error("Could not create hardware nodes from setup file: ", err.Error())
 			return err
