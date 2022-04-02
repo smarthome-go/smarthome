@@ -45,38 +45,6 @@ func createHomescriptTable() error {
 	return nil
 }
 
-// Modifies the metadata of a given homescript
-// Does not check the validity of the homescript's id
-func ModifyHomescriptById(id string, homescript HomescriptFrontend) error {
-	query, err := db.Prepare(`
-	UPDATE homescript
-	SET 
-	Name=?,
-	Description=?,
-	QuickActionsEnabled=?,
-	SchedulerEnabled=?,
-	Code=?
-	WHERE Id=?
-	`)
-	if err != nil {
-		log.Error("Failed to update homescript item: preparing query failed: ", err.Error())
-		return err
-	}
-	_, err = query.Exec(
-		homescript.Name,
-		homescript.Description,
-		homescript.QuickActionsEnabled,
-		homescript.SchedulerEnabled,
-		homescript.Code,
-		id,
-	)
-	if err != nil {
-		log.Error("Failed to update homescript item: executing query failed: ", err.Error())
-		return err
-	}
-	return nil
-}
-
 // Creates a new homescript entry
 func CreateNewHomescript(homescript Homescript) error {
 	query, err := db.Prepare(`
@@ -106,6 +74,38 @@ func CreateNewHomescript(homescript Homescript) error {
 		homescript.Code,
 	); err != nil {
 		log.Error("Failed to create new homescript entry: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}
+
+// Modifies the metadata of a given homescript
+// Does not check the validity of the homescript's id
+func ModifyHomescriptById(id string, homescript HomescriptFrontend) error {
+	query, err := db.Prepare(`
+	UPDATE homescript
+	SET 
+	Name=?,
+	Description=?,
+	QuickActionsEnabled=?,
+	SchedulerEnabled=?,
+	Code=?
+	WHERE Id=?
+	`)
+	if err != nil {
+		log.Error("Failed to update homescript item: preparing query failed: ", err.Error())
+		return err
+	}
+	_, err = query.Exec(
+		homescript.Name,
+		homescript.Description,
+		homescript.QuickActionsEnabled,
+		homescript.SchedulerEnabled,
+		homescript.Code,
+		id,
+	)
+	if err != nil {
+		log.Error("Failed to update homescript item: executing query failed: ", err.Error())
 		return err
 	}
 	return nil
