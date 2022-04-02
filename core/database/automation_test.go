@@ -96,8 +96,8 @@ func TestCreateNewAutomation(t *testing.T) {
 		newId, err := CreateNewAutomation(automation.Automation)
 		// Check for error validity
 		if err != nil {
-			if !strings.Contains(err.Error(), automation.Error) {
-				t.Errorf("Unexpected error: want: `%s` got: `%s`", automation.Error, err.Error())
+			if !strings.Contains(err.Error(), automation.Error) || automation.Error == "" {
+				t.Errorf("Unexpected error at name: %s : want: `%s` got: `%s`", automation.Automation.Name, automation.Error, err.Error())
 				return
 			}
 		} else if automation.Error != "" {
@@ -182,7 +182,7 @@ func TestGetAutomationById(t *testing.T) {
 		newId, err := CreateNewAutomation(automation.Automation)
 		// Check for error validity
 		if err != nil {
-			if !strings.Contains(err.Error(), automation.Error) {
+			if err.Error() != automation.Error {
 				t.Errorf("Unexpected error: want: `%s` got: `%s`", automation.Error, err.Error())
 				return
 			}
@@ -291,7 +291,7 @@ func TestGetUserAutomations(t *testing.T) {
 		_, err := CreateNewAutomation(automation.Automation)
 		// Check for error validity
 		if err != nil {
-			if !strings.Contains(err.Error(), automation.Error) {
+			if !strings.Contains(err.Error(), automation.Error) || automation.Error == "" {
 				t.Errorf("Unexpected error: want: `%s` got: `%s`", automation.Error, err.Error())
 				return
 			}
@@ -411,7 +411,7 @@ func TestModifyAutomation(t *testing.T) {
 		})
 		// Check for error validity
 		if err != nil {
-			if !strings.Contains(err.Error(), automation.Error) {
+			if !strings.Contains(err.Error(), automation.Error) || automation.Error == "" {
 				t.Errorf("Unexpected error: want: `%s` got: `%s`", automation.Error, err.Error())
 				return
 			}
