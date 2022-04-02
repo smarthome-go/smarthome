@@ -241,7 +241,7 @@ func TestGetUserHomescriptById(t *testing.T) {
 	}
 	table := []Homescript{
 		{
-			Id:    "admin",
+			Id:    "admin_new",
 			Owner: "admin",
 		},
 		{
@@ -255,13 +255,13 @@ func TestGetUserHomescriptById(t *testing.T) {
 			return
 		}
 	}
-	_, exists, err := GetUserHomescriptById("admin", "hms_testing2")
+	_, exists, err := GetUserHomescriptById("admin_new", "hms_testing2")
 	if err != nil {
 		t.Error(err.Error())
 		return
 	}
 	if exists {
-		t.Errorf("Homescript `admin` should not be accessible by user `hms_testing2`")
+		t.Errorf("Homescript `admin_new` should not be accessible by user `hms_testing2`")
 		return
 	}
 	_, exists, err = GetUserHomescriptById("hms_testing2", "hms_testing2")
