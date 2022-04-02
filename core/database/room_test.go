@@ -59,6 +59,23 @@ func TestCreateRoom(t *testing.T) {
 		}
 		valid = false
 		for _, item := range rooms {
+			if item.Id == room.Id &&
+				item.Name == room.Name &&
+				item.Description == room.Description {
+				valid = true
+			}
+		}
+		if valid {
+			t.Errorf("Room %s was found in personal rooms despite no switches are set up", room.Id)
+			return
+		}
+		rooms, err = ListPersonalRoomsAll("admin")
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+		valid = false
+		for _, item := range rooms {
 			if item.Id == room.Id {
 				valid = true
 			}
