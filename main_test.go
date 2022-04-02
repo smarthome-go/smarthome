@@ -1,9 +1,7 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
-	"os"
 	"testing"
 	"time"
 
@@ -26,28 +24,10 @@ import (
 
 func TestServer(t *testing.T) {
 	// Create logger
-	logLevel := logrus.TraceLevel
-	if newLogLevel, newLogLevelOk := os.LookupEnv("SMARTHOME_LOG_LEVEL"); newLogLevelOk {
-		switch newLogLevel {
-		case "TRACE":
-			logLevel = logrus.TraceLevel
-		case "DEBUG":
-			logLevel = logrus.DebugLevel
-		case "INFO":
-			logLevel = logrus.InfoLevel
-		case "WARN":
-			logLevel = logrus.WarnLevel
-		case "ERROR":
-			logLevel = logrus.ErrorLevel
-		case "FATAL":
-			logLevel = logrus.FatalLevel
-		default:
-			fmt.Printf("Invalid log level from environment variable: '%s'. Using TRACE\n", newLogLevel)
-		}
-	}
-	log, err := utils.NewLogger(logLevel)
+	log, err := utils.NewLogger(logrus.TraceLevel)
 	if err != nil {
-		panic(err.Error())
+		t.Error(err.Error())
+		return
 	}
 
 	// Initialize <module> loggers
@@ -84,23 +64,22 @@ func TestServer(t *testing.T) {
 	}
 
 	if dbErr != nil {
-		log.Error("Failed to connect to database after 5 retries, exiting now")
-		panic(dbErr.Error())
+		t.Errorf("Failed to connect to database after 5 retries, exiting now: %s", dbErr.Error())
 	}
 
 	// Run setup file if it exists, nil is passed because the file should be read from disk
 	if err := config.RunSetup(&config.Setup{}); err != nil {
-		log.Fatal("Could not run setup: ", err.Error())
+		t.Errorf("Could not run setup: %s", err.Error())
 	}
 
 	if err := database.FlushAllLogs(); err != nil {
-		log.Fatal("Failed to flush logs: ", err.Error())
+		t.Errorf("Failed to flush logs: %s", err.Error())
 	}
 
 	// Always flush old logs
 	log.Info("Flushing logs older than 30 days")
 	if err := database.FlushOldLogs(); err != nil {
-		log.Fatal("Failed to flush logs older that 30 days: ", err.Error())
+		t.Errorf("Failed to flush logs older that 30 days: %s", err.Error())
 	}
 
 	if err := database.SetAutomationSystemActivation(true); err != nil {
