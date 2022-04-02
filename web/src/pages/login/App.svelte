@@ -121,6 +121,12 @@
 </main>
 
 <style lang="scss">
+    @use '../../mixins' as *;
+
+    :global body {
+        margin: 1rem;
+    }
+
     main {
         position: fixed;
         top: 50%;
@@ -129,13 +135,26 @@
         display: flex;
         align-items: center;
         height: 34rem;
-        width: 50rem;
+        width: min(50rem, 100% - 4rem);
+
+        @include mobile {
+            flex-direction: column;
+            width: 100%;
+            height: auto;
+            position: relative;
+            top: 0;
+            left: 0;
+            transform: none;
+            padding-inline: 1rem;
+            box-sizing: border-box;
+            z-index: 0;
+        }
     }
 
     #left {
         border-radius: 0.4rem;
         width: 40%;
-        height: 105%;
+        height: calc(100% + 2rem);
         box-sizing: border-box;
         position: relative;
         background-color: var(--clr-height-0-12);
@@ -152,6 +171,12 @@
         h4 {
             margin-bottom: 0.3em;
         }
+
+        @include mobile {
+            width: calc(100% + 2rem);
+            height: auto;
+            padding-block: 2rem;
+        }
     }
     #hexagon {
         height: 15rem;
@@ -165,6 +190,14 @@
         bottom: 2rem;
         z-index: -5;
         transform: translateX(50%);
+
+        @include mobile {
+            height: 10rem;
+            width: 10rem;
+            bottom: 0;
+            right: 3rem;
+            transform: translate(0, 50%) rotate(90deg);
+        }
     }
     #right {
         border-radius: 0 0.4rem 0.4rem 0;
@@ -182,6 +215,20 @@
             flex-direction: column;
             align-items: center;
             gap: 1rem;
+
+            @include mobile {
+                & > div {
+                    max-width: calc(100% - 2rem);
+                }
+            }
+        }
+
+        @include mobile {
+            width: 100%;
+            height: auto;
+            border-radius: 0 0 0.4rem 0.4rem;
+            padding-top: 7rem;
+            padding-bottom: 3rem;
         }
     }
     main :global #loader {
