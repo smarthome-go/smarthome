@@ -3,9 +3,10 @@ package hardware
 import (
 	"testing"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/core/event"
-	"github.com/sirupsen/logrus"
 )
 
 func TestSetPower(t *testing.T) {
@@ -19,8 +20,8 @@ func TestSetPower(t *testing.T) {
 	}
 	if err := database.CreateHardwareNode(database.HardwareNode{
 		Name:    "test",
-		Online:  false,
-		Enabled: false,
+		Online:  true,
+		Enabled: true,
 		Url:     "http://localhost",
 		Token:   "",
 	}); err != nil {
@@ -36,7 +37,7 @@ func TestSetPower(t *testing.T) {
 			Switch: "test",
 			Power:  true,
 			// Only the first request will throw an error due to node being marked as offline
-			Error: `Post "http://localhost/power?token=": dial tcp [::1]:80: connect: connection refused`,
+			Error: `Post "http://localhost/power?token=": dial tcp 127.0.0.1:80: connect: connection refused`,
 		},
 		{
 			Switch: "test",

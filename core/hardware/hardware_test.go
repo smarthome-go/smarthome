@@ -5,8 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/sirupsen/logrus"
+
+	"github.com/MikMuellerDev/smarthome/core/database"
 )
 
 func TestMain(m *testing.M) {
@@ -100,52 +101,48 @@ func TestCheckNodeOnline(t *testing.T) {
 func TestSendPowerRequest(t *testing.T) {
 	table := []struct {
 		Node  database.HardwareNode
-		Error string
+		Error bool
 	}{
 		{
 			Node: database.HardwareNode{
 				Name:    "test1",
 				Online:  true,
 				Enabled: true,
-				Url:     "http://localhost:1",
+				Url:     "http://1.1.1.1:1",
 				Token:   "",
 			},
-			Error: `Post "http://localhost:1/power?token=": dial tcp [::1]:1: connect: connection refused`,
+			Error: true,
 		},
 		{
 			Node: database.HardwareNode{
 				Name:    "test2",
 				Online:  false,
 				Enabled: true,
-				Url:     "http://localhost:2",
+				Url:     "http://1.1.1.1:2",
 				Token:   "",
 			},
-			Error: `Post "http://localhost:2/power?token=": dial tcp [::1]:2: connect: connection refused`,
+			Error: true,
 		},
 		{
 			Node: database.HardwareNode{
 				Name:    "test3",
 				Online:  true,
 				Enabled: false,
-				Url:     "http://localhost:3",
+				Url:     "http://1.1.1.1:3",
 				Token:   "",
 			},
-			Error: ``,
+			Error: false,
 		},
 	}
 	for _, item := range table {
 		if got := sendPowerRequest(item.Node, "", false); got != nil {
-			if item.Error == "" {
+			if !item.Error {
 				t.Errorf("Node: %s Error is not expected: want: '', got %s", item.Node.Name, got.Error())
-				continue
-			}
-			if item.Error != got.Error() {
-				t.Errorf("Node: %s Error is not expected: want: %s, got %s", item.Node.Name, item.Error, got.Error())
-				continue
+				return
 			}
 		} else {
-			if item.Error != "" {
-				t.Errorf("Node: %s Expected error which did not occur: %s", item.Node.Name, item.Error)
+			if item.Error {
+				t.Errorf("Node: %s Expected error which did not occur", item.Node.Name)
 			}
 		}
 	}

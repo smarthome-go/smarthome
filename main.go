@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/MikMuellerDev/smarthome/core/config"
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/core/event"
@@ -23,7 +25,6 @@ import (
 	"github.com/MikMuellerDev/smarthome/server/routes"
 	"github.com/MikMuellerDev/smarthome/server/templates"
 	"github.com/MikMuellerDev/smarthome/services/camera"
-	"github.com/sirupsen/logrus"
 )
 
 var port = 8082 // Port used during development, can be overridden by config file or environment variables

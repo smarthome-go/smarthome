@@ -44,7 +44,7 @@ func TestAddUserPermission(t *testing.T) {
 			t.Error(err.Error())
 			return
 		}
-		if !alreadyHasPermission {
+		if alreadyHasPermission {
 			t.Errorf("Add User permission failed: user does not already have permission %s", permission.Permission)
 			return
 		}
