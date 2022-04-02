@@ -69,7 +69,7 @@ func InsertUser(user FullUser) error {
 		user.Surname,
 		user.PrimaryColor,
 		user.Password,
-		"./web/dist/assets/avatar/default.png",
+		"./resources/avatar/default.png",
 	)
 	if err != nil {
 		log.Error("Could not create user. Failed to execute query: ", err.Error())

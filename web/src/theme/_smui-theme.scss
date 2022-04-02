@@ -11,3 +11,10 @@ body {
   background-color: theme.$surface;
   color: theme.$on-surface;
 }
+
+:root {
+  --clr-text: #{theme.$on-surface};
+  --clr-error: #{theme.$error};
+  --clr-warn: #FFAB00; // Amber A700
+  --clr-success: #00C853; // Green A700
+}

@@ -52,7 +52,7 @@
 </script>
 
 <main>
-    <div id="left" class="mdc-elevation--z4">
+    <div id="left" class="mdc-elevation--z8">
         <img src={Logo} alt="logo" />
         <h4>Smarthome</h4>
         <p class="text-hint">Please login to continue</p>
@@ -138,6 +138,7 @@
         height: 105%;
         box-sizing: border-box;
         position: relative;
+        background-color: var(--clr-height-0-12);
 
         display: flex;
         flex-direction: column;
@@ -174,6 +175,7 @@
         z-index: -10;
         position: relative;
         overflow: hidden;
+        background-color: var(--clr-height-0-2);
 
         form {
             display: flex;
@@ -185,8 +187,6 @@
     main :global #loader {
         position: absolute;
         top: 0;
-        transition-property: opacity;
-        transition-duration: 0.2s;
         opacity: 0;
     }
 </style>

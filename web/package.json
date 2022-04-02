@@ -43,6 +43,7 @@
   "dependencies": {
     "@fortawesome/free-solid-svg-icons": "^6.1.1",
     "@smui/button": "^6.0.0-beta.15",
+    "@smui/circular-progress": "^6.0.0-beta.15",
     "@smui/icon-button": "^6.0.0-beta.15",
     "@smui/linear-progress": "^6.0.0-beta.15",
     "@smui/snackbar": "^6.0.0-beta.15",

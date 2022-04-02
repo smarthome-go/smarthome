@@ -9,6 +9,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         login: resolve(__dirname, 'html/login.html'),
+        dash: resolve(__dirname, 'html/dash.html'),
       }
     },
   },

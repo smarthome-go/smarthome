@@ -7,7 +7,7 @@ import (
 // Identified by a username, has a password and an avatar path
 type FullUser struct {
 	Username     string `json:"username"`
-	Firstname    string `json:"firstname"`
+	Firstname    string `json:"forename"`
 	Surname      string `json:"surname"`
 	PrimaryColor string `json:"primaryColor"`
 	Password     string `json:"password"`
@@ -17,7 +17,7 @@ type FullUser struct {
 
 type User struct {
 	Username     string `json:"username"`
-	Firstname    string `json:"firstname"`
+	Firstname    string `json:"forename"`
 	Surname      string `json:"surname"`
 	PrimaryColor string `json:"primaryColor"`
 }
