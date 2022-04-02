@@ -15,6 +15,11 @@ setup:
 	go mod tidy
 	cd web && npm i
 
+# Testing
+test:
+	cd docker/testing && sudo docker-compose up -d
+	go test -v ./...
+
 # Updating the current version in all locations
 version:
 	python3 update_version.py

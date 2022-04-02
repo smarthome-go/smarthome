@@ -63,6 +63,10 @@ func checkNodeOnline(node database.HardwareNode) error {
 // However, the preferred method of communication is by using the API `SetPower()` this way, priorities and interrupts are scheduled automatically
 // A check if  a node is online again can be still executed afterwards
 func sendPowerRequest(node database.HardwareNode, switchName string, powerOn bool) error {
+	if !node.Enabled {
+		log.Trace("Not sending power request to disabled node")
+		return nil
+	}
 	requestBody, err := json.Marshal(PowerRequest{
 		Switch: switchName,
 		Power:  powerOn,

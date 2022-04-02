@@ -27,7 +27,7 @@ func createSwitchTable() error {
 	CREATE TABLE
 	IF NOT EXISTS
 	switch(
-		Id VARCHAR(2) PRIMARY KEY,
+		Id VARCHAR(20) PRIMARY KEY,
 		Name VARCHAR(30),
 		Power BOOLEAN DEFAULT FALSE,
 		RoomId VARCHAR(30),
@@ -52,7 +52,7 @@ func createHasSwitchPermissionTable() error {
 	IF NOT EXISTS
 	hasSwitchPermission(
 		Username VARCHAR(20),
-		Switch VARCHAR(2),
+		Switch VARCHAR(20),
 		CONSTRAINT HasSwitchPermissionUsername
 		FOREIGN KEY (Username)
 		REFERENCES user(Username),

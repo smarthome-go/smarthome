@@ -39,6 +39,7 @@ func GetDatabaseStats() DBStatus {
 
 func DeleteTables() error {
 	tables := []string{
+		"SET FOREIGN_KEY_CHECKS = 0",
 		"DROP TABLE IF EXISTS camera",
 		"DROP TABLE IF EXISTS rooms",
 		"DROP TABLE IF EXISTS hasSwitchPermission",
@@ -52,8 +53,8 @@ func DeleteTables() error {
 		"DROP TABLE IF EXISTS user",
 		"DROP TABLE IF EXISTS hardware",
 		"DROP TABLE IF EXISTS logs",
+		"SET FOREIGN_KEY_CHECKS = 1",
 	}
-
 	for _, query := range tables {
 		_, err := db.Exec(query)
 		if err != nil {

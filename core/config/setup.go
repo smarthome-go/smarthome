@@ -40,15 +40,21 @@ func readSetupFile() (Setup, bool, error) {
 // Used for setting up a smarthome server quickly
 // Reads a setup file at startup and starts functions that initialize those values in the database
 // Used for quick setup of a smarthome instance
-func RunSetup() error {
-	setup, shouldProceed, err := readSetupFile()
-	if err != nil {
-		log.Error("Failed to run setup: ", err.Error())
-		return err
-	}
-	if !shouldProceed {
-		log.Debug("No setup file found: starting without setup.")
-		return nil
+func RunSetup(overrideSetup *Setup) error {
+	var setup Setup
+	if overrideSetup == nil {
+		setupTemp, shouldProceed, err := readSetupFile()
+		if err != nil {
+			log.Error("Failed to run setup: ", err.Error())
+			return err
+		}
+		if !shouldProceed {
+			log.Debug("No setup file found: starting without setup.")
+			return nil
+		}
+		setup = setupTemp
+	} else {
+		setup = *overrideSetup
 	}
 	if err := createRoomsInDatabase(setup.Rooms); err != nil {
 		log.Error("Aboring setup: could not create room entries in database: ", err.Error())

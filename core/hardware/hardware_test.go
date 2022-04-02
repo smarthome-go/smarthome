@@ -30,7 +30,8 @@ func initDB(args ...bool) error {
 }
 
 func TestPower(t *testing.T) {
-	if err := initDB(); err != nil {
+	InitLogger(logrus.New())
+	if err := initDB(true); err != nil {
 		t.Error(err.Error())
 	}
 	table := []struct {
@@ -77,7 +78,7 @@ func TestPower(t *testing.T) {
 // Requests
 func TestCheckNodeOnline(t *testing.T) {
 	InitLogger(logrus.New())
-	if err := initDB(); err != nil {
+	if err := initDB(true); err != nil {
 		t.Error(err.Error())
 	}
 	if err := checkNodeOnline(database.HardwareNode{
@@ -95,45 +96,58 @@ func TestSendPowerRequest(t *testing.T) {
 	log := logrus.New()
 	InitLogger(log)
 	event.InitLogger(log)
-	if err := initDB(); err != nil {
+	if err := initDB(true); err != nil {
 		t.Error(err.Error())
 	}
-	table := map[database.HardwareNode]string{
+	table := []struct {
+		Node  database.HardwareNode
+		Error string
+	}{
 		{
-			Name:    "test1",
-			Online:  true,
-			Enabled: true,
-			Url:     "http://localhost",
-			Token:   "",
-		}: `Post "http://localhost/power?token=": dial tcp [::1]:80: connect: connection refused`,
+			Node: database.HardwareNode{
+				Name:    "test1",
+				Online:  true,
+				Enabled: true,
+				Url:     "http://localhost:1",
+				Token:   "",
+			},
+			Error: `Post "http://localhost:1/power?token=": dial tcp [::1]:1: connect: connection refused`,
+		},
 		{
-			Name:    "test2",
-			Online:  true,
-			Enabled: false,
-			Url:     "http://localhost",
-			Token:   "",
-		}: "",
+			Node: database.HardwareNode{
+				Name:    "test2",
+				Online:  false,
+				Enabled: true,
+				Url:     "http://localhost:2",
+				Token:   "",
+			},
+			Error: `Post "http://localhost:2/power?token=": dial tcp [::1]:2: connect: connection refused`,
+		},
 		{
-			Name:    "test3",
-			Online:  false,
-			Enabled: false,
-			Url:     "http://localhost",
-			Token:   "",
-		}: `Post "http://localhost/power?token=": dial tcp [::1]:80: connect: connection refused`,
+			Node: database.HardwareNode{
+				Name:    "test3",
+				Online:  true,
+				Enabled: false,
+				Url:     "http://localhost:3",
+				Token:   "",
+			},
+			Error: ``,
+		},
 	}
-	for node, want := range table {
-		if got := sendPowerRequest(node, "", false); got != nil {
-			if want == "" {
-				t.Errorf("Error is not expected: want: '', got %s", got.Error())
-				return
+	for _, item := range table {
+		if got := sendPowerRequest(item.Node, "", false); got != nil {
+			if item.Error == "" {
+				t.Errorf("Node: %s Error is not expected: want: '', got %s", item.Node.Name, got.Error())
+				continue
 			}
-			if want != got.Error() {
-				t.Errorf("Error is not expected: want: %s, got %s", want, got.Error())
-				return
+			if item.Error != got.Error() {
+				t.Errorf("Node: %s Error is not expected: want: %s, got %s", item.Node.Name, item.Error, got.Error())
+				continue
 			}
-		}
-		if want != "" {
-			t.Errorf("Expected error %s but none occurred", want)
+		} else {
+			if item.Error != "" {
+				t.Errorf("Node: %s Expected error which did not occur: %s", item.Node.Name, item.Error)
+			}
 		}
 	}
 }
