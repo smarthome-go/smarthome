@@ -19,7 +19,7 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 		return err
 	}
 	db = dbTemp
-	if err := CreateConfigTable(); err != nil {
+	if err := createConfigTable(); err != nil {
 		return err
 	}
 	if err := createUserTable(); err != nil {

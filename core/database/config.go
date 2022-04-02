@@ -12,7 +12,7 @@ type ServerConfig struct {
 }
 
 // Creates the table that contains the server configuration
-func CreateConfigTable() error {
+func createConfigTable() error {
 	_, err := db.Exec(`
 	CREATE TABLE
 	IF NOT EXISTS
@@ -77,7 +77,7 @@ func SetServerConfiguration(config ServerConfig) error {
 	UPDATE configuration
 	SET
 	AutomationEnabled=?,
-	LockDownMode=?
+	LockDownMode=?,
 	Latitude=?,
 	Longitude=?
 	WHERE Id=0
@@ -89,6 +89,8 @@ func SetServerConfiguration(config ServerConfig) error {
 	if _, err := query.Exec(
 		config.AutomationEnabled,
 		config.LockDownMode,
+		config.Latitude,
+		config.Longitude,
 	); err != nil {
 		log.Error("Failed to update the servers configuration: executing query failed: ", err.Error())
 		return err

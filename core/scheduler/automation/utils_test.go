@@ -2,41 +2,10 @@ package automation
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/MikMuellerDev/smarthome/core/database"
-	"github.com/sirupsen/logrus"
 )
-
-func TestMain(m *testing.M) {
-	log := logrus.New()
-	log.Level = logrus.FatalLevel
-	InitLogger(log)
-	if err := initDB(); err != nil {
-		panic(err.Error())
-	}
-	_, doesExists, err := database.GetUserHomescriptById("test", "admin")
-	if err != nil {
-		panic(err.Error())
-	}
-	if !doesExists {
-		// Create Homescript
-		if err := database.CreateNewHomescript(database.Homescript{
-			Id:                  "test",
-			Owner:               "admin",
-			Name:                "Testing",
-			Description:         "A Homescript for testing purposes",
-			QuickActionsEnabled: false,
-			SchedulerEnabled:    false,
-			Code:                "log('automation_trigger', '', 0)",
-		}); err != nil {
-			panic(err.Error())
-		}
-	}
-	code := m.Run()
-	os.Exit(code)
-}
 
 func TestCreateAutomation(t *testing.T) {
 	TestInit(t)
