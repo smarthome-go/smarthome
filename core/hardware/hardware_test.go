@@ -1,12 +1,28 @@
 package hardware
 
 import (
+	"os"
 	"testing"
+	"time"
 
 	"github.com/MikMuellerDev/smarthome/core/database"
-	"github.com/MikMuellerDev/smarthome/core/event"
 	"github.com/sirupsen/logrus"
 )
+
+func TestMain(m *testing.M) {
+	log := logrus.New()
+	log.Level = logrus.FatalLevel
+	InitLogger(log)
+	if err := initDB(true); err != nil {
+		panic(err.Error())
+	}
+	// Create a room for some tests
+	if err := database.CreateRoom("testing", "testing", "testing"); err != nil {
+		panic(err.Error())
+	}
+	code := m.Run()
+	os.Exit(code)
+}
 
 func initDB(args ...bool) error {
 	database.InitLogger(logrus.New())
@@ -24,16 +40,13 @@ func initDB(args ...bool) error {
 		if err := database.DeleteTables(); err != nil {
 			return err
 		}
+		time.Sleep(time.Second)
 		initDB()
 	}
 	return nil
 }
 
 func TestPower(t *testing.T) {
-	InitLogger(logrus.New())
-	if err := initDB(true); err != nil {
-		t.Error(err.Error())
-	}
 	table := []struct {
 		Switch string
 		Power  bool
@@ -50,10 +63,6 @@ func TestPower(t *testing.T) {
 		{"5", false},
 		{"6", true},
 		{"6", false},
-	}
-	if err := database.CreateRoom("testing", "testing", "testing"); err != nil {
-		t.Error(err.Error())
-		return
 	}
 	for _, item := range table {
 		if err := database.CreateSwitch(item.Switch, item.Switch, "testing", 0); err != nil {
@@ -77,10 +86,6 @@ func TestPower(t *testing.T) {
 
 // Requests
 func TestCheckNodeOnline(t *testing.T) {
-	InitLogger(logrus.New())
-	if err := initDB(true); err != nil {
-		t.Error(err.Error())
-	}
 	if err := checkNodeOnline(database.HardwareNode{
 		Name:    "test",
 		Online:  true,
@@ -93,12 +98,6 @@ func TestCheckNodeOnline(t *testing.T) {
 }
 
 func TestSendPowerRequest(t *testing.T) {
-	log := logrus.New()
-	InitLogger(log)
-	event.InitLogger(log)
-	if err := initDB(true); err != nil {
-		t.Error(err.Error())
-	}
 	table := []struct {
 		Node  database.HardwareNode
 		Error string

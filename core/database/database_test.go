@@ -1,37 +1,31 @@
 package database
 
 import (
-	"testing"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
 
-func testDB() error {
+func initDB(args ...bool) error {
+	log := logrus.New()
+	log.Level = logrus.FatalLevel
+	InitLogger(log)
 	if err := Init(DatabaseConfig{
 		Username: "smarthome",
 		Password: "testing",
 		Hostname: "localhost",
 		Database: "smarthome",
 		Port:     3330,
-	}, "admin"); err != nil {
+	}, "admin",
+	); err != nil {
 		return err
 	}
+	if len(args) > 0 {
+		if err := DeleteTables(); err != nil {
+			return err
+		}
+		time.Sleep(time.Second)
+		initDB()
+	}
 	return nil
-}
-
-func TestInit(t *testing.T) {
-	InitLogger(logrus.New())
-
-}
-
-func TestDeleteTables(t *testing.T) {
-	InitLogger(logrus.New())
-	if err := testDB(); err != nil {
-		t.Error(err.Error())
-		return
-	}
-	if err := DeleteTables(); err != nil {
-		t.Error(err.Error())
-		return
-	}
 }

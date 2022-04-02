@@ -2,6 +2,7 @@ package automation
 
 import (
 	"testing"
+	"time"
 
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/sirupsen/logrus"
@@ -23,16 +24,13 @@ func initDB(args ...bool) error {
 		if err := database.DeleteTables(); err != nil {
 			return err
 		}
+		time.Sleep(time.Second)
 		initDB()
 	}
 	return nil
 }
 
 func TestInit(t *testing.T) {
-	InitLogger(logrus.New())
-	if err := initDB(); err != nil {
-		t.Error(err.Error())
-	}
 	if err := Init(); err != nil {
 		t.Error(err.Error())
 		return
@@ -40,22 +38,14 @@ func TestInit(t *testing.T) {
 }
 
 func TestDeactivate(t *testing.T) {
-	InitLogger(logrus.New())
-	TestInit(t)
-	if err := initDB(); err != nil {
-		t.Error(err.Error())
-	}
+	TestInit(t) // Initialize the system first
 	if err := DeactivateAutomationSystem(); err != nil {
 		t.Error(err.Error())
 	}
 }
 
 func TestActivate(t *testing.T) {
-	InitLogger(logrus.New())
 	TestInit(t)
-	if err := initDB(); err != nil {
-		t.Error(err.Error())
-	}
 	if err := ActivateAutomationSystem(); err != nil {
 		t.Error(err.Error())
 	}

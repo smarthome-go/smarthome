@@ -2,13 +2,22 @@ package config
 
 import (
 	"testing"
+	"time"
 
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/sirupsen/logrus"
 )
 
+func TestMain(m *testing.M) {
+	log := logrus.New()
+	log.Level = logrus.FatalLevel
+	InitLogger(log)
+}
+
 func initDB(args ...bool) error {
-	database.InitLogger(logrus.New())
+	log := logrus.New()
+	log.Level = logrus.FatalLevel
+	database.InitLogger(log)
 	if err := database.Init(database.DatabaseConfig{
 		Username: "smarthome",
 		Password: "testing",
@@ -23,17 +32,13 @@ func initDB(args ...bool) error {
 		if err := database.DeleteTables(); err != nil {
 			return err
 		}
+		time.Sleep(time.Second)
 		initDB()
 	}
 	return nil
 }
 
 func TestRunSetup(t *testing.T) {
-	InitLogger(logrus.New())
-	if err := initDB(true); err != nil {
-		t.Error(err.Error())
-		return
-	}
 	setup := Setup{
 		HardwareNodes: []database.HardwareNode{
 			{

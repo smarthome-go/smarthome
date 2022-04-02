@@ -71,6 +71,7 @@ func CreateNewAutomation(automation Automation) (uint, error) {
 	`)
 	if err != nil {
 		log.Error("Failed to create new automation: preparing query failed: ", err.Error())
+		return 0, err
 	}
 	res, err := query.Exec(
 		automation.Name,
@@ -158,6 +159,7 @@ func GetUserAutomations(username string) ([]Automation, error) {
 			&automation.TimingMode,
 		); err != nil {
 			log.Error("Failed to list user automations: scanning for results failed: ", err.Error())
+			return nil, err
 		}
 		automations = append(automations, automation)
 	}
@@ -191,6 +193,7 @@ func GetAutomations() ([]Automation, error) {
 			&automation.TimingMode,
 		); err != nil {
 			log.Error("Failed to list all automations: scanning for results failed: ", err.Error())
+			return nil, err
 		}
 		automations = append(automations, automation)
 	}
