@@ -149,7 +149,6 @@ func TestHomescript(t *testing.T) {
 				return
 			}
 		}
-
 		// Delete Homescript
 		if err := DeleteHomescriptById(item.Homescript.Id); err != nil {
 			t.Error(err.Error())
@@ -164,5 +163,114 @@ func TestHomescript(t *testing.T) {
 			t.Errorf("Homescript %s still exists after deletion", homescript.Id)
 			return
 		}
+	}
+}
+
+func TestListHomeScript(t *testing.T) {
+	// Create test user
+	if err := AddUser(FullUser{
+		Username: "hms_testing",
+	}); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	// Add one script for the admin and one for the testuser
+	scripts := []Homescript{
+		{
+			Id:                  "hms_testing",
+			Owner:               "hms_testing",
+			Name:                "test",
+			Description:         "test",
+			QuickActionsEnabled: false,
+			SchedulerEnabled:    false,
+			Code:                "",
+		},
+		{
+			Id:                  "admin",
+			Owner:               "admin",
+			Name:                "test",
+			Description:         "test",
+			QuickActionsEnabled: false,
+			SchedulerEnabled:    false,
+			Code:                "",
+		},
+		{
+			Id:                  "hms_testing2",
+			Owner:               "hms_testing",
+			Name:                "test",
+			Description:         "test",
+			QuickActionsEnabled: false,
+			SchedulerEnabled:    false,
+			Code:                "",
+		},
+		{
+			Id:                  "admin2",
+			Owner:               "admin",
+			Name:                "test",
+			Description:         "test",
+			QuickActionsEnabled: false,
+			SchedulerEnabled:    false,
+			Code:                "",
+		},
+	}
+	for _, script := range scripts {
+		if err := CreateNewHomescript(script); err != nil {
+			t.Error(err.Error())
+			return
+		}
+		personalScripts, err := ListHomescriptOfUser(script.Owner)
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+		for _, item := range personalScripts {
+			if item.Owner != script.Owner {
+				t.Errorf("Unexpected homescript-item %v for user %s: this is a security vulnerability", item, script.Owner)
+				return
+			}
+		}
+	}
+}
+
+func TestGetUserHomescriptById(t *testing.T) {
+	if err := AddUser(FullUser{
+		Username: "hms_testing2",
+	}); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	table := []Homescript{
+		{
+			Id:    "admin",
+			Owner: "admin",
+		},
+		{
+			Id:    "hms_testing2",
+			Owner: "hms_testing2",
+		},
+	}
+	for _, item := range table {
+		if err := CreateNewHomescript(item); err != nil {
+			t.Error(err.Error())
+			return
+		}
+	}
+	_, exists, err := GetUserHomescriptById("admin", "hms_testing2")
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if exists {
+		t.Errorf("Homescript `admin` should not be accessible by user `hms_testing2`")
+		return
+	}
+	_, exists, err = GetUserHomescriptById("hms_testing2", "hms_testing2")
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if !exists {
+		t.Errorf("Homescript `hms_testing2` should be accessible by user `hms_testing2`")
+		return
 	}
 }
