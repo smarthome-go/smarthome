@@ -245,7 +245,7 @@ func TestGetUserHomescriptById(t *testing.T) {
 			Owner: "admin",
 		},
 		{
-			Id:    "hms_testing2",
+			Id:    "hms_testing_temp",
 			Owner: "hms_testing2",
 		},
 	}
@@ -264,13 +264,13 @@ func TestGetUserHomescriptById(t *testing.T) {
 		t.Errorf("Homescript `admin_new` should not be accessible by user `hms_testing2`")
 		return
 	}
-	_, exists, err = GetUserHomescriptById("hms_testing2", "hms_testing2")
+	_, exists, err = GetUserHomescriptById("hms_testing_temp", "hms_testing2")
 	if err != nil {
 		t.Error(err.Error())
 		return
 	}
 	if !exists {
-		t.Errorf("Homescript `hms_testing2` should be accessible by user `hms_testing2`")
+		t.Errorf("Homescript `hms_testing_temp` should be accessible by user `hms_testing2`")
 		return
 	}
 }
