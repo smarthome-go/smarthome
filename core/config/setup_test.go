@@ -1,6 +1,9 @@
 package config
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -12,7 +15,7 @@ import (
 
 func TestMain(m *testing.M) {
 	log := logrus.New()
-	log.Level = logrus.FatalLevel
+	log.Level = logrus.TraceLevel
 	InitLogger(log)
 	if err := initDB(true); err != nil {
 		panic(err.Error())
@@ -88,7 +91,23 @@ func TestRunSetup(t *testing.T) {
 			},
 		},
 	}
-	if err := RunSetup(&setup); err != nil {
+	// Write the json to a temp directory so it can be read later
+	setupPath = fmt.Sprintf("%s/setup.json", t.TempDir())
+	content, err := json.Marshal(setup)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if err := ioutil.WriteFile(
+		setupPath,
+		content,
+		0755,
+	); err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	if err := RunSetup(); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -136,5 +155,35 @@ func TestRunSetup(t *testing.T) {
 			t.Errorf("Room %s does not exist after creation", setupRoom.Id)
 			return
 		}
+	}
+}
+
+func TestReadBrokenSetupFile(t *testing.T) {
+	// Write the bad contents to another temp directory so it can be read later
+	setupPath = fmt.Sprintf("%s/setup_invalid.json", t.TempDir())
+	if err := ioutil.WriteFile(
+		setupPath,
+		[]byte("invalid_content"),
+		0755,
+	); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if err := RunSetup(); err == nil {
+		t.Error("Error expected whilst parsing broken setup file but none occurred")
+		return
+	}
+}
+
+func TestSetupFileDoesNotExist(t *testing.T) {
+	setupPath = "/does/not/exist"
+	_, fileExists, err := readSetupFile()
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if fileExists {
+		t.Errorf("Non-existent file %s was readable by function", setupPath)
+		return
 	}
 }

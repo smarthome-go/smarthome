@@ -14,7 +14,8 @@ type Setup struct {
 	Rooms         []database.Room         `json:"rooms"`
 }
 
-const setupPath = "./data/config/setup.json"
+// Is again a variable for testing
+var setupPath = "./data/config/setup.json"
 
 // TODO: add some sort of web import / export later
 // Returns the setup struct, a bool that indicates that a setup file has been read and an error
@@ -40,28 +41,22 @@ func readSetupFile() (Setup, bool, error) {
 // Used for setting up a smarthome server quickly
 // Reads a setup file at startup and starts functions that initialize those values in the database
 // Used for quick setup of a smarthome instance
-func RunSetup(overrideSetup *Setup) error {
-	var setup Setup
-	if overrideSetup == nil {
-		setupTemp, shouldProceed, err := readSetupFile()
-		if err != nil {
-			log.Error("Failed to run setup: ", err.Error())
-			return err
-		}
-		if !shouldProceed {
-			log.Debug("No setup file found: starting without setup.")
-			return nil
-		}
-		setup = setupTemp
-	} else {
-		setup = *overrideSetup
+func RunSetup() error {
+	setup, shouldProceed, err := readSetupFile()
+	if err != nil {
+		log.Error("Failed to run setup: ", err.Error())
+		return err
+	}
+	if !shouldProceed {
+		log.Debug("No setup file found: starting without setup.")
+		return nil
 	}
 	if err := createRoomsInDatabase(setup.Rooms); err != nil {
-		log.Error("Aboring setup: could not create room entries in database: ", err.Error())
+		log.Error("Aborting setup: could not create room entries in database: ", err.Error())
 		return err
 	}
 	if err := createHardwareNodesInDatabase(setup.HardwareNodes); err != nil {
-		log.Error("Aboring setup: could not create hardware node entries in database: ", err.Error())
+		log.Error("Aborting setup: could not create hardware node entries in database: ", err.Error())
 		return err
 	}
 	log.Info("Successfully ran setup")

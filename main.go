@@ -150,8 +150,8 @@ func main() {
 		panic(dbErr.Error())
 	}
 
-	// Run setup file if it exists, nil is passed because the file should be read from disk
-	if err := config.RunSetup(nil); err != nil {
+	// Run setup file if it exists
+	if err := config.RunSetup(); err != nil {
 		log.Fatal("Could not run setup: ", err.Error())
 	}
 

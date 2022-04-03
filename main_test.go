@@ -68,8 +68,8 @@ func TestServer(t *testing.T) {
 		t.Errorf("Failed to connect to database after 5 retries, exiting now: %s", dbErr.Error())
 	}
 
-	// Run setup file if it exists, nil is passed because the file should be read from disk
-	if err := config.RunSetup(&config.Setup{}); err != nil {
+	// Run setup file if it exists
+	if err := config.RunSetup(); err != nil {
 		t.Errorf("Could not run setup: %s", err.Error())
 	}
 

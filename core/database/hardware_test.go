@@ -96,6 +96,7 @@ func TestModifyNode(t *testing.T) {
 	nodeAfter := HardwareNode{
 		Name:    "after",
 		Enabled: true,
+		Online:  true,
 		Token:   "after",
 	}
 	if err := ModifyHardwareNode(nodeBefore.Url, nodeAfter); err != nil {
