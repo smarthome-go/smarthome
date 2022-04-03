@@ -318,7 +318,7 @@ func TestGetUserAutomations(t *testing.T) {
 	}
 }
 
-func TestModifyAutomation(t *testing.T) {
+func TestModifyDeleteAutomation(t *testing.T) {
 	table := []struct {
 		Automation Automation
 		Error      string
@@ -440,6 +440,28 @@ func TestModifyAutomation(t *testing.T) {
 				t.Errorf("Modification did not succeed: want: %v got: %v", automation.Automation, item)
 				return
 			}
+		}
+	}
+	automations, err := GetAutomations()
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	for _, automation := range automations {
+		// Delete automation after it has been successfully modified
+		if err := DeleteAutomationById(automation.Id); err != nil {
+			t.Error(err.Error())
+			return
+		}
+		// Check if the automation still exists after planned deletion
+		_, exists, err := GetAutomationById(automation.Id)
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+		if exists {
+			t.Errorf("Automation %d still exists after deletion", automation.Id)
+			return
 		}
 	}
 }

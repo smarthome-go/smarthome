@@ -25,7 +25,7 @@ import (
 
 func TestServer(t *testing.T) {
 	// Create logger
-	log, err := utils.NewLogger(logrus.TraceLevel)
+	log, err := utils.NewLogger(logrus.FatalLevel)
 	if err != nil {
 		t.Error(err.Error())
 		return

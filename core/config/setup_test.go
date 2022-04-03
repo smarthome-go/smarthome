@@ -15,7 +15,7 @@ import (
 
 func TestMain(m *testing.M) {
 	log := logrus.New()
-	log.Level = logrus.TraceLevel
+	log.Level = logrus.FatalLevel
 	InitLogger(log)
 	if err := initDB(true); err != nil {
 		panic(err.Error())
