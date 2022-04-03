@@ -125,6 +125,7 @@ func GetLogs() ([]LogEvent, error) {
 		}
 		if !logTime.Valid {
 			log.Error("Invalid time column when scanning logs")
+			return nil, fmt.Errorf("invalid time column when scanning logs")
 		} else {
 			logItem.Date = logTime.Time
 			logs = append(logs, logItem)
