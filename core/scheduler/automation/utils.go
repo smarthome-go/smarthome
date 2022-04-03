@@ -66,20 +66,26 @@ func CreateNewAutomation(
 		return err
 	}
 	if enabled {
-		user.Notify(
+		if err := user.Notify(
 			owner,
 			"Automation Added",
 			fmt.Sprintf("Automation '%s' has been added", name),
 			1,
-		)
+		); err != nil {
+			log.Error("Failed to notify user: ", err.Error())
+			return err
+		}
 		log.Debug(fmt.Sprintf("Created new automation '%s' for user '%s. It will run %s", name, owner, cronDescription))
 	} else {
-		user.Notify(
+		if err := user.Notify(
 			owner,
 			"Inactive Automation Added",
 			fmt.Sprintf("Automation '%s' has been added but is currently disabled", name),
 			2,
-		)
+		); err != nil {
+			log.Error("Failed to notify user: ", err.Error())
+			return err
+		}
 		log.Trace(fmt.Sprintf("Added automation '%d' which is currently disabled, not adding to scheduler", newAutomationId))
 		return nil
 	}
@@ -139,12 +145,15 @@ func RemoveAutomation(automationId uint) error {
 		return err
 	}
 	log.Trace(fmt.Sprintf("Deactivated and removed automation '%d'", automationId))
-	user.Notify(
+	if err := user.Notify(
 		previousAutomation.Owner,
 		"Removed Automation",
 		fmt.Sprintf("The Automation '%s' has been removed from the system", previousAutomation.Name),
 		1,
-	)
+	); err != nil {
+		log.Error("Failed to notify user: ", err.Error())
+		return err
+	}
 	return nil
 }
 
@@ -239,27 +248,36 @@ func ModifyAutomationById(automationId uint, newAutomation database.AutomationWi
 		// Only add the scheduler if it is enabled in the new version
 		automationJob := scheduler.Cron(newAutomation.CronExpression)
 		automationJob.Tag(fmt.Sprintf("%d", automationId))
-		automationJob.Do(automationRunnerFunc, automationId)
+		if _, err := automationJob.Do(automationRunnerFunc, automationId); err != nil {
+			log.Error("Failed to modify automation, registering cron job failed: ", err.Error())
+			return err
+		}
 		log.Debug(fmt.Sprintf("Automation %d has been modified and restarted", automationId))
 
 		if !automationBefore.Enabled {
 			log.Trace(fmt.Sprintf("Automation with id %d has been activated", automationId))
-			user.Notify(
+			if err := user.Notify(
 				automationBefore.Owner,
 				"Automation Activated",
 				fmt.Sprintf("Automation '%s' has been activated", newAutomation.Name),
 				1,
-			)
+			); err != nil {
+				log.Error("Failed to notify user: ", err.Error())
+				return err
+			}
 		}
 	} else {
 		if automationBefore.Enabled {
 			log.Trace(fmt.Sprintf("Automation with id %d has been disabled", automationId))
-			user.Notify(
+			if err := user.Notify(
 				automationBefore.Owner,
 				"Automation Temporarely Disabled",
 				fmt.Sprintf("Automation '%s' has been disabled", automationBefore.Name),
 				2,
-			)
+			); err != nil {
+				log.Error("Failed to notify user: ", err.Error())
+				return err
+			}
 		}
 		log.Debug(fmt.Sprintf("Automation %d has been modified but not started due to being disabled", automationId))
 	}

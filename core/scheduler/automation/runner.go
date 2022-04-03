@@ -79,12 +79,15 @@ func automationRunnerFunc(id uint) {
 			"Automation Failure",
 			fmt.Sprintf("Automation with the Id: '%d' failed because its Homescript Id: '%s' is invalid. This indicates a bad configuration.", id, job.HomescriptId),
 		)
-		user.Notify(
+		if err := user.Notify(
 			job.Owner,
 			"Automation Failure",
 			fmt.Sprintf("Automation '%s' failed because its Homescript Id: '%s' is invalid. Contact your administrator.", job.Name, job.HomescriptId),
 			user.NotificationLevelError,
-		)
+		); err != nil {
+			log.Error("Failed to notify user: ", err.Error())
+			return
+		}
 		return
 	}
 	output, exitCode, err := homescript.RunById(job.Owner, job.HomescriptId)
@@ -94,12 +97,15 @@ func automationRunnerFunc(id uint) {
 			"Automation Failure",
 			fmt.Sprintf("Automation with Id: '%d' failed. Error: %s", id, err.Error()),
 		)
-		user.Notify(
+		if err := user.Notify(
 			job.Owner,
 			"Automation Failure",
 			fmt.Sprintf("Automation '%s' failed during execution. Error: %s", job.Name, err.Error()),
 			user.NotificationLevelError,
-		)
+		); err != nil {
+			log.Error("Failed to notify user: ", err.Error())
+			return
+		}
 		return
 	}
 	event.Debug(
