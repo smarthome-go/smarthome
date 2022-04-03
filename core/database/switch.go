@@ -110,6 +110,7 @@ func CreateSwitch(id string, name string, roomId string, watts uint16) error {
 func DeleteSwitch(switchId string) error {
 	if err := RemoveSwitchFromPermissions(switchId); err != nil {
 		log.Error("Failed to remove switch: dependencies could not be removed: ", err.Error())
+		return err
 	}
 	query, err := db.Prepare(`
 	DELETE FROM
@@ -147,6 +148,7 @@ func ListSwitches() ([]Switch, error) {
 			&switchItem.Watts,
 		); err != nil {
 			log.Error("Could not list switches: Failed to scan results: ", err.Error())
+			return nil, err
 		}
 		switches = append(switches, switchItem)
 	}
@@ -164,12 +166,12 @@ func ListUserSwitches(username string) ([]Switch, error) {
 	)
 	if err != nil {
 		log.Error("Could not list user switches: preparing query failed.", err.Error())
-		return []Switch{}, err
+		return nil, err
 	}
 	res, err := query.Query(username)
 	if err != nil {
 		log.Error("Could not list user switches: executing query failed: ", err.Error())
-		return []Switch{}, err
+		return nil, err
 	}
 	switches := make([]Switch, 0)
 	for res.Next() {
@@ -182,6 +184,7 @@ func ListUserSwitches(username string) ([]Switch, error) {
 			&switchItem.Watts,
 		); err != nil {
 			log.Error("Could not list user switches: Failed to scan results: ", err.Error())
+			return nil, err
 		}
 		switches = append(switches, switchItem)
 	}
@@ -229,6 +232,7 @@ func GetPowerStates() ([]PowerState, error) {
 	`)
 	if err != nil {
 		log.Error("Failed to list powerstates: failed to execute query: ", err.Error())
+		return nil, err
 	}
 	powerStates := make([]PowerState, 0)
 	for res.Next() {
@@ -236,7 +240,7 @@ func GetPowerStates() ([]PowerState, error) {
 		err := res.Scan(&powerState.Switch, &powerState.PowerOn)
 		if err != nil {
 			log.Error("Failed to list powerstates: failed to scan query: ", err.Error())
-			return []PowerState{}, err
+			return nil, err
 		}
 		powerStates = append(powerStates, powerState)
 	}
@@ -260,6 +264,7 @@ func GetPowerStateOfSwitch(switchId string) (bool, error) {
 	err = query.QueryRow(switchId).Scan(&powerState)
 	if err != nil {
 		log.Error("Failed to get switch power state: executing query failed: ", err.Error())
+		return false, err
 	}
 	return powerState, err
 }
