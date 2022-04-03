@@ -3,7 +3,17 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"time"
 )
+
+// internal logging-related
+type LogEvent struct {
+	Id          uint      `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Level       int       `json:"level"`
+	Date        time.Time `json:"date"`
+}
 
 // Creates (if not exists) the table containing internal (mostly non-error) loggin events
 // For example a user logging in or altering power states
