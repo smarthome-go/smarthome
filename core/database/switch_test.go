@@ -289,7 +289,56 @@ func TestUserSwitches(t *testing.T) {
 					t.Errorf("Power state did not change after toggle. want: %t got: %t", !powerStatePrev, powerState)
 					return
 				}
+				powerStates, err := GetPowerStates()
+				if err != nil {
+					t.Error(err.Error())
+					return
+				}
+				valid := false
+				for _, s := range powerStates {
+					if s.Switch == switchId.Id && s.PowerOn != powerStatePrev {
+						valid = true
+					}
+				}
+				if !valid {
+					t.Errorf("Switch %s with correct power state not matched in power states", switchId.Id)
+					return
+				}
 			}
 		})
 	})
+}
+
+func TestDoesSwitchExist(t *testing.T) {
+	if err := createTestRoom(); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if err := CreateSwitch(
+		"test1",
+		"test1",
+		"test",
+		1,
+	); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	switchExists, err := DoesSwitchExist("test1")
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if !switchExists {
+		t.Errorf("Switch 'test1' does not exist after creation")
+		return
+	}
+	switchExists, err = DoesSwitchExist("invalid")
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if switchExists {
+		t.Error("Switch 'invalid' exists but should not")
+		return
+	}
 }
