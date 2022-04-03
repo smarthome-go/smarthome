@@ -241,6 +241,21 @@ func TestUserSwitches(t *testing.T) {
 						t.Errorf("User %s does not have switch permission %s", test.User, switchId)
 						return
 					}
+					userSwitches, err := ListUserSwitches(test.User)
+					if err != nil {
+						t.Error(err.Error())
+						return
+					}
+					valid := false
+					for _, s := range userSwitches {
+						if s.Id == switchId {
+							valid = true
+						}
+					}
+					if !valid && test.Error == "" {
+						t.Errorf("Switch %s not found in user switches", switchId)
+						return
+					}
 					hasPermission, err = UserHasSwitchPermission("__invalid__", switchId)
 					if err != nil {
 						t.Error(err.Error())
