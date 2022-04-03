@@ -32,12 +32,15 @@ func automationRunnerFunc(id uint) {
 	}
 	if !job.Enabled {
 		log.Info(fmt.Sprintf("Automations %d canceled because it is deactivated", id))
-		user.Notify(
+		if err := user.Notify(
 			job.Owner,
 			"Automation Suspended",
 			fmt.Sprintf("Automation '%s' was not executed because it is currently disabled. If you want to disable this automation completely, delete it. If the automation should run, enable it.", job.Name),
 			user.NotificationLevelWarn,
-		)
+		); err != nil {
+			log.Error("Failed to notify user: ", err.Error())
+			return
+		}
 		return
 	}
 	// If the timing mode is set to either 'sunrise' or 'sunset', a new time should be generated
@@ -48,12 +51,15 @@ func automationRunnerFunc(id uint) {
 				"Automation Failure",
 				fmt.Sprintf("Automation %d failed because its next launch time could not be adjusted: %s", id, err.Error()),
 			)
-			user.Notify(
+			if err := user.Notify(
 				job.Owner,
 				"Automation Failure",
 				fmt.Sprintf("Automation %d failed because its next launch time could not be adjusted: %s", id, err.Error()),
 				user.NotificationLevelError,
-			)
+			); err != nil {
+				log.Error("Failed to notify user: ", err.Error())
+				return
+			}
 			return
 		}
 	}
