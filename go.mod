@@ -27,5 +27,5 @@ require (
 	github.com/nathan-osman/go-sunrise v1.0.0
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
 	golang.org/x/image v0.0.0-20220302094943-723b81ca9867
-	golang.org/x/sys v0.0.0-20211019181941-9d821ace8654 // indirect
+	golang.org/x/sys v0.0.0-20220403020550-483a9cbc67c0 // indirect
 )
