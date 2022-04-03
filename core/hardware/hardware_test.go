@@ -42,7 +42,7 @@ func initDB(args ...bool) error {
 			return err
 		}
 		time.Sleep(time.Second)
-		initDB()
+		return initDB()
 	}
 	return nil
 }
