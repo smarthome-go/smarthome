@@ -38,10 +38,8 @@ type HomescriptIdRequest struct {
 // Runs any given Homescript as a string
 func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	decoder := json.NewDecoder(r.Body)
@@ -87,10 +85,8 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 // Returns a list of homescripts which are owned by the current user
 func ListPersonalHomescripts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	homescriptList, err := database.ListHomescriptOfUser(username)
@@ -105,10 +101,8 @@ func ListPersonalHomescripts(w http.ResponseWriter, r *http.Request) {
 // Creates a new Homescript
 func CreateNewHomescript(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	decoder := json.NewDecoder(r.Body)
@@ -150,10 +144,8 @@ func CreateNewHomescript(w http.ResponseWriter, r *http.Request) {
 // Deletes a Homescript by its Id, checks if it exists and if the user has permission to delete it
 func DeleteHomescriptById(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	decoder := json.NewDecoder(r.Body)
@@ -186,10 +178,8 @@ func DeleteHomescriptById(w http.ResponseWriter, r *http.Request) {
 // Modifies the metadata of a given homescript
 func ModifyHomescript(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	decoder := json.NewDecoder(r.Body)

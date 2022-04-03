@@ -23,10 +23,8 @@ type UserSwitchPermissionRequest struct {
 // Request: empty | Response: `["a", "b", "c"]`
 func GetUserPermissions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	permissions, err := database.GetUserPermissions(username)

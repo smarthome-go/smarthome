@@ -15,10 +15,8 @@ import (
 // Image should ideally be in `1:1` aspect ratio, authentication required`
 func handleAvatarUpload(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	// Max upload size: 10 MB
@@ -70,10 +68,8 @@ func handleAvatarUpload(w http.ResponseWriter, r *http.Request) {
 // Deletes the user's currently saved avatar and sets it to default, authentication required
 func deleteAvatar(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	filepathBefore, err := database.GetAvatarPathByUsername(username)
@@ -100,10 +96,8 @@ func deleteAvatar(w http.ResponseWriter, r *http.Request) {
 
 // Returns the user's current avatar as an image, authentication required
 func getAvatar(w http.ResponseWriter, r *http.Request) {
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	var filepath string

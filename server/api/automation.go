@@ -44,10 +44,8 @@ type AutomationActivationRequest struct {
 // Returns a list of all automations set up by the current user
 func GetUserAutomations(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	automations, err := automation.GetUserAutomations(username)
@@ -62,10 +60,8 @@ func GetUserAutomations(w http.ResponseWriter, r *http.Request) {
 // Creates a new automation
 func CreateNewAutomation(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	decoder := json.NewDecoder(r.Body)
@@ -147,10 +143,8 @@ func CreateNewAutomation(w http.ResponseWriter, r *http.Request) {
 // Stops, then removes the given automation from the system
 func RemoveAutomation(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	decoder := json.NewDecoder(r.Body)
@@ -183,10 +177,8 @@ func RemoveAutomation(w http.ResponseWriter, r *http.Request) {
 // Modifies a existing automation, also restarts the schedule
 func ModifyAutomation(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	decoder := json.NewDecoder(r.Body)

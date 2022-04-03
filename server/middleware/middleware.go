@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/core/user"
-	"github.com/sirupsen/logrus"
 )
 
 var log *logrus.Logger
@@ -125,12 +126,15 @@ func ApiAuth(handler http.HandlerFunc) http.HandlerFunc {
 // Parses the session and returns the currently logged in user
 // If no user is logged in but is trying to authenticate with URL-queries,
 // this function will call `getUserFromQuery` internally in order to get the username
-func GetUserFromCurrentSession(r *http.Request) (string, error) {
+func GetUserFromCurrentSession(w http.ResponseWriter, r *http.Request) (string, error) {
 	session, err := Store.Get(r, "session")
 	if err != nil {
 		username, validCredentials, err := getUserFromQuery(r)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			log.Error("Could not get session from request: ", err.Error())
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 			return "", err
 		}
 		if !validCredentials {
@@ -144,10 +148,16 @@ func GetUserFromCurrentSession(r *http.Request) (string, error) {
 	}
 	usernameTemp, ok := session.Values["username"]
 	if !ok {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return "", errors.New("could not obtain username from session")
 	}
 	username, ok := usernameTemp.(string)
 	if !ok {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return "", errors.New("could not obtain username from session")
 	}
 	return username, nil
@@ -177,12 +187,11 @@ func getUserFromQuery(r *http.Request) (string, bool, error) {
 // Make sure that the permission to check exists before checking it here
 func Perm(handler http.HandlerFunc, permissionToCheck database.PermissionType) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		username, err := GetUserFromCurrentSession(r)
+		username, err := GetUserFromCurrentSession(w, r)
 		log.Trace(fmt.Sprintf("Checking permission `%s` for user `%s`", permissionToCheck, username))
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
-			log.Error("failed to get username from query")
-			w.WriteHeader(http.StatusBadRequest)
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(Response{false, "access denied, invalid session", "clear your browser's cookies"})
 			return
 		}

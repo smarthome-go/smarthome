@@ -16,7 +16,7 @@ func InitLogger(logger *logrus.Logger) {
 	log = logger
 }
 
-func response(w http.ResponseWriter, res Response) {
+func Res(w http.ResponseWriter, res Response) {
 	now := time.Now().Local()
 	response := res
 	response.Time = now.Format(time.UnixDate)

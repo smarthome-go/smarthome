@@ -86,10 +86,8 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 // Returns the user's personal data, auth required
 func GetUserDetails(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	userData, err := database.GetUserByUsername(username)

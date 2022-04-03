@@ -28,10 +28,8 @@ func PowerPostHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	switchExists, err := database.DoesSwitchExist(request.Switch)
@@ -87,10 +85,8 @@ func GetSwitches(w http.ResponseWriter, r *http.Request) {
 // Only returns switches which the user has access to, authentication required
 func GetUserSwitches(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	switches, err := database.ListUserSwitches(username)
@@ -120,10 +116,8 @@ func GetPowerStates(w http.ResponseWriter, r *http.Request) {
 // Returns the wanted response for the frontend
 func GetUserRoomsWithSwitches(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	rooms, err := database.ListPersonalRoomsAll(username)

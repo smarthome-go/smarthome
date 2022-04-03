@@ -51,10 +51,8 @@ type UserSchedulerEnabledRequest struct {
 // Returns a list of all schedules set up by the current user
 func GetUserSchedules(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	schedules, err := database.GetUserSchedules(username)
@@ -69,10 +67,8 @@ func GetUserSchedules(w http.ResponseWriter, r *http.Request) {
 // Creates a new generic schedule which runs homescript
 func CreateNewSchedule(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	decoder := json.NewDecoder(r.Body)
@@ -105,10 +101,8 @@ func CreateNewSchedule(w http.ResponseWriter, r *http.Request) {
 // Modify a generic schedule which already exists
 func ModifySchedule(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	decoder := json.NewDecoder(r.Body)
@@ -153,10 +147,8 @@ func ModifySchedule(w http.ResponseWriter, r *http.Request) {
 // Stops, then removes the given schedule from the system
 func RemoveSchedule(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	decoder := json.NewDecoder(r.Body)
@@ -189,10 +181,8 @@ func RemoveSchedule(w http.ResponseWriter, r *http.Request) {
 // Set if the user scheduler is enabled or disabled
 func SetUserSchedulerEnabled(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	decoder := json.NewDecoder(r.Body)
