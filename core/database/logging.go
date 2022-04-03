@@ -106,7 +106,7 @@ func GetLogs() ([]LogEvent, error) {
 	res, err := db.Query(query)
 	if err != nil {
 		log.Error("Could not get all logs: failed to execute query: ", err.Error())
-		return []LogEvent{}, err
+		return nil, err
 	}
 	logs := make([]LogEvent, 0)
 	for res.Next() {
@@ -121,7 +121,7 @@ func GetLogs() ([]LogEvent, error) {
 		)
 		if err != nil {
 			log.Error("Could not list all logs: Failed to scan results ", err.Error())
-			return []LogEvent{}, err
+			return nil, err
 		}
 		if !logTime.Valid {
 			log.Error("Invalid time column when scanning logs")
