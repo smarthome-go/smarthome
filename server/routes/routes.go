@@ -2,13 +2,14 @@ package routes
 
 import (
 	"net/http"
-
 	// `mdl`` is shorter than `middleware`
+
+	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
+
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/server/api"
 	mdl "github.com/MikMuellerDev/smarthome/server/middleware"
-	"github.com/gorilla/mux"
-	"github.com/sirupsen/logrus"
 )
 
 var log *logrus.Logger
