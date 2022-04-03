@@ -96,14 +96,20 @@ func CreateNewAutomation(
 		// Add a dummy scheduler so that the modify function does not fail
 		automationJob := scheduler.Cron(cronExpression)
 		automationJob.Tag(fmt.Sprintf("%d", newAutomationId))
-		automationJob.Do(func() {})
+		if _, err := automationJob.Do(func() {}); err != nil {
+			log.Error("Failed to register cron job: ", err.Error())
+			return err
+		}
 		// If the timing mode is set to either `sunrise` or `sunset`, do not activate the automation, update it instead
 		return updateJobTime(newAutomationId, timingMode == database.TimingSunrise)
 	}
 	// Prepare the job for go-cron
 	automationJob := scheduler.Cron(cronExpression)
 	automationJob.Tag(fmt.Sprintf("%d", newAutomationId))
-	automationJob.Do(automationRunnerFunc, newAutomationId)
+	if _, err = automationJob.Do(automationRunnerFunc, newAutomationId); err != nil {
+		log.Error("Failed to register cron job: ", err.Error())
+		return err
+	}
 	return nil
 }
 
