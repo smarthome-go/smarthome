@@ -51,6 +51,29 @@ func TestAddUserPermission(t *testing.T) {
 	}
 }
 
+func TestPermissionExists(t *testing.T) {
+	for _, permission := range Permissions {
+		if !DoesPermissionExist(string(permission.Permission)) {
+			t.Errorf("DoesPermissionExists seems to be broken: %s does exist but is not found", permission.Permission)
+			return
+		}
+	}
+	nonExiststent := []string{
+		"a",
+		"b",
+		"c",
+		"d",
+		"e",
+		"f",
+	}
+	for _, permission := range nonExiststent {
+		if DoesPermissionExist(string(permission)) {
+			t.Errorf("DoesPermissionExists seems to be broken: %s does not exist but is found", permission)
+			return
+		}
+	}
+}
+
 func TestRemoveAllPermissionOfUser(t *testing.T) {
 	if err := addAllPermissions(); err != nil {
 		t.Error(err.Error())
