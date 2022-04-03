@@ -160,6 +160,6 @@ func (self *Executor) GetDebugInfo() (string, error) {
 	output += fmt.Sprintf(" Current Memory Usage: %s │ %d\n", strings.Repeat(" ", 30-len("Current Memory Usage: ")), debugInfo.MemoryUsage)
 	output += fmt.Sprintf(" Current Power Jobs: %s │ %d\n", strings.Repeat(" ", 30-len("Current Power Jobs: ")), debugInfo.PowerJobCount)
 	output += fmt.Sprintf(" Last Power Job Error Count: %s │ %d\n", strings.Repeat(" ", 30-len("Last Power Job Error Count: ")), debugInfo.PowerJobWithErrorCount)
-	output += fmt.Sprintf("%s", strings.Repeat("\u2015", 45))
+	output += strings.Repeat("\u2015", 45)
 	return output, nil
 }
