@@ -136,7 +136,7 @@ func ListSwitches() ([]Switch, error) {
 	res, err := db.Query(query)
 	if err != nil {
 		log.Error("Could not list switches: failed to execute query: ", err.Error())
-		return []Switch{}, err
+		return nil, err
 	}
 	switches := make([]Switch, 0)
 	for res.Next() {
