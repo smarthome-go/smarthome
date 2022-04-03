@@ -114,7 +114,7 @@ func TestModifyNode(t *testing.T) {
 	if nodeFromDb.Enabled != nodeAfter.Enabled ||
 		nodeFromDb.Name != nodeAfter.Name ||
 		nodeFromDb.Token != nodeAfter.Token ||
-		nodeFromDb.Online != nodeFromDb.Online ||
+		nodeFromDb.Online != nodeAfter.Online ||
 		nodeFromDb.Url != nodeBefore.Url {
 		t.Errorf("Modification did not affect all metadata: want: %v got: %v", nodeAfter, nodeFromDb)
 		return
