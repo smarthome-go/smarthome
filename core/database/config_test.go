@@ -49,10 +49,10 @@ func TestSetConfig(t *testing.T) {
 		t.Error("Configuration does not exists after modification")
 		return
 	}
-	if config.AutomationEnabled != config.AutomationEnabled ||
-		config.LockDownMode != config.LockDownMode ||
-		config.Latitude != config.Latitude ||
-		config.Longitude != config.Longitude {
+	if config.AutomationEnabled != configNew.AutomationEnabled ||
+		config.LockDownMode != configNew.LockDownMode ||
+		config.Latitude != configNew.Latitude ||
+		config.Longitude != configNew.Longitude {
 		t.Errorf("Configuration was not modified: want: %v got: %v", configNew, config)
 		return
 	}
