@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/MikMuellerDev/smarthome/core/config"
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/core/event"
@@ -19,7 +21,6 @@ import (
 	"github.com/MikMuellerDev/smarthome/server/routes"
 	"github.com/MikMuellerDev/smarthome/server/templates"
 	"github.com/MikMuellerDev/smarthome/services/camera"
-	"github.com/sirupsen/logrus"
 )
 
 func TestServer(t *testing.T) {
@@ -85,8 +86,15 @@ func TestServer(t *testing.T) {
 	if err := database.SetAutomationSystemActivation(true); err != nil {
 		t.Error(err.Error())
 	}
-	automation.Init() // Initializes the automation scheduler
-	scheduler.Init()  // Initializes the normal scheduler
+
+	// Initializes the automation scheduler
+	if err := automation.Init(); err != nil {
+		t.Errorf("Failed to activate automation system: %s", err.Error())
+	}
+	// Initializes the normal scheduler
+	if err := scheduler.Init(); err != nil {
+		t.Errorf("Failed to activate scheduler system: %s", err.Error())
+	}
 
 	r := routes.NewRouter()
 	middleware.Init(true)

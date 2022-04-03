@@ -7,6 +7,7 @@ import (
 
 	"github.com/MikMuellerDev/smarthome/core/event"
 	"github.com/MikMuellerDev/smarthome/core/user"
+	"github.com/MikMuellerDev/smarthome/server/api"
 	"github.com/MikMuellerDev/smarthome/server/middleware"
 )
 
@@ -20,14 +21,14 @@ func loginPostHandler(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&loginRequest)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "login failed", Error: "malformed request"})
+		api.Res(w, api.Response{Success: false, Message: "login failed", Error: "malformed request"})
 		return
 	}
 	loginValid, err := user.ValidateCredentials(loginRequest.Username, loginRequest.Password)
 	if err != nil {
 		log.Error("User failed to login: database failure.")
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "login failed", Error: "could not validate login: internal error: database failure"})
+		api.Res(w, api.Response{Success: false, Message: "login failed", Error: "could not validate login: internal error: database failure"})
 		return
 	}
 	if loginValid {
@@ -37,7 +38,7 @@ func loginPostHandler(w http.ResponseWriter, r *http.Request) {
 		if err := session.Save(r, w); err != nil {
 			log.Error("Failed to save session: ", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to authenticate", Error: "could not save session after successful authentication"})
+			api.Res(w, api.Response{Success: false, Message: "failed to authenticate", Error: "could not save session after successful authentication"})
 		}
 		w.WriteHeader(http.StatusNoContent)
 		log.Debug(fmt.Sprintf("User %s logged in successfully", loginRequest.Username))
@@ -46,7 +47,7 @@ func loginPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Debug("Login failed: invalid credentials")
 	w.WriteHeader(http.StatusUnauthorized)
-	json.NewEncoder(w).Encode(Response{Success: false, Message: "login failed", Error: "invalid credentials"})
+	api.Res(w, api.Response{Success: false, Message: "login failed", Error: "invalid credentials"})
 	go event.Warn("Failed Login", fmt.Sprintf("Someone is tying to login to the account of %s", loginRequest.Username))
 }
 
@@ -62,7 +63,7 @@ func logoutGetHandler(w http.ResponseWriter, r *http.Request) {
 	if err := session.Save(r, w); err != nil {
 		log.Error("Failed to save session: ", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to authenticate", Error: "could not save session after successful authentication"})
+		api.Res(w, api.Response{Success: false, Message: "failed to authenticate", Error: "could not save session after successful authentication"})
 	}
 	log.Trace("A user logged out")
 	http.Redirect(w, r, "/login", http.StatusFound)

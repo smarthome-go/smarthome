@@ -58,10 +58,13 @@ func GetUserSchedules(w http.ResponseWriter, r *http.Request) {
 	schedules, err := database.GetUserSchedules(username)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to list personal schedules", Error: "internal server error"})
+		Res(w, Response{Success: false, Message: "failed to list personal schedules", Error: "internal server error"})
 		return
 	}
-	json.NewEncoder(w).Encode(schedules)
+	if err := json.NewEncoder(w).Encode(schedules); err != nil {
+		log.Error(err)
+		Res(w, Response{Success: false, Message: "failed to list personal schedules", Error: "failed to encode response"})
+	}
 }
 
 // Creates a new generic schedule which runs homescript
@@ -76,12 +79,12 @@ func CreateNewSchedule(w http.ResponseWriter, r *http.Request) {
 	var request NewScheduleRequest
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
 	if request.Hour > 24 || request.Minute > 60 { // Checks the minute and hour, values below 0 are checked implicitly through `uint`
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to create new schedule", Error: "invalid hour and / or minute"})
+		Res(w, Response{Success: false, Message: "failed to create new schedule", Error: "invalid hour and / or minute"})
 		return
 	}
 	if err := scheduler.CreateNewSchedule(database.Schedule{
@@ -92,10 +95,10 @@ func CreateNewSchedule(w http.ResponseWriter, r *http.Request) {
 		HomescriptCode: request.HomescriptCode,
 	}); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to add schedule", Error: "internal server error"})
+		Res(w, Response{Success: false, Message: "failed to add schedule", Error: "internal server error"})
 		return
 	}
-	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully created new schedule"})
+	Res(w, Response{Success: true, Message: "successfully created new schedule"})
 }
 
 // Modify a generic schedule which already exists
@@ -110,23 +113,23 @@ func ModifySchedule(w http.ResponseWriter, r *http.Request) {
 	var request ModifyGenericScheduleRequest
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
 	if request.Hour > 24 || request.Minute > 60 { // Checks the minute and hour, values below 0 are checked implicitly through `uint`
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to modify schedule", Error: "invalid hour and / or minute"})
+		Res(w, Response{Success: false, Message: "failed to modify schedule", Error: "invalid hour and / or minute"})
 		return
 	}
 	_, doesExists, err := scheduler.GetUserScheduleById(username, request.Id)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to modify schedule", Error: "internal server error"})
+		Res(w, Response{Success: false, Message: "failed to modify schedule", Error: "internal server error"})
 		return
 	}
 	if !doesExists {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to modify schedule", Error: "invalid id / not found"})
+		Res(w, Response{Success: false, Message: "failed to modify schedule", Error: "invalid id / not found"})
 		return
 	}
 	if err := scheduler.ModifyScheduleById(request.Id,
@@ -138,10 +141,10 @@ func ModifySchedule(w http.ResponseWriter, r *http.Request) {
 		},
 	); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to modify schedule", Error: "internal server error"})
+		Res(w, Response{Success: false, Message: "failed to modify schedule", Error: "internal server error"})
 		return
 	}
-	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully modified and restarted schedule"})
+	Res(w, Response{Success: true, Message: "successfully modified and restarted schedule"})
 }
 
 // Stops, then removes the given schedule from the system
@@ -156,26 +159,26 @@ func RemoveSchedule(w http.ResponseWriter, r *http.Request) {
 	var request DeleteScheduleRequest
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
 	_, doesExists, err := scheduler.GetUserScheduleById(username, request.Id) // Checks if the schedule exists and if the user is allowed to delete it
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to delete schedule", Error: "backend failure"})
+		Res(w, Response{Success: false, Message: "failed to delete schedule", Error: "backend failure"})
 		return
 	}
 	if !doesExists {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to delete schedule", Error: "invalid id / not found"})
+		Res(w, Response{Success: false, Message: "failed to delete schedule", Error: "invalid id / not found"})
 		return
 	}
 	if err := scheduler.RemoveScheduleById(request.Id); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to delete schedule", Error: "backend failure"})
+		Res(w, Response{Success: false, Message: "failed to delete schedule", Error: "backend failure"})
 		return
 	}
-	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully deleted schedule"})
+	Res(w, Response{Success: true, Message: "successfully deleted schedule"})
 }
 
 // Set if the user scheduler is enabled or disabled
@@ -190,24 +193,24 @@ func SetUserSchedulerEnabled(w http.ResponseWriter, r *http.Request) {
 	var request UserSchedulerEnabledRequest
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
 	user, err := database.GetUserByUsername(username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to set scheduler status", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to set scheduler status", Error: "database failure"})
 		return
 	}
 	if user.SchedulerEnabled == request.Enabled {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to set status of scheduler", Error: "scheduler is already in the requested mode"})
+		Res(w, Response{Success: false, Message: "failed to set status of scheduler", Error: "scheduler is already in the requested mode"})
 		return
 	}
 	if err := database.SetUserSchedulerEnabled(username, request.Enabled); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to set scheduler status", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to set scheduler status", Error: "database failure"})
 		return
 	}
-	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully updated scheduler status"})
+	Res(w, Response{Success: true, Message: "successfully updated scheduler status"})
 }

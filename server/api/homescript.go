@@ -47,39 +47,51 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 	var request HomescriptLiveRunRequest
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
 	output, exitCode, hmsErrors := homescript.Run(username, "live", request.Code)
 	if len(hmsErrors) > 0 {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(HomescriptResponse{
-			Success:  false,
-			Exitcode: exitCode,
-			Message:  "Homescript terminated abnormally",
-			Output:   output,
-			Errors:   hmsErrors,
-		})
+		if err := json.NewEncoder(w).Encode(
+			HomescriptResponse{
+				Success:  false,
+				Exitcode: exitCode,
+				Message:  "Homescript terminated abnormally",
+				Output:   output,
+				Errors:   hmsErrors,
+			}); err != nil {
+			log.Error(err.Error())
+			Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
+		}
 		return
 	}
 	if exitCode != 0 {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(HomescriptResponse{
-			Success:  false,
-			Exitcode: exitCode,
-			Message:  "Homescript exited with a non-0 status code",
-			Output:   output,
-			Errors:   hmsErrors,
-		})
+		if err := json.NewEncoder(w).Encode(
+			HomescriptResponse{
+				Success:  false,
+				Exitcode: exitCode,
+				Message:  "Homescript exited with a non-0 status code",
+				Output:   output,
+				Errors:   hmsErrors,
+			}); err != nil {
+			log.Error(err.Error())
+			Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
+		}
 		return
 	}
-	json.NewEncoder(w).Encode(HomescriptResponse{
-		Success:  true,
-		Message:  "Homescript ran successfully",
-		Output:   output,
-		Exitcode: exitCode,
-		Errors:   hmsErrors,
-	})
+	if err := json.NewEncoder(w).Encode(
+		HomescriptResponse{
+			Success:  true,
+			Message:  "Homescript ran successfully",
+			Output:   output,
+			Exitcode: exitCode,
+			Errors:   hmsErrors,
+		}); err != nil {
+		log.Error(err.Error())
+		Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
+	}
 }
 
 // Returns a list of homescripts which are owned by the current user
@@ -92,10 +104,13 @@ func ListPersonalHomescripts(w http.ResponseWriter, r *http.Request) {
 	homescriptList, err := database.ListHomescriptOfUser(username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to list personal homescript", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to list personal homescript", Error: "database failure"})
 		return
 	}
-	json.NewEncoder(w).Encode(homescriptList)
+	if err := json.NewEncoder(w).Encode(homescriptList); err != nil {
+		log.Error(err.Error())
+		Res(w, Response{Success: false, Message: "failed to list personal homescript", Error: "could not encode response"})
+	}
 }
 
 // Creates a new Homescript
@@ -110,18 +125,18 @@ func CreateNewHomescript(w http.ResponseWriter, r *http.Request) {
 	var request CreateHomescriptRequest
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
 	alreadyExists, err := database.DoesHomescriptExist(request.Id)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to add homescript", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to add homescript", Error: "database failure"})
 		return
 	}
 	if alreadyExists {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to add homescript", Error: fmt.Sprintf("the id: '%s' is already present in the database, use another one", request.Id)})
+		Res(w, Response{Success: false, Message: "failed to add homescript", Error: fmt.Sprintf("the id: '%s' is already present in the database, use another one", request.Id)})
 		return
 	}
 	homescriptToAdd := database.Homescript{
@@ -135,10 +150,10 @@ func CreateNewHomescript(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := database.CreateNewHomescript(homescriptToAdd); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to create new homescript", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to create new homescript", Error: "database failure"})
 		return
 	}
-	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully created new homescript"})
+	Res(w, Response{Success: true, Message: "successfully created new homescript"})
 }
 
 // Deletes a Homescript by its Id, checks if it exists and if the user has permission to delete it
@@ -153,26 +168,26 @@ func DeleteHomescriptById(w http.ResponseWriter, r *http.Request) {
 	var request HomescriptIdRequest
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
 	_, exists, err := database.GetUserHomescriptById(request.Id, username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to delete homescript: could not validate existence", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to delete homescript: could not validate existence", Error: "database failure"})
 		return
 	}
 	if !exists {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to delete homescript", Error: "not found / permission denied: no data is associated to this id"})
+		Res(w, Response{Success: false, Message: "failed to delete homescript", Error: "not found / permission denied: no data is associated to this id"})
 		return
 	}
 	if err := database.DeleteHomescriptById(request.Id); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to delete homescript", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to delete homescript", Error: "database failure"})
 		return
 	}
-	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully deleted homescript"})
+	Res(w, Response{Success: true, Message: "successfully deleted homescript"})
 }
 
 // Modifies the metadata of a given homescript
@@ -187,18 +202,18 @@ func ModifyHomescript(w http.ResponseWriter, r *http.Request) {
 	var request CreateHomescriptRequest
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
 	_, exists, err := database.GetUserHomescriptById(request.Id, username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to modify homescript: could not validate existence", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to modify homescript: could not validate existence", Error: "database failure"})
 		return
 	}
 	if !exists {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to modify homescript", Error: "not found / permission denied: no data is associated to this id"})
+		Res(w, Response{Success: false, Message: "failed to modify homescript", Error: "not found / permission denied: no data is associated to this id"})
 		return
 	}
 	homescriptMetadata := database.HomescriptFrontend{
@@ -210,8 +225,8 @@ func ModifyHomescript(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := database.ModifyHomescriptById(request.Id, homescriptMetadata); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to modify homescript", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to modify homescript", Error: "database failure"})
 		return
 	}
-	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully modified homescript"})
+	Res(w, Response{Success: true, Message: "successfully modified homescript"})
 }

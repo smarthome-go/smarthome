@@ -1,10 +1,10 @@
 package routes
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
+	"github.com/MikMuellerDev/smarthome/server/api"
 	"github.com/MikMuellerDev/smarthome/server/templates"
 )
 
@@ -18,5 +18,5 @@ func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 func methodNotAllowedHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusMethodNotAllowed)
-	json.NewEncoder(w).Encode(Response{Success: false, Message: fmt.Sprintf("The method `%s` is invalid: method not allowed", r.Method), Error: "method not allowed"})
+	api.Res(w, api.Response{Success: false, Message: fmt.Sprintf("The method `%s` is invalid: method not allowed", r.Method), Error: "method not allowed"})
 }

@@ -27,27 +27,27 @@ func AddUser(w http.ResponseWriter, r *http.Request) {
 	var request AddUserRequest
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
 	userAlreadyExists, err := database.DoesUserExist(request.Username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to add user", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to add user", Error: "database failure"})
 		return
 	}
 	if userAlreadyExists {
 		w.WriteHeader(http.StatusConflict)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to add user", Error: "user already exists"})
+		Res(w, Response{Success: false, Message: "failed to add user", Error: "user already exists"})
 		return
 	}
 	if err = database.AddUser(database.FullUser{Username: request.Username, Password: request.Password}); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to add user", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to add user", Error: "database failure"})
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully created new user"})
+	Res(w, Response{Success: true, Message: "successfully created new user"})
 }
 
 // Deletes a user given a valid username
@@ -60,27 +60,27 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	var request RemoveUserRequest
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
 	userDoesExist, err := database.DoesUserExist(request.Username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to remove user", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to remove user", Error: "database failure"})
 		return
 	}
 	if !userDoesExist {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to delete user", Error: "no user exists with given username"})
+		Res(w, Response{Success: false, Message: "failed to delete user", Error: "no user exists with given username"})
 		return
 	}
 	if err := user.DeleteUser(request.Username); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to remove user", Error: "backend failure"})
+		Res(w, Response{Success: false, Message: "failed to remove user", Error: "backend failure"})
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully deleted user"})
+	Res(w, Response{Success: true, Message: "successfully deleted user"})
 }
 
 // Returns the user's personal data, auth required
@@ -93,10 +93,13 @@ func GetUserDetails(w http.ResponseWriter, r *http.Request) {
 	userData, err := database.GetUserByUsername(username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to get user data", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to get user data", Error: "database failure"})
 		return
 	}
-	json.NewEncoder(w).Encode(userData)
+	if err := json.NewEncoder(w).Encode(userData); err != nil {
+		log.Error(err.Error())
+		Res(w, Response{Success: false, Message: "failed to --", Error: "failed to encode response"})
+	}
 }
 
 // Returns a list of users and their metadata, admin auth required
@@ -105,8 +108,11 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := database.ListUsers()
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to list users", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to list users", Error: "database failure"})
 		return
 	}
-	json.NewEncoder(w).Encode(users)
+	if err := json.NewEncoder(w).Encode(users); err != nil {
+		log.Error(err.Error())
+		Res(w, Response{Success: false, Message: "failed to --", Error: "failed to encode response"})
+	}
 }

@@ -169,8 +169,14 @@ func main() {
 		log.Fatal("Failed to flush logs older that 30 days: ", err.Error())
 	}
 
-	automation.Init() // Initializes the automation scheduler
-	scheduler.Init()  // Initializes the normal scheduler
+	// Initializes the automation scheduler
+	if err := automation.Init(); err != nil {
+		log.Fatal("Failed to activate automation system: ", err.Error())
+	}
+	// Initializes the normal scheduler
+	if err := scheduler.Init(); err != nil {
+		log.Fatal("Failed to activate scheduler system: ", err.Error())
+	}
 
 	r := routes.NewRouter()
 	middleware.Init(configStruct.Server.Production)

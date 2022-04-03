@@ -51,10 +51,12 @@ func GetUserAutomations(w http.ResponseWriter, r *http.Request) {
 	automations, err := automation.GetUserAutomations(username)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to list personal automations", Error: "internal server error"})
+		Res(w, Response{Success: false, Message: "failed to list personal automations", Error: "internal server error"})
 		return
 	}
-	json.NewEncoder(w).Encode(automations)
+	if err := json.NewEncoder(w).Encode(automations); err != nil {
+		Res(w, Response{Success: false, Message: "failed to list personal automations", Error: "could not encode content"})
+	}
 }
 
 // Creates a new automation
@@ -69,25 +71,25 @@ func CreateNewAutomation(w http.ResponseWriter, r *http.Request) {
 	var request NewAutomationRequest
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
 	// Check if the provided HomescriptId is valid
 	_, homescriptValid, err := database.GetUserHomescriptById(request.HomescriptId, username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to create new automation", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to create new automation", Error: "database failure"})
 		return
 	}
 	if !homescriptValid {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to create new automation", Error: "homescript id is invalid or not found"})
+		Res(w, Response{Success: false, Message: "failed to create new automation", Error: "homescript id is invalid or not found"})
 		return
 	}
 	// Check if the provided hour, minute and days are valid
 	if len(request.Days) > 7 || len(request.Days) == 0 { // Check if there are more than 7 days or 0
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to create new automation", Error: "length of `days` cannot be greater than 7 or none (0)"})
+		Res(w, Response{Success: false, Message: "failed to create new automation", Error: "length of `days` cannot be greater than 7 or none (0)"})
 		return
 	}
 	// Check for duplicates and if each provided day is valid
@@ -95,7 +97,7 @@ func CreateNewAutomation(w http.ResponseWriter, r *http.Request) {
 	for _, day := range request.Days {
 		if day > 6 {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to create new automation", Error: "invalid day in `days`: day must be >= 0 and <= 6"})
+			Res(w, Response{Success: false, Message: "failed to create new automation", Error: "invalid day in `days`: day must be >= 0 and <= 6"})
 			return
 		}
 		dayIsAlreadyPresend := false
@@ -106,19 +108,19 @@ func CreateNewAutomation(w http.ResponseWriter, r *http.Request) {
 		}
 		if dayIsAlreadyPresend {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to create new automation", Error: "duplicate entries in `days`"})
+			Res(w, Response{Success: false, Message: "failed to create new automation", Error: "duplicate entries in `days`"})
 			return
 		}
 		containsDays = append(containsDays, day) // If the day is not already present, add it
 	}
 	if request.TimingMode != database.TimingNormal && request.TimingMode != database.TimingSunrise && request.TimingMode != database.TimingSunset {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to create new automation", Error: "invalid timing mode"})
+		Res(w, Response{Success: false, Message: "failed to create new automation", Error: "invalid timing mode"})
 		return
 	}
 	if request.Hour > 24 || request.Minute > 60 { // Checks the minute and hour, values below 0 are checked implicitly through `uint`
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to create new automation", Error: "invalid hour and / or minute"})
+		Res(w, Response{Success: false, Message: "failed to create new automation", Error: "invalid hour and / or minute"})
 		return
 	}
 	if err := automation.CreateNewAutomation(
@@ -134,10 +136,10 @@ func CreateNewAutomation(w http.ResponseWriter, r *http.Request) {
 	); err != nil {
 		log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to create new automation", Error: "backend failure"})
+		Res(w, Response{Success: false, Message: "failed to create new automation", Error: "backend failure"})
 		return
 	}
-	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully added new automation"})
+	Res(w, Response{Success: true, Message: "successfully added new automation"})
 }
 
 // Stops, then removes the given automation from the system
@@ -152,26 +154,26 @@ func RemoveAutomation(w http.ResponseWriter, r *http.Request) {
 	var request DeleteAutomationRequest
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
 	_, doesExists, err := automation.GetUserAutomationById(username, request.Id) // Checks if the automation exists and if the user is allowed to delete it
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to delete automation", Error: "backend failure"})
+		Res(w, Response{Success: false, Message: "failed to delete automation", Error: "backend failure"})
 		return
 	}
 	if !doesExists {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to delete automation", Error: "invalid id / not found"})
+		Res(w, Response{Success: false, Message: "failed to delete automation", Error: "invalid id / not found"})
 		return
 	}
 	if err := automation.RemoveAutomation(request.Id); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to delete automation", Error: "backend failure"})
+		Res(w, Response{Success: false, Message: "failed to delete automation", Error: "backend failure"})
 		return
 	}
-	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully deleted automation"})
+	Res(w, Response{Success: true, Message: "successfully deleted automation"})
 }
 
 // Modifies a existing automation, also restarts the schedule
@@ -186,37 +188,37 @@ func ModifyAutomation(w http.ResponseWriter, r *http.Request) {
 	var request ModifyAutomationRequest
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
 	// Check if the requested automation is valid
 	_, automationValid, err := automation.GetUserAutomationById(username, request.Id)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to modify automation", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to modify automation", Error: "database failure"})
 		return
 	}
 	if !automationValid {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to modify automation", Error: "automation id is invalid or not found"})
+		Res(w, Response{Success: false, Message: "failed to modify automation", Error: "automation id is invalid or not found"})
 		return
 	}
 	// Check if the provided HomescriptId is valid
 	_, homescriptValid, err := database.GetUserHomescriptById(request.HomescriptId, username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to modify automation", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to modify automation", Error: "database failure"})
 		return
 	}
 	if !homescriptValid {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to modify automation", Error: "homescript id is invalid or not found"})
+		Res(w, Response{Success: false, Message: "failed to modify automation", Error: "homescript id is invalid or not found"})
 		return
 	}
 	// Check if the provided hour, minute and days are valid
 	if len(request.Days) > 7 || len(request.Days) == 0 { // Check if there are more than 7 days or 0
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to modify automation", Error: "length of `days` cannot be greater than 7 or none (0)"})
+		Res(w, Response{Success: false, Message: "failed to modify automation", Error: "length of `days` cannot be greater than 7 or none (0)"})
 		return
 	}
 	// Check for duplicates and if each provided day is valid
@@ -224,7 +226,7 @@ func ModifyAutomation(w http.ResponseWriter, r *http.Request) {
 	for _, day := range request.Days {
 		if day > 6 {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to modify automation", Error: "invalid day in `days`: day must be >= 0 and <= 6"})
+			Res(w, Response{Success: false, Message: "failed to modify automation", Error: "invalid day in `days`: day must be >= 0 and <= 6"})
 			return
 		}
 		dayIsAlreadyPresend := false
@@ -235,14 +237,14 @@ func ModifyAutomation(w http.ResponseWriter, r *http.Request) {
 		}
 		if dayIsAlreadyPresend {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to modify automation", Error: "duplicate entries in `days`"})
+			Res(w, Response{Success: false, Message: "failed to modify automation", Error: "duplicate entries in `days`"})
 			return
 		}
 		containsDays = append(containsDays, day) // If the day is not already present, add it
 	}
 	if request.Hour > 24 || request.Minute > 60 { // Checks the minute and hour, values below 0 are checked implicitly through `uint`
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to modify automation", Error: "invalid hour and / or minute"})
+		Res(w, Response{Success: false, Message: "failed to modify automation", Error: "invalid hour and / or minute"})
 		return
 	}
 	cronExpr, err := automation.GenerateCronExpression(
@@ -252,7 +254,7 @@ func ModifyAutomation(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to modify automation", Error: "could not create cron expression"})
+		Res(w, Response{Success: false, Message: "failed to modify automation", Error: "could not create cron expression"})
 		return
 	}
 	newAutomation := database.AutomationWithoutIdAndUsername{
@@ -265,10 +267,10 @@ func ModifyAutomation(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := automation.ModifyAutomationById(request.Id, newAutomation); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to modify automation", Error: "internal server error"})
+		Res(w, Response{Success: false, Message: "failed to modify automation", Error: "internal server error"})
 		return
 	}
-	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully modified automation"})
+	Res(w, Response{Success: true, Message: "successfully modified automation"})
 }
 
 // Activate or deactivate the entire automation system
@@ -279,30 +281,30 @@ func ChangeActivationAutomation(w http.ResponseWriter, r *http.Request) {
 	var request AutomationActivationRequest
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
 	serverConfig, found, err := database.GetServerConfiguration()
 	if err != nil || !found {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to change activation state of automations", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to change activation state of automations", Error: "database failure"})
 		return
 	}
 	if serverConfig.AutomationEnabled == request.Enabled {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to change activation state of automations", Error: fmt.Sprintf("current activation mode of automation is already set to %t", serverConfig.AutomationEnabled)})
+		Res(w, Response{Success: false, Message: "failed to change activation state of automations", Error: fmt.Sprintf("current activation mode of automation is already set to %t", serverConfig.AutomationEnabled)})
 		return
 	}
 	if request.Enabled {
 		if err := automation.ActivateAutomationSystem(); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to activate automations", Error: "internal server error"})
+			Res(w, Response{Success: false, Message: "failed to activate automations", Error: "internal server error"})
 			return
 		}
 	} else {
 		if err := automation.DeactivateAutomationSystem(); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to deactivate automations", Error: "internal server error"})
+			Res(w, Response{Success: false, Message: "failed to deactivate automations", Error: "internal server error"})
 			return
 		}
 	}
@@ -311,19 +313,19 @@ func ChangeActivationAutomation(w http.ResponseWriter, r *http.Request) {
 		if !request.Enabled {
 			if err := automation.ActivateAutomationSystem(); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to activate automations", Error: "internal server error"})
+				Res(w, Response{Success: false, Message: "failed to activate automations", Error: "internal server error"})
 				return
 			}
 		} else {
 			if err := automation.DeactivateAutomationSystem(); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to deactivate automations", Error: "internal server error"})
+				Res(w, Response{Success: false, Message: "failed to deactivate automations", Error: "internal server error"})
 				return
 			}
 		}
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to (de) activate automations but managed to rollback", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to (de) activate automations but managed to rollback", Error: "database failure"})
 		return
 	}
-	json.NewEncoder(w).Encode(Response{Success: true, Message: fmt.Sprintf("successfully set activation mode of automations to %t", request.Enabled)})
+	Res(w, Response{Success: true, Message: fmt.Sprintf("successfully set activation mode of automations to %t", request.Enabled)})
 }
