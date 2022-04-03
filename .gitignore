@@ -44,3 +44,6 @@ data/config/setup.json
 docker/homescript
 docker/homescript_linux_amd64.tar.gz
 .vscode/configurationCache.log
+
+# go coverage file
+coverage.html
