@@ -55,3 +55,7 @@ func initDB(args ...bool) error {
 	}
 	return nil
 }
+
+func TestGetDatabaseStats(t *testing.T) {
+	_ = GetDatabaseStats()
+}

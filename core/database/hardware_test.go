@@ -120,4 +120,23 @@ func TestModifyNode(t *testing.T) {
 		t.Errorf("Modification did not affect all metadata: want: %v got: %v", nodeAfter, nodeFromDb)
 		return
 	}
+	nodes, err := GetHardwareNodes()
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	valid := false
+	for _, node := range nodes {
+		if node.Enabled == nodeAfter.Enabled &&
+			node.Name == nodeAfter.Name &&
+			node.Token == nodeAfter.Token &&
+			node.Online == nodeAfter.Online &&
+			node.Url == nodeBefore.Url {
+			valid = true
+		}
+	}
+	if !valid {
+		t.Errorf("Hardware node not found in nodes want: %v got: {}", nodeAfter)
+		return
+	}
 }
