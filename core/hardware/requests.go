@@ -112,7 +112,7 @@ func sendPowerRequest(node database.HardwareNode, switchName string, powerOn boo
 // Makes a database request at the beginning in order to obtain information about the available nodes
 // Updates the power state in the database after the jobs have been sent to the hardware nodes
 func setPowerOnAllNodes(switchName string, powerOn bool) error {
-	var err error = nil
+	var err error
 	// Retrieves available hardware nodes from the database
 	nodes, err := database.GetHardwareNodes()
 	if err != nil {
@@ -121,19 +121,31 @@ func setPowerOnAllNodes(switchName string, powerOn bool) error {
 	}
 	for _, node := range nodes {
 		if !node.Online && node.Enabled {
-			go checkNodeOnline(node)
+			go func() {
+				if err := checkNodeOnline(node); err != nil {
+					log.Debug(fmt.Sprintf("Node %s is still offline", node.Name))
+				}
+			}()
 			log.Warn(fmt.Sprintf("Skipping node: '%s' because it is currently marked as offline", node.Name))
 			continue
 		}
 		errTemp := sendPowerRequest(node, switchName, powerOn)
 		if errTemp != nil {
 			// If the request failed, check the node and mark it as offline
-			go checkNodeOnline(node)
+			go func() {
+				if err := checkNodeOnline(node); err != nil {
+					log.Error("Failed to check node online: ", err.Error())
+				}
+			}()
 			err = errTemp
 		} else {
 			if !node.Online {
 				// If the node was previously offline and is now online
-				go checkNodeOnline(node)
+				go func() {
+					if err := checkNodeOnline(node); err != nil {
+						log.Error("Failed to check node online: ", err.Error())
+					}
+				}()
 			}
 			log.Debug("Successfully sent power request to: ", node.Name)
 		}
