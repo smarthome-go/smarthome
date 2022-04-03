@@ -144,11 +144,12 @@ func GetUserNotifications(username string) ([]Notification, error) {
 	`)
 	if err != nil {
 		log.Error("Failed to get notifications: preparing query failed: ", err.Error())
-		return []Notification{}, err
+		return nil, err
 	}
 	res, err := query.Query(username)
 	if err != nil {
 		log.Error("Failed to get notifications: executing query failed: ", err.Error())
+		return nil, err
 	}
 	notifications := make([]Notification, 0)
 	for res.Next() {
@@ -163,11 +164,11 @@ func GetUserNotifications(username string) ([]Notification, error) {
 		)
 		if err != nil {
 			log.Error()
-			return []Notification{}, err
+			return nil, err
 		}
 		if !notificationTime.Valid {
 			log.Error("Failed tp get notifications: notification time is not valid: critical failure")
-			return []Notification{}, errors.New("critical error: notification date column contains null value")
+			return nil, errors.New("critical error: notification date column contains null value")
 		}
 		notificationItem.Date = notificationTime.Time
 		notifications = append(notifications, notificationItem)
