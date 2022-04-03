@@ -1,16 +1,31 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
+	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/MikMuellerDev/smarthome/services/camera"
-	"github.com/sirupsen/logrus"
 )
 
 var log *logrus.Logger
 
 func InitLogger(logger *logrus.Logger) {
 	log = logger
+}
+
+func response(w http.ResponseWriter, res Response) {
+	now := time.Now().Local()
+	response := res
+	response.Time = now.Format(time.UnixDate)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		if _, err := w.Write([]byte("internal server error")); err != nil {
+			log.Error("Could not send response to client")
+		}
+	}
 }
 
 // TEST IMAGE FETCHING MODULE
