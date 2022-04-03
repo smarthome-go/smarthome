@@ -434,7 +434,7 @@ func TestModifyAutomation(t *testing.T) {
 			item.CronExpression != automation.Automation.CronExpression ||
 			item.Enabled != automation.Automation.Enabled ||
 			item.HomescriptId != automation.Automation.HomescriptId ||
-			item.Owner != item.Owner ||
+			item.Owner != automation.Automation.Owner ||
 			item.TimingMode != automation.Automation.TimingMode {
 			if automation.Error == "" {
 				t.Errorf("Modification did not succeed: want: %v got: %v", automation.Automation, item)
