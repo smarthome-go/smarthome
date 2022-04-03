@@ -1,17 +1,24 @@
 package config
 
 import (
+	"os"
 	"testing"
 	"time"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/sirupsen/logrus"
+
+	"github.com/MikMuellerDev/smarthome/core/database"
 )
 
 func TestMain(m *testing.M) {
 	log := logrus.New()
 	log.Level = logrus.FatalLevel
 	InitLogger(log)
+	if err := initDB(true); err != nil {
+		panic(err.Error())
+	}
+	code := m.Run()
+	os.Exit(code)
 }
 
 func initDB(args ...bool) error {
@@ -33,7 +40,7 @@ func initDB(args ...bool) error {
 			return err
 		}
 		time.Sleep(time.Second)
-		initDB()
+		return initDB()
 	}
 	return nil
 }
