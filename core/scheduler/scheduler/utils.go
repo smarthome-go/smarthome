@@ -27,7 +27,10 @@ func CreateNewSchedule(schedule database.Schedule) error {
 	schedulerJob := scheduler.Every(1).Day().At(fmt.Sprintf("%02d:%02d", schedule.Hour, schedule.Minute))
 	schedulerJob.Tag(fmt.Sprintf("%d", newScheduleId))
 	schedulerJob.LimitRunsTo(1)
-	schedulerJob.Do(scheduleRunnerFunc, newScheduleId)
+	if _, err := schedulerJob.Do(scheduleRunnerFunc, newScheduleId); err != nil {
+		log.Error("Failed to create new schedule: could not register cron job: ", err.Error())
+		return err
+	}
 	log.Trace(fmt.Sprintf("Successfully added and setup schedule '%d'", newScheduleId))
 	return nil
 }
@@ -65,7 +68,10 @@ func ModifyScheduleById(id uint, newSchedule database.Schedule) error {
 	schedulerJob := scheduler.Every(1).Day().At(fmt.Sprintf("%02d:%02d", newSchedule.Hour, newSchedule.Minute))
 	schedulerJob.Tag(fmt.Sprintf("%d", id))
 	schedulerJob.LimitRunsTo(1)
-	schedulerJob.Do(scheduleRunnerFunc, id)
+	if _, err := schedulerJob.Do(scheduleRunnerFunc, id); err != nil {
+		log.Error("Failed to modify schedule: could not register cronjob after modification: ", err.Error())
+		return err
+	}
 	log.Trace(fmt.Sprintf("Successfully added and setup schedule after modification'%d'", id))
 	return nil
 }
