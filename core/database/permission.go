@@ -25,6 +25,7 @@ func createHasPermissionTable() error {
 	_, err := db.Exec(query)
 	if err != nil {
 		log.Error("Could not create hasPermission table: Executing query failed: ", err.Error())
+		return err
 	}
 	return nil
 }
@@ -44,6 +45,7 @@ func createPermissionTable() error {
 	_, err := db.Exec(query)
 	if err != nil {
 		log.Error("Could not create permissions table: Executing query failed: ", err.Error())
+		return err
 	}
 	return nil
 }
