@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/go-co-op/gocron"
 	"github.com/sirupsen/logrus"
+
+	"github.com/MikMuellerDev/smarthome/core/database"
 )
 
 // The main scheduler which will run all automation jobs
@@ -39,7 +40,11 @@ func ActivateAutomationSystem() error {
 		}
 		automationJob := scheduler.Cron(automation.CronExpression)
 		automationJob.Tag(fmt.Sprintf("%d", automation.Id))
-		automationJob.Do(automationRunnerFunc, automation.Id)
+		_, err := automationJob.Do(automationRunnerFunc, automation.Id)
+		if err != nil {
+			log.Error("Failed to register cron job: ", err.Error())
+			return err
+		}
 		activatedItems += 1
 		log.Debug(fmt.Sprintf("Successfully activated automation '%d' of user '%s'", automation.Id, automation.Owner))
 	}
