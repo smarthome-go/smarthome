@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/go-co-op/gocron"
 	"github.com/sirupsen/logrus"
+
+	"github.com/MikMuellerDev/smarthome/core/database"
 )
 
 // This scheduler is executed only once, then disabled the job it should run
@@ -49,7 +50,10 @@ func startSavedSchedules() error {
 		schedulerJob := scheduler.Every(1).Day().At(fmt.Sprintf("%02d:%02d", schedule.Hour, schedule.Minute))
 		schedulerJob.Tag(fmt.Sprintf("%d", schedule.Id))
 		schedulerJob.LimitRunsTo(1)
-		schedulerJob.Do(scheduleRunnerFunc, schedule.Id)
+		if _, err := schedulerJob.Do(scheduleRunnerFunc, schedule.Id); err != nil {
+			log.Error("Failed to activates saved schedules: could not register cronjob: ", err.Error())
+			return err
+		}
 		log.Trace(fmt.Sprintf("Successfully activated schedule '%d' of user '%s'", schedule.Id, schedule.Owner))
 	}
 	log.Debug("Successfully activated conventional scheduler")

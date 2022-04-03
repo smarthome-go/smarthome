@@ -34,12 +34,15 @@ func scheduleRunnerFunc(id uint) {
 	}
 	if !owner.SchedulerEnabled {
 		log.Info(fmt.Sprintf("Not running schedule '%s' because user's schedules are currently disabled", job.Name))
-		user.Notify(
+		if err := user.Notify(
 			owner.Username,
 			"Schedule Skipped",
 			fmt.Sprintf("Schedule '%s' was discarded because your schedules are disabled", job.Name),
 			user.NotificationLevelWarn,
-		)
+		); err != nil {
+			log.Error("Failed to notify user: ", err.Error())
+			return
+		}
 		event.Debug(
 			"Schedule Skipped",
 			fmt.Sprintf("Schedule '%s' has been skipped", job.Name),
