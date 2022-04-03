@@ -1,6 +1,7 @@
 package hardware
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/sirupsen/logrus"
@@ -37,7 +38,7 @@ func TestSetPower(t *testing.T) {
 			Switch: "test",
 			Power:  true,
 			// Only the first request will throw an error due to node being marked as offline
-			Error: `Post "http://localhost/power?token=": dial tcp 127.0.0.1:80: connect: connection refused`,
+			Error: `Post "http://localhost/power?token=": dial tcp`, // Different on other machines
 		},
 		{
 			Switch: "test",
@@ -66,7 +67,7 @@ func TestSetPower(t *testing.T) {
 			return
 		}
 		if err := SetPower(req.Switch, req.Power); err != nil {
-			if err.Error() != req.Error {
+			if !strings.Contains(err.Error(), req.Error) || req.Error == "" {
 				t.Errorf("Unexpected error: want: `%s` got: `%s`", req.Error, err.Error())
 				return
 			}
