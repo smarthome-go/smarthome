@@ -61,7 +61,7 @@ func ListUsers() ([]User, error) {
 	res, err := db.Query(query)
 	if err != nil {
 		log.Error("Could not list users. Failed to execute query: ", err.Error())
-		return []User{}, err
+		return nil, err
 	}
 	var userList []User
 	for res.Next() {
@@ -75,6 +75,7 @@ func ListUsers() ([]User, error) {
 		)
 		if err != nil {
 			log.Error("Failed to scan user values from database results: ", err.Error())
+			return nil, err
 		}
 		userList = append(userList, user)
 	}
