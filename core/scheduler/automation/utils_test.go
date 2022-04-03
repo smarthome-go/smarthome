@@ -79,11 +79,6 @@ func TestModifyAutomation(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
-	automations, err = GetUserAutomations("admin")
-	if err != nil {
-		t.Error(err.Error())
-		return
-	}
 	temp, found, err := GetUserAutomationById("admin", testId)
 	if err != nil {
 		t.Error(err.Error())
