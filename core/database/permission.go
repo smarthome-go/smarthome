@@ -86,6 +86,7 @@ func initializePermissions() error {
 func AddUserPermission(username string, permission PermissionType) (bool, error) {
 	alreadyHasPermission, err := UserHasPermission(username, permission)
 	if err != nil {
+		log.Error("Could not add permission: could not determine if user is already in posession of this permission: ", err.Error())
 		return false, err
 	}
 	if alreadyHasPermission {
