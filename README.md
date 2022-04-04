@@ -1,7 +1,6 @@
 # Smarthome
 ### Version: `0.0.18-beta`
 
-[![golangci-lint](https://github.com/MikMuellerDev/smarthome/actions/workflows/golangci.yml/badge.svg)](https://github.com/MikMuellerDev/smarthome/actions/workflows/golangci.yml)
 [![Go Build](https://github.com/MikMuellerDev/smarthome/actions/workflows/go.yml/badge.svg)](https://github.com/MikMuellerDev/smarthome/actions/workflows/go.yml)
 
 ### The `setup.json`
