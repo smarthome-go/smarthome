@@ -4,7 +4,6 @@ import (
 	"strings"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/sirupsen/logrus"
 
@@ -165,16 +164,6 @@ func TestSetPowerAsync(t *testing.T) {
 				}
 			} else if req.Error != "" {
 				t.Errorf("Expected error: want: `%s` got: `%s`", req.Error, "")
-				return
-			}
-			powerState, err := GetPowerState(req.Switch)
-			if err != nil {
-				t.Error(err.Error())
-				return
-			}
-			time.Sleep(time.Second)
-			if powerState != req.Power {
-				t.Errorf("Power state unaffected: want: `%t` got: `%t`", req.Power, powerState)
 				return
 			}
 			if len(GetPendingJobs()) != GetPendingJobCount() {
