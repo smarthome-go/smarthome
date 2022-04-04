@@ -27,13 +27,6 @@ func TestCreateSwitchTable(t *testing.T) {
 	}
 }
 
-func TestCreateHasSwitchPermissionTable(t *testing.T) {
-	if err := createHasSwitchPermissionTable(); err != nil {
-		t.Error(err.Error())
-		return
-	}
-}
-
 func TestSwitches(t *testing.T) {
 	if err := createTestRoom(); err != nil {
 		t.Error(err.Error())
