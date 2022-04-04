@@ -148,6 +148,57 @@ func TestUserAvatarPath(t *testing.T) {
 		t.Errorf("Unexpected avatar path: want: ./web/assets/avatar/default.png got: %s", avatarpath)
 		return
 	}
+	if err := SetUserAvatarPath("delete_me", "invalid_path"); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	avatarpath, err = GetAvatarPathByUsername("delete_me")
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if avatarpath != "invalid_path" {
+		t.Errorf("Unexpected avatar path: want: invalid_path got: %s", avatarpath)
+		return
+	}
+	// Cleanup
+	if err := DeleteUser("delete_me"); err != nil {
+		t.Error(err.Error())
+		return
+	}
+}
+
+func TestSetScheduleEnabled(t *testing.T) {
+	if err := createUserMockData(); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	before, exists, err := GetUserByUsername("delete_me")
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if !exists {
+		t.Error("User `delete_me` does not exist after creation")
+		return
+	}
+	if err := SetUserSchedulerEnabled("delete_me", !before.SchedulerEnabled); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	after, exists, err := GetUserByUsername("delete_me")
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if !exists {
+		t.Error("User `delete_me` does not exist after modification")
+		return
+	}
+	if after.SchedulerEnabled == before.SchedulerEnabled {
+		t.Errorf("ScheduleEnabled not toggled: want: %t got: %t", !before.SchedulerEnabled, after.SchedulerEnabled)
+		return
+	}
 	// Cleanup
 	if err := DeleteUser("delete_me"); err != nil {
 		t.Error(err.Error())

@@ -98,3 +98,25 @@ func TestDeleteLogs(t *testing.T) {
 		return
 	}
 }
+
+func TestHelperFunctions(t *testing.T) {
+	if err := database.FlushAllLogs(); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	Trace("", "")
+	Debug("", "")
+	Info("", "")
+	Warn("", "")
+	Error("", "")
+	Fatal("", "")
+	logs, err := database.GetLogs()
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if len(logs) != 6 {
+		t.Errorf("Log count is not expected, want: 6 got: %d", len(logs))
+		return
+	}
+}
