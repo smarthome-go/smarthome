@@ -56,6 +56,26 @@ func TestSetPower(t *testing.T) {
 			Power:  false,
 			Error:  ``,
 		},
+		{
+			Switch: "test3",
+			Power:  true,
+			Error:  ``,
+		},
+		{
+			Switch: "test3",
+			Power:  false,
+			Error:  ``,
+		},
+		{
+			Switch: "test4",
+			Power:  true,
+			Error:  ``,
+		},
+		{
+			Switch: "test4",
+			Power:  false,
+			Error:  ``,
+		},
 	}
 	// Create a test room
 	if err := database.CreateRoom("test", "test", "test"); err != nil {
@@ -139,6 +159,26 @@ func TestSetPowerAsync(t *testing.T) {
 		},
 		{
 			Switch: "test_2",
+			Power:  false,
+			Error:  ``,
+		},
+		{
+			Switch: "test_3",
+			Power:  true,
+			Error:  ``,
+		},
+		{
+			Switch: "test_3",
+			Power:  false,
+			Error:  ``,
+		},
+		{
+			Switch: "test_4",
+			Power:  true,
+			Error:  ``,
+		},
+		{
+			Switch: "test_4",
 			Power:  false,
 			Error:  ``,
 		},
