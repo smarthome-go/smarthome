@@ -167,8 +167,8 @@ func GetUserNotifications(username string) ([]Notification, error) {
 			return nil, err
 		}
 		if !notificationTime.Valid {
-			log.Error("Failed tp get notifications: notification time is not valid: critical failure")
-			return nil, errors.New("critical error: notification date column contains null value")
+			log.Error("Failed to get user notifications: notification time is not valid: critical failure")
+			return nil, errors.New("failed to get user notifications: notification date column contains null value")
 		}
 		notificationItem.Date = notificationTime.Time
 		notifications = append(notifications, notificationItem)
