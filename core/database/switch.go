@@ -45,30 +45,6 @@ func createSwitchTable() error {
 	return nil
 }
 
-// Stores the n:m relation between the user and their switch-permissions
-func createHasSwitchPermissionTable() error {
-	query := `
-	CREATE TABLE
-	IF NOT EXISTS
-	hasSwitchPermission(
-		Username VARCHAR(20),
-		Switch VARCHAR(20),
-		CONSTRAINT HasSwitchPermissionUsername
-		FOREIGN KEY (Username)
-		REFERENCES user(Username),
-		CONSTRAINT HasSwitchPermissionSwitch
-		FOREIGN KEY (Switch)
-		REFERENCES switch(Id)
-	)
-	`
-	_, err := db.Query(query)
-	if err != nil {
-		log.Error("Failed to create hasSwitchPermissionTable: Executing query failed: ", err.Error())
-		return err
-	}
-	return nil
-}
-
 // Creates a new switch
 // Will return an error if the database fails
 func CreateSwitch(id string, name string, roomId string, watts uint16) error {
