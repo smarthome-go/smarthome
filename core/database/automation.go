@@ -254,3 +254,21 @@ func DeleteAutomationById(id uint) error {
 	}
 	return nil
 }
+
+// Deletes all automations from a given user
+func DeleteAllAutomationsFromUser(username string) error {
+	query, err := db.Prepare(`
+	DELETE FROM
+	automation
+	WHERE Owner=?
+	`)
+	if err != nil {
+		log.Error("Failed to delete all automations from user: preparing query failed", err.Error())
+		return err
+	}
+	if _, err := query.Exec(username); err != nil {
+		log.Error("Failed to delete all automations from user: executing query failed", err.Error())
+		return err
+	}
+	return nil
+}

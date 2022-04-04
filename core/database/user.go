@@ -123,6 +123,15 @@ func DeleteUser(username string) error {
 	if err := DeleteAllNotificationsFromUser(username); err != nil {
 		return err
 	}
+	if err := DeleteAllAutomationsFromUser(username); err != nil {
+		return err
+	}
+	if err := DeleteAllHomescriptsOfUser(username); err != nil {
+		return err
+	}
+	if err := DeleteAllSchedulesFromUser(username); err != nil {
+		return err
+	}
 	query, err := db.Prepare(`
 	DELETE FROM user WHERE Username=? 
 	`)

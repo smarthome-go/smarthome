@@ -39,6 +39,15 @@ func TestAddUserSwitchPermission(t *testing.T) {
 			t.Error(err.Error())
 			return
 		}
+		removed, err := RemoveUserSwitchPermission("permissions_switch", test.Switch)
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+		if removed {
+			t.Errorf("Switch permission %s was removed but was never added", test.Switch)
+			return
+		}
 		if test.Add {
 			added, err := AddUserSwitchPermission("permissions_switch", test.Switch)
 			if err != nil {
@@ -69,6 +78,16 @@ func TestAddUserSwitchPermission(t *testing.T) {
 		}
 		if added == test.Add {
 			t.Errorf("Added response for permission for switch %s does not match expected value: want: %t got: %t", test.Switch, !test.Add, added)
+			return
+		}
+		// Remove switch permission
+		removed, err := RemoveUserSwitchPermission("permissions_switch", test.Switch)
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+		if !removed {
+			t.Errorf("Switch permission %s was not be removed", test.Switch)
 			return
 		}
 	}

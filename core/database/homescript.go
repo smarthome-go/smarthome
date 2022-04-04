@@ -234,3 +234,21 @@ func DeleteHomescriptById(homescriptId string) error {
 	}
 	return nil
 }
+
+// Deletes all Homescripts of a given user
+func DeleteAllHomescriptsOfUser(username string) error {
+	query, err := db.Prepare(`
+	DELETE FROM
+	homescript
+	WHERE Owner=?
+	`)
+	if err != nil {
+		log.Error("Failed to delete all Homescripts of user: preparing query failed: ", err.Error())
+		return err
+	}
+	if _, err := query.Exec(username); err != nil {
+		log.Error("Failed to delete all Homescripts of user: preparing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}

@@ -222,3 +222,21 @@ func DeleteScheduleById(id uint) error {
 	}
 	return nil
 }
+
+// Deletes all schedules from a given user
+func DeleteAllSchedulesFromUser(username string) error {
+	query, err := db.Prepare(`
+	DElETE FROM
+	schedule
+	WHERE Owner=?
+	`)
+	if err != nil {
+		log.Error("Failed to delete all schedules of user: preparing query failed: ", err.Error())
+		return err
+	}
+	if _, err := query.Exec(username); err != nil {
+		log.Error("Failed to delete all schedules of user: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}
