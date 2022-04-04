@@ -23,9 +23,13 @@ func scheduleRunnerFunc(id uint) {
 		log.Error(fmt.Sprintf("Failed to run schedule '%s': no metadata saved in the database: %s", job.Name, err.Error()))
 		return
 	}
-	owner, err := database.GetUserByUsername(job.Owner)
+	owner, found, err := database.GetUserByUsername(job.Owner)
 	if err != nil {
 		log.Error(fmt.Sprintf("Failed to run schedule '%s': database error whilst retrieving user information: %s", job.Name, err.Error()))
+		return
+	}
+	if !found {
+		log.Error(fmt.Sprintf("Owner %s of schedule %d does not exist", job.Owner, job.Id))
 		return
 	}
 	if err := database.DeleteScheduleById(id); err != nil {

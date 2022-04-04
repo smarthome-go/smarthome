@@ -196,8 +196,8 @@ func SetUserSchedulerEnabled(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	user, err := database.GetUserByUsername(username)
-	if err != nil {
+	user, found, err := database.GetUserByUsername(username)
+	if err != nil || !found {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to set scheduler status", Error: "database failure"})
 		return

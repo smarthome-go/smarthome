@@ -90,8 +90,8 @@ func GetUserDetails(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	userData, err := database.GetUserByUsername(username)
-	if err != nil {
+	userData, found, err := database.GetUserByUsername(username)
+	if err != nil || !found {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to get user data", Error: "database failure"})
 		return

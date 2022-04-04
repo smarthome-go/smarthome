@@ -4,7 +4,15 @@ import "testing"
 
 func createUserMockData() error {
 	// Create user
-	if err := AddUser(FullUser{Username: "delete_me"}); err != nil {
+	if err := AddUser(FullUser{
+		Username:         "delete_me",
+		Firstname:        "forename",
+		Surname:          "surname",
+		PrimaryColor:     "#121212",
+		Password:         "test",
+		AvatarPath:       "/invalid",
+		SchedulerEnabled: true,
+	}); err != nil {
 		return err
 	}
 	// Give him permissions
@@ -57,6 +65,90 @@ func TestDeleteuser(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
+	if err := DeleteUser("delete_me"); err != nil {
+		t.Error(err.Error())
+		return
+	}
+}
+
+func TestGetUserByUsername(t *testing.T) {
+	if err := createUserMockData(); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	fromDb, exists, err := GetUserByUsername("delete_me")
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if !exists {
+		t.Errorf("User `delete_me` does not exist after creation")
+		return
+	}
+	if fromDb.Username != "delete_me" ||
+		fromDb.Firstname != "forename" ||
+		fromDb.Surname != "surname" ||
+		fromDb.PrimaryColor != "#121212" ||
+		!fromDb.SchedulerEnabled {
+		t.Errorf("User `delete_me` has invalid metadata: got: %v", fromDb)
+		return
+	}
+	if err := DeleteUser("delete_me"); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	_, exists, err = GetUserByUsername("delete_me")
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if exists {
+		t.Errorf("User `delete_me` does still exist after creation")
+		return
+	}
+	// Cleanup
+	if err := DeleteUser("delete_me"); err != nil {
+		t.Error(err.Error())
+		return
+	}
+}
+
+func TestUserPasswordHash(t *testing.T) {
+	if err := createUserMockData(); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	hash, err := GetUserPasswordHash("delete_me")
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if hash == `` {
+		t.Errorf("unexpected password hash length: got %s", hash)
+		return
+	}
+	// Cleanup
+	if err := DeleteUser("delete_me"); err != nil {
+		t.Error(err.Error())
+		return
+	}
+}
+
+func TestUserAvatarPath(t *testing.T) {
+	if err := createUserMockData(); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	avatarpath, err := GetAvatarPathByUsername("delete_me")
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if avatarpath != "./web/assets/avatar/default.png" {
+		t.Errorf("Unexpected avatar path: want: ./web/assets/avatar/default.png got: %s", avatarpath)
+		return
+	}
+	// Cleanup
 	if err := DeleteUser("delete_me"); err != nil {
 		t.Error(err.Error())
 		return

@@ -1,6 +1,7 @@
 package database
 
 import (
+	"database/sql"
 	"errors"
 
 	"golang.org/x/crypto/bcrypt"
@@ -194,7 +195,7 @@ func DoesUserExist(username string) (bool, error) {
 }
 
 // Returns a user struct based on a username, does not check if the user exists, additional checks needed beforehand
-func GetUserByUsername(username string) (User, error) {
+func GetUserByUsername(username string) (User, bool, error) {
 	query, err := db.Prepare(`
 	SELECT
 	Username, Firstname, Surname, PrimaryColor, SchedulerEnabled
@@ -203,28 +204,23 @@ func GetUserByUsername(username string) (User, error) {
 	`)
 	if err != nil {
 		log.Error("Could not get user by username: failed to prepare query: ", err.Error())
-		return User{}, err
+		return User{}, false, err
 	}
-	res, err := query.Query(username)
-	if err != nil {
-		log.Error("Could not get user by username: failed to execute query: ", err.Error())
-		return User{}, err
-	}
-	user := User{}
-	for res.Next() {
-		err := res.Scan(
-			&user.Username,
-			&user.Firstname,
-			&user.Surname,
-			&user.PrimaryColor,
-			&user.SchedulerEnabled,
-		)
-		if err != nil {
-			log.Error("Failed to get user by username: failed to scan query: ", err.Error())
-			return User{}, err
+	var user User
+	if err := query.QueryRow(username).Scan(
+		&user.Username,
+		&user.Firstname,
+		&user.Surname,
+		&user.PrimaryColor,
+		&user.SchedulerEnabled,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return User{}, false, nil
 		}
+		log.Error(err.Error())
+		return User{}, false, err
 	}
-	return user, nil
+	return user, true, nil
 }
 
 // Returns the password of a given user
