@@ -34,8 +34,7 @@ release: cleanall version test build
 
 # Run
 run: web
-	go run -v . &
-	cd web && npm run watch
+	go run -v .
 
 run-full: web mysql
 	go run -v .
