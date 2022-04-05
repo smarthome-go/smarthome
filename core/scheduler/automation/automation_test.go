@@ -32,6 +32,9 @@ func TestMain(m *testing.M) {
 	if err := database.CreateSwitch("test_switch_inactive", "", "test_room", 0); err != nil {
 		panic(err.Error())
 	}
+	if err := database.CreateSwitch("test_switch_abort", "", "test_room", 0); err != nil {
+		panic(err.Error())
+	}
 	_, doesExists, err := database.GetUserHomescriptById("test", "admin")
 	if err != nil {
 		panic(err.Error())
@@ -82,6 +85,24 @@ func TestMain(m *testing.M) {
 			QuickActionsEnabled: false,
 			SchedulerEnabled:    false,
 			Code:                "switch('test_switch_inactive', on)",
+		}); err != nil {
+			panic(err.Error())
+		}
+	}
+	_, doesExists, err = database.GetUserHomescriptById("test_abort", "admin")
+	if err != nil {
+		panic(err.Error())
+	}
+	if !doesExists {
+		// Create another Homescript
+		if err := database.CreateNewHomescript(database.Homescript{
+			Id:                  "test_abort",
+			Owner:               "admin",
+			Name:                "Testing 2",
+			Description:         "Another Homescript for testing purposes",
+			QuickActionsEnabled: false,
+			SchedulerEnabled:    false,
+			Code:                "switch('test_switch_abort', on)",
 		}); err != nil {
 			panic(err.Error())
 		}
@@ -172,9 +193,36 @@ func TestAutomation(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
+	abortId, err := CreateNewAutomation(
+		"name",
+		"description",
+		uint8(then.Hour()),
+		uint8(then.Minute()),
+		[]uint8{0, 1, 2, 3, 4, 5, 6},
+		"test_abort",
+		"admin",
+		true,
+		database.TimingNormal,
+	)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
 	// Modify second automation to use the other homescript file
 	cronExpression, err := GenerateCronExpression(uint8(then.Hour()), uint8(then.Minute()), []uint8{0, 1, 2, 3, 4, 5, 6})
 	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if err := ModifyAutomationById(abortId,
+		database.AutomationWithoutIdAndUsername{
+			Name:           "name",
+			Description:    "description",
+			CronExpression: cronExpression,
+			HomescriptId:   "test_abort",
+			Enabled:        false,
+			TimingMode:     database.TimingNormal,
+		}); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -225,36 +273,58 @@ func TestAutomation(t *testing.T) {
 		t.Error("Power of `test_switch_inactive` changed: want: false got: true")
 		return
 	}
+	power, err = database.GetPowerStateOfSwitch("test_switch_abort")
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if power {
+		t.Error("Power of `test_switch_abort` changed: want: false got: true")
+		return
+	}
 }
 
-func TestTimingModes(t testing.T) {
+func TestTimingModes(t *testing.T) {
 	log := logrus.New()
 	log.Level = logrus.FatalLevel
+	InitLogger(log)
 	event.InitLogger(log)
 	homescript.InitLogger(log)
 	hardware.InitLogger(log)
+	if err := Init(); err != nil {
+		t.Error(err.Error())
+		return
+	}
 	sunriseId, err := CreateNewAutomation(
 		"name",
 		"description",
-		25, // Use invalid values to distinguish between them
-		61,
+		23,
+		59,
 		[]uint8{0, 1, 2, 3, 4, 5, 6},
 		"test",
 		"admin",
 		true,
 		database.TimingSunrise,
 	)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
 	sunSetId, err := CreateNewAutomation(
 		"name",
 		"description",
-		25, // Use invalid values to distinguish between them
-		61,
+		23,
+		59,
 		[]uint8{0, 1, 2, 3, 4, 5, 6},
 		"test",
 		"admin",
 		true,
 		database.TimingSunset,
 	)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
 	sunrise, found, err := database.GetAutomationById(sunriseId)
 	if err != nil {
 		t.Error(err.Error())
@@ -273,7 +343,7 @@ func TestTimingModes(t testing.T) {
 		t.Errorf("Automation %d was not found after creation", sunSetId)
 		return
 	}
-	if sunrise.CronExpression != sunSet.CronExpression {
+	if sunrise.CronExpression == sunSet.CronExpression {
 		t.Errorf("Cron expression of sunrise and sunset is not valid. `%s`|`%s`", sunSet.CronExpression, sunrise.CronExpression)
 	}
 }
