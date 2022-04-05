@@ -37,5 +37,5 @@ func loginGetHandler(w http.ResponseWriter, r *http.Request) {
 
 // Serves HTML for profile settings
 func userProfileGetHandler(w http.ResponseWriter, r *http.Request) {
-	templates.ExecuteTemplate(w, "profileSettings.html", http.StatusOK)
+	templates.ExecuteTemplate(w, "profile.html", http.StatusOK)
 }
