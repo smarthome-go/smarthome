@@ -22,7 +22,7 @@ test:
 	# Tests should be run one after another due to deletion of the database at every test start
 
 vtest:
-	time go test -p 1 ./... -coverprofile=coverage.out
+	go test -p 1 ./... -coverprofile=coverage.out
 	go tool cover --html=coverage.out -o coverage.html
 
 # Updating the current version in all locations
