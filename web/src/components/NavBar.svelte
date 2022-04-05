@@ -182,8 +182,12 @@
         padding-block: .5rem;
         padding-left: .4rem;
         overflow-x: hidden;
+        min-height: 3.5rem;
 
-        @include mobile { width: min-content; }
+        @include mobile {
+            width: min-content;
+            min-height: auto;
+        }
 
         &__avatar {
             background-position: center;
