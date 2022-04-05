@@ -176,13 +176,11 @@ func TestGetUserAutomations(t *testing.T) {
 			fromDb.TimingMode != item.TimingMode ||
 			fromDb.Owner != item.Owner ||
 			fromDb.CronDescription != "At 01:01 AM, only on Sunday" {
-			fmt.Println("Want:", item)
-			fmt.Println("Got:", fromDb)
-			t.Error("Adding and retrieving automations failed: values are not equal")
+			t.Errorf("Adding and retrieving automations failed: values are not equal. want: %v got: %v", item, fromDb)
 			return
 		}
 		if err := RemoveAutomation(item.Id); err != nil {
-			t.Error("Failed to remove created automation: ", err.Error())
+			t.Error(err.Error())
 			return
 		}
 	}
