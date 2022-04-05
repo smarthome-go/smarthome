@@ -1,7 +1,7 @@
 <script lang="ts">
     import IconButton from '@smui/icon-button'
     import CircularProgress from '@smui/circular-progress'
-    import { data, infoBar } from '../global'
+    import { data, createSnackbar } from '../global'
 
     export let dummy = false
 
@@ -39,8 +39,7 @@
                 $data.notifications = $data.notifications.filter(n => n.id !== id)
             }, 300)
         } catch {
-            $infoBar.message = 'Could not delete notification. Try again later'
-            $infoBar.bar.open()
+            $createSnackbar('Could not delete notification')
         } finally {
             loading = false
         }

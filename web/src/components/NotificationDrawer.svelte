@@ -2,7 +2,7 @@
     import Button, { Label } from '@smui/button'
     import IconButton from '@smui/icon-button'
     import LinearProgress from '@smui/linear-progress'
-    import { data, infoBar, sleep } from '../global'
+    import { createSnackbar, data, sleep } from '../global'
     import NotificationCard from './Notification.svelte'
 
     export let hidden = true
@@ -16,7 +16,11 @@
     async function load(showLoader = true) {
         if (showLoader) loading = true
         try {
-            $data.notifications = await (await fetch('/api/user/notification/list')).json()
+            const res = await (await fetch('/api/user/notification/list')).json()
+            if (res.success === false) throw new Error()
+            $data.notifications = res
+        } catch {
+            $createSnackbar('Could not refresh notifications')
         } finally { loading = false }
     }
     async function deleteAll() {
@@ -39,8 +43,7 @@
             await sleep(300)
             $data.notifications = []
         } catch {
-            $infoBar.message = 'Could not delete notifications. Please try again'
-            $infoBar.bar.open()
+            $createSnackbar('Could not delete notifications')
         } finally { loading = false }
     }
 </script>
