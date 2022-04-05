@@ -33,14 +33,13 @@ $elevations: (
     --clr-on-primary: #121212;
     --icon-size: 1.5rem;
 
-    @media (prefers-color-scheme: light) {
+    --clr-hover: #ffffff1a;
+    @include elevation-colors(#121212, #fff);
+    &.light-theme {
         --clr-hover: #0000001a;
-        @include elevation-colors(#fff, #121212)
+        @include elevation-colors(#fff, #121212);
     }
-    @media screen and (prefers-color-scheme: dark) {
-        --clr-hover: #ffffff1a;
-        @include elevation-colors(#121212, #fff)
-    }
+
     @for $hue from 0 through 9 {
         --clr-bg-#{$hue}00: var(--clr-height-0-#{list.nth(map.keys($elevations), $hue + 1)});
     }
@@ -81,7 +80,7 @@ big { font-size: 1.1em; }
 b, strong { font-weight: bold; }
 
 // Scrollbar
-@media screen and (prefers-color-scheme: dark) {
+:root:not(.light-theme) {
     *::-webkit-scrollbar {
         background-color: rgb(71, 71, 71);
         width: 16px;

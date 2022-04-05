@@ -24,6 +24,12 @@
     $: userInvalid = userDirty && username === ''
     $: passwordInvalid = passwordDirty && password === ''
 
+    let theme = window.localStorage.getItem('theme')
+    if (theme === null) theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+    let darkTheme = theme !== 'light'
+    $: document.documentElement.classList.toggle('light-theme', !darkTheme)
+    $: window.localStorage.setItem('theme', darkTheme ? 'dark' : 'light')
+
     async function login(event: SubmitEvent) {
         event.preventDefault()
         if (username === '') userInvalid = true
@@ -51,6 +57,11 @@
     }
 </script>
 
+<svelte:head>
+    {#if !darkTheme}
+        <link rel="stylesheet" href="/src/theme-light.css">
+    {/if}
+</svelte:head>
 <main>
     <div id="left" class="mdc-elevation--z8">
         <img src={Logo} alt="logo" />
@@ -78,6 +89,12 @@
     </div>
     <div id="right" class="mdc-elevation--z2">
         <LinearProgress id="loader" bind:this={loader} indeterminate />
+        <IconButton
+            id="theme-toggle"
+            on:click={() => darkTheme = !darkTheme}
+            class="material-icons"
+            title="Toggle light/dark theme"
+        >{darkTheme ? 'light_mode' : 'dark_mode'}</IconButton>
         <form on:submit={login}>
             <div>
                 <Textfield
@@ -235,5 +252,15 @@
         position: absolute;
         top: 0;
         opacity: 0;
+    }
+    main :global #theme-toggle {
+        position: absolute;
+        top: 1rem;
+        right: 2rem;
+
+        @include mobile {
+            right: auto;
+            left: 2rem;
+        }
     }
 </style>
