@@ -12,6 +12,7 @@ import (
 // This file contains cron utils functions, mostly for parsing cron-expressions
 
 // Generates a cron-expression based on the hour, minute, and  days on which the automation should run
+// Is used for sending the owner of an automation a notification or for listing a users automations
 func GenerateCronExpression(hour uint8, minute uint8, days []uint8) (string, error) {
 	output := [5]string{"", "", "*", "*", ""}
 	output[0] = fmt.Sprintf("%d", minute)

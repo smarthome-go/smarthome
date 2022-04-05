@@ -12,12 +12,12 @@ func TestCreateAutomation(t *testing.T) {
 	id, err := CreateNewAutomation(
 		"name",
 		"description",
-		18,
-		56,
+		0,
+		0,
 		[]uint8{0},
 		"test",
 		"admin",
-		true,
+		false,
 		database.TimingNormal,
 	)
 	if err != nil {
@@ -31,14 +31,14 @@ func TestCreateAutomation(t *testing.T) {
 		return
 	}
 	if !found {
-		t.Errorf("Automation %d not found after creation", id)
+		t.Errorf("Automation '%d' not found after creation", id)
 		return
 	}
 	if fromDb.Name != "name" ||
 		fromDb.Description != "description" ||
-		!fromDb.Enabled ||
+		fromDb.Enabled ||
 		fromDb.Owner != "admin" {
-		t.Errorf("Automation %d has invalid metadata", id)
+		t.Errorf("Automation '%d' has invalid metadata", id)
 	}
 }
 
@@ -47,13 +47,13 @@ func TestModifyAutomation(t *testing.T) {
 	id, err := CreateNewAutomation(
 		"name",
 		"description",
-		18,
-		56,
+		0,
+		0,
 		[]uint8{0},
 		"test",
 		"admin",
-		true,
-		database.TimingNormal,
+		false,
+		database.TimingSunrise,
 	)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -65,7 +65,7 @@ func TestModifyAutomation(t *testing.T) {
 		Description:    "description2",
 		CronExpression: "* * * * *",
 		HomescriptId:   "test",
-		Enabled:        false,
+		Enabled:        true,
 		TimingMode:     database.TimingNormal,
 	}); err != nil {
 		t.Error(err.Error())
@@ -77,25 +77,32 @@ func TestModifyAutomation(t *testing.T) {
 		return
 	}
 	if !found {
-		t.Errorf("Automation with id %d not found", id)
+		t.Errorf("Automation '%d' not found", id)
 		return
 	}
-	if temp.Name == "name2" && temp.Description == "description2" && temp.Enabled && temp.Owner == "admin" && temp.CronExpression == "* * * * *" {
+	if temp.Name != "name2" ||
+		temp.Description != "description2" ||
+		temp.CronDescription != "* * * * * *" ||
+		!temp.Enabled ||
+		temp.TimingMode != database.TimingNormal {
 		t.Errorf("invalid metadata of modified automation. Got: (Name: %s, Desc: %s, Enabled: %t, Cron: %s) | Want: (`name2`, `description2`, `true`, `* * * * *`)", temp.Name, temp.Description, temp.Enabled, temp.CronExpression)
+		return
 	}
 }
 
+// Test if the deletion signal is correctly sent to the database
+// For actual execution tests, have a look at `automation_test.go`
 func TestRemoveAutomation(t *testing.T) {
 	TestInit(t)
 	id, err := CreateNewAutomation(
 		"name",
 		"description",
-		18,
-		56,
+		0,
+		0,
 		[]uint8{0},
 		"test",
 		"admin",
-		true,
+		false,
 		database.TimingNormal,
 	)
 	if err != nil {
@@ -109,7 +116,7 @@ func TestRemoveAutomation(t *testing.T) {
 		return
 	}
 	if !found {
-		t.Errorf("Automation %d not found after creation", id)
+		t.Errorf("Automation '%d' not found after creation", id)
 		return
 	}
 	if err := RemoveAutomation(id); err != nil {
@@ -122,7 +129,7 @@ func TestRemoveAutomation(t *testing.T) {
 		return
 	}
 	if found {
-		t.Errorf("Automation %d still found after deletion", id)
+		t.Errorf("Automation '%d' still found after deletion", id)
 		return
 	}
 }
@@ -151,6 +158,7 @@ func TestGetUserAutomations(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
+	// Matches every existent automation against the return value of `GetUserAutomationById`
 	for _, item := range automations {
 		fromDb, found, err := GetUserAutomationById("admin", item.Id)
 		if err != nil {
@@ -158,7 +166,7 @@ func TestGetUserAutomations(t *testing.T) {
 			return
 		}
 		if !found {
-			t.Errorf("Automation with id %d could not be found after creation", item.Id)
+			t.Errorf("Automation '%d' could not be found after creation", item.Id)
 			return
 		}
 		if fromDb.Name != item.Name ||
