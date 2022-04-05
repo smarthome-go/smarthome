@@ -10,6 +10,9 @@ export default defineConfig({
       input: {
         login: resolve(__dirname, 'html/login.html'),
         dash: resolve(__dirname, 'html/dash.html'),
+        rooms: resolve(__dirname, 'html/rooms.html'),
+        profile: resolve(__dirname, 'html/profile.html'),
+        404: resolve(__dirname, 'html/404.html'),
       }
     },
   },

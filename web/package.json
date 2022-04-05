@@ -22,8 +22,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "prepare": "npm-run-all prepare:*",
-    "prepare:light-theme": "smui-theme compile src/theme-light.css -i src/theme",
-    "prepare:dark-theme": "smui-theme compile src/theme-dark.css -i src/theme/dark"
+    "prepare:light-theme": "smui-theme compile public/assets/theme-light.css -i src/theme",
+    "prepare:dark-theme": "smui-theme compile public/assets/theme-dark.css -i src/theme/dark"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^1.0.0-next.30",

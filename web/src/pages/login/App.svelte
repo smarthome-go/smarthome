@@ -59,7 +59,7 @@
 
 <svelte:head>
     {#if !darkTheme}
-        <link rel="stylesheet" href="/src/theme-light.css">
+        <link rel="stylesheet" href="/assets/theme-light.css">
     {/if}
 </svelte:head>
 <main>
