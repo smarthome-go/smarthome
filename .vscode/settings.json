@@ -2,6 +2,7 @@
     "makefile.extensionOutputFolder": "./.vscode",
     "cSpell.words": [
         "gocron",
+        "lnquy",
         "mysql"
     ],
     // Should only be enabled on a Desktop due to power draw
