@@ -57,7 +57,7 @@ func TestMain(m *testing.M) {
 			Description:         "Another Homescript for testing purposes",
 			QuickActionsEnabled: false,
 			SchedulerEnabled:    false,
-			Code:                "log('automation_trigger_modify', '', 0); switch('test_switch', on)",
+			Code:                "log('automation_trigger_modify', '', 0)",
 		}); err != nil {
 			panic(err.Error())
 		}
@@ -96,7 +96,6 @@ func TestAutomation(t *testing.T) {
 	event.InitLogger(log)
 	homescript.InitLogger(log)
 	hardware.InitLogger(log)
-
 	// Flush all logs before automation runs
 	if err := database.FlushAllLogs(); err != nil {
 		t.Error(err.Error())
@@ -126,7 +125,7 @@ func TestAutomation(t *testing.T) {
 		uint8(then.Hour()),
 		uint8(then.Minute()),
 		[]uint8{0, 1, 2, 3, 4, 5, 6},
-		"test",
+		"test_modify",
 		"admin",
 		true,
 		database.TimingNormal,
@@ -134,7 +133,6 @@ func TestAutomation(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
-
 	time.Sleep(time.Minute * 2)
 	logs, err := database.GetLogs()
 	if err != nil {

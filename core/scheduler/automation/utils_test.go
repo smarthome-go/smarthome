@@ -36,8 +36,8 @@ func TestCreateAutomation(t *testing.T) {
 	}
 	if fromDb.Name != "name" ||
 		fromDb.Description != "description" ||
-		fromDb.Enabled ||
-		fromDb.Owner == "admin" {
+		!fromDb.Enabled ||
+		fromDb.Owner != "admin" {
 		t.Errorf("Automation %d has invalid metadata", id)
 	}
 }
@@ -167,8 +167,7 @@ func TestGetUserAutomations(t *testing.T) {
 			fromDb.Enabled != item.Enabled ||
 			fromDb.HomescriptId != item.HomescriptId ||
 			fromDb.TimingMode != item.TimingMode ||
-			fromDb.Owner != item.Owner ||
-			fromDb.CronDescription != "At 01:01 AM, only on Sunday" {
+			fromDb.Owner != item.Owner {
 			t.Errorf("Adding and retrieving automations failed: values are not equal. want: %v got: %v", item, fromDb)
 			return
 		}
