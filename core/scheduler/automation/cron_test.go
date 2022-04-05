@@ -20,6 +20,7 @@ func TestGenerateCronExpression(t *testing.T) {
 		got, err := GenerateCronExpression(table.Hour, table.Minute, table.Days)
 		if err != nil {
 			t.Errorf("Test Failed: failed to generate cron expression")
+			return
 		}
 		if got != table.Result {
 			t.Errorf("Test (H: %d M: %d DAYS: %v) Failed: OUTPUT: %s", table.Hour, table.Minute, table.Days, table.Result)
@@ -32,6 +33,7 @@ func TestGenerateCronExpression(t *testing.T) {
 		days, err := GetDaysFromCronExpression(got)
 		if err != nil {
 			t.Error(err.Error())
+			return
 		}
 		for index, day := range days {
 			if day != table.Days[index] {
@@ -41,9 +43,11 @@ func TestGenerateCronExpression(t *testing.T) {
 		human, err := generateHumanReadableCronExpression(got)
 		if err != nil {
 			t.Error(err.Error())
+			return
 		}
 		if human != table.HumanResult {
 			t.Errorf("Test (H: %d M: %d DAYS: %v) Failed: human readable output should be: %s but got: %s", table.Hour, table.Minute, table.Days, table.HumanResult, human)
+			return
 		}
 	}
 }
