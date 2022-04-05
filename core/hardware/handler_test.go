@@ -96,6 +96,10 @@ func TestSetPower(t *testing.T) {
 			t.Errorf("Expected error: want: `%s` got: `%s`", req.Error, "")
 			return
 		}
+		if len(GetResults()) > 0 {
+			t.Errorf("Some results have not been consumed. want: 0 got: %d", len(GetResults()))
+			return
+		}
 		powerState, err := GetPowerState(req.Switch)
 		if err != nil {
 			t.Error(err.Error())
@@ -105,6 +109,11 @@ func TestSetPower(t *testing.T) {
 			t.Errorf("Power state unaffected: want: `%t` got: `%t`", req.Power, powerState)
 			return
 		}
+	}
+	// Errors of last running daemon should be 0 due to many daemons being used above
+	if GetJobsWithErrorInHandler() > 0 {
+		t.Errorf("Invalid jobs with error count. want: %d got: %d", 0, GetJobsWithErrorInHandler())
+		return
 	}
 	// When no node is registered, the request should not fail
 	if err := database.DeleteHardwareNode("http://localhost"); err != nil {
