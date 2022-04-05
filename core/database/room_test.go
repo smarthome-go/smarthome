@@ -38,10 +38,6 @@ func createMockSwitches() error {
 }
 
 func TestCreateRoom(t *testing.T) {
-	if err := createMockSwitches(); err != nil {
-		t.Error(err.Error())
-		return
-	}
 	table := []struct {
 		Room     Room
 		Listable bool // If the room will be in user rooms
@@ -95,12 +91,19 @@ func TestCreateRoom(t *testing.T) {
 			t.Errorf("Room %s was not found after creation", room.Room.Id)
 			return
 		}
-		rooms, err = listPersonalRoomsWithoutMetadata("admin")
+	}
+	// After room has been created, create switches
+	if err := createMockSwitches(); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	for _, room := range table {
+		rooms, err := listPersonalRoomsWithoutMetadata("admin")
 		if err != nil {
 			t.Error(err.Error())
 			return
 		}
-		valid = false
+		valid := false
 		for _, item := range rooms {
 			if item.Id == room.Room.Id &&
 				item.Name == room.Room.Name &&
@@ -109,7 +112,7 @@ func TestCreateRoom(t *testing.T) {
 			}
 		}
 		if valid != room.Listable { // Check if the room was listable despite being marked as not listable
-			t.Errorf("Room %s did not follow `lisable` spec", room.Room.Id)
+			t.Errorf("Room %s did not follow `listable` spec", room.Room.Id)
 			return
 		}
 		rooms, err = ListPersonalRoomsAll("admin")
@@ -124,7 +127,7 @@ func TestCreateRoom(t *testing.T) {
 			}
 		}
 		if valid != room.Listable {
-			t.Errorf("Room %s did not follow `lisable` spec", room.Room.Id)
+			t.Errorf("Room %s did not follow `listable` spec", room.Room.Id)
 			return
 		}
 	}

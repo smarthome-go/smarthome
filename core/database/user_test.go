@@ -3,6 +3,9 @@ package database
 import "testing"
 
 func createUserMockData() error {
+	if err := initDB(true); err != nil {
+		return err
+	}
 	// Create user
 	if err := AddUser(FullUser{
 		Username:         "delete_me",
@@ -144,8 +147,8 @@ func TestUserAvatarPath(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
-	if avatarpath != "./web/assets/avatar/default.png" {
-		t.Errorf("Unexpected avatar path: want: ./web/assets/avatar/default.png got: %s", avatarpath)
+	if avatarpath != "./resources/avatar/default.png" {
+		t.Errorf("Unexpected avatar path: want: ./resources/avatar/default.png got: %s", avatarpath)
 		return
 	}
 	if err := SetUserAvatarPath("delete_me", "invalid_path"); err != nil {
