@@ -10,7 +10,7 @@ import (
 	"github.com/MikMuellerDev/smarthome/core/database"
 )
 
-// The main scheduler which will run all automation jobs
+// The scheduler which will run all predefined automation jobs
 var scheduler *gocron.Scheduler
 
 var log *logrus.Logger
@@ -88,6 +88,7 @@ func Init() error {
 	if serverConfig.AutomationEnabled {
 		if err := ActivateAutomationSystem(); err != nil {
 			log.Error("Failed to activate automation system: could not activate persistent jobs: ", err.Error())
+			return err
 		}
 		log.Info("Successfully activated automation scheduler system")
 	} else {
