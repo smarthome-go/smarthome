@@ -28,6 +28,7 @@ export interface UserData {
     forename: string
     surname: string
     primaryColor: string
+    darkTheme: boolean
 }
 
 export const data: Writable<Data> = writable({
@@ -36,6 +37,7 @@ export const data: Writable<Data> = writable({
         primaryColor: '',
         surname: '',
         username: '',
+        darkTheme: true,
     },
     notificationCount: 0,
     notifications: []
