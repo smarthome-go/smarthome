@@ -4,8 +4,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/sirupsen/logrus"
+
+	"github.com/MikMuellerDev/smarthome/core/database"
 )
 
 type PowerJob struct {
