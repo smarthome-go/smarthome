@@ -10,7 +10,7 @@ import (
 // Identified by a username, has a password and an avatar path
 type FullUser struct {
 	Username         string `json:"username"`
-	Firstname        string `json:"firstname"`
+	Firstname        string `json:"forename"`
 	Surname          string `json:"surname"`
 	PrimaryColor     string `json:"primaryColor"`
 	Password         string `json:"password"`
@@ -21,7 +21,7 @@ type FullUser struct {
 
 type User struct {
 	Username         string `json:"username"`
-	Firstname        string `json:"firstname"`
+	Firstname        string `json:"forename"`
 	Surname          string `json:"surname"`
 	PrimaryColor     string `json:"primaryColor"`
 	SchedulerEnabled bool   `json:"schedulerEnabled"`
@@ -37,7 +37,7 @@ func createUserTable() error {
 	user(
 		Username VARCHAR(20) PRIMARY KEY,
 		Firstname VARCHAR(20) DEFAULT " ",
-		Surname VARCHAR(20)   DEFAULT " ", 
+		Surname VARCHAR(20)   DEFAULT " ",
 		PrimaryColor CHAR(7)  DEFAULT "#88ff70",
 		SchedulerEnabled BOOLEAN DEFAULT TRUE,
 		Password text,
@@ -101,7 +101,7 @@ func InsertUser(user FullUser) error {
 		user.Surname,
 		user.PrimaryColor,
 		user.Password,
-		"./web/assets/avatar/default.png",
+		"./resources/avatar/default.png",
 	)
 	if err != nil {
 		log.Error("Could not create user. Failed to execute query: ", err.Error())
@@ -134,7 +134,7 @@ func DeleteUser(username string) error {
 		return err
 	}
 	query, err := db.Prepare(`
-	DELETE FROM user WHERE Username=? 
+	DELETE FROM user WHERE Username=?
 	`)
 	if err != nil {
 		log.Error("Could not delete user. Failed to prepare query: ", err.Error())
@@ -200,7 +200,7 @@ func GetUserByUsername(username string) (User, bool, error) {
 	SELECT
 	Username, Firstname, Surname, PrimaryColor, SchedulerEnabled
 	FROM user
-	WHERE Username=? 
+	WHERE Username=?
 	`)
 	if err != nil {
 		log.Error("Could not get user by username: failed to prepare query: ", err.Error())
@@ -247,7 +247,7 @@ func GetAvatarPathByUsername(username string) (string, error) {
 	query, err := db.Prepare(`
 	SELECT AvatarPath
 	FROM user
-	WHERE Username=? 
+	WHERE Username=?
 	`)
 	if err != nil {
 		log.Error("Could not get avatar path by username: failed to prepare query: ", err.Error())

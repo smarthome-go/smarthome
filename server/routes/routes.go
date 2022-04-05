@@ -117,14 +117,7 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/camera/test", api.TestImageProxy).Methods("GET")
 
 	/// Static files ///
-	// For JS and CSS components
-	outFilepath := "./web/out/"
-	staticPathPrefix := "/static"
-	outFileserver := http.FileServer(http.Dir(outFilepath))
-	r.PathPrefix(staticPathPrefix).Handler(http.StripPrefix(staticPathPrefix, outFileserver))
-
-	// Other assets, such as PNG or JPEG
-	assetsFilepath := "./web/assets/"
+	assetsFilepath := "./web/dist/assets/"
 	assetsPathPrefix := "/assets"
 	assetsFileserver := http.FileServer(http.Dir(assetsFilepath))
 	r.PathPrefix(assetsPathPrefix).Handler(http.StripPrefix(assetsPathPrefix, assetsFileserver))

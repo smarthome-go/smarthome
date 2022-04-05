@@ -1,17 +1,12 @@
 {
   "name": "smarthome-web",
   "version": "0.0.18-beta",
-  "description": "Webinterface for Smarthome",
-  "main": "",
-  "scripts": {
-    "build:ts": "tsc",
-    "build:scss": "sass --no-source-map src/scss:out/css",
-    "build": "npm-run-all -s build:*",
-    "postbuild": "postcss out/css/**/*.css -ru autoprefixer cssnano --no-map",
-    "watch:ts": "tsc --watch --preserveWatchOutput",
-    "watch:scss": "sass --source-map -w src/scss:out/css",
-    "watch": "npm-run-all -p watch:*"
-  },
+  "description": "Web interface for Smarthome",
+  "author": "MikMuellerDev",
+  "contributors": [
+    "RubixDev"
+  ],
+  "license": "GPL-2.0-only",
   "repository": {
     "type": "git",
     "url": "github.com/MikMuellerDev/smarthome"
@@ -21,15 +16,39 @@
     "automation",
     "home"
   ],
-  "devDependencies": {
-    "autoprefixer": "^10.4.2",
-    "cssnano": "^5.0.16",
-    "npm-run-all": "^4.1.5",
-    "postcss": "^8.4.5",
-    "postcss-cli": "^9.1.0",
-    "sass": "^1.49.9",
-    "typescript": "^4.6.2"
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "prepare": "npm-run-all prepare:*",
+    "prepare:light-theme": "smui-theme compile public/assets/theme-light.css -i src/theme",
+    "prepare:dark-theme": "smui-theme compile public/assets/theme-dark.css -i src/theme/dark"
   },
-  "author": "MikMuellerDev",
-  "license": "GPL-2.0-only"
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^1.0.0-next.30",
+    "@tsconfig/svelte": "^2.0.1",
+    "autoprefixer": "^10.4.4",
+    "npm-run-all": "^4.1.5",
+    "postcss-preset-env": "^7.4.3",
+    "postcss-pseudoelements": "^2.1.1",
+    "sass": "^1.49.9",
+    "smui-theme": "^6.0.0-beta.15",
+    "svelte": "^3.46.4",
+    "svelte-preprocess": "^4.10.4",
+    "tslib": "^2.3.1",
+    "typescript": "^4.6.3",
+    "vite": "^2.8.6"
+  },
+  "dependencies": {
+    "@fortawesome/free-solid-svg-icons": "^6.1.1",
+    "@smui/button": "^6.0.0-beta.15",
+    "@smui/circular-progress": "^6.0.0-beta.15",
+    "@smui/icon-button": "^6.0.0-beta.15",
+    "@smui/linear-progress": "^6.0.0-beta.15",
+    "@smui/snackbar": "^6.0.0-beta.15",
+    "@smui/textfield": "^6.0.0-beta.15",
+    "material-icons": "^1.10.8",
+    "svelte-fa": "^2.4.0"
+  }
 }

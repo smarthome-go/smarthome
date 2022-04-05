@@ -1,0 +1,20 @@
+@use 'sass:color';
+
+@use '@material/theme/index' as theme with (
+  $background: #121212,
+  $surface: #121212,
+  $error: #cf6679,
+);
+
+html,
+body {
+  background-color: theme.$background;
+  color: theme.$on-surface;
+}
+
+:root {
+  --clr-text: #{theme.$on-surface};
+  --clr-error: #{theme.$error};
+  --clr-warn: #FFEE58; // Yellow 400
+  --clr-success: #B2FF59; // Light Green A200
+}

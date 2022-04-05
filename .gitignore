@@ -22,10 +22,6 @@ go.work
 .vscode/targets.log
 .vscode/dryrun.log
 
-# Web files
-web/node_modules
-web/out
-
 # Build files
 build
 bin
