@@ -15,5 +15,6 @@
     },
     "go.coverOnSingleTest": true,
     "go.coverOnTestPackage": true,
-    "go.testTimeout": "10m"
+    "go.testTimeout": "10m",
+    "go.disableConcurrentTests": true
 }
