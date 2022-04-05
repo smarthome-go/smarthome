@@ -40,7 +40,6 @@ docker/app
 
 # Setup file
 data/config/setup.json
-.vscode/settings.json
 docker/homescript
 docker/homescript_linux_amd64.tar.gz
 .vscode/configurationCache.log
