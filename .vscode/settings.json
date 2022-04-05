@@ -3,7 +3,8 @@
     "cSpell.words": [
         "gocron",
         "lnquy",
-        "mysql"
+        "mysql",
+        "osman"
     ],
     // Should only be enabled on a Desktop due to power draw
     // "go.coverOnSave": true,

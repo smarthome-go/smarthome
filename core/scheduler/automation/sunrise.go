@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/nathan-osman/go-sunrise"
+
+	"github.com/MikMuellerDev/smarthome/core/database"
 )
 
 // Utils for determining the times for sunrise and sunset
@@ -17,7 +18,7 @@ type SunTime struct {
 	Minute uint
 }
 
-// Returns (sunrise, sunset) based on the provided coordinates
+// Returns (sunrise, sunset) based on the provided coordinates which are stored in the server configuration
 func CalculateSunRiseSet(lat float32, lon float32) (SunTime, SunTime) {
 	sunRise, sunSet := sunrise.SunriseSunset(
 		float64(lat), float64(lon),
@@ -30,7 +31,7 @@ func CalculateSunRiseSet(lat float32, lon float32) (SunTime, SunTime) {
 		}
 }
 
-// Given a jobId and if it should use sunrise or sunset, this function modifies the running time of a given automation
+// Given a jobId and whether sunrise or sunset should is activated, the next execution time is modified
 func updateJobTime(id uint, useSunRise bool) error {
 	// Obtain the server's configuration in order to determine the latitude and longitude
 	config, found, err := database.GetServerConfiguration()
@@ -38,23 +39,24 @@ func updateJobTime(id uint, useSunRise bool) error {
 		log.Error("Failed to update job launch time: could not obtain the server's configuration")
 		return errors.New("could not update launch time: failed to obtain server config")
 	}
-	// Retrieve the current job in order to get its current cron expression (for the days)
+	// Retrieve the current job in order to get its current cron-expression (for the days)
 	job, found, err := database.GetAutomationById(id)
 	if err != nil || !found {
 		return errors.New("could not update launch time: invalid id supplied")
 	}
-	// Calculate both times
+	// Calculate both the sunrise and sunset time
 	sunRise, sunSet := CalculateSunRiseSet(config.Latitude, config.Longitude)
-	var finalTime SunTime // Will be set according to `useSunRise`
+	// Select the time which is desired
+	var finalTime SunTime
 	if useSunRise {
 		finalTime = sunRise
 	} else {
 		finalTime = sunSet
 	}
-	// Get the days from the cron expression
+	// Extract the days from the cron-expression
 	days, err := GetDaysFromCronExpression(job.CronExpression)
 	if err != nil {
-		log.Error(fmt.Sprintf("Failed to get days from cron expression '%s': Error: %s", job.CronExpression, err))
+		log.Error(fmt.Sprintf("Failed to extract days from cron-expression '%s': Error: %s", job.CronExpression, err))
 		return err
 	}
 	cronExpression, err := GenerateCronExpression(uint8(finalTime.Hour), uint8(finalTime.Minute), days)
@@ -69,9 +71,9 @@ func updateJobTime(id uint, useSunRise bool) error {
 		Enabled:        job.Enabled,
 		TimingMode:     job.TimingMode,
 	}); err != nil {
-		log.Error("Failed to update launch time of automation: could not modify automation: ", err.Error())
+		log.Error(fmt.Sprintf("Failed to update next execution time of automation '%d': could not modify automation: %s", id, err.Error()))
 		return err
 	}
-	log.Trace(fmt.Sprintf("Successfully updated the launch time of automation %d", id))
+	log.Trace(fmt.Sprintf("Successfully updated the next execution time of automation '%d'", id))
 	return nil
 }
