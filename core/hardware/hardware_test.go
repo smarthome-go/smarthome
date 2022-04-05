@@ -8,12 +8,14 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/MikMuellerDev/smarthome/core/database"
+	"github.com/MikMuellerDev/smarthome/core/event"
 )
 
 func TestMain(m *testing.M) {
 	log := logrus.New()
 	log.Level = logrus.FatalLevel
 	InitLogger(log)
+	event.InitLogger(log)
 	if err := initDB(true); err != nil {
 		panic(err.Error())
 	}

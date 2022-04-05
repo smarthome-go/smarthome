@@ -9,6 +9,7 @@ import (
 
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/core/event"
+	"github.com/MikMuellerDev/smarthome/core/hardware"
 	"github.com/MikMuellerDev/smarthome/core/homescript"
 )
 
@@ -76,6 +77,7 @@ func TestAutomation(t *testing.T) {
 	log.Level = logrus.FatalLevel
 	event.InitLogger(log)
 	homescript.InitLogger(log)
+	hardware.InitLogger(log)
 	// Flush all logs before automation runs
 	if err := database.FlushAllLogs(); err != nil {
 		t.Error(err.Error())
