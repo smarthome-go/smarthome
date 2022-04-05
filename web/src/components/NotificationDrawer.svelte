@@ -16,7 +16,12 @@
     async function load(showLoader = true) {
         if (showLoader) loading = true
         try {
-            $data.notifications = await (await fetch('/api/user/notification/list')).json()
+            const res = await (await fetch('/api/user/notification/list')).json()
+            if (res.success === false) throw new Error()
+            $data.notifications = res
+        } catch {
+            $infoBar.message = 'Could not refresh notifications'
+            $infoBar.bar.open()
         } finally { loading = false }
     }
     async function deleteAll() {
