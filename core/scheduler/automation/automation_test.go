@@ -17,13 +17,16 @@ func TestMain(m *testing.M) {
 	log := logrus.New()
 	log.Level = logrus.FatalLevel
 	InitLogger(log)
-	if err := initDB(); err != nil {
+	if err := initDB(true); err != nil {
 		panic(err.Error())
 	}
 	if err := database.CreateRoom("test_room", "", ""); err != nil {
 		panic(err.Error())
 	}
 	if err := database.CreateSwitch("test_switch", "", "test_room", 0); err != nil {
+		panic(err.Error())
+	}
+	if err := database.CreateSwitch("test_switch_modify", "", "test_room", 0); err != nil {
 		panic(err.Error())
 	}
 	_, doesExists, err := database.GetUserHomescriptById("test", "admin")
@@ -39,7 +42,7 @@ func TestMain(m *testing.M) {
 			Description:         "A Homescript for testing purposes",
 			QuickActionsEnabled: false,
 			SchedulerEnabled:    false,
-			Code:                "log('automation_trigger', '', 0); switch('test_switch', on)",
+			Code:                "switch('test_switch', on)",
 		}); err != nil {
 			panic(err.Error())
 		}
@@ -57,7 +60,7 @@ func TestMain(m *testing.M) {
 			Description:         "Another Homescript for testing purposes",
 			QuickActionsEnabled: false,
 			SchedulerEnabled:    false,
-			Code:                "log('automation_trigger_modify', '', 0)",
+			Code:                "switch('test_switch_modify', on)",
 		}); err != nil {
 			panic(err.Error())
 		}
@@ -119,43 +122,63 @@ func TestAutomation(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
-	if _, err := CreateNewAutomation(
+	modifyId, err := CreateNewAutomation(
 		"name",
 		"description",
 		uint8(then.Hour()),
 		uint8(then.Minute()),
 		[]uint8{0, 1, 2, 3, 4, 5, 6},
-		"test_modify",
+		"test",
 		"admin",
 		true,
 		database.TimingNormal,
-	); err != nil {
-		t.Error(err.Error())
-		return
-	}
-	time.Sleep(time.Minute * 2)
-	logs, err := database.GetLogs()
+	)
 	if err != nil {
 		t.Error(err.Error())
 		return
 	}
+	// Modify second automation to use the other homescript file
+	cronExpression, err := GenerateCronExpression(uint8(then.Hour()), uint8(then.Minute()), []uint8{0, 1, 2, 3, 4, 5, 6})
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if err := ModifyAutomationById(modifyId,
+		database.AutomationWithoutIdAndUsername{
+			Name:           "name",
+			Description:    "description",
+			CronExpression: cronExpression,
+			HomescriptId:   "test_modify",
+			Enabled:        true,
+			TimingMode:     database.TimingNormal,
+		}); err != nil {
+		t.Error(err.Error())
+		return
+	}
 	valid := false
-	for _, l := range logs {
-		if l.Name == "automation_trigger" && l.Level == 0 {
+	for i := 0; i < 30; i++ {
+		time.Sleep(time.Second * 5)
+		power, err := database.GetPowerStateOfSwitch("test_switch")
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+		if power {
 			valid = true
+			break
 		}
 	}
 	if !valid {
-		t.Error("Log from automation not found, could not verify that automation has been executed")
+		t.Error("Power of `test_switch` did not change")
 		return
 	}
-	power, err := database.GetPowerStateOfSwitch("test_switch")
+	power, err := database.GetPowerStateOfSwitch("test_switch_modify")
 	if err != nil {
 		t.Error(err.Error())
 		return
 	}
 	if !power {
-		t.Error("Power did not change: want: true got: false")
+		t.Error("Power of `test_switch_modify` did not change: want: true got: false")
 		return
 	}
 }

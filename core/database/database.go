@@ -37,6 +37,11 @@ func GetDatabaseStats() DBStatus {
 	}
 }
 
+// Closes the database
+func Shutdown() error {
+	return db.Close()
+}
+
 func DeleteTables() error {
 	tables := []string{
 		"SET FOREIGN_KEY_CHECKS = 0",

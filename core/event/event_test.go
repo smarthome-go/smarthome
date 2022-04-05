@@ -100,23 +100,40 @@ func TestDeleteLogs(t *testing.T) {
 }
 
 func TestHelperFunctions(t *testing.T) {
-	if err := database.FlushAllLogs(); err != nil {
-		t.Error(err.Error())
-		return
+	for i := 0; i < 2; i++ {
+		if err := database.FlushAllLogs(); err != nil {
+			t.Error(err.Error())
+			return
+		}
+		if i == 1 {
+			// Simulate database failure after one iteration
+			if err := database.Shutdown(); err != nil {
+				t.Error(err.Error())
+				return
+			}
+		}
+		Trace("", "")
+		Debug("", "")
+		Info("", "")
+		Warn("", "")
+		Error("", "")
+		Fatal("", "")
+		if i == 1 {
+			return
+		}
+		logs, err := database.GetLogs()
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+		if len(logs) != 6 {
+			t.Errorf("Log count is not expected, want: 6 got: %d", len(logs))
+			return
+		}
 	}
-	Trace("", "")
-	Debug("", "")
-	Info("", "")
-	Warn("", "")
-	Error("", "")
-	Fatal("", "")
-	logs, err := database.GetLogs()
-	if err != nil {
+	// Start database again
+	if err := initDB(true); err != nil {
 		t.Error(err.Error())
-		return
-	}
-	if len(logs) != 6 {
-		t.Errorf("Log count is not expected, want: 6 got: %d", len(logs))
 		return
 	}
 }
