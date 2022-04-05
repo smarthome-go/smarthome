@@ -32,7 +32,7 @@ func CreateNewAutomation(
 	owner string,
 	enabled bool,
 	timingMode database.TimingMode,
-) error {
+) (uint, error) {
 	// Generate a cron expression based on the input data
 	// The `days` slice should not be longer than 7
 	cronExpression, err := GenerateCronExpression(
@@ -42,7 +42,7 @@ func CreateNewAutomation(
 	)
 	if err != nil {
 		log.Error("Could not create automation: failed to generate cron expression: unexpected input: ", err.Error())
-		return err
+		return 0, err
 	}
 	// Insert the automation into the database
 	newAutomationId, err := database.CreateNewAutomation(
@@ -58,12 +58,12 @@ func CreateNewAutomation(
 	)
 	if err != nil {
 		log.Error("Could not create automation: database failure: ", err.Error())
-		return err
+		return 0, err
 	}
 	cronDescription, err := generateHumanReadableCronExpression(cronExpression)
 	if err != nil {
 		log.Error("Could not create automation: failed to generate human readable string: ", err.Error())
-		return err
+		return 0, err
 	}
 	if enabled {
 		if err := user.Notify(
@@ -73,7 +73,7 @@ func CreateNewAutomation(
 			1,
 		); err != nil {
 			log.Error("Failed to notify user: ", err.Error())
-			return err
+			return 0, err
 		}
 		log.Debug(fmt.Sprintf("Created new automation '%s' for user '%s. It will run %s", name, owner, cronDescription))
 	} else {
@@ -84,18 +84,18 @@ func CreateNewAutomation(
 			2,
 		); err != nil {
 			log.Error("Failed to notify user: ", err.Error())
-			return err
+			return 0, err
 		}
 		log.Trace(fmt.Sprintf("Added automation '%d' which is currently disabled, not adding to scheduler", newAutomationId))
-		return nil
+		return newAutomationId, nil
 	}
 	serverConfig, found, err := database.GetServerConfiguration()
 	if err != nil || !found {
 		log.Error("Failed to setup new automation: could not retrieve server configuration due to database failure")
-		return errors.New("failed to setup new automation: could not retrieve server configuration due to database failure")
+		return 0, errors.New("failed to setup new automation: could not retrieve server configuration due to database failure")
 	}
 	if !serverConfig.AutomationEnabled { // If the automation scheduler is disabled, do not add the scheduler
-		return nil
+		return newAutomationId, nil
 
 	}
 	if timingMode != database.TimingNormal {
@@ -104,19 +104,19 @@ func CreateNewAutomation(
 		automationJob.Tag(fmt.Sprintf("%d", newAutomationId))
 		if _, err := automationJob.Do(func() {}); err != nil {
 			log.Error("Failed to register cron job: ", err.Error())
-			return err
+			return 0, err
 		}
 		// If the timing mode is set to either `sunrise` or `sunset`, do not activate the automation, update it instead
-		return updateJobTime(newAutomationId, timingMode == database.TimingSunrise)
+		return newAutomationId, updateJobTime(newAutomationId, timingMode == database.TimingSunrise)
 	}
 	// Prepare the job for go-cron
 	automationJob := scheduler.Cron(cronExpression)
 	automationJob.Tag(fmt.Sprintf("%d", newAutomationId))
 	if _, err = automationJob.Do(automationRunnerFunc, newAutomationId); err != nil {
 		log.Error("Failed to register cron job: ", err.Error())
-		return err
+		return 0, err
 	}
-	return nil
+	return newAutomationId, nil
 }
 
 // Removes an automation from the database and prevents its further execution

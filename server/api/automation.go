@@ -123,7 +123,7 @@ func CreateNewAutomation(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to create new automation", Error: "invalid hour and / or minute"})
 		return
 	}
-	if err := automation.CreateNewAutomation(
+	id, err := automation.CreateNewAutomation(
 		request.Name,
 		request.Description,
 		uint8(request.Hour),
@@ -133,13 +133,14 @@ func CreateNewAutomation(w http.ResponseWriter, r *http.Request) {
 		username,
 		request.Enabled,
 		request.TimingMode,
-	); err != nil {
+	)
+	if err != nil {
 		log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		Res(w, Response{Success: false, Message: "failed to create new automation", Error: "backend failure"})
 		return
 	}
-	Res(w, Response{Success: true, Message: "successfully added new automation"})
+	Res(w, Response{Success: true, Message: fmt.Sprintf("successfully added new automation %d", id)})
 }
 
 // Stops, then removes the given automation from the system

@@ -20,14 +20,14 @@ func TestMain(m *testing.M) {
 	if err := initDB(); err != nil {
 		panic(err.Error())
 	}
-	_, doesExists, err := database.GetUserHomescriptById("test", "admin")
-	if err != nil {
-		panic(err.Error())
-	}
 	if err := database.CreateRoom("test_room", "", ""); err != nil {
 		panic(err.Error())
 	}
 	if err := database.CreateSwitch("test_switch", "", "test_room", 0); err != nil {
+		panic(err.Error())
+	}
+	_, doesExists, err := database.GetUserHomescriptById("test", "admin")
+	if err != nil {
 		panic(err.Error())
 	}
 	if !doesExists {
@@ -40,6 +40,24 @@ func TestMain(m *testing.M) {
 			QuickActionsEnabled: false,
 			SchedulerEnabled:    false,
 			Code:                "log('automation_trigger', '', 0); switch('test_switch', on)",
+		}); err != nil {
+			panic(err.Error())
+		}
+	}
+	_, doesExists, err = database.GetUserHomescriptById("test_modify", "admin")
+	if err != nil {
+		panic(err.Error())
+	}
+	if !doesExists {
+		// Create another Homescript
+		if err := database.CreateNewHomescript(database.Homescript{
+			Id:                  "test_modify",
+			Owner:               "admin",
+			Name:                "Testing 2",
+			Description:         "Another Homescript for testing purposes",
+			QuickActionsEnabled: false,
+			SchedulerEnabled:    false,
+			Code:                "log('automation_trigger_modify', '', 0); switch('test_switch', on)",
 		}); err != nil {
 			panic(err.Error())
 		}
@@ -78,6 +96,7 @@ func TestAutomation(t *testing.T) {
 	event.InitLogger(log)
 	homescript.InitLogger(log)
 	hardware.InitLogger(log)
+
 	// Flush all logs before automation runs
 	if err := database.FlushAllLogs(); err != nil {
 		t.Error(err.Error())
@@ -87,7 +106,7 @@ func TestAutomation(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
-	if err := CreateNewAutomation(
+	if _, err := CreateNewAutomation(
 		"name",
 		"description",
 		uint8(then.Hour()),
@@ -101,6 +120,21 @@ func TestAutomation(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
+	if _, err := CreateNewAutomation(
+		"name",
+		"description",
+		uint8(then.Hour()),
+		uint8(then.Minute()),
+		[]uint8{0, 1, 2, 3, 4, 5, 6},
+		"test",
+		"admin",
+		true,
+		database.TimingNormal,
+	); err != nil {
+		t.Error(err.Error())
+		return
+	}
+
 	time.Sleep(time.Minute * 2)
 	logs, err := database.GetLogs()
 	if err != nil {
