@@ -98,6 +98,6 @@ func TestServer(t *testing.T) {
 
 	r := routes.NewRouter()
 	middleware.Init(true)
-	templates.LoadTemplates("./web/html/**/*.html")
+	templates.LoadTemplates("./web/dist/html/*.html")
 	http.Handle("/", r)
 }
