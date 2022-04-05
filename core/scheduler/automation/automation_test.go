@@ -133,6 +133,7 @@ func initDB(args ...bool) error {
 	return nil
 }
 
+// Todo: organize function
 func TestAutomation(t *testing.T) {
 	now := time.Now()
 	then := now.Add(time.Minute)
