@@ -16,6 +16,7 @@ type FullUser struct {
 	Password         string `json:"password"`
 	AvatarPath       string `json:"avatarPath"`
 	SchedulerEnabled bool   `json:"schedulerEnabled"`
+	DarkTheme        bool   `json:"darkTheme"`
 	// TODO: add bg image and frontend themes
 }
 
@@ -25,6 +26,7 @@ type User struct {
 	Surname          string `json:"surname"`
 	PrimaryColor     string `json:"primaryColor"`
 	SchedulerEnabled bool   `json:"schedulerEnabled"`
+	DarkTheme        bool   `json:"darkTheme"`
 }
 
 // Used during <Init> of the database, only called once
@@ -40,6 +42,7 @@ func createUserTable() error {
 		Surname VARCHAR(20)   DEFAULT " ",
 		PrimaryColor CHAR(7)  DEFAULT "#88ff70",
 		SchedulerEnabled BOOLEAN DEFAULT TRUE,
+		DarkTheme BOOLEAN DEFAULT TRUE,
 		Password text,
 		AvatarPath text
 	)
@@ -57,7 +60,7 @@ func createUserTable() error {
 func ListUsers() ([]User, error) {
 	query := `
 	SELECT
-	Username, Firstname, Surname, PrimaryColor, SchedulerEnabled
+	Username, Firstname, Surname, PrimaryColor, SchedulerEnabled, DarkTheme
 	FROM user`
 	res, err := db.Query(query)
 	if err != nil {
@@ -73,6 +76,7 @@ func ListUsers() ([]User, error) {
 			&user.Surname,
 			&user.PrimaryColor,
 			&user.SchedulerEnabled,
+			&user.DarkTheme,
 		)
 		if err != nil {
 			log.Error("Failed to scan user values from database results: ", err.Error())
@@ -88,8 +92,8 @@ func ListUsers() ([]User, error) {
 func InsertUser(user FullUser) error {
 	query, err := db.Prepare(`
 	INSERT INTO
-	user(Username, Firstname, Surname, PrimaryColor, Password, AvatarPath, SchedulerEnabled)
-	VALUES(?, ?, ?, ?, ?, ?, DEFAULT)
+	user(Username, Firstname, Surname, PrimaryColor, Password, AvatarPath, SchedulerEnabled, DarkTheme)
+	VALUES(?, ?, ?, ?, ?, ?, DEFAULT, DEFAULT)
 	ON DUPLICATE KEY UPDATE Password=VALUES(Password)`)
 	if err != nil {
 		log.Error("Could not create user. Failed to prepare query: ", err.Error())
@@ -198,7 +202,7 @@ func DoesUserExist(username string) (bool, error) {
 func GetUserByUsername(username string) (User, bool, error) {
 	query, err := db.Prepare(`
 	SELECT
-	Username, Firstname, Surname, PrimaryColor, SchedulerEnabled
+	Username, Firstname, Surname, PrimaryColor, SchedulerEnabled, DarkTheme
 	FROM user
 	WHERE Username=?
 	`)
@@ -213,6 +217,7 @@ func GetUserByUsername(username string) (User, bool, error) {
 		&user.Surname,
 		&user.PrimaryColor,
 		&user.SchedulerEnabled,
+		&user.DarkTheme,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return User{}, false, nil
