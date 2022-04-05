@@ -14,7 +14,8 @@ type Setup struct {
 	Rooms         []database.Room         `json:"rooms"`
 }
 
-const setupPath = "./data/config/setup.json"
+// Is again a variable for testing
+var setupPath = "./data/config/setup.json"
 
 // TODO: add some sort of web import / export later
 // Returns the setup struct, a bool that indicates that a setup file has been read and an error
@@ -51,11 +52,11 @@ func RunSetup() error {
 		return nil
 	}
 	if err := createRoomsInDatabase(setup.Rooms); err != nil {
-		log.Error("Aboring setup: could not create room entries in database: ", err.Error())
+		log.Error("Aborting setup: could not create room entries in database: ", err.Error())
 		return err
 	}
 	if err := createHardwareNodesInDatabase(setup.HardwareNodes); err != nil {
-		log.Error("Aboring setup: could not create hardware node entries in database: ", err.Error())
+		log.Error("Aborting setup: could not create hardware node entries in database: ", err.Error())
 		return err
 	}
 	log.Info("Successfully ran setup")
@@ -87,9 +88,11 @@ func createRoomsInDatabase(rooms []database.Room) error {
 func createHardwareNodesInDatabase(nodes []database.HardwareNode) error {
 	for _, node := range nodes {
 		if err := database.CreateHardwareNode(
-			node.Name,
-			node.Url,
-			node.Token,
+			database.HardwareNode{
+				Name:  node.Name,
+				Url:   node.Url,
+				Token: node.Token,
+			},
 		); err != nil {
 			log.Error("Could not create hardware nodes from setup file: ", err.Error())
 			return err

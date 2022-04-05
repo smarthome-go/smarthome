@@ -12,7 +12,7 @@ require (
 )
 
 require (
-	github.com/MikMuellerDev/homescript v0.2.4-beta
+	github.com/MikMuellerDev/homescript v0.2.5-beta
 	github.com/lnquy/cron v1.1.1
 )
 
@@ -24,7 +24,8 @@ require (
 require (
 	github.com/go-co-op/gocron v1.13.0
 	github.com/gorilla/securecookie v1.1.1
+	github.com/nathan-osman/go-sunrise v1.0.0
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
 	golang.org/x/image v0.0.0-20220302094943-723b81ca9867
-	golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1 // indirect
+	golang.org/x/sys v0.0.0-20220403020550-483a9cbc67c0 // indirect
 )

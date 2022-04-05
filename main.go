@@ -9,12 +9,15 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/MikMuellerDev/smarthome/core/config"
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/core/event"
 	"github.com/MikMuellerDev/smarthome/core/hardware"
 	"github.com/MikMuellerDev/smarthome/core/homescript"
 	"github.com/MikMuellerDev/smarthome/core/scheduler/automation"
+	"github.com/MikMuellerDev/smarthome/core/scheduler/scheduler"
 	"github.com/MikMuellerDev/smarthome/core/user"
 	"github.com/MikMuellerDev/smarthome/core/utils"
 	"github.com/MikMuellerDev/smarthome/server/api"
@@ -22,13 +25,12 @@ import (
 	"github.com/MikMuellerDev/smarthome/server/routes"
 	"github.com/MikMuellerDev/smarthome/server/templates"
 	"github.com/MikMuellerDev/smarthome/services/camera"
-	"github.com/sirupsen/logrus"
 )
 
 var port = 8082 // Port used during development, can be overridden by config file or environment variables
 
 func main() {
-	utils.Version = "0.0.17-beta"
+	utils.Version = "0.0.18-beta"
 
 	startTime := time.Now()
 	// Create logger
@@ -69,6 +71,7 @@ func main() {
 	event.InitLogger(log)
 	homescript.InitLogger(log)
 	automation.InitLogger(log)
+	scheduler.InitLogger(log)
 
 	// Read config file
 	if err := config.ReadConfigFile(); err != nil {
@@ -159,31 +162,6 @@ func main() {
 		}
 	}
 
-	// BEGIN REMOVE ME
-	tmp, err := database.CreateNewSchedule(database.Schedule{
-		Name:           "test",
-		Owner:          "admin",
-		Hour:           1,
-		Minute:         1,
-		HomescriptCode: "print('hello')",
-	})
-	if err != nil {
-		log.Error(err.Error())
-	}
-	fmt.Println(database.GetScheduleById(tmp))
-	fmt.Println(database.GetUserSchedules("admin"))
-	fmt.Println(database.GetSchedules())
-	if err := database.ModifySchedule(tmp, database.ScheduleWithoudIdAndUsername{
-		Name:           "test 2",
-		Hour:           2,
-		Minute:         2,
-		HomescriptCode: "exit(12)",
-	}); err != nil {
-		log.Error(err.Error())
-	}
-	fmt.Println(database.DeleteScheduleById(tmp))
-	// END REMOVE ME
-
 	// Always flush old logs
 	// TODO: move deletion of old logs to a scheduler
 	log.Info("Flushing logs older than 30 days")
@@ -191,7 +169,14 @@ func main() {
 		log.Fatal("Failed to flush logs older that 30 days: ", err.Error())
 	}
 
-	automation.Init() // Initializes the automation scheduler
+	// Initializes the automation scheduler
+	if err := automation.Init(); err != nil {
+		log.Fatal("Failed to activate automation system: ", err.Error())
+	}
+	// Initializes the normal scheduler
+	if err := scheduler.Init(); err != nil {
+		log.Fatal("Failed to activate scheduler system: ", err.Error())
+	}
 
 	r := routes.NewRouter()
 	middleware.Init(configStruct.Server.Production)
@@ -199,7 +184,7 @@ func main() {
 	http.Handle("/", r)
 
 	event.Info("System Started", fmt.Sprintf("The Smarthome server completed startup in %.2f seconds", time.Since(startTime).Seconds()))
-	log.Info(fmt.Sprintf("Smarthome v%s is running on port %d", utils.Version, port))
+	log.Info(fmt.Sprintf("Smarthome v%s is running on http://localhost:%d", utils.Version, port))
 	if err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
 		panic(err)
 	}

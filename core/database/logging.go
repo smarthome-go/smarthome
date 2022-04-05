@@ -3,7 +3,17 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"time"
 )
+
+// internal logging-related
+type LogEvent struct {
+	Id          uint      `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Level       int       `json:"level"`
+	Date        time.Time `json:"date"`
+}
 
 // Creates (if not exists) the table containing internal (mostly non-error) loggin events
 // For example a user logging in or altering power states
@@ -96,7 +106,7 @@ func GetLogs() ([]LogEvent, error) {
 	res, err := db.Query(query)
 	if err != nil {
 		log.Error("Could not get all logs: failed to execute query: ", err.Error())
-		return []LogEvent{}, err
+		return nil, err
 	}
 	logs := make([]LogEvent, 0)
 	for res.Next() {
@@ -111,10 +121,11 @@ func GetLogs() ([]LogEvent, error) {
 		)
 		if err != nil {
 			log.Error("Could not list all logs: Failed to scan results ", err.Error())
-			return []LogEvent{}, err
+			return nil, err
 		}
 		if !logTime.Valid {
 			log.Error("Invalid time column when scanning logs")
+			return nil, fmt.Errorf("invalid time column when scanning logs")
 		} else {
 			logItem.Date = logTime.Time
 			logs = append(logs, logItem)

@@ -1,6 +1,7 @@
 package database
 
 import (
+	"database/sql"
 	"fmt"
 )
 
@@ -37,7 +38,7 @@ func createHardwareNodeTable() error {
 }
 
 // Adds a new hardware node to the database, if the node already exists (same url), its name will be updated
-func CreateHardwareNode(name string, url string, token string) error {
+func CreateHardwareNode(node HardwareNode) error {
 	query, err := db.Prepare(`
 	INSERT INTO
 	hardware(
@@ -51,7 +52,7 @@ func CreateHardwareNode(name string, url string, token string) error {
 		log.Error("Failed to create a new node: prepearing query failed: ", err.Error())
 		return err
 	}
-	res, err := query.Exec(url, name, token)
+	res, err := query.Exec(node.Url, node.Name, node.Token)
 	if err != nil {
 		log.Error("Failed to create a new node: executing query failed: ", err.Error())
 		return err
@@ -62,7 +63,7 @@ func CreateHardwareNode(name string, url string, token string) error {
 		return err
 	}
 	if rowsAffected > 0 {
-		log.Debug(fmt.Sprintf("Added hardware node `%s` with url `%s`", name, url))
+		log.Debug(fmt.Sprintf("Added hardware node `%s` with url `%s`", node.Name, node.Url))
 	}
 	defer query.Close()
 	return nil
@@ -134,4 +135,59 @@ func GetHardwareNodes() ([]HardwareNode, error) {
 	return nodes, nil
 }
 
-// TODO: add modify node function
+// Returns a hardware node given its url
+func GetHardwareNodeByUrl(url string) (HardwareNode, bool, error) {
+	query, err := db.Prepare(`
+	SELECT
+	Url, Online, Enabled, Name, Token
+	FROM hardware
+	WHERE Url=?
+	`)
+	if err != nil {
+		log.Error("Failed to get Hardware node by url: preparing query failed: ", err.Error())
+		return HardwareNode{}, false, err
+	}
+	var node HardwareNode
+	if err := query.QueryRow(url).Scan(
+		&node.Url,
+		&node.Online,
+		&node.Enabled,
+		&node.Name,
+		&node.Token,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return HardwareNode{}, false, nil
+		}
+		log.Error("Failed to get Hardware node by url: executing query failed: ", err.Error())
+		return HardwareNode{}, false, err
+	}
+	return node, true, nil
+}
+
+// Changes the metadata of a given node
+// Does not affect the online boolean
+// For changing the online status, use `SetNodeOnline`
+func ModifyHardwareNode(url string, node HardwareNode) error {
+	query, err := db.Prepare(`
+	UPDATE hardware
+	SET
+	Enabled=?,
+	Name=?,
+	Token=?
+	WHERE Url=?
+	`)
+	if err != nil {
+		log.Error("Failed to modify Hardware node: preparing query failed: ", err.Error())
+		return err
+	}
+	if _, err := query.Exec(
+		node.Enabled,
+		node.Name,
+		node.Token,
+		url,
+	); err != nil {
+		log.Error("Failed to modify Hardware node: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}

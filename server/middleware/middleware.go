@@ -1,14 +1,14 @@
 package middleware
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/core/user"
-	"github.com/sirupsen/logrus"
 )
 
 var log *logrus.Logger
@@ -21,6 +21,7 @@ type Response struct {
 	Success bool   `json:"success"`
 	Message string `json:"message"`
 	Error   string `json:"error"`
+	Time    string `json:"time"`
 }
 
 // Checks if a user is already logged in (session)
@@ -55,7 +56,7 @@ func Auth(handler http.HandlerFunc) http.HandlerFunc {
 			if err := session.Save(r, w); err != nil {
 				log.Error("Failed to save session: ", err.Error())
 				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to authenticate", Error: "could not save session after successful authentication"})
+				Res(w, Response{Success: false, Message: "failed to authenticate", Error: "could not save session after successful authentication"})
 			}
 			handler.ServeHTTP(w, r)
 			return
@@ -86,7 +87,7 @@ func ApiAuth(handler http.HandlerFunc) http.HandlerFunc {
 			log.Trace("Invalid Session, not serving", r.URL.Path)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(Response{false, "access denied, please authenticate", "authentication required"})
+			Res(w, Response{Success: false, Message: "access denied, please authenticate", Error: "authentication required"})
 			return
 		}
 		// TODO: implement a check that prevents a user from authenticating with the same credentials multiple times
@@ -95,7 +96,7 @@ func ApiAuth(handler http.HandlerFunc) http.HandlerFunc {
 			// The database could not verify the given credentials
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusServiceUnavailable)
-			json.NewEncoder(w).Encode(Response{false, "could not authenticate: failed to validate credentials", "database failure"})
+			Res(w, Response{Success: false, Message: "could not authenticate: failed to validate credentials", Error: "database failure"})
 			return
 		}
 		if validCredentials {
@@ -106,7 +107,7 @@ func ApiAuth(handler http.HandlerFunc) http.HandlerFunc {
 			if err := session.Save(r, w); err != nil {
 				log.Error("Failed to save session: ", err.Error())
 				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to authenticate", Error: "could not save session after successful authentication"})
+				Res(w, Response{Success: false, Message: "failed to authenticate", Error: "could not save session after successful authentication"})
 			}
 			log.Trace(fmt.Sprintf("valid query: serving %s", r.URL.Path))
 			handler.ServeHTTP(w, r)
@@ -116,7 +117,7 @@ func ApiAuth(handler http.HandlerFunc) http.HandlerFunc {
 			log.Trace("bad credentials, invalid Session: not serving", r.URL.Path)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(Response{false, "access denied, wrong username or password", "invalid credentials"})
+			Res(w, Response{Success: false, Message: "access denied, wrong username or password", Error: "invalid credentials"})
 			return
 		}
 	}
@@ -125,12 +126,15 @@ func ApiAuth(handler http.HandlerFunc) http.HandlerFunc {
 // Parses the session and returns the currently logged in user
 // If no user is logged in but is trying to authenticate with URL-queries,
 // this function will call `getUserFromQuery` internally in order to get the username
-func GetUserFromCurrentSession(r *http.Request) (string, error) {
+func GetUserFromCurrentSession(w http.ResponseWriter, r *http.Request) (string, error) {
 	session, err := Store.Get(r, "session")
 	if err != nil {
 		username, validCredentials, err := getUserFromQuery(r)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			log.Error("Could not get session from request: ", err.Error())
+			w.WriteHeader(http.StatusBadRequest)
+			Res(w, Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 			return "", err
 		}
 		if !validCredentials {
@@ -144,10 +148,16 @@ func GetUserFromCurrentSession(r *http.Request) (string, error) {
 	}
 	usernameTemp, ok := session.Values["username"]
 	if !ok {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return "", errors.New("could not obtain username from session")
 	}
 	username, ok := usernameTemp.(string)
 	if !ok {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return "", errors.New("could not obtain username from session")
 	}
 	return username, nil
@@ -177,26 +187,25 @@ func getUserFromQuery(r *http.Request) (string, bool, error) {
 // Make sure that the permission to check exists before checking it here
 func Perm(handler http.HandlerFunc, permissionToCheck database.PermissionType) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		username, err := GetUserFromCurrentSession(r)
+		username, err := GetUserFromCurrentSession(w, r)
 		log.Trace(fmt.Sprintf("Checking permission `%s` for user `%s`", permissionToCheck, username))
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
-			log.Error("failed to get username from query")
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(Response{false, "access denied, invalid session", "clear your browser's cookies"})
+			w.WriteHeader(http.StatusInternalServerError)
+			Res(w, Response{Success: false, Message: "access denied, invalid session", Error: "clear your browser's cookies"})
 			return
 		}
 		hasPermission, err := database.UserHasPermission(username, permissionToCheck)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusServiceUnavailable)
-			json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "failed to check permission to access this ressource"})
+			Res(w, Response{Success: false, Message: "database error", Error: "failed to check permission to access this ressource"})
 			return
 		}
 		if !hasPermission {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(Response{Success: false, Message: "permission denied", Error: "missing permission to access this ressource, contact your administrator"})
+			Res(w, Response{Success: false, Message: "permission denied", Error: "missing permission to access this ressource, contact your administrator"})
 			return
 		}
 		handler.ServeHTTP(w, r)

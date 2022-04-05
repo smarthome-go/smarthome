@@ -1,0 +1,19 @@
+{
+    "makefile.extensionOutputFolder": "./.vscode",
+    "cSpell.words": [
+        "gocron",
+        "mysql"
+    ],
+    // Should only be enabled on a Desktop due to power draw
+    // "go.coverOnSave": true,
+    "go.coverageDecorator": {
+        "type": "highlight",
+        "coveredHighlightColor": "rgba(13, 188, 138, 0.2)",
+        "uncoveredHighlightColor": "rgba(128,64,64,0.8)",
+        "coveredGutterStyle": "blockgreen",
+        "uncoveredGutterStyle": "blockred"
+    },
+    "go.coverOnSingleTest": true,
+    "go.coverOnTestPackage": true,
+    "go.testTimeout": "10m"
+}

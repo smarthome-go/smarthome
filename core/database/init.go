@@ -19,7 +19,7 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 		return err
 	}
 	db = dbTemp
-	if err := CreateConfigTable(); err != nil {
+	if err := createConfigTable(); err != nil {
 		return err
 	}
 	if err := createUserTable(); err != nil {
@@ -74,6 +74,7 @@ func createDatabase() error {
 	dbTemp, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%d)/", config.Username, config.Password, config.Hostname, config.Port))
 	if err != nil {
 		log.Error("Could not connect to Database: ", err.Error())
+		return err
 	}
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelfunc()

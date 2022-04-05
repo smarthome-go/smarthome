@@ -2,6 +2,24 @@ package database
 
 import "fmt"
 
+// Camera struct, used in `config.rooms.cameras``
+type Camera struct {
+	Id     int    `json:"id"`
+	RoomId string `json:"roomId"`
+	Url    string `json:"url"`
+	Name   string `json:"name"`
+}
+
+// Identified by a unique Id, has a Name and Description
+// When used in config file, the Switches slice is also populated
+type Room struct {
+	Id          string   `json:"id"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Switches    []Switch `json:"switches"`
+	Cameras     []Camera `json:"cameras"`
+}
+
 // Initializes the table containing the rooms
 func createRoomTable() error {
 	query := `
@@ -61,7 +79,7 @@ func ListRooms() ([]Room, error) {
 	`
 	res, err := db.Query(query)
 	if err != nil {
-		log.Error("Failed to list rooms: executing statement failed: ", err.Error())
+		log.Error("Failed to list rooms: executing query failed: ", err.Error())
 		return nil, err
 	}
 	rooms := make([]Room, 0)
@@ -88,7 +106,7 @@ func listPersonalRoomsWithoutMetadata(username string) ([]Room, error) {
 	`
 	res, err := db.Query(query)
 	if err != nil {
-		log.Error("Failed to list personal rooms: executing statement failed: ", err.Error())
+		log.Error("Failed to list personal rooms: executing query failed: ", err.Error())
 		return nil, err
 	}
 	rooms := make([]Room, 0)

@@ -25,6 +25,7 @@ func createHasPermissionTable() error {
 	_, err := db.Exec(query)
 	if err != nil {
 		log.Error("Could not create hasPermission table: Executing query failed: ", err.Error())
+		return err
 	}
 	return nil
 }
@@ -44,6 +45,7 @@ func createPermissionTable() error {
 	_, err := db.Exec(query)
 	if err != nil {
 		log.Error("Could not create permissions table: Executing query failed: ", err.Error())
+		return err
 	}
 	return nil
 }
@@ -84,6 +86,7 @@ func initializePermissions() error {
 func AddUserPermission(username string, permission PermissionType) (bool, error) {
 	alreadyHasPermission, err := UserHasPermission(username, permission)
 	if err != nil {
+		log.Error("Could not add permission: could not determine if user is already in posession of this permission: ", err.Error())
 		return false, err
 	}
 	if alreadyHasPermission {

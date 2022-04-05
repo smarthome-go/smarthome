@@ -19,37 +19,39 @@ type DeleteNotificationByIdRequest struct {
 // Returns a uin16 that indicates the number of notifications the current user has, no authentication required
 func GetNotificationCount(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	notificationCount, err := database.GetUserNotificationCount(username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed get notification count", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed get notification count", Error: "database failure"})
 		return
 	}
-	json.NewEncoder(w).Encode(NotificationCountResponse{NotificationCount: notificationCount})
+	if err := json.NewEncoder(w).Encode(NotificationCountResponse{NotificationCount: notificationCount}); err != nil {
+		log.Error(err.Error())
+		Res(w, Response{Success: false, Message: "failed get notification count", Error: "could not encode response"})
+	}
 }
 
 // Returns a list containing notifications of the current user
 func GetNotifications(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	notifications, err := database.GetUserNotifications(username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed get notification count", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed get notifications", Error: "database failure"})
 		return
 	}
-	json.NewEncoder(w).Encode(notifications)
+	if err := json.NewEncoder(w).Encode(notifications); err != nil {
+		log.Error(err.Error())
+		Res(w, Response{Success: false, Message: "failed get notifications", Error: "could not encode response"})
+	}
 }
 
 // Delete a given notification from the current user
@@ -60,35 +62,31 @@ func DeleteUserNotificationById(w http.ResponseWriter, r *http.Request) {
 	var request DeleteNotificationByIdRequest
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	if err := database.DeleteNotificationFromUserById(request.Id, username); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to delete notification", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to delete notification", Error: "database failure"})
 		return
 	}
-	json.NewEncoder(w).Encode(Response{Success: true, Message: "Successfully sent deletion request"})
+	Res(w, Response{Success: true, Message: "Successfully sent deletion request"})
 }
 
 func DeleteAllUserNotifications(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	username, err := middleware.GetUserFromCurrentSession(r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "could not get username from session", Error: "malformed user session"})
 		return
 	}
 	if err := database.DeleteAllNotificationsFromUser(username); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "failed to delete all notifications", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to delete all notifications", Error: "database failure"})
 		return
 	}
-	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully deleted all notifications"})
+	Res(w, Response{Success: true, Message: "successfully deleted all notifications"})
 }

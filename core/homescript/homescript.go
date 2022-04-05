@@ -62,7 +62,7 @@ func Run(username string, scriptLabel string, scriptCode string) (string, int, [
 		scriptCode,
 	)
 	if len(runtimeErrors) > 0 {
-		log.Error(fmt.Sprintf("Homescript '%s' ran by user '%s' has terminated: %s", scriptLabel, username, runtimeErrors[0].Message))
+		log.Debug(fmt.Sprintf("Homescript '%s' ran by user '%s' has terminated: %s", scriptLabel, username, runtimeErrors[0].Message))
 		return executor.Output, 1, convertErrors(runtimeErrors...)
 	}
 	log.Debug(fmt.Sprintf("Homescript '%s' ran by user '%s' was executed successfully", scriptLabel, username))

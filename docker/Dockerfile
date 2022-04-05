@@ -1,7 +1,7 @@
 FROM amd64/debian:stable-slim
 
 LABEL author="MikMuellerDev"
-LABEL version="0.0.17-beta"
+LABEL version="0.0.18-beta"
 
 RUN useradd -M smarthome
 
@@ -16,7 +16,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt update && apt install -yq \
   curl \
   && apt autoclean && apt autoremove && rm -rf /var/lib/apt/lists/*
 
-RUN curl -L https://github.com/MikMuellerDev/homescript-cli/releases/download/v0.3.1-beta/homescript_linux_amd64.tar.gz -o /tmp/homescript
+RUN curl -L https://github.com/MikMuellerDev/homescript-cli/releases/download/v0.4.1-beta/homescript_linux_amd64.tar.gz -o /tmp/homescript
 
 WORKDIR /usr/bin
 RUN tar -xvf /tmp/homescript

@@ -8,6 +8,8 @@ dockerfile_path = "docker/Dockerfile"
 package_json_path = "web/package.json"
 main_go_path = "main.go"
 readme_path = "README.md"
+makefile_path = "Makefile"
+docker_compose_path = "docker-compose.yml"
 
 with open(main_go_path, "r") as main_go:
     content = main_go.read()
@@ -57,7 +59,7 @@ with open(package_json_path, "r") as package_json:
 with open(package_json_path, "w") as package_json:
     package_json.write(content.replace(old_version, VERSION))
     
-# The NPM `package.json`
+# The `README.md`
 with open(readme_path, "r") as readme:
     content = readme.read()
     old_version = content.split("### Version: `")[1].split("`\n")[0]
@@ -65,5 +67,23 @@ with open(readme_path, "r") as readme:
     
 with open(readme_path, "w") as readme:
     readme.write(content.replace(old_version, VERSION))
+    
+# The `Makefile`
+with open(makefile_path, "r") as makefile:
+    content = makefile.read()
+    old_version = content.split("version := ")[1].split("\n")[0]
+    print(f"Found old version in {makefile_path}:", old_version)
+    
+with open(makefile_path, "w") as makefile:
+    makefile.write(content.replace(old_version, VERSION))
+
+# The `docker_compose.yml`
+with open(docker_compose_path, "r") as compose:
+    content = compose.read()
+    old_version = content.split("image: mikmuellerdev/smarthome:")[1].split("\n")[0]
+    print(f"Found old version in {docker_compose_path}:", old_version)
+    
+with open(docker_compose_path, "w") as compose:
+    compose.write(content.replace(old_version, VERSION))
     
 print(f"Version has been upgraded from '{old_version}' -> '{VERSION}'")

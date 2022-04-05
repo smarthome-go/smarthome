@@ -7,8 +7,9 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/sirupsen/logrus"
+
+	"github.com/MikMuellerDev/smarthome/core/database"
 )
 
 type ServerConfig struct {
@@ -23,7 +24,9 @@ type Config struct {
 
 var config Config
 
-const configPath = "./data/config/config.json"
+// The actual file will always be `config.json`
+// must be a var in order to be overridden by the unit test
+var configPath = "./data/config"
 
 var log *logrus.Logger
 
@@ -34,12 +37,12 @@ func InitLogger(logger *logrus.Logger) {
 func ReadConfigFile() error {
 	// Read file from <configPath> on disk
 	// If this file does not exist, create a new blank one
-	content, err := ioutil.ReadFile(configPath)
+	content, err := ioutil.ReadFile(fmt.Sprintf("%s/config.json", configPath))
 	if err != nil {
 		configTemp, errCreate := createNewConfigFile()
 		if errCreate != nil {
 			log.Error("Failed to read config file: ", err.Error())
-			log.Fatal("Failed to initialize config: could not read or create a config file: ", errCreate.Error())
+			log.Error("Failed to initialize config: could not read or create a config file: ", errCreate.Error())
 			return err
 		}
 		config = configTemp
@@ -78,11 +81,11 @@ func createNewConfigFile() (Config, error) {
 		log.Error("Failed to create config file: creating file content from JSON failed: ", err.Error())
 		return Config{}, err
 	}
-	if err := os.MkdirAll("./data/config", 0755); err != nil {
+	if err := os.MkdirAll(configPath, 0755); err != nil {
 		log.Error("Failed to create new config file: creating data directory failed: ", err.Error())
 		return Config{}, err
 	}
-	if err = ioutil.WriteFile("data/config/config.json", fileContent, 0755); err != nil {
+	if err = ioutil.WriteFile(fmt.Sprintf("%s/config.json", configPath), fileContent, 0755); err != nil {
 		log.Error("Failed to write file to disk: ", err.Error())
 		return Config{}, err
 	}

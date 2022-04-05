@@ -34,8 +34,7 @@ func fetchImageBytes(url string, timeout int) ([]byte, error) {
 	}
 	imageMegabytes := len(imageData) / 1024 / 1024
 	if imageMegabytes > int(maxImageSize) {
-		log.Warn("Failed to fetch image with a size over 2MB")
-		errors.New("image data to large: will only fetch below 2MB")
+		log.Warn("Failed to fetch image with a size over allowed limit")
 		return nil, errors.New("failed to fetch image: size to large")
 	}
 	return imageData, nil

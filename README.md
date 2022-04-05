@@ -1,5 +1,8 @@
 # Smarthome
-### Version: `0.0.17-beta`
+### Version: `0.0.18-beta`
+
+[![Go Build](https://github.com/MikMuellerDev/smarthome/actions/workflows/go.yml/badge.svg)](https://github.com/MikMuellerDev/smarthome/actions/workflows/go.yml)
+
 ### The `setup.json`
 Most of the configuration of the smarthome server can be achieved using the `setup.json` file.
 This file is scanned and evaluated at startup.

@@ -3,10 +3,21 @@ package database
 import (
 	"database/sql"
 	"errors"
+	"time"
 )
 
 // Many notifications are always meant to address one user
 // Will later be used in `core/user`
+
+// User notification
+type Notification struct {
+	Id          uint      `json:"id"`
+	Priority    uint8     `json:"priority"` // Includes 1: info, 2: warning, 3: alert
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Date        time.Time `json:"date"`
+	// Username is left out due to not being required in the service layer
+}
 
 // Creates the notification table unless it exists, returns an error if the database fails
 func createNotificationTable() error {
@@ -133,11 +144,12 @@ func GetUserNotifications(username string) ([]Notification, error) {
 	`)
 	if err != nil {
 		log.Error("Failed to get notifications: preparing query failed: ", err.Error())
-		return []Notification{}, err
+		return nil, err
 	}
 	res, err := query.Query(username)
 	if err != nil {
 		log.Error("Failed to get notifications: executing query failed: ", err.Error())
+		return nil, err
 	}
 	notifications := make([]Notification, 0)
 	for res.Next() {
@@ -152,11 +164,11 @@ func GetUserNotifications(username string) ([]Notification, error) {
 		)
 		if err != nil {
 			log.Error()
-			return []Notification{}, err
+			return nil, err
 		}
 		if !notificationTime.Valid {
-			log.Error("Failed tp get notifications: notification time is not valid: critical failure")
-			return []Notification{}, errors.New("critical error: notification date column contains null value")
+			log.Error("Failed to get user notifications: notification time is not valid: critical failure")
+			return nil, errors.New("failed to get user notifications: notification date column contains null value")
 		}
 		notificationItem.Date = notificationTime.Time
 		notifications = append(notifications, notificationItem)

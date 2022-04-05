@@ -15,11 +15,11 @@ func FlushOldLogs(w http.ResponseWriter, r *http.Request) {
 	if err := database.FlushOldLogs(); err != nil {
 		log.Error("Exception in flushOldLogs: database failure: ", err.Error())
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "failed to flush logs: database failure"})
+		Res(w, Response{Success: false, Message: "database error", Error: "failed to flush logs: database failure"})
 		return
 	}
 	go event.Info("Flushed Old Logs", "Logs which are older than 30 days were deleted.")
-	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully flushed logs older than 30 days"})
+	Res(w, Response{Success: true, Message: "successfully flushed logs older than 30 days"})
 }
 
 // Triggers deletion of ALL internal server logs, admin authentication required
@@ -29,10 +29,10 @@ func FlushAllLogs(w http.ResponseWriter, r *http.Request) {
 	if err := database.FlushAllLogs(); err != nil {
 		log.Error("Exception in flushOldLogs: database failure: ", err.Error())
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "failed to flush logs: database failure"})
+		Res(w, Response{Success: false, Message: "database error", Error: "failed to flush logs: database failure"})
 		return
 	}
-	json.NewEncoder(w).Encode(Response{Success: true, Message: "successfully flushed logs"})
+	Res(w, Response{Success: true, Message: "successfully flushed logs"})
 }
 
 // Returns a list of logging items in the logging table, admin authentication required
@@ -42,8 +42,11 @@ func ListLogs(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Error("Failed to list logs: database failure: ", err.Error())
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(Response{Success: false, Message: "database error", Error: "failed to get logs: database failure"})
+		Res(w, Response{Success: false, Message: "database error", Error: "failed to get logs: database failure"})
 		return
 	}
-	json.NewEncoder(w).Encode(logs)
+	if err := json.NewEncoder(w).Encode(logs); err != nil {
+		log.Error(err.Error())
+		Res(w, Response{Success: false, Message: "could not get logs", Error: "failed to encode response"})
+	}
 }

@@ -27,7 +27,7 @@ func createSwitchTable() error {
 	CREATE TABLE
 	IF NOT EXISTS
 	switch(
-		Id VARCHAR(2) PRIMARY KEY,
+		Id VARCHAR(20) PRIMARY KEY,
 		Name VARCHAR(30),
 		Power BOOLEAN DEFAULT FALSE,
 		RoomId VARCHAR(30),
@@ -40,30 +40,6 @@ func createSwitchTable() error {
 	_, err := db.Exec(query)
 	if err != nil {
 		log.Error("Failed to create switch Table: Executing query failed: ", err.Error())
-		return err
-	}
-	return nil
-}
-
-// Stores the n:m relation between the user and their switch-permissions
-func createHasSwitchPermissionTable() error {
-	query := `
-	CREATE TABLE
-	IF NOT EXISTS
-	hasSwitchPermission(
-		Username VARCHAR(20),
-		Switch VARCHAR(2),
-		CONSTRAINT HasSwitchPermissionUsername
-		FOREIGN KEY (Username)
-		REFERENCES user(Username),
-		CONSTRAINT HasSwitchPermissionSwitch
-		FOREIGN KEY (Switch)
-		REFERENCES switch(Id)
-	)
-	`
-	_, err := db.Query(query)
-	if err != nil {
-		log.Error("Failed to create hasSwitchPermissionTable: Executing query failed: ", err.Error())
 		return err
 	}
 	return nil
@@ -110,6 +86,7 @@ func CreateSwitch(id string, name string, roomId string, watts uint16) error {
 func DeleteSwitch(switchId string) error {
 	if err := RemoveSwitchFromPermissions(switchId); err != nil {
 		log.Error("Failed to remove switch: dependencies could not be removed: ", err.Error())
+		return err
 	}
 	query, err := db.Prepare(`
 	DELETE FROM
@@ -135,7 +112,7 @@ func ListSwitches() ([]Switch, error) {
 	res, err := db.Query(query)
 	if err != nil {
 		log.Error("Could not list switches: failed to execute query: ", err.Error())
-		return []Switch{}, err
+		return nil, err
 	}
 	switches := make([]Switch, 0)
 	for res.Next() {
@@ -147,6 +124,7 @@ func ListSwitches() ([]Switch, error) {
 			&switchItem.Watts,
 		); err != nil {
 			log.Error("Could not list switches: Failed to scan results: ", err.Error())
+			return nil, err
 		}
 		switches = append(switches, switchItem)
 	}
@@ -164,12 +142,12 @@ func ListUserSwitches(username string) ([]Switch, error) {
 	)
 	if err != nil {
 		log.Error("Could not list user switches: preparing query failed.", err.Error())
-		return []Switch{}, err
+		return nil, err
 	}
 	res, err := query.Query(username)
 	if err != nil {
 		log.Error("Could not list user switches: executing query failed: ", err.Error())
-		return []Switch{}, err
+		return nil, err
 	}
 	switches := make([]Switch, 0)
 	for res.Next() {
@@ -182,6 +160,7 @@ func ListUserSwitches(username string) ([]Switch, error) {
 			&switchItem.Watts,
 		); err != nil {
 			log.Error("Could not list user switches: Failed to scan results: ", err.Error())
+			return nil, err
 		}
 		switches = append(switches, switchItem)
 	}
@@ -229,6 +208,7 @@ func GetPowerStates() ([]PowerState, error) {
 	`)
 	if err != nil {
 		log.Error("Failed to list powerstates: failed to execute query: ", err.Error())
+		return nil, err
 	}
 	powerStates := make([]PowerState, 0)
 	for res.Next() {
@@ -236,7 +216,7 @@ func GetPowerStates() ([]PowerState, error) {
 		err := res.Scan(&powerState.Switch, &powerState.PowerOn)
 		if err != nil {
 			log.Error("Failed to list powerstates: failed to scan query: ", err.Error())
-			return []PowerState{}, err
+			return nil, err
 		}
 		powerStates = append(powerStates, powerState)
 	}
@@ -260,6 +240,7 @@ func GetPowerStateOfSwitch(switchId string) (bool, error) {
 	err = query.QueryRow(switchId).Scan(&powerState)
 	if err != nil {
 		log.Error("Failed to get switch power state: executing query failed: ", err.Error())
+		return false, err
 	}
 	return powerState, err
 }

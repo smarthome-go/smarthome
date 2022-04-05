@@ -2,6 +2,30 @@ package database
 
 import "fmt"
 
+// Stores the n:m relation between the user and their switch-permissions
+func createHasSwitchPermissionTable() error {
+	query := `
+	CREATE TABLE
+	IF NOT EXISTS
+	hasSwitchPermission(
+		Username VARCHAR(20),
+		Switch VARCHAR(20),
+		CONSTRAINT HasSwitchPermissionUsername
+		FOREIGN KEY (Username)
+		REFERENCES user(Username),
+		CONSTRAINT HasSwitchPermissionSwitch
+		FOREIGN KEY (Switch)
+		REFERENCES switch(Id)
+	)
+	`
+	_, err := db.Query(query)
+	if err != nil {
+		log.Error("Failed to create hasSwitchPermissionTable: Executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}
+
 // Adds a given switchId to a given user
 // The existence of the switch should be validated beforehand
 // If this permission already resides inside the table, it is ignored and modified=false, error=nil is returned
