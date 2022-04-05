@@ -1,13 +1,6 @@
-import type { SnackbarComponentDev } from '@smui/snackbar'
 import { Writable, writable, get } from 'svelte/store'
 
-export const infoBar: Writable<{
-    message: string,
-    bar: SnackbarComponentDev,
-}> = writable({
-    message: '',
-    bar: undefined,
-})
+export const createSnackbar: Writable<(message: string) => void> = writable(() => {})
 
 export interface Notification {
     id: number
