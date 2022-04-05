@@ -82,10 +82,10 @@ func TestModifyAutomation(t *testing.T) {
 	}
 	if temp.Name != "name2" ||
 		temp.Description != "description2" ||
-		temp.CronDescription != "* * * * * *" ||
+		temp.CronExpression != "* * * * *" ||
 		!temp.Enabled ||
 		temp.TimingMode != database.TimingNormal {
-		t.Errorf("invalid metadata of modified automation. Got: (Name: %s, Desc: %s, Enabled: %t, Cron: %s) | Want: (`name2`, `description2`, `true`, `* * * * *`)", temp.Name, temp.Description, temp.Enabled, temp.CronExpression)
+		t.Errorf("invalid metadata of modified automation. Want: (`name2`, `description2`, `true`, `* * * * *`) | Got: (Name: %s, Desc: %s, Enabled: %t, Cron: %s)", temp.Name, temp.Description, temp.Enabled, temp.CronExpression)
 		return
 	}
 }
