@@ -13,13 +13,26 @@ import (
 	"github.com/MikMuellerDev/smarthome/core/homescript"
 )
 
+// Sets up the tests dependencies
 func TestMain(m *testing.M) {
 	log := logrus.New()
 	log.Level = logrus.FatalLevel
 	InitLogger(log)
+	event.InitLogger(log)
+	homescript.InitLogger(log)
+	hardware.InitLogger(log)
 	if err := initDB(true); err != nil {
 		panic(err.Error())
 	}
+	if err := createMockData(); err != nil {
+		panic(err.Error())
+	}
+	code := m.Run()
+	os.Exit(code)
+}
+
+// Creates mock data, including a room, switches and homescripts
+func createMockData() error {
 	if err := database.CreateRoom("test_room", "", ""); err != nil {
 		panic(err.Error())
 	}
@@ -107,8 +120,7 @@ func TestMain(m *testing.M) {
 			panic(err.Error())
 		}
 	}
-	code := m.Run()
-	os.Exit(code)
+	return nil
 }
 
 func initDB(args ...bool) error {
@@ -133,24 +145,15 @@ func initDB(args ...bool) error {
 	return nil
 }
 
-// Todo: organize function
+// Creates a regular automation and checks if it is executed on time
 func TestAutomation(t *testing.T) {
 	now := time.Now()
 	then := now.Add(time.Minute)
-	log := logrus.New()
-	log.Level = logrus.FatalLevel
-	event.InitLogger(log)
-	homescript.InitLogger(log)
-	hardware.InitLogger(log)
-	// Flush all logs before automation runs
-	if err := database.FlushAllLogs(); err != nil {
-		t.Error(err.Error())
-		return
-	}
 	if err := Init(); err != nil {
 		t.Error(err.Error())
 		return
 	}
+	// Normal automation
 	if _, err := CreateNewAutomation(
 		"name",
 		"description",
@@ -165,6 +168,37 @@ func TestAutomation(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
+	valid := false
+	for i := 0; i < 7; i++ {
+		time.Sleep(time.Second * 10)
+		power, err := database.GetPowerStateOfSwitch("test_switch")
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+		if power {
+			valid = true
+			break
+		}
+	}
+	if !valid {
+		t.Error("Power of `test_switch` did not change")
+		return
+	}
+}
+
+// Creates a automation which executes the script `x`
+// Modifies the automation so that it executes the script `y` instead
+// X and Y turn on a different switch which represents the script
+// If the switch of Y was not turned on, the test is considered a failure
+func TestModificationToDifferentScript(t *testing.T) {
+	now := time.Now()
+	then := now.Add(time.Minute)
+	if err := Init(); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	// Create initial automation
 	modifyId, err := CreateNewAutomation(
 		"name",
 		"description",
@@ -180,50 +214,9 @@ func TestAutomation(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
-	if _, err := CreateNewAutomation(
-		"name",
-		"description",
-		uint8(then.Hour()),
-		uint8(then.Minute()),
-		[]uint8{0, 1, 2, 3, 4, 5, 6},
-		"test_inactive",
-		"admin",
-		false,
-		database.TimingNormal,
-	); err != nil {
-		t.Error(err.Error())
-		return
-	}
-	abortId, err := CreateNewAutomation(
-		"name",
-		"description",
-		uint8(then.Hour()),
-		uint8(then.Minute()),
-		[]uint8{0, 1, 2, 3, 4, 5, 6},
-		"test_abort",
-		"admin",
-		true,
-		database.TimingNormal,
-	)
-	if err != nil {
-		t.Error(err.Error())
-		return
-	}
 	// Modify second automation to use the other homescript file
 	cronExpression, err := GenerateCronExpression(uint8(then.Hour()), uint8(then.Minute()), []uint8{0, 1, 2, 3, 4, 5, 6})
 	if err != nil {
-		t.Error(err.Error())
-		return
-	}
-	if err := ModifyAutomationById(abortId,
-		database.AutomationWithoutIdAndUsername{
-			Name:           "name",
-			Description:    "description",
-			CronExpression: cronExpression,
-			HomescriptId:   "test_abort",
-			Enabled:        false,
-			TimingMode:     database.TimingNormal,
-		}); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -239,59 +232,129 @@ func TestAutomation(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
+	// Wait for approx. a minute in order to dertermine if the modification succeeded
 	valid := false
-	for i := 0; i < 30; i++ {
-		time.Sleep(time.Second * 5)
-		power, err := database.GetPowerStateOfSwitch("test_switch")
+	for i := 0; i < 7; i++ {
+		time.Sleep(time.Second * 10)
+		power, err := database.GetPowerStateOfSwitch("test_switch_modify")
 		if err != nil {
 			t.Error(err.Error())
 			return
 		}
 		if power {
 			valid = true
-			break
 		}
 	}
+	// Check if the updated script did change the power
 	if !valid {
-		t.Error("Power of `test_switch` did not change")
-		return
-	}
-	power, err := database.GetPowerStateOfSwitch("test_switch_modify")
-	if err != nil {
-		t.Error(err.Error())
-		return
-	}
-	if !power {
-		t.Error("Power of `test_switch_modify` did not change: want: true got: false")
-		return
-	}
-	power, err = database.GetPowerStateOfSwitch("test_switch_inactive")
-	if err != nil {
-		t.Error(err.Error())
-		return
-	}
-	if power {
-		t.Error("Power of `test_switch_inactive` changed: want: false got: true")
-		return
-	}
-	power, err = database.GetPowerStateOfSwitch("test_switch_abort")
-	if err != nil {
-		t.Error(err.Error())
-		return
-	}
-	if power {
-		t.Error("Power of `test_switch_abort` changed: want: false got: true")
+		t.Error("Power of `test_switch_modify` did not change")
 		return
 	}
 }
 
+// Creates a regular automation which is then modified to be disabled
+// Checks if the automation still executes despite being disabled
+func TestModificationToAbort(t *testing.T) {
+	now := time.Now()
+	then := now.Add(time.Minute)
+	if err := Init(); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	// Create initial automation
+	abortId, err := CreateNewAutomation(
+		"name",
+		"description",
+		uint8(then.Hour()),
+		uint8(then.Minute()),
+		[]uint8{0, 1, 2, 3, 4, 5, 6},
+		"test_abort",
+		"admin",
+		true,
+		database.TimingNormal,
+	)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	// Gets the initial automation in order to copy its cron-expression
+	// The old cron-expression is required in order to preserve the time window in
+	// which the automation could be executed if the modification fails
+	automation, found, err := database.GetAutomationById(abortId)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if !found {
+		t.Errorf("Automation %d not found in database", abortId)
+		return
+	}
+	// Set its activation status to `disabled`
+	if err := ModifyAutomationById(abortId,
+		database.AutomationWithoutIdAndUsername{
+			Name:           "name",
+			Description:    "description",
+			CronExpression: automation.CronExpression,
+			HomescriptId:   "test_abort",
+			Enabled:        false,
+			TimingMode:     database.TimingNormal,
+		}); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	// Wait for approx. a minute until the test can be considered to be successful
+	for i := 0; i < 7; i++ {
+		time.Sleep(time.Second * 10)
+		power, err := database.GetPowerStateOfSwitch("test_switch_abort")
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+		if power {
+			t.Errorf("Power of `test_switch_abort` changed but should not")
+			return
+		}
+	}
+}
+
+// TODO: add a initially disabled automation which is then enabled
+
+// Creates an automation which is initially disabled
+// Checks if the automation runs despite being disabled
+func TestStartInactiveAutomation(t *testing.T) {
+	now := time.Now()
+	then := now.Add(time.Minute)
+	if _, err := CreateNewAutomation(
+		"name",
+		"description",
+		uint8(then.Hour()),
+		uint8(then.Minute()),
+		[]uint8{0, 1, 2, 3, 4, 5, 6},
+		"test_inactive",
+		"admin",
+		false,
+		database.TimingNormal,
+	); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	// Wait for approx. a minute until to decide that the test was executed successfully
+	for i := 0; i < 7; i++ {
+		time.Sleep(time.Second * 10)
+		power, err := database.GetPowerStateOfSwitch("test_switch_inactive")
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+		if power {
+			t.Errorf("Power of `test_switch_inactive` changed but should not")
+			return
+		}
+	}
+}
+
+// Tests if the different timing modes `sunrise` and `sunset` generate appropriate Cron-Expressions
 func TestTimingModes(t *testing.T) {
-	log := logrus.New()
-	log.Level = logrus.FatalLevel
-	InitLogger(log)
-	event.InitLogger(log)
-	homescript.InitLogger(log)
-	hardware.InitLogger(log)
 	if err := Init(); err != nil {
 		t.Error(err.Error())
 		return
@@ -349,6 +412,7 @@ func TestTimingModes(t *testing.T) {
 	}
 }
 
+// Tests if the automation system can be initialized
 func TestInit(t *testing.T) {
 	if err := Init(); err != nil {
 		t.Error(err.Error())
@@ -356,6 +420,7 @@ func TestInit(t *testing.T) {
 	}
 }
 
+// Deactivates and Reactivates the automation system in order to check for errors
 func TestActivate(t *testing.T) {
 	TestInit(t)
 	if err := DeactivateAutomationSystem(); err != nil {
