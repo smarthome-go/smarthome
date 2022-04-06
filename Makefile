@@ -32,6 +32,9 @@ version:
 # Change version on build
 release: cleanall version test build
 
+vite-dev:
+	cd web && npm run dev
+
 # Run
 run: web
 	go run -v .
