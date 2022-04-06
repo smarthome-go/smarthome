@@ -110,6 +110,7 @@
         white-space: nowrap;
         transition-property: width, height;
         transition-duration: .3s;
+        z-index: 100;
 
         @include mobile {
             bottom: auto;
@@ -120,13 +121,13 @@
         }
         @include not-widescreen {
             &.closed {
-            width: 5.125rem;
+                width: 5.125rem;
 
-            @include mobile {
-                width: auto;
-                height: 3.5rem;
+                @include mobile {
+                    width: auto;
+                    height: 3.5rem;
+                }
             }
-        }
         }
     }
 
@@ -141,14 +142,14 @@
     #toggle {
         position: absolute;
         right: 0;
-        top: 2.2rem;
+        top: 50%;
         color: var(--clr-text);
         background-color: var(--clr-hover);
         border-radius: 50%;
         cursor: pointer;
-        height: 1.5625rem;
+        height: 2rem;
         aspect-ratio: 1;
-        transform: translateX(50%);
+        transform: translate(50%, -50%);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -158,7 +159,7 @@
         @include mobile {
             top: 1.75rem;
             left: 5rem;
-            transform: translateY(-50%) rotate(90deg) scale(120%);
+            transform: translateY(-50%) rotate(90deg);
         }
         @include widescreen {
             opacity: 0;
@@ -166,7 +167,7 @@
         }
 
         i {
-            font-size: 1.2rem;
+            font-size: 1.5rem;
             transform: rotate(180deg);
             transition: transform .3s;
 
