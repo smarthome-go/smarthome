@@ -210,3 +210,32 @@ func TestSetScheduleEnabled(t *testing.T) {
 		return
 	}
 }
+
+func assertDarkTheme(username string, want bool, t *testing.T) {
+	user, found, err := GetUserByUsername("admin")
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if !found {
+		t.Errorf("user with username `admin` not found in database")
+		return
+	}
+	if user.DarkTheme {
+		t.Errorf("Dark theme does not match: want: %t got: %t", want, user.DarkTheme)
+		return
+	}
+}
+
+func TestSetUserDarkTheme(t *testing.T) {
+	if err := SetUserDarkThemeEnabled("admin", false); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	assertDarkTheme("admin", false, t)
+	if err := SetUserDarkThemeEnabled("admin", false); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	assertDarkTheme("admin", false, t)
+}

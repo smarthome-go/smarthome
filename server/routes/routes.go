@@ -111,6 +111,9 @@ func NewRouter() *mux.Router {
 	// Admin-specific
 	r.HandleFunc("/api/config/location/modify", mdl.ApiAuth(mdl.Perm(api.UpdateLocation, database.PermissionModifyLocation))).Methods("PUT")
 
+	// Customization
+	r.HandleFunc("/api/user/settings/theme", mdl.ApiAuth(api.SetColorTheme)).Methods("PUT")
+
 	// TODO: remove this one below
 	// TODO: add camera modification / management features
 	// Test camera module here

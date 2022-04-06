@@ -315,3 +315,22 @@ func SetUserSchedulerEnabled(username string, enabled bool) error {
 	}
 	return nil
 }
+
+// Set whether the user uses the dark theme or the light theme
+func SetUserDarkThemeEnabled(username string, useDarkTheme bool) error {
+	query, err := db.Prepare(`
+	UPDATE user
+	SET DarkTheme=?
+	WHERE Username=?
+	`)
+	if err != nil {
+		log.Error("Failed to set dark theme for user: preparing query failed: ", err.Error())
+		return err
+	}
+	_, err = query.Exec(useDarkTheme, username)
+	if err != nil {
+		log.Error("Failed to set dark theme for user: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}

@@ -18,6 +18,10 @@ type RemoveUserRequest struct {
 	Username string `json:"username"`
 }
 
+type SetColorThemeRequest struct {
+	DarkTheme bool `json:"darkTheme"`
+}
+
 // Creates a new user and gives him a provided password
 // Request: `{"username": "x", "password": "y"}`, admin auth required
 func AddUser(w http.ResponseWriter, r *http.Request) {
@@ -115,4 +119,27 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 		log.Error(err.Error())
 		Res(w, Response{Success: false, Message: "failed to --", Error: "failed to encode response"})
 	}
+}
+
+// Allows the user to change whether they want to use the light or dark theme
+func SetColorTheme(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(w, r)
+	if err != nil {
+		return
+	}
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request SetColorThemeRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	if err := database.SetUserDarkThemeEnabled(username, request.DarkTheme); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to update color theme", Error: "database failure"})
+		return
+	}
+	Res(w, Response{Success: true, Message: "successfully updated color theme"})
 }
