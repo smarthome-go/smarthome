@@ -42,7 +42,7 @@ func createReminderTable() error {
 		DueDate DATETIME,
 		Owner VARCHAR(20),
 		UserWasNotified BOOL,
-		UserWasNotifiedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+		UserWasNotifiedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		PRIMARY KEY(Id),
 		FOREIGN KEY(Owner)
 		REFERENCES user(Username)
@@ -62,13 +62,13 @@ func CreateNewReminder(name string, description string, dueDate time.Time, owner
 	reminder(
 		Id, Name, Description, CreatedDate, DueDate, Owner, Priority, UserWasNotified, UserWasNotifiedAt
 	)
-	VALUES(DEFAULT, ?, ?, DEFAULT, ?, ?, ?, FALSE, DEFAULT)
+	VALUES(DEFAULT, ?, ?, DEFAULT, ?, ?, ?, FALSE, ?)
 	`)
 	if err != nil {
 		log.Error("Failed to create new reminder: ", err.Error())
 		return 0, err
 	}
-	res, err := query.Exec(name, description, dueDate, owner, priority)
+	res, err := query.Exec(name, description, dueDate, owner, priority, time.Date(1970, 0, 0, 0, 0, 0, 0, time.Local))
 	if err != nil {
 		log.Error("Failed to create new reminder: ", err.Error())
 		return 0, err
@@ -116,11 +116,12 @@ func GetUserReminders(username string) ([]Reminder, error) {
 			&dueDate,
 			&reminder.Owner,
 			&reminder.UserWasNotified,
-			&reminder.UserWasNotifiedAt,
+			&userWasNotifiedAt,
 		); err != nil {
 			log.Error("Failed to get user reminders: scanning result failed: ", err.Error())
 			return nil, err
 		}
+
 		if !createdDate.Valid || !dueDate.Valid || !userWasNotifiedAt.Valid {
 			log.Error("Failed to get user reminders: some dates are invalid")
 			return nil, fmt.Errorf("failed to get user reminders: invalid dates in result")
@@ -166,6 +167,7 @@ func ModifyReminder(id uint, name string, description string, dueDate time.Time,
 
 // Modifies the reminders status its owner has been informed about urgency
 func SetReminderUserWasNotified(wasNotified bool, wasNotifiedAt time.Time) error {
+	// TODO: add this function
 	return nil
 }
 
@@ -197,7 +199,7 @@ func GetReminderById(id uint, owner string) (Reminder, bool, error) {
 		&reminder.Priority,
 		&reminder.Owner,
 		&reminder.UserWasNotified,
-		&reminder.UserWasNotifiedAt,
+		&userWasNotifiedAt,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return Reminder{}, false, nil

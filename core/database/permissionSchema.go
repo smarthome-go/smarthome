@@ -25,6 +25,7 @@ const (
 	PermissionHomescript              PermissionType = "homescript"
 	PermissionAutomation              PermissionType = "automation"
 	PermissionScheduler               PermissionType = "scheduler"
+	PermissionReminder                PermissionType = "reminder"
 	PermissionActivateAutomation      PermissionType = "activateAutomation"
 	PermissionModifyLocation          PermissionType = "changeLocation"
 

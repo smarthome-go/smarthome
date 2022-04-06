@@ -12,7 +12,7 @@ import (
 var scheduler *gocron.Scheduler
 
 func reminderRunner() {
-	log.Trace("Checking for urgent reminders...")
+	log.Trace("Checkging for overdue reminders...")
 	var err error
 	var users []database.User
 	var notificationsSent uint
@@ -34,16 +34,19 @@ func reminderRunner() {
 			return
 		}
 	}
-	log.Trace(fmt.Sprintf("Successfully sent %d notifications for reminders", notificationsSent))
+	if notificationsSent > 0 {
+		log.Trace(fmt.Sprintf("Successfully sent %d notifications for reminding users", notificationsSent))
+	}
 }
 
 func InitSchedule() error {
 	scheduler = gocron.NewScheduler(time.Local)
-	runner := scheduler.Every(time.Minute)
+	runner := scheduler.Every(time.Hour)
 	if _, err := runner.Do(reminderRunner); err != nil {
 		log.Error("Failed to setup notification runner: ", err.Error())
 		return err
 	}
+	runner.StartImmediately()
 	scheduler.StartAsync()
 	return nil
 }

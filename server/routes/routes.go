@@ -114,6 +114,10 @@ func NewRouter() *mux.Router {
 	// Customization
 	r.HandleFunc("/api/user/settings/theme", mdl.ApiAuth(api.SetColorTheme)).Methods("PUT")
 
+	// Reminders
+	r.HandleFunc("/api/reminder/add", mdl.ApiAuth(mdl.Perm(api.AddReminder, database.PermissionReminder))).Methods("POST")
+	r.HandleFunc("/api/reminder/list", mdl.ApiAuth(mdl.Perm(api.GetReminders, database.PermissionReminder))).Methods("GET")
+
 	// TODO: remove this one below
 	// TODO: add camera modification / management features
 	// Test camera module here
