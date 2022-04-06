@@ -239,3 +239,36 @@ func TestSetUserDarkTheme(t *testing.T) {
 	}
 	assertDarkTheme("admin", false, t)
 }
+
+func assertPrimaryColors(username string, wantDark string, wantLight string, t *testing.T) {
+	user, found, err := GetUserByUsername("admin")
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if !found {
+		t.Errorf("user with username `admin` not found in database")
+		return
+	}
+	if user.PrimaryColorDark != wantDark {
+		t.Errorf("Primary color for dark theme does not match: want: %s got: %s", wantDark, user.PrimaryColorDark)
+		return
+	}
+	if user.PrimaryColorLight != wantLight {
+		t.Errorf("Primary color for light theme does not match: want: %s got: %s", wantLight, user.PrimaryColorLight)
+		return
+	}
+}
+
+func TestSetUserPrimaryColors(t *testing.T) {
+	if err := SetUserPrimaryColors("admin", "#001122", "#334455"); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	assertPrimaryColors("admin", "#001122", "#334455", t)
+	if err := SetUserPrimaryColors("admin", "#667788", "#112233"); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	assertPrimaryColors("admin", "#667788", "#112233", t)
+}

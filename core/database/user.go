@@ -41,8 +41,8 @@ func createUserTable() error {
 		Username VARCHAR(20) PRIMARY KEY,
 		Firstname VARCHAR(20) DEFAULT "Forename",
 		Surname VARCHAR(20)   DEFAULT "Surname",
-		PrimaryColorDark CHAR(7) DEFAULT "#88FF70",
-		PrimaryColorLight CHAR(7) DEFAULT "#00C853",
+		PrimaryColorDark CHAR(7),
+		PrimaryColorLight CHAR(7),
 		SchedulerEnabled BOOLEAN DEFAULT TRUE,
 		DarkTheme BOOLEAN DEFAULT TRUE,
 		Password text,
@@ -330,6 +330,31 @@ func SetUserDarkThemeEnabled(username string, useDarkTheme bool) error {
 	_, err = query.Exec(useDarkTheme, username)
 	if err != nil {
 		log.Error("Failed to set dark theme for user: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}
+
+// Sets the users primary colors
+func SetUserPrimaryColors(username string, colorDark string, colorLight string) error {
+	query, err := db.Prepare(`
+	UPDATE user
+	SET
+	PrimaryColorDark=?,
+	PrimaryColorLight=?
+	WHERE Username=?
+	`)
+	if err != nil {
+		log.Error("Failed to update primary colors for user: preparing query failed: ", err.Error())
+		return err
+	}
+	_, err = query.Exec(
+		colorDark,
+		colorLight,
+		username,
+	)
+	if err != nil {
+		log.Error("Failed to update primary colors for user executing query failed: ", err.Error())
 		return err
 	}
 	return nil
