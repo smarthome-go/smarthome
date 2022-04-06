@@ -67,6 +67,9 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 	if err := createScheduleTable(); err != nil {
 		return err
 	}
+	if err := createReminderTable(); err != nil {
+		return err
+	}
 	return nil
 }
 
