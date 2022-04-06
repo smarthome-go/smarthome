@@ -29,13 +29,21 @@ $elevations: (
 }
 
 :root {
-    --clr-primary: #88ff70;
-    --clr-on-primary: #121212;
+    --clr-primary-dark: #88ff70;
+    --clr-on-primary-dark: #121212;
+    --clr-primary-light: #00C853;
+    --clr-on-primary-light: #121212;
+    --clr-primary: var(--clr-primary-dark);
+    --clr-on-primary: var(--clr-on-primary-dark);
+    --clr-hover: #ffffff1a;
+
     --icon-size: 1.5rem;
 
-    --clr-hover: #ffffff1a;
     @include elevation-colors(#121212, #fff);
+
     &.light-theme {
+        --clr-primary: var(--clr-primary-light);
+        --clr-on-primary: var(--clr-on-primary-light);
         --clr-hover: #0000001a;
         @include elevation-colors(#fff, #121212);
     }

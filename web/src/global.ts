@@ -14,26 +14,30 @@ export interface Data {
     userData: UserData
     notificationCount: number
     notifications: Notification[]
+    loaded: boolean
 }
 
 export interface UserData {
     username: string
     forename: string
     surname: string
-    primaryColor: string
+    primaryColorDark: string
+    primaryColorLight: string
     darkTheme: boolean
 }
 
 export const data: Writable<Data> = writable({
     userData: {
         forename: '',
-        primaryColor: '',
+        primaryColorDark: '',
+        primaryColorLight: '',
         surname: '',
         username: '',
         darkTheme: true,
     },
     notificationCount: 0,
-    notifications: []
+    notifications: [],
+    loaded: false,
 })
 
 let isFetching = false
@@ -49,6 +53,7 @@ export async function fetchData() {
     const temp = get(data)
     temp.userData = await fetchUserData()
     temp.notificationCount = await fetchNotificationCount()
+    temp.loaded = true
     data.set(temp)
     console.log('Fetched data:', temp)
     isFetching = false
