@@ -17,7 +17,6 @@ type FullUser struct {
 	AvatarPath       string `json:"avatarPath"`
 	SchedulerEnabled bool   `json:"schedulerEnabled"`
 	DarkTheme        bool   `json:"darkTheme"`
-	// TODO: add bg image and frontend themes
 }
 
 type User struct {
