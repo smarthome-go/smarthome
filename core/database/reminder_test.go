@@ -1,7 +1,6 @@
 package database
 
 import (
-	"fmt"
 	"testing"
 	"time"
 )
@@ -14,7 +13,8 @@ func TestCreateReminderTable(t *testing.T) {
 	}
 }
 
-func TestCreateNewReminder(t *testing.T) {
+// Test the creation, deletion and retrieval of reminders
+func TestReminders(t *testing.T) {
 	table := []Reminder{
 		{
 			Name:        "reminder 1",
@@ -64,12 +64,75 @@ func TestCreateNewReminder(t *testing.T) {
 			t.Error(err.Error())
 			return
 		}
-		fmt.Println(id)
+		exists, err := DoesReminderExist(id, i.Owner)
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+		if !exists {
+			t.Errorf("Reminder '%d' does not exist after creation", id)
+			return
+		}
+		exists, err = DoesReminderExist(id, "invalid_owner")
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+		if exists {
+			t.Errorf("Reminder '%d' exists for invalid owner", id)
+			return
+		}
 	}
-	reminders, found, err := GetUserReminders(table[0].Owner)
+	reminders, err := GetUserReminders(table[0].Owner)
 	if err != nil {
 		t.Error(err.Error())
 		return
 	}
-	fmt.Println(reminders, found)
+	for _, test := range table {
+		valid := false
+		for _, reminder := range reminders {
+			if reminder.Name == test.Name &&
+				reminder.Description == test.Description &&
+				reminder.Priority == test.Priority &&
+				reminder.Owner == test.Owner {
+				valid = true
+			}
+		}
+		if !valid {
+			t.Errorf("Reminder '%s' was not found in the database", test.Name)
+			return
+		}
+	}
+	if err := DeleteAllRemindersFromUser(table[0].Owner); err != nil {
+		t.Error(err.Error())
+		return
+	}
+}
+
+func TestDeleteUserReminderById(t *testing.T) {
+	// Create a test user in order to test if another user is allowed to delete foreign reminders
+	if err := AddUser(FullUser{Username: "reminder"}); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	// Create a reminder for the user
+	id, err := CreateNewReminder("reminder", "reminder", time.Now(), "reminder", Low)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if err := DeleteUserReminderById("admin", id); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	reminders, err := GetUserReminders("reminder")
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	// If this fails, users may be able to delete foreign reminders
+	if len(reminders) == 0 {
+		t.Errorf("Length of user reminders after deletion is 0 but should not.")
+		return
+	}
 }
