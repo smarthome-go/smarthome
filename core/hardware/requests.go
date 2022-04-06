@@ -131,6 +131,8 @@ func setPowerOnAllNodes(switchName string, powerOn bool) error {
 		}
 		errTemp := sendPowerRequest(node, switchName, powerOn)
 		if errTemp != nil {
+			// Log the error
+			event.Error("Node Request Failed", fmt.Sprintf("Power request to node '%s' failed because the request existed with: %s", node.Name, err.Error()))
 			// If the request failed, check the node and mark it as offline
 			go func() {
 				if err := checkNodeOnline(node); err != nil {
