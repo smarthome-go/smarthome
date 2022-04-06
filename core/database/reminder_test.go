@@ -64,7 +64,7 @@ func TestReminders(t *testing.T) {
 			t.Error(err.Error())
 			return
 		}
-		exists, err := DoesReminderExist(id, i.Owner)
+		_, exists, err := GetReminderById(id, i.Owner)
 		if err != nil {
 			t.Error(err.Error())
 			return
@@ -73,7 +73,7 @@ func TestReminders(t *testing.T) {
 			t.Errorf("Reminder '%d' does not exist after creation", id)
 			return
 		}
-		exists, err = DoesReminderExist(id, "invalid_owner")
+		_, exists, err = GetReminderById(id, "invalid_owner")
 		if err != nil {
 			t.Error(err.Error())
 			return
@@ -133,6 +133,32 @@ func TestDeleteUserReminderById(t *testing.T) {
 	// If this fails, users may be able to delete foreign reminders
 	if len(reminders) == 0 {
 		t.Errorf("Length of user reminders after deletion is 0 but should not.")
+		return
+	}
+	// Modify the reminder
+	if err := ModifyReminder(
+		id,
+		"new name",
+		"new description",
+		time.Date(1999, 6, 0, 0, 0, 0, 0, time.Now().Location()),
+		Urgent,
+	); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	// Check if the modification succeeded
+	reminder, _, err := GetReminderById(id, "reminder")
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if reminder.Id != id ||
+		reminder.Name != "new name" ||
+		reminder.Description != "new description" ||
+		reminder.Owner != "reminder" ||
+		reminder.DueDate.Year() != 1999 ||
+		reminder.Priority != Urgent {
+		t.Errorf("Reminder has invalid metadata after modification got: %v", reminder)
 		return
 	}
 }

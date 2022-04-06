@@ -83,7 +83,8 @@ func GetUserReminders(username string) ([]Reminder, error) {
 	SELECT
 	Id, Name, Description, Priority, CreatedDate, DueDate, Owner
 	FROM reminder
-	WHERE Owner=?
+	WHERE
+	Owner=?
 	`)
 	if err != nil {
 		log.Error("Failed to get user reminders: preparing query failed: ", err.Error())
@@ -122,33 +123,66 @@ func GetUserReminders(username string) ([]Reminder, error) {
 	return reminders, nil
 }
 
-func ModifyReminder(id uint, newName string, newDescription string, newDueDate time.Time) error {
+// Modifies a given reminder to possess the new metadata
+func ModifyReminder(id uint, name string, description string, dueDate time.Time, priority NotificationPriority) error {
+	query, err := db.Prepare(`
+	UPDATE reminder
+	SET
+	Name=?,
+	Description=?,
+	DueDate=?,
+	Priority=?
+	WHERE
+	Id=?
+	`)
+	if err != nil {
+		log.Error("Failed to modify reminder: preparing query failed: ", err.Error())
+		return err
+	}
+	if _, err := query.Exec(
+		name,
+		description,
+		dueDate,
+		priority,
+		id,
+	); err != nil {
+		log.Error("Failed to modify reminder: executing query failed: ", err.Error())
+		return err
+	}
 	return nil
 }
 
-// Checks if a given reminder exists and is owned by a certain user
-func DoesReminderExist(id uint, owner string) (bool, error) {
+// Given its id and owner, the function returns a reminder, if it was found and an error
+func GetReminderById(id uint, owner string) (Reminder, bool, error) {
 	query, err := db.Prepare(`
 	SELECT
-	Id
+	Id, Name, Description, CreatedDate, DueDate, Priority, Owner
 	FROM reminder
-	WHERE Id=?
-	AND Owner=?
+	WHERE
+	Id=? AND Owner=?
 	`)
 	if err != nil {
 		log.Error("Failed to check if reminder exists: preparing query failed: ", err.Error())
-		return false, err
+		return Reminder{}, false, err
 	}
-	// Scan to `id` due to the id not being required
-	if err := query.QueryRow(id, owner).Scan(&id); err != nil {
+	var reminder Reminder
+	if err := query.QueryRow(id, owner).Scan(
+		&reminder.Id,
+		&reminder.Name,
+		&reminder.Description,
+		&reminder.CreatedDate,
+		&reminder.DueDate,
+		&reminder.Priority,
+		&reminder.Owner,
+	); err != nil {
 		if err == sql.ErrNoRows {
-			return false, nil
+			return Reminder{}, false, nil
 		}
 		log.Error("Failed to check if reminder exists: executing query failed: ", err.Error())
-		return false, err
+		return Reminder{}, false, err
 
 	}
-	return true, nil
+	return reminder, true, nil
 }
 
 // Deletes all reminders of a given user
@@ -156,7 +190,8 @@ func DeleteAllRemindersFromUser(username string) error {
 	query, err := db.Prepare(`
 	DELETE FROM
 	reminder
-	WHERE Owner=?
+	WHERE
+	Owner=?
 	`)
 	if err != nil {
 		log.Error("Failed to remove all reminders from user: preparing query failed: ", err.Error())
@@ -173,8 +208,8 @@ func DeleteUserReminderById(owner string, id uint) error {
 	query, err := db.Prepare(`
 	DELETE FROM
 	reminder
-	WHERE Owner=?
-	AND Id=?
+	WHERE
+	Owner=? AND Id=?
 	`)
 	if err != nil {
 		log.Error("Deleting user reminder failed: preparing query failed: ", err.Error())
