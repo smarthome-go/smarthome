@@ -17,13 +17,15 @@ const (
 )
 
 type Reminder struct {
-	Id          uint                 `json:"id"`
-	Name        string               `json:"name"`
-	Description string               `json:"description"`
-	Priority    NotificationPriority `json:"priority"`
-	CreatedDate time.Time            `json:"createdDate"`
-	DueDate     time.Time            `json:"dueDate"`
-	Owner       string               `json:"owner"`
+	Id                uint                 `json:"id"`
+	Name              string               `json:"name"`
+	Description       string               `json:"description"`
+	Priority          NotificationPriority `json:"priority"`
+	CreatedDate       time.Time            `json:"createdDate"`
+	DueDate           time.Time            `json:"dueDate"`
+	Owner             string               `json:"owner"`
+	UserWasNotified   bool                 `json:"userWasNotified"` // Saves if the ownere has been notified about the current urgency of the task
+	UserWasNotifiedAt time.Time            `json:"userWasNotifiedAt"`
 }
 
 // Creates the table which contains reminders
@@ -39,6 +41,8 @@ func createReminderTable() error {
 		CreatedDate DATETIME DEFAULT CURRENT_TIMESTAMP,
 		DueDate DATETIME,
 		Owner VARCHAR(20),
+		UserWasNotified BOOL,
+		UserWasNotifiedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
 		PRIMARY KEY(Id),
 		FOREIGN KEY(Owner)
 		REFERENCES user(Username)
@@ -56,9 +60,9 @@ func CreateNewReminder(name string, description string, dueDate time.Time, owner
 	query, err := db.Prepare(`
 	INSERT INTO
 	reminder(
-		Id, Name, Description, CreatedDate, DueDate, Owner, Priority
+		Id, Name, Description, CreatedDate, DueDate, Owner, Priority, UserWasNotified, UserWasNotifiedAt
 	)
-	VALUES(DEFAULT, ?, ?, DEFAULT, ?, ?, ?)
+	VALUES(DEFAULT, ?, ?, DEFAULT, ?, ?, ?, FALSE, DEFAULT)
 	`)
 	if err != nil {
 		log.Error("Failed to create new reminder: ", err.Error())
@@ -81,7 +85,7 @@ func CreateNewReminder(name string, description string, dueDate time.Time, owner
 func GetUserReminders(username string) ([]Reminder, error) {
 	query, err := db.Prepare(`
 	SELECT
-	Id, Name, Description, Priority, CreatedDate, DueDate, Owner
+	Id, Name, Description, Priority, CreatedDate, DueDate, Owner, UserWasNotified, UserWasNotifiedAt
 	FROM reminder
 	WHERE
 	Owner=?
@@ -98,8 +102,11 @@ func GetUserReminders(username string) ([]Reminder, error) {
 	reminders := make([]Reminder, 0)
 	for res.Next() {
 		var reminder Reminder
+
 		var createdDate sql.NullTime
 		var dueDate sql.NullTime
+		var userWasNotifiedAt sql.NullTime
+
 		if err := res.Scan(
 			&reminder.Id,
 			&reminder.Name,
@@ -108,16 +115,21 @@ func GetUserReminders(username string) ([]Reminder, error) {
 			&createdDate,
 			&dueDate,
 			&reminder.Owner,
+			&reminder.UserWasNotified,
+			&reminder.UserWasNotifiedAt,
 		); err != nil {
 			log.Error("Failed to get user reminders: scanning result failed: ", err.Error())
 			return nil, err
 		}
-		if !createdDate.Valid || !dueDate.Valid {
+		if !createdDate.Valid || !dueDate.Valid || !userWasNotifiedAt.Valid {
 			log.Error("Failed to get user reminders: some dates are invalid")
 			return nil, fmt.Errorf("failed to get user reminders: invalid dates in result")
 		}
+
 		reminder.CreatedDate = createdDate.Time
 		reminder.DueDate = dueDate.Time
+		reminder.UserWasNotifiedAt = userWasNotifiedAt.Time
+
 		reminders = append(reminders, reminder)
 	}
 	return reminders, nil
@@ -152,11 +164,16 @@ func ModifyReminder(id uint, name string, description string, dueDate time.Time,
 	return nil
 }
 
+// Modifies the reminders status its owner has been informed about urgency
+func SetReminderUserWasNotified(wasNotified bool, wasNotifiedAt time.Time) error {
+	return nil
+}
+
 // Given its id and owner, the function returns a reminder, if it was found and an error
 func GetReminderById(id uint, owner string) (Reminder, bool, error) {
 	query, err := db.Prepare(`
 	SELECT
-	Id, Name, Description, CreatedDate, DueDate, Priority, Owner
+	Id, Name, Description, CreatedDate, DueDate, Priority, Owner, UserWasNotified, UserWasNotifiedAt
 	FROM reminder
 	WHERE
 	Id=? AND Owner=?
@@ -166,6 +183,11 @@ func GetReminderById(id uint, owner string) (Reminder, bool, error) {
 		return Reminder{}, false, err
 	}
 	var reminder Reminder
+
+	var createdDate sql.NullTime
+	var dueDate sql.NullTime
+	var userWasNotifiedAt sql.NullTime
+
 	if err := query.QueryRow(id, owner).Scan(
 		&reminder.Id,
 		&reminder.Name,
@@ -174,6 +196,8 @@ func GetReminderById(id uint, owner string) (Reminder, bool, error) {
 		&reminder.DueDate,
 		&reminder.Priority,
 		&reminder.Owner,
+		&reminder.UserWasNotified,
+		&reminder.UserWasNotifiedAt,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return Reminder{}, false, nil
@@ -182,6 +206,16 @@ func GetReminderById(id uint, owner string) (Reminder, bool, error) {
 		return Reminder{}, false, err
 
 	}
+
+	if !createdDate.Valid || !dueDate.Valid || !userWasNotifiedAt.Valid {
+		log.Error("Failed to get user reminders: some dates are invalid")
+		return Reminder{}, false, fmt.Errorf("failed to get user reminders: invalid dates in result")
+	}
+
+	reminder.CreatedDate = createdDate.Time
+	reminder.DueDate = dueDate.Time
+	reminder.UserWasNotifiedAt = userWasNotifiedAt.Time
+
 	return reminder, true, nil
 }
 

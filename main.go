@@ -25,6 +25,7 @@ import (
 	"github.com/MikMuellerDev/smarthome/server/routes"
 	"github.com/MikMuellerDev/smarthome/server/templates"
 	"github.com/MikMuellerDev/smarthome/services/camera"
+	"github.com/MikMuellerDev/smarthome/services/reminder"
 )
 
 var port = 8082 // Port used during development, can be overridden by config file or environment variables
@@ -72,6 +73,7 @@ func main() {
 	homescript.InitLogger(log)
 	automation.InitLogger(log)
 	scheduler.InitLogger(log)
+	reminder.InitLogger(log)
 
 	// Read config file
 	if err := config.ReadConfigFile(); err != nil {
@@ -176,6 +178,11 @@ func main() {
 	// Initializes the normal scheduler
 	if err := scheduler.Init(); err != nil {
 		log.Fatal("Failed to activate scheduler system: ", err.Error())
+	}
+
+	// Initialize notification scheduler for reminders
+	if err := reminder.InitSchedule(); err != nil {
+		log.Fatal("Failed to activate reminder scheduler: ", err.Error())
 	}
 
 	r := routes.NewRouter()
