@@ -37,8 +37,8 @@ func createUserTable() error {
 	IF NOT EXISTS
 	user(
 		Username VARCHAR(20) PRIMARY KEY,
-		Firstname VARCHAR(20) DEFAULT " ",
-		Surname VARCHAR(20)   DEFAULT " ",
+		Firstname VARCHAR(20) DEFAULT "Forename",
+		Surname VARCHAR(20)   DEFAULT "Surname",
 		PrimaryColor CHAR(7)  DEFAULT "#88ff70",
 		SchedulerEnabled BOOLEAN DEFAULT TRUE,
 		DarkTheme BOOLEAN DEFAULT TRUE,
@@ -176,7 +176,7 @@ func AddUser(user FullUser) error {
 	if _, err = AddUserPermission(user.Username, "authentication"); err != nil {
 		return err
 	}
-	if err = AddNotification(user.Username, "Hello!", "Welcome to Smarthome, the privacy-focused home automation system.", 1); err != nil {
+	if err = AddNotification(user.Username, "Hello!", "Welcome to Smarthome, the home automation system.", 1); err != nil {
 		return err
 	}
 	return nil
