@@ -49,6 +49,8 @@ clean: cleanweb
 	rm -rf docker/homescript
 	rm -rf docker/homescript_linux_amd64.tar.gz
 	rm -rf docker/smarthome
+	rm coverage.out
+	rm coverage.html
 
 cleanweb:
 	rm -rf web/out
