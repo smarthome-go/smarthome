@@ -8,13 +8,14 @@ func createUserMockData() error {
 	}
 	// Create user
 	if err := AddUser(FullUser{
-		Username:         "delete_me",
-		Firstname:        "forename",
-		Surname:          "surname",
-		PrimaryColor:     "#121212",
-		Password:         "test",
-		AvatarPath:       "/invalid",
-		SchedulerEnabled: true,
+		Username:          "delete_me",
+		Firstname:         "forename",
+		Surname:           "surname",
+		PrimaryColorDark:  "#121212",
+		PrimaryColorLight: "#121212",
+		Password:          "test",
+		AvatarPath:        "/invalid",
+		SchedulerEnabled:  true,
 	}); err != nil {
 		return err
 	}
@@ -91,7 +92,8 @@ func TestGetUserByUsername(t *testing.T) {
 	if fromDb.Username != "delete_me" ||
 		fromDb.Firstname != "forename" ||
 		fromDb.Surname != "surname" ||
-		fromDb.PrimaryColor != "#121212" ||
+		fromDb.PrimaryColorDark != "#121212" ||
+		fromDb.PrimaryColorLight != "#121212" ||
 		!fromDb.SchedulerEnabled {
 		t.Errorf("User `delete_me` has invalid metadata: got: %v", fromDb)
 		return

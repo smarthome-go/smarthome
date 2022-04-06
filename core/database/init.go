@@ -99,11 +99,12 @@ func createDatabase() error {
 
 func initAdminUser(password string) error {
 	if err := AddUser(FullUser{
-		Username:     "admin",
-		Firstname:    "Admin",
-		Surname:      "User",
-		PrimaryColor: "#88ff70",
-		Password:     password,
+		Username:          "admin",
+		Firstname:         "Admin",
+		Surname:           "User",
+		PrimaryColorDark:  "#00E676",
+		PrimaryColorLight: "#B2FF59",
+		Password:          password,
 	}); err != nil {
 		if err.Error() != "could not add user: user already exists" {
 			return err

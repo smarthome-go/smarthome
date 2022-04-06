@@ -9,23 +9,25 @@ import (
 
 // Identified by a username, has a password and an avatar path
 type FullUser struct {
-	Username         string `json:"username"`
-	Firstname        string `json:"forename"`
-	Surname          string `json:"surname"`
-	PrimaryColor     string `json:"primaryColor"`
-	Password         string `json:"password"`
-	AvatarPath       string `json:"avatarPath"`
-	SchedulerEnabled bool   `json:"schedulerEnabled"`
-	DarkTheme        bool   `json:"darkTheme"`
+	Username          string `json:"username"`
+	Firstname         string `json:"forename"`
+	Surname           string `json:"surname"`
+	PrimaryColorDark  string `json:"primaryColorDark"`
+	PrimaryColorLight string `json:"primaryColorLight"`
+	Password          string `json:"password"`
+	AvatarPath        string `json:"avatarPath"`
+	SchedulerEnabled  bool   `json:"schedulerEnabled"`
+	DarkTheme         bool   `json:"darkTheme"`
 }
 
 type User struct {
-	Username         string `json:"username"`
-	Firstname        string `json:"forename"`
-	Surname          string `json:"surname"`
-	PrimaryColor     string `json:"primaryColor"`
-	SchedulerEnabled bool   `json:"schedulerEnabled"`
-	DarkTheme        bool   `json:"darkTheme"`
+	Username          string `json:"username"`
+	Firstname         string `json:"forename"`
+	Surname           string `json:"surname"`
+	PrimaryColorDark  string `json:"primaryColorDark"`
+	PrimaryColorLight string `json:"primaryColorLight"`
+	SchedulerEnabled  bool   `json:"schedulerEnabled"`
+	DarkTheme         bool   `json:"darkTheme"`
 }
 
 // Used during <Init> of the database, only called once
@@ -39,13 +41,13 @@ func createUserTable() error {
 		Username VARCHAR(20) PRIMARY KEY,
 		Firstname VARCHAR(20) DEFAULT "Forename",
 		Surname VARCHAR(20)   DEFAULT "Surname",
-		PrimaryColor CHAR(7)  DEFAULT "#88ff70",
+		PrimaryColorDark CHAR(7) DEFAULT "#00E676",
+		PrimaryColorLight CHAR(7) DEFAULT "#B2FF59",
 		SchedulerEnabled BOOLEAN DEFAULT TRUE,
 		DarkTheme BOOLEAN DEFAULT TRUE,
 		Password text,
 		AvatarPath text
-	)
-	`
+	)`
 	_, err := db.Exec(query)
 	if err != nil {
 		log.Error("Failed to create user table: Executing query failed: ", err.Error())
@@ -59,7 +61,7 @@ func createUserTable() error {
 func ListUsers() ([]User, error) {
 	query := `
 	SELECT
-	Username, Firstname, Surname, PrimaryColor, SchedulerEnabled, DarkTheme
+	Username, Firstname, Surname, PrimaryColorDark, PrimaryColorLight, SchedulerEnabled, DarkTheme
 	FROM user`
 	res, err := db.Query(query)
 	if err != nil {
@@ -73,7 +75,8 @@ func ListUsers() ([]User, error) {
 			&user.Username,
 			&user.Firstname,
 			&user.Surname,
-			&user.PrimaryColor,
+			&user.PrimaryColorDark,
+			&user.PrimaryColorLight,
 			&user.SchedulerEnabled,
 			&user.DarkTheme,
 		)
@@ -91,8 +94,8 @@ func ListUsers() ([]User, error) {
 func InsertUser(user FullUser) error {
 	query, err := db.Prepare(`
 	INSERT INTO
-	user(Username, Firstname, Surname, PrimaryColor, Password, AvatarPath, SchedulerEnabled, DarkTheme)
-	VALUES(?, ?, ?, ?, ?, ?, DEFAULT, DEFAULT)
+	user(Username, Firstname, Surname, PrimaryColorDark, PrimaryColorLight, Password, AvatarPath, SchedulerEnabled, DarkTheme)
+	VALUES(?, ?, ?, ?, ?, ?, ?, DEFAULT, DEFAULT)
 	ON DUPLICATE KEY UPDATE Password=VALUES(Password)`)
 	if err != nil {
 		log.Error("Could not create user. Failed to prepare query: ", err.Error())
@@ -102,7 +105,8 @@ func InsertUser(user FullUser) error {
 		user.Username,
 		user.Firstname,
 		user.Surname,
-		user.PrimaryColor,
+		user.PrimaryColorDark,
+		user.PrimaryColorLight,
 		user.Password,
 		"./resources/avatar/default.png",
 	)
@@ -201,7 +205,7 @@ func DoesUserExist(username string) (bool, error) {
 func GetUserByUsername(username string) (User, bool, error) {
 	query, err := db.Prepare(`
 	SELECT
-	Username, Firstname, Surname, PrimaryColor, SchedulerEnabled, DarkTheme
+	Username, Firstname, Surname, PrimaryColorDark, PrimaryColorLight, SchedulerEnabled, DarkTheme
 	FROM user
 	WHERE Username=?
 	`)
@@ -214,7 +218,8 @@ func GetUserByUsername(username string) (User, bool, error) {
 		&user.Username,
 		&user.Firstname,
 		&user.Surname,
-		&user.PrimaryColor,
+		&user.PrimaryColorDark,
+		&user.PrimaryColorLight,
 		&user.SchedulerEnabled,
 		&user.DarkTheme,
 	); err != nil {
