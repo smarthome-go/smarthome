@@ -11,23 +11,17 @@ type PermissionType string
 
 // Different types of permissions
 const (
-	PermissionAuthentication          PermissionType = "authentication"
-	PermissionSetPower                PermissionType = "setPower"
-	PermissionAddLogEvent             PermissionType = "addLogEvent"
-	PermissionDeleteLogs              PermissionType = "deleteLogs"
-	PermissionListLogs                PermissionType = "listLogs"
-	PermissionChangeAvatar            PermissionType = "changeAvatar"
-	PermissionChangeUserPermissions   PermissionType = "changeUserPermissions"
-	PermissionChangeSwitchPermissions PermissionType = "changeSwitchPermissions"
-	PermissionGetDebugInfo            PermissionType = "getDebugInfo"
-	PermissionChangeUsers             PermissionType = "changeUsers"
-	PermissionListUsers               PermissionType = "listUsers"
-	PermissionHomescript              PermissionType = "homescript"
-	PermissionAutomation              PermissionType = "automation"
-	PermissionScheduler               PermissionType = "scheduler"
-	PermissionReminder                PermissionType = "reminder"
-	PermissionActivateAutomation      PermissionType = "activateAutomation"
-	PermissionModifyLocation          PermissionType = "changeLocation"
+	PermissionAuthentication     PermissionType = "authentication"
+	PermissionPower              PermissionType = "setPower"
+	PermissionLogs               PermissionType = "logs"
+	PermissionManageUsers        PermissionType = "manageUsers"
+	PermissionDebug              PermissionType = "debug"
+	PermissionHomescript         PermissionType = "homescript"
+	PermissionAutomation         PermissionType = "automation"
+	PermissionScheduler          PermissionType = "scheduler"
+	PermissionReminder           PermissionType = "reminder"
+	PermissionModifyServerConfig PermissionType = "modifyServerConfig"
+	PermissionModifyRooms        PermissionType = "modifyRooms"
 
 	// Dangerous
 	PermissionWildCard PermissionType = "*"
@@ -43,63 +37,27 @@ var (
 		},
 		{
 			// User is allowed to request power jobs, interact with outlets, still dependent on switch permissions
-			Permission:  PermissionSetPower,
-			Name:        "Set Power",
+			Permission:  PermissionPower,
+			Name:        "Power",
 			Description: "Interact with switches",
 		},
 		{
-			// (Admin) is allowed to use the internal logging system
-			Permission:  PermissionAddLogEvent,
-			Name:        "Add Log Event",
-			Description: "Use the internal logging system",
-		},
-		{
-			// (Admin) is allowed to delete logs older than 30 days
-			Permission:  PermissionDeleteLogs,
-			Name:        "Flush Logs All or Old",
-			Description: "Delete logs events which are older than 30 days or delete all log events",
-		},
-		{
-			// (Admin) is allowed to request logs
-			Permission:  PermissionListLogs,
-			Name:        "List Logs",
-			Description: "List all internal logs",
-		},
-		{
-			// User is allowed to upload a custom avatar
-			Permission:  PermissionChangeAvatar,
-			Name:        "Upload / Delete / Change Avatar",
-			Description: "Allows the user to customize their avatar",
-		},
-		{
-			// (Admin) is allowed to add / delete permissions to / from users
-			Permission:  PermissionChangeUserPermissions,
-			Name:        "Change User Permissions",
-			Description: "Add / delete permissions to / from users",
-		},
-		{
-			// (Admin) is allowed to add / delete switch permissions to / from users
-			Permission:  PermissionChangeSwitchPermissions,
-			Name:        "Change User Switch Permissions",
-			Description: "Add / delete switch permissions to / from users",
+			// (Admin) is allowed to use and manage the internal logging system
+			Permission:  PermissionLogs,
+			Name:        "Manage Logging",
+			Description: "Use and manage the internal logging system",
 		},
 		{
 			// (Admin) is allowed to read debug information from the server
-			Permission:  PermissionGetDebugInfo,
-			Name:        "Display Debug Info",
+			Permission:  PermissionDebug,
+			Name:        "Debug Features",
 			Description: "Obtain debug information about the system",
 		},
 		{
-			// (Admin) is allowed to create new users or delete users
-			Permission:  PermissionChangeUsers,
-			Name:        "Add / Delete users",
-			Description: "Create a new user or delete users",
-		},
-		{
-			// (Admin) is allowed to list all users
-			Permission:  PermissionListUsers,
-			Name:        "List users",
-			Description: "See a list of all users",
+			// (Admin) is allowed to create new users or delete users and manage their permissions
+			Permission:  PermissionManageUsers,
+			Name:        "Manage Users",
+			Description: "Create / remove and manage users and manage their permissions",
 		},
 		{
 			// User is allowed to run, add, delete, and modify Homescript, scheduler homescript excluded
@@ -120,19 +78,19 @@ var (
 			Description: "List, add, delete, and modify schedules",
 		},
 		{
-			// (Admin) is allowed to toggle the state of the automations system
-			Permission:  PermissionActivateAutomation,
-			Name:        "(De) Activate Automation System",
-			Description: "Enable / Disable the entire automation system",
+			// User is allowed to set up, modify, delete, and view personal reminders
+			Permission:  PermissionReminder,
+			Name:        "Use Reminders",
+			Description: "List, add, delete, and modify reminders",
 		},
 		{
-			// (Admin) is allowed to modify the servers geolocation
-			Permission:  PermissionModifyLocation,
-			Name:        "Modify Server Location",
-			Description: "Modify the geolocation of the server",
+			// (Admin) is allowed to change global config parameters
+			Permission:  PermissionModifyServerConfig,
+			Name:        "Manage Server Config",
+			Description: "Change global server configuration values",
 		},
 		{
-			// WARNING: This allows a user to do everything, should only be allowed to the `admin` user
+			// WARNING: This allows a user to do everything, should only be allowed to admin users
 			Permission:  PermissionWildCard,
 			Name:        "Permission Wildcard *",
 			Description: "Allows all permissions",

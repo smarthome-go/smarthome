@@ -166,8 +166,23 @@ func ModifyReminder(id uint, name string, description string, dueDate time.Time,
 }
 
 // Modifies the reminders status its owner has been informed about urgency
-func SetReminderUserWasNotified(wasNotified bool, wasNotifiedAt time.Time) error {
+func SetReminderUserWasNotified(id uint, wasNotified bool, wasNotifiedAt time.Time) error {
 	// TODO: add this function
+	query, err := db.Prepare(`
+	UPDATE reminder
+	SET
+	UserWasNotified=?,
+	UserWasNotifiedAt=?
+	WHERE Id=?
+	`)
+	if err != nil {
+		log.Error("Failed to update notification status of reminders: preparing query failed: ", err.Error())
+		return err
+	}
+	if _, err := query.Exec(wasNotified, wasNotifiedAt, id); err != nil {
+		log.Error("Failed to update notification status of reminders: executing query failed: ", err.Error())
+		return err
+	}
 	return nil
 }
 
@@ -194,8 +209,8 @@ func GetReminderById(id uint, owner string) (Reminder, bool, error) {
 		&reminder.Id,
 		&reminder.Name,
 		&reminder.Description,
-		&reminder.CreatedDate,
-		&reminder.DueDate,
+		&createdDate,
+		&dueDate,
 		&reminder.Priority,
 		&reminder.Owner,
 		&reminder.UserWasNotified,
@@ -210,7 +225,7 @@ func GetReminderById(id uint, owner string) (Reminder, bool, error) {
 	}
 
 	if !createdDate.Valid || !dueDate.Valid || !userWasNotifiedAt.Valid {
-		log.Error("Failed to get user reminders: some dates are invalid")
+		log.Errorf("Failed to get user reminders: some dates are invalid: (%t, %t, %t)", createdDate.Valid, dueDate.Valid, userWasNotifiedAt.Valid)
 		return Reminder{}, false, fmt.Errorf("failed to get user reminders: invalid dates in result")
 	}
 

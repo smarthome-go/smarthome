@@ -26,7 +26,7 @@ func fetchImageBytes(url string, timeout int) ([]byte, error) {
 		return make([]byte, 0), err
 	}
 	if response.StatusCode != 200 {
-		fmt.Printf("Received non 200 response code\n")
+		log.Error("Received non 200 response code\n")
 	}
 	imageData, err := ioutil.ReadAll(response.Body)
 	if err != nil {
