@@ -80,3 +80,5 @@ func GetReminders(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "could not encode response"})
 	}
 }
+
+// Deletes a reminder, for example if it's task is finished

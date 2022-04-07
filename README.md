@@ -1,5 +1,5 @@
 # Smarthome
-### Version: `0.0.18-beta`
+### Version: `0.0.19-beta`
 
 [![Go Build](https://github.com/MikMuellerDev/smarthome/actions/workflows/go.yml/badge.svg)](https://github.com/MikMuellerDev/smarthome/actions/workflows/go.yml)
 

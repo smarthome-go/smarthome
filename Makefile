@@ -1,7 +1,7 @@
 appname := smarthome
 workingdir := smarthome
 sources := $(wildcard *.go)
-version := 0.0.18-beta
+version := 0.0.19-beta
 
 build = GOOS=$(1) GOARCH=$(2) go build -v -o $(appname) $(4)
 tar = mkdir -p build && cd ../ && tar -cvzf ./$(appname)_$(1)_$(2).tar.gz $(workingdir)/$(appname) $(workingdir)/web/out $(workingdir)/web/html $(workingdir)/web/assets && mv $(appname)_$(1)_$(2).tar.gz $(workingdir)/build
@@ -52,8 +52,8 @@ clean: cleanweb
 	rm -rf docker/homescript
 	rm -rf docker/homescript_linux_amd64.tar.gz
 	rm -rf docker/smarthome
-	rm coverage.out
-	rm coverage.html
+	rm -rf coverage.out
+	rm -rf coverage.html
 
 cleanweb:
 	rm -rf web/out
@@ -72,13 +72,14 @@ build: web all linux clean
 
 docker: cleanall web test
 	GOOS=linux GOARCH=amd64 go build -v -o smarthome -ldflags '-extldflags "-fno-PIC -static"' -buildmode pie -tags 'osusergo netgo static_build' 
-	mkdir docker/app
-	# rsync -rv --exclude=data/avatars data docker/app/
-	rsync -rv --exclude=web/src --exclude=web/node_modules --exclude=web/*.json web docker/app/
+	mkdir -p docker/app/web
+	rsync -rv resources docker/app/
+	rsync -rv web/dist docker/app/web/
 	cp smarthome docker/app/
 	cd docker && docker build . -t mikmuellerdev/smarthome:$(version)
 
 web: cleanweb
+	cd web && npm run prepare
 	cd web && npm run build
 
 # Build architectures

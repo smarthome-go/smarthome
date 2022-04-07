@@ -1,7 +1,7 @@
 FROM amd64/debian:stable-slim
 
 LABEL author="MikMuellerDev"
-LABEL version="0.0.18-beta"
+LABEL version="0.0.19-beta"
 
 RUN useradd -M smarthome
 
@@ -30,5 +30,7 @@ HEALTHCHECK --interval=300s --timeout=5s --start-period=5s CMD curl --fail http:
 EXPOSE 80/tcp
 
 USER smarthome:smarthome
+
+ENV SMARTHOME_LOG_LEVEL=INFO
 
 ENTRYPOINT ["/app/smarthome"]

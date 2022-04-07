@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   smarthome:
-    image: mikmuellerdev/smarthome:0.0.18-beta
+    image: mikmuellerdev/smarthome:0.0.19-beta
     container_name: smarthome
     depends_on:
       - "smarthome-mariadb"
