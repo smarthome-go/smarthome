@@ -209,8 +209,8 @@ func GetReminderById(id uint, owner string) (Reminder, bool, error) {
 		&reminder.Id,
 		&reminder.Name,
 		&reminder.Description,
-		&reminder.CreatedDate,
-		&reminder.DueDate,
+		&createdDate,
+		&dueDate,
 		&reminder.Priority,
 		&reminder.Owner,
 		&reminder.UserWasNotified,
@@ -225,7 +225,7 @@ func GetReminderById(id uint, owner string) (Reminder, bool, error) {
 	}
 
 	if !createdDate.Valid || !dueDate.Valid || !userWasNotifiedAt.Valid {
-		log.Error("Failed to get user reminders: some dates are invalid")
+		log.Errorf("Failed to get user reminders: some dates are invalid: (%t, %t, %t)", createdDate.Valid, dueDate.Valid, userWasNotifiedAt.Valid)
 		return Reminder{}, false, fmt.Errorf("failed to get user reminders: invalid dates in result")
 	}
 
