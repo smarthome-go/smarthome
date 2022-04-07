@@ -149,6 +149,7 @@
         cursor: pointer;
         height: 2rem;
         aspect-ratio: 1;
+        overflow: hidden;
         transform: translate(50%, -50%);
         display: flex;
         align-items: center;
