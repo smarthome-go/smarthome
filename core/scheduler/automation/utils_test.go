@@ -1,7 +1,6 @@
 package automation
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/MikMuellerDev/smarthome/core/database"
@@ -21,7 +20,6 @@ func TestCreateAutomation(t *testing.T) {
 		database.TimingNormal,
 	)
 	if err != nil {
-		fmt.Println(err.Error())
 		t.Error(err.Error())
 		return
 	}
@@ -56,7 +54,6 @@ func TestModifyAutomation(t *testing.T) {
 		database.TimingSunrise,
 	)
 	if err != nil {
-		fmt.Println(err.Error())
 		t.Error(err.Error())
 		return
 	}
@@ -106,7 +103,6 @@ func TestRemoveAutomation(t *testing.T) {
 		database.TimingNormal,
 	)
 	if err != nil {
-		fmt.Println(err.Error())
 		t.Error(err.Error())
 		return
 	}
@@ -148,7 +144,6 @@ func TestGetUserAutomations(t *testing.T) {
 			true,
 			database.TimingNormal,
 		); err != nil {
-			fmt.Println(err.Error())
 			t.Error(err.Error())
 			return
 		}
