@@ -82,7 +82,7 @@ func (self *Executor) Log(
 	description string,
 	level interpreter.LogLevel,
 ) error {
-	hasPermission, err := database.UserHasPermission(self.Username, database.PermissionAddLogEvent)
+	hasPermission, err := database.UserHasPermission(self.Username, database.PermissionLogs)
 	if err != nil {
 		log.Error(fmt.Sprintf("[Homescript] ERROR: script: '%s' user: '%s': failed to log event: failed to check permission: %s", self.ScriptName, self.Username, err.Error()))
 		return err

@@ -56,7 +56,7 @@ func SetSwitchPowerAll(switchId string, powerOn bool, username string) error {
 	if !switchExists {
 		return fmt.Errorf("Failed to set power: switch '%s' does not exist", switchId)
 	}
-	userHasPowerPermission, err := database.UserHasPermission(username, database.PermissionSetPower)
+	userHasPowerPermission, err := database.UserHasPermission(username, database.PermissionPower)
 	if err != nil {
 		return fmt.Errorf("Failed to set power: could not check if user is allowed to interact with switches: %s", err.Error())
 	}

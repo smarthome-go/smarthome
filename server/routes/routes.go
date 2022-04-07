@@ -37,7 +37,7 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/health", api.HealthCheck).Methods("GET")
 
 	// Debug information about the system
-	r.HandleFunc("/api/debug", mdl.ApiAuth(mdl.Perm(api.DebugInfo, database.PermissionGetDebugInfo))).Methods("GET")
+	r.HandleFunc("/api/debug", mdl.ApiAuth(mdl.Perm(api.DebugInfo, database.PermissionDebug))).Methods("GET")
 
 	r.HandleFunc("/login", loginGetHandler).Methods("GET")
 	r.HandleFunc("/logout", logoutGetHandler).Methods("GET")
@@ -48,35 +48,35 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/switch/list", api.GetSwitches).Methods("GET")
 	r.HandleFunc("/api/switch/list/personal", mdl.ApiAuth(api.GetUserSwitches)).Methods("GET")
 	r.HandleFunc("/api/power/states", api.GetPowerStates).Methods("GET")
-	r.HandleFunc("/api/power/set", mdl.ApiAuth(mdl.Perm(api.PowerPostHandler, database.PermissionSetPower))).Methods("POST")
+	r.HandleFunc("/api/power/set", mdl.ApiAuth(mdl.Perm(api.PowerPostHandler, database.PermissionPower))).Methods("POST")
 
 	// Rooms
 	r.HandleFunc("/api/room/list/personal", mdl.ApiAuth(api.GetUserRoomsWithSwitches)).Methods("GET")
 
 	// Logs for the admin user
-	r.HandleFunc("/api/logs/delete/old", mdl.ApiAuth(mdl.Perm(api.FlushOldLogs, database.PermissionDeleteLogs))).Methods("DELETE")
-	r.HandleFunc("/api/logs/delete/all", mdl.ApiAuth(mdl.Perm(api.FlushAllLogs, database.PermissionDeleteLogs))).Methods("DELETE")
-	r.HandleFunc("/api/logs", mdl.ApiAuth(mdl.Perm(api.ListLogs, database.PermissionListLogs))).Methods("GET")
+	r.HandleFunc("/api/logs/delete/old", mdl.ApiAuth(mdl.Perm(api.FlushOldLogs, database.PermissionLogs))).Methods("DELETE")
+	r.HandleFunc("/api/logs/delete/all", mdl.ApiAuth(mdl.Perm(api.FlushAllLogs, database.PermissionLogs))).Methods("DELETE")
+	r.HandleFunc("/api/logs", mdl.ApiAuth(mdl.Perm(api.ListLogs, database.PermissionLogs))).Methods("GET")
 
 	// Customization for the user
 	// Profile picture upload test
 	r.HandleFunc("/api/user/avatar", mdl.ApiAuth(getAvatar)).Methods("GET")
-	r.HandleFunc("/api/user/avatar/upload", mdl.ApiAuth(mdl.Perm(handleAvatarUpload, database.PermissionChangeAvatar))).Methods("POST")
-	r.HandleFunc("/api/user/avatar/delete", mdl.ApiAuth(mdl.Perm(deleteAvatar, database.PermissionChangeAvatar))).Methods("DELETE")
+	r.HandleFunc("/api/user/avatar/upload", mdl.ApiAuth(handleAvatarUpload)).Methods("POST")
+	r.HandleFunc("/api/user/avatar/delete", mdl.ApiAuth(deleteAvatar)).Methods("DELETE")
 
 	// Permissions
 	r.HandleFunc("/api/user/permissions/personal", mdl.ApiAuth(api.GetUserPermissions))
-	r.HandleFunc("/api/user/permissions/add", mdl.ApiAuth(mdl.Perm(api.AddUserPermission, database.PermissionChangeUserPermissions))).Methods("PUT")
-	r.HandleFunc("/api/user/permissions/delete", mdl.ApiAuth(mdl.Perm(api.RemoveUserPermission, database.PermissionChangeUserPermissions))).Methods("DELETE")
+	r.HandleFunc("/api/user/permissions/add", mdl.ApiAuth(mdl.Perm(api.AddUserPermission, database.PermissionManageUsers))).Methods("PUT")
+	r.HandleFunc("/api/user/permissions/delete", mdl.ApiAuth(mdl.Perm(api.RemoveUserPermission, database.PermissionManageUsers))).Methods("DELETE")
 
 	// Switch Permissions
-	r.HandleFunc("/api/user/permissions/switch/add", mdl.ApiAuth(mdl.Perm(api.AddSwitchPermission, database.PermissionChangeSwitchPermissions))).Methods("PUT")
-	r.HandleFunc("/api/user/permissions/switch/delete", mdl.ApiAuth(mdl.Perm(api.RemoveSwitchPermission, database.PermissionChangeSwitchPermissions))).Methods("DELETE")
+	r.HandleFunc("/api/user/permissions/switch/add", mdl.ApiAuth(mdl.Perm(api.AddSwitchPermission, database.PermissionManageUsers))).Methods("PUT")
+	r.HandleFunc("/api/user/permissions/switch/delete", mdl.ApiAuth(mdl.Perm(api.RemoveSwitchPermission, database.PermissionManageUsers))).Methods("DELETE")
 
 	// Creating and removing users
-	r.HandleFunc("/api/user/list", mdl.ApiAuth(mdl.Perm(api.ListUsers, database.PermissionListUsers))).Methods("GET")
-	r.HandleFunc("/api/user/add", mdl.ApiAuth(mdl.Perm(api.AddUser, database.PermissionChangeUsers))).Methods("POST")
-	r.HandleFunc("/api/user/delete", mdl.ApiAuth(mdl.Perm(api.DeleteUser, database.PermissionChangeUsers))).Methods("DELETE")
+	r.HandleFunc("/api/user/list", mdl.ApiAuth(mdl.Perm(api.ListUsers, database.PermissionManageUsers))).Methods("GET")
+	r.HandleFunc("/api/user/add", mdl.ApiAuth(mdl.Perm(api.AddUser, database.PermissionManageUsers))).Methods("POST")
+	r.HandleFunc("/api/user/delete", mdl.ApiAuth(mdl.Perm(api.DeleteUser, database.PermissionManageUsers))).Methods("DELETE")
 
 	// Get personal details
 	r.HandleFunc("/api/user/data", mdl.ApiAuth(api.GetUserDetails)).Methods("GET")
@@ -99,7 +99,7 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/automation/add", mdl.ApiAuth(mdl.Perm(api.CreateNewAutomation, database.PermissionAutomation))).Methods("POST")
 	r.HandleFunc("/api/automation/delete", mdl.ApiAuth(mdl.Perm(api.RemoveAutomation, database.PermissionAutomation))).Methods("DELETE")
 	r.HandleFunc("/api/automation/modify", mdl.ApiAuth(mdl.Perm(api.ModifyAutomation, database.PermissionAutomation))).Methods("PUT")
-	r.HandleFunc("/api/automation/state/global", mdl.ApiAuth(mdl.Perm(api.ChangeActivationAutomation, database.PermissionActivateAutomation))).Methods("PUT")
+	r.HandleFunc("/api/automation/state/global", mdl.ApiAuth(mdl.Perm(api.ChangeActivationAutomation, database.PermissionModifyServerConfig))).Methods("PUT")
 
 	// Schedule-related
 	r.HandleFunc("/api/scheduler/list/personal", mdl.ApiAuth(mdl.Perm(api.GetUserSchedules, database.PermissionScheduler))).Methods("GET")
@@ -109,7 +109,7 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/scheduler/state/personal", mdl.ApiAuth(mdl.Perm(api.SetUserSchedulerEnabled, database.PermissionScheduler))).Methods("PUT")
 
 	// Admin-specific
-	r.HandleFunc("/api/config/location/modify", mdl.ApiAuth(mdl.Perm(api.UpdateLocation, database.PermissionModifyLocation))).Methods("PUT")
+	r.HandleFunc("/api/config/location/modify", mdl.ApiAuth(mdl.Perm(api.UpdateLocation, database.PermissionModifyServerConfig))).Methods("PUT")
 
 	// Customization
 	r.HandleFunc("/api/user/settings/theme", mdl.ApiAuth(api.SetColorTheme)).Methods("PUT")
