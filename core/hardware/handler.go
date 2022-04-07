@@ -1,6 +1,8 @@
 package hardware
 
-import "time"
+import (
+	"time"
+)
 
 /*
 Feature-spec of the handler:
@@ -48,10 +50,20 @@ func addJobToQueue(switchId string, turnOn bool, id int64) {
 		daemonRunning = true
 		ch := make(chan bool)
 		go jobDaemon(ch)
-		<-ch
+		for {
+			select {
+			case <-ch:
+				return
+			default:
+				time.Sleep(time.Millisecond * 50)
+				if hasFinished(id) {
+					return
+				}
+			}
+		}
 	} else {
-		for daemonRunning {
-			time.Sleep(time.Second)
+		for daemonRunning && !hasFinished(id) {
+			time.Sleep(time.Millisecond * 50)
 		}
 	}
 }
@@ -103,6 +115,16 @@ func consumeResult(id int64) JobResult {
 	}
 	jobResults = resultsTemp
 	return returnValue
+}
+
+// Checks if the job with the current id has finished
+func hasFinished(id int64) bool {
+	for _, result := range jobResults {
+		if result.Id == id {
+			return true
+		}
+	}
+	return false
 }
 
 // Returns the number of currently pending jobs in the queue
