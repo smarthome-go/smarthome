@@ -14,6 +14,7 @@ all:	linux
 setup:
 	go mod tidy
 	cd web && npm i
+	cd web && npm run prepare
 
 # Testing
 test:
@@ -70,13 +71,15 @@ mysql:
 # Builds
 build: web all linux clean
 
-docker: cleanall web test
+docker: cleanall web
 	GOOS=linux GOARCH=amd64 go build -v -o smarthome -ldflags '-extldflags "-fno-PIC -static"' -buildmode pie -tags 'osusergo netgo static_build' 
 	mkdir -p docker/app/web
 	rsync -rv resources docker/app/
 	rsync -rv web/dist docker/app/web/
 	cp smarthome docker/app/
 	cd docker && docker build . -t mikmuellerdev/smarthome:$(version)
+
+docker-releasse: test docker 
 
 web: cleanweb
 	cd web && npm run prepare
