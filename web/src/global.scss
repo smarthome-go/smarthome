@@ -4,7 +4,6 @@
 
 @use '@material/typography';
 @use '@material/elevation/styles';
-@use '@material/linear-progress';
 @use 'material-icons/iconfont/filled.css';
 
 $elevations: (
@@ -31,8 +30,8 @@ $elevations: (
 :root {
     --clr-primary-dark: #88ff70;
     --clr-on-primary-dark: #121212;
-    --clr-primary-light: #00C853;
-    --clr-on-primary-light: #121212;
+    --clr-primary-light: #2E7D32; // Green 800
+    --clr-on-primary-light: #ffffff;
     --clr-primary: var(--clr-primary-dark);
     --clr-on-primary: var(--clr-on-primary-dark);
     --clr-hover: #ffffff1a;
@@ -48,20 +47,22 @@ $elevations: (
         @include elevation-colors(#fff, #121212);
     }
 
-    @for $hue from 0 through 9 {
-        --clr-bg-#{$hue}00: var(--clr-height-0-#{list.nth(map.keys($elevations), $hue + 1)});
-    }
-
     --mdc-theme-primary: var(--clr-primary);
     --mdc-theme-on-primary: var(--clr-on-primary);
 }
-.mdc-text-field { user-select: none; }
-.mdc-text-field--focused:not(.mdc-text-field--disabled, .mdc-text-field--invalid) .mdc-floating-label {
-    color: var(--mdc-theme-primary);
+
+// Snackbar actions primary color
+.mdc-snackbar__actions {
+    --mdc-theme-primary: var(--clr-primary-light);
+    :root.light-theme & { --mdc-theme-primary: var(--clr-primary-dark); }
 }
-.mdc-linear-progress {
-    @include linear-progress.buffer-color(transparent);
+
+.mdc-circular-progress {
+    height: 1.5rem;
+    width: 1.5rem;
 }
+
+body { margin: 0; }
 
 
 h1, h2, h3, h4, h5, h6, p { opacity: 87%; }

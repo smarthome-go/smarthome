@@ -1,0 +1,37 @@
+@use '@material/theme/color-palette' as colors;
+@use '@material/linear-progress';
+
+// Text field label selection
+.mdc-text-field { user-select: none; }
+// Text field floating label color
+.mdc-text-field--focused:not(.mdc-text-field--disabled, .mdc-text-field--invalid) .mdc-floating-label {
+    color: var(--mdc-theme-primary);
+}
+// Linear progress background color
+.mdc-linear-progress {
+    @include linear-progress.buffer-color(transparent);
+}
+// Switch enabled color for hover/focus/active
+.mdc-switch.mdc-switch--selected:enabled:hover:not(:focus):not(:active) .mdc-switch__handle::after,
+.mdc-switch.mdc-switch--selected:enabled:focus:not(:active) .mdc-switch__handle::after,
+.mdc-switch.mdc-switch--selected:enabled:active .mdc-switch__handle::after {
+    background-color: var(--mdc-theme-primary) !important;
+}
+// Switch disabled color for hover/focus/active
+.mdc-switch.mdc-switch--unselected:enabled:hover:not(:focus):not(:active) .mdc-switch__handle::after,
+.mdc-switch.mdc-switch--unselected:enabled:focus:not(:active) .mdc-switch__handle::after,
+.mdc-switch.mdc-switch--unselected:enabled:active .mdc-switch__handle::after {
+    background-color: colors.$grey-700 !important;
+}
+// Switch track color
+.mdc-switch:enabled .mdc-switch__track::after,
+.mdc-switch:enabled:hover:not(:focus):not(:active) .mdc-switch__track::after,
+.mdc-switch:enabled:focus:not(:active) .mdc-switch__track::after,
+    .mdc-switch:enabled:active .mdc-switch__track::after {
+    background-color: var(--mdc-theme-primary) !important;
+    filter: brightness(175%);
+}
+// Snackbar action text color
+.mdc-snackbar__action:not(:disabled) {
+    color: var(--mdc-theme-primary) !important;
+}

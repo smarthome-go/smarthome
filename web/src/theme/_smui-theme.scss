@@ -1,10 +1,13 @@
 @use 'sass:color';
 
+@use '@material/theme/color-palette' as colors;
 @use '@material/theme/index' as theme with (
   $background: #fff,
   $surface: #fff,
   $error: #b00020,
 );
+
+@use './fixes';
 
 html,
 body {
@@ -15,6 +18,13 @@ body {
 :root {
   --clr-text: #{theme.$on-surface};
   --clr-error: #{theme.$error};
-  --clr-warn: #FFAB00; // Amber A700
-  --clr-success: #00C853; // Green A700
+  --clr-warn: #{colors.$amber-a700};
+  --clr-success: #{colors.$green-a700};
+}
+
+.mdc-switch:enabled .mdc-switch__track::before,
+.mdc-switch:enabled:active .mdc-switch__track::before,
+.mdc-switch:enabled:focus:not(:active) .mdc-switch__track::before,
+.mdc-switch:enabled:hover:not(:focus):not(:active) .mdc-switch__track::before {
+  background-color: colors.$grey-400 !important;
 }

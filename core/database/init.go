@@ -106,7 +106,7 @@ func initAdminUser(password string) error {
 		Firstname:         "Admin",
 		Surname:           "User",
 		PrimaryColorDark:  "#88FF70",
-		PrimaryColorLight: "#00C853",
+		PrimaryColorLight: "#2E7D32",
 		Password:          password,
 	}); err != nil {
 		if err.Error() != "could not add user: user already exists" {
