@@ -31,6 +31,7 @@
         try {
             const res = await (await fetch('/api/user/notification/delete', {
                 method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id }),
             })).json()
             if (!res.success) throw new Error()
@@ -155,8 +156,6 @@
         position: absolute;
         top: 1rem;
         right: 4rem;
-        height: 1.5rem;
-        width: 1.5rem;
         opacity: 0;
         &.visible { opacity: 1; }
     }

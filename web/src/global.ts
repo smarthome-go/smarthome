@@ -1,6 +1,7 @@
+import type { ConfigAction } from '@smui/snackbar/kitchen'
 import { Writable, writable, get } from 'svelte/store'
 
-export const createSnackbar: Writable<(message: string) => void> = writable(() => {})
+export const createSnackbar: Writable<(message: string, actions?: ConfigAction[]) => void> = writable(() => {})
 
 export interface Notification {
     id: number

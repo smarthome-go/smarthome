@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Kitchen from '@smui/snackbar/kitchen'
+    import Kitchen, { ConfigAction } from '@smui/snackbar/kitchen'
     import type { KitchenComponentDev } from '@smui/snackbar/kitchen'
     import NavBar from './components/NavBar.svelte'
     import { data, createSnackbar } from './global'
@@ -34,10 +34,11 @@
     }
 
     let kitchen: KitchenComponentDev
-    $createSnackbar = (message: string) => {
+    $createSnackbar = (message: string, actions?: ConfigAction[]) => {
         kitchen.push({
             label: message,
             dismissButton: true,
+            actions,
         })
     }
 </script>

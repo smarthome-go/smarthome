@@ -39,9 +39,7 @@
         loader.getElement().style.opacity = '1'
         const res = await fetch('/api/login', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })
         })
         loader.getElement().style.opacity = '0'
@@ -79,7 +77,7 @@
                 gradientTransform="rotate(-45 0.5 0.5)"
             >
                 <stop offset="0%" stop-color="var(--clr-primary)" />
-                <stop offset="100%" stop-color="var(--clr-bg-400)" />
+                <stop offset="100%" stop-color="var(--clr-height-0-4)" />
             </linearGradient>
             <polygon
                 points="25,5 75,5 100,50 75,95 25,95 0,50"
