@@ -61,15 +61,19 @@
         <IconButton class="material-icons" on:click={() => loadRooms(true)}>refresh</IconButton>
         <LinearProgress id="loader" bind:loading />
     </div>
-    <div id="switches" class="mdc-elevation--z1">
-        {#each currentRoom !== undefined ? currentRoom.switches : [] as sw (sw.id)}
-            <Switch bind:checked={sw.powerOn} id={sw.id} label={sw.name} />
-        {/each}
+    <div id="content">
+        <div id="switches" class="mdc-elevation--z1">
+            {#each currentRoom !== undefined ? currentRoom.switches : [] as sw (sw.id)}
+                <Switch bind:checked={sw.powerOn} id={sw.id} label={sw.name} />
+            {/each}
+        </div>
+        <div id="cameras" class="mdc-elevation--z1"></div>
     </div>
-    <div id="cameras" class="mdc-elevation--z1"></div>
 </Page>
 
 <style lang="scss">
+    @use '../../mixins' as *;
+
     #tabs {
         background-color: var(--clr-height-0-8);
         min-height: 48px;
@@ -83,6 +87,17 @@
         }
     }
 
+    #content {
+        min-height: calc(100vh - 48px);
+        padding: 1rem 1.5rem;
+        display: flex;
+        gap: 1rem;
+        flex-direction: column;
+        box-sizing: border-box;
+
+        @include widescreen { flex-direction: row; }
+        @include mobile { min-height: calc(100vh - 48px - 3.5rem); }
+    }
     #switches {
         background-color: var(--clr-height-0-1);
         padding: 1.5rem;
@@ -91,14 +106,23 @@
         flex-wrap: wrap;
         gap: 1rem;
         align-content: flex-start;
-        margin: 1rem 1.5rem;
         box-sizing: border-box;
-        min-height: calc(100vh - 3rem - 48px - 15rem);
+        min-height: calc(100% - 16rem);
+        flex-grow: 1;
+
+        @include widescreen { min-height: 100%; }
     }
     #cameras {
         background-color: var(--clr-height-0-1);
         height: 15rem;
         border-radius: .4rem;
-        margin: 0 1.5rem 1rem;
+        padding: 1.5rem;
+        box-sizing: border-box;
+
+        @include widescreen {
+            height: auto;
+            min-height: 100%;
+            width: 20rem;
+        }
     }
 </style>
