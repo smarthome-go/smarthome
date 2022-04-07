@@ -130,7 +130,7 @@ func TestSetPowerAsync(t *testing.T) {
 	log := logrus.New()
 	log.Level = logrus.FatalLevel
 	InitLogger(log)
-	event.InitLogger(log)
+	// event.InitLogger(log)
 	if err := initDB(true); err != nil {
 		t.Error(err.Error())
 		return
