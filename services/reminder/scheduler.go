@@ -1,7 +1,6 @@
 package reminder
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/go-co-op/gocron"
@@ -12,10 +11,8 @@ import (
 var scheduler *gocron.Scheduler
 
 func reminderRunner() {
-	log.Trace("Checkging for overdue reminders...")
 	var err error
 	var users []database.User
-	var notificationsSent uint
 
 	defer func(error) {
 		if err != nil {
@@ -29,13 +26,10 @@ func reminderRunner() {
 	}
 
 	for _, user := range users {
-		notificationsSent, err = SendUrgencyNotifications(user.Username)
+		err = SendUrgencyNotifications(user.Username)
 		if err != nil {
 			return
 		}
-	}
-	if notificationsSent > 0 {
-		log.Trace(fmt.Sprintf("Successfully sent %d notifications for reminding users", notificationsSent))
 	}
 }
 
