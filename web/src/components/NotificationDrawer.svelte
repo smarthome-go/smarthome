@@ -1,9 +1,9 @@
 <script lang="ts">
     import Button, { Label } from '@smui/button'
     import IconButton from '@smui/icon-button'
-    import LinearProgress from '@smui/linear-progress'
     import { createSnackbar, data, sleep } from '../global'
     import NotificationCard from './Notification.svelte'
+    import Progress from './Progress.svelte'
 
     export let hidden = true
 
@@ -49,7 +49,7 @@
 </script>
 
 <div id="drawer" class:hidden class:mdc-elevation--z8={!hidden}>
-    <LinearProgress id="loader" class={loading ? 'visible' : ''} indeterminate />
+    <Progress id="loader" bind:loading/>
     <div id="header">
         <Button on:click={deleteAll} disabled={$data.notifications.length === 0}>
             <Label>Delete All</Label>

@@ -2,14 +2,13 @@
     import Button, { Icon, Label } from '@smui/button'
     import Textfield from '@smui/textfield'
     import HelperText from '@smui/textfield/helper-text'
-    import LinearProgress from '@smui/linear-progress'
-    import type { LinearProgressComponentDev } from '@smui/linear-progress'
     import Snackbar, { Actions } from '@smui/snackbar'
     import type { SnackbarComponentDev } from '@smui/snackbar'
     import IconButton from '@smui/icon-button'
+    import Progress from '../../components/Progress.svelte'
     import Logo from '../../assets/logo.webp'
 
-    let loader: LinearProgressComponentDev
+    let loading = false
 
     let snackbar: SnackbarComponentDev
     let errorMessage = ''
@@ -36,13 +35,13 @@
         if (password === '') passwordInvalid = true
         if (userInvalid || passwordInvalid) return
 
-        loader.getElement().style.opacity = '1'
+        loading = true
         const res = await fetch('/api/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })
         })
-        loader.getElement().style.opacity = '0'
+        loading = false
         if (res.status === 204) {
             window.location.href = '/'
         } else if (res.status === 401) {
@@ -86,7 +85,7 @@
         </svg>
     </div>
     <div id="right" class="mdc-elevation--z2">
-        <LinearProgress id="loader" bind:this={loader} indeterminate />
+        <Progress id="loader" bind:loading />
         <IconButton
             id="theme-toggle"
             on:click={() => darkTheme = !darkTheme}
@@ -249,7 +248,6 @@
     main :global #loader {
         position: absolute;
         top: 0;
-        opacity: 0;
     }
     main :global #theme-toggle {
         position: absolute;

@@ -1,7 +1,7 @@
 <script lang="ts">
     import IconButton from '@smui/icon-button'
-    import CircularProgress from '@smui/circular-progress'
     import { data, createSnackbar } from '../global'
+    import Progress from './Progress.svelte'
 
     export let dummy = false
 
@@ -55,7 +55,7 @@
         <div class="time"></div>
     {:else}
         <div class="line" style:--clr-priority={priorityColors[priority - 1]}></div>
-        <CircularProgress class={'spinner' + (loading ? ' visible' : '')} indeterminate/>
+        <Progress class="spinner" bind:loading type="circular" />
         <IconButton class="delete material-icons" title="Delete" on:click={deleteSelf}>delete</IconButton>
         <h6>{name}</h6>
         <p>{description}</p>

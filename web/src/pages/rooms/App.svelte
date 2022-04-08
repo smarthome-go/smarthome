@@ -3,7 +3,7 @@
     import Tab, { Label } from '@smui/tab'
     import IconButton from '@smui/icon-button'
     import { createSnackbar, sleep } from '../../global'
-    import LinearProgress from '../../components/Progress.svelte'
+    import Progress from '../../components/Progress.svelte'
     import Page from '../../Page.svelte'
     import Switch from './Switch.svelte'
 
@@ -59,7 +59,7 @@
         </TabBar>
         {/await}
         <IconButton class="material-icons" on:click={() => loadRooms(true)}>refresh</IconButton>
-        <LinearProgress id="loader" bind:loading />
+        <Progress id="loader" bind:loading />
     </div>
     <div id="content">
         <div id="switches" class="mdc-elevation--z1">
