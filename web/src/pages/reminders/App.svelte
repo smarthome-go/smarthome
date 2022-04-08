@@ -1,15 +1,15 @@
 <script lang="ts">
-    import SegmentedButton,{ Label,Segment } from "@smui/segmented-button"
-    import Textfield from "@smui/textfield"
-    import CharacterCounter from "@smui/textfield/character-counter"
-    import HelperText from "@smui/textfield/helper-text"
-    import Page from "../../Page.svelte"
-    import Reminder from "./Reminder.svelte"
+    import SegmentedButton, { Label, Segment } from '@smui/segmented-button'
+    import Textfield from '@smui/textfield'
+    import CharacterCounter from '@smui/textfield/character-counter'
+    import HelperText from '@smui/textfield/helper-text'
+    import Page from '../../Page.svelte'
+    import Reminder from './Reminder.svelte'
 
     // Add new inputs
-    let inputName = ""
-    let inputDescription = ""
-    let selectedPriority = "Normal"
+    let inputName = ''
+    let inputDescription = ''
+    let selectedPriority = 'Normal'
 </script>
 
 <Page>
@@ -17,10 +17,10 @@
         <div id="container" class="mdc-elevation--z1">
             <Reminder
                 id={1}
-                name={"test"}
-                description={"nein"}
-                createdDate={"yesterday"}
-                dueDate={"nein"}
+                name={'test'}
+                description={'nein'}
+                createdDate={'yesterday'}
+                dueDate={'nein'}
                 priority={0}
                 userWasNotified={false}
             />
@@ -28,12 +28,12 @@
         <div id="create" class="mdc-elevation--z1">
             <div id="name">
                 <Textfield
-                style="width: 100%;"
-                helperLine$style="width: 100%;"
-                bind:value={inputName}
-                label="Name"
-                input$maxlength={100}
-              >
+                    style="width: 100%;"
+                    helperLine$style="width: 100%;"
+                    bind:value={inputName}
+                    label="Name"
+                    input$maxlength={100}
+                >
                     <CharacterCounter slot="helper">0 / 100</CharacterCounter>
                 </Textfield>
             </div>
@@ -44,6 +44,7 @@
                     textarea
                     bind:value={inputDescription}
                     label="Description"
+                    input$rows={5}
                 >
                     <HelperText slot="helper"
                         >Describe which task you want to accomplish</HelperText
@@ -51,7 +52,7 @@
                 </Textfield>
             </div>
             <SegmentedButton
-                segments={["Low", "Normal", "Medium", "High", "Urgent"]}
+                segments={['Low', 'Normal', 'Medium', 'High', 'Urgent']}
                 let:segment
                 singleSelect
                 bind:selected={selectedPriority}
@@ -65,7 +66,7 @@
 </Page>
 
 <style lang="scss">
-    @use "../../mixins" as *;
+    @use '../../mixins' as *;
     #content {
         display: flex;
         flex-direction: column;
@@ -94,5 +95,7 @@
     }
     #description {
         margin-top: 1rem;
+
+        :global(.mdc-text-field__resizer) { resize: none; }
     }
 </style>
