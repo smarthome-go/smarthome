@@ -37,6 +37,12 @@
             position: 'top',
         },
         {
+            label: 'Reminders',
+            uri: '/reminders',
+            icon: 'task_alt',
+            position: 'top',
+        },
+        {
             label: 'Profile',
             uri: '/profile',
             icon: 'person',

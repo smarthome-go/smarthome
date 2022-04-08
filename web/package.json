@@ -46,6 +46,7 @@
     "@smui/circular-progress": "^6.0.0-beta.15",
     "@smui/icon-button": "^6.0.0-beta.15",
     "@smui/linear-progress": "^6.0.0-beta.15",
+    "@smui/segmented-button": "^6.0.0-beta.15",
     "@smui/snackbar": "^6.0.0-beta.15",
     "@smui/switch": "^6.0.0-beta.15",
     "@smui/tab": "^6.0.0-beta.15",
