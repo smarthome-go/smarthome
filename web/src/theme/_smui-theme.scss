@@ -21,10 +21,3 @@ body {
   --clr-warn: #{colors.$amber-a700};
   --clr-success: #{colors.$green-a700};
 }
-
-.mdc-switch:enabled .mdc-switch__track::before,
-.mdc-switch:enabled:active .mdc-switch__track::before,
-.mdc-switch:enabled:focus:not(:active) .mdc-switch__track::before,
-.mdc-switch:enabled:hover:not(:focus):not(:active) .mdc-switch__track::before {
-  background-color: colors.$grey-400 !important;
-}
