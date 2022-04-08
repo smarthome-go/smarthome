@@ -30,6 +30,9 @@ func NewRouter() *mux.Router {
 	// Rooms
 	r.HandleFunc("/rooms", mdl.Auth(roomsGetHandler)).Methods("GET")
 
+	// Reminders
+	r.HandleFunc("/reminders", mdl.Auth(reminderGetHandler)).Methods("GET")
+
 	// User profile (settings)
 	r.HandleFunc("/profile", mdl.Auth(userProfileGetHandler)).Methods("GET")
 

@@ -17,9 +17,14 @@ func dashGetHandler(w http.ResponseWriter, r *http.Request) {
 	templates.ExecuteTemplate(w, "dash.html", http.StatusOK)
 }
 
-// Serves HTML for power
+// Serves HTML for rooms
 func roomsGetHandler(w http.ResponseWriter, r *http.Request) {
 	templates.ExecuteTemplate(w, "rooms.html", http.StatusOK)
+}
+
+// Serves HTML for reminders
+func reminderGetHandler(w http.ResponseWriter, r *http.Request) {
+	templates.ExecuteTemplate(w, "reminders.html", http.StatusOK)
 }
 
 // If not user is logged in, it serves the HTML for the login page
