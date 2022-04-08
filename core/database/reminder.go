@@ -35,7 +35,7 @@ func createReminderTable() error {
 	IF NOT EXISTS
 	reminder(
 		Id INT AUTO_INCREMENT,
-		Name VARCHAR(200),
+		Name TEXT,
 		Description TEXT,
 		Priority INT,
 		CreatedDate DATETIME DEFAULT CURRENT_TIMESTAMP,
