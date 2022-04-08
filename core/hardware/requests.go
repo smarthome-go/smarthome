@@ -121,11 +121,9 @@ func setPowerOnAllNodes(switchName string, powerOn bool) error {
 	}
 	for _, node := range nodes {
 		if !node.Online && node.Enabled {
-			go func() {
-				if err := checkNodeOnline(node); err != nil {
-					log.Debug(fmt.Sprintf("Node %s is still offline", node.Name))
-				}
-			}()
+			if errTemp := checkNodeOnline(node); errTemp != nil {
+				log.Debug(fmt.Sprintf("Node %s is still offline", node.Name))
+			}
 			log.Warn(fmt.Sprintf("Skipping node: '%s' because it is currently marked as offline", node.Name))
 			continue
 		}
@@ -134,20 +132,16 @@ func setPowerOnAllNodes(switchName string, powerOn bool) error {
 			// Log the error
 			event.Error("Node Request Failed", fmt.Sprintf("Power request to node '%s' failed because the request existed with: %s", node.Name, errTemp.Error()))
 			// If the request failed, check the node and mark it as offline
-			go func() {
-				if err := checkNodeOnline(node); err != nil {
-					log.Error("Failed to check node online: ", err.Error())
-				}
-			}()
+			if err := checkNodeOnline(node); err != nil {
+				log.Error("Failed to check node online: ", err.Error())
+			}
 			err = errTemp
 		} else {
 			if !node.Online {
 				// If the node was previously offline and is now online
-				go func() {
-					if err := checkNodeOnline(node); err != nil {
-						log.Error("Failed to check node online: ", err.Error())
-					}
-				}()
+				if err := checkNodeOnline(node); err != nil {
+					log.Error("Failed to check node online: ", err.Error())
+				}
 			}
 			log.Debug("Successfully sent power request to: ", node.Name)
 		}

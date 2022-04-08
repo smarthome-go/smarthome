@@ -23,10 +23,17 @@ type jobQueueType struct {
 	m        sync.RWMutex
 }
 
+type resultQueueType struct {
+	JobResults []JobResult
+	m          sync.RWMutex
+}
+
 var jobQueue = jobQueueType{
 	JobQueue: make([]PowerJob, 0),
 }
-var jobResults atomic.Value
+var jobResults = resultQueueType{
+	JobResults: make([]JobResult, 0),
+}
 
 // Whether a job daemon loop is already running
 // var daemonRunning bool
@@ -37,7 +44,7 @@ var daemonRunning atomic.Value
 
 // temporarely stores the result of each executed job
 // var jobResults []JobResult = make([]JobResult, 0)
-var jobsWithErrorInHandlerCount uint16
+var jobsWithErrorInHandlerCount atomic.Value
 
 // Time to be waited after each job (in milliseconds)
 const cooldown = 500
@@ -62,11 +69,16 @@ func addJobToQueue(switchId string, turnOn bool, id int64) {
 	jobQueue.m.Unlock()
 
 	if !daemonRunning.Load().(bool) {
-		jobsWithErrorInHandlerCount = 0
-		jobResults.Store(make([]JobResult, 0))
+		jobsWithErrorInHandlerCount.Store(0)
+
+		jobResults.m.Lock()
+		jobResults.JobResults = make([]JobResult, 0)
+		jobResults.m.Unlock()
+
 		daemonRunning.Store(true)
 		ch := make(chan bool)
 		go jobDaemon(ch)
+		// TODO: Maybe replace with waitgroup
 		for {
 			select {
 			case <-ch:
@@ -91,37 +103,47 @@ func addJobToQueue(switchId string, turnOn bool, id int64) {
 // If a new job should be executed whilst no daemon is active, a new daemon is created.
 func jobDaemon(ch chan bool) {
 	for {
-		jobQueue.m.RLock()
-		length := len(jobQueue.JobQueue)
-		jobQueue.m.RUnlock()
-
-		if length == 0 {
+		jobQueue.m.RLock() // Lock for getting length
+		if len(jobQueue.JobQueue) == 0 {
 			daemonRunning.Store(false)
 			ch <- true
+			jobQueue.m.RUnlock() // Unlock if condition
 			break
 		}
 		currentJob := jobQueue.JobQueue[0]
+		jobQueue.m.RUnlock() // Unlock if condition
+
+		// Call the function which interacts with the hardware
 		err := setPowerOnAllNodes(currentJob.Switch, currentJob.Power)
-		jobResults.Store(append(jobResults.Load().([]JobResult), JobResult{Id: currentJob.Id, Error: err}))
+
+		jobResults.m.Lock()
+		jobResults.JobResults = append(jobResults.JobResults, JobResult{Id: currentJob.Id, Error: err})
+		jobResults.m.Unlock()
+
 		if err != nil {
-			jobsWithErrorInHandlerCount += 1
+			jobsWithErrorInHandlerCount.Store(jobsWithErrorInHandlerCount.Load().(int) + 1)
 		}
 		// Removes the first value in the queue, in this case the freshly completed job
 		var tempQueue []PowerJob = make([]PowerJob, 0)
+
+		jobQueue.m.RLock() // Lock while loop is iterating
 		for i, item := range jobQueue.JobQueue {
 			if i != 0 {
 				tempQueue = append(tempQueue, item)
 			}
 		}
+		jobQueue.m.RUnlock() // Unlock loop
+
 		jobQueue.m.Lock()
 		jobQueue.JobQueue = tempQueue
 		jobQueue.m.Unlock()
+
 		// Only sleep if other jobs are in the current queue
-		jobQueue.m.RLock()
+		jobQueue.m.RLock() // Lock for the if condition
 		if len(jobQueue.JobQueue) > 0 {
 			time.Sleep(cooldown * time.Millisecond)
 		}
-		jobQueue.m.RUnlock()
+		jobQueue.m.RUnlock() // Unlock if condition
 	}
 }
 
@@ -131,20 +153,26 @@ func jobDaemon(ch chan bool) {
 func consumeResult(id int64) JobResult {
 	var resultsTemp []JobResult = make([]JobResult, 0)
 	var returnValue JobResult
-	for _, result := range jobResults.Load().([]JobResult) {
+
+	jobResults.m.Lock() // Lock for iteration
+	for _, result := range jobResults.JobResults {
 		if result.Id != id {
 			resultsTemp = append(resultsTemp, result)
 		} else {
 			returnValue = result
 		}
 	}
-	jobResults.Store(resultsTemp)
+	jobResults.JobResults = resultsTemp
+	jobResults.m.Unlock()
+
 	return returnValue
 }
 
 // Checks if the job with the current id has finished
 func hasFinished(id int64) bool {
-	for _, result := range jobResults.Load().([]JobResult) {
+	jobResults.m.RLock()
+	defer jobResults.m.RUnlock()
+	for _, result := range jobResults.JobResults {
 		if result.Id == id {
 			return true
 		}
@@ -153,9 +181,8 @@ func hasFinished(id int64) bool {
 }
 
 func Init() {
-	// Initialize thread-safe slice
-	// jobQueue.Store(make([]PowerJob, 0))
-	jobResults.Store(make([]JobResult, 0))
+	// Initialize thread-safe variables, for more info, look at the top for mutexes
+	jobsWithErrorInHandlerCount.Store(0)
 	daemonRunning.Store(false)
 }
 
@@ -168,7 +195,7 @@ func GetPendingJobCount() int {
 
 // Returns the number of registered failed jobs of the last running daemon (can also be the current daemon)
 func GetJobsWithErrorInHandler() uint16 {
-	return jobsWithErrorInHandlerCount
+	return uint16(jobsWithErrorInHandlerCount.Load().(int))
 }
 
 // Returns the current state of the job queue
@@ -180,5 +207,7 @@ func GetPendingJobs() []PowerJob {
 
 // Returns the current state of the results queue
 func GetResults() []JobResult {
-	return jobResults.Load().([]JobResult)
+	jobResults.m.RLock()
+	defer jobResults.m.RUnlock()
+	return jobResults.JobResults
 }
