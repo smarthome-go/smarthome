@@ -1,9 +1,10 @@
 package user
 
 import (
-	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/MikMuellerDev/smarthome/core/database"
 )
 
 var log *logrus.Logger
@@ -16,7 +17,7 @@ func InitLogger(logger *logrus.Logger) {
 // <true> means valid authentication
 // Can return an error if the database fails to return a valid result, meaning service downtime
 func ValidateCredentials(username string, password string) (bool, error) {
-	userExists, err := database.DoesUserExist(username)
+	_, userExists, err := database.GetUserByUsername(username)
 	if err != nil {
 		log.Error("Failed to validate password: could not check if user exists: ", err.Error())
 		return false, err

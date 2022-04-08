@@ -68,7 +68,8 @@ func ListUsers() ([]User, error) {
 		log.Error("Could not list users. Failed to execute query: ", err.Error())
 		return nil, err
 	}
-	var userList []User
+	defer res.Close()
+	userList := make([]User, 0)
 	for res.Next() {
 		var user User
 		err := res.Scan(
@@ -101,6 +102,7 @@ func InsertUser(user FullUser) error {
 		log.Error("Could not create user. Failed to prepare query: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	_, err = query.Exec(
 		user.Username,
 		user.Firstname,
@@ -114,7 +116,6 @@ func InsertUser(user FullUser) error {
 		log.Error("Could not create user. Failed to execute query: ", err.Error())
 		return err
 	}
-	defer query.Close()
 	return nil
 }
 
@@ -147,12 +148,12 @@ func DeleteUser(username string) error {
 		log.Error("Could not delete user. Failed to prepare query: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	_, err = query.Exec(username)
 	if err != nil {
 		log.Error("Could not delete user. Failed to execute query: ", err.Error())
 		return err
 	}
-	defer query.Close()
 	return nil
 }
 
@@ -160,7 +161,7 @@ func DeleteUser(username string) error {
 // Will return an error if the database fails
 // Does not check for duplicate users
 func AddUser(user FullUser) error {
-	userExists, err := DoesUserExist(user.Username)
+	_, userExists, err := GetUserByUsername(user.Username)
 	if err != nil {
 		return err
 	}
@@ -188,18 +189,18 @@ func AddUser(user FullUser) error {
 
 // Returns <true> if a provided user exists
 // If the database fails, it returns an error
-func DoesUserExist(username string) (bool, error) {
-	userList, err := ListUsers()
-	if err != nil {
-		return false, err
-	}
-	for _, userItem := range userList {
-		if userItem.Username == username {
-			return true, nil
-		}
-	}
-	return false, nil
-}
+// func DoesUserExist(username string) (bool, error) {
+// 	userList, err := ListUsers()
+// 	if err != nil {
+// 		return false, err
+// 	}
+// 	for _, userItem := range userList {
+// 		if userItem.Username == username {
+// 			return true, nil
+// 		}
+// 	}
+// 	return false, nil
+// }
 
 // Returns a user struct based on a username, does not check if the user exists, additional checks needed beforehand
 func GetUserByUsername(username string) (User, bool, error) {
@@ -213,6 +214,7 @@ func GetUserByUsername(username string) (User, bool, error) {
 		log.Error("Could not get user by username: failed to prepare query: ", err.Error())
 		return User{}, false, err
 	}
+	defer query.Close()
 	var user User
 	if err := query.QueryRow(username).Scan(
 		&user.Username,
@@ -226,7 +228,7 @@ func GetUserByUsername(username string) (User, bool, error) {
 		if err == sql.ErrNoRows {
 			return User{}, false, nil
 		}
-		log.Error(err.Error())
+		log.Error("Failed to get user by username: ", err.Error())
 		return User{}, false, err
 	}
 	return user, true, nil
@@ -244,10 +246,15 @@ func GetUserPasswordHash(username string) (string, error) {
 		log.Error("Failed to get user password hash: preparing query failed: ", err.Error())
 		return "", err
 	}
+	defer query.Close()
 	var passwordHash string
 	if err := query.QueryRow(username).Scan(&passwordHash); err != nil {
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
 		log.Error("Failed to get user password hash: executing query failed: ", err.Error())
 	}
+	query.Close()
 	return passwordHash, nil
 }
 
@@ -262,11 +269,14 @@ func GetAvatarPathByUsername(username string) (string, error) {
 		log.Error("Could not get avatar path by username: failed to prepare query: ", err.Error())
 		return "", err
 	}
+	defer query.Close()
 	res, err := query.Query(username)
 	if err != nil {
 		log.Error("Could not get avatar path by username: failed to execute query: ", err.Error())
 		return "", err
 	}
+	// TODO: use query row
+	defer res.Close()
 	var avatarPath string
 	for res.Next() {
 		err := res.Scan(&avatarPath)
@@ -289,6 +299,7 @@ func SetUserAvatarPath(username string, avatarPath string) error {
 		log.Error("Failed to set AvatarPath for user: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	_, err = query.Exec(avatarPath, username)
 	if err != nil {
 		log.Error("Failed to set AvatarPath for user: executing query failed: ", err.Error())
@@ -308,6 +319,7 @@ func SetUserSchedulerEnabled(username string, enabled bool) error {
 		log.Error("Failed to set SchedulerEnabled for user: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	_, err = query.Exec(enabled, username)
 	if err != nil {
 		log.Error("Failed to set SchedulerEnabled for user: executing query failed: ", err.Error())
@@ -327,6 +339,7 @@ func SetUserDarkThemeEnabled(username string, useDarkTheme bool) error {
 		log.Error("Failed to set dark theme for user: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	_, err = query.Exec(useDarkTheme, username)
 	if err != nil {
 		log.Error("Failed to set dark theme for user: executing query failed: ", err.Error())
@@ -348,6 +361,7 @@ func SetUserPrimaryColors(username string, colorDark string, colorLight string) 
 		log.Error("Failed to update primary colors for user: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	_, err = query.Exec(
 		colorDark,
 		colorLight,

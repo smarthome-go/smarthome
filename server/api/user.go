@@ -34,7 +34,7 @@ func AddUser(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	userAlreadyExists, err := database.DoesUserExist(request.Username)
+	_, userAlreadyExists, err := database.GetUserByUsername(request.Username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to add user", Error: "database failure"})
@@ -67,7 +67,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	userDoesExist, err := database.DoesUserExist(request.Username)
+	_, userDoesExist, err := database.GetUserByUsername(request.Username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to remove user", Error: "database failure"})

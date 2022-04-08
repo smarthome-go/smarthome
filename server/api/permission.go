@@ -59,7 +59,7 @@ func AddUserPermission(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "could not add permission to user", Error: "invalid permission type"})
 		return
 	}
-	userExists, err := database.DoesUserExist(request.Username)
+	_, userExists, err := database.GetUserByUsername(request.Username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to add permission", Error: "database failure"})
@@ -105,7 +105,7 @@ func RemoveUserPermission(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "could not remove permission from user", Error: "invalid permission type"})
 		return
 	}
-	userExists, err := database.DoesUserExist(request.Username)
+	_, userExists, err := database.GetUserByUsername(request.Username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to remove permission", Error: "database failure"})
@@ -155,7 +155,7 @@ func AddSwitchPermission(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "could not add switch permission to user", Error: "invalid switch permission type: not found"})
 		return
 	}
-	userExists, err := database.DoesUserExist(request.Username)
+	_, userExists, err := database.GetUserByUsername(request.Username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to add switch permission", Error: "database failure"})
@@ -205,7 +205,7 @@ func RemoveSwitchPermission(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "could not remove switch permission from user", Error: "invalid switch permission type: not found"})
 		return
 	}
-	userExists, err := database.DoesUserExist(request.Username)
+	_, userExists, err := database.GetUserByUsername(request.Username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to remove switch permission", Error: "database failure"})

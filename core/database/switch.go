@@ -65,6 +65,7 @@ func CreateSwitch(id string, name string, roomId string, watts uint16) error {
 		log.Error("Failed to add switch: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	res, err := query.Exec(id, name, roomId, watts)
 	if err != nil {
 		log.Error("Failed to add switch: executing query failed: ", err.Error())
@@ -78,7 +79,6 @@ func CreateSwitch(id string, name string, roomId string, watts uint16) error {
 	if rowsAffected > 0 {
 		log.Debug(fmt.Sprintf("Added switch `%s` with name `%s`", id, name))
 	}
-	defer query.Close()
 	return nil
 }
 
@@ -97,6 +97,7 @@ func DeleteSwitch(switchId string) error {
 		log.Error("Failed to remove switch: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err = query.Exec(switchId); err != nil {
 		log.Error("Failed to remove switch: executing query failed: ", err.Error())
 		return err
@@ -114,6 +115,7 @@ func ListSwitches() ([]Switch, error) {
 		log.Error("Could not list switches: failed to execute query: ", err.Error())
 		return nil, err
 	}
+	defer res.Close()
 	switches := make([]Switch, 0)
 	for res.Next() {
 		var switchItem Switch
@@ -144,6 +146,7 @@ func ListUserSwitches(username string) ([]Switch, error) {
 		log.Error("Could not list user switches: preparing query failed.", err.Error())
 		return nil, err
 	}
+	defer query.Close()
 	res, err := query.Query(username)
 	if err != nil {
 		log.Error("Could not list user switches: executing query failed: ", err.Error())
@@ -164,7 +167,6 @@ func ListUserSwitches(username string) ([]Switch, error) {
 		}
 		switches = append(switches, switchItem)
 	}
-	defer query.Close()
 	return switches, nil
 }
 
@@ -181,6 +183,7 @@ func SetPowerState(switchId string, isPoweredOn bool) (bool, error) {
 		log.Error("Could not alter power state: preparing query failed: ", err.Error())
 		return false, err
 	}
+	defer query.Close()
 	res, err := query.Exec(isPoweredOn, switchId)
 	if err != nil {
 		log.Error("Could not alter power state: executing query failed: ", err.Error())
@@ -194,7 +197,6 @@ func SetPowerState(switchId string, isPoweredOn bool) (bool, error) {
 	if rowsAffected == 0 {
 		return false, nil
 	}
-	defer query.Close()
 	return true, nil
 }
 
@@ -210,6 +212,7 @@ func GetPowerStates() ([]PowerState, error) {
 		log.Error("Failed to list powerstates: failed to execute query: ", err.Error())
 		return nil, err
 	}
+	defer res.Close()
 	powerStates := make([]PowerState, 0)
 	for res.Next() {
 		var powerState PowerState
@@ -236,6 +239,7 @@ func GetPowerStateOfSwitch(switchId string) (bool, error) {
 		log.Error("Failed to get switch power state: preparing query failed: ", err.Error())
 		return false, err
 	}
+	defer query.Close()
 	var powerState bool
 	err = query.QueryRow(switchId).Scan(&powerState)
 	if err != nil {
