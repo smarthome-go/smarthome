@@ -104,14 +104,17 @@ func addJobToQueue(switchId string, turnOn bool, id int64) {
 func jobDaemon(ch chan bool) {
 	for {
 		jobQueue.m.RLock() // Lock for getting length
-		if len(jobQueue.JobQueue) == 0 {
+		length := len(jobQueue.JobQueue)
+		jobQueue.m.RUnlock() // Unlock if condition
+		if length == 0 {
 			daemonRunning.Store(false)
 			ch <- true
-			jobQueue.m.RUnlock() // Unlock if condition
 			break
 		}
+
+		jobQueue.m.RLock()
 		currentJob := jobQueue.JobQueue[0]
-		jobQueue.m.RUnlock() // Unlock if condition
+		jobQueue.m.RUnlock()
 
 		// Call the function which interacts with the hardware
 		err := setPowerOnAllNodes(currentJob.Switch, currentJob.Power)
