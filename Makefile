@@ -4,7 +4,7 @@ sources := $(wildcard *.go)
 version := 0.0.19-beta
 
 build = GOOS=$(1) GOARCH=$(2) go build -v -o $(appname) $(4)
-tar = mkdir -p build && cd ../ && tar -cvzf ./$(appname)_$(1)_$(2).tar.gz $(workingdir)/$(appname) $(workingdir)/web/out $(workingdir)/web/html $(workingdir)/web/assets && mv $(appname)_$(1)_$(2).tar.gz $(workingdir)/build
+tar = mkdir -p build && cd ../ && tar -cvzf ./$(appname)_$(1)_$(2).tar.gz $(workingdir)/$(appname) $(workingdir)/web/dist $(workingdir)/web/html $(workingdir)/resources && mv $(appname)_$(1)_$(2).tar.gz $(workingdir)/build
 
 .PHONY: all linux
 
@@ -79,7 +79,7 @@ docker: cleanall web
 	cp smarthome docker/app/
 	cd docker && docker build . -t mikmuellerdev/smarthome:$(version)
 
-docker-releasse: test docker 
+docker-release: test docker 
 
 web: cleanweb
 	cd web && npm run prepare
