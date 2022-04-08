@@ -73,6 +73,7 @@ func CreateNewAutomation(automation Automation) (uint, error) {
 		log.Error("Failed to create new automation: preparing query failed: ", err.Error())
 		return 0, err
 	}
+	defer query.Close()
 	res, err := query.Exec(
 		automation.Name,
 		automation.Description,
@@ -107,6 +108,7 @@ func GetAutomationById(id uint) (Automation, bool, error) {
 		log.Error("Could not get automation by id: preparing query failed: ", err.Error())
 		return Automation{}, false, err
 	}
+	defer query.Close()
 	var automation Automation
 	err = query.QueryRow(id).Scan(
 		&automation.Id,
@@ -140,11 +142,13 @@ func GetUserAutomations(username string) ([]Automation, error) {
 		log.Error("Failed to list user automations: preparing query failed: ", err.Error())
 		return nil, err
 	}
+	defer query.Close()
 	res, err := query.Query(username)
 	if err != nil {
 		log.Error("Failed to list user automations: executing query failed: ", err.Error())
 		return nil, err
 	}
+	defer res.Close()
 	automations := make([]Automation, 0)
 	for res.Next() {
 		var automation Automation
@@ -163,7 +167,6 @@ func GetUserAutomations(username string) ([]Automation, error) {
 		}
 		automations = append(automations, automation)
 	}
-	defer res.Close()
 	return automations, nil
 }
 
@@ -179,6 +182,7 @@ func GetAutomations() ([]Automation, error) {
 		log.Error("Failed to list all automations: executing query failed: ", err.Error())
 		return nil, err
 	}
+	defer res.Close()
 	automations := make([]Automation, 0)
 	for res.Next() {
 		var automation Automation
@@ -197,7 +201,6 @@ func GetAutomations() ([]Automation, error) {
 		}
 		automations = append(automations, automation)
 	}
-	defer res.Close()
 	return automations, nil
 }
 
@@ -219,6 +222,7 @@ func ModifyAutomation(id uint, newItem AutomationWithoutIdAndUsername) error {
 		log.Error("Failed to modify automation: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	_, err = query.Exec(
 		newItem.Name,
 		newItem.Description,
@@ -248,6 +252,7 @@ func DeleteAutomationById(id uint) error {
 		log.Error("Failed to delete automation by Id: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err := query.Exec(id); err != nil {
 		log.Error("Failed to delete automation by Id: executing query failed: ", err.Error())
 		return err
@@ -266,6 +271,7 @@ func DeleteAllAutomationsFromUser(username string) error {
 		log.Error("Failed to delete all automations from user: preparing query failed", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err := query.Exec(username); err != nil {
 		log.Error("Failed to delete all automations from user: executing query failed", err.Error())
 		return err

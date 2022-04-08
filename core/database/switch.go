@@ -202,6 +202,7 @@ func SetPowerState(switchId string, isPoweredOn bool) (bool, error) {
 
 // Returns a list of PowerStates
 // Can return a database error
+// TODO: not really needed
 func GetPowerStates() ([]PowerState, error) {
 	res, err := db.Query(`
 	SELECT 
@@ -229,6 +230,7 @@ func GetPowerStates() ([]PowerState, error) {
 // Returns the power state of a given switch as a boolean
 // Does not check if the switch exists.
 // If the switch does not exist, an error is returned
+// TODO: also remove this, add GetSwitchById
 func GetPowerStateOfSwitch(switchId string) (bool, error) {
 	query, err := db.Prepare(`
 	SELECT Power
@@ -250,6 +252,7 @@ func GetPowerStateOfSwitch(switchId string) (bool, error) {
 }
 
 // Returns (exists, error), err when the database fails
+// TODO: abolish this function, create GetSwitchById
 func DoesSwitchExist(switchId string) (bool, error) {
 	switches, err := ListSwitches()
 	if err != nil {

@@ -54,6 +54,7 @@ func CreateNewSchedule(schedule Schedule) (uint, error) {
 		log.Error("Failed to create new schedule: preparing query failed: ", err.Error())
 		return 0, err
 	}
+	defer query.Close()
 	res, err := query.Exec(
 		schedule.Name,
 		schedule.Owner,
@@ -86,6 +87,7 @@ func GetScheduleById(id uint) (Schedule, bool, error) {
 		log.Error("Failed to get schedule by id: preparing query failed: ", err.Error())
 		return Schedule{}, false, err
 	}
+	defer query.Close()
 	var schedule Schedule
 	if err := query.QueryRow(id).Scan(
 		&schedule.Id,
@@ -106,7 +108,6 @@ func GetScheduleById(id uint) (Schedule, bool, error) {
 
 // Returns a list containing schedules of a given user
 func GetUserSchedules(username string) ([]Schedule, error) {
-	schedules := make([]Schedule, 0)
 	query, err := db.Prepare(`
 	SELECT
 	Id, Name, Owner, Hour, Minute, HomescriptCode
@@ -117,11 +118,14 @@ func GetUserSchedules(username string) ([]Schedule, error) {
 		log.Error("Failed to list user schedules: preparing query failed: ", err.Error())
 		return nil, err
 	}
+	defer query.Close()
 	res, err := query.Query(username)
 	if err != nil {
 		log.Error("Failed to list user schedules: executing query failed: ", err.Error())
 		return nil, err
 	}
+	defer res.Close()
+	schedules := make([]Schedule, 0)
 	for res.Next() {
 		var schedule Schedule
 		if err := res.Scan(
@@ -142,7 +146,6 @@ func GetUserSchedules(username string) ([]Schedule, error) {
 
 // Returns a list of schedules of all users, used for activating schedules at the start of the server
 func GetSchedules() ([]Schedule, error) {
-	schedules := make([]Schedule, 0)
 	query, err := db.Prepare(`
 	SELECT
 	Id, Name, Owner, Hour, Minute, HomescriptCode
@@ -152,11 +155,14 @@ func GetSchedules() ([]Schedule, error) {
 		log.Error("Failed to list schedules: preparing query failed: ", err.Error())
 		return nil, err
 	}
+	defer query.Close()
 	res, err := query.Query()
 	if err != nil {
 		log.Error("Failed to list schedules: executing query failed: ", err.Error())
 		return nil, err
 	}
+	defer res.Close()
+	schedules := make([]Schedule, 0)
 	for res.Next() {
 		var schedule Schedule
 		if err := res.Scan(
@@ -191,6 +197,7 @@ func ModifySchedule(id uint, newItem ScheduleWithoudIdAndUsername) error {
 		log.Error("Failed to modify schedule: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err := query.Exec(
 		newItem.Name,
 		newItem.Hour,
@@ -216,6 +223,7 @@ func DeleteScheduleById(id uint) error {
 		log.Error("Failed to delete schedule by id: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err := query.Exec(id); err != nil {
 		log.Error("Failed to delete schedule by id: executing query failed: ", err.Error())
 		return err
@@ -234,6 +242,7 @@ func DeleteAllSchedulesFromUser(username string) error {
 		log.Error("Failed to delete all schedules of user: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err := query.Exec(username); err != nil {
 		log.Error("Failed to delete all schedules of user: executing query failed: ", err.Error())
 		return err

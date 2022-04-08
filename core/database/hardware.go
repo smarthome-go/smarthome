@@ -52,6 +52,7 @@ func CreateHardwareNode(node HardwareNode) error {
 		log.Error("Failed to create a new node: prepearing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	res, err := query.Exec(node.Url, node.Name, node.Token)
 	if err != nil {
 		log.Error("Failed to create a new node: executing query failed: ", err.Error())
@@ -80,6 +81,7 @@ func SetNodeOnline(nodeUrl string, online bool) error {
 		log.Error("Failed to mark uptime status of node: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err := query.Exec(online, nodeUrl); err != nil {
 		log.Error("Failed to mark uptime status of node: executing query failed: ", err.Error())
 		return err
@@ -98,6 +100,7 @@ func DeleteHardwareNode(url string) error {
 		log.Error("Failed to delete hardware node: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err = query.Exec(url); err != nil {
 		log.Error("Failed to delete hardware node: executing query failed: ", err.Error())
 		return err
@@ -117,6 +120,7 @@ func GetHardwareNodes() ([]HardwareNode, error) {
 		log.Error("Failed to list hardware nodes: executing query failed: ", err.Error())
 		return nil, err
 	}
+	defer res.Close()
 	nodes := make([]HardwareNode, 0)
 	for res.Next() {
 		var node HardwareNode
@@ -180,6 +184,7 @@ func ModifyHardwareNode(url string, node HardwareNode) error {
 		log.Error("Failed to modify Hardware node: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err := query.Exec(
 		node.Enabled,
 		node.Name,

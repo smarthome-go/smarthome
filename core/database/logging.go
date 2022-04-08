@@ -53,11 +53,11 @@ func AddLogEvent(name string, description string, level int) error {
 		log.Error("Failed to add log event: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err = query.Exec(name, description, level); err != nil {
 		log.Error("Failed to add log event: preparing query failed: ", err.Error())
 		return err
 	}
-	defer query.Close()
 	return nil
 }
 
@@ -108,6 +108,7 @@ func GetLogs() ([]LogEvent, error) {
 		log.Error("Could not get all logs: failed to execute query: ", err.Error())
 		return nil, err
 	}
+	defer res.Close()
 	logs := make([]LogEvent, 0)
 	for res.Next() {
 		var logItem LogEvent

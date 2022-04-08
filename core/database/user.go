@@ -159,7 +159,7 @@ func DeleteUser(username string) error {
 
 // Helper function to create a User which is given a set of basic permissions
 // Will return an error if the database fails
-// Does not check for duplicate users
+// TODO: Remove business logic from here, move to core/user
 func AddUser(user FullUser) error {
 	_, userExists, err := GetUserByUsername(user.Username)
 	if err != nil {
@@ -186,21 +186,6 @@ func AddUser(user FullUser) error {
 	}
 	return nil
 }
-
-// Returns <true> if a provided user exists
-// If the database fails, it returns an error
-// func DoesUserExist(username string) (bool, error) {
-// 	userList, err := ListUsers()
-// 	if err != nil {
-// 		return false, err
-// 	}
-// 	for _, userItem := range userList {
-// 		if userItem.Username == username {
-// 			return true, nil
-// 		}
-// 	}
-// 	return false, nil
-// }
 
 // Returns a user struct based on a username, does not check if the user exists, additional checks needed beforehand
 func GetUserByUsername(username string) (User, bool, error) {
@@ -254,7 +239,6 @@ func GetUserPasswordHash(username string) (string, error) {
 		}
 		log.Error("Failed to get user password hash: executing query failed: ", err.Error())
 	}
-	query.Close()
 	return passwordHash, nil
 }
 
@@ -276,7 +260,6 @@ func GetAvatarPathByUsername(username string) (string, error) {
 		return "", err
 	}
 	// TODO: use query row
-	defer res.Close()
 	var avatarPath string
 	for res.Next() {
 		err := res.Scan(&avatarPath)

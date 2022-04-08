@@ -64,6 +64,7 @@ func CreateNewHomescript(homescript Homescript) error {
 		log.Error("Failed to create new homescript entry: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err = query.Exec(
 		homescript.Id,
 		homescript.Owner,
@@ -96,6 +97,7 @@ func ModifyHomescriptById(id string, homescript HomescriptFrontend) error {
 		log.Error("Failed to update homescript item: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	_, err = query.Exec(
 		homescript.Name,
 		homescript.Description,
@@ -123,11 +125,13 @@ func ListHomescriptOfUser(username string) ([]Homescript, error) {
 		log.Error("Failed to list homescript of user: preparing query failed: ", err.Error())
 		return nil, err
 	}
+	defer query.Close()
 	res, err := query.Query(username)
 	if err != nil {
 		log.Error("Failed to list homescript of user: executing query failed: ", err.Error())
 		return nil, err
 	}
+	defer res.Close()
 	var homescriptList []Homescript = make([]Homescript, 0)
 	for res.Next() {
 		var homescript Homescript
@@ -160,11 +164,13 @@ func ListHomescriptFiles() ([]Homescript, error) {
 		log.Error("Failed to list homescript files: preparing query failed: ", err.Error())
 		return nil, err
 	}
+	defer query.Close()
 	res, err := query.Query()
 	if err != nil {
 		log.Error("Failed to list homescript files: executing query failed: ", err.Error())
 		return nil, err
 	}
+	defer res.Close()
 	var homescriptList []Homescript = make([]Homescript, 0)
 	for res.Next() {
 		var homescript Homescript
@@ -188,6 +194,7 @@ func ListHomescriptFiles() ([]Homescript, error) {
 
 // Returns a Homescript given its id
 // Returns Homescript, has been found, error
+// TODO: replace with query row
 func GetUserHomescriptById(homescriptId string, username string) (Homescript, bool, error) {
 	homescripts, err := ListHomescriptOfUser(username)
 	if err != nil {
@@ -202,6 +209,7 @@ func GetUserHomescriptById(homescriptId string, username string) (Homescript, bo
 	return Homescript{}, false, nil
 }
 
+// TODO: remove and intigrate into get user homescript
 // Checks if a Homescript with an id exists in the database
 func DoesHomescriptExist(homescriptId string) (bool, error) {
 	homescripts, err := ListHomescriptFiles()
@@ -228,6 +236,7 @@ func DeleteHomescriptById(homescriptId string) error {
 		log.Error("Failed to delete homescript by id: preparing query failed")
 		return err
 	}
+	defer query.Close()
 	if _, err := query.Exec(homescriptId); err != nil {
 		log.Error("Failed to delete homescript by id: executing query failed")
 		return err
@@ -246,6 +255,7 @@ func DeleteAllHomescriptsOfUser(username string) error {
 		log.Error("Failed to delete all Homescripts of user: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err := query.Exec(username); err != nil {
 		log.Error("Failed to delete all Homescripts of user: preparing query failed: ", err.Error())
 		return err

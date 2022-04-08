@@ -62,6 +62,7 @@ func initializePermissions() error {
 		log.Error("Failed to create permission: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	for _, permission := range Permissions {
 		res, err := query.Exec(permission.Permission, permission.Name, permission.Description)
 		if err != nil {
@@ -77,7 +78,6 @@ func initializePermissions() error {
 			log.Debug("Inserted new permission into permissions table: ", permission.Permission)
 		}
 	}
-	defer query.Close()
 	return nil
 }
 
@@ -97,19 +97,20 @@ func AddUserPermission(username string, permission PermissionType) (bool, error)
 		log.Error("Could not add permission. Failed to prepare query: ", err.Error())
 		return false, err
 	}
+	defer query.Close()
 	_, err = query.Exec(username, permission)
 	if err != nil {
 		log.Error("Could not add permission. Failed to execute query: ", err.Error())
 		return false, err
 	}
 	log.Debug(fmt.Sprintf("Successfully added permission: `%s` to user: `%s`", permission, username))
-	defer query.Close()
 	return true, nil
 }
 
 // Attempts to remove a provided permission from a provided user
 // Fails if permission does not exist or if the database fails
 // Warns and returns `false` for the `modified` boolean the user does not have the permission
+// TODO: the business logic will need to be put to user
 func RemoveUserPermission(username string, permission PermissionType) (bool, error) {
 	hasPermission, err := UserHasPermission(username, permission)
 	if err != nil {
@@ -124,13 +125,13 @@ func RemoveUserPermission(username string, permission PermissionType) (bool, err
 		log.Error("Could not remove permission: Failed to prepare query: ", err.Error())
 		return false, err
 	}
+	defer query.Close()
 	_, err = query.Exec(username, permission)
 	if err != nil {
 		log.Error("Failed to remove permission: Failed to execute query: ", err.Error())
 		return false, err
 	}
 	log.Debug(fmt.Sprintf("Successfully removed permission: `%s` from user: `%s`", permission, username))
-	defer query.Close()
 	return true, nil
 }
 
@@ -142,6 +143,7 @@ func RemoveAllPermissionsOfUser(username string) error {
 		log.Error("Could not delete all permissions of user: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err = query.Exec(username); err != nil {
 		log.Error("Could not delete all permissions of user: executing query failed: ", err.Error())
 		return err
@@ -157,11 +159,13 @@ func GetUserPermissions(username string) ([]string, error) {
 		log.Error("Could get user permissions. Failed to prepare query: ", err.Error())
 		return permissions, err
 	}
+	defer query.Close()
 	res, err := query.Query(username)
 	if err != nil {
 		log.Error("Could get user permissions. Failed to execute query: ", err.Error())
 		return permissions, nil
 	}
+	defer res.Close()
 	for res.Next() {
 		var permission string
 		err = res.Scan(&permission)
@@ -171,11 +175,11 @@ func GetUserPermissions(username string) ([]string, error) {
 		}
 		permissions = append(permissions, permission)
 	}
-	defer query.Close()
 	return permissions, nil
 }
 
 // Checks the validity of a given permission string
+// TODO: Can also be abolished because of ENUM type
 func DoesPermissionExist(permission string) bool {
 	for _, permissionItem := range Permissions {
 		if string(permissionItem.Permission) == permission {
@@ -184,6 +188,8 @@ func DoesPermissionExist(permission string) bool {
 	}
 	return false
 }
+
+// TODO: move to business logic layer
 
 // Checks if a provided user is in possession of a provided permission, can return an error, if the database fails
 func UserHasPermission(username string, permission PermissionType) (bool, error) {

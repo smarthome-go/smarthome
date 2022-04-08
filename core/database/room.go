@@ -53,6 +53,7 @@ func CreateRoom(RoomId string, Name string, Description string) error {
 		log.Error("Could not create room: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	res, err := query.Exec(RoomId, Name, Description)
 	if err != nil {
 		log.Error("Could not create room: executing query failed: ", err.Error())
@@ -82,6 +83,7 @@ func ListRooms() ([]Room, error) {
 		log.Error("Failed to list rooms: executing query failed: ", err.Error())
 		return nil, err
 	}
+	defer res.Close()
 	rooms := make([]Room, 0)
 	for res.Next() {
 		var roomTemp Room
@@ -109,6 +111,7 @@ func listPersonalRoomsWithoutMetadata(username string) ([]Room, error) {
 		log.Error("Failed to list personal rooms: executing query failed: ", err.Error())
 		return nil, err
 	}
+	defer res.Close()
 	rooms := make([]Room, 0)
 	for res.Next() {
 		roomTemp := Room{
@@ -124,6 +127,7 @@ func listPersonalRoomsWithoutMetadata(username string) ([]Room, error) {
 	return rooms, nil
 }
 
+// TODO: Move to business layer
 // Returns a complete list of rooms, includes metadata like switches
 func ListPersonalRoomsAll(username string) ([]Room, error) {
 	rooms, err := listPersonalRoomsWithoutMetadata(username)

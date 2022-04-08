@@ -79,6 +79,7 @@ func createDatabase() error {
 		log.Error("Could not connect to Database: ", err.Error())
 		return err
 	}
+	defer dbTemp.Close()
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelfunc()
 	res, err := dbTemp.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS "+config.Database)
@@ -96,7 +97,6 @@ func createDatabase() error {
 	} else {
 		log.Debug(fmt.Sprintf("Using existing database `%s`", config.Database))
 	}
-	defer dbTemp.Close()
 	return nil
 }
 

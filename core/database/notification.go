@@ -66,6 +66,7 @@ func AddNotification(receiverUsername string, name string, description string, p
 		log.Error("Failed to add notification: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	_, err = query.Exec(receiverUsername, priority, name, description)
 	if err != nil {
 		log.Error("Failed to add notification: executing query failed: ", err.Error())
@@ -85,6 +86,7 @@ func DeleteAllNotificationsFromUser(username string) error {
 		log.Error("Failed to remove all user notifications: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err = query.Exec(username); err != nil {
 		log.Error("Failed to remove all user notifications: executing query failed: ", err.Error())
 		return err
@@ -104,6 +106,7 @@ func DeleteNotificationFromUserById(notificationId uint, username string) error 
 		log.Error("Failed to delete notification by id: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	_, err = query.Exec(notificationId, username)
 	if err != nil {
 		log.Error("Failed to delete notification by id: executing query failed: ", err.Error())
@@ -125,6 +128,7 @@ func GetUserNotificationCount(username string) (uint16, error) {
 		log.Error("Failed to get notification count: preparing query failed: ", err.Error())
 		return 0, err
 	}
+	defer query.Close()
 	var count uint16 = 0
 	err = query.QueryRow(username).Scan(&count)
 	if err != nil {
@@ -146,11 +150,13 @@ func GetUserNotifications(username string) ([]Notification, error) {
 		log.Error("Failed to get notifications: preparing query failed: ", err.Error())
 		return nil, err
 	}
+	defer query.Close()
 	res, err := query.Query(username)
 	if err != nil {
 		log.Error("Failed to get notifications: executing query failed: ", err.Error())
 		return nil, err
 	}
+	defer res.Close()
 	notifications := make([]Notification, 0)
 	for res.Next() {
 		var notificationItem Notification

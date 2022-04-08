@@ -29,6 +29,7 @@ func createHasSwitchPermissionTable() error {
 // Adds a given switchId to a given user
 // The existence of the switch should be validated beforehand
 // If this permission already resides inside the table, it is ignored and modified=false, error=nil is returned
+// TODO: Remove useless check if user already has permission
 func AddUserSwitchPermission(username string, switchId string) (bool, error) {
 	userAlreadyHasPermission, err := UserHasSwitchPermission(username, switchId)
 	if err != nil {
@@ -50,6 +51,7 @@ func AddUserSwitchPermission(username string, switchId string) (bool, error) {
 		log.Error("Could not add switch permission to user: preparing query failed: ", err.Error())
 		return false, err
 	}
+	defer query.Close()
 	_, err = query.Exec(username, switchId)
 	if err != nil {
 		log.Error("Failed to add switch permission to user: executing query failed: ", err.Error())
@@ -59,6 +61,7 @@ func AddUserSwitchPermission(username string, switchId string) (bool, error) {
 	return true, nil
 }
 
+// TODO: Remove useless check if user already has permission
 // TODO: check naming consistency of `ADD / CREATE` and `DELETE / REMOVE`
 // Removes a switch permission from a user, but does not delete if from the switch permission list
 func RemoveUserSwitchPermission(username string, switchId string) (bool, error) {
@@ -75,6 +78,7 @@ func RemoveUserSwitchPermission(username string, switchId string) (bool, error) 
 		log.Error("Failed to remove switch permission from user: failed to prepare query: ", err.Error())
 		return false, err
 	}
+	defer query.Close()
 	if _, err = query.Exec(username, switchId); err != nil {
 		log.Error("Failed to remove switch permission from user: executing query failed: ", err.Error())
 		return false, nil
@@ -93,6 +97,7 @@ func RemoveSwitchFromPermissions(switchId string) error {
 		log.Error("Failed to remove switch completely from switch permissions: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err = query.Exec(switchId); err != nil {
 		log.Error("Failed to remove switch completely from switch permissions: executing query failed: ", err.Error())
 		return err
@@ -112,6 +117,7 @@ func RemoveAllSwitchPermissionsOfUser(username string) error {
 		log.Error("Failed to remove all switch permissions of user: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err := query.Exec(username); err != nil {
 		log.Error("Failed to remove all switch permissions of user: executing query failed: ", err.Error())
 		return err
@@ -128,11 +134,13 @@ func GetUserSwitchPermissions(username string) ([]string, error) {
 		log.Error("Could not list user switch permissions: failed to prepare query: ", err.Error())
 		return make([]string, 0), err
 	}
+	defer query.Close()
 	res, err := query.Query(username)
 	if err != nil {
 		log.Error("Could not list user switch permissions: failed to execute query: ", err.Error())
 		return make([]string, 0), err
 	}
+	defer res.Close()
 	permissions := make([]string, 0)
 	for res.Next() {
 		var permission string
@@ -143,11 +151,11 @@ func GetUserSwitchPermissions(username string) ([]string, error) {
 		}
 		permissions = append(permissions, permission)
 	}
-	defer query.Close()
 	return permissions, nil
 }
 
 // Will return a boolean if a user has a switch permission
+// TODO: Replace with QueryRow
 func UserHasSwitchPermission(username string, switchId string) (bool, error) {
 	permissions, err := GetUserSwitchPermissions(username)
 	if err != nil {
