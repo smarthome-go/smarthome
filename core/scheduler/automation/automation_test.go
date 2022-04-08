@@ -27,6 +27,7 @@ func TestMain(m *testing.M) {
 	if err := createMockData(); err != nil {
 		panic(err.Error())
 	}
+	hardware.Init()
 	code := m.Run()
 	os.Exit(code)
 }

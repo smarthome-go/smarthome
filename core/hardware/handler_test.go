@@ -220,6 +220,7 @@ func TestSetPowerAsync(t *testing.T) {
 				return
 			}
 		}()
+		wg.Wait()
 		// When no node is registered, the request should not fail
 		if err := database.DeleteHardwareNode("http://localhost"); err != nil {
 			t.Error(err.Error())
