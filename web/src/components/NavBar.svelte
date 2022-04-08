@@ -9,6 +9,14 @@
 
     let drawerClosed = true
 
+    let nav: HTMLElement
+    document.addEventListener('click', event => {
+        if (!nav.contains(event.target as Node)) {
+            closed = true
+            drawerClosed = true
+        }
+    }, true)
+
     interface Page {
         label: string,
         uri: string,
@@ -56,7 +64,7 @@
     onMount(async () => await fetchData())
 </script>
 
-<nav class:closed>
+<nav bind:this={nav} class:closed>
     <div id="bg" class:mdc-elevation--z16={drawerClosed} class:mdc-elevation--z8={!drawerClosed}></div>
     <div id="toggle" on:click={toggleClosed}>
         <i class="material-icons">chevron_right</i>
