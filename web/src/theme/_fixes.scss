@@ -35,3 +35,18 @@
 .mdc-snackbar__action:not(:disabled) {
     color: var(--mdc-theme-primary) !important;
 }
+// Segmented button selected background
+.mdc-segmented-button__segment--selected::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: .08;
+    background-color: var(--mdc-theme-primary);
+}
+
+:root {
+    --mdc-ripple-color: var(--mdc-theme-primary);
+    --mdc-segmented-button-selected-ink-color: var(--mdc-theme-primary);
+    --mdc-segmented-button-unselected-container-fill-color: transparent;
+    --mdc-segmented-button-selected-container-fill-color: transparent;
+}
