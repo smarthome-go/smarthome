@@ -2,16 +2,22 @@
     import Button, { Icon, Label } from '@smui/button'
     import Textfield from '@smui/textfield'
     import HelperText from '@smui/textfield/helper-text'
-    import Snackbar, { Actions } from '@smui/snackbar'
-    import type { SnackbarComponentDev } from '@smui/snackbar'
+    import Kitchen from '@smui/snackbar/kitchen'
+    import type { KitchenComponentDev } from '@smui/snackbar/kitchen'
     import IconButton from '@smui/icon-button'
     import Progress from '../../components/Progress.svelte'
     import Logo from '../../assets/logo.webp'
+    import { createSnackbar } from '../../global'
 
     let loading = false
 
-    let snackbar: SnackbarComponentDev
-    let errorMessage = ''
+    let kitchen: KitchenComponentDev
+    $createSnackbar = (message: string) => {
+        kitchen.push({
+            label: message,
+            dismissButton: true,
+        })
+    }
 
     let username = ''
     let password = ''
@@ -36,21 +42,20 @@
         if (userInvalid || passwordInvalid) return
 
         loading = true
-        const res = await fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
-        })
-        loading = false
-        if (res.status === 204) {
+        try {
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            })
+            if (res.status === 401) throw 'Invalid username and/or password'
+            if (res.status !== 204) throw new Error()
             window.location.href = '/'
-        } else if (res.status === 401) {
-            errorMessage = 'Invalid username and/or password'
-            snackbar.open()
-        } else {
-            errorMessage = 'An unknown error occured. Please try again'
-            snackbar.open()
+        } catch (e) {
+            if (typeof e === 'string') $createSnackbar(e)
+            else $createSnackbar('An unknown error occured. Please try again')
         }
+        loading = false
     }
 </script>
 
@@ -126,13 +131,8 @@
             </Button>
         </form>
     </div>
-    <Snackbar bind:this={snackbar}>
-        <Label>{errorMessage}</Label>
-        <Actions>
-            <IconButton class="material-icons" title="Dismiss">close</IconButton>
-        </Actions>
-    </Snackbar>
 </main>
+<Kitchen bind:this={kitchen} dismiss$class="material-icons" />
 
 <style lang="scss">
     @use '../../mixins' as *;
