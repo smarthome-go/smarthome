@@ -21,7 +21,8 @@
             $data.notifications = res
         } catch {
             $createSnackbar('Could not refresh notifications')
-        } finally { loading = false }
+        }
+        loading = false
     }
     async function deleteAll() {
         loading = true
@@ -44,7 +45,8 @@
             $data.notifications = []
         } catch {
             $createSnackbar('Could not delete notifications')
-        } finally { loading = false }
+        }
+        loading = false
     }
 </script>
 

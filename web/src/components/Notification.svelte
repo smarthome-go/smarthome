@@ -41,9 +41,8 @@
             }, 300)
         } catch {
             $createSnackbar('Could not delete notification')
-        } finally {
-            loading = false
         }
+        loading = false
     }
 </script>
 
