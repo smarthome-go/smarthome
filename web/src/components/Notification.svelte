@@ -34,7 +34,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id }),
             })).json()
-            if (!res.success) throw new Error()
+            if (!res.success) throw Error()
             deleted = true
             setTimeout(() => {
                 $data.notifications = $data.notifications.filter(n => n.id !== id)

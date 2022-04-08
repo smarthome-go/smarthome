@@ -17,7 +17,7 @@
         if (showLoader) loading = true
         try {
             const res = await (await fetch('/api/user/notification/list')).json()
-            if (res.success === false) throw new Error()
+            if (res.success === false) throw Error()
             $data.notifications = res
         } catch {
             $createSnackbar('Could not refresh notifications')
@@ -30,7 +30,7 @@
             const res = await (await fetch('/api/user/notification/delete/all', {
                 method: 'DELETE',
             })).json()
-            if (!res.success) throw new Error()
+            if (!res.success) throw Error()
 
             const notifications = [...$data.notifications]
             const viewportHeight = Math.max(window.innerHeight, document.documentElement.clientHeight)

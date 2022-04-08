@@ -29,7 +29,7 @@
         loading = true
         try {
             const res = await (await fetch('/api/room/list/personal')).json()
-            if (res.success === false) throw new Error()
+            if (res.success === false) throw Error()
             if (updateExisting) {
                 for (const room of rooms) {
                     room.switches = (res as RoomResponse[]).find(r => r.id === room.id).switches

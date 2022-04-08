@@ -21,7 +21,7 @@
                     powerOn: event.detail.selected,
                 }),
             })).json()
-            if (!res.success) throw new Error()
+            if (!res.success) throw Error()
         } catch {
             $createSnackbar(`Failed to set switch '${label}' to ${event.detail.selected ? 'on' : 'off'}`)
         }

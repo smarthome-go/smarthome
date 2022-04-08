@@ -49,7 +49,7 @@
                 body: JSON.stringify({ username, password })
             })
             if (res.status === 401) throw 'Invalid username and/or password'
-            if (res.status !== 204) throw new Error()
+            if (res.status !== 204) throw Error()
             window.location.href = '/'
         } catch (e) {
             if (typeof e === 'string') $createSnackbar(e)
