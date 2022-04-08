@@ -23,6 +23,7 @@ func TestMain(m *testing.M) {
 	if err := database.CreateRoom("testing", "testing", "testing"); err != nil {
 		panic(err.Error())
 	}
+	Init() // For initializing atomic slice
 	code := m.Run()
 	os.Exit(code)
 }

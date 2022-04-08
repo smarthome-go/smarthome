@@ -185,6 +185,9 @@ func main() {
 		log.Fatal("Failed to activate reminder scheduler: ", err.Error())
 	}
 
+	// Init the hardware handler
+	hardware.Init()
+
 	r := routes.NewRouter()
 	middleware.Init(configStruct.Server.Production)
 	templates.LoadTemplates("./web/dist/html/*.html")
