@@ -95,14 +95,14 @@
             animation-name: loading;
 
             .title {
-                background-color: var(--clr-bg-600);
+                background-color: var(--clr-height-0-8);
                 height: 1.4rem;
                 width: 5rem;
                 margin-bottom: 1rem;
             }
 
             .description {
-                background-color: var(--clr-bg-800);
+                background-color: var(--clr-height-0-16);
                 height: 1rem;
                 width: 100%;
                 margin-bottom: .5rem;
@@ -110,7 +110,7 @@
             }
 
             .time {
-                background-color: var(--clr-bg-700);
+                background-color: var(--clr-height-0-12);
                 height: .6rem;
                 width: 6rem;
                 margin-top: 1rem;
