@@ -51,12 +51,15 @@ $elevations: (
     --mdc-theme-on-primary: var(--clr-on-primary);
 }
 
+// Snackbar z-index
+.mdc-snackbar { z-index: 200; }
 // Snackbar actions primary color
 .mdc-snackbar__actions {
     --mdc-theme-primary: var(--clr-primary-light);
     :root.light-theme & { --mdc-theme-primary: var(--clr-primary-dark); }
 }
 
+// Circular progress default size
 .mdc-circular-progress {
     height: 1.5rem;
     width: 1.5rem;
