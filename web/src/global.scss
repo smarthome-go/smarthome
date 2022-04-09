@@ -65,10 +65,8 @@ $elevations: (
 body { margin: 0; }
 
 
-h1, h2, h3, h4, h5, h6, p { opacity: 87%; }
-.text-normal { opacity: 87%; }
-.text-hint { opacity: 60%; }
-.text-disabled { opacity: 38%; }
+.text-hint { color: var(--clr-text-hint); }
+.text-disabled { color: var(--clr-text-disabled); }
 html { @include typography.typography('body1'); }
 h1 { @include typography.typography('headline1'); }
 h2 { @include typography.typography('headline2'); }

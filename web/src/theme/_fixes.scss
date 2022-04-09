@@ -28,7 +28,9 @@
 }
 
 :root {
+    // Ripple color
     --mdc-ripple-color: var(--mdc-theme-primary);
+    .mdc-icon-button { --mdc-ripple-color: var(--clr-text); }
 
     // Segmented button colors
     --mdc-segmented-button-selected-ink-color: var(--mdc-theme-primary);
@@ -64,4 +66,7 @@
     .mdc-switch:enabled:hover:not(:focus):not(:active) .mdc-switch__track::after {
         opacity: .25;
     }
+
+    // Disabled text/icons
+    --mdc-theme-text-disabled-on-light: var(--clr-text-disabled);
 }

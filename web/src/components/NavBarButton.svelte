@@ -8,13 +8,13 @@
 
 {#if active}
     <div class:active>
-        <i class="material-icons text-normal">{icon}</i>
-        <span class="text-normal">{label}</span>
+        <i class="material-icons">{icon}</i>
+        <span>{label}</span>
     </div>
 {:else}
     <a class:active href={uri}>
-        <i class="material-icons text-normal">{icon}</i>
-        <span class="text-normal">{label}</span>
+        <i class="material-icons">{icon}</i>
+        <span>{label}</span>
     </a>
 {/if}
 

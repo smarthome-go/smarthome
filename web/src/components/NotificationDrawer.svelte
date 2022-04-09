@@ -10,11 +10,11 @@
     let loaded = false
     let loading = false
 
-    $: if (!hidden && !loaded) load(false).then(() => loaded = true)
+    $: if (!hidden && !loaded) load().then(() => loaded = true)
     $: if (loaded) $data.notificationCount = $data.notifications.length
 
-    async function load(showLoader = true) {
-        if (showLoader) loading = true
+    async function load() {
+        loading = true
         try {
             const res = await (await fetch('/api/user/notification/list')).json()
             if (res.success === false) throw Error()
@@ -56,7 +56,7 @@
         <Button on:click={deleteAll} disabled={$data.notifications.length === 0}>
             <Label>Delete All</Label>
         </Button>
-        <IconButton on:click={() => load()} class="material-icons">refresh</IconButton>
+        <IconButton on:click={() => load()} disabled={loading} class="material-icons">refresh</IconButton>
     </div>
     <div id="list">
         {#if loaded}

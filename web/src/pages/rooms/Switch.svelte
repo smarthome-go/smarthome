@@ -33,7 +33,7 @@
 <div class="switch mdc-elevation--z3">
     <div>
         <Switch icons={false} bind:checked on:SMUISwitch:change={toggle} />
-        <span class="text-normal">{label}</span>
+        <span>{label}</span>
     </div>
     <div class="right">
         <Progress type="circular" bind:loading />

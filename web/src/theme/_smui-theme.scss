@@ -1,12 +1,13 @@
 @use 'sass:color';
 
-@use '@material/theme/color-palette' as colors;
+$text-color: #121212;
 @use '@material/theme/index' as theme with (
   $background: #fff,
   $surface: #fff,
+  $on-surface: color.change($text-color, $alpha: 0.87),
   $error: #b00020,
 );
-
+@use '@material/theme/color-palette' as colors;
 @use './fixes';
 
 html,
@@ -17,6 +18,8 @@ body {
 
 :root {
   --clr-text: #{theme.$on-surface};
+  --clr-text-hint: #{color.change($text-color, $alpha: 0.6)};
+  --clr-text-disabled: #{color.change($text-color, $alpha: 0.38)};
   --clr-error: #{theme.$error};
   --clr-warn: #{colors.$amber-a700};
   --clr-success: #{colors.$green-a700};
