@@ -14,7 +14,7 @@
   onMount(() => {
     switch (priority) {
       case 0:
-        priorityColor = "#ff0000";
+        priorityColor = "#707070";
         break;
       case 1:
         priorityColor = "#00ff00";
@@ -42,5 +42,6 @@
     display: flex;
     border-radius: 0.3rem;
     align-items: center;
+    border-left: .3rem solid var(--clr-priority);
   }
 </style>
