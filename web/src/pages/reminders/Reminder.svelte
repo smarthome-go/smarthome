@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Checkbox from "@smui/checkbox";
+  import FormField from "@smui/form-field";
   import { onMount } from "svelte";
 
   export let id: number;
@@ -9,7 +11,10 @@
   export let createdDate: string;
   export let userWasNotified: boolean;
 
+  let doneChecked = false;
+
   let priorityColor: string;
+  const priorities = ["Low", "Normal", "Medium", "High", "Urgent"];
 
   onMount(() => {
     switch (priority) {
@@ -30,18 +35,36 @@
 </script>
 
 <div id="main" class="mdc-elevation--z3" style:--clr-priority={priorityColor}>
-  <h5>{name}</h5>
+  <div id="top">
+    <h6>{name}</h6>
+    <FormField align="end">
+      <Checkbox bind:checked={doneChecked} />
+      <span slot="label">Mark as completed</span>
+    </FormField>
+  </div>
   <p>{description}</p>
-  <p>{dueDate}</p>
-  <p class="text-hint">{createdDate}</p>
+  <div id="bottom">
+    <p>{dueDate}</p>
+    <p class="text-hint">{createdDate}</p>
+    <p class="text-hint">{priorities[priority]}</p>
+  </div>
 </div>
 
 <style lang="scss">
   #main {
     background-color: var(--clr-height-1-3);
-    display: flex;
     border-radius: 0.3rem;
-    align-items: center;
-    border-left: .3rem solid var(--clr-priority);
+    border-left: 0.3rem solid var(--clr-priority);
+    padding: 0.7rem 1rem;
+  }
+  h6 {
+    margin: 0;
+  }
+  #top {
+    display: flex;
+    justify-content: space-between;
+  }
+  #bottom {
+    display: flex;
   }
 </style>

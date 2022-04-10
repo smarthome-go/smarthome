@@ -1,15 +1,16 @@
 <script lang="ts">
-    import SegmentedButton, { Label, Segment } from '@smui/segmented-button'
-    import Textfield from '@smui/textfield'
-    import CharacterCounter from '@smui/textfield/character-counter'
-    import HelperText from '@smui/textfield/helper-text'
-    import Page from '../../Page.svelte'
-    import Reminder from './Reminder.svelte'
+    import SegmentedButton,{ Label,Segment } from '@smui/segmented-button';
+    import Textfield from '@smui/textfield';
+    import CharacterCounter from '@smui/textfield/character-counter';
+    import HelperText from '@smui/textfield/helper-text';
+    import Page from '../../Page.svelte';
+    import Reminder from './Reminder.svelte';
 
     // Add new inputs
     let inputName = ''
     let inputDescription = ''
     let selectedPriority = 'Normal'
+    const priorities = ['Low', 'Normal', 'Medium', 'High', 'Urgent']
 </script>
 
 <Page>
@@ -17,10 +18,10 @@
         <div id="container" class="mdc-elevation--z1">
             <Reminder
                 id={1}
-                name={'test'}
-                description={'nein'}
-                createdDate={'yesterday'}
-                dueDate={'nein'}
+                name={'Name'}
+                description={'Description'}
+                createdDate={'created: yesterday'}
+                dueDate={'until 08.01.2000'}
                 priority={0}
                 userWasNotified={false}
             />
@@ -52,7 +53,7 @@
                 </Textfield>
             </div>
             <SegmentedButton
-                segments={['Low', 'Normal', 'Medium', 'High', 'Urgent']}
+                segments={priorities}
                 let:segment
                 singleSelect
                 bind:selected={selectedPriority}
