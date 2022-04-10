@@ -1,9 +1,9 @@
 <script lang="ts">
-    import Button, { Label } from '@smui/button'
-    import IconButton from '@smui/icon-button'
-    import { createSnackbar, data, sleep } from '../global'
-    import NotificationCard from './Notification.svelte'
-    import Progress from './Progress.svelte'
+    import Button,{ Label } from '@smui/button';
+    import IconButton from '@smui/icon-button';
+    import { createSnackbar,data,sleep } from '../global';
+    import NotificationCard from './Notification.svelte';
+    import Progress from './Progress.svelte';
 
     export let hidden = true
 

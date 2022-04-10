@@ -1,11 +1,11 @@
 <script lang="ts">
-    import TabBar from '@smui/tab-bar'
-    import Tab, { Label } from '@smui/tab'
-    import IconButton from '@smui/icon-button'
-    import { createSnackbar, sleep } from '../../global'
-    import Progress from '../../components/Progress.svelte'
-    import Page from '../../Page.svelte'
-    import Switch from './Switch.svelte'
+    import IconButton from '@smui/icon-button';
+    import Tab,{ Label } from '@smui/tab';
+    import TabBar from '@smui/tab-bar';
+    import Progress from '../../components/Progress.svelte';
+    import { createSnackbar,sleep } from '../../global';
+    import Page from '../../Page.svelte';
+    import Switch from './Switch.svelte';
 
     interface RoomResponse {
         id: string,

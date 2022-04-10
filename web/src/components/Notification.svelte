@@ -1,7 +1,7 @@
 <script lang="ts">
-    import IconButton from '@smui/icon-button'
-    import { data, createSnackbar } from '../global'
-    import Progress from './Progress.svelte'
+    import IconButton from '@smui/icon-button';
+    import { createSnackbar,data } from '../global';
+    import Progress from './Progress.svelte';
 
     export let dummy = false
 
