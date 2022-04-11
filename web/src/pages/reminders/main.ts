@@ -6,11 +6,11 @@ export interface reminder {
   name: string;
   description: string;
   priority: number;
-  createdDate: string;
-  dueDate: string;
+  createdDate: number;
+  dueDate: number;
   owner: string;
   userWasNotified: boolean;
-  userWasNotifiedAt: string;
+  userWasNotifiedAt: number;
 }
 
 export const reminders: Writable<reminder[]> = writable([]);

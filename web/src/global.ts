@@ -1,5 +1,5 @@
 import type { ConfigAction } from '@smui/snackbar/kitchen'
-import { Writable, writable, get } from 'svelte/store'
+import { get, Writable, writable } from 'svelte/store'
 
 export const createSnackbar: Writable<(message: string, actions?: ConfigAction[]) => void> = writable(() => {})
 
@@ -56,7 +56,6 @@ export async function fetchData() {
     temp.notificationCount = await fetchNotificationCount()
     temp.loaded = true
     data.set(temp)
-    console.log('Fetched data:', temp)
     isFetching = false
     hasFetched = true
 }

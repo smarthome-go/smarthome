@@ -26,14 +26,12 @@
       const res = (await (
         await fetch("/api/reminder/list")
       ).json()) as reminder[];
-      console.log(res);
       reminders.set(res);
     } catch (err) {
       $createSnackbar("Could not load reminders");
     }
     loading = false;
   }
-
   onMount(() => loadReminders());
 </script>
 
@@ -41,10 +39,12 @@
   <Progress id="loader" bind:loading />
   <div id="content">
     <div id="container" class="mdc-elevation--z1">
-      <div id="header">
+      <div class="header">
         <h6>Reminders</h6>
-        <IconButton class="material-icons" on:click={() => loadReminders()}
-          >refresh</IconButton
+        <IconButton
+          title="Refresh"
+          class="material-icons"
+          on:click={() => loadReminders()}>refresh</IconButton
         >
       </div>
       <div class="reminders" class:empty={$reminders.length === 0}>
@@ -57,6 +57,14 @@
       </div>
     </div>
     <div id="add" class="mdc-elevation--z1">
+      <div class="header">
+        <h6>Reminders</h6>
+        <IconButton
+          title="Refresh"
+          class="material-icons"
+          on:click={() => loadReminders()}>refresh</IconButton
+        >
+      </div>
       <div id="name">
         <Textfield
           style="width: 100%;"
@@ -92,13 +100,12 @@
           <Label>{segment}</Label>
         </Segment>
       </SegmentedButton>
-      
+
       <br />
       <br />
       <Button on:click={() => {}} touch variant="raised">
         <Label>Create</Label>
       </Button>
-
       <Button on:click={() => {}} touch>
         <Label>Cancel</Label>
       </Button>
@@ -117,6 +124,8 @@
     }
     margin: 1rem 1.5rem;
     gap: 1rem;
+    transition-property: height;
+    transition-duration: 0.3s;
   }
   #container {
     background-color: var(--clr-height-0-1);
@@ -146,7 +155,7 @@
       justify-content: center;
     }
   }
-  #header {
+  .header {
     display: flex;
     justify-content: space-between;
     h6 {
