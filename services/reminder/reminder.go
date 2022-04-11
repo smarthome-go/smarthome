@@ -25,7 +25,7 @@ func sendDueInReminder(id uint, username string, name string, daysLeft uint, due
 	}
 	if err := user.Notify(
 		username,
-		fmt.Sprintf("Task is due to %s", dueDate.Format("Monday, 2.1.2006")),
+		fmt.Sprintf("Task is due on %s", dueDate.Format("Monday, 2.1.2006")),
 		fmt.Sprintf("You have %d %s left to complete the task '%s'",
 			daysLeft,
 			dayText,
