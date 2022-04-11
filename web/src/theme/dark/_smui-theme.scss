@@ -23,4 +23,6 @@ body {
   --clr-error: #{theme.$error};
   --clr-warn: #{colors.$yellow-400};
   --clr-success: #{colors.$light-green-a200};
+  --clr-priority-low: #{colors.$grey-600};
+  --clr-priority-medium: #{colors.$light-blue-a200};
 }
