@@ -49,8 +49,8 @@
       if (!res.success) throw Error();
       deleted = true;
       setTimeout(() => {
-        $reminders = $reminders.filter(n => n.id !== id)
-      }, 300)
+        $reminders = $reminders.filter((n) => n.id !== id);
+      }, 300);
     } catch (err) {
       $createSnackbar("Could not mark reminder as completed");
     }
@@ -78,6 +78,9 @@
     <h6>{name}</h6>
     <div id="buttons">
       <Progress class="spinner" bind:loading type="circular" />
+      <p style:--clr-priority={priorityColor} class="text-hint priority">
+        {priorities[priority]}
+      </p>
       <IconButton class="material-icons" on:click={() => deleteSelf()}
         >done</IconButton
       >
@@ -85,9 +88,8 @@
   </div>
   <p>{description}</p>
   <div id="bottom">
-    <p>{dueDate}</p>
-    <p class="text-hint">{createdDate}</p>
-    <p class="text-hint">{priorities[priority]}</p>
+    <p class="date text-hint">until: {dueDate}</p>
+    <p class="text-hint date">created: {createdDate}</p>
   </div>
 </div>
 
@@ -96,11 +98,11 @@
     background-color: var(--clr-height-1-3);
     border-radius: 0.3rem;
     border-left: 0.3rem solid var(--clr-priority);
-    padding: 0.7rem 1rem;
-    transition-property: transform, height, margin-bottom, padding, opacity;;
+    padding: 1rem;
+    transition-property: transform, height, margin-bottom, padding, opacity;
     transition-duration: 0.3s;
     margin-bottom: 1rem;
-    
+
     &.deleted {
       transform: translateX(-110%);
       margin-bottom: 0;
@@ -110,16 +112,27 @@
   h6 {
     margin: 0;
   }
+  p {
+    margin: 0.5rem 0;
+  }
   #top {
     display: flex;
     justify-content: space-between;
   }
   #bottom {
     display: flex;
+    justify-content: space-between;
   }
   #buttons {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: .8rem;
+  }
+  .date {
+    font-size: 0.8rem;
+  }
+  .priority {
+    opacity: 90%;
+    color: var(--clr-priority);
   }
 </style>
