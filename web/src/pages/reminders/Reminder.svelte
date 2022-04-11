@@ -16,11 +16,11 @@
   let deleted = false;
 
   const priorities = [
-    { label: "LOW", color: "#757575" }, // Gray 600
-    { label: "NORMAL", color: "#B2FF59" }, // Light Green A200
-    { label: "MEDIUM", color: "#64B5F6" }, // Blue 300
-    { label: "HIGH", color: "#FFEB3B" }, // Yellow 500
-    { label: "URGENT", color: "#EF5350" }, // Red 400
+    { label: "LOW", color: "var(--clr-priority-low)" },
+    { label: "NORMAL", color: "var(--clr-success)" },
+    { label: "MEDIUM", color: "var(--clr-priority-medium)" },
+    { label: "HIGH", color: "var(--clr-warn)" },
+    { label: "URGENT", color: "var(--clr-error)" },
   ];
   const priorityColor = priorities[priority].color;
 
@@ -90,9 +90,8 @@
   </div>
   <p>{description}</p>
   <div id="bottom">
-    <p class="date">
-      <span class="text-hint">Due to</span>
-      {millisToDate(dueDate)}
+    <p class="date text-hint">
+      Due Date {millisToDate(dueDate)}
     </p>
     <p class="text-disabled date">created {millisToDate(createdDate)}</p>
   </div>

@@ -15,6 +15,7 @@
   // Add new inputs
   let inputName = "";
   let inputDescription = "";
+  let inputDueDate = new Date(Date.now()).getMilliseconds();
   let selectedPriority = "Normal";
   const priorities = ["Low", "Normal", "Medium", "High", "Urgent"];
 
@@ -32,6 +33,35 @@
     }
     loading = false;
   }
+
+  async function create() {
+    loading = true;
+    try {
+      const res = await (
+        await fetch("/api/reminder/add", {
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: inputName,
+            description: inputDescription,
+            priority: priorities.indexOf(selectedPriority),
+            dueDate: inputDueDate,
+          }),
+          method: "POST",
+        })
+      ).json();
+      if (!res.success) throw Error();
+    } catch (err) {
+      $createSnackbar("Could not create reminder");
+    }
+    loading = false;
+  }
+
+  function cancel() {
+    inputName = "";
+    inputDescription = "";
+    selectedPriority = "Normal";
+  }
+
   onMount(() => loadReminders());
 </script>
 
@@ -100,21 +130,37 @@
           <Label>{segment}</Label>
         </Segment>
       </SegmentedButton>
-
       <br />
       <br />
-      <Button on:click={() => {}} touch variant="raised">
-        <Label>Create</Label>
-      </Button>
-      <Button on:click={() => {}} touch>
-        <Label>Cancel</Label>
-      </Button>
+      <div class="align">
+        <Button
+          on:click={() => {
+            create();
+            cancel();
+          }}
+          disabled={inputName.length === 0}
+          touch
+          variant="raised"
+        >
+          <Label>Create</Label>
+        </Button>
+        <Button disabled={inputName.length === 0} on:click={cancel} touch>
+          <Label>Cancel</Label>
+        </Button>
+      </div>
     </div>
   </div>
 </Page>
 
 <style lang="scss">
   @use "../../mixins" as *;
+
+  // #date {
+  //   width: 100%;
+  //   height: 100%;
+  //   position: absolute;
+  // }
+
   #content {
     display: flex;
     flex-direction: column;
@@ -166,6 +212,14 @@
     margin-top: 1rem;
     :global(.mdc-text-field__resizer) {
       resize: none;
+    }
+  }
+  .align {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    @include mobile {
+      gap: 0.7rem;
     }
   }
 </style>
