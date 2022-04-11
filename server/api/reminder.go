@@ -8,6 +8,7 @@ import (
 
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/server/middleware"
+	"github.com/MikMuellerDev/smarthome/services/reminder"
 )
 
 type AddReminderRequest struct {
@@ -77,7 +78,7 @@ func GetReminders(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	reminders, err := database.GetUserReminders(username)
+	reminders, err := reminder.GetUserReminders(username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to list reminders", Error: "database failure"})
