@@ -57,7 +57,7 @@ clean: cleanweb
 	rm -rf coverage.html
 
 cleanweb:
-	rm -rf web/out
+	rm -rf web/dist
 
 cleanall: clean
 	rm -rf build
@@ -82,7 +82,6 @@ docker: cleanall web
 docker-release: test docker 
 
 web: cleanweb
-	cd web && npm run prepare
 	cd web && npm run build
 
 # Build architectures

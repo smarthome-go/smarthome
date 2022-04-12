@@ -1,7 +1,7 @@
 <script lang="ts">
     import Ripple from '@smui/ripple'
     import { onMount } from 'svelte'
-    export let value: Date
+    export let value = new Date()
     export let label: string
 
     let inputElement: HTMLInputElement
@@ -10,16 +10,35 @@
     let active = false
 
     document.addEventListener(
+        // Used for displaying and hiding the label / helper text
         'click',
         (event) => {
-            console.log(document.activeElement)
             active = document.activeElement === inputElement
         },
         true
     )
+
+    export function clear() {
+        inputElement.value = ''
+    }
+
     onMount(() => {
         inputElement.onfocus = () => {
+            // Always shows the helper text
             active = true
+        }
+        inputElement.oninput = () => {
+            // Needed because binding to value is not optimal
+            value =
+                inputElement != undefined
+                    ? inputElement.valueAsDate
+                    : new Date()
+        }
+        inputElement.onchange = () => {
+            value =
+                inputElement != undefined
+                    ? inputElement.valueAsDate
+                    : new Date()
         }
     })
 </script>
@@ -28,7 +47,6 @@
     <input
         class="text-hint"
         use:Ripple={{ surface: true }}
-        bind:value
         bind:this={inputElement}
         type="date"
         name="date"
@@ -56,7 +74,7 @@
     }
 
     input:focus {
-        color: var(--text-high);
+        color: var(--clr-primary);
     }
 
     input::-webkit-calendar-picker-indicator {
@@ -66,7 +84,7 @@
         cursor: pointer;
     }
 
-    input:before {
+    input::before {
         background: none;
         font-family: 'Material Icons';
         content: 'event';
@@ -81,10 +99,6 @@
         padding-left: 0.5rem;
         box-sizing: border-box;
         transition: 0.1s;
-    }
-
-    input:focus::before {
-        color: var(--clr-primary);
     }
 
     #hint {

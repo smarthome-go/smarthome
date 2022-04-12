@@ -16,13 +16,25 @@
     // Inputs for adding a reminder
     let inputName = ''
     let inputDescription = ''
-    let inputDueDate = new Date()
+
+    let datePicker: DatePicker 
+    const defaultDate = new Date()
+    let inputDueDate = defaultDate
+
     let selectedPriority = 'Normal'
     const priorities = ['Low', 'Normal', 'Medium', 'High', 'Urgent']
 
-    $: console.log(inputDueDate)
-
     let loading = false
+    let dirty = false
+    $: dirty = nameDirty || descriptionDirty || dueDateDirty || priorityDirty
+    
+    let nameDirty = false
+    let descriptionDirty = false
+    let dueDateDirty = false
+    let priorityDirty = false
+
+    $: dueDateDirty = inputDueDate != defaultDate
+    $: priorityDirty = selectedPriority != "Normal"
 
     async function loadReminders() {
         loading = true
@@ -47,14 +59,14 @@
                         name: inputName,
                         description: inputDescription,
                         priority: priorities.indexOf(selectedPriority),
-                        dueDate: inputDueDate,
+                        dueDate: inputDueDate.getTime(),
                     }),
                     method: 'POST',
                 })
             ).json()
-            if (!res.success) throw Error()
+            if (!res.success) throw Error(`request error: ${res.error}`)
         } catch (err) {
-            $createSnackbar('Could not create reminder')
+            $createSnackbar(`Could not create reminder ${err}`)
         }
         loading = false
     }
@@ -63,6 +75,8 @@
         inputName = ''
         inputDescription = ''
         selectedPriority = 'Normal'
+        inputDueDate = defaultDate
+        datePicker.clear()
     }
 
     onMount(() => loadReminders())
@@ -103,6 +117,7 @@
                     style="width: 100%;"
                     helperLine$style="width: 100%;"
                     bind:value={inputName}
+                    bind:dirty={nameDirty}
                     label="Name"
                     input$maxlength={100}
                 >
@@ -115,6 +130,7 @@
                     helperLine$style="width: 100%;"
                     textarea
                     bind:value={inputDescription}
+                    bind:dirty={descriptionDirty}
                     label="Description"
                     input$rows={5}
                 >
@@ -134,7 +150,8 @@
                 </Segment>
             </SegmentedButton>
             <br />
-            <DatePicker label={'Due Date'} bind:value={inputDueDate} />
+            <br />
+            <DatePicker bind:this={datePicker} label={'Due Date'} bind:value={inputDueDate} />
             <br />
             <!-- Create and cancel buttons -->
             <div class="align">
@@ -143,14 +160,14 @@
                         create()
                         cancel()
                     }}
-                    disabled={inputName.length === 0}
+                    disabled={inputName.length === 0 || !dueDateDirty}
                     touch
                     variant="raised"
                 >
                     <Label>Create</Label>
                 </Button>
                 <Button
-                    disabled={inputName.length === 0}
+                    disabled={!dirty}
                     on:click={cancel}
                     touch
                 >
