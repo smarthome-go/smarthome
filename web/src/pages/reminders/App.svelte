@@ -6,6 +6,7 @@
     import CharacterCounter from '@smui/textfield/character-counter'
     import HelperText from '@smui/textfield/helper-text'
     import { onMount } from 'svelte'
+    import DatePicker from '../../components/DatePicker.svelte'
     import Progress from '../../components/Progress.svelte'
     import { createSnackbar } from '../../global'
     import Page from '../../Page.svelte'
@@ -15,9 +16,11 @@
     // Inputs for adding a reminder
     let inputName = ''
     let inputDescription = ''
-    let inputDueDate = new Date(Date.now()).getMilliseconds()
+    let inputDueDate = new Date()
     let selectedPriority = 'Normal'
     const priorities = ['Low', 'Normal', 'Medium', 'High', 'Urgent']
+
+    $: console.log(inputDueDate)
 
     let loading = false
 
@@ -131,7 +134,9 @@
                 </Segment>
             </SegmentedButton>
             <br />
+            <DatePicker label={'Due Date'} bind:value={inputDueDate} />
             <br />
+            <!-- Create and cancel buttons -->
             <div class="align">
                 <Button
                     on:click={() => {
