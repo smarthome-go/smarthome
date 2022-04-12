@@ -17,7 +17,7 @@
     let inputName = ''
     let inputDescription = ''
 
-    let datePicker: DatePicker 
+    let datePicker: DatePicker
     const defaultDate = new Date()
     let inputDueDate = defaultDate
 
@@ -27,14 +27,14 @@
     let loading = false
     let dirty = false
     $: dirty = nameDirty || descriptionDirty || dueDateDirty || priorityDirty
-    
+
     let nameDirty = false
     let descriptionDirty = false
     let dueDateDirty = false
     let priorityDirty = false
 
     $: dueDateDirty = inputDueDate != defaultDate
-    $: priorityDirty = selectedPriority != "Normal"
+    $: priorityDirty = selectedPriority != 'Normal'
 
     async function loadReminders() {
         loading = true
@@ -71,12 +71,15 @@
         loading = false
     }
 
-    function cancel() {
+    function clear() {
         inputName = ''
         inputDescription = ''
         selectedPriority = 'Normal'
         inputDueDate = defaultDate
         datePicker.clear()
+
+        nameDirty = false
+        descriptionDirty = false
     }
 
     onMount(() => loadReminders())
@@ -151,14 +154,19 @@
             </SegmentedButton>
             <br />
             <br />
-            <DatePicker bind:this={datePicker} label={'Due Date'} bind:value={inputDueDate} />
+            <DatePicker
+                bind:this={datePicker}
+                label={'Due Date'}
+                bind:value={inputDueDate}
+            />
             <br />
             <!-- Create and cancel buttons -->
             <div class="align">
                 <Button
-                    on:click={() => {
-                        create()
-                        cancel()
+                    on:click={async () => {
+                        await create()
+                        clear() // Clear inputs
+                        await loadReminders() // Needs to be fetched from server in order to make deletion possible (id)
                     }}
                     disabled={inputName.length === 0 || !dueDateDirty}
                     touch
@@ -166,11 +174,7 @@
                 >
                     <Label>Create</Label>
                 </Button>
-                <Button
-                    disabled={!dirty}
-                    on:click={cancel}
-                    touch
-                >
+                <Button disabled={!dirty} on:click={clear} touch>
                     <Label>Cancel</Label>
                 </Button>
             </div>
