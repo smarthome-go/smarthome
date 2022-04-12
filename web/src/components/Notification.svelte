@@ -1,7 +1,7 @@
 <script lang="ts">
-    import IconButton from '@smui/icon-button';
-    import { createSnackbar,data } from '../global';
-    import Progress from './Progress.svelte';
+    import IconButton from '@smui/icon-button'
+    import { createSnackbar,data } from '../global'
+    import Progress from './Progress.svelte'
 
     export let dummy = false
 
@@ -21,7 +21,10 @@
     ]
 
     $: if (deleted) {
-        container.style.setProperty('--height', container.getBoundingClientRect().height + 'px')
+        container.style.setProperty(
+            '--height',
+            container.getBoundingClientRect().height + 'px'
+        )
         container.getBoundingClientRect()
         container.style.height = '0'
     }
@@ -29,15 +32,19 @@
     async function deleteSelf() {
         loading = true
         try {
-            const res = await (await fetch('/api/user/notification/delete', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id }),
-            })).json()
+            const res = await (
+                await fetch('/api/user/notification/delete', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id }),
+                })
+            ).json()
             if (!res.success) throw Error()
             deleted = true
             setTimeout(() => {
-                $data.notifications = $data.notifications.filter(n => n.id !== id)
+                $data.notifications = $data.notifications.filter(
+                    (n) => n.id !== id
+                )
             }, 300)
         } catch {
             $createSnackbar('Could not delete notification')
@@ -46,16 +53,26 @@
     }
 </script>
 
-<div class="root mdc-elevation--z2" bind:this={container} class:deleted class:dummy id={`notification-${id}`}>
+<div
+    class="root mdc-elevation--z2"
+    bind:this={container}
+    class:deleted
+    class:dummy
+    id={`notification-${id}`}
+>
     {#if dummy}
-        <div class="title"></div>
-        <div class="description"></div>
-        <div class="description small"></div>
-        <div class="time"></div>
+        <div class="title" />
+        <div class="description" />
+        <div class="description small" />
+        <div class="time" />
     {:else}
-        <div class="line" style:--clr-priority={priorityColors[priority - 1]}></div>
+        <div class="line" style:--clr-priority={priorityColors[priority - 1]} />
         <Progress class="spinner" bind:loading type="circular" />
-        <IconButton class="delete material-icons" title="Delete" on:click={deleteSelf}>delete</IconButton>
+        <IconButton
+            class="delete material-icons"
+            title="Delete"
+            on:click={deleteSelf}>delete</IconButton
+        >
         <h6>{name}</h6>
         <p>{description}</p>
         <p class="date text-hint">{date}</p>
@@ -64,13 +81,13 @@
 
 <style lang="scss">
     .root {
-        border-radius: .3rem;
+        border-radius: 0.3rem;
         padding: 1rem;
         padding-left: 1.5rem;
         white-space: normal;
         position: relative;
         transition-property: transform, height, margin-bottom, padding;
-        transition-duration: .3s;
+        transition-duration: 0.3s;
         width: 100%;
         box-sizing: border-box;
         user-select: text;
@@ -80,8 +97,12 @@
         margin-bottom: 1rem;
         flex-shrink: 0;
 
-        h6 { margin: 0; }
-        .date { font-size: .7rem; }
+        h6 {
+            margin: 0;
+        }
+        .date {
+            font-size: 0.7rem;
+        }
 
         &.deleted {
             transform: translateX(-110%);
@@ -105,13 +126,15 @@
                 background-color: var(--clr-height-0-16);
                 height: 1rem;
                 width: 100%;
-                margin-bottom: .5rem;
-                &.small { width: 90%; }
+                margin-bottom: 0.5rem;
+                &.small {
+                    width: 90%;
+                }
             }
 
             .time {
                 background-color: var(--clr-height-0-12);
-                height: .6rem;
+                height: 0.6rem;
                 width: 6rem;
                 margin-top: 1rem;
             }
@@ -119,19 +142,25 @@
     }
 
     @keyframes loading {
-        0% { filter: brightness(100%); }
-        50% { filter: brightness(90%); }
-        100% { filter: brightness(100%); }
+        0% {
+            filter: brightness(100%);
+        }
+        50% {
+            filter: brightness(90%);
+        }
+        100% {
+            filter: brightness(100%);
+        }
     }
 
     .line {
         position: absolute;
-        border-radius: .3rem;
+        border-radius: 0.3rem;
         overflow: hidden;
         top: 0;
         left: 0;
         bottom: 0;
-        width: .5rem;
+        width: 0.5rem;
 
         &::before {
             content: '';
@@ -139,15 +168,15 @@
             top: 0;
             bottom: 0;
             left: 0;
-            width: .3rem;
+            width: 0.3rem;
             background-color: var(--clr-priority);
         }
     }
 
     .root :global .delete {
         position: absolute;
-        top: .25rem;
-        right: .25rem;
+        top: 0.25rem;
+        right: 0.25rem;
         cursor: pointer;
         z-index: 10;
     }
@@ -156,6 +185,8 @@
         top: 1rem;
         right: 4rem;
         opacity: 0;
-        &.visible { opacity: 1; }
+        &.visible {
+            opacity: 1;
+        }
     }
 </style>

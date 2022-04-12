@@ -19,5 +19,9 @@
     "go.coverOnSingleTest": true,
     "go.coverOnTestPackage": true,
     "go.testTimeout": "10m",
-    "go.disableConcurrentTests": true
+    "go.disableConcurrentTests": true,
+    "typescript.format.semicolons": "remove",
+    "javascript.format.semicolons": "remove",
+    "prettier.semi": false,
+    "prettier.tabWidth": 4
 }
