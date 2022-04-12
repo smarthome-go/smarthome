@@ -21,10 +21,7 @@
     ]
 
     $: if (deleted) {
-        container.style.setProperty(
-            '--height',
-            container.getBoundingClientRect().height + 'px'
-        )
+        container.style.setProperty('--height', container.getBoundingClientRect().height + 'px')
         container.getBoundingClientRect()
         container.style.height = '0'
     }
@@ -100,6 +97,7 @@
         h6 {
             margin: 0;
         }
+        
         .date {
             font-size: 0.7rem;
         }
@@ -180,6 +178,7 @@
         cursor: pointer;
         z-index: 10;
     }
+    
     .root > :global .spinner {
         position: absolute;
         top: 1rem;
