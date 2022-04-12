@@ -15,6 +15,8 @@ export interface reminder {
 
 export const reminders: Writable<reminder[]> = writable([])
 
+export const loading: Writable<boolean> = writable(false)
+
 export default new App({
   target: document.body,
 })

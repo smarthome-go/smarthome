@@ -2,6 +2,7 @@
     import IconButton from '@smui/icon-button'
     import Progress from '../../components/Progress.svelte'
     import { createSnackbar } from '../../global'
+    import Edit from './Edit.svelte'
     import { reminders } from './main'
 
     export let id: number
@@ -12,7 +13,7 @@
     export let createdDate: number
     export let userWasNotified: boolean
 
-    let loading = false
+    let deleteLoading = false
     let deleted = false
 
     const priorities = [
@@ -29,8 +30,18 @@
         return d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear()
     }
 
+    let container: HTMLDivElement
+    $: if (deleted) {
+        container.style.setProperty(
+            '--height',
+            container.getBoundingClientRect().height + 'px'
+        )
+        container.getBoundingClientRect()
+        container.style.height = '0'
+    }
+
     async function deleteSelf() {
-        loading = true
+        deleteLoading = true
         try {
             const res = await (
                 await fetch('/api/reminder/delete', {
@@ -47,17 +58,11 @@
         } catch (err) {
             $createSnackbar('Could not mark reminder as completed')
         }
-        loading = false
+        deleteLoading = false
     }
 
-    let container: HTMLDivElement
-    $: if (deleted) {
-        container.style.setProperty(
-            '--height',
-            container.getBoundingClientRect().height + 'px'
-        )
-        container.getBoundingClientRect()
-        container.style.height = '0'
+    async function modify(name, description, priority, dueDate) {
+        console.log(id)
     }
 </script>
 
@@ -77,7 +82,7 @@
             {/if}
         </div>
         <div class="align">
-            <Progress class="spinner" bind:loading type="circular" />
+            <Progress class="spinner" bind:loading={deleteLoading} type="circular" />
             <p
                 style:--clr-priority={priorityColor}
                 class="text-hint"
@@ -99,6 +104,7 @@
         </p>
         <p class="text-disabled date">created {millisToDate(createdDate)}</p>
     </div>
+    <Edit modify={modify}/>
 </div>
 
 <style lang="scss">

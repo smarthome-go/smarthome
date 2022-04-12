@@ -36,6 +36,8 @@ $elevations: (
     --clr-on-primary: var(--clr-on-primary-dark);
     --clr-hover: #ffffff1a;
 
+    --mdc-dialog-z-index: 200;
+
     --icon-size: 1.5rem;
 
     @include elevation-colors(#121212, #fff);
