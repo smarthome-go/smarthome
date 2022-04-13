@@ -51,21 +51,21 @@
             uri: '/scheduler',
             icon: 'schedule',
             position: 'top',
-            permission: ""
+            permission: "scheduler"
         },
         {
             label: 'Automation',
             uri: '/automation',
             icon: 'event_repeat',
             position: 'top',
-            permission: ""
+            permission: "automation"
         },
         {
             label: 'Homescript',
             uri: '/homescript',
             icon: 'terminal',
             position: 'top',
-            permission: ""
+            permission: "homescript"
         },
         {
             label: 'Profile',
