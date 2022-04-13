@@ -21,10 +21,8 @@ func Res(w http.ResponseWriter, res Response) {
 	response := res
 	response.Time = now.Format(time.UnixDate)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		if _, err := w.Write([]byte("internal server error")); err != nil {
-			log.Error("Could not send response to client")
-		}
+		log.Error("Could not send response to client: ", err.Error())
+		return
 	}
 }
 
