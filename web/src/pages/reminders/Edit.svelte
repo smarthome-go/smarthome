@@ -18,6 +18,12 @@
 
     $: selectedPriority = priorities.indexOf(priority)
 
+    // Values when the dialog is opened, used for reverting the changes on cancel
+    let nameBefore: string
+    let descriptionBefore: string
+    let dueDateBefore: Date
+    let priorityBefore: number
+
     // Date Picker validation
     const now = new Date()
     const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000
@@ -31,8 +37,6 @@
 
     function closeHandler(e: CustomEvent<{ action: string }>) {
         switch (e.detail.action) {
-            case 'close' || 'cancel':
-                break
             case 'modify':
                 modify(
                     inputName,
@@ -40,6 +44,17 @@
                     selectedPriority,
                     inputDueDate
                 )
+                nameBefore = inputName
+                descriptionBefore = inputDescription
+                priorityBefore = selectedPriority
+                dueDateBefore = inputDueDate
+                break
+            default:
+                // Reset all values to their original state
+                inputName = nameBefore
+                inputDescription = descriptionBefore
+                selectedPriority = priorityBefore
+                inputDueDate = dueDateBefore
                 break
         }
     }
@@ -70,7 +85,7 @@
         <Button disabled={datePickerInvalid} action="modify">
             <Label>Modify</Label>
         </Button>
-        <Button action="cancel" defaultAction>
+        <Button defaultAction action="cancel">
             <Label>Cancel</Label>
         </Button>
     </Actions>
@@ -78,6 +93,8 @@
 
 <IconButton
     class="material-icons"
-    on:click={() => (open = true)}
+    on:click={async () => {
+        open = true
+    }}
     title="Edit Reminder">edit</IconButton
 >
