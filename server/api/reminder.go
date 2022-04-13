@@ -173,4 +173,5 @@ func ModifyReminder(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to modify reminder", Error: "database failure"})
 		return
 	}
+	Res(w, Response{Success: true, Message: "successfully updated reminder"})
 }

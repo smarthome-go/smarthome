@@ -13,8 +13,12 @@
     export let createdDate: number
     export let userWasNotified: boolean
 
-    let deleteLoading = false
+    let thisLoading = false
     let deleted = false
+
+    let dueDateObj = new Date(dueDate)
+    $: if (dueDateObj !== undefined && dueDateObj !== null)
+        dueDate = dueDateObj.getTime() // allow reverse binding from inputs
 
     const priorities = [
         { label: 'LOW', color: 'var(--clr-priority-low)' },
@@ -23,7 +27,12 @@
         { label: 'HIGH', color: 'var(--clr-warn)' },
         { label: 'URGENT', color: 'var(--clr-error)' },
     ]
-    const priorityColor = priorities[priority].color
+
+    let priorityLabel: string
+    $: priorityLabel = priorities[priority].label
+
+    let priorityColor: string
+    $: priorityColor = priorities[priority].color
 
     function millisToDate(millis: number): string {
         const d = new Date(millis)
@@ -41,7 +50,7 @@
     }
 
     async function deleteSelf() {
-        deleteLoading = true
+        thisLoading = true
         try {
             const res = await (
                 await fetch('/api/reminder/delete', {
@@ -58,11 +67,37 @@
         } catch (err) {
             $createSnackbar('Could not mark reminder as completed')
         }
-        deleteLoading = false
+        thisLoading = false
     }
 
-    async function modify(name, description, priority, dueDate) {
-        console.log(id)
+    async function modify(
+        name: string,
+        description: string,
+        priority: number,
+        dueDate: Date
+    ) {
+        console.log('MODIFY:', id)
+        thisLoading = true
+        try {
+            const res = await (
+                await fetch('/api/reminder/modify', {
+                    headers: { 'Content-Type': 'application/json' },
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        id,
+                        name,
+                        description,
+                        priority,
+                        dueDate: dueDate.getTime(),
+                    }),
+                })
+            ).json()
+            if (!res.success) throw Error(res.error)
+            $createSnackbar('Successfully updated reminder')
+        } catch (err) {
+            $createSnackbar(`Failed to modify reminder: ${err}`)
+        }
+        thisLoading = false
     }
 </script>
 
@@ -82,13 +117,17 @@
             {/if}
         </div>
         <div class="align">
-            <Progress class="spinner" bind:loading={deleteLoading} type="circular" />
+            <Progress
+                class="spinner"
+                bind:loading={thisLoading}
+                type="circular"
+            />
             <p
                 style:--clr-priority={priorityColor}
                 class="text-hint"
                 id="priority"
             >
-                {priorities[priority].label}
+                {priorityLabel}
             </p>
             <IconButton
                 title="Mark done"
@@ -99,12 +138,24 @@
     </div>
     <p>{description}</p>
     <div id="bottom">
+        <!-- (Left) -->
         <p class="date text-hint">
             Due Date {millisToDate(dueDate)}
         </p>
-        <p class="text-disabled date">created {millisToDate(createdDate)}</p>
+        <!-- (Right) -->
+        <div class="align">
+            <p class="text-disabled date">
+                created {millisToDate(createdDate)}
+            </p>
+            <Edit
+                bind:inputDueDate={dueDateObj}
+                bind:selectedPriority={priority}
+                bind:inputDescription={description}
+                bind:inputName={name}
+                {modify}
+            />
+        </div>
     </div>
-    <Edit modify={modify}/>
 </div>
 
 <style lang="scss">
@@ -126,17 +177,20 @@
             padding: 0 1rem;
         }
     }
+
     h6 {
         margin: 0;
     }
     p {
         margin: 0.5rem 0;
     }
+
     #top {
         display: flex;
         justify-content: space-between;
         align-items: center;
     }
+
     #bottom {
         display: flex;
         justify-content: space-between;
@@ -147,6 +201,7 @@
             }
         }
     }
+
     .align {
         display: flex;
         align-items: center;
@@ -155,6 +210,7 @@
             gap: 0.5rem;
         }
     }
+
     #priority {
         opacity: 80%;
         color: var(--clr-priority);
@@ -162,6 +218,7 @@
             display: none;
         }
     }
+
     .date {
         font-size: 0.8rem;
     }

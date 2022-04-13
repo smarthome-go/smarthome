@@ -9,7 +9,8 @@
     import Reminder from './Reminder.svelte'
 
     $loading = false
-  
+
+    // Fetches the current reminders from the server
     async function loadReminders() {
         $loading = true
         try {
@@ -23,8 +24,8 @@
         $loading = false
     }
 
-      // Create mode
-      async function create(name, description, priority, dueDate) {
+    // Creates a new reminder
+    async function create(name, description, priority, dueDate) {
         $loading = true
         try {
             const res = await (
@@ -46,8 +47,8 @@
         }
         $loading = false
     }
-    
-    onMount(() => loadReminders())
+
+    onMount(() => loadReminders()) // Load reminders as soon as the component is mounted
 </script>
 
 <Page>
@@ -55,12 +56,12 @@
     <div id="content">
         <div id="container" class="mdc-elevation--z1">
             <div class="header">
-                <h6>Add Reminder</h6>
-                <!-- <IconButton
+                <h6>Reminders</h6>
+                <IconButton
                     title="Refresh"
                     class="material-icons"
                     on:click={() => loadReminders()}>refresh</IconButton
-                > -->
+                >
             </div>
             <div class="reminders" class:empty={$reminders.length === 0}>
                 {#if $reminders.length === 0}
@@ -73,14 +74,9 @@
         </div>
         <div id="add" class="mdc-elevation--z1">
             <div class="header">
-                <h6>Reminders</h6>
-                <IconButton
-                    title="Refresh"
-                    class="material-icons"
-                    on:click={() => loadReminders()}>refresh</IconButton
-                >
+                <h6>Add Reminder</h6>
             </div>
-            <Inputs     onSubmit={create} submitLabel={"create"}/>  
+            <Inputs onSubmit={create} submitLabel={'create'} />
         </div>
     </div>
 </Page>
