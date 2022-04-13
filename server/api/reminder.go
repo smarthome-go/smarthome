@@ -25,6 +25,12 @@ type ModifyReminderRequest struct {
 	DueDate     uint                          `json:"dueDate"` // Will be sent as unix millis
 }
 
+type AddedReminderResponse struct {
+	Id      uint   `json:"id"`
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+}
+
 type RemoveReminderRequest struct {
 	Id uint `json:"id"`
 }
@@ -68,7 +74,10 @@ func AddReminder(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to add reminder", Error: "database failure"})
 		return
 	}
-	Res(w, Response{Success: true, Message: fmt.Sprintf("successfully added reminder '%d'", id)})
+	if err := json.NewEncoder(w).Encode(AddedReminderResponse{Id: id, Success: true, Message: fmt.Sprintf("successfully added reminder '%d'", id)}); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		Res(w, Response{Success: false, Message: "could not encode response"})
+	}
 }
 
 // Returns a list of reminders that the current user has added

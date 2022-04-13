@@ -2,7 +2,7 @@
     import IconButton from '@smui/icon-button'
     import { onMount } from 'svelte'
     import Progress from '../../components/Progress.svelte'
-    import { createSnackbar } from '../../global'
+    import { createSnackbar,data } from '../../global'
     import Page from '../../Page.svelte'
     import Inputs from './Inputs.svelte'
     import { loading,reminder,reminders } from './main'
@@ -41,7 +41,17 @@
                 })
             ).json()
             if (!res.success) throw Error(`request error: ${res.error}`)
-            await loadReminders()
+            $reminders = [...$reminders, {
+                id: res.id,
+                createdDate: new Date().getTime(),
+                 description,
+                 dueDate: dueDate.getTime(),
+                 name: name,
+                 owner: $data.userData.username,
+                 priority,
+                 userWasNotified: false,
+                 userWasNotifiedAt: 0,
+            }]
         } catch (err) {
             $createSnackbar(`Could not create reminder ${err}`)
         }
@@ -76,7 +86,7 @@
             <div class="header">
                 <h6>Add Reminder</h6>
             </div>
-            <Inputs onSubmit={create} submitLabel={'create'} />
+            <Inputs onSubmit={create} />
         </div>
     </div>
 </Page>
