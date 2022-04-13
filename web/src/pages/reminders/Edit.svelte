@@ -13,7 +13,7 @@
     export let inputName = ''
     export let inputDescription = ''
     export let inputDueDate: Date
-    export let selectedPriority: number
+    export let selectedPriority = 0
     let priority = priorities[selectedPriority]
 
     $: selectedPriority = priorities.indexOf(priority)
@@ -95,6 +95,10 @@
     class="material-icons"
     on:click={async () => {
         open = true
+        nameBefore = inputName
+        descriptionBefore = inputDescription
+        priorityBefore = selectedPriority
+        dueDateBefore = inputDueDate
     }}
     title="Edit Reminder">edit</IconButton
 >

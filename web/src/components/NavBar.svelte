@@ -5,23 +5,27 @@
     import NotificationDrawer from './NotificationDrawer.svelte'
 
     export let closed = true
-    const toggleClosed = () => closed = !closed
+    const toggleClosed = () => (closed = !closed)
 
     let drawerClosed = true
 
     let nav: HTMLElement
-    document.addEventListener('click', event => {
-        if (!nav.contains(event.target as Node)) {
-            closed = true
-            drawerClosed = true
-        }
-    }, true)
+    document.addEventListener(
+        'click',
+        (event) => {
+            if (!nav.contains(event.target as Node)) {
+                closed = true
+                drawerClosed = true
+            }
+        },
+        true
+    )
 
     interface Page {
-        label: string,
-        uri: string,
-        icon: string,
-        position: 'top' | 'bottom',
+        label: string
+        uri: string
+        icon: string
+        position: 'top' | 'bottom'
         permission: string // '' means no permission required
     }
     let pages: Page[] = [
@@ -30,79 +34,77 @@
             uri: '/dash',
             icon: 'home',
             position: 'top',
-            permission: ""
+            permission: '',
         },
         {
             label: 'Rooms',
             uri: '/rooms',
             icon: 'view_quilt',
             position: 'top',
-            permission: "setPower"
+            permission: 'setPower',
         },
         {
             label: 'Reminders',
             uri: '/reminders',
             icon: 'task_alt',
             position: 'top',
-            permission: "reminder"
+            permission: 'reminder',
         },
         {
             label: 'Scheduler',
             uri: '/scheduler',
             icon: 'schedule',
             position: 'top',
-            permission: "scheduler"
+            permission: 'scheduler',
         },
         {
             label: 'Automation',
             uri: '/automation',
             icon: 'event_repeat',
             position: 'top',
-            permission: "automation"
+            permission: 'automation',
         },
         {
             label: 'Homescript',
             uri: '/homescript',
             icon: 'terminal',
             position: 'top',
-            permission: "homescript"
+            permission: 'homescript',
         },
         {
             label: 'Profile',
             uri: '/profile',
             icon: 'manage_accounts',
             position: 'top',
-            permission: ""
+            permission: '',
         },
         {
             label: 'Users',
             uri: '/users',
             icon: 'admin_panel_settings',
             position: 'bottom',
-            permission: "manageUsers"
+            permission: 'manageUsers',
         },
         {
             label: 'System',
             uri: '/settings',
             icon: 'settings',
             position: 'bottom',
-            permission: "modifyServerConfig"
+            permission: 'modifyServerConfig',
         },
         {
             label: 'Logout',
             uri: '/logout',
             icon: 'logout',
             position: 'bottom',
-            permission: ""
+            permission: '',
         },
     ]
-    // Filter out any pages to which the user has no access to
-    pages = pages.filter(p => $data.userData.permissions.includes(p.permission) || p.permission == '' || $data.userData.permissions.includes('*'))
-    
+
     function withoutPosition(page: Page): {
-        label: string,
-        uri: string,
-        icon: string,
+        label: string
+        uri: string
+        icon: string
     } {
         return {
             label: page.label,
@@ -111,40 +113,70 @@
         }
     }
 
-    onMount(async () => await fetchData())
+    onMount(async () => {
+        await fetchData()
+        // Filter out any pages to which the user has no access to
+        pages = pages.filter(
+            (p) =>
+                $data.userData.permissions.includes(p.permission) ||
+                p.permission == '' ||
+                $data.userData.permissions.includes('*')
+        )
+    })
 </script>
 
 <nav bind:this={nav} class:closed>
-    <div id="bg" class:mdc-elevation--z16={drawerClosed} class:mdc-elevation--z8={!drawerClosed}></div>
+    <div
+        id="bg"
+        class:mdc-elevation--z16={drawerClosed}
+        class:mdc-elevation--z8={!drawerClosed}
+    />
     <div id="toggle" on:click={toggleClosed}>
         <i class="material-icons">chevron_right</i>
     </div>
     <div id="header">
-        <div id="header__avatar"></div>
+        <div id="header__avatar" />
         <div id="header__texts">
-            <strong>{$data.userData.user.forename} {$data.userData.user.surname}</strong>
+            <strong
+                >{$data.userData.user.forename}
+                {$data.userData.user.surname}</strong
+            >
             <span>{$data.userData.user.username}</span>
         </div>
     </div>
-    <div id="bell" on:click={() => drawerClosed = !drawerClosed}>
+    <div id="bell" on:click={() => (drawerClosed = !drawerClosed)}>
         <div id="bell__icon">
             <div id="bell__icon__inner">
-                <i class="material-icons">{$data.notificationCount === 0 ? 'notifications' : 'notifications_active'}</i>
-                <div class:hidden={$data.notificationCount === 0}><span>{$data.notificationCount}</span></div>
+                <i class="material-icons"
+                    >{$data.notificationCount === 0
+                        ? 'notifications'
+                        : 'notifications_active'}</i
+                >
+                <div class:hidden={$data.notificationCount === 0}>
+                    <span>{$data.notificationCount}</span>
+                </div>
             </div>
         </div>
-        <span id="bell__text">{'Notification' + ($data.notificationCount !== 1 ? 's' : '')}</span>
+        <span id="bell__text"
+            >{'Notification' + ($data.notificationCount !== 1 ? 's' : '')}</span
+        >
     </div>
     <NotificationDrawer bind:hidden={drawerClosed} />
     <div id="menubar">
         <div>
-            {#each pages.filter(p => p.position === 'top') as page}
-                <NavBarButton {...withoutPosition(page)} active={page.uri === window.location.pathname} />
+            {#each pages.filter((p) => p.position === 'top') as page}
+                <NavBarButton
+                    {...withoutPosition(page)}
+                    active={page.uri === window.location.pathname}
+                />
             {/each}
         </div>
         <div>
-            {#each pages.filter(p => p.position === 'bottom') as page}
-                <NavBarButton {...withoutPosition(page)} active={page.uri === window.location.pathname} />
+            {#each pages.filter((p) => p.position === 'bottom') as page}
+                <NavBarButton
+                    {...withoutPosition(page)}
+                    active={page.uri === window.location.pathname}
+                />
             {/each}
         </div>
     </div>
@@ -164,10 +196,12 @@
         padding: 1rem;
         display: flex;
         flex-direction: column;
-        & > * { flex-shrink: 0; }
+        & > * {
+            flex-shrink: 0;
+        }
         white-space: nowrap;
         transition-property: width, height;
-        transition-duration: .3s;
+        transition-duration: 0.3s;
         z-index: 100;
 
         @include mobile {
@@ -193,7 +227,7 @@
         position: absolute;
         inset: 0;
         transition-property: box-shadow;
-        transition-duration: .3s;
+        transition-duration: 0.3s;
         background-color: var(--clr-height-0-16);
     }
 
@@ -213,7 +247,7 @@
         align-items: center;
         justify-content: center;
         z-index: 10;
-        transition: opacity .3s;
+        transition: opacity 0.3s;
 
         @include mobile {
             top: 1.75rem;
@@ -228,9 +262,11 @@
         i {
             font-size: 1.5rem;
             transform: rotate(180deg);
-            transition: transform .3s;
+            transition: transform 0.3s;
 
-            nav.closed & { transform: rotate(0deg); }
+            nav.closed & {
+                transform: rotate(0deg);
+            }
         }
     }
 
@@ -238,9 +274,9 @@
         position: relative;
         display: flex;
         align-items: center;
-        gap: .6rem;
-        padding-block: .5rem;
-        padding-left: .4rem;
+        gap: 0.6rem;
+        padding-block: 0.5rem;
+        padding-left: 0.4rem;
         overflow-x: hidden;
         min-height: 3.5rem;
 
@@ -261,36 +297,44 @@
         &__texts {
             display: flex;
             flex-direction: column;
-            gap: .2rem;
+            gap: 0.2rem;
             pointer-events: none;
 
-            @include mobile { display: none; }
+            @include mobile {
+                display: none;
+            }
 
-            &:first-child { font-weight: 600; }
+            &:first-child {
+                font-weight: 600;
+            }
         }
     }
 
     #bell {
         position: relative;
         overflow-x: hidden;
-        border-radius: .4rem;
+        border-radius: 0.4rem;
         display: flex;
         align-items: center;
-        gap: .3rem;
+        gap: 0.3rem;
         height: 3.125rem;
         cursor: pointer;
-        transition: background-color .2s;
+        transition: background-color 0.2s;
 
-        &:hover { background-color: var(--clr-hover); }
+        &:hover {
+            background-color: var(--clr-hover);
+        }
         @include mobile {
             width: min-content;
             position: absolute;
             top: 1.75rem;
             right: 1rem;
             transform: translate(200%, -50%);
-            transition: transform .2s;
+            transition: transform 0.2s;
 
-            nav.closed & { transform: translateY(-50%); }
+            nav.closed & {
+                transform: translateY(-50%);
+            }
         }
 
         &__icon {
@@ -301,17 +345,19 @@
             justify-content: center;
 
             &__inner {
-                line-height: .75;
+                line-height: 0.75;
                 position: relative;
-                i { font-size: var(--icon-size); }
+                i {
+                    font-size: var(--icon-size);
+                }
                 div {
                     position: absolute;
-                    font-size: .6rem;
+                    font-size: 0.6rem;
                     border-radius: 50%;
                     background-color: var(--clr-primary);
-                    height: .8rem;
+                    height: 0.8rem;
                     aspect-ratio: 1;
-                    padding: .1rem;
+                    padding: 0.1rem;
                     top: 0;
                     right: 0;
                     transform: translate(50%, -50%);
@@ -319,16 +365,22 @@
                     align-items: center;
                     justify-content: center;
                     transition-property: opacity;
-                    transition-duration: .2s;
+                    transition-duration: 0.2s;
 
-                    &.hidden { opacity: 0; }
-                    span { color: var(--clr-on-primary); }
+                    &.hidden {
+                        opacity: 0;
+                    }
+                    span {
+                        color: var(--clr-on-primary);
+                    }
                 }
             }
         }
 
         &__text {
-            @include mobile { display: none; }
+            @include mobile {
+                display: none;
+            }
         }
     }
 

@@ -8,7 +8,7 @@
     export let id: number
     export let name: string
     export let description: string
-    export let priority: number
+    export let priority = 1
     export let dueDate: number
     export let createdDate: number
     export let userWasNotified: boolean
@@ -29,10 +29,12 @@
     ]
 
     let priorityLabel: string
-    $: priorityLabel = priorities[priority].label
+    $: if (priorities[priority] !== undefined)
+        priorityLabel = priorities[priority].label
 
     let priorityColor: string
-    $: priorityColor = priorities[priority].color
+    $: if (priorities[priority] !== undefined)
+        priorityColor = priorities[priority].color
 
     function millisToDate(millis: number): string {
         const d = new Date(millis)
