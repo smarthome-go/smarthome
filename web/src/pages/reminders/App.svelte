@@ -47,7 +47,7 @@
                  description,
                  dueDate: dueDate.getTime(),
                  name: name,
-                 owner: $data.userData.username,
+                 owner: $data.userData.user.username,
                  priority,
                  userWasNotified: false,
                  userWasNotifiedAt: 0,

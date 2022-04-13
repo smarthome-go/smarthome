@@ -1,8 +1,8 @@
 <script lang="ts">
-    import Kitchen, { ConfigAction } from '@smui/snackbar/kitchen'
     import type { KitchenComponentDev } from '@smui/snackbar/kitchen'
+    import Kitchen,{ ConfigAction } from '@smui/snackbar/kitchen'
     import NavBar from './components/NavBar.svelte'
-    import { data, createSnackbar } from './global'
+    import { createSnackbar,data } from './global'
 
     function contrast(color: string): 'black' | 'white' {
         const r = parseInt(color.slice(1, 3), 16)
@@ -19,17 +19,17 @@
         return brighter / darker <= 4.5 ? 'black' : 'white'
     }
 
-    $: document.documentElement.classList.toggle('light-theme', !$data.userData.darkTheme)
+    $: document.documentElement.classList.toggle('light-theme', !$data.userData.user.darkTheme)
     $: if ($data.loaded) {
-        document.documentElement.style.setProperty('--clr-primary-dark', $data.userData.primaryColorDark)
-        document.documentElement.style.setProperty('--clr-primary-light', $data.userData.primaryColorLight)
+        document.documentElement.style.setProperty('--clr-primary-dark', $data.userData.user.primaryColorDark)
+        document.documentElement.style.setProperty('--clr-primary-light', $data.userData.user.primaryColorLight)
         document.documentElement.style.setProperty(
             '--clr-on-primary-dark',
-            contrast($data.userData.primaryColorDark) === 'black' ? '#121212' : '#ffffff',
+            contrast($data.userData.user.primaryColorDark) === 'black' ? '#121212' : '#ffffff',
         )
         document.documentElement.style.setProperty(
             '--clr-on-primary-light',
-            contrast($data.userData.primaryColorLight) === 'black' ? '#121212' : '#ffffff',
+            contrast($data.userData.user.primaryColorLight) === 'black' ? '#121212' : '#ffffff',
         )
     }
 
@@ -44,7 +44,7 @@
 </script>
 
 <svelte:head>
-    {#if !$data.userData.darkTheme}
+    {#if !$data.userData.user.darkTheme}
         <link rel="stylesheet" href="/assets/theme-light.css">
     {/if}
 </svelte:head>

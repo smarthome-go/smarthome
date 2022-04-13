@@ -30,6 +30,12 @@ type User struct {
 	DarkTheme         bool   `json:"darkTheme"`
 }
 
+// Used in the frontend, includes most of the important details of the current user
+type UserDetails struct {
+	User        User     `json:"user"`
+	Permissions []string `json:"permissions"`
+}
+
 // Used during <Init> of the database, only called once
 // Creates the table containing <users> if it doesn't already exist
 // Can return an error if the database fails
@@ -217,6 +223,25 @@ func GetUserByUsername(username string) (User, bool, error) {
 		return User{}, false, err
 	}
 	return user, true, nil
+}
+
+// Returns the users information and their permissions
+func GetUserDetails(username string) (UserDetails, bool, error) {
+	user, found, err := GetUserByUsername(username)
+	if err != nil {
+		return UserDetails{}, false, err
+	}
+	if !found {
+		return UserDetails{}, false, nil
+	}
+	permissions, err := GetUserPermissions(username)
+	if err != nil {
+		return UserDetails{}, false, err
+	}
+	return UserDetails{
+		User:        user,
+		Permissions: permissions,
+	}, true, nil
 }
 
 // Returns the password of a given user

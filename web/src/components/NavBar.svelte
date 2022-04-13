@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte'
-    import { data, fetchData } from '../global'
+    import { data,fetchData } from '../global'
     import NavBarButton from './NavBarButton.svelte'
     import NotificationDrawer from './NotificationDrawer.svelte'
 
@@ -22,39 +22,83 @@
         uri: string,
         icon: string,
         position: 'top' | 'bottom',
+        permission: string // '' means no permission required
     }
-    const pages: Page[] = [
+    let pages: Page[] = [
         {
             label: 'Dashboard',
             uri: '/dash',
             icon: 'home',
             position: 'top',
+            permission: ""
         },
         {
             label: 'Rooms',
             uri: '/rooms',
             icon: 'view_quilt',
             position: 'top',
+            permission: "setPower"
         },
         {
             label: 'Reminders',
             uri: '/reminders',
             icon: 'task_alt',
             position: 'top',
+            permission: "reminder"
+        },
+        {
+            label: 'Scheduler',
+            uri: '/scheduler',
+            icon: 'schedule',
+            position: 'top',
+            permission: ""
+        },
+        {
+            label: 'Automation',
+            uri: '/automation',
+            icon: 'event_repeat',
+            position: 'top',
+            permission: ""
+        },
+        {
+            label: 'Homescript',
+            uri: '/homescript',
+            icon: 'terminal',
+            position: 'top',
+            permission: ""
         },
         {
             label: 'Profile',
             uri: '/profile',
-            icon: 'person',
+            icon: 'manage_accounts',
             position: 'top',
+            permission: ""
+        },
+        {
+            label: 'Users',
+            uri: '/users',
+            icon: 'admin_panel_settings',
+            position: 'bottom',
+            permission: "manageUsers"
+        },
+        {
+            label: 'System',
+            uri: '/settings',
+            icon: 'settings',
+            position: 'bottom',
+            permission: "modifyServerConfig"
         },
         {
             label: 'Logout',
             uri: '/logout',
             icon: 'logout',
             position: 'bottom',
+            permission: ""
         },
     ]
+    // Filter out any pages to which the user has no access to
+    pages = pages.filter(p => $data.userData.permissions.includes(p.permission) || p.permission == '' || $data.userData.permissions.includes('*'))
+    
     function withoutPosition(page: Page): {
         label: string,
         uri: string,
@@ -78,8 +122,8 @@
     <div id="header">
         <div id="header__avatar"></div>
         <div id="header__texts">
-            <strong>{$data.userData.forename} {$data.userData.surname}</strong>
-            <span>{$data.userData.username}</span>
+            <strong>{$data.userData.user.forename} {$data.userData.user.surname}</strong>
+            <span>{$data.userData.user.username}</span>
         </div>
     </div>
     <div id="bell" on:click={() => drawerClosed = !drawerClosed}>

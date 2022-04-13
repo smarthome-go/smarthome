@@ -1,7 +1,7 @@
 import type { ConfigAction } from '@smui/snackbar/kitchen'
 import { get, Writable, writable } from 'svelte/store'
 
-export const createSnackbar: Writable<(message: string, actions?: ConfigAction[]) => void> = writable(() => {})
+export const createSnackbar: Writable<(message: string, actions?: ConfigAction[]) => void> = writable(() => { })
 
 export interface Notification {
     id: number
@@ -19,22 +19,28 @@ export interface Data {
 }
 
 export interface UserData {
-    username: string
-    forename: string
-    surname: string
-    primaryColorDark: string
-    primaryColorLight: string
-    darkTheme: boolean
+    user: {
+        username: string
+        forename: string
+        surname: string
+        primaryColorDark: string
+        primaryColorLight: string
+        darkTheme: boolean
+    }
+    permissions: string[]
 }
 
 export const data: Writable<Data> = writable({
     userData: {
-        forename: '',
-        primaryColorDark: '',
-        primaryColorLight: '',
-        surname: '',
-        username: '',
-        darkTheme: true,
+        user: {
+            forename: '',
+            primaryColorDark: '',
+            primaryColorLight: '',
+            surname: '',
+            username: '',
+            darkTheme: true,
+        },
+        permissions: [],
     },
     notificationCount: 0,
     notifications: [],
