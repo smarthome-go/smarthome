@@ -27,6 +27,11 @@ func reminderGetHandler(w http.ResponseWriter, r *http.Request) {
 	templates.ExecuteTemplate(w, "reminders.html", http.StatusOK)
 }
 
+// Serves HTML for user management
+func usersGetHandler(w http.ResponseWriter, r *http.Request) {
+	templates.ExecuteTemplate(w, "users.html", http.StatusOK)
+}
+
 // If not user is logged in, it serves the HTML for the login page
 // Otherwise the user is redirected to the dashboard
 func loginGetHandler(w http.ResponseWriter, r *http.Request) {

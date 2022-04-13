@@ -13,6 +13,7 @@ export default defineConfig({
         rooms: resolve(__dirname, 'html/rooms.html'),
         reminders: resolve(__dirname, 'html/reminders.html'),
         profile: resolve(__dirname, 'html/profile.html'),
+        users: resolve(__dirname, 'html/users.html'),
         404: resolve(__dirname, 'html/404.html'),
       }
     },
