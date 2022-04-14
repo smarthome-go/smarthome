@@ -63,15 +63,15 @@
 <Dialog
     bind:open
     fullscreen
-    aria-labelledby="fullscreen-title"
-    aria-describedby="fullscreen-content"
+    aria-labelledby="title"
+    aria-describedby="content"
     on:SMUIDialog:closed={closeHandler}
 >
     <Header>
-        <Title id="fullscreen-title">Modify Reminder</Title>
+        <Title id="title">Modify Reminder</Title>
         <IconButton action="close" class="material-icons">close</IconButton>
     </Header>
-    <Content id="fullscreen-content">
+    <Content id="content">
         <Inputs
             bind:inputName
             bind:inputDescription

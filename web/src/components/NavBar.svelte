@@ -292,7 +292,7 @@
             border-radius: 50%;
             aspect-ratio: 1;
             height: 2.5rem;
-            background-image: url('/api/user/avatar');
+            background-image: url('/api/user/avatar/personal');
         }
         &__texts {
             display: flex;
