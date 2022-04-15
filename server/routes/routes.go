@@ -75,6 +75,7 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/user/permissions/personal", mdl.ApiAuth(api.GetUserPermissions))
 	r.HandleFunc("/api/user/permissions/add", mdl.ApiAuth(mdl.Perm(api.AddUserPermission, database.PermissionManageUsers))).Methods("PUT")
 	r.HandleFunc("/api/user/permissions/delete", mdl.ApiAuth(mdl.Perm(api.RemoveUserPermission, database.PermissionManageUsers))).Methods("DELETE")
+	r.HandleFunc("/api/permissions/list", api.ListPermissions).Methods("GET")
 
 	// Switch Permissions
 	r.HandleFunc("/api/user/permissions/switch/add", mdl.ApiAuth(mdl.Perm(api.AddSwitchPermission, database.PermissionManageUsers))).Methods("PUT")

@@ -231,3 +231,11 @@ func RemoveSwitchPermission(w http.ResponseWriter, r *http.Request) {
 	go event.Info("Removed Switch Permission", fmt.Sprintf("Removed switch permission %s from user %s.", request.Switch, request.Username))
 	Res(w, Response{Success: true, Message: "successfully removed switch permission from user"})
 }
+
+// Returns the list of all available permissions
+func ListPermissions(w http.ResponseWriter, r *http.Request) {
+	if err := json.NewEncoder(w).Encode(database.Permissions); err != nil {
+		Res(w, Response{Success: false, Message: "failed to list permissions", Error: "could not encode content"})
+		return
+	}
+}

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Button,{ Icon,Label } from '@smui/button'
+    import EditUser from './EditUser.svelte'
 
     export let username: string
     export let forename: string
@@ -24,10 +24,7 @@
     </div>
 
     <div id="manage">
-        <Button on:click={() => alert(`popup should open instead`)}>
-            <Label>Manage</Label>
-            <Icon class="material-icons">edit</Icon>
-        </Button>
+        <EditUser bind:username title={`Manage User: ${username}`} />
     </div>
 </div>
 
@@ -59,6 +56,12 @@
             display: block;
             margin: 0;
             word-break: break-all;
+            @include mobile {
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+                max-width: 7rem;
+            }
         }
         span {
             @include mobile {

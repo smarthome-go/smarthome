@@ -20,8 +20,26 @@
         darkTheme: boolean
     }
 
+    interface Permission {
+        permission: string
+        name: string
+        description: string
+    }
+
     let users: User[] = []
+    export let allPermissions: Permission[] = []
+
     let loading = false
+
+    export async function loadPermissions() {
+        loading = true
+        try {
+            allPermissions = await (await fetch('/api/permissions/list')).json()
+        } catch (err) {
+            $createSnackbar(`Failed to load permissions: ${err}`)
+        }
+        loading = false
+    }
 
     async function loadUsers() {
         loading = true
@@ -73,14 +91,17 @@
     <div id="container">
         <div id="header">
             <h6>User Management</h6>
-            <div class="align">
+            <div class="right">
                 <IconButton
                     title="Refresh"
                     class="material-icons"
                     on:click={loadUsers}>refresh</IconButton
                 >
                 <AddUser onAdd={addUser} bind:show={addUserShow} />
-                <Button on:click={addUserShow} variant="raised">
+                <Button
+                    on:click={addUserShow}
+                    variant="raised"
+                >
                     <Label>Add User</Label>
                     <Icon class="material-icons">person_add</Icon>
                 </Button>
@@ -106,6 +127,9 @@
         @include widescreen {
             padding: 1.5rem 20%;
         }
+        @include mobile {
+            margin: 1.5rem 0;
+        }
     }
     #users {
         div:not(:last-child) {
@@ -116,24 +140,26 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+        width: 100%;
 
         @include mobile {
             flex-direction: column;
-            align-items: flex-start;
             margin-bottom: 1rem;
+            align-items: stretch;
         }
     }
     h6 {
-        margin: 1rem 0;
+        margin-bottom: 1rem;
 
         @include mobile {
             margin: 0.5rem 0;
             font-size: 1rem;
         }
     }
-    .align {
+    .right {
         display: flex;
         gap: 1rem;
         align-items: center;
+        justify-content: space-between;
     }
 </style>
