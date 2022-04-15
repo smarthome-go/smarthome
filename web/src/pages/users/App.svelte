@@ -1,5 +1,6 @@
 <script lang="ts">
     import Button,{ Icon,Label } from '@smui/button'
+    import IconButton from '@smui/icon-button'
     import { onMount } from 'svelte'
     import Progress from '../../components/Progress.svelte'
     import { createSnackbar } from '../../global'
@@ -72,17 +73,24 @@
     <div id="container">
         <div id="header">
             <h6>User Management</h6>
-            <AddUser onAdd={addUser} bind:show={addUserShow} />
-            <Button on:click={addUserShow} variant="raised">
-                <Label>Add User</Label>
-                <Icon class="material-icons">person_add</Icon>
-            </Button>
+            <div class="align">
+                <IconButton
+                    title="Refresh"
+                    class="material-icons"
+                    on:click={loadUsers}>refresh</IconButton
+                >
+                <AddUser onAdd={addUser} bind:show={addUserShow} />
+                <Button on:click={addUserShow} variant="raised">
+                    <Label>Add User</Label>
+                    <Icon class="material-icons">person_add</Icon>
+                </Button>
+            </div>
         </div>
         <div id="users">
             {#each users as user (user.username)}
-            <div>
-                <User {...user} />
-            </div>
+                <div>
+                    <User {...user} />
+                </div>
             {/each}
         </div>
     </div>
@@ -108,8 +116,24 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+
+        @include mobile {
+            flex-direction: column;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
     }
     h6 {
-        margin: 1rem;
+        margin: 1rem 0;
+
+        @include mobile {
+            margin: 0.5rem 0;
+            font-size: 1rem;
+        }
+    }
+    .align {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
     }
 </style>

@@ -40,9 +40,9 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+
         @include mobile {
-            flex-direction: column;
-            align-items: normal;
+            flex-wrap: wrap;
         }
     }
     #left {
@@ -58,6 +58,7 @@
         h6 {
             display: block;
             margin: 0;
+            word-break: break-all;
         }
         span {
             @include mobile {

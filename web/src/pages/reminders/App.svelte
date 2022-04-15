@@ -70,7 +70,7 @@
                 <IconButton
                     title="Refresh"
                     class="material-icons"
-                    on:click={() => loadReminders()}>refresh</IconButton
+                    on:click={loadReminders}>refresh</IconButton
                 >
             </div>
             <div class="reminders" class:empty={$reminders.length === 0}>
