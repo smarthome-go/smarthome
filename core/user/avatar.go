@@ -10,6 +10,8 @@ import (
 	"github.com/MikMuellerDev/smarthome/core/database"
 )
 
+const defaultFilePath = "./resources/avatar/default.png"
+
 // Will remove the current avatar of a user unless it is set to `default`
 func RemoveAvatar(username string) error {
 	// Get current file path
@@ -17,8 +19,8 @@ func RemoveAvatar(username string) error {
 	if err != nil {
 		return err
 	}
-	if filepath == "./web/assets/avatar/default.png" {
-		log.Debug("Will not remove default avatar picture")
+	if filepath == defaultFilePath {
+		log.Trace("Will not remove default avatar picture")
 		return nil
 	}
 	// Remove file from filesystem
@@ -26,7 +28,7 @@ func RemoveAvatar(username string) error {
 		return err
 	}
 	// Set the default path in the database again
-	if err := database.SetUserAvatarPath(username, "./web/assets/avatar/default.png"); err != nil {
+	if err := database.SetUserAvatarPath(username, defaultFilePath); err != nil {
 		return err
 	}
 	return nil
@@ -40,23 +42,24 @@ func UploadAvatar(username string, filename string, file multipart.File) error {
 		return err
 	}
 	// Check if the user has a custom avatar
-	if filepathBefore != "./web/assets/avatar/default.png" {
+	if filepathBefore != defaultFilePath {
 		// Remove file from filesystem, ignore errors
 		if err := os.Remove(filepathBefore); err != nil {
 			log.Warn("Could not remove avatar from user: maybe it was deleted manually: ", err.Error())
+			return err
 		}
 	}
 	// Create new profile file
 	// generates a unique hash based on the username and filename combination
 	hashPrefix := md5.Sum([]byte(fmt.Sprintf("%s%s", username, filename)))
-	filepath := fmt.Sprintf("./data/avatars/%x_%s", hashPrefix, filename)
+	filepath := fmt.Sprintf("./resources/avatar/%x_%s", hashPrefix, filename)
 	var newFile *os.File
 	newFile, err = os.Create(filepath)
 	if err != nil {
-		if err := os.Mkdir("./data", 0775); err != nil {
+		if err := os.Mkdir("./resources", 0775); err != nil {
 			log.Debug("Could not create data directory: likely exists")
 		}
-		if err := os.Mkdir("./data/avatars", 0775); err != nil {
+		if err := os.Mkdir("./resources/avatar", 0775); err != nil {
 			log.Error("Could not upload file: could not create new directory: ", err.Error())
 			return err
 		}
