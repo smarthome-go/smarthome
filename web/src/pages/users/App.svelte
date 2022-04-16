@@ -91,17 +91,14 @@
     <div id="container">
         <div id="header">
             <h6>User Management</h6>
-            <div class="right">
+            <div>
                 <IconButton
                     title="Refresh"
                     class="material-icons"
                     on:click={loadUsers}>refresh</IconButton
                 >
                 <AddUser onAdd={addUser} bind:show={addUserShow} />
-                <Button
-                    on:click={addUserShow}
-                    variant="raised"
-                >
+                <Button on:click={addUserShow} variant="raised">
                     <Label>Add User</Label>
                     <Icon class="material-icons">person_add</Icon>
                 </Button>
@@ -119,47 +116,33 @@
 
 <style lang="scss">
     @use '../../mixins' as *;
-    #container {
-        margin: 1rem 1.5rem;
-        border-radius: 0.4rem;
-        padding: 1.5rem;
-
-        @include widescreen {
-            padding: 1.5rem 20%;
-        }
-        @include mobile {
-            margin: 1.5rem 0;
-        }
-    }
-    #users {
-        div:not(:last-child) {
-            margin-bottom: 1.3rem;
-        }
-    }
     #header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        width: 100%;
+        margin: 1rem 2rem;
+        box-sizing: border-box;
 
         @include mobile {
-            flex-direction: column;
-            margin-bottom: 1rem;
-            align-items: stretch;
+            flex-wrap: wrap;
         }
-    }
-    h6 {
-        margin-bottom: 1rem;
 
-        @include mobile {
+        h6 {
             margin: 0.5rem 0;
-            font-size: 1rem;
+        }
+
+        div {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
         }
     }
-    .right {
+    #users {
+        padding: 1.5rem;
+        border-radius: 0.4rem;
         display: flex;
+        flex-wrap: wrap;
         gap: 1rem;
-        align-items: center;
-        justify-content: space-between;
+        box-sizing: border-box;
     }
 </style>

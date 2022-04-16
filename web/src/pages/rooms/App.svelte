@@ -130,6 +130,10 @@
         @include widescreen {
             min-height: 100%;
         }
+
+        @include mobile {
+            justify-content: center;
+        }
     }
     #cameras {
         background-color: var(--clr-height-0-1);

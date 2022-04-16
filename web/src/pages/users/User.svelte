@@ -23,8 +23,9 @@
         </div>
     </div>
 
-    <div id="manage">
+    <div id="actions">
         <EditUser bind:username title={`Manage User: ${username}`} />
+
     </div>
 </div>
 
@@ -33,20 +34,18 @@
     #root {
         background-color: var(--clr-height-1-3);
         border-radius: 0.3rem;
-        padding: 1rem;
+        padding: 0.5rem;
         display: flex;
-        align-items: center;
+        height: min-content;
+        min-width: 18rem;
         justify-content: space-between;
-
-        @include mobile {
-            flex-wrap: wrap;
-        }
+        align-items: center;
     }
     #left {
         display: flex;
         gap: 1rem;
     }
-    #manage {
+    #actions {
         @include mobile {
             display: block;
         }
@@ -56,12 +55,10 @@
             display: block;
             margin: 0;
             word-break: break-all;
-            @include mobile {
-                overflow: hidden;
-                white-space: nowrap;
-                text-overflow: ellipsis;
-                max-width: 7rem;
-            }
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            max-width: 7rem;
         }
         span {
             @include mobile {

@@ -8,6 +8,7 @@
     let open = false
 
     export let username = ''
+    export let forename = ''
     export let surname = ''
 
     export let title = 'Manage User'
@@ -19,6 +20,12 @@
         <IconButton action="close" class="material-icons">close</IconButton>
     </Header>
     <Content id="content">
+        <div id="profile">
+            <img src={`/api/user/avatar/user/${username}`} alt="">
+            <div>
+                <h6>{forename} {surname}</h6>
+            </div>
+        </div>
         <div id="names">
             <div>
                 <!-- Forename -->
@@ -42,10 +49,6 @@
                     <CharacterCounter slot="helper">0 / 30</CharacterCounter>
                 </Textfield>
             </div>
-        </div>
-        <!-- Permissions -->
-        <div id="permissions">
-            
         </div>
     </Content>
     <Actions>
