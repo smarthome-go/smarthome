@@ -15,7 +15,7 @@
         <img
             src={`/api/user/avatar/user/${username}`}
             alt="the users avatar"
-            class="mdc-elevation--z4"
+            class="mdc-elevation--z3"
         />
         <div id="labels">
             <h6>{username}</h6>
@@ -24,7 +24,7 @@
     </div>
 
     <div id="actions">
-        <EditUser bind:username title={`Manage User: ${username}`} />
+        <EditUser bind:darkTheme bind:username bind:forename bind:surname />
 
     </div>
 </div>
