@@ -3,6 +3,8 @@ package routes
 import (
 	"net/http"
 
+	"github.com/MikMuellerDev/smarthome/core/database"
+	"github.com/MikMuellerDev/smarthome/server/api"
 	"github.com/MikMuellerDev/smarthome/server/middleware"
 	"github.com/MikMuellerDev/smarthome/server/templates"
 )
@@ -35,13 +37,33 @@ func usersGetHandler(w http.ResponseWriter, r *http.Request) {
 // If not user is logged in, it serves the HTML for the login page
 // Otherwise the user is redirected to the dashboard
 func loginGetHandler(w http.ResponseWriter, r *http.Request) {
-	session, _ := middleware.Store.Get(r, "session")
+	session, err := middleware.Store.Get(r, "session")
+	if err != nil {
+		log.Debug("Session exists but could not be decoded: ", err.Error())
+	}
+
 	loginValidTemp, loginValidOkTemp := session.Values["valid"]
 	loginValid, loginValidOk := loginValidTemp.(bool)
+
+	usernameTemp, usernameTempOk := session.Values["username"]
+	usernameSession, usernameSessionOk := usernameTemp.(string)
+
 	if loginValidOkTemp && loginValidOk && loginValid {
-		http.Redirect(w, r, "/dash", http.StatusFound)
-		return
+		if usernameTempOk && usernameSessionOk && usernameSession != "" {
+			_, exists, err := database.GetUserByUsername(usernameSession)
+			if err != nil {
+				w.WriteHeader(http.StatusBadGateway)
+				api.Res(w, api.Response{Success: false, Message: "Could not check user validity", Error: "database failure"})
+				return
+			}
+			if exists {
+				// The session is valid: redirect to the dashboard
+				http.Redirect(w, r, "/dash", http.StatusFound)
+				return
+			}
+		}
 	}
+	// If no user is logged in, serve the login screen
 	templates.ExecuteTemplate(w, "login.html", http.StatusOK)
 }
 
