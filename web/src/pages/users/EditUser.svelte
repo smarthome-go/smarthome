@@ -27,27 +27,61 @@
 
     async function deleteUser() {
         try {
-            const res = await (await fetch('/api/user/delete', {
-                method: "DELETE",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({username})
-            })).json()
+            const res = await (
+                await fetch('/api/user/delete', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username }),
+                })
+            ).json()
             if (!res.success) throw Error(res.error)
             $createSnackbar(`Deleted user ${username}`)
-            $users = $users.filter(u => u.username !== username)
-        } catch(err) {
+            $users = $users.filter((u) => u.username !== username)
+        } catch (err) {
             $createSnackbar(`Faield to delete user: ${err}`)
         }
     }
-    
+
+    // TODO: implement functions in GUI
+    async function suspendUser() {
+        try {
+            const res = await (
+                await fetch('/api/user/permission/delete', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username,
+                        permission: 'authentication',
+                    }),
+                })
+            ).json()
+            if (!res.success) throw Error(res.error)
+            // Modify permission of user after succesfull suspension
+        } catch (err) {
+            $createSnackbar(`Failed to suspend user: ${err}`)
+        }
+    }
+
+    async function activateUser() {
+        try {
+            const res = await (
+                await fetch('/api/user/permission/add', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username,
+                        permission: 'authentication',
+                    }),
+                })
+            ).json()
+            if (!res.success) throw Error(res.error)
+        } catch (err) {
+            $createSnackbar(`Failed to activate user: ${err}`)
+        }
+    }
 </script>
 
-<Dialog
-    bind:open
-    fullscreen
-    aria-labelledby="title"
-    aria-describedby="content"
->
+<Dialog bind:open fullscreen aria-labelledby="title" aria-describedby="content">
     <Dialog
         bind:open={deleteOpen}
         slot="over"
@@ -63,7 +97,7 @@
             <Button>
                 <Label>Cancel</Label>
             </Button>
-            <Button on:click={deleteUser}> 
+            <Button on:click={deleteUser}>
                 <Label>Delete</Label>
             </Button>
         </Actions>
