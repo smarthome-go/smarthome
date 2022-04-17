@@ -6,7 +6,7 @@
     export let surname: string
     export let primaryColorDark: string
     export let primaryColorLight: string
-    export let schedulerEnabled: boolean
+    export let automationEnabled: boolean
     export let darkTheme: boolean
 </script>
 
@@ -24,8 +24,7 @@
     </div>
 
     <div id="actions">
-        <EditUser bind:darkTheme bind:username bind:forename bind:surname />
-
+        <EditUser bind:automationEnabled bind:darkTheme bind:username bind:forename bind:surname />
     </div>
 </div>
 

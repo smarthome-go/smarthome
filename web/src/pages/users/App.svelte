@@ -6,35 +6,19 @@
     import { createSnackbar } from '../../global'
     import Page from '../../Page.svelte'
     import AddUser from './AddUser.svelte'
+    import { allPermissions,users } from './main'
     import User from './User.svelte'
 
     let addUserShow = () => {}
-
-    interface User {
-        username: string
-        forename: string
-        surname: string
-        primaryColorDark: string
-        primaryColorLight: string
-        schedulerEnabled: boolean
-        darkTheme: boolean
-    }
-
-    interface Permission {
-        permission: string
-        name: string
-        description: string
-    }
-
-    let users: User[] = []
-    export let allPermissions: Permission[] = []
 
     let loading = false
 
     export async function loadPermissions() {
         loading = true
         try {
-            allPermissions = await (await fetch('/api/permissions/list')).json()
+            $allPermissions = await (
+                await fetch('/api/permissions/list')
+            ).json()
         } catch (err) {
             $createSnackbar(`Failed to load permissions: ${err}`)
         }
@@ -47,7 +31,7 @@
             const res = await (await fetch('/api/user/list')).json()
             if (res.success !== undefined && !res.success)
                 throw Error(res.error)
-            users = res
+            $users = res
         } catch (err) {
             $createSnackbar(`Could not load users: ${err}`)
         }
@@ -65,13 +49,13 @@
                 })
             ).json()
             if (!res.success) throw Error(res.error)
-            users = [
-                ...users,
+            $users = [
+                ...$users,
                 {
                     darkTheme: true,
                     primaryColorDark: '',
                     primaryColorLight: '',
-                    schedulerEnabled: true,
+                    automationEnabled: true,
                     forename: 'Forename',
                     surname: 'Surname',
                     username: username,
@@ -105,7 +89,7 @@
             </div>
         </div>
         <div id="users">
-            {#each users as user (user.username)}
+            {#each $users as user (user.username)}
                 <div>
                     <User {...user} />
                 </div>

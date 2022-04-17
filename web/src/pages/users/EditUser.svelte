@@ -3,11 +3,12 @@
     import Dialog,{ Actions,Content,Header,Title } from '@smui/dialog'
     import FormField from '@smui/form-field'
     import IconButton from '@smui/icon-button'
-    import Paper,{ Subtitle } from '@smui/paper'
+    import Paper from '@smui/paper'
     import Switch from '@smui/switch'
     import Textfield from '@smui/textfield'
     import CharacterCounter from '@smui/textfield/character-counter'
-    import { data } from '../../global'
+    import { createSnackbar,data } from '../../global'
+    import { users } from './main'
 
     let open = false
 
@@ -15,14 +16,58 @@
     export let forename = ''
     export let surname = ''
     export let darkTheme: boolean
+    export let automationEnabled: boolean
+
+    let deleteOpen = false
 
     $: {
         if (username == $data.userData.user.username)
-          $data.userData.user.darkTheme = darkTheme
+            $data.userData.user.darkTheme = darkTheme
     }
+
+    async function deleteUser() {
+        try {
+            const res = await (await fetch('/api/user/delete', {
+                method: "DELETE",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({username})
+            })).json()
+            if (!res.success) throw Error(res.error)
+            $createSnackbar(`Deleted user ${username}`)
+            $users = $users.filter(u => u.username !== username)
+        } catch(err) {
+            $createSnackbar(`Faield to delete user: ${err}`)
+        }
+    }
+    
 </script>
 
-<Dialog bind:open fullscreen aria-labelledby="title" aria-describedby="content">
+<Dialog
+    bind:open
+    fullscreen
+    aria-labelledby="title"
+    aria-describedby="content"
+>
+    <Dialog
+        bind:open={deleteOpen}
+        slot="over"
+        aria-labelledby="confirmation-title"
+        aria-describedby="confirmation-content"
+    >
+        <Title id="confirmation-title">Confirm Deletion</Title>
+        <Content id="confirmation-content">
+            You are about to delete the user '{username}'. This action is
+            irreversible, do you want to proceed?
+        </Content>
+        <Actions>
+            <Button>
+                <Label>Cancel</Label>
+            </Button>
+            <Button on:click={deleteUser}> 
+                <Label>Delete</Label>
+            </Button>
+        </Actions>
+    </Dialog>
     <Header>
         <Title id="title">Manage User</Title>
         <IconButton action="close" class="material-icons">close</IconButton>
@@ -65,14 +110,37 @@
             </div>
         </div>
         <div id="toggles" class="mdc-elevation--z1">
-            <Paper variant="outlined">
+            <Paper color="primary" variant="outlined">
                 <Title>Toggles</Title>
-                <Subtitle>Change theme and automation status</Subtitle>
                 <div id="toggle-content">
                     <FormField>
                         <Switch bind:checked={darkTheme} />
                         <span slot="label">Dark Theme</span>
-                      </FormField>
+                    </FormField>
+                    <FormField>
+                        <Switch bind:checked={automationEnabled} />
+                        <span slot="label">Automation Enabled</span>
+                    </FormField>
+                </div>
+            </Paper>
+        </div>
+        <div id="danger">
+            <Paper variant="outlined">
+                <Title>Dangerous Actions</Title>
+                <div id="danger-buttons">
+                    <div>
+                        <Button
+                            variant="outlined"
+                            on:click={() => {
+                                deleteOpen = true
+                            }}>delete</Button
+                        >
+                        <span>Delete account</span>
+                    </div>
+                    <div>
+                        <Button variant="outlined">suspend</Button>
+                        <span>Temporarely suspend account</span>
+                    </div>
                 </div>
             </Paper>
         </div>
@@ -121,5 +189,19 @@
     #toggles {
         margin-top: 2rem;
         background-color: var(--clr-height-0-1);
+    }
+    #danger {
+        margin-top: 1rem;
+    }
+    #danger-buttons {
+        display: flex;
+        gap: 3rem;
+        margin-top: 0.7rem;
+
+        div {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
     }
 </style>
