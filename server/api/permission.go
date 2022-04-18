@@ -77,8 +77,8 @@ func AddUserPermission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !modified {
-		w.WriteHeader(http.StatusConflict)
-		Res(w, Response{Success: true, Message: "user is already in possession of this permission"})
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to add permission", Error: "user is already in possession of this permission"})
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
@@ -123,8 +123,8 @@ func RemoveUserPermission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !modified {
-		w.WriteHeader(http.StatusConflict)
-		Res(w, Response{Success: true, Message: "user does not have this permission"})
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to remove permission", Error: "user does not have this permission"})
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
@@ -173,8 +173,8 @@ func AddSwitchPermission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !modified {
-		w.WriteHeader(http.StatusConflict)
-		Res(w, Response{Success: true, Message: "user is already in possession of this switch permission"})
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to add switch permission", Error: "user is already in possession of this switch permission"})
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
@@ -223,8 +223,8 @@ func RemoveSwitchPermission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !modified {
-		w.WriteHeader(http.StatusConflict)
-		Res(w, Response{Success: true, Message: "user does not have this switch permission"})
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to remove switch permission", Error: "user does not have this switch permission"})
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
