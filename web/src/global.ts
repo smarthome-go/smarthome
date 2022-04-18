@@ -67,11 +67,23 @@ export async function fetchData() {
 }
 
 export async function fetchUserData(): Promise<UserData> {
-    return await (await fetch('/api/user/data')).json()
+    try {
+        const res  = await (await fetch('/api/user/data')).json()
+        if (res.success !== undefined && !res.success) throw Error(res.error)
+        return res
+    } catch(err) {
+       get(createSnackbar)(`Could not fetch user data: ${err}`)
+    }
 }
 
 export async function fetchNotificationCount(): Promise<number> {
-    return (await (await fetch('/api/user/notification/count')).json()).count
+    try {
+        const res = await (await fetch('/api/user/notification/count')).json()
+        if (res.success !== undefined && !res.success) throw Error(res.error)
+        return res.count
+    }catch(err) {
+        get(createSnackbar)(`Could not fetch notification count: ${err}`)
+    }
 }
 
 export const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms))
