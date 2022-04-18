@@ -57,7 +57,15 @@ func AddUser(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to add user", Error: "user already exists"})
 		return
 	}
-	if err = database.AddUser(database.FullUser{Username: request.Username, Password: request.Password}); err != nil {
+	if err = database.AddUser(
+		database.FullUser{
+			Username:          request.Username,
+			Password:          request.Password,
+			Forename:          "Forename",
+			Surname:           "Surname",
+			PrimaryColorDark:  "#88FF70",
+			PrimaryColorLight: "#2E7D32",
+		}); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to add user", Error: "database failure"})
 		return
