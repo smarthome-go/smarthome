@@ -52,14 +52,18 @@
             $users = [
                 ...$users,
                 {
-                    darkTheme: true,
-                    primaryColorDark: '',
-                    primaryColorLight: '',
-                    automationEnabled: true,
-                    forename: 'Forename',
-                    surname: 'Surname',
-                    username: username,
-                },
+                    user: {
+
+                        darkTheme: true,
+                        primaryColorDark: '',
+                        primaryColorLight: '',
+                        automationEnabled: true,
+                        forename: 'Forename',
+                        surname: 'Surname',
+                        username: username,
+                    },
+                    permissions: ["authentication"]
+                }
             ]
         } catch (err) {
             $createSnackbar(`Could not create user: ${err}`)
@@ -89,9 +93,9 @@
             </div>
         </div>
         <div id="users">
-            {#each $users as user (user.username)}
+            {#each $users as user (user.user.username)}
                 <div>
-                    <User {...user} />
+                    <User {...user.user} bind:permissions={user.permissions} />
                 </div>
             {/each}
         </div>

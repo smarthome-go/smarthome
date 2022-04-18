@@ -17,8 +17,15 @@
     export let surname = ''
     export let darkTheme: boolean
     export let automationEnabled: boolean
+    export let permissions: string[]
 
     let deleteOpen = false
+
+    let isSuspended = false
+    $: {
+        if (permissions !== null && permissions !== undefined)
+            isSuspended = !permissions.includes('authentication')
+    }
 
     $: {
         if (username == $data.userData.user.username)
@@ -36,7 +43,7 @@
             ).json()
             if (!res.success) throw Error(res.error)
             $createSnackbar(`Deleted user ${username}`)
-            $users = $users.filter((u) => u.username !== username)
+            $users = $users.filter((u) => u.user.username !== username)
         } catch (err) {
             $createSnackbar(`Faield to delete user: ${err}`)
         }
@@ -46,7 +53,7 @@
     async function suspendUser() {
         try {
             const res = await (
-                await fetch('/api/user/permission/delete', {
+                await fetch('/api/user/permissions/delete', {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -55,8 +62,10 @@
                     }),
                 })
             ).json()
+            console.log(res)
             if (!res.success) throw Error(res.error)
             // Modify permission of user after succesfull suspension
+            permissions = permissions.filter((p) => p != 'authentication')
         } catch (err) {
             $createSnackbar(`Failed to suspend user: ${err}`)
         }
@@ -65,7 +74,7 @@
     async function activateUser() {
         try {
             const res = await (
-                await fetch('/api/user/permission/add', {
+                await fetch('/api/user/permissions/add', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -75,6 +84,8 @@
                 })
             ).json()
             if (!res.success) throw Error(res.error)
+            // Add authentication permission to local array
+            permissions = [...permissions, 'authentication']
         } catch (err) {
             $createSnackbar(`Failed to activate user: ${err}`)
         }
@@ -172,8 +183,17 @@
                         <span>Delete account</span>
                     </div>
                     <div>
-                        <Button variant="outlined">suspend</Button>
-                        <span>Temporarely suspend account</span>
+                        <Button
+                            variant="outlined"
+                            on:click={isSuspended ? activateUser : suspendUser}
+                        >
+                            {isSuspended ? 'activate' : 'suspend'}</Button
+                        >
+                        <span
+                            >{isSuspended
+                                ? 'Activate account'
+                                : 'Temporarily supend account'}</span
+                        >
                     </div>
                 </div>
             </Paper>
@@ -181,7 +201,7 @@
     </Content>
     <Actions>
         <Button defaultAction>
-            <Label>Save</Label>
+            <Label>Done</Label>
         </Button>
         <Button>
             <Label>Cancel</Label>

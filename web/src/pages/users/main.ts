@@ -18,7 +18,12 @@ export interface Permission {
   description: string
 }
 
-export const users: Writable<User[]> = writable([])
+export interface UserData {
+  user: User
+  permissions: string[]
+}
+
+export const users: Writable<UserData[]> = writable([])
 
 export const allPermissions: Writable<Permission[]> = writable([])
 
