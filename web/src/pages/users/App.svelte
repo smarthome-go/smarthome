@@ -17,7 +17,7 @@
         loading = true
         try {
             $allPermissions = await (
-                await fetch('/api/permissions/list')
+                await fetch('/api/permissions/manage/list')
             ).json()
         } catch (err) {
             $createSnackbar(`Failed to load permissions: ${err}`)
@@ -28,7 +28,7 @@
     async function loadUsers() {
         loading = true
         try {
-            const res = await (await fetch('/api/user/list')).json()
+            const res = await (await fetch('/api/user/manage/list')).json()
             if (res.success !== undefined && !res.success)
                 throw Error(res.error)
             $users = res
@@ -42,7 +42,7 @@
         loading = true
         try {
             const res = await (
-                await fetch('/api/user/add', {
+                await fetch('/api/user/manage/add', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password }),
