@@ -153,25 +153,25 @@ func RemoveAllPermissionsOfUser(username string) error {
 
 // Returns a list of permissions assigned to a given user, if it exists
 func GetUserPermissions(username string) ([]string, error) {
-	var permissions []string
 	query, err := db.Prepare("SELECT Permission FROM hasPermission WHERE Username=?")
 	if err != nil {
 		log.Error("Could get user permissions. Failed to prepare query: ", err.Error())
-		return permissions, err
+		return nil, err
 	}
 	defer query.Close()
 	res, err := query.Query(username)
 	if err != nil {
 		log.Error("Could get user permissions. Failed to execute query: ", err.Error())
-		return permissions, nil
+		return nil, err
 	}
 	defer res.Close()
+	permissions := make([]string, 0)
 	for res.Next() {
 		var permission string
 		err = res.Scan(&permission)
 		if err != nil {
 			log.Error("Could get user permissions. Failed to scan query: ", err.Error())
-			return permissions, nil
+			return nil, err
 		}
 		permissions = append(permissions, permission)
 	}
