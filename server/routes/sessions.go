@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/core/event"
 	"github.com/MikMuellerDev/smarthome/core/user"
 	"github.com/MikMuellerDev/smarthome/server/api"
@@ -32,6 +33,18 @@ func loginPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if loginValid {
+		// Check if the user is allowed to authenticate
+		allowed, err := database.UserHasPermission(loginRequest.Username, database.PermissionAuthentication)
+		if err != nil {
+			w.WriteHeader(http.StatusBadGateway)
+			api.Res(w, api.Response{Success: false, Message: "failed to login", Error: "database failure"})
+			return
+		}
+		if !allowed {
+			w.WriteHeader(http.StatusForbidden)
+			api.Res(w, api.Response{Success: false, Message: "failed to login", Error: "account currently suspended"})
+			return
+		}
 		session, _ := middleware.Store.Get(r, "session")
 		session.Values["valid"] = true
 		session.Values["username"] = loginRequest.Username
