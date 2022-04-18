@@ -82,12 +82,15 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/user/permissions/switch/delete", mdl.ApiAuth(mdl.Perm(api.RemoveSwitchPermission, database.PermissionManageUsers))).Methods("DELETE")
 
 	// Creating and removing users
-	r.HandleFunc("/api/user/list", mdl.ApiAuth(mdl.Perm(api.ListUsers, database.PermissionManageUsers))).Methods("GET")
-	r.HandleFunc("/api/user/add", mdl.ApiAuth(mdl.Perm(api.AddUser, database.PermissionManageUsers))).Methods("POST")
-	r.HandleFunc("/api/user/delete", mdl.ApiAuth(mdl.Perm(api.DeleteUser, database.PermissionManageUsers))).Methods("DELETE")
+	r.HandleFunc("/api/user/manage/list", mdl.ApiAuth(mdl.Perm(api.ListUsers, database.PermissionManageUsers))).Methods("GET")
+	r.HandleFunc("/api/user/manage/add", mdl.ApiAuth(mdl.Perm(api.AddUser, database.PermissionManageUsers))).Methods("POST")
+	r.HandleFunc("/api/user/manage/modify", mdl.ApiAuth(mdl.Perm(api.AddUser, database.PermissionManageUsers))).Methods("PUT")
+	r.HandleFunc("/api/user/manage/delete", mdl.ApiAuth(mdl.Perm(api.DeleteUser, database.PermissionManageUsers))).Methods("DELETE")
+	r.HandleFunc("/api/user/manage/data/modify", mdl.ApiAuth(mdl.Perm(api.ModifyUserMetadata, database.PermissionManageUsers))).Methods("PUT")
 
-	// Get personal details
+	// Manage personal data
 	r.HandleFunc("/api/user/data", mdl.ApiAuth(api.GetUserDetails)).Methods("GET")
+	r.HandleFunc("/api/user/data/update", mdl.ApiAuth(api.ModifyCurrentUserMetadata)).Methods("PUT")
 
 	// Notification-related
 	r.HandleFunc("/api/user/notification/count", mdl.ApiAuth(api.GetNotificationCount)).Methods("GET")

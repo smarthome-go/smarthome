@@ -22,6 +22,18 @@ type SetColorThemeRequest struct {
 	DarkTheme bool `json:"darkTheme"`
 }
 
+type ModifyUserMetadataRequest struct {
+	Forename          string `json:"forename"`
+	Surname           string `json:"surname"`
+	PrimaryColorDark  string `json:"primaryColorDark"`
+	PrimaryColorLight string `json:"primaryColorLight"`
+}
+
+type ModifyForeignUserMetadataRequest struct {
+	Username string                    `json:"username"`
+	Data     ModifyUserMetadataRequest `json:"data"`
+}
+
 // Creates a new user and gives him a provided password
 // Request: `{"username": "x", "password": "y"}`, admin auth required
 func AddUser(w http.ResponseWriter, r *http.Request) {
@@ -142,4 +154,67 @@ func SetColorTheme(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	Res(w, Response{Success: true, Message: "successfully updated color theme"})
+}
+
+// Modifies the metadata of the current user
+func ModifyCurrentUserMetadata(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(w, r)
+	if err != nil {
+		return
+	}
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request ModifyUserMetadataRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	if len(request.PrimaryColorDark) != 7 || len(request.PrimaryColorLight) != 7 || request.PrimaryColorDark[0] != '#' || request.PrimaryColorLight[0] != '#' {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to modify user metadata", Error: "invalid color format: a valid color would be `#ffffff`"})
+		return
+	}
+	if err := database.UpdateUserMetadata(username, request.Forename, request.Surname, request.PrimaryColorDark, request.PrimaryColorLight); err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		Res(w, Response{Success: false, Message: "failed to modify user metadata", Error: "database failure"})
+		return
+	}
+	Res(w, Response{Success: true, Message: "successfully updated user metadata"})
+}
+
+// Modifies the metadata of a given user
+func ModifyUserMetadata(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request ModifyForeignUserMetadataRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	_, exists, err := database.GetUserByUsername(request.Username)
+	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		Res(w, Response{Success: false, Message: "failed to modify user metadata", Error: "database failure"})
+		return
+	}
+	if !exists {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to modify user metadata", Error: "invalid username"})
+		return
+	}
+	if len(request.Data.PrimaryColorDark) != 7 || len(request.Data.PrimaryColorLight) != 7 || request.Data.PrimaryColorDark[0] != '#' || request.Data.PrimaryColorLight[0] != '#' {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to modify user metadata", Error: "invalid color format: a valid color would be `#ffffff`"})
+		return
+	}
+	if err := database.UpdateUserMetadata(request.Username, request.Data.Forename, request.Data.Surname, request.Data.PrimaryColorDark, request.Data.PrimaryColorLight); err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		Res(w, Response{Success: false, Message: "failed to modify user metadata", Error: "database failure"})
+		return
+	}
+	Res(w, Response{Success: true, Message: "successfully updated user metadata"})
 }
