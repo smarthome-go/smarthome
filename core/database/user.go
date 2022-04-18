@@ -10,7 +10,7 @@ import (
 // Identified by a username, has a password and an avatar path
 type FullUser struct {
 	Username          string `json:"username"`
-	Firstname         string `json:"forename"`
+	Forename          string `json:"forename"`
 	Surname           string `json:"surname"`
 	PrimaryColorDark  string `json:"primaryColorDark"`
 	PrimaryColorLight string `json:"primaryColorLight"`
@@ -22,7 +22,7 @@ type FullUser struct {
 
 type User struct {
 	Username          string `json:"username"`
-	Firstname         string `json:"forename"`
+	Forename          string `json:"forename"`
 	Surname           string `json:"surname"`
 	PrimaryColorDark  string `json:"primaryColorDark"`
 	PrimaryColorLight string `json:"primaryColorLight"`
@@ -45,7 +45,7 @@ func createUserTable() error {
 	IF NOT EXISTS
 	user(
 		Username VARCHAR(20) PRIMARY KEY,
-		Firstname VARCHAR(20) DEFAULT "Forename",
+		Forename VARCHAR(20) DEFAULT "Forename",
 		Surname VARCHAR(20)   DEFAULT "Surname",
 		PrimaryColorDark CHAR(7),
 		PrimaryColorLight CHAR(7),
@@ -67,7 +67,7 @@ func createUserTable() error {
 func ListUsers() ([]User, error) {
 	query := `
 	SELECT
-	Username, Firstname, Surname, PrimaryColorDark, PrimaryColorLight, SchedulerEnabled, DarkTheme
+	Username, Forename, Surname, PrimaryColorDark, PrimaryColorLight, SchedulerEnabled, DarkTheme
 	FROM user`
 	res, err := db.Query(query)
 	if err != nil {
@@ -80,7 +80,7 @@ func ListUsers() ([]User, error) {
 		var user User
 		err := res.Scan(
 			&user.Username,
-			&user.Firstname,
+			&user.Forename,
 			&user.Surname,
 			&user.PrimaryColorDark,
 			&user.PrimaryColorLight,
@@ -101,7 +101,7 @@ func ListUsers() ([]User, error) {
 func ListUsersWithPermission() ([]UserDetails, error) {
 	query := `
 	SELECT
-	Username, Firstname, Surname, PrimaryColorDark, PrimaryColorLight, SchedulerEnabled, DarkTheme
+	Username, Forename, Surname, PrimaryColorDark, PrimaryColorLight, SchedulerEnabled, DarkTheme
 	FROM user`
 	res, err := db.Query(query)
 	if err != nil {
@@ -114,7 +114,7 @@ func ListUsersWithPermission() ([]UserDetails, error) {
 		var user UserDetails
 		err := res.Scan(
 			&user.User.Username,
-			&user.User.Firstname,
+			&user.User.Forename,
 			&user.User.Surname,
 			&user.User.PrimaryColorDark,
 			&user.User.PrimaryColorLight,
@@ -142,7 +142,7 @@ func ListUsersWithPermission() ([]UserDetails, error) {
 func InsertUser(user FullUser) error {
 	query, err := db.Prepare(`
 	INSERT INTO
-	user(Username, Firstname, Surname, PrimaryColorDark, PrimaryColorLight, Password, AvatarPath, SchedulerEnabled, DarkTheme)
+	user(Username, Forename, Surname, PrimaryColorDark, PrimaryColorLight, Password, AvatarPath, SchedulerEnabled, DarkTheme)
 	VALUES(?, ?, ?, ?, ?, ?, ?, DEFAULT, DEFAULT)
 	ON DUPLICATE KEY UPDATE Password=VALUES(Password)`)
 	if err != nil {
@@ -152,7 +152,7 @@ func InsertUser(user FullUser) error {
 	defer query.Close()
 	_, err = query.Exec(
 		user.Username,
-		user.Firstname,
+		user.Forename,
 		user.Surname,
 		user.PrimaryColorDark,
 		user.PrimaryColorLight,
@@ -235,7 +235,7 @@ func AddUser(user FullUser) error {
 func GetUserByUsername(username string) (User, bool, error) {
 	query, err := db.Prepare(`
 	SELECT
-	Username, Firstname, Surname, PrimaryColorDark, PrimaryColorLight, SchedulerEnabled, DarkTheme
+	Username, Forename, Surname, PrimaryColorDark, PrimaryColorLight, SchedulerEnabled, DarkTheme
 	FROM user
 	WHERE Username=?
 	`)
@@ -247,7 +247,7 @@ func GetUserByUsername(username string) (User, bool, error) {
 	var user User
 	if err := query.QueryRow(username).Scan(
 		&user.Username,
-		&user.Firstname,
+		&user.Forename,
 		&user.Surname,
 		&user.PrimaryColorDark,
 		&user.PrimaryColorLight,
@@ -395,10 +395,12 @@ func SetUserDarkThemeEnabled(username string, useDarkTheme bool) error {
 }
 
 // Sets the users primary colors
-func SetUserPrimaryColors(username string, colorDark string, colorLight string) error {
+func UpdateUserMetadata(username string, forename string, surname string, primaryColorDark string, primaryColorLight string) error {
 	query, err := db.Prepare(`
 	UPDATE user
 	SET
+	Forename=?,
+	Surname=?,
 	PrimaryColorDark=?,
 	PrimaryColorLight=?
 	WHERE Username=?
@@ -409,8 +411,10 @@ func SetUserPrimaryColors(username string, colorDark string, colorLight string) 
 	}
 	defer query.Close()
 	_, err = query.Exec(
-		colorDark,
-		colorLight,
+		forename,
+		surname,
+		primaryColorDark,
+		primaryColorLight,
 		username,
 	)
 	if err != nil {

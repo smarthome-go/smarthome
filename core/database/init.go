@@ -103,7 +103,7 @@ func createDatabase() error {
 func initAdminUser(password string) error {
 	if err := AddUser(FullUser{
 		Username:          "admin",
-		Firstname:         "Admin",
+		Forename:          "Admin",
 		Surname:           "User",
 		PrimaryColorDark:  "#88FF70",
 		PrimaryColorLight: "#2E7D32",

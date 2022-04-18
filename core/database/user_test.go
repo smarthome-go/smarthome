@@ -9,7 +9,7 @@ func createUserMockData() error {
 	// Create user
 	if err := AddUser(FullUser{
 		Username:          "delete_me",
-		Firstname:         "forename",
+		Forename:          "forename",
 		Surname:           "surname",
 		PrimaryColorDark:  "#121212",
 		PrimaryColorLight: "#121212",
@@ -90,7 +90,7 @@ func TestGetUserByUsername(t *testing.T) {
 		return
 	}
 	if fromDb.Username != "delete_me" ||
-		fromDb.Firstname != "forename" ||
+		fromDb.Forename != "forename" ||
 		fromDb.Surname != "surname" ||
 		fromDb.PrimaryColorDark != "#121212" ||
 		fromDb.PrimaryColorLight != "#121212" ||
@@ -240,7 +240,7 @@ func TestSetUserDarkTheme(t *testing.T) {
 	assertDarkTheme("admin", false, t)
 }
 
-func assertPrimaryColors(username string, wantDark string, wantLight string, t *testing.T) {
+func assertUserData(username string, wantForname string, wantSurname string, wantDark string, wantLight string, t *testing.T) {
 	user, found, err := GetUserByUsername("admin")
 	if err != nil {
 		t.Error(err.Error())
@@ -258,17 +258,26 @@ func assertPrimaryColors(username string, wantDark string, wantLight string, t *
 		t.Errorf("Primary color for light theme does not match: want: %s got: %s", wantLight, user.PrimaryColorLight)
 		return
 	}
+	if user.Forename != wantForname {
+		t.Errorf("Forename of user does not match expected value: want: %s got: %s", wantForname, user.Forename)
+		return
+	}
+	if user.Surname != wantSurname {
+		t.Errorf("Surname of user does not match expected value: want: %s got: %s", wantSurname, user.Surname)
+		return
+	}
 }
 
-func TestSetUserPrimaryColors(t *testing.T) {
-	if err := SetUserPrimaryColors("admin", "#001122", "#334455"); err != nil {
+func TestUpdateMetadata(t *testing.T) {
+	if err := UpdateUserMetadata("admin", "forename1", "surname1", "#111111", "#222222"); err != nil {
 		t.Error(err.Error())
 		return
 	}
-	assertPrimaryColors("admin", "#001122", "#334455", t)
-	if err := SetUserPrimaryColors("admin", "#667788", "#112233"); err != nil {
+	assertUserData("admin", "forename1", "surname1", "#111111", "#222222", t)
+	if err := UpdateUserMetadata("admin", "forename2", "surname2", "#333333", "#444444"); err != nil {
 		t.Error(err.Error())
 		return
 	}
-	assertPrimaryColors("admin", "#667788", "#112233", t)
+	assertUserData("admin", "forename2", "surname2", "#333333", "#444444", t)
+
 }
