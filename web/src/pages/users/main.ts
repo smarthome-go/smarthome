@@ -8,7 +8,7 @@ export interface User {
   surname: string
   primaryColorDark: string
   primaryColorLight: string
-  automationEnabled: boolean
+  schedulerEnabled: boolean
   darkTheme: boolean
 }
 

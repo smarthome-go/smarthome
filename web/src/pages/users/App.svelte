@@ -57,7 +57,7 @@
                         darkTheme: true,
                         primaryColorDark: '',
                         primaryColorLight: '',
-                        automationEnabled: true,
+                        schedulerEnabled: true,
                         forename: 'Forename',
                         surname: 'Surname',
                         username: username,

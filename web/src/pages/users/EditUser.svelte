@@ -16,7 +16,7 @@
     export let forename = ''
     export let surname = ''
     export let darkTheme: boolean
-    export let automationEnabled: boolean
+    export let schedulerEnabled: boolean
     export let permissions: string[]
 
     let deleteOpen = false
@@ -163,8 +163,8 @@
                         <span slot="label">Dark Theme</span>
                     </FormField>
                     <FormField>
-                        <Switch bind:checked={automationEnabled} />
-                        <span slot="label">Automation Enabled</span>
+                        <Switch bind:checked={schedulerEnabled} />
+                        <span slot="label">Scheduler Enabled</span>
                     </FormField>
                 </div>
             </Paper>
