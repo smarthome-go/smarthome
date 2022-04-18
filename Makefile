@@ -3,7 +3,7 @@ workingdir := smarthome
 sources := $(wildcard *.go)
 version := 0.0.20-beta
 
-build = GOOS=$(1) GOARCH=$(2) go build -v -o $(appname) $(4)
+build = GOOS=$(1) GOARCH=$(2) go build -ldflags "-s -w" -v -o $(appname) $(4)
 tar = mkdir -p build && cd ../ && tar -cvzf ./$(appname)_$(1)_$(2).tar.gz $(workingdir)/$(appname) $(workingdir)/web/dist $(workingdir)/web/html $(workingdir)/resources && mv $(appname)_$(1)_$(2).tar.gz $(workingdir)/build
 
 .PHONY: all linux
@@ -38,10 +38,10 @@ vite-dev:
 
 # Run
 run: web
-	go run -v .
+	go run -v -race .
 
 run-full: web mysql
-	go run -v .
+	go run -v -race .
 
 # Cleaning
 clean: cleanweb
@@ -72,7 +72,7 @@ mysql:
 build: web all linux clean
 
 docker: cleanall web
-	GOOS=linux GOARCH=amd64 go build -v -o smarthome -ldflags '-extldflags "-fno-PIC -static"' -buildmode pie -tags 'osusergo netgo static_build' 
+	GOOS=linux GOARCH=amd64 go build -v -o smarthome -ldflags '-s -w -extldflags "-fno-PIC -static"' -buildmode pie -tags 'osusergo netgo static_build' 
 	mkdir -p docker/app/web
 	rsync -rv resources docker/app/
 	rsync -rv web/dist docker/app/web/
@@ -92,7 +92,7 @@ build/linux_386.tar.gz: $(sources)
 	$(call tar,linux,386)
 
 build/linux_amd64.tar.gz: $(sources)
-	$(call build,linux,amd64, -ldflags '-extldflags "-fno-PIC -static"' -buildmode pie -tags 'osusergo netgo static_build')
+	$(call build,linux,amd64, -ldflags '-s -w -extldflags "-fno-PIC -static"' -buildmode pie -tags 'osusergo netgo static_build')
 	$(call tar,linux,amd64)
 
 build/linux_arm.tar.gz: $(sources)
