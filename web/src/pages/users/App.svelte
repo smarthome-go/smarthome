@@ -62,7 +62,7 @@
                         surname: 'Surname',
                         username: username,
                     },
-                    permissions: ["authentication"]
+                    permissions: []
                 }
             ]
         } catch (err) {

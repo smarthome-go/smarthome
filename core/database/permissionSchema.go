@@ -11,7 +11,6 @@ type PermissionType string
 
 // Different types of permissions
 const (
-	PermissionAuthentication     PermissionType = "authentication"
 	PermissionPower              PermissionType = "setPower"
 	PermissionLogs               PermissionType = "logs"
 	PermissionManageUsers        PermissionType = "manageUsers"
@@ -29,12 +28,6 @@ const (
 
 var (
 	Permissions = []Permission{
-		{
-			// User is allowed to authenticate and login, if disabled, a user is `disabled`
-			Permission:  PermissionAuthentication,
-			Name:        "Authentication",
-			Description: "Allows the user to authenticate",
-		},
 		{
 			// User is allowed to request power jobs, interact with outlets, still dependent on switch permissions
 			Permission:  PermissionPower,

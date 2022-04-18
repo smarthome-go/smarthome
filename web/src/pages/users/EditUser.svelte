@@ -21,12 +21,6 @@
 
     let deleteOpen = false
 
-    let isSuspended = false
-    $: {
-        if (permissions !== null && permissions !== undefined)
-            isSuspended = !permissions.includes('authentication')
-    }
-
     $: {
         if (username == $data.userData.user.username)
             $data.userData.user.darkTheme = darkTheme
@@ -46,48 +40,6 @@
             $users = $users.filter((u) => u.user.username !== username)
         } catch (err) {
             $createSnackbar(`Faield to delete user: ${err}`)
-        }
-    }
-
-    // TODO: implement functions in GUI
-    async function suspendUser() {
-        try {
-            const res = await (
-                await fetch('/api/user/permissions/delete', {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username,
-                        permission: 'authentication',
-                    }),
-                })
-            ).json()
-            console.log(res)
-            if (!res.success) throw Error(res.error)
-            // Modify permission of user after succesfull suspension
-            permissions = permissions.filter((p) => p != 'authentication')
-        } catch (err) {
-            $createSnackbar(`Failed to suspend user: ${err}`)
-        }
-    }
-
-    async function activateUser() {
-        try {
-            const res = await (
-                await fetch('/api/user/permissions/add', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username,
-                        permission: 'authentication',
-                    }),
-                })
-            ).json()
-            if (!res.success) throw Error(res.error)
-            // Add authentication permission to local array
-            permissions = [...permissions, 'authentication']
-        } catch (err) {
-            $createSnackbar(`Failed to activate user: ${err}`)
         }
     }
 </script>
@@ -181,19 +133,6 @@
                             }}>delete</Button
                         >
                         <span>Delete account</span>
-                    </div>
-                    <div>
-                        <Button
-                            variant="outlined"
-                            on:click={isSuspended ? activateUser : suspendUser}
-                        >
-                            {isSuspended ? 'activate' : 'suspend'}</Button
-                        >
-                        <span
-                            >{isSuspended
-                                ? 'Activate account'
-                                : 'Temporarily supend account'}</span
-                        >
                     </div>
                 </div>
             </Paper>

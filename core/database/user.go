@@ -225,10 +225,7 @@ func AddUser(user FullUser) error {
 	if err = InsertUser(user); err != nil {
 		return err
 	}
-	if _, err = AddUserPermission(user.Username, "authentication"); err != nil {
-		return err
-	}
-	if err = AddNotification(user.Username, "Hello!", "Welcome to Smarthome, the home automation system.", 1); err != nil {
+	if err = AddNotification(user.Username, "Hello!", "Welcome to Smarthome, a self-built home automation system.", 1); err != nil {
 		return err
 	}
 	return nil
