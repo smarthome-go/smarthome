@@ -25,7 +25,7 @@
     </div>
 
     <div id="actions">
-        <EditUser bind:permissions bind:schedulerEnabled bind:darkTheme bind:username bind:forename bind:surname />
+        <EditUser bind:primaryColorDark bind:primaryColorLight bind:permissions bind:schedulerEnabled bind:darkTheme bind:username bind:forename bind:surname />
     </div>
 </div>
 

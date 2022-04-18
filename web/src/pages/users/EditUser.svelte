@@ -7,6 +7,8 @@
     import Switch from '@smui/switch'
     import Textfield from '@smui/textfield'
     import CharacterCounter from '@smui/textfield/character-counter'
+    import { onMount } from 'svelte'
+    import Progress from '../../components/Progress.svelte'
     import { createSnackbar,data } from '../../global'
     import { users } from './main'
 
@@ -15,21 +17,46 @@
     export let username = ''
     export let forename = ''
     export let surname = ''
+    export let primaryColorDark
+    export let primaryColorLight
+
     export let darkTheme: boolean
     export let schedulerEnabled: boolean
     export let permissions: string[]
 
+    let forenameBefore: string
+    let surnameBefore: string
+    let primaryColorDarkBefore: string
+    let primaryColorLightBefore: string
+
     let deleteOpen = false
+
+    let loading = false
 
     $: {
         if (username == $data.userData.user.username)
             $data.userData.user.darkTheme = darkTheme
     }
 
+    function updateBeforeValues() {
+        forenameBefore = forename
+        surnameBefore = surname
+        primaryColorDarkBefore = primaryColorDark
+        primaryColorLightBefore = primaryColorLight
+    }
+
+    function restoreChanges() {
+        forename = forenameBefore
+        surname = surnameBefore
+        primaryColorDark = primaryColorDarkBefore
+        primaryColorLight = primaryColorLightBefore
+    }
+
     async function deleteUser() {
+        loading = true
         try {
             const res = await (
-                await fetch('/api/user/delete', {
+                await fetch('/api/user/manage/delete', {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username }),
@@ -41,10 +68,39 @@
         } catch (err) {
             $createSnackbar(`Faield to delete user: ${err}`)
         }
+        loading = false
     }
+
+    async function modify() {
+        loading = true
+        try {
+            const res = await (
+                await fetch('/api/user/manage/data/modify', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username,
+                        data: {
+                            forename,
+                            surname,
+                            primaryColorDark,
+                            primaryColorLight,
+                        },
+                    }),
+                })
+            ).json()
+            if (!res.success) throw Error(res.error)
+        } catch (err) {
+            $createSnackbar(`Failed to modify user data: ${err}`)
+            restoreChanges()
+        }
+        loading = false
+    }
+    onMount(updateBeforeValues)
 </script>
 
 <Dialog bind:open fullscreen aria-labelledby="title" aria-describedby="content">
+    <Progress id="loader" bind:loading />
     <Dialog
         bind:open={deleteOpen}
         slot="over"
@@ -139,10 +195,11 @@
         </div>
     </Content>
     <Actions>
-        <Button defaultAction>
-            <Label>Done</Label>
+        <!-- Only allow save if data has been changed -->
+        <Button defaultAction on:click={modify}>
+            <Label>Save</Label>
         </Button>
-        <Button>
+        <Button on:click={restoreChanges}>
             <Label>Cancel</Label>
         </Button>
     </Actions>
