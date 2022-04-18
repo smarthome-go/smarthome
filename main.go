@@ -134,7 +134,7 @@ func main() {
 		}
 	}
 
-	// Initialize database, try 5 times before giving up
+	// Initialize / connect to database, try 5 times before giving up
 	var dbErr error = nil
 
 	for i := 0; i <= 5; i++ {
@@ -142,7 +142,7 @@ func main() {
 		if dbErr == nil {
 			break
 		} else {
-			log.Warn("Failed to connect to database, retrying in 2 seconds")
+			log.Warn("Failed to connect to database, retrying in 5 seconds")
 			time.Sleep(time.Second * 5)
 		}
 	}
@@ -186,7 +186,7 @@ func main() {
 	}
 
 	// Init the hardware handler
-	hardware.Init()
+	hardware.Init() // Needed for initializing atomics
 
 	r := routes.NewRouter()
 	middleware.Init(configStruct.Server.Production)
