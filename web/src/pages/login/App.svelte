@@ -1,12 +1,12 @@
 <script lang="ts">
-    import Button, { Icon, Label } from '@smui/button'
+    import Button,{ Icon,Label } from '@smui/button'
+    import IconButton from '@smui/icon-button'
+    import type { KitchenComponentDev } from '@smui/snackbar/kitchen'
+    import Kitchen from '@smui/snackbar/kitchen'
     import Textfield from '@smui/textfield'
     import HelperText from '@smui/textfield/helper-text'
-    import Kitchen from '@smui/snackbar/kitchen'
-    import type { KitchenComponentDev } from '@smui/snackbar/kitchen'
-    import IconButton from '@smui/icon-button'
-    import Progress from '../../components/Progress.svelte'
     import Logo from '../../assets/logo.webp'
+    import Progress from '../../components/Progress.svelte'
     import { createSnackbar } from '../../global'
 
     let loading = false
@@ -49,6 +49,8 @@
                 body: JSON.stringify({ username, password })
             })
             if (res.status === 401) throw 'Invalid username and/or password'
+            if (res.status === 403) throw 'Your account is currently suspended'
+            if (res.status === 502) throw 'The server is currently unable to proccess your request'
             if (res.status !== 204) throw Error()
             window.location.href = '/'
         } catch (e) {
