@@ -132,5 +132,9 @@
         flex-wrap: wrap;
         gap: 1rem;
         box-sizing: border-box;
+
+        @include mobile {
+            justify-content: center;
+        }
     }
 </style>
