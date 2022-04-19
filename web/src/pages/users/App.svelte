@@ -55,8 +55,8 @@
                     user: {
 
                         darkTheme: true,
-                        primaryColorDark: '',
-                        primaryColorLight: '',
+                        primaryColorDark: '#88FF70',
+                        primaryColorLight: '#2E7D32',
                         schedulerEnabled: true,
                         forename: 'Forename',
                         surname: 'Surname',
