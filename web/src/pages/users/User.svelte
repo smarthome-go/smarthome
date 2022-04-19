@@ -25,7 +25,15 @@
     </div>
 
     <div id="actions">
-        <EditUser bind:primaryColorDark bind:primaryColorLight bind:permissions bind:schedulerEnabled bind:darkTheme bind:username bind:forename bind:surname />
+        <EditUser
+            bind:primaryColorDark
+            bind:primaryColorLight
+            bind:schedulerEnabled
+            bind:darkTheme
+            bind:username
+            bind:forename
+            bind:surname
+        />
     </div>
 </div>
 
@@ -37,7 +45,7 @@
         padding: 0.5rem;
         display: flex;
         height: min-content;
-        min-width: 18rem;
+        width: 18rem;
         justify-content: space-between;
         align-items: center;
     }
@@ -51,16 +59,22 @@
         }
     }
     #labels {
+        max-width: 10rem;
+        overflow: hidden;
+
         h6 {
-            display: block;
             margin: 0;
             word-break: break-all;
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
-            max-width: 7rem;
         }
         span {
+            display: block;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+
             @include mobile {
                 display: none;
             }
