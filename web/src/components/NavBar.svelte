@@ -163,7 +163,7 @@
     </div>
     <NotificationDrawer bind:hidden={drawerClosed} />
     <div id="menubar">
-        <div>
+        <div id="menubar__top">
             {#each pages.filter((p) => p.position === 'top') as page}
                 <NavBarButton
                     {...withoutPosition(page)}
@@ -171,7 +171,7 @@
                 />
             {/each}
         </div>
-        <div>
+        <div id="menubar__bottom">
             {#each pages.filter((p) => p.position === 'bottom') as page}
                 <NavBarButton
                     {...withoutPosition(page)}
@@ -308,7 +308,8 @@
                 font-weight: 600;
             }
 
-            strong, span {
+            strong,
+            span {
                 overflow: hidden;
                 white-space: nowrap;
                 text-overflow: ellipsis;
@@ -399,9 +400,29 @@
         overflow-x: hidden;
         flex-grow: 1;
         padding-top: 1rem;
+
         @include mobile {
             flex-shrink: 1;
             overflow-y: hidden;
+
+            &__top {
+                @include landscape {
+                    display: flex;
+                    flex-wrap: wrap;
+                    flex-direction: column;
+                    height: 50vh;
+                }
+            }
+
+            &__bottom {
+                @include landscape {
+                    display: flex;
+                    gap: 1rem;
+                    background-color: var(--clr-hover);
+                    border-radius: 0.3rem;
+                    padding-bottom: 0.625rem;
+                }
+            }
         }
     }
 </style>
