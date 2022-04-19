@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/core/user"
@@ -57,9 +58,14 @@ func AddUser(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to add user", Error: "user already exists"})
 		return
 	}
+	if len(request.Username) == 0 || strings.Contains(request.Username, " ") {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to add user", Error: "bad format: username should not be blank and may not contain whitespaces"})
+		return
+	}
 	if err = database.AddUser(
 		database.FullUser{
-			Username:          request.Username,
+			Username:          strings.ToLower(request.Username),
 			Password:          request.Password,
 			Forename:          "Forename",
 			Surname:           "Surname",
@@ -184,6 +190,11 @@ func ModifyCurrentUserMetadata(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to modify user metadata", Error: "invalid color format: a valid color would be `#ffffff`"})
 		return
 	}
+	if len(request.Forename) > 20 || len(request.Surname) > 20 {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to modify user metadata", Error: "data too long for forename or surname. max 20 chars allowed."})
+		return
+	}
 	if err := database.UpdateUserMetadata(username, request.Forename, request.Surname, request.PrimaryColorDark, request.PrimaryColorLight); err != nil {
 		w.WriteHeader(http.StatusBadGateway)
 		Res(w, Response{Success: false, Message: "failed to modify user metadata", Error: "database failure"})
@@ -217,6 +228,11 @@ func ModifyUserMetadata(w http.ResponseWriter, r *http.Request) {
 	if len(request.Data.PrimaryColorDark) != 7 || len(request.Data.PrimaryColorLight) != 7 || request.Data.PrimaryColorDark[0] != '#' || request.Data.PrimaryColorLight[0] != '#' {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		Res(w, Response{Success: false, Message: "failed to modify user metadata", Error: "invalid color format: a valid color would be `#ffffff`"})
+		return
+	}
+	if len(request.Data.Forename) > 20 || len(request.Data.Surname) > 20 {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to modify user metadata", Error: "data too long for forename or surname. max 20 chars allowed."})
 		return
 	}
 	if err := database.UpdateUserMetadata(request.Username, request.Data.Forename, request.Data.Surname, request.Data.PrimaryColorDark, request.Data.PrimaryColorLight); err != nil {
