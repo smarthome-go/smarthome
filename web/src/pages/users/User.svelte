@@ -48,6 +48,10 @@
         width: 18rem;
         justify-content: space-between;
         align-items: center;
+
+        @include mobile {
+            width: 80vw;
+        }
     }
     #left {
         display: flex;
