@@ -406,7 +406,7 @@ func UpdateUserMetadata(username string, forename string, surname string, primar
 	WHERE Username=?
 	`)
 	if err != nil {
-		log.Error("Failed to update primary colors for user: preparing query failed: ", err.Error())
+		log.Error("Failed to update user metadata: preparing query failed: ", err.Error())
 		return err
 	}
 	defer query.Close()
@@ -418,7 +418,7 @@ func UpdateUserMetadata(username string, forename string, surname string, primar
 		username,
 	)
 	if err != nil {
-		log.Error("Failed to update primary colors for user executing query failed: ", err.Error())
+		log.Error("Failed to update user metadata: executing query failed: ", err.Error())
 		return err
 	}
 	return nil
