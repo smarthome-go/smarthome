@@ -307,6 +307,13 @@
             &:first-child {
                 font-weight: 600;
             }
+
+            strong, span {
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+                max-width: 7rem;
+            }
         }
     }
 
