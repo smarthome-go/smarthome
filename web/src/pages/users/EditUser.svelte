@@ -12,32 +12,51 @@
     import { createSnackbar,data } from '../../global'
     import { users } from './main'
 
+    // Dialog open / loading booleans
     let open = false
+    let loading = false
+    let deleteOpen = false
 
+    // Exported user data
     export let username = ''
     export let forename = ''
     export let surname = ''
     export let primaryColorDark
     export let primaryColorLight
-
     export let darkTheme: boolean
     export let schedulerEnabled: boolean
-    export let permissions: string[]
 
+    // Values before modification
     let forenameBefore: string
     let surnameBefore: string
     let primaryColorDarkBefore: string
     let primaryColorLightBefore: string
 
-    let deleteOpen = false
-
-    let loading = false
-
+    // If the dialog edits  current user, some values can be changed directly in order to display a preview
     $: {
-        if (username == $data.userData.user.username)
+        if (username == $data.userData.user.username) {
             $data.userData.user.darkTheme = darkTheme
+            $data.userData.user.forename = forename
+            $data.userData.user.surname = surname
+        }
     }
 
+    // Variables that keep track of input change and valididy
+    let forenameDirty = false
+    let surnameDirty = false
+    let forenameInvalid = false
+    let surnameInvalid = false
+    // Update values reactively
+    $: {
+        forenameDirty = forename !== forenameBefore
+        surnameDirty = surname !== surnameBefore
+
+        forenameInvalid = forename.length == 0
+        surnameInvalid = surname.length === 0
+    }
+
+    // Sets the values before modification to the currently visable values
+    onMount(updateBeforeValues) // Saves the values initially
     function updateBeforeValues() {
         forenameBefore = forename
         surnameBefore = surname
@@ -45,6 +64,7 @@
         primaryColorLightBefore = primaryColorLight
     }
 
+    // Rolls back any changes
     function restoreChanges() {
         forename = forenameBefore
         surname = surnameBefore
@@ -52,6 +72,7 @@
         primaryColorLight = primaryColorLightBefore
     }
 
+    // Sends a delete request to the server
     async function deleteUser() {
         loading = true
         try {
@@ -71,6 +92,7 @@
         loading = false
     }
 
+    // Sends a modification request to the server
     async function modify() {
         loading = true
         try {
@@ -90,13 +112,14 @@
                 })
             ).json()
             if (!res.success) throw Error(res.error)
+            $createSnackbar(`Successfully modified user '${username}'`)
+            updateBeforeValues()
         } catch (err) {
             $createSnackbar(`Failed to modify user data: ${err}`)
             restoreChanges()
         }
         loading = false
     }
-    onMount(updateBeforeValues)
 </script>
 
 <Dialog bind:open fullscreen aria-labelledby="title" aria-describedby="content">
@@ -127,6 +150,7 @@
     </Header>
     <Content id="content">
         <div id="profile">
+            <!-- Profile Preview -->
             <img
                 class="mdc-elevation--z3"
                 src={`/api/user/avatar/user/${username}`}
@@ -144,10 +168,11 @@
                 <Textfield
                     helperLine$style="width: 100%;"
                     label="Forename"
-                    input$maxlength={30}
+                    input$maxlength={20}
+                    bind:invalid={forenameInvalid}
                     bind:value={forename}
                 >
-                    <CharacterCounter slot="helper">0 / 30</CharacterCounter>
+                    <CharacterCounter slot="helper">0 / 20</CharacterCounter>
                 </Textfield>
             </div>
             <div>
@@ -155,14 +180,16 @@
                 <Textfield
                     helperLine$style="width: 100%;"
                     label="Surname"
-                    input$maxlength={30}
+                    input$maxlength={20}
+                    bind:invalid={surnameInvalid}
                     bind:value={surname}
                 >
-                    <CharacterCounter slot="helper">0 / 30</CharacterCounter>
+                    <CharacterCounter slot="helper">0 / 20</CharacterCounter>
                 </Textfield>
             </div>
         </div>
         <div id="toggles" class="mdc-elevation--z1">
+            <!-- Boolean Toggles-->
             <Paper color="primary" variant="outlined">
                 <Title>Toggles</Title>
                 <div id="toggle-content">
@@ -178,6 +205,7 @@
             </Paper>
         </div>
         <div id="danger">
+            <!-- Dangerous actions: delete account -->
             <Paper variant="outlined">
                 <Title>Dangerous Actions</Title>
                 <div id="danger-buttons">
@@ -196,9 +224,16 @@
     </Content>
     <Actions>
         <!-- Only allow save if data has been changed -->
-        <Button defaultAction on:click={modify}>
+        <Button
+            disabled={(!forenameDirty && !surnameDirty) ||
+                forenameInvalid ||
+                surnameInvalid}
+            defaultAction
+            on:click={modify}
+        >
             <Label>Save</Label>
         </Button>
+        <!-- Restore changes if the user cancels the action -->
         <Button on:click={restoreChanges}>
             <Label>Cancel</Label>
         </Button>
@@ -235,7 +270,6 @@
     #edit {
         margin-top: 1rem;
     }
-
     #toggles {
         margin-top: 2rem;
         background-color: var(--clr-height-0-1);
