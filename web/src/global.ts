@@ -30,12 +30,21 @@ export interface UserData {
     permissions: string[]
 }
 
+// Color caching
+let cachedColorDark = localStorage.getItem("smarthome_primary_color_dark")
+let cachedColorLight = localStorage.getItem("smarthome_primary_color_light")
+
+if (cachedColorDark !== null && cachedColorLight !== null) {
+    document.documentElement.style.setProperty('--clr-primary-dark', cachedColorDark)
+    document.documentElement.style.setProperty('--clr-primary-light', cachedColorLight)
+}
+
 export const data: Writable<Data> = writable({
     userData: {
         user: {
             forename: '',
-            primaryColorDark: '',
-            primaryColorLight: '',
+            primaryColorDark: cachedColorDark,
+            primaryColorLight: cachedColorLight,
             surname: '',
             username: '',
             darkTheme: true,
@@ -48,7 +57,7 @@ export const data: Writable<Data> = writable({
 })
 
 let isFetching = false
-let hasFetched = false
+let hasFetched = false // Indicates that the user data has been fetched, used for primary color caching
 
 export async function fetchData() {
     if (hasFetched) return
@@ -64,15 +73,19 @@ export async function fetchData() {
     data.set(temp)
     isFetching = false
     hasFetched = true
+
+    // Update cached primary colors
+    localStorage.setItem("smarthome_primary_color_dark", get(data).userData.user.primaryColorDark)
+    localStorage.setItem("smarthome_primary_color_light", get(data).userData.user.primaryColorLight)
 }
 
 export async function fetchUserData(): Promise<UserData> {
     try {
-        const res  = await (await fetch('/api/user/data')).json()
+        const res = await (await fetch('/api/user/data')).json()
         if (res.success !== undefined && !res.success) throw Error(res.error)
         return res
-    } catch(err) {
-       get(createSnackbar)(`Could not fetch user data: ${err}`)
+    } catch (err) {
+        get(createSnackbar)(`Could not fetch user data: ${err}`)
     }
 }
 
@@ -81,7 +94,7 @@ export async function fetchNotificationCount(): Promise<number> {
         const res = await (await fetch('/api/user/notification/count')).json()
         if (res.success !== undefined && !res.success) throw Error(res.error)
         return res.count
-    }catch(err) {
+    } catch (err) {
         get(createSnackbar)(`Could not fetch notification count: ${err}`)
     }
 }
