@@ -23,6 +23,11 @@ type SetColorThemeRequest struct {
 	DarkTheme bool `json:"darkTheme"`
 }
 
+type SetForeignUserColorThemeRequest struct {
+	Username  string `json:"username"`
+	DarkTheme bool   `json:"darkTheme"`
+}
+
 type ModifyUserMetadataRequest struct {
 	Forename          string `json:"forename"`
 	Surname           string `json:"surname"`
@@ -148,7 +153,7 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 // Allows the user to change whether they want to use the light or dark theme
-func SetColorTheme(w http.ResponseWriter, r *http.Request) {
+func SetCurrentUserColorTheme(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
@@ -163,6 +168,40 @@ func SetColorTheme(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := database.SetUserDarkThemeEnabled(username, request.DarkTheme); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to update color theme", Error: "database failure"})
+		return
+	}
+	Res(w, Response{Success: true, Message: "successfully updated color theme"})
+}
+
+func SetUserColorTheme(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request SetForeignUserColorThemeRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	user, found, err := database.GetUserByUsername(request.Username)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to update color theme", Error: "database failure"})
+		return
+	}
+	if !found {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to update color theme", Error: "not found"})
+		return
+	}
+	if user.DarkTheme == request.DarkTheme {
+		w.WriteHeader(http.StatusOK)
+		Res(w, Response{Success: true, Message: "theme unchanged"})
+		return
+	}
+	if err := database.SetUserDarkThemeEnabled(request.Username, request.DarkTheme); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to update color theme", Error: "database failure"})
 		return
