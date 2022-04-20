@@ -117,13 +117,15 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/scheduler/add", mdl.ApiAuth(mdl.Perm(api.CreateNewSchedule, database.PermissionScheduler))).Methods("POST")
 	r.HandleFunc("/api/scheduler/delete", mdl.ApiAuth(mdl.Perm(api.RemoveSchedule, database.PermissionScheduler))).Methods("DELETE")
 	r.HandleFunc("/api/scheduler/modify", mdl.ApiAuth(mdl.Perm(api.ModifySchedule, database.PermissionScheduler))).Methods("PUT")
-	r.HandleFunc("/api/scheduler/state/personal", mdl.ApiAuth(mdl.Perm(api.SetUserSchedulerEnabled, database.PermissionScheduler))).Methods("PUT")
+	r.HandleFunc("/api/scheduler/state/personal", mdl.ApiAuth(mdl.Perm(api.SetCurrentUserSchedulerEnabled, database.PermissionScheduler))).Methods("PUT")
+	r.HandleFunc("/api/scheduler/state/user", mdl.ApiAuth(mdl.Perm(api.SetUserSchedulerEnabled, database.PermissionManageUsers))).Methods("PUT")
 
 	// Admin-specific
 	r.HandleFunc("/api/config/location/modify", mdl.ApiAuth(mdl.Perm(api.UpdateLocation, database.PermissionModifyServerConfig))).Methods("PUT")
 
 	// Customization
-	r.HandleFunc("/api/user/settings/theme", mdl.ApiAuth(api.SetColorTheme)).Methods("PUT")
+	r.HandleFunc("/api/user/settings/theme/personal", mdl.ApiAuth(api.SetCurrentUserColorTheme)).Methods("PUT")
+	r.HandleFunc("/api/user/settings/theme/user", mdl.ApiAuth(api.SetUserColorTheme)).Methods("PUT")
 
 	// Reminders
 	r.HandleFunc("/api/reminder/add", mdl.ApiAuth(mdl.Perm(api.AddReminder, database.PermissionReminder))).Methods("POST")
