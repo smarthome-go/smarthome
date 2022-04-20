@@ -4,7 +4,6 @@
     export let value = '#ffffff'
 
     const id = `${new Date().getTime()}-${uuidv4()}`
-    console.log(id)
 </script>
 
 <span>

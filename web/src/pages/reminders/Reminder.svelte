@@ -78,7 +78,6 @@
         priority: number,
         dueDate: Date
     ) {
-        console.log('MODIFY:', id)
         thisLoading = true
         try {
             const res = await (
