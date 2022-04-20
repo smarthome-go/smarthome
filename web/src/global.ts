@@ -31,12 +31,16 @@ export interface UserData {
 }
 
 // Color caching
-let cachedColorDark = localStorage.getItem("smarthome_primary_color_dark")
-let cachedColorLight = localStorage.getItem("smarthome_primary_color_light")
+const cachedColorDark: string = localStorage.getItem("smarthome_primary_color_dark")
+const cachedColorLight: string = localStorage.getItem("smarthome_primary_color_light")
+let cachedTheme = true
+const cachedThemeTemp = localStorage.getItem("smarthome_theme") === 'true'
 
-if (cachedColorDark !== null && cachedColorLight !== null) {
+if (cachedColorDark !== null && cachedColorLight !== null && cachedTheme !== null) {
     document.documentElement.style.setProperty('--clr-primary-dark', cachedColorDark)
     document.documentElement.style.setProperty('--clr-primary-light', cachedColorLight)
+    document.documentElement.classList.toggle('light-theme', cachedTheme)
+    cachedTheme = cachedThemeTemp 
 }
 
 export const data: Writable<Data> = writable({
@@ -47,7 +51,7 @@ export const data: Writable<Data> = writable({
             primaryColorLight: cachedColorLight,
             surname: '',
             username: '',
-            darkTheme: true,
+            darkTheme: cachedTheme,
         },
         permissions: [],
     },
@@ -77,6 +81,7 @@ export async function fetchData() {
     // Update cached primary colors
     localStorage.setItem("smarthome_primary_color_dark", get(data).userData.user.primaryColorDark)
     localStorage.setItem("smarthome_primary_color_light", get(data).userData.user.primaryColorLight)
+    localStorage.setItem("smarthome_theme", get(data).userData.user.darkTheme ? 'true' : 'false')
 }
 
 export async function fetchUserData(): Promise<UserData> {
