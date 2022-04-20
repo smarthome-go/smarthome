@@ -44,8 +44,13 @@ type DeleteScheduleRequest struct {
 	Id uint `json:"id"`
 }
 
-type UserSchedulerEnabledRequest struct {
+type CurrentUserSchedulerEnabledRequest struct {
 	Enabled bool `json:"enabled"`
+}
+
+type UserSchedulerEnabledRequest struct {
+	Username string `json:"username"`
+	Enabled  bool   `json:"enabled"`
 }
 
 // Returns a list of all schedules set up by the current user
@@ -182,7 +187,7 @@ func RemoveSchedule(w http.ResponseWriter, r *http.Request) {
 }
 
 // Set if the user scheduler is enabled or disabled
-func SetUserSchedulerEnabled(w http.ResponseWriter, r *http.Request) {
+func SetCurrentUserSchedulerEnabled(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
@@ -190,7 +195,7 @@ func SetUserSchedulerEnabled(w http.ResponseWriter, r *http.Request) {
 	}
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
-	var request UserSchedulerEnabledRequest
+	var request CurrentUserSchedulerEnabledRequest
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
@@ -208,6 +213,41 @@ func SetUserSchedulerEnabled(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := database.SetUserSchedulerEnabled(username, request.Enabled); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to set scheduler status", Error: "database failure"})
+		return
+	}
+	Res(w, Response{Success: true, Message: "successfully updated scheduler status"})
+}
+
+// Set if the user scheduler is enabled or disabled
+func SetUserSchedulerEnabled(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request UserSchedulerEnabledRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	user, found, err := database.GetUserByUsername(request.Username)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to set scheduler status", Error: "database failure"})
+		return
+	}
+	if !found {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to set scheduler status", Error: "invalid username"})
+		return
+	}
+	if user.SchedulerEnabled == request.Enabled {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to set status of scheduler", Error: "scheduler is already in the requested mode"})
+		return
+	}
+	if err := database.SetUserSchedulerEnabled(request.Username, request.Enabled); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to set scheduler status", Error: "database failure"})
 		return
