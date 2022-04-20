@@ -8,6 +8,7 @@
     import Textfield from '@smui/textfield'
     import CharacterCounter from '@smui/textfield/character-counter'
     import { onMount } from 'svelte'
+    import ColorPicker from '../../components/ColorPicker.svelte'
     import Progress from '../../components/Progress.svelte'
     import { createSnackbar,data } from '../../global'
     import { users } from './main'
@@ -38,6 +39,8 @@
             $data.userData.user.darkTheme = darkTheme
             $data.userData.user.forename = forename
             $data.userData.user.surname = surname
+            $data.userData.user.primaryColorDark = primaryColorDark
+            $data.userData.user.primaryColorLight = primaryColorLight
         }
     }
 
@@ -194,13 +197,43 @@
                 <Title>Toggles</Title>
                 <div id="toggle-content">
                     <FormField>
-                        <Switch bind:checked={darkTheme} />
-                        <span slot="label">Dark Theme</span>
-                    </FormField>
-                    <FormField>
                         <Switch bind:checked={schedulerEnabled} />
                         <span slot="label">Scheduler Enabled</span>
                     </FormField>
+                </div>
+            </Paper>
+        </div>
+        <div id="theming" class="mdc-elevation--z1">
+            <!-- Theming Settings-->
+            <Paper>
+                <Title>Theme</Title>
+                <FormField>
+                    <Switch bind:checked={darkTheme} />
+                    <span slot="label">Dark Theme</span>
+                </FormField>
+                <div id="primary-colors">
+                    <div class="color">
+                        <div
+                            class="color-indicator"
+                            style:background-color={primaryColorDark}
+                        />
+                        <!-- Primary Color Dark -->
+                        <div>
+                            <ColorPicker bind:value={primaryColorDark} />
+                            <span>Color Dark</span>
+                        </div>
+                    </div>
+                    <div class="color">
+                        <div
+                            class="color-indicator"
+                            style:background-color={primaryColorLight}
+                        />
+                        <!-- Primary Color Light -->
+                        <div>
+                            <ColorPicker bind:value={primaryColorLight} />
+                            <span>Color Light</span>
+                        </div>
+                    </div>
                 </div>
             </Paper>
         </div>
@@ -287,5 +320,35 @@
             align-items: center;
             gap: 0.5rem;
         }
+    }
+    #theming {
+        margin-top: 1rem;
+        background-color: var(--clr-height-0-1);
+    }
+
+    #primary-colors {
+        display: flex;
+        gap: 1rem;
+
+        .color {
+            display: flex;
+            align-items: center;
+            gap: .2rem;
+            background-color: var(--clr-height-0-1);
+            padding: 1rem;
+            border-radius: .3rem;
+
+            div {
+                display: flex;
+                align-items: center;
+                gap: .5rem;
+            }
+        }
+    
+    }
+    .color-indicator {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
     }
 </style>

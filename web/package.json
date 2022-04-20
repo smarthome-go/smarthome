@@ -57,6 +57,7 @@
     "@smui/tab-bar": "^6.0.0-beta.15",
     "@smui/textfield": "^6.0.0-beta.15",
     "material-icons": "^1.10.8",
-    "svelte-fa": "^2.4.0"
+    "svelte-fa": "^2.4.0",
+    "uuid": "^8.3.2"
   }
 }
