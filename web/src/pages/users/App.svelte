@@ -6,15 +6,13 @@
     import { createSnackbar } from '../../global'
     import Page from '../../Page.svelte'
     import AddUser from './AddUser.svelte'
-    import { allPermissions,users } from './main'
+    import { allPermissions,loading,users } from './main'
     import User from './User.svelte'
 
     let addUserShow = () => {}
 
-    let loading = false
-
     export async function loadPermissions() {
-        loading = true
+        $loading = true
         try {
             $allPermissions = await (
                 await fetch('/api/permissions/manage/list')
@@ -22,11 +20,11 @@
         } catch (err) {
             $createSnackbar(`Failed to load permissions: ${err}`)
         }
-        loading = false
+       $loading = false
     }
 
     async function loadUsers() {
-        loading = true
+       $loading = true
         try {
             const res = await (await fetch('/api/user/manage/list')).json()
             if (res.success !== undefined && !res.success)
@@ -35,11 +33,11 @@
         } catch (err) {
             $createSnackbar(`Could not load users: ${err}`)
         }
-        loading = false
+       $loading = false
     }
 
     async function addUser(username: string, password: string) {
-        loading = true
+        $loading = true
         try {
             const res = await (
                 await fetch('/api/user/manage/add', {
@@ -68,14 +66,14 @@
         } catch (err) {
             $createSnackbar(`Could not create user: ${err}`)
         }
-        loading = false
+        $loading = false
     }
 
     onMount(() => loadUsers())
 </script>
 
 <Page>
-    <Progress id="loader" bind:loading />
+    <Progress id="loader" bind:loading={$loading} />
     <div id="container">
         <div id="header">
             <h6>User Management</h6>
