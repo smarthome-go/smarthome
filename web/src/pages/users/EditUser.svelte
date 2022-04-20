@@ -3,19 +3,16 @@
     import Dialog,{ Actions,Content,Header,Title } from '@smui/dialog'
     import FormField from '@smui/form-field'
     import IconButton from '@smui/icon-button'
-    import Paper from '@smui/paper'
     import Switch from '@smui/switch'
     import Textfield from '@smui/textfield'
     import CharacterCounter from '@smui/textfield/character-counter'
     import { onMount } from 'svelte'
     import ColorPicker from '../../components/ColorPicker.svelte'
-    import Progress from '../../components/Progress.svelte'
     import { createSnackbar,data } from '../../global'
-    import { users } from './main'
+    import { loading,users } from './main'
 
     // Dialog open / loading booleans
     let open = false
-    let loading = false
     let deleteOpen = false
 
     // Exported user data
@@ -32,6 +29,8 @@
     let surnameBefore: string
     let primaryColorDarkBefore: string
     let primaryColorLightBefore: string
+    let schedulerEnabledBefore: boolean
+    let darkThemeBefore: boolean
 
     // If the dialog edits  current user, some values can be changed directly in order to display a preview
     $: {
@@ -49,10 +48,15 @@
     let surnameDirty = false
     let forenameInvalid = false
     let surnameInvalid = false
+    let primaryColorDarkDirty = false
+    let primaryColorLightDirty = false
     // Update values reactively
     $: {
         forenameDirty = forename !== forenameBefore
         surnameDirty = surname !== surnameBefore
+
+        primaryColorDarkDirty = primaryColorDark !== primaryColorDarkBefore
+        primaryColorLightDirty = primaryColorLight !== primaryColorLightBefore
 
         forenameInvalid = forename.length == 0
         surnameInvalid = surname.length === 0
@@ -65,6 +69,8 @@
         surnameBefore = surname
         primaryColorDarkBefore = primaryColorDark
         primaryColorLightBefore = primaryColorLight
+        schedulerEnabledBefore = schedulerEnabled
+        darkThemeBefore = darkTheme
     }
 
     // Rolls back any changes
@@ -73,11 +79,13 @@
         surname = surnameBefore
         primaryColorDark = primaryColorDarkBefore
         primaryColorLight = primaryColorLightBefore
+        schedulerEnabled = schedulerEnabledBefore
+        darkTheme = darkThemeBefore
     }
 
     // Sends a delete request to the server
     async function deleteUser() {
-        loading = true
+        $loading = true
         try {
             const res = await (
                 await fetch('/api/user/manage/delete', {
@@ -92,12 +100,52 @@
         } catch (err) {
             $createSnackbar(`Faield to delete user: ${err}`)
         }
-        loading = false
+        $loading = false
+    }
+
+    // Toggles the users scheduler
+    async function setScheduler() {
+        if (schedulerEnabled == schedulerEnabledBefore) return
+        try {
+            const res = await (
+                await fetch('/api/scheduler/state/user', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username,
+                        enabled: schedulerEnabled,
+                    }),
+                })
+            ).json()
+            if (!res.success) throw Error(res.error)
+        } catch (err) {
+            throw Error(err)
+        }
+    }
+
+    // Toggles the users theme preference
+    async function setTheme() {
+        if (darkTheme == darkThemeBefore) return
+        try {
+            const res = await (
+                await fetch('/api/user/settings/theme/user', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username,
+                        darkTheme,
+                    }),
+                })
+            ).json()
+            if (!res.success) throw Error(res.error)
+        } catch (err) {
+            throw Error(err)
+        }
     }
 
     // Sends a modification request to the server
     async function modify() {
-        loading = true
+        $loading = true
         try {
             const res = await (
                 await fetch('/api/user/manage/data/modify', {
@@ -115,18 +163,19 @@
                 })
             ).json()
             if (!res.success) throw Error(res.error)
+            await setScheduler()
+            await setTheme()
             $createSnackbar(`Successfully modified user '${username}'`)
             updateBeforeValues()
         } catch (err) {
             $createSnackbar(`Failed to modify user data: ${err}`)
             restoreChanges()
         }
-        loading = false
+        $loading = false
     }
 </script>
 
 <Dialog bind:open fullscreen aria-labelledby="title" aria-describedby="content">
-    <Progress id="loader" bind:loading />
     <Dialog
         bind:open={deleteOpen}
         slot="over"
@@ -191,25 +240,29 @@
                 </Textfield>
             </div>
         </div>
-        <div id="toggles" class="mdc-elevation--z1">
-            <!-- Boolean Toggles-->
-            <Paper color="primary" variant="outlined">
+        <div id="middle">
+            <div id="toggles" class="mdc-elevation--z1">
+                <!-- Boolean Toggles-->
                 <Title>Toggles</Title>
                 <div id="toggle-content">
                     <FormField>
                         <Switch bind:checked={schedulerEnabled} />
-                        <span slot="label">Scheduler Enabled</span>
+                        <span slot="label">
+                            Scheduler {schedulerEnabled
+                                ? 'enabled'
+                                : 'disabled'}
+                        </span>
                     </FormField>
                 </div>
-            </Paper>
-        </div>
-        <div id="theming" class="mdc-elevation--z1">
-            <!-- Theming Settings-->
-            <Paper>
+            </div>
+            <div id="theming" class="mdc-elevation--z1">
+                <!-- Theming Settings-->
                 <Title>Theme</Title>
                 <FormField>
                     <Switch bind:checked={darkTheme} />
-                    <span slot="label">Dark Theme</span>
+                    <span slot="label"
+                        >Dark Theme {darkTheme ? 'enabled' : 'disabled'}</span
+                    >
                 </FormField>
                 <div id="primary-colors">
                     <div class="color">
@@ -220,7 +273,7 @@
                         <!-- Primary Color Dark -->
                         <div>
                             <ColorPicker bind:value={primaryColorDark} />
-                            <span>Color Dark</span>
+                            <span>Dark</span>
                         </div>
                     </div>
                     <div class="color">
@@ -231,34 +284,34 @@
                         <!-- Primary Color Light -->
                         <div>
                             <ColorPicker bind:value={primaryColorLight} />
-                            <span>Color Light</span>
+                            <span>Light</span>
                         </div>
                     </div>
                 </div>
-            </Paper>
+            </div>
         </div>
         <div id="danger">
             <!-- Dangerous actions: delete account -->
-            <Paper variant="outlined">
-                <Title>Dangerous Actions</Title>
-                <div id="danger-buttons">
-                    <div>
-                        <Button
-                            variant="outlined"
-                            on:click={() => {
-                                deleteOpen = true
-                            }}>delete</Button
-                        >
-                        <span>Delete account</span>
-                    </div>
-                </div>
-            </Paper>
+            <div>
+                <Title>Delete User</Title>
+                <Button
+                    variant="outlined"
+                    on:click={() => {
+                        deleteOpen = true
+                    }}>delete</Button
+                >
+            </div>
         </div>
     </Content>
     <Actions>
         <!-- Only allow save if data has been changed -->
         <Button
-            disabled={(!forenameDirty && !surnameDirty) ||
+            disabled={(!forenameDirty &&
+                !surnameDirty &&
+                !primaryColorDarkDirty &&
+                !primaryColorLightDirty &&
+                schedulerEnabled == schedulerEnabledBefore &&
+                darkTheme == darkThemeBefore) ||
                 forenameInvalid ||
                 surnameInvalid}
             defaultAction
@@ -282,6 +335,7 @@
 >
 
 <style lang="scss">
+    @use '../../mixins' as *;
     #names {
         display: flex;
         gap: 2rem;
@@ -303,52 +357,52 @@
     #edit {
         margin-top: 1rem;
     }
-    #toggles {
-        margin-top: 2rem;
-        background-color: var(--clr-height-0-1);
-    }
-    #danger {
-        margin-top: 1rem;
-    }
-    #danger-buttons {
-        display: flex;
-        gap: 3rem;
-        margin-top: 0.7rem;
-
-        div {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-    }
-    #theming {
-        margin-top: 1rem;
-        background-color: var(--clr-height-0-1);
-    }
-
     #primary-colors {
         display: flex;
         gap: 1rem;
 
+        @include mobile {
+            flex-direction: column;
+            gap: 0;
+        }
+
         .color {
             display: flex;
             align-items: center;
-            gap: .2rem;
+            gap: 0.2rem;
             background-color: var(--clr-height-0-1);
             padding: 1rem;
-            border-radius: .3rem;
+            border-radius: 0.3rem;
 
             div {
                 display: flex;
                 align-items: center;
-                gap: .5rem;
+                gap: 0.5rem;
             }
         }
-    
     }
     .color-indicator {
         width: 2rem;
         height: 2rem;
         border-radius: 50%;
+    }
+    #middle {
+        margin: 1rem 0;
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    #toggles,
+    #theming,
+    #danger {
+        border-radius: 0.3rem;
+        background-color: var(--clr-height-0-1);
+        padding: 1rem;
+    }
+    #toggles,
+    #theming {
+        @include mobile {
+            width: 100%;
+        }
     }
 </style>

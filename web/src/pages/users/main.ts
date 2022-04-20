@@ -25,6 +25,8 @@ export interface UserData {
 
 export const users: Writable<UserData[]> = writable([])
 
+export const loading: Writable<boolean> = writable(false)
+
 export const allPermissions: Writable<Permission[]> = writable([])
 
 export default new App({
