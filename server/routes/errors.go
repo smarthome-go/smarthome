@@ -11,6 +11,7 @@ import (
 
 // If a `404 - not found` error occurs, this page is served, no authentication required
 func notFoundHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNotFound)
 	path := strings.Split(r.URL.Path, "/")
 	if len(path) >= 1 {
