@@ -1,7 +1,7 @@
 appname := smarthome
 workingdir := smarthome
 sources := $(wildcard *.go)
-version := 0.0.20-beta
+version := 0.0.21-beta
 
 build = GOOS=$(1) GOARCH=$(2) go build -ldflags "-s -w" -v -o $(appname) $(4)
 tar = mkdir -p build && cd ../ && tar -cvzf ./$(appname)_$(1)_$(2).tar.gz $(workingdir)/$(appname) $(workingdir)/web/dist $(workingdir)/web/html $(workingdir)/resources && mv $(appname)_$(1)_$(2).tar.gz $(workingdir)/build
@@ -31,7 +31,7 @@ version:
 	python3 update_version.py
 
 # Change version on build
-release: cleanall version test build
+release: cleanall version test build docker
 
 vite-dev:
 	cd web && npm run dev
@@ -78,8 +78,6 @@ docker: cleanall web
 	rsync -rv web/dist docker/app/web/
 	cp smarthome docker/app/
 	cd docker && docker build . -t mikmuellerdev/smarthome:$(version)
-
-docker-release: test docker 
 
 web: cleanweb
 	cd web && npm run build
