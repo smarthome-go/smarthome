@@ -7,9 +7,9 @@
     import Textfield from '@smui/textfield'
     import CharacterCounter from '@smui/textfield/character-counter'
     import { onMount } from 'svelte'
-    import ColorPicker from '../../components/ColorPicker.svelte'
-    import { createSnackbar,data } from '../../global'
-    import { loading,users } from './main'
+    import ColorPicker from '../../../components/ColorPicker.svelte'
+    import { createSnackbar,data } from '../../../global'
+    import { loading,users } from './../main'
 
     // Dialog open / loading booleans
     export let open = false
@@ -330,7 +330,7 @@
 </Dialog>
 
 <style lang="scss">
-    @use '../../mixins' as *;
+    @use '../../../mixins' as *;
     #names {
         display: flex;
         gap: 2rem;

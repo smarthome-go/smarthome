@@ -1,7 +1,8 @@
 <script lang="ts">
     import IconButton from '@smui/icon-button'
     import Tooltip,{ Wrapper } from '@smui/tooltip'
-    import EditUser from './EditUser.svelte'
+    import EditPermissions from './dialogs/EditPermissions.svelte'
+    import EditUser from './dialogs/EditUser.svelte'
 
     export let username: string
     export let forename: string
@@ -13,9 +14,11 @@
     export let permissions: string[] = []
 
     let editOpen = false
+    let permissionsOpen = false
 </script>
 
 <div id="root">
+    <!-- Dialogs -->
     <EditUser
         bind:primaryColorDark
         bind:primaryColorLight
@@ -25,6 +28,13 @@
         bind:forename
         bind:surname
         bind:open={editOpen}
+    />
+    <EditPermissions
+        {username}
+        {forename}
+        {surname}
+        bind:permissions
+        bind:open={permissionsOpen}
     />
     <div id="left">
         <img
@@ -40,11 +50,18 @@
 
     <div id="actions">
         <Wrapper>
-            <IconButton class="material-icons" on:click={() => editOpen = true}>edit</IconButton>
+            <IconButton
+                class="material-icons"
+                on:click={() => (editOpen = true)}>edit</IconButton
+            >
             <Tooltip xPos="start">Edit User</Tooltip>
         </Wrapper>
         <Wrapper>
-            <IconButton class="material-icons">admin_panel_settings</IconButton>
+            <IconButton
+                class="material-icons"
+                on:click={() => (permissionsOpen = true)}
+                >admin_panel_settings</IconButton
+            >
             <Tooltip xPos="start">Edit User Permissions</Tooltip>
         </Wrapper>
     </div>
