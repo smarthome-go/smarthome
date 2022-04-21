@@ -89,10 +89,10 @@ docker-prepare:
 	cp smarthome docker/app/
 
 docker: cleanall web docker-prepare
-	cd docker && docker build . -t mikmuellerdev/smarthome:$(version)
+	cd docker && docker build . -t mikmuellerdev/smarthome:$(version) --network=host
 
 sudo-docker: cleanall web docker-prepare
-	cd docker && sudo docker build . -t mikmuellerdev/smarthome:$(version)
+	cd docker && sudo docker build . -t mikmuellerdev/smarthome:$(version) --network=host
 
 web: cleanweb
 	cd web && npm run build
