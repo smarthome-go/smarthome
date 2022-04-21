@@ -1,22 +1,29 @@
-FROM amd64/debian:stable-slim
+FROM alpine:3
 
 LABEL author="MikMuellerDev"
-LABEL version="0.0.21-beta"
-
-RUN useradd -M smarthome
+LABEL version="0.0.22-beta"
 
 COPY ./app /app
 
+RUN addgroup smarthome
+
+RUN adduser \
+    --disabled-password \
+    --gecos "" \
+    --home /app \
+    --ingroup smarthome \
+    --no-create-home \
+    --uid 1000 \
+    smarthome
+
+RUN apk add curl bash && rm -rf /var/cache/apk/*
+
 COPY motd /etc/motd
-RUN echo '[ ! -z "$TERM" -a -r /etc/motd ] && cat /etc/motd' >> /etc/bash.bashrc
 
+COPY .ashrc /app/.ashrc
+ENV ENV=/app/.ashrc
 
-RUN export DEBIAN_FRONTEND=noninteractive && apt update && apt install -yq \
-  # tzdata \
-  curl \
-  && apt autoclean && apt autoremove && rm -rf /var/lib/apt/lists/*
-
-RUN curl -L https://github.com/MikMuellerDev/homescript-cli/releases/download/v0.5.1-beta/homescript_linux_amd64.tar.gz -o /tmp/homescript
+RUN curl -L https://github.com/MikMuellerDev/homescript-cli/releases/download/v0.5.2-beta/homescript_linux_amd64.tar.gz -o /tmp/homescript
 
 WORKDIR /usr/bin
 RUN tar -xvf /tmp/homescript

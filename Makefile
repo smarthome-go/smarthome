@@ -1,7 +1,7 @@
 appname := smarthome
 workingdir := smarthome
 sources := $(wildcard *.go)
-version := 0.0.21-beta
+version := 0.0.22-beta
 
 build = GOOS=$(1) GOARCH=$(2) go build -ldflags "-s -w" -v -o $(appname) $(4)
 tar = mkdir -p build && cd ../ && tar -cvzf ./$(appname)_$(1)_$(2).tar.gz $(workingdir)/$(appname) $(workingdir)/web/dist $(workingdir)/web/html $(workingdir)/resources && mv $(appname)_$(1)_$(2).tar.gz $(workingdir)/build
@@ -82,7 +82,7 @@ mysql:
 build: web all linux clean
 
 docker-prepare:
-	GOOS=linux GOARCH=amd64 go build -v -o smarthome -ldflags '-s -w -extldflags "-fno-PIC -static"' -buildmode pie -tags 'osusergo netgo static_build' 
+	CGO_ENABLED=0 GOOS=linux go build -v -installsuffix cgo -ldflags '-s -w' -o smarthome
 	mkdir -p docker/app/web
 	rsync -rv resources docker/app/
 	rsync -rv web/dist docker/app/web/
