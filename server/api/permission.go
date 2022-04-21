@@ -7,6 +7,7 @@ import (
 
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/core/event"
+	"github.com/MikMuellerDev/smarthome/core/user"
 	"github.com/MikMuellerDev/smarthome/server/middleware"
 )
 
@@ -78,7 +79,7 @@ func AddUserPermission(w http.ResponseWriter, r *http.Request) {
 	}
 	if !modified {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		Res(w, Response{Success: false, Message: "failed to add permission", Error: "user is already in possession of this permission"})
+		Res(w, Response{Success: false, Message: "did not add permission", Error: "user is already in possession of this permission"})
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
@@ -116,6 +117,20 @@ func RemoveUserPermission(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "could not remove permission from user", Error: "invalid user"})
 		return
 	}
+	// If a potentially dangerous permission should be removed, assure that it will not break the system
+	if request.Permission == string(database.PermissionManageUsers) || request.Permission == string(database.PermissionWildCard) {
+		isAlone, err := user.IsStandaloneUserAdmin(request.Username)
+		if err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			Res(w, Response{Success: false, Message: "failed to remove permission", Error: "database failure"})
+			return
+		}
+		if isAlone {
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			Res(w, Response{Success: false, Message: "failed to remove permission", Error: "user is the only user with permission to manage other users"})
+			return
+		}
+	}
 	modified, err := database.RemoveUserPermission(request.Username, database.PermissionType(request.Permission))
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
@@ -124,7 +139,7 @@ func RemoveUserPermission(w http.ResponseWriter, r *http.Request) {
 	}
 	if !modified {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		Res(w, Response{Success: false, Message: "failed to remove permission", Error: "user does not have this permission"})
+		Res(w, Response{Success: false, Message: "did remove permission", Error: "user does not have this permission"})
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
