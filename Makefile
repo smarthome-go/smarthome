@@ -81,13 +81,18 @@ mysql:
 # Builds
 build: web all linux clean
 
-docker: cleanall web
+docker-prepare:
 	GOOS=linux GOARCH=amd64 go build -v -o smarthome -ldflags '-s -w -extldflags "-fno-PIC -static"' -buildmode pie -tags 'osusergo netgo static_build' 
 	mkdir -p docker/app/web
 	rsync -rv resources docker/app/
 	rsync -rv web/dist docker/app/web/
 	cp smarthome docker/app/
+
+docker: cleanall web docker-prepare
 	cd docker && docker build . -t mikmuellerdev/smarthome:$(version)
+
+sudo-docker: cleanall web docker-prepare
+	cd docker && sudo docker build . -t mikmuellerdev/smarthome:$(version)
 
 web: cleanweb
 	cd web && npm run build
