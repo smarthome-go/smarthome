@@ -55,3 +55,21 @@ func DeleteUser(username string) error {
 	}
 	return nil
 }
+
+// Checks if the user is the only entity with user management permission
+func IsStandaloneUserAdmin(username string) (bool, error) {
+	users, err := database.ListUsers()
+	if err != nil {
+		return false, err
+	}
+	for _, user := range users {
+		hasPermission, err := database.UserHasPermission(user.Username, database.PermissionManageUsers)
+		if err != nil {
+			return false, err
+		}
+		if hasPermission && user.Username != username {
+			return false, nil
+		}
+	}
+	return true, nil
+}
