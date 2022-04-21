@@ -363,14 +363,13 @@
 
         @include mobile {
             flex-direction: column;
-            gap: 0;
         }
 
         .color {
             display: flex;
             align-items: center;
             gap: 0.2rem;
-            background-color: var(--clr-height-0-1);
+            background-color: var(--clr-height-1-3);
             padding: 1rem;
             border-radius: 0.3rem;
 
@@ -385,12 +384,18 @@
         width: 2rem;
         height: 2rem;
         border-radius: 50%;
+
+        @include not-widescreen {
+            width: 1.2rem;
+            height: 1.2rem;
+        }
     }
     #middle {
         margin: 1rem 0;
         display: flex;
         gap: 1rem;
         flex-wrap: wrap;
+        box-sizing: border-box;
     }
     #toggles,
     #theming,
@@ -401,8 +406,21 @@
     }
     #toggles,
     #theming {
-        @include mobile {
+        box-sizing: border-box;
+        @include not-widescreen {
             width: 100%;
+        }
+    }
+    @include widescreen {
+        #middle {
+            justify-content: space-between;
+            gap: 0;
+        }
+        #toggles {
+            width: 33%;
+        }
+        #theming {
+            width: 65%;
         }
     }
 </style>
