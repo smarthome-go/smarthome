@@ -1,4 +1,6 @@
 <script lang="ts">
+    import IconButton from '@smui/icon-button'
+    import Tooltip,{ Wrapper } from '@smui/tooltip'
     import EditUser from './EditUser.svelte'
 
     export let username: string
@@ -9,9 +11,21 @@
     export let schedulerEnabled: boolean
     export let darkTheme: boolean
     export let permissions: string[] = []
+
+    let editOpen = false
 </script>
 
 <div id="root">
+    <EditUser
+        bind:primaryColorDark
+        bind:primaryColorLight
+        bind:schedulerEnabled
+        bind:darkTheme
+        bind:username
+        bind:forename
+        bind:surname
+        bind:open={editOpen}
+    />
     <div id="left">
         <img
             src={`/api/user/avatar/user/${username}`}
@@ -25,15 +39,14 @@
     </div>
 
     <div id="actions">
-        <EditUser
-            bind:primaryColorDark
-            bind:primaryColorLight
-            bind:schedulerEnabled
-            bind:darkTheme
-            bind:username
-            bind:forename
-            bind:surname
-        />
+        <Wrapper>
+            <IconButton class="material-icons" on:click={() => editOpen = true}>edit</IconButton>
+            <Tooltip xPos="start">Edit User</Tooltip>
+        </Wrapper>
+        <Wrapper>
+            <IconButton class="material-icons">admin_panel_settings</IconButton>
+            <Tooltip xPos="start">Edit User Permissions</Tooltip>
+        </Wrapper>
     </div>
 </div>
 
@@ -45,7 +58,7 @@
         padding: 0.5rem;
         display: flex;
         height: min-content;
-        width: 18rem;
+        width: 19rem;
         justify-content: space-between;
         align-items: center;
 
@@ -63,7 +76,7 @@
         }
     }
     #labels {
-        max-width: 10rem;
+        max-width: 7.7rem; // Needed adjustment due to second action button
         overflow: hidden;
 
         h6 {
@@ -78,10 +91,7 @@
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
-
-            @include mobile {
-                display: none;
-            }
+            color: var(--clr-text-hint);
         }
     }
     img {
@@ -90,8 +100,8 @@
         height: 4rem;
 
         @include mobile {
-            width: 2rem;
-            height: 2rem;
+            width: 3rem;
+            height: 3rem;
         }
     }
 </style>

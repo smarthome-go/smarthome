@@ -12,7 +12,7 @@
     import { loading,users } from './main'
 
     // Dialog open / loading booleans
-    let open = false
+    export let open = false
     let deleteOpen = false
 
     // Exported user data
@@ -306,14 +306,17 @@
     <Actions>
         <!-- Only allow save if data has been changed -->
         <Button
-            disabled={(!forenameDirty &&
+            disabled={// Performs various integrity checks before sending data to the server for better UX
+            (!forenameDirty &&
                 !surnameDirty &&
                 !primaryColorDarkDirty &&
                 !primaryColorLightDirty &&
                 schedulerEnabled == schedulerEnabledBefore &&
                 darkTheme == darkThemeBefore) ||
                 forenameInvalid ||
-                surnameInvalid}
+                surnameInvalid ||
+                forename.length > 20 ||
+                surname.length > 20}
             defaultAction
             on:click={modify}
         >
@@ -325,14 +328,6 @@
         </Button>
     </Actions>
 </Dialog>
-
-<IconButton
-    class="material-icons"
-    on:click={async () => {
-        open = true
-    }}
-    title="Manage">edit</IconButton
->
 
 <style lang="scss">
     @use '../../mixins' as *;
