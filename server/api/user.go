@@ -109,6 +109,17 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to delete user", Error: "no user exists with given username"})
 		return
 	}
+	isAlone, err := user.IsStandaloneUserAdmin(request.Username)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to remove permission", Error: "database failure"})
+		return
+	}
+	if isAlone {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to remove permission", Error: "user is the only user with permission to create other users"})
+		return
+	}
 	if err := user.DeleteUser(request.Username); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		Res(w, Response{Success: false, Message: "failed to remove user", Error: "backend failure"})
