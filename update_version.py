@@ -23,6 +23,9 @@ except KeyboardInterrupt:
     print("\nCanceled by user")
     quit()
 
+if VERSION == "":
+    VERSION = old_version
+
 if not re.match(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$", VERSION):
     print(
         f"\x1b[31mThe version: '{VERSION}' is not a valid SemVer version.\x1b[0m")
