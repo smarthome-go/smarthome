@@ -25,14 +25,16 @@ test:
 	cd docker/testing && docker-compose up -d
 	go test -v -p 1 ./... --timeout=10000s
 	# Tests should be run one after another due to deletion of the database at every test start
+	rm -rf web/dist/html/testing.html
 
 vtest:
 	mkdir -p web/dist/html
 	touch web/dist/html/testing.html
 	# Prevents server panic
-	
+
 	go test -p 1 ./... -coverprofile=coverage.out
 	go tool cover --html=coverage.out -o coverage.html
+	rm -rf web/dist/html/testing.html
 
 # Updating the current version in all locations
 version:
