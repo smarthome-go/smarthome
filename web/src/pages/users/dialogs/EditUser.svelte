@@ -244,16 +244,12 @@
             <div id="toggles" class="mdc-elevation--z1">
                 <!-- Boolean Toggles-->
                 <Title>Toggles</Title>
-                <div id="toggle-content">
-                    <FormField>
-                        <Switch bind:checked={schedulerEnabled} />
-                        <span slot="label">
-                            Scheduler {schedulerEnabled
-                                ? 'enabled'
-                                : 'disabled'}
-                        </span>
-                    </FormField>
-                </div>
+                <FormField>
+                    <Switch bind:checked={schedulerEnabled} />
+                    <span id="toggles__scheduler__indicator" slot="label">
+                        Scheduler {schedulerEnabled ? 'enabled' : 'disabled'}
+                    </span>
+                </FormField>
             </div>
             <div id="theming" class="mdc-elevation--z1">
                 <!-- Theming Settings-->
@@ -289,17 +285,22 @@
                     </div>
                 </div>
             </div>
-        </div>
-        <div id="danger">
-            <!-- Dangerous actions: delete account -->
-            <div>
-                <Title>Delete User</Title>
-                <Button
-                    variant="outlined"
-                    on:click={() => {
-                        deleteOpen = true
-                    }}>delete</Button
-                >
+            <div id="danger">
+                <!-- Dangerous actions: delete account -->
+                <div id="danger__delete__user">
+                    <div>
+                        <h6>Delete User</h6>
+                        <span class="--clr-text-hint"
+                            >Erase all user data and delete account</span
+                        >
+                    </div>
+                    <Button
+                        variant="outlined"
+                        on:click={() => {
+                            deleteOpen = true
+                        }}>delete</Button
+                    >
+                </div>
             </div>
         </div>
     </Content>
@@ -395,27 +396,29 @@
     #toggles,
     #theming,
     #danger {
-        border-radius: 0.3rem;
         background-color: var(--clr-height-0-1);
+        border-radius: 0.3rem;
         padding: 1rem;
-    }
-    #toggles,
-    #theming {
-        box-sizing: border-box;
+
         @include not-widescreen {
             width: 100%;
         }
     }
-    @include widescreen {
-        #middle {
-            justify-content: space-between;
-            gap: 0;
-        }
-        #toggles {
-            width: 33%;
-        }
-        #theming {
-            width: 65%;
+    #toggles__scheduler__indicator {
+        display: block;
+        min-width: 10rem;
+    }
+    #danger {
+        border: 0.1rem solid var(--clr-error);
+        &__delete__user {
+            display: flex;
+            gap: 2rem;
+            align-items: flex-end;
+
+            div {
+                display: flex;
+                flex-direction: column;
+            }
         }
     }
 </style>
