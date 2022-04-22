@@ -28,6 +28,7 @@
             label="Username"
             input$maxlength={20}
             required
+            invalid={(usernameDirty && username.length == 0) || username.includes(' ')}
         >
             <svelte:fragment slot="helper">
                 <CharacterCounter>0 / 20</CharacterCounter>
@@ -42,6 +43,7 @@
     </Content>
     <Actions>
         <Button
+            disabled={username.length == 0 || username.includes(' ')}
             on:click={() => {
                 onAdd(username, password)
                 username = ''
