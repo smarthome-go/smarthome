@@ -32,7 +32,7 @@ vtest:
 	touch web/dist/html/testing.html
 	# Prevents server panic
 
-	go test -p 1 ./... -coverprofile=coverage.out
+	go test -v -p 1 ./... -coverprofile=coverage.out
 	go tool cover --html=coverage.out -o coverage.html
 	rm -rf web/dist/html/testing.html
 
