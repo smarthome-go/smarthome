@@ -98,7 +98,7 @@
             $createSnackbar(`Deleted user ${username}`)
             $users = $users.filter((u) => u.user.username !== username)
         } catch (err) {
-            $createSnackbar(`Faield to delete user: ${err}`)
+            $createSnackbar(`Could not delete user: ${err}`)
         }
         $loading = false
     }
@@ -289,7 +289,7 @@
                 <!-- Dangerous actions: delete account -->
                 <div id="danger__delete__user">
                     <div>
-                        <h6>Delete User</h6>
+                        <Title>Delete User</Title>
                         <span class="--clr-text-hint"
                             >Erase all user data and delete account</span
                         >
@@ -409,7 +409,6 @@
         min-width: 10rem;
     }
     #danger {
-        border: 0.1rem solid var(--clr-error);
         &__delete__user {
             display: flex;
             gap: 2rem;

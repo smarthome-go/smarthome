@@ -41,6 +41,15 @@ func UploadAvatar(username string, filename string, file multipart.File) error {
 	if err != nil {
 		return err
 	}
+	// generates a unique hash based on the username and filename combination
+	hashPrefix := md5.Sum([]byte(fmt.Sprintf("%s%s", username, filename)))
+	filepath := fmt.Sprintf("./data/avatar/%x_%s", hashPrefix, filename)
+	// If the filepath is equal, the hash did not change which means that the file is equal and will not be written to disk again
+	if filepath == filepathBefore {
+		// Stop if file is unchanged
+		log.Trace(fmt.Sprintf("Not writing avatar file: hash unchanged (%s)", filepath))
+		return nil
+	}
 	// Check if the user has a custom avatar
 	if filepathBefore != defaultFilePath {
 		// Remove file from filesystem, ignore errors
@@ -50,16 +59,12 @@ func UploadAvatar(username string, filename string, file multipart.File) error {
 		}
 	}
 	// Create new profile file
-	// generates a unique hash based on the username and filename combination
-	hashPrefix := md5.Sum([]byte(fmt.Sprintf("%s%s", username, filename)))
-	filepath := fmt.Sprintf("./resources/avatar/%x_%s", hashPrefix, filename)
-	var newFile *os.File
-	newFile, err = os.Create(filepath)
+	newFile, err := os.Create(filepath)
 	if err != nil {
-		if err := os.Mkdir("./resources", 0775); err != nil {
+		if err := os.Mkdir("./data", 0775); err != nil {
 			log.Debug("Could not create data directory: likely exists")
 		}
-		if err := os.Mkdir("./resources/avatar", 0775); err != nil {
+		if err := os.Mkdir("./data/avatar", 0775); err != nil {
 			log.Error("Could not upload file: could not create new directory: ", err.Error())
 			return err
 		}
@@ -79,5 +84,6 @@ func UploadAvatar(username string, filename string, file multipart.File) error {
 	if err := database.SetUserAvatarPath(username, filepath); err != nil {
 		return err
 	}
+	log.Trace("Successfully updated avatar")
 	return nil
 }
