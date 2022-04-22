@@ -2,8 +2,9 @@
     import Button,{ Label } from '@smui/button'
     import Dialog,{ Actions,Content,Header,Title } from '@smui/dialog'
     import IconButton from '@smui/icon-button'
+    import Progress from '../../../components/Progress.svelte'
     import { createSnackbar } from '../../../global'
-    import { allPermissions,fetchAllPermissions,loading } from '../main'
+    import { allPermissions,fetchAllPermissions } from '../main'
     import Permission from './Permission.svelte'
 
     // Dialog open / loading booleans
@@ -18,8 +19,7 @@
 
     $: {
         if (open && $allPermissions.length === 0) {
-            $loading = true
-            fetchAllPermissions().then(() => ($loading = false))
+            fetchAllPermissions()
         }
     }
 
@@ -85,6 +85,10 @@
         <IconButton action="close" class="material-icons">close</IconButton>
     </Header>
     <Content id="content">
+        {#if $allPermissions.length == 0}
+            <Progress type="linear" loading={true} />
+            <span>Preparing editor...</span>
+        {/if}
         <div id="permissions">
             {#each $allPermissions as permission (permission.permission)}
                 <Permission
