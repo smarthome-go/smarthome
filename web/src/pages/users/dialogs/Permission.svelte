@@ -61,8 +61,8 @@
             color: var(--clr-text);
         }
 
-        @include mobile {
-            width: 100%;
+        @include widescreen {
+            width: 29%;
         }
     }
     .top {
