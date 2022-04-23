@@ -20,14 +20,14 @@ RUN apk add curl bash && rm -rf /var/cache/apk/*
 
 COPY motd /etc/motd
 
-COPY .ashrc /app/.ashrc
-ENV ENV=/app/.ashrc
+COPY .bashrc /app/.bashrc
+ENV ENV=/app/.bashrc
 
 RUN curl -L https://github.com/MikMuellerDev/homescript-cli/releases/download/v0.5.2-beta/homescript_linux_amd64.tar.gz -o /tmp/homescript
 
-WORKDIR /usr/bin
+WORKDIR /bin
 RUN tar -xvf /tmp/homescript
-RUN chmod +x /usr/bin/homescript
+RUN chmod +x /bin/homescript
 
 RUN chown -R smarthome:smarthome /app
 WORKDIR /app/
