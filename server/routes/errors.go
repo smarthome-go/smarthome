@@ -11,12 +11,12 @@ import (
 
 // If a `404 - not found` error occurs, this page is served, no authentication required
 func notFoundHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNotFound)
 	path := strings.Split(r.URL.Path, "/")
 	if len(path) >= 1 {
 		if path[1] == "api" {
 			// Any subpath under `/api` which was not found which means that a response struct should be returned instead if html
+			w.Header().Set("Content-Type", "application/json")
 			api.Res(w, api.Response{Success: false, Message: "not found", Error: fmt.Sprintf("The url `%s` could not be found", r.URL.Path)})
 			return
 		}
