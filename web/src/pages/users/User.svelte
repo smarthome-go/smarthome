@@ -93,7 +93,7 @@
         }
     }
     #labels {
-        max-width: 7.7rem; // Needed adjustment due to second action button
+        max-width: 7rem; // Needed adjustment due to second action button
         overflow: hidden;
 
         h6 {
