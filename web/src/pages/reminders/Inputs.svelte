@@ -131,7 +131,6 @@
                 clear()
             }}
             disabled={inputName.length === 0 ||
-                !dueDateDirty ||
                 datePickerInvalid}
             touch
             variant="raised"
