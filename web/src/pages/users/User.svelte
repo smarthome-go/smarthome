@@ -11,7 +11,9 @@
     export let primaryColorLight: string
     export let schedulerEnabled: boolean
     export let darkTheme: boolean
+
     export let permissions: string[] = []
+    export let switchPermissions: string[] = []
 
     let editOpen = false
     let permissionsOpen = false
@@ -31,9 +33,8 @@
     />
     <EditPermissions
         {username}
-        {forename}
-        {surname}
         bind:permissions
+        bind:switchPermissions
         bind:open={permissionsOpen}
     />
     <div id="left">

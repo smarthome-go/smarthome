@@ -67,19 +67,21 @@ func NewRouter() *mux.Router {
 	// Customization for the user
 	// Profile picture upload test
 	r.HandleFunc("/api/user/avatar/personal", mdl.ApiAuth(api.GetAvatar)).Methods("GET")
-	r.HandleFunc("/api/user/avatar/user/{username}", mdl.ApiAuth(api.GetUserAvatar)).Methods("GET")
+	r.HandleFunc("/api/user/avatar/user/{username}", mdl.ApiAuth(api.GetForeignUserAvatar)).Methods("GET")
 	r.HandleFunc("/api/user/avatar/upload", mdl.ApiAuth(api.HandleAvatarUpload)).Methods("POST")
 	r.HandleFunc("/api/user/avatar/delete", mdl.ApiAuth(api.DeleteAvatar)).Methods("DELETE")
 
 	// Permissions
-	r.HandleFunc("/api/user/permissions/personal", mdl.ApiAuth(api.GetUserPermissions))
 	r.HandleFunc("/api/user/permissions/add", mdl.ApiAuth(mdl.Perm(api.AddUserPermission, database.PermissionManageUsers))).Methods("POST")
 	r.HandleFunc("/api/user/permissions/delete", mdl.ApiAuth(mdl.Perm(api.RemoveUserPermission, database.PermissionManageUsers))).Methods("DELETE")
-	r.HandleFunc("/api/permissions/list", api.ListPermissions).Methods("GET")
+	r.HandleFunc("/api/permissions/list/all", api.ListPermissions).Methods("GET")
+	r.HandleFunc("/api/user/permissions/list/personal", mdl.ApiAuth(api.GetCurrentUserPermissions)).Methods("GET")
+	r.HandleFunc("/api/user/permissions/list/user/{username}", mdl.ApiAuth(api.GetForeignUserPermissions)).Methods("GET")
 
 	// Switch Permissions
-	r.HandleFunc("/api/user/permissions/switch/add", mdl.ApiAuth(mdl.Perm(api.AddSwitchPermission, database.PermissionManageUsers))).Methods("PUT")
+	r.HandleFunc("/api/user/permissions/switch/add", mdl.ApiAuth(mdl.Perm(api.AddSwitchPermission, database.PermissionManageUsers))).Methods("POST")
 	r.HandleFunc("/api/user/permissions/switch/delete", mdl.ApiAuth(mdl.Perm(api.RemoveSwitchPermission, database.PermissionManageUsers))).Methods("DELETE")
+	r.HandleFunc("/api/user/permissions/switch/list/user/{username}", mdl.ApiAuth(mdl.Perm(api.GetForeignUserSwitchPermissions, database.PermissionManageUsers))).Methods("GET")
 
 	// Creating and removing users
 	r.HandleFunc("/api/user/manage/list", mdl.ApiAuth(mdl.Perm(api.ListUsers, database.PermissionManageUsers))).Methods("GET")

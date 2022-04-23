@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gorilla/mux"
+
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/core/event"
 	"github.com/MikMuellerDev/smarthome/core/user"
@@ -20,9 +22,9 @@ type UserSwitchPermissionRequest struct {
 	Switch   string `json:"switch"`
 }
 
-// Returns a list of strings which resemble permissions of the currently logged in user, authentication required
+// Returns a list of strings which represent permissions of the currently logged in user, admin authentication required
 // Request: empty | Response: `["a", "b", "c"]`
-func GetUserPermissions(w http.ResponseWriter, r *http.Request) {
+func GetCurrentUserPermissions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
@@ -30,14 +32,57 @@ func GetUserPermissions(w http.ResponseWriter, r *http.Request) {
 	}
 	permissions, err := database.GetUserPermissions(username)
 	if err != nil {
-		log.Error("Exception in getUserPermissions: database failure: ", err.Error())
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "database error", Error: "database error"})
 		return
 	}
 	if err := json.NewEncoder(w).Encode(permissions); err != nil {
-		log.Error(err.Error())
+		log.Error("Failed to encode response: ", err.Error())
 		Res(w, Response{Success: false, Message: "could not get user permissions", Error: "failed to encode response"})
+	}
+}
+
+// Returns a list of strings which represent the permissions of an arbitrary user, admin authentication required
+func GetForeignUserPermissions(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	vars := mux.Vars(r)
+	username, ok := vars["username"]
+	if !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "no username provided", Error: "no username provided"})
+		return
+	}
+	permissions, err := database.GetUserPermissions(username)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "database error", Error: "database error"})
+		return
+	}
+	if err := json.NewEncoder(w).Encode(permissions); err != nil {
+		log.Error("Failed to encode response: ", err.Error())
+		Res(w, Response{Success: false, Message: "could not get user permissions", Error: "failed to encode response"})
+	}
+}
+
+// Returns a list of strings which represent the switch permissions of an arbitrary user, admin authentication required
+func GetForeignUserSwitchPermissions(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	vars := mux.Vars(r)
+	username, ok := vars["username"]
+	if !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "no username provided", Error: "no username provided"})
+		return
+	}
+	permissions, err := database.GetUserSwitchPermissions(username)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "database error", Error: "database error"})
+		return
+	}
+	if err := json.NewEncoder(w).Encode(permissions); err != nil {
+		log.Error("Failed to encode response: ", err.Error())
+		Res(w, Response{Success: false, Message: "could not get user switch permissions", Error: "failed to encode response"})
 	}
 }
 

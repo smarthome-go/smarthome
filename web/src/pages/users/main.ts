@@ -19,25 +19,43 @@ export interface Permission {
   description: string
 }
 
+export interface Switch {
+  id: string
+  name: string
+  powerOn: boolean
+  watts: number
+}
+
 export interface UserData {
   user: User
   permissions: string[]
+  switchPermissions: string[]
 }
 
-export const users: Writable<UserData[]> = writable([])
-
 export const loading: Writable<boolean> = writable(false)
-
+export const users: Writable<UserData[]> = writable([])
 export const allPermissions: Writable<Permission[]> = writable([])
-
+export const allSwitches: Writable<Switch[]> = writable([])
+export const allSwitchesFetched: Writable<boolean> = writable(false)
 export async function fetchAllPermissions() {
   try {
-    const res = await (await fetch('/api/permissions/list')).json()
+    const res = await (await fetch('/api/permissions/list/all')).json()
     if (res.success !== undefined && !res.success) throw Error(res.error)
     allPermissions.set(res)
-  }catch(err) {
-    get(createSnackbar)(`Could not fetch system permissions: ${err}`)
+  } catch (err) {
+    get(createSnackbar)(`Could not load system permissions: ${err}`)
   }
+}
+
+export async function fetchAllSwitches() {
+  try {
+    const res = await (await fetch('/api/switch/list')).json()
+    if (res.success !== undefined && !res.success) throw Error(res.error)
+    allSwitches.set(res)
+  } catch (err) {
+    get(createSnackbar)(`Could not load system switches: ${err}`)
+  }
+  allSwitchesFetched.set(true)
 }
 
 export default new App({

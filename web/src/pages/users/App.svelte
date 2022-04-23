@@ -20,20 +20,25 @@
         } catch (err) {
             $createSnackbar(`Failed to load permissions: ${err}`)
         }
-       $loading = false
+        $loading = false
     }
 
     async function loadUsers() {
-       $loading = true
+        $loading = true
         try {
             const res = await (await fetch('/api/user/manage/list')).json()
             if (res.success !== undefined && !res.success)
                 throw Error(res.error)
-            $users = res
+            for (let user of res) {
+                $users = [
+                    ...$users,
+                    { user, permissions: [], switchPermissions: [] },
+                ]
+            }
         } catch (err) {
             $createSnackbar(`Could not load users: ${err}`)
         }
-       $loading = false
+        $loading = false
     }
 
     async function addUser(username: string, password: string) {
@@ -51,7 +56,6 @@
                 ...$users,
                 {
                     user: {
-
                         darkTheme: true,
                         primaryColorDark: '#88FF70',
                         primaryColorLight: '#2E7D32',
@@ -60,8 +64,9 @@
                         surname: 'Surname',
                         username: username,
                     },
-                    permissions: []
-                }
+                    permissions: [],
+                    switchPermissions: [],
+                },
             ]
         } catch (err) {
             $createSnackbar(`Could not create user: ${err}`)
@@ -93,7 +98,11 @@
         <div id="users">
             {#each $users as user (user.user.username)}
                 <div>
-                    <User {...user.user} bind:permissions={user.permissions} />
+                    <User
+                        {...user.user}
+                        bind:permissions={user.permissions}
+                        bind:switchPermissions={user.switchPermissions}
+                    />
                 </div>
             {/each}
         </div>

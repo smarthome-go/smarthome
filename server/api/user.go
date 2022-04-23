@@ -151,7 +151,7 @@ func GetUserDetails(w http.ResponseWriter, r *http.Request) {
 // Returns a list of users and their metadata, admin auth required
 func ListUsers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	users, err := database.ListUsersWithPermission()
+	users, err := database.ListUsers()
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to list users", Error: "database failure"})

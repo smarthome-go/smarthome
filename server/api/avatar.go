@@ -127,7 +127,7 @@ func GetAvatar(w http.ResponseWriter, r *http.Request) {
 }
 
 // Returns the avatar of any given user. Used for the user management panel
-func GetUserAvatar(w http.ResponseWriter, r *http.Request) {
+func GetForeignUserAvatar(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username, ok := vars["username"]
 	if !ok {

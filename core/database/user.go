@@ -30,7 +30,6 @@ type User struct {
 	DarkTheme         bool   `json:"darkTheme"`
 }
 
-// Used in the frontend, includes most of the important details of the current user
 type UserDetails struct {
 	User        User     `json:"user"`
 	Permissions []string `json:"permissions"`
@@ -96,46 +95,46 @@ func ListUsers() ([]User, error) {
 	return userList, nil
 }
 
-// Lists users which are currently in the Database
-// Returns an empty list with an error when failing
-func ListUsersWithPermission() ([]UserDetails, error) {
-	query := `
-	SELECT
-	Username, Forename, Surname, PrimaryColorDark, PrimaryColorLight, SchedulerEnabled, DarkTheme
-	FROM user`
-	res, err := db.Query(query)
-	if err != nil {
-		log.Error("Could not list users. Failed to execute query: ", err.Error())
-		return nil, err
-	}
-	defer res.Close()
-	userList := make([]UserDetails, 0)
-	for res.Next() {
-		var user UserDetails
-		err := res.Scan(
-			&user.User.Username,
-			&user.User.Forename,
-			&user.User.Surname,
-			&user.User.PrimaryColorDark,
-			&user.User.PrimaryColorLight,
-			&user.User.SchedulerEnabled,
-			&user.User.DarkTheme,
-		)
-		if err != nil {
-			log.Error("Failed to scan user values from database results: ", err.Error())
-			return nil, err
-		}
-		// Query the user's permissions
-		permissions, err := GetUserPermissions(user.User.Username)
-		if err != nil {
-			return nil, err
-		}
-		// Set permissions
-		user.Permissions = permissions
-		userList = append(userList, user)
-	}
-	return userList, nil
-}
+// // Lists users which are currently in the Database
+// // Returns an empty list with an error when failing
+// func ListUsersWithPermission() ([]UserDetails, error) {
+// 	query := `
+// 	SELECT
+// 	Username, Forename, Surname, PrimaryColorDark, PrimaryColorLight, SchedulerEnabled, DarkTheme
+// 	FROM user`
+// 	res, err := db.Query(query)
+// 	if err != nil {
+// 		log.Error("Could not list users. Failed to execute query: ", err.Error())
+// 		return nil, err
+// 	}
+// 	defer res.Close()
+// 	userList := make([]UserDetails, 0)
+// 	for res.Next() {
+// 		var user UserDetails
+// 		err := res.Scan(
+// 			&user.User.Username,
+// 			&user.User.Forename,
+// 			&user.User.Surname,
+// 			&user.User.PrimaryColorDark,
+// 			&user.User.PrimaryColorLight,
+// 			&user.User.SchedulerEnabled,
+// 			&user.User.DarkTheme,
+// 		)
+// 		if err != nil {
+// 			log.Error("Failed to scan user values from database results: ", err.Error())
+// 			return nil, err
+// 		}
+// 		// Query the user's permissions
+// 		permissions, err := GetUserPermissions(user.User.Username)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		// Set permissions
+// 		user.Permissions = permissions
+// 		userList = append(userList, user)
+// 	}
+// 	return userList, nil
+// }
 
 // Creates a new user based on a the supplied `User` struct
 // Won't panic if user already exists, but will change password
