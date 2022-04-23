@@ -41,7 +41,7 @@ version:
 	python3 update_version.py
 
 # Change version on build
-release: cleanall version test build docker
+release: cleanall version test build docker docker-push
 
 vite-dev:
 	cd web && npm run dev
@@ -88,11 +88,15 @@ docker-prepare:
 	rsync -rv web/dist docker/app/web/
 	cp smarthome docker/app/
 
+docker-push:
+	docker push mikmuellerdev/smarthome:$(version)
+	docker push mikmuellerdev/smarthome:latest
+
 docker: cleanall web docker-prepare
-	cd docker && docker build . -t mikmuellerdev/smarthome:$(version) --network=host
+	cd docker && docker build . -t mikmuellerdev/smarthome:$(version) -t mikmuellerdev/smarthome:latest --network=host
 
 sudo-docker: cleanall web docker-prepare
-	cd docker && sudo docker build . -t mikmuellerdev/smarthome:$(version) --network=host
+	cd docker && sudo docker build . -t mikmuellerdev/smarthome:$(version) -t mikmuellerdev/smarthome:latest --network=host
 
 web: cleanweb
 	cd web && npm run build
