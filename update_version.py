@@ -38,7 +38,7 @@ with open(main_go_path, "w") as main_go:
 # The Docker motd
 with open(docker_motd_path, "r") as docker_motd:
     content = docker_motd.read()
-    old_version = content.split("Version  : ")[1].split("\n")[0]
+    old_version = content.split("Version   : ")[1].split("\n")[0]
     print(f"Found old version in {docker_motd_path}:", old_version)
 
 with open(docker_motd_path, "w") as main_go:
