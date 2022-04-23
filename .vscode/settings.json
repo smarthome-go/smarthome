@@ -6,7 +6,9 @@
         "mysql",
         "osman",
         "smarthome",
-        "vite"
+        "smui",
+        "vite",
+        "webp"
     ],
     
     // Should only be enabled on a Desktop due to power draw
