@@ -210,6 +210,7 @@
                     <SwitchPermission
                         id={switchItem.id}
                         name={switchItem.name}
+                        roomId={switchItem.roomId}
                         active={switchPermissions.includes(switchItem.id)}
                         grantFunc={grantSwitchPermission}
                         removeFunc={removeSwitchPermission}

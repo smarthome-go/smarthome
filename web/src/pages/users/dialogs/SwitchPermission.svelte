@@ -5,6 +5,7 @@
     import { sleep } from '../../../global'
 
     export let name: string
+    export let roomId: string
     export let id: string
 
     export let active // Shows if the user currently has the permission
@@ -33,7 +34,7 @@
         <h6>{name}</h6>
         <div>
             <Progress type="circular" bind:loading />
-            <pre>{id}</pre>
+            <pre><span>{id}</span>/{roomId}</pre>
         </div>
     </div>
     <FormField>
@@ -83,6 +84,10 @@
                 background-color: var(--clr-height-3-6);
                 padding: 0.1rem 0.2rem;
                 border-radius: 0.1rem;
+
+                span {
+                    color: var(--clr-text);
+                }
             }
         }
     }

@@ -22,6 +22,7 @@ export interface Permission {
 export interface Switch {
   id: string
   name: string
+  roomId: string
   powerOn: boolean
   watts: number
 }
