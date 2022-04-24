@@ -1,6 +1,6 @@
 <script lang="ts">
     import Button,{ Label } from '@smui/button'
-    import Dialog,{ Actions,Content,Title } from '@smui/dialog'
+    import Dialog,{ Actions,Content,InitialFocus,Title } from '@smui/dialog'
     import Textfield from '@smui/textfield'
     import CharacterCounter from '@smui/textfield/character-counter'
     export let open = false
@@ -51,8 +51,12 @@
         />
     </Content>
     <Actions>
+        <Button on:click={() => {}}>
+            <Label>Cancel</Label>
+        </Button>
         <Button
             disabled={usernameInvalid || password === ''}
+            use={[InitialFocus]}
             on:click={() => {
                 onAdd(username, password)
                 username = ''
@@ -60,9 +64,6 @@
             }}
         >
             <Label>Create</Label>
-        </Button>
-        <Button on:click={() => {}}>
-            <Label>Cancel</Label>
         </Button>
     </Actions>
 </Dialog>

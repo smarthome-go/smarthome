@@ -1,6 +1,12 @@
 <script lang="ts">
     import Button,{ Label } from '@smui/button'
-    import Dialog,{ Actions,Content,Header,Title } from '@smui/dialog'
+    import Dialog,{
+    Actions,
+    Content,
+    Header,
+    InitialFocus,
+    Title
+    } from '@smui/dialog'
     import FormField from '@smui/form-field'
     import IconButton from '@smui/icon-button'
     import Switch from '@smui/switch'
@@ -188,11 +194,11 @@
             irreversible, do you want to proceed?
         </Content>
         <Actions>
-            <Button>
-                <Label>Cancel</Label>
-            </Button>
             <Button on:click={deleteUser}>
                 <Label>Delete</Label>
+            </Button>
+            <Button use={[InitialFocus]}>
+                <Label>Cancel</Label>
             </Button>
         </Actions>
     </Dialog>

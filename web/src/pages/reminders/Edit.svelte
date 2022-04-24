@@ -1,6 +1,6 @@
 <script lang="ts">
     import Button,{ Label } from '@smui/button'
-    import Dialog,{ Actions,Content,Header,Title } from '@smui/dialog'
+    import Dialog,{ Actions,Content,Header,InitialFocus,Title } from '@smui/dialog'
     import IconButton from '@smui/icon-button'
     import Inputs from './Inputs.svelte'
 
@@ -82,11 +82,11 @@
         />
     </Content>
     <Actions>
-        <Button disabled={datePickerInvalid} action="modify">
-            <Label>Modify</Label>
-        </Button>
         <Button defaultAction action="cancel">
             <Label>Cancel</Label>
+        </Button>
+        <Button use={[InitialFocus]} disabled={datePickerInvalid} action="modify">
+            <Label>Modify</Label>
         </Button>
     </Actions>
 </Dialog>
