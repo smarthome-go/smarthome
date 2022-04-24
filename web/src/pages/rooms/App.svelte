@@ -89,6 +89,7 @@
 
     #tabs {
         background-color: var(--clr-height-0-8);
+        padding-right: 1rem;
         min-height: 48px;
         position: relative;
         display: flex;

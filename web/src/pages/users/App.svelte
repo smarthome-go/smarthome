@@ -1,12 +1,12 @@
 <script lang="ts">
-    import Button, { Icon, Label } from '@smui/button'
+    import Button,{ Icon,Label } from '@smui/button'
     import IconButton from '@smui/icon-button'
     import { onMount } from 'svelte'
     import Progress from '../../components/Progress.svelte'
     import { createSnackbar } from '../../global'
     import Page from '../../Page.svelte'
     import AddUser from './dialogs/AddUser.svelte'
-    import { allPermissions, loading, users } from './main'
+    import { allPermissions,loading,users } from './main'
     import User from './User.svelte'
 
     let addUserShow = () => {}
@@ -79,7 +79,6 @@
 </script>
 
 <Page>
-    <Progress id="loader" bind:loading={$loading} />
     <div id="container">
         <div id="header">
             <h6>User Management</h6>
@@ -100,6 +99,7 @@
                 </Button>
             </div>
         </div>
+        <Progress id="loader" bind:loading={$loading} />
         <div id="users">
             {#each $users as user (user.user.username)}
                 <div>
@@ -120,8 +120,9 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin: 1rem 2rem;
+        padding: .1rem 1.3rem;
         box-sizing: border-box;
+        background-color: var(--clr-height-1-2);
 
         @include mobile {
             flex-wrap: wrap;
