@@ -23,7 +23,7 @@ COPY motd /etc/motd
 COPY .bashrc /app/.bashrc
 ENV ENV=/app/.bashrc
 
-RUN curl -L https://github.com/MikMuellerDev/homescript-cli/releases/download/v0.5.2-beta/homescript_linux_amd64.tar.gz -o /tmp/homescript
+RUN curl -L https://github.com/MikMuellerDev/homescript-cli/releases/download/v0.6.0-beta/homescript_linux_amd64.tar.gz -o /tmp/homescript
 
 WORKDIR /bin
 RUN tar -xvf /tmp/homescript
