@@ -4,10 +4,11 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/MikMuellerDev/homescript/homescript"
 	hmsError "github.com/MikMuellerDev/homescript/homescript/error"
 	"github.com/MikMuellerDev/smarthome/core/database"
-	"github.com/sirupsen/logrus"
 )
 
 var log *logrus.Logger

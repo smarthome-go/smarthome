@@ -12,7 +12,7 @@ require (
 )
 
 require (
-	github.com/MikMuellerDev/homescript v0.2.5-beta
+	github.com/MikMuellerDev/homescript v0.4.0-beta
 	github.com/lnquy/cron v1.1.1
 )
 
