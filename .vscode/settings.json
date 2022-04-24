@@ -31,5 +31,20 @@
 
     // Override for Svelte extension
     "prettier.semi": false,
-    "prettier.tabWidth": 4
+    "prettier.tabWidth": 4,
+    "sqltools.connections": [
+        {
+            "mysqlOptions": {
+                "authProtocol": "default"
+            },
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 3313,
+            "driver": "MariaDB",
+            "name": "Smarthome",
+            "database": "smarthome",
+            "username": "smarthome",
+            "password": "password"
+        }
+    ]
 }
