@@ -173,7 +173,7 @@
         <IconButton action="close" class="material-icons">close</IconButton>
     </Header>
     <Content id="content">
-        <div id="tabs" class="mdc-elevation--z8">
+        <div id="tabs">
             <TabBar
                 tabs={permissions.includes('setPower')
                     ? ['Permissions', 'Switch Permissions']
