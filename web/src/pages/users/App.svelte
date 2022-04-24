@@ -5,7 +5,7 @@
     import Progress from '../../components/Progress.svelte'
     import { createSnackbar } from '../../global'
     import Page from '../../Page.svelte'
-    import AddUser from './AddUser.svelte'
+    import AddUser from './dialogs/AddUser.svelte'
     import { allPermissions,loading,users } from './main'
     import User from './User.svelte'
 
@@ -29,12 +29,7 @@
             const res = await (await fetch('/api/user/manage/list')).json()
             if (res.success !== undefined && !res.success)
                 throw Error(res.error)
-            for (let user of res) {
-                $users = [
-                    ...$users,
-                    { user, permissions: [], switchPermissions: [] },
-                ]
-            }
+            $users = res.map(u => Object.create({user: u, permissions: [], switchPermissions: []}) )
         } catch (err) {
             $createSnackbar(`Could not load users: ${err}`)
         }
@@ -88,7 +83,11 @@
                     class="material-icons"
                     on:click={loadUsers}>refresh</IconButton
                 >
-                <AddUser onAdd={addUser} bind:show={addUserShow} />
+                <AddUser
+                    onAdd={addUser}
+                    bind:show={addUserShow}
+                    blacklist={$users.map((u) => u.user.username)}
+                />
                 <Button on:click={addUserShow} variant="raised">
                     <Label>Add User</Label>
                     <Icon class="material-icons">person_add</Icon>
