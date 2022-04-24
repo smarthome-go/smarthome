@@ -1,6 +1,6 @@
 <script lang="ts">
-    import Button, { Label } from '@smui/button'
-    import Dialog, { Actions, Content, Title } from '@smui/dialog'
+    import Button,{ Label } from '@smui/button'
+    import Dialog,{ Actions,Content,Title } from '@smui/dialog'
     import Textfield from '@smui/textfield'
     import CharacterCounter from '@smui/textfield/character-counter'
     export let open = false
@@ -8,10 +8,12 @@
     export let username = ''
     let usernameDirty = false
     export let password = ''
+    let passwordDirty = false
 
     export function show() {
         open = true
         usernameDirty = false
+        passwordDirty = false
     }
 
     // Will be used in order to show if a username is already taken
@@ -32,20 +34,25 @@
         <Textfield
             bind:value={username}
             bind:dirty={usernameDirty}
-            label="Username"
-            input$maxlength={20}
-            required
             bind:invalid={usernameInvalid}
+            input$maxlength={20}
+            label="Username"
+            required
         >
             <svelte:fragment slot="helper">
                 <CharacterCounter>0 / 20</CharacterCounter>
             </svelte:fragment>
         </Textfield>
-        <Textfield bind:value={password} label="Password" />
+        <Textfield
+            bind:value={password}
+            bind:dirty={passwordDirty}
+            label="Password"
+            required
+        />
     </Content>
     <Actions>
         <Button
-            disabled={usernameInvalid}
+            disabled={usernameInvalid || password === ''}
             on:click={() => {
                 onAdd(username, password)
                 username = ''

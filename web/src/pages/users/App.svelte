@@ -1,12 +1,12 @@
 <script lang="ts">
-    import Button,{ Icon,Label } from '@smui/button'
+    import Button, { Icon, Label } from '@smui/button'
     import IconButton from '@smui/icon-button'
     import { onMount } from 'svelte'
     import Progress from '../../components/Progress.svelte'
     import { createSnackbar } from '../../global'
     import Page from '../../Page.svelte'
     import AddUser from './dialogs/AddUser.svelte'
-    import { allPermissions,loading,users } from './main'
+    import { allPermissions, loading, users } from './main'
     import User from './User.svelte'
 
     let addUserShow = () => {}
@@ -29,7 +29,13 @@
             const res = await (await fetch('/api/user/manage/list')).json()
             if (res.success !== undefined && !res.success)
                 throw Error(res.error)
-            $users = res.map(u => Object.create({user: u, permissions: [], switchPermissions: []}) )
+            $users = res.map((u) =>
+                Object.create({
+                    user: u,
+                    permissions: [],
+                    switchPermissions: [],
+                })
+            )
         } catch (err) {
             $createSnackbar(`Could not load users: ${err}`)
         }
