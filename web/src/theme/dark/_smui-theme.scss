@@ -1,13 +1,12 @@
 @use 'sass:color';
 
 $text-color: #fff;
-@use '@material/theme/index' as theme with (
-  $background: #121212,
+@use '@material/theme/index'as theme with ($background: #121212,
   $surface: #121212,
   $on-surface: color.change($text-color, $alpha: 0.87),
   $error: #cf6679,
 );
-@use '@material/theme/color-palette' as colors;
+@use '@material/theme/color-palette'as colors;
 @use '../fixes';
 
 html,
@@ -25,4 +24,5 @@ body {
   --clr-success: #{colors.$light-green-a200};
   --clr-priority-low: #{colors.$grey-600};
   --clr-priority-medium: #{colors.$light-blue-a200};
+  color-scheme: dark;
 }
