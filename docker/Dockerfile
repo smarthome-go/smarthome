@@ -1,13 +1,11 @@
 FROM alpine:3
 
 LABEL author="MikMuellerDev"
-LABEL version="0.0.23-beta"
+LABEL version="0.0.24-beta"
 
 COPY ./app /app
 
-RUN addgroup smarthome
-
-RUN adduser \
+RUN addgroup smarthome && adduser \
     --disabled-password \
     --gecos "" \
     --home /app \
@@ -19,15 +17,12 @@ RUN adduser \
 RUN apk add curl bash && rm -rf /var/cache/apk/*
 
 COPY motd /etc/motd
-
 COPY .bashrc /app/.bashrc
 ENV ENV=/app/.bashrc
 
-RUN curl -L https://github.com/MikMuellerDev/homescript-cli/releases/download/v0.6.0-beta/homescript_linux_amd64.tar.gz -o /tmp/homescript
-
+RUN curl -L https://github.com/MikMuellerDev/homescript-cli/releases/download/v0.6.0-beta/homescript_linux_amd64.tar.gz -o /tmp/homescript.tar.gz
 WORKDIR /bin
-RUN tar -xvf /tmp/homescript
-RUN chmod +x /bin/homescript
+RUN tar -xvf /tmp/homescript.tar.gz && chmod +x /bin/homescript && rm -rf /tmp/homescript.tar.gz
 
 RUN chown -R smarthome:smarthome /app
 WORKDIR /app/
