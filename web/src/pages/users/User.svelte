@@ -86,6 +86,7 @@
     }
     #left {
         display: flex;
+        align-items: center;
         gap: 1rem;
     }
     #actions {
@@ -114,8 +115,9 @@
     }
     img {
         border-radius: 50%;
-        width: 4rem;
-        height: 4rem;
+        width: 3rem;
+        height: 3rem;
+        margin-left: .1rem;
 
         @include mobile {
             width: 3rem;
