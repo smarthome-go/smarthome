@@ -124,18 +124,24 @@
         box-sizing: border-box;
         background-color: var(--clr-height-1-2);
 
-        @include mobile {
-            flex-wrap: wrap;
-        }
-
         h6 {
             margin: 0.5rem 0;
+
+            @include mobile {
+                display: none;
+            }
         }
 
         div {
             display: flex;
             align-items: center;
             gap: 1rem;
+
+            @include mobile {
+                flex-direction: row-reverse;
+                justify-content: space-between;
+                width: 100%;
+            }
         }
     }
     #users {
