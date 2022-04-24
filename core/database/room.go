@@ -97,7 +97,7 @@ func ListRooms() ([]Room, error) {
 }
 
 func listPersonalRoomsWithoutMetadata(username string) ([]Room, error) {
-	query := `
+	query, err := db.Prepare(`
 	SELECT DISTINCT
 	room.Id, room.Name, room.Description
 	FROM room
@@ -105,8 +105,13 @@ func listPersonalRoomsWithoutMetadata(username string) ([]Room, error) {
 	ON switch.RoomId=room.Id
 	JOIN hasSwitchPermission
 	ON switch.Id=hasSwitchPermission.Switch
-	`
-	res, err := db.Query(query)
+	WHERE username=?
+	`)
+	if err != nil {
+		log.Error("Failed to list personal rooms: preparing query failed: ", err.Error())
+		return nil, err
+	}
+	res, err := query.Query(username)
 	if err != nil {
 		log.Error("Failed to list personal rooms: executing query failed: ", err.Error())
 		return nil, err
