@@ -151,7 +151,7 @@
                 })
             ).json()
             if (!res.success) throw Error(res.error)
-            switchPermissions = permissions.filter((s) => s !== permission)
+            switchPermissions = switchPermissions.filter((s) => s !== permission)
         } catch (err) {
             $createSnackbar(`Failed to remove switch-permission: ${err}`)
             throw Error()
