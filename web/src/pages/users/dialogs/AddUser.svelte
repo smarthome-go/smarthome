@@ -1,6 +1,6 @@
 <script lang="ts">
-    import Button,{ Label } from '@smui/button'
-    import Dialog,{ Actions,Content,Title } from '@smui/dialog'
+    import Button, { Label } from '@smui/button'
+    import Dialog, { Actions, Content, Title } from '@smui/dialog'
     import Textfield from '@smui/textfield'
     import CharacterCounter from '@smui/textfield/character-counter'
     export let open = false
@@ -8,15 +8,22 @@
     export let username = ''
     let usernameDirty = false
     export let password = ''
-    let passwordDirty = false
 
     export function show() {
         open = true
         usernameDirty = false
-        passwordDirty = false
     }
 
+    // Will be used in order to show if a username is already taken
+    export let blacklist: string[]
+
     export let onAdd = (_username: string, _password: string) => {}
+
+    let usernameInvalid = false
+    $: usernameInvalid =
+        (usernameDirty && username.length == 0) ||
+        username.includes(' ') ||
+        blacklist.includes(username)
 </script>
 
 <Dialog bind:open aria-labelledby="title" aria-describedby="content">
@@ -28,22 +35,17 @@
             label="Username"
             input$maxlength={20}
             required
-            invalid={(usernameDirty && username.length == 0) || username.includes(' ')}
+            bind:invalid={usernameInvalid}
         >
             <svelte:fragment slot="helper">
                 <CharacterCounter>0 / 20</CharacterCounter>
             </svelte:fragment>
         </Textfield>
-        <Textfield
-            bind:dirty={passwordDirty}
-            bind:value={password}
-            label="Password"
-            required
-        />
+        <Textfield bind:value={password} label="Password" />
     </Content>
     <Actions>
         <Button
-            disabled={username.length == 0 || username.includes(' ')}
+            disabled={usernameInvalid}
             on:click={() => {
                 onAdd(username, password)
                 username = ''
