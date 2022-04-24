@@ -151,7 +151,9 @@
                 })
             ).json()
             if (!res.success) throw Error(res.error)
-            switchPermissions = switchPermissions.filter((s) => s !== permission)
+            switchPermissions = switchPermissions.filter(
+                (s) => s !== permission
+            )
         } catch (err) {
             $createSnackbar(`Failed to remove switch-permission: ${err}`)
             throw Error()
@@ -173,7 +175,9 @@
     <Content id="content">
         <div id="tabs" class="mdc-elevation--z8">
             <TabBar
-                tabs={['Permissions', 'Switch Permissions']}
+                tabs={permissions.includes('setPower')
+                    ? ['Permissions', 'Switch Permissions']
+                    : ['Permissions']}
                 let:tab={mode}
                 bind:active={currentMode}
                 key={(tab) => tab}
@@ -182,6 +186,15 @@
                     <Label>{mode}</Label>
                 </Tab>
             </TabBar>
+            <IconButton
+                title="Refresh"
+                class="material-icons"
+                on:click={() => {
+                    currentMode === 'Permissions'
+                        ? fetchUserPermissions()
+                        : fetchUserSwitchPermissions()
+                }}>refresh</IconButton
+            >
         </div>
         {#if currentMode == 'Permissions'}
             {#if $allPermissions.length == 0 || !permissionsFetched}
@@ -227,6 +240,7 @@
 </Dialog>
 
 <style lang="scss">
+    @use '../../../mixins' as *;
     #permissions,
     #switch-permissions {
         display: flex;
@@ -236,5 +250,11 @@
 
     #tabs {
         margin-bottom: 1rem;
+        display: flex;
+        
+        @include mobile {
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
     }
 </style>
