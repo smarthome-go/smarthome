@@ -3,7 +3,7 @@
     import Tab,{ Label } from '@smui/tab'
     import TabBar from '@smui/tab-bar'
     import Progress from '../../components/Progress.svelte'
-    import { createSnackbar,sleep } from '../../global'
+    import { createSnackbar,hasPermission,sleep } from '../../global'
     import Page from '../../Page.svelte'
     import Switch from './Switch.svelte'
 
@@ -69,6 +69,12 @@
                 </Tab>
             </TabBar>
         {/await}
+        {#if hasPermission('modifyServerConfig')}
+            <IconButton class="material-icons" title="Edit Rooms"
+                >edit</IconButton
+            >
+            <IconButton class="material-icons" title="Add Room">add</IconButton>
+        {/if}
         <IconButton class="material-icons" on:click={() => loadRooms(true)}
             >refresh</IconButton
         >
@@ -79,8 +85,21 @@
             {#each currentRoom !== undefined ? currentRoom.switches : [] as sw (sw.id)}
                 <Switch bind:checked={sw.powerOn} id={sw.id} label={sw.name} />
             {/each}
+            {#if hasPermission('modifyServerConfig')}
+                <div id="add-switch">
+                    <Label>Add Switch</Label>
+                    <IconButton class="material-icons">add</IconButton>
+                </div>
+            {/if}
         </div>
-        <div id="cameras" class="mdc-elevation--z1" />
+        <div id="cameras" class="mdc-elevation--z1">
+            {#if hasPermission('modifyServerConfig')}
+                <div id="add-camera">
+                    <Label>Add Camera</Label>
+                    <IconButton class="material-icons">add</IconButton>
+                </div>
+            {/if}
+        </div>
     </div>
 </Page>
 
@@ -148,5 +167,16 @@
             min-height: 100%;
             width: 20rem;
         }
+    }
+    #add-switch,
+    #add-camera {
+        background-color: var(--clr-height-1-3);
+        border-radius: 0.3rem;
+        width: 15rem;
+        height: 3.3rem;
+        padding: 0.5rem 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
 </style>

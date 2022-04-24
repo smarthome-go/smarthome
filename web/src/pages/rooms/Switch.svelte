@@ -1,7 +1,8 @@
 <script lang="ts">
+    import IconButton from '@smui/icon-button'
     import Switch from '@smui/switch'
-    import { createSnackbar, sleep } from '../../global'
     import Progress from '../../components/Progress.svelte'
+    import { createSnackbar,hasPermission,sleep } from '../../global'
 
     export let id: string
     export let label: string
@@ -13,17 +14,23 @@
     async function toggle(event: CustomEvent<{ selected: boolean }>) {
         requests++
         try {
-            const res = await (await fetch('/api/power/set', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    switch: id,
-                    powerOn: event.detail.selected,
-                }),
-            })).json()
+            const res = await (
+                await fetch('/api/power/set', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        switch: id,
+                        powerOn: event.detail.selected,
+                    }),
+                })
+            ).json()
             if (!res.success) throw Error()
         } catch {
-            $createSnackbar(`Failed to set switch '${label}' to ${event.detail.selected ? 'on' : 'off'}`)
+            $createSnackbar(
+                `Failed to set switch '${label}' to ${
+                    event.detail.selected ? 'on' : 'off'
+                }`
+            )
         }
         await sleep(500)
         requests--
@@ -37,18 +44,24 @@
     </div>
     <div class="right">
         <Progress type="circular" bind:loading />
+        {#if hasPermission('modifyServerConfig')}
+            <IconButton class="material-icons" title="Edit Switch"
+                >edit</IconButton
+            >
+        {/if}
     </div>
 </div>
 
 <style lang="scss">
     .switch {
         background-color: var(--clr-height-1-3);
-        border-radius: .3rem;
+        border-radius: 0.3rem;
         min-width: 15rem;
-        height: min-content;
-        padding: .5rem;
+        height: 3.3rem;
+        padding: 0.5rem;
         display: flex;
         justify-content: space-between;
+        align-items: center;
 
         & > * {
             display: flex;
