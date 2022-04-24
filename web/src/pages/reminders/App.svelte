@@ -41,17 +41,20 @@
                 })
             ).json()
             if (!res.success) throw Error(`request error: ${res.error}`)
-            $reminders = [...$reminders, {
-                id: res.id,
-                createdDate: new Date().getTime(),
-                 description,
-                 dueDate: dueDate.getTime(),
-                 name: name,
-                 owner: $data.userData.user.username,
-                 priority,
-                 userWasNotified: false,
-                 userWasNotifiedAt: 0,
-            }]
+            $reminders = [
+                ...$reminders,
+                {
+                    id: res.id,
+                    createdDate: new Date().getTime(),
+                    description,
+                    dueDate: dueDate.getTime(),
+                    name: name,
+                    owner: $data.userData.user.username,
+                    priority,
+                    userWasNotified: false,
+                    userWasNotifiedAt: 0,
+                },
+            ]
         } catch (err) {
             $createSnackbar(`Could not create reminder ${err}`)
         }
@@ -75,7 +78,10 @@
             </div>
             <div class="reminders" class:empty={$reminders.length === 0}>
                 {#if $reminders.length === 0}
-                    No reminders
+                    <div id="done-indicator">
+                        <i class="material-icons">done</i>
+                        <h6>All caught up, nothing to do.</h6>
+                    </div>
                 {/if}
                 {#each $reminders as reminder (reminder.id)}
                     <Reminder {...reminder} />
@@ -93,7 +99,6 @@
 
 <style lang="scss">
     @use '../../mixins' as *;
-
     #content {
         display: flex;
         flex-direction: column;
@@ -107,7 +112,6 @@
             gap: 2rem;
         }
     }
-
     #container {
         background-color: var(--clr-height-0-1);
         border-radius: 0.4rem;
@@ -117,7 +121,6 @@
             width: 50%;
         }
     }
-
     #add {
         background-color: var(--clr-height-0-1);
         border-radius: 0.4rem;
@@ -127,9 +130,8 @@
             width: 50%;
         }
     }
-
     .reminders {
-        padding: 1rem 0;
+        padding: 1rem 0;    
         display: flex;
         flex-direction: column;
         overflow-x: hidden;
@@ -140,13 +142,33 @@
             justify-content: center;
         }
     }
-
     .header {
         display: flex;
         justify-content: space-between;
 
         h6 {
             margin: 0;
+        }
+    }
+    #done-indicator {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+
+        
+        h6 {
+            color: var(--clr-text-hint);
+            margin: 1rem 0;
+            
+            @include mobile {
+                font-size: 1.2rem;
+            }
+        }
+
+        i {
+            color: var(--clr-text-disabled);
+            font-size: 7rem;
         }
     }
 </style>
