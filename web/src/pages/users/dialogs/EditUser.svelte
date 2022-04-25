@@ -38,15 +38,15 @@
     let schedulerEnabledBefore: boolean
     let darkThemeBefore: boolean
 
-    // If the dialog edits  current user, some values can be changed directly in order to display a preview
-    $: {
-        if (username == $data.userData.user.username) {
-            $data.userData.user.darkTheme = darkTheme
-            $data.userData.user.forename = forename
-            $data.userData.user.surname = surname
-            $data.userData.user.primaryColorDark = primaryColorDark
-            $data.userData.user.primaryColorLight = primaryColorLight
-        }
+    const isCurrentUser = username == $data.userData.user.username
+    
+    // If the dialog edits the current user, some values can be changed directly in order to display a preview
+    $: if (isCurrentUser) {
+        $data.userData.user.darkTheme = darkTheme
+        $data.userData.user.forename = forename
+        $data.userData.user.surname = surname
+        $data.userData.user.primaryColorDark = primaryColorDark
+        $data.userData.user.primaryColorLight = primaryColorLight
     }
 
     // Variables that keep track of input change and valididy

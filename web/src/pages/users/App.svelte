@@ -9,14 +9,16 @@
     import { allPermissions,loading,users } from './main'
     import User from './User.svelte'
 
-    let addUserShow = () => {}
+    let addUserShow: () => void
 
     export async function loadPermissions() {
         $loading = true
         try {
-            $allPermissions = await (
+            const res = await (
                 await fetch('/api/permissions/manage/list')
             ).json()
+            if (res.succes != undefined && !res.success) throw Error(res.error)
+            $allPermissions = res
         } catch (err) {
             $createSnackbar(`Failed to load permissions: ${err}`)
         }
