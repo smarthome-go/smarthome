@@ -138,5 +138,5 @@ export const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms))
 
 export function hasPermission(permission: string): boolean {
     const permissions = get(data).userData.permissions
-    return permission.includes(permission) || permission.includes('*')
+    return permissions.includes(permission) || permissions.includes('*')
 }
