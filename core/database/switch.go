@@ -57,7 +57,6 @@ func CreateSwitch(id string, name string, roomId string, watts uint16) error {
 	ON DUPLICATE KEY
 	UPDATE
 	Name=VALUES(Name),
-	Power=VALUES(Power),
 	RoomId=VALUES(RoomId),
 	Watts=VALUES(Watts)
 	`)
