@@ -1,6 +1,6 @@
 {
   "name": "smarthome-web",
-  "version": "0.0.25-beta-rc.2",
+  "version": "0.0.25-beta-rc.2-fix",
   "description": "Web interface for Smarthome",
   "author": "MikMuellerDev",
   "contributors": [
