@@ -108,7 +108,7 @@ func TestCreateRoom(t *testing.T) {
 			}
 		}
 		if valid != test.Listable { // Check if the room was listable despite being marked as not listable
-			t.Errorf("Room %s did not follow `listable` spec", test.Room.Id)
+			t.Errorf("Room %s did not follow `listable` spec: want: %t got: %t", test.Room.Id, test.Listable, valid)
 			return
 		}
 		newRooms, err := ListPersonalRooms("admin")
@@ -119,11 +119,31 @@ func TestCreateRoom(t *testing.T) {
 		valid = false
 		for _, room := range newRooms {
 			if room.Data.Id == test.Room.Id {
+				// Verify by retrieving room by id
+				roomTemp, found, err := GetRoomDataById(test.Room.Id)
+				if err != nil {
+					t.Error(err.Error())
+					return
+				}
+				if !found {
+					t.Errorf("`GetRoomDataById` indicates that it was not found want: %t got: %t", valid, found)
+					return
+				}
+				if roomTemp.Id != test.Room.Id || roomTemp.Name != test.Room.Name || roomTemp.Description != test.Room.Description {
+					t.Errorf("`GetRoomDataById` returned different metadata than intended: want: %v got: %v", test.Room, roomTemp)
+					return
+				}
+
+				// Compare current values against test table
+				if room.Data.Name != test.Room.Name || room.Data.Description != test.Room.Description {
+					t.Errorf("Matched room holds different metadata than intended: want: %v got: %v", test.Room, room)
+					return
+				}
 				valid = true
 			}
 		}
 		if valid != test.Listable {
-			t.Errorf("Room %s did not follow `listable` spec", test.Room.Id)
+			t.Errorf("Room %s did not follow `listable` spec: want: %t got: %t", test.Room.Id, test.Listable, valid)
 			return
 		}
 	}
