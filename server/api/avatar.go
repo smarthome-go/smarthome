@@ -77,7 +77,7 @@ func DeleteAvatar(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Error("Could remove avatar: ", err.Error())
 		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Success: false, Message: "avatar removal failed", Error: "database error"})
+		Res(w, Response{Success: false, Message: "avatar removal failed", Error: "database failure"})
 		return
 	}
 	// Check if the user has a custom avatar
@@ -137,8 +137,8 @@ func GetForeignUserAvatar(w http.ResponseWriter, r *http.Request) {
 	}
 	_, exists, err := database.GetUserByUsername(username)
 	if err != nil {
-		w.WriteHeader(http.StatusBadGateway)
-		Res(w, Response{Success: false, Message: "failed to serve avatar", Error: "database error"})
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to serve avatar", Error: "database failure"})
 		return
 	}
 	if !exists {

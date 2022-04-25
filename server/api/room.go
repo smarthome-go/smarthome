@@ -23,9 +23,8 @@ func GetUserRoomsWithSwitches(w http.ResponseWriter, r *http.Request) {
 	}
 	rooms, err := database.ListPersonalRooms(username)
 	if err != nil {
-		log.Error("Could not list user rooms: database failure: ", err.Error())
 		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Success: false, Message: "database error", Error: "database error"})
+		Res(w, Response{Success: false, Message: "could not list personal rooms", Error: "database failure"})
 		return
 	}
 	if err := json.NewEncoder(w).Encode(rooms); err != nil {
@@ -45,4 +44,21 @@ func AddRoom(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
+	_, alreadyExists, err := database.GetRoomDataById(request.Id)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Message: "failed to create new room: could not check for conflicts", Error: "database failure"})
+		return
+	}
+	if alreadyExists {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Message: "failed to create new room", Error: "a room with the same room-id already exists"})
+		return
+	}
+	if err := database.CreateRoom(database.RoomData(request)); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Message: "failed to create new room", Error: "database failure"})
+		return
+	}
+	Res(w, Response{Success: true, Message: "successfully created new room"})
 }

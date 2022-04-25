@@ -70,7 +70,7 @@ func AddReminder(w http.ResponseWriter, r *http.Request) {
 		request.Priority,
 	)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to add reminder", Error: "database failure"})
 		return
 	}

@@ -246,7 +246,7 @@ func ModifyCurrentUserMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := database.UpdateUserMetadata(username, request.Forename, request.Surname, request.PrimaryColorDark, request.PrimaryColorLight); err != nil {
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to modify user metadata", Error: "database failure"})
 		return
 	}
@@ -266,7 +266,7 @@ func ModifyUserMetadata(w http.ResponseWriter, r *http.Request) {
 	}
 	_, exists, err := database.GetUserByUsername(request.Username)
 	if err != nil {
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to modify user metadata", Error: "database failure"})
 		return
 	}
@@ -286,7 +286,7 @@ func ModifyUserMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := database.UpdateUserMetadata(request.Username, request.Data.Forename, request.Data.Surname, request.Data.PrimaryColorDark, request.Data.PrimaryColorLight); err != nil {
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to modify user metadata", Error: "database failure"})
 		return
 	}

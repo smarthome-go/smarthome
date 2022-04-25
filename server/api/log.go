@@ -13,9 +13,8 @@ import (
 func FlushOldLogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := database.FlushOldLogs(); err != nil {
-		log.Error("Exception in flushOldLogs: database failure: ", err.Error())
 		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Success: false, Message: "database error", Error: "failed to flush logs: database failure"})
+		Res(w, Response{Success: false, Message: "failed to flush logs", Error: "database failure"})
 		return
 	}
 	go event.Info("Flushed Old Logs", "Logs which are older than 30 days were deleted.")
@@ -27,9 +26,8 @@ func FlushOldLogs(w http.ResponseWriter, r *http.Request) {
 func FlushAllLogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := database.FlushAllLogs(); err != nil {
-		log.Error("Exception in flushOldLogs: database failure: ", err.Error())
 		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Success: false, Message: "database error", Error: "failed to flush logs: database failure"})
+		Res(w, Response{Success: false, Message: "failed to flush logs", Error: "database failure"})
 		return
 	}
 	Res(w, Response{Success: true, Message: "successfully flushed logs"})
@@ -40,9 +38,8 @@ func ListLogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	logs, err := database.GetLogs()
 	if err != nil {
-		log.Error("Failed to list logs: database failure: ", err.Error())
 		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Success: false, Message: "database error", Error: "failed to get logs: database failure"})
+		Res(w, Response{Success: false, Message: "database error", Error: "database failure"})
 		return
 	}
 	if err := json.NewEncoder(w).Encode(logs); err != nil {

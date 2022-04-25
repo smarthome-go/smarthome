@@ -52,7 +52,7 @@ func loginGetHandler(w http.ResponseWriter, r *http.Request) {
 		if usernameTempOk && usernameSessionOk && usernameSession != "" {
 			_, exists, err := database.GetUserByUsername(usernameSession)
 			if err != nil {
-				w.WriteHeader(http.StatusBadGateway)
+				w.WriteHeader(http.StatusServiceUnavailable)
 				api.Res(w, api.Response{Success: false, Message: "Could not check user validity", Error: "database failure"})
 				return
 			}

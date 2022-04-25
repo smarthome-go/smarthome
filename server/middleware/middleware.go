@@ -50,7 +50,7 @@ func Auth(handler http.HandlerFunc) http.HandlerFunc {
 			if usernameTempOk && usernameSessionOk && usernameSession != "" {
 				_, exists, err := database.GetUserByUsername(usernameSession)
 				if err != nil {
-					w.WriteHeader(http.StatusBadGateway)
+					w.WriteHeader(http.StatusServiceUnavailable)
 					Res(w, Response{Success: false, Message: "Could not check user validity", Error: "database failure"})
 					return
 				}
@@ -117,7 +117,7 @@ func ApiAuth(handler http.HandlerFunc) http.HandlerFunc {
 			if usernameTempOk && usernameSessionOk && usernameSession != "" {
 				_, exists, err := database.GetUserByUsername(usernameSession)
 				if err != nil {
-					w.WriteHeader(http.StatusBadGateway)
+					w.WriteHeader(http.StatusServiceUnavailable)
 					Res(w, Response{Success: false, Message: "Could not check user validity", Error: "database failure"})
 					return
 				}

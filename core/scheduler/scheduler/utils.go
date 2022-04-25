@@ -80,7 +80,6 @@ func ModifyScheduleById(id uint, newSchedule database.Schedule) error {
 func GetUserScheduleById(username string, id uint) (database.Schedule, bool, error) {
 	schedules, err := database.GetUserSchedules(username)
 	if err != nil {
-		log.Error("Failed to get user schedule: database error")
 		return database.Schedule{}, false, err
 	}
 	for _, schedule := range schedules {
