@@ -1,9 +1,10 @@
 <script lang="ts">
     import IconButton from '@smui/icon-button'
-    import Tab,{ Label } from '@smui/tab'
+    import Tab, { Label } from '@smui/tab'
     import TabBar from '@smui/tab-bar'
+    import { onMount } from 'svelte'
     import Progress from '../../components/Progress.svelte'
-    import { createSnackbar,hasPermission,sleep } from '../../global'
+    import { createSnackbar, hasPermission, sleep } from '../../global'
     import Page from '../../Page.svelte'
     import Switch from './Switch.svelte'
 
@@ -22,9 +23,16 @@
 
     let loading = false
     let rooms: RoomResponse[]
+
     let currentRoom: RoomResponse
     $: if (currentRoom !== undefined)
         window.localStorage.setItem('current_room', currentRoom.id)
+
+    // Determines if additional buttons for editing rooms should be visible
+    let hasEditPermission: boolean
+    onMount(async () => {
+        hasEditPermission = await hasPermission('modifyServerConfig')
+    })
 
     async function loadRooms(updateExisting: boolean = false) {
         loading = true
@@ -69,7 +77,7 @@
                 </Tab>
             </TabBar>
         {/await}
-        {#if hasPermission('modifyServerConfig')}
+        {#if hasEditPermission}
             <IconButton class="material-icons" title="Edit Rooms"
                 >edit</IconButton
             >
@@ -85,7 +93,7 @@
             {#each currentRoom !== undefined ? currentRoom.switches : [] as sw (sw.id)}
                 <Switch bind:checked={sw.powerOn} id={sw.id} label={sw.name} />
             {/each}
-            {#if hasPermission('modifyServerConfig')}
+            {#if hasEditPermission}
                 <div id="add-switch">
                     <Label>Add Switch</Label>
                     <IconButton class="material-icons">add</IconButton>
@@ -93,7 +101,7 @@
             {/if}
         </div>
         <div id="cameras" class="mdc-elevation--z1">
-            {#if hasPermission('modifyServerConfig')}
+            {#if hasEditPermission}
                 <div id="add-camera">
                     <Label>Add Camera</Label>
                     <IconButton class="material-icons">add</IconButton>

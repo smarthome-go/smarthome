@@ -1,8 +1,9 @@
 <script lang="ts">
     import IconButton from '@smui/icon-button'
     import Switch from '@smui/switch'
+    import { onMount } from 'svelte/internal'
     import Progress from '../../components/Progress.svelte'
-    import { createSnackbar,hasPermission,sleep } from '../../global'
+    import { createSnackbar, hasPermission, sleep } from '../../global'
 
     export let id: string
     export let label: string
@@ -10,6 +11,13 @@
 
     let requests = 0
     let loading = false
+
+    // Determines if edit button should be shown
+    let hasEditPermission: boolean
+    onMount(async () => {
+        hasEditPermission = await hasPermission('modifyServerConfig')
+    })
+
     $: loading = requests !== 0
     async function toggle(event: CustomEvent<{ selected: boolean }>) {
         requests++
@@ -43,7 +51,7 @@
         <span>{label}</span>
     </div>
     <div class="right">
-        {#if hasPermission('modifyServerConfig')}
+        {#if hasEditPermission}
             <IconButton class="material-icons" title="Edit Switch"
                 >edit</IconButton
             >
