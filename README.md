@@ -2,6 +2,7 @@
 ### Version: `0.0.25-beta-rc.1`
 
 [![Go Build](https://github.com/MikMuellerDev/smarthome/actions/workflows/go.yml/badge.svg)](https://github.com/MikMuellerDev/smarthome/actions/workflows/go.yml)
+[![](https://tokei.rs/b1/github/MikMuellerDev/smarthome?category=code)](https://github.com/MikMuellerDev/smarthome).
 
 ### The `setup.json`
 Most of the configuration of the smarthome server can be achieved using the `setup.json` file.
