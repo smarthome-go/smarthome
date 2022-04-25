@@ -78,7 +78,7 @@ func TestSetPower(t *testing.T) {
 		},
 	}
 	// Create a test room
-	if err := database.CreateRoom("test", "test", "test"); err != nil {
+	if err := database.CreateRoom(database.RoomData{Id: "test", Name: "test", Description: "test"}); err != nil {
 		t.Error("Failed to create room:", err.Error())
 		return
 	}
@@ -193,7 +193,7 @@ func TestSetPowerAsync(t *testing.T) {
 		},
 	}
 	// Create a test room
-	if err := database.CreateRoom("test", "test", "test"); err != nil {
+	if err := database.CreateRoom(database.RoomData{Id: "test", Name: "test", Description: "test"}); err != nil {
 		t.Error("Failed to create room:", err.Error())
 		return
 	}

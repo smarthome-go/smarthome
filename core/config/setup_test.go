@@ -61,9 +61,11 @@ func TestRunSetup(t *testing.T) {
 		},
 		Rooms: []database.Room{
 			{
-				Id:          "test",
-				Name:        "test",
-				Description: "test",
+				Data: database.RoomData{
+					Id:          "test",
+					Name:        "test",
+					Description: "test",
+				},
 				Switches: []database.Switch{
 					{
 						Id:      "test",
@@ -147,12 +149,12 @@ func TestRunSetup(t *testing.T) {
 	for _, setupRoom := range setup.Rooms {
 		roomValid := false
 		for _, room := range rooms {
-			if room.Id == setupRoom.Id && room.Description == setupRoom.Description {
+			if room.Id == setupRoom.Data.Id && room.Description == setupRoom.Data.Description {
 				roomValid = true
 			}
 		}
 		if !roomValid {
-			t.Errorf("Room %s does not exist after creation", setupRoom.Id)
+			t.Errorf("Room %s does not exist after creation", setupRoom.Data.Id)
 			return
 		}
 	}

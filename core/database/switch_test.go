@@ -8,16 +8,15 @@ import (
 
 func createTestRoom() error {
 	return CreateRoom(
-		"test",
-		"test_room",
-		"test_descriotion",
-	)
+		RoomData{
+			Id:          "test",
+			Name:        "test_room",
+			Description: "test_description",
+		})
 }
 
 func createTestUser() error {
-	return AddUser(FullUser{
-		Username: "switches_test",
-	})
+	return AddUser(FullUser{Username: "switches_test"})
 }
 
 func TestCreateSwitchTable(t *testing.T) {

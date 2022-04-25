@@ -5,10 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/core/event"
 	"github.com/MikMuellerDev/smarthome/core/hardware"
-	"github.com/sirupsen/logrus"
 )
 
 func TestMain(m *testing.M) {
@@ -49,7 +50,7 @@ func initDB(args ...bool) error {
 
 func TestRun(t *testing.T) {
 	// Create a mock switch and room
-	if err := database.CreateRoom("test", "", ""); err != nil {
+	if err := database.CreateRoom(database.RoomData{Id: "test"}); err != nil {
 		t.Error(err.Error())
 		return
 	}

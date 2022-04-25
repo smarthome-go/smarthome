@@ -20,7 +20,7 @@ func TestMain(m *testing.M) {
 		panic(err.Error())
 	}
 	// Create a room for some tests
-	if err := database.CreateRoom("testing", "testing", "testing"); err != nil {
+	if err := database.CreateRoom(database.RoomData{Id: "testing", Name: "testing", Description: "testing"}); err != nil {
 		panic(err.Error())
 	}
 	Init() // For initializing atomic slice

@@ -21,9 +21,11 @@ This file is scanned and evaluated at startup.
     ],
     "rooms": [
         {
-            "id": "test_room",
-            "name": "Test Room",
-            "description": "This is a test room",
+            "data": {
+                "id": "test_room",
+                "name": "Test Room",
+                "description": "This is a test room"
+            },
             "switches": [
                 {
                     "id": "s1",

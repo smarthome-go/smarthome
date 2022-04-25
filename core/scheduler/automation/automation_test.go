@@ -34,7 +34,7 @@ func TestMain(m *testing.M) {
 
 // Creates mock data, including a room, switches and homescripts
 func createMockData() error {
-	if err := database.CreateRoom("test_room", "", ""); err != nil {
+	if err := database.CreateRoom(database.RoomData{Id: "test_room"}); err != nil {
 		panic(err.Error())
 	}
 	if err := database.CreateSwitch("test_switch", "", "test_room", 0); err != nil {

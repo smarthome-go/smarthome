@@ -1,18 +1,21 @@
 <script lang="ts">
     import IconButton from '@smui/icon-button'
-    import Tab, { Label } from '@smui/tab'
+    import Tab,{ Label } from '@smui/tab'
     import TabBar from '@smui/tab-bar'
     import { onMount } from 'svelte'
     import Progress from '../../components/Progress.svelte'
-    import { createSnackbar, hasPermission, sleep } from '../../global'
+    import { createSnackbar,hasPermission,sleep } from '../../global'
     import Page from '../../Page.svelte'
     import Switch from './Switch.svelte'
 
     interface RoomResponse {
-        id: string
-        name: string
-        description: string
+        data: {
+            id: string
+            name: string
+            description: string
+        }
         switches: SwitchResponse[]
+        cameras: CameraRespomse[]
     }
     interface SwitchResponse {
         id: string
@@ -21,12 +24,16 @@
         watts: number
     }
 
+    interface CameraRespomse {
+
+    }
+
     let loading = false
     let rooms: RoomResponse[]
 
     let currentRoom: RoomResponse
     $: if (currentRoom !== undefined)
-        window.localStorage.setItem('current_room', currentRoom.id)
+        window.localStorage.setItem('current_room', currentRoom.data.id)
 
     // Determines if additional buttons for editing rooms should be visible
     let hasEditPermission: boolean
@@ -42,13 +49,13 @@
             if (updateExisting) {
                 for (const room of rooms) {
                     room.switches = (res as RoomResponse[]).find(
-                        (r) => r.id === room.id
+                        (r) => r.data.id === room.data.id
                     ).switches
                 }
             } else rooms = res
             const roomId = window.localStorage.getItem('current_room')
             const room =
-                roomId === null ? undefined : rooms.find((r) => r.id === roomId)
+                roomId === null ? undefined : rooms.find((r) => r.data.id === roomId)
             currentRoom = room === undefined ? rooms[0] : room
         } catch {
             $createSnackbar('Could not load rooms', [

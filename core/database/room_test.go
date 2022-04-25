@@ -39,11 +39,11 @@ func createMockSwitches() error {
 
 func TestCreateRoom(t *testing.T) {
 	table := []struct {
-		Room     Room
+		Room     RoomData
 		Listable bool // If the room will be in user rooms
 	}{
 		{
-			Room: Room{
+			Room: RoomData{
 				Id:          "test_1",
 				Name:        "test_1",
 				Description: "test_1",
@@ -51,7 +51,7 @@ func TestCreateRoom(t *testing.T) {
 			Listable: true,
 		},
 		{
-			Room: Room{
+			Room: RoomData{
 				Id:          "test_2",
 				Name:        "test_2",
 				Description: "test_2",
@@ -59,7 +59,7 @@ func TestCreateRoom(t *testing.T) {
 			Listable: true,
 		},
 		{
-			Room: Room{
+			Room: RoomData{
 				Id:          "test_3",
 				Name:        "test_3",
 				Description: "test_3",
@@ -67,12 +67,8 @@ func TestCreateRoom(t *testing.T) {
 			Listable: false,
 		},
 	}
-	for _, room := range table {
-		if err := CreateRoom(
-			room.Room.Id,
-			room.Room.Name,
-			room.Room.Description,
-		); err != nil {
+	for _, test := range table {
+		if err := CreateRoom(test.Room); err != nil {
 			t.Error(err.Error())
 			return
 		}
@@ -83,12 +79,12 @@ func TestCreateRoom(t *testing.T) {
 		}
 		valid := false
 		for _, item := range rooms {
-			if item.Id == room.Room.Id {
+			if item.Id == test.Room.Id {
 				valid = true
 			}
 		}
 		if !valid {
-			t.Errorf("Room %s was not found after creation", room.Room.Id)
+			t.Errorf("Room %s was not found after creation", test.Room.Id)
 			return
 		}
 	}
@@ -97,37 +93,37 @@ func TestCreateRoom(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
-	for _, room := range table {
-		rooms, err := listPersonalRoomsWithoutMetadata("admin")
+	for _, test := range table {
+		rooms, err := listPersonalRoomData("admin")
 		if err != nil {
 			t.Error(err.Error())
 			return
 		}
 		valid := false
 		for _, item := range rooms {
-			if item.Id == room.Room.Id &&
-				item.Name == room.Room.Name &&
-				item.Description == room.Room.Description {
+			if item.Id == test.Room.Id &&
+				item.Name == test.Room.Name &&
+				item.Description == test.Room.Description {
 				valid = true
 			}
 		}
-		if valid != room.Listable { // Check if the room was listable despite being marked as not listable
-			t.Errorf("Room %s did not follow `listable` spec", room.Room.Id)
+		if valid != test.Listable { // Check if the room was listable despite being marked as not listable
+			t.Errorf("Room %s did not follow `listable` spec", test.Room.Id)
 			return
 		}
-		rooms, err = ListPersonalRoomsAll("admin")
+		newRooms, err := ListPersonalRooms("admin")
 		if err != nil {
 			t.Error(err.Error())
 			return
 		}
 		valid = false
-		for _, item := range rooms {
-			if item.Id == room.Room.Id {
+		for _, room := range newRooms {
+			if room.Data.Id == test.Room.Id {
 				valid = true
 			}
 		}
-		if valid != room.Listable {
-			t.Errorf("Room %s did not follow `listable` spec", room.Room.Id)
+		if valid != test.Listable {
+			t.Errorf("Room %s did not follow `listable` spec", test.Room.Id)
 			return
 		}
 	}

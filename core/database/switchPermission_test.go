@@ -17,7 +17,8 @@ func TestAddUserSwitchPermission(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
-	if err := CreateRoom("test_permissions", "", ""); err != nil {
+	if err := CreateRoom(
+		RoomData{Id: "test_permissions"}); err != nil {
 		t.Error(err.Error())
 		return
 	}

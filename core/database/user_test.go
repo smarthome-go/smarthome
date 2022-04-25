@@ -26,7 +26,7 @@ func createUserMockData() error {
 		}
 	}
 	// Create a switch for the room
-	if err := CreateRoom("delete_me", "", ""); err != nil {
+	if err := CreateRoom(RoomData{Id: "delete_me"}); err != nil {
 		return err
 	}
 	// Create a switch

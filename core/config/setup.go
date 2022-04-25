@@ -66,12 +66,12 @@ func RunSetup() error {
 // Takes the specified `rooms` and creates according database entries
 func createRoomsInDatabase(rooms []database.Room) error {
 	for _, room := range rooms {
-		if err := database.CreateRoom(room.Id, room.Name, room.Description); err != nil {
+		if err := database.CreateRoom(room.Data); err != nil {
 			log.Error("Could not create rooms from setup file: ", err.Error())
 			return err
 		}
 		for _, switchItem := range room.Switches {
-			if err := database.CreateSwitch(switchItem.Id, switchItem.Name, room.Id, switchItem.Watts); err != nil {
+			if err := database.CreateSwitch(switchItem.Id, switchItem.Name, room.Data.Id, switchItem.Watts); err != nil {
 				log.Error("Could not create switches from setup file: ", err.Error())
 				return err
 			}
