@@ -47,17 +47,17 @@ func AddRoom(w http.ResponseWriter, r *http.Request) {
 	_, alreadyExists, err := database.GetRoomDataById(request.Id)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Message: "failed to create new room: could not check for conflicts", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to create new room: could not check for conflicts", Error: "database failure"})
 		return
 	}
 	if alreadyExists {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		Res(w, Response{Message: "failed to create new room", Error: "a room with the same room-id already exists"})
+		Res(w, Response{Success: false, Message: "failed to create new room", Error: "a room with the same room-id already exists"})
 		return
 	}
 	if err := database.CreateRoom(database.RoomData(request)); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Message: "failed to create new room", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to create new room", Error: "database failure"})
 		return
 	}
 	Res(w, Response{Success: true, Message: "successfully created new room"})
