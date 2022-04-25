@@ -43,12 +43,14 @@
         <span>{label}</span>
     </div>
     <div class="right">
-        <Progress type="circular" bind:loading />
         {#if hasPermission('modifyServerConfig')}
             <IconButton class="material-icons" title="Edit Switch"
                 >edit</IconButton
             >
         {/if}
+        <div>
+            <Progress type="circular" bind:loading />
+        </div>
     </div>
 </div>
 
@@ -69,6 +71,8 @@
         }
     }
     .right {
-        margin-right: 14px;
+        div {
+            margin-right: 14px;
+        }
     }
 </style>
