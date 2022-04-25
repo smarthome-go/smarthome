@@ -3,7 +3,7 @@
     import Switch from '@smui/switch'
     import { onMount } from 'svelte/internal'
     import Progress from '../../components/Progress.svelte'
-    import { createSnackbar, hasPermission, sleep } from '../../global'
+    import { createSnackbar,hasPermission,sleep } from '../../global'
 
     export let id: string
     export let label: string
@@ -15,7 +15,7 @@
     // Determines if edit button should be shown
     let hasEditPermission: boolean
     onMount(async () => {
-        hasEditPermission = await hasPermission('modifyServerConfig')
+        hasEditPermission = await hasPermission('modifyRooms')
     })
 
     $: loading = requests !== 0

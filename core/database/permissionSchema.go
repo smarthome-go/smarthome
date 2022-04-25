@@ -77,6 +77,12 @@ var (
 			Description: "List, add, delete, and modify reminders",
 		},
 		{
+			// (Admin) is allowed to modify rooms, switches and cameras
+			Permission:  PermissionModifyRooms,
+			Name:        "Manage Rooms",
+			Description: "Add, modify and delete rooms and room contents",
+		},
+		{
 			// (Admin) is allowed to change global config parameters
 			Permission:  PermissionModifyServerConfig,
 			Name:        "Manage Server Config",

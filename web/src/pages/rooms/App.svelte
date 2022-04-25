@@ -38,7 +38,7 @@
     // Determines if additional buttons for editing rooms should be visible
     let hasEditPermission: boolean
     onMount(async () => {
-        hasEditPermission = await hasPermission('modifyServerConfig')
+        hasEditPermission = await hasPermission('modifyRooms')
     })
 
     async function loadRooms(updateExisting: boolean = false) {
@@ -77,10 +77,10 @@
                 tabs={rooms}
                 let:tab={room}
                 bind:active={currentRoom}
-                key={(tab) => tab.id}
+                key={(tab) => tab.data.id}
             >
                 <Tab tab={room} minWidth>
-                    <Label>{room.name}</Label>
+                    <Label>{room.data.name}</Label>
                 </Tab>
             </TabBar>
         {/await}
