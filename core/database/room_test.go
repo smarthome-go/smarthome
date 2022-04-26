@@ -71,7 +71,7 @@ func createMockSwitches() error {
 	return nil
 }
 
-func TestRooms(t *testing.T) {
+func TestCreateRooms(t *testing.T) {
 	for _, test := range table {
 		if err := CreateRoom(test.Room); err != nil {
 			t.Error(err.Error())
@@ -93,11 +93,14 @@ func TestRooms(t *testing.T) {
 			return
 		}
 	}
-	// After room has been created, create switches
+}
+
+func TestListRooms(t *testing.T) {
 	if err := createMockSwitches(); err != nil {
 		t.Error(err.Error())
 		return
 	}
+
 	for _, test := range table {
 		rooms, err := listPersonalRoomData("admin")
 		if err != nil {
@@ -112,16 +115,19 @@ func TestRooms(t *testing.T) {
 				valid = true
 			}
 		}
-		if valid != test.Listable { // Check if the room was listable despite being marked as not listable
+		// Check if the room was listable despite being marked as not listable
+		if valid != test.Listable {
 			t.Errorf("Room %s did not follow `listable` spec: want: %t got: %t", test.Room.Id, test.Listable, valid)
 			return
 		}
+
 		newRooms, err := ListPersonalRooms("admin")
 		if err != nil {
 			t.Error(err.Error())
 			return
 		}
 		valid = false
+
 		for _, room := range newRooms {
 			if room.Data.Id == test.Room.Id {
 				// Verify by retrieving room by id
@@ -134,16 +140,17 @@ func TestRooms(t *testing.T) {
 					t.Errorf("`GetRoomDataById` indicates that it was not found want: %t got: %t", valid, found)
 					return
 				}
+
+				// Compare values against test table
 				if roomTemp.Id != test.Room.Id || roomTemp.Name != test.Room.Name || roomTemp.Description != test.Room.Description {
 					t.Errorf("`GetRoomDataById` returned different metadata than intended: want: %v got: %v", test.Room, roomTemp)
 					return
 				}
-
-				// Compare current values against test table
 				if room.Data.Name != test.Room.Name || room.Data.Description != test.Room.Description {
 					t.Errorf("Matched room holds different metadata than intended: want: %v got: %v", test.Room, room)
 					return
 				}
+
 				valid = true
 			}
 		}
