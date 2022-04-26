@@ -104,6 +104,21 @@ func DeleteSwitch(switchId string) error {
 	return nil
 }
 
+// Deletes all switches from an arbitrary room
+// TODO: move to business layer
+func DeleteRoomSwitches(roomId string) error {
+	switches, err := ListSwitches()
+	if err != nil {
+		return err
+	}
+	for _, switchItem := range switches {
+		if err := DeleteSwitch(switchItem.Id); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Returns a list of available switches with their attributes
 func ListSwitches() ([]Switch, error) {
 	query := `

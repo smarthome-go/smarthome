@@ -148,3 +148,31 @@ func TestCreateRoom(t *testing.T) {
 		}
 	}
 }
+
+func TestDeleteRoom(t *testing.T) {
+	// Create Test Data
+	TestCreateRoom(t)
+
+	rooms, err := ListRooms()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	for _, room := range rooms {
+		if err := DeleteRoom(room.Id); err != nil {
+			t.Error(err.Error())
+			return
+		}
+		_, found, err := GetRoomDataById(room.Id)
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+		if found {
+			t.Errorf("Room %s found after deletion", room.Id)
+			return
+		}
+	}
+}
+
+

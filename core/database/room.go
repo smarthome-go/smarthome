@@ -78,6 +78,8 @@ func CreateRoom(room RoomData) error {
 	return nil
 }
 
+// Updates the rooms name and description
+
 // Returns a list of room data
 func ListRooms() ([]RoomData, error) {
 	query := `
@@ -160,7 +162,25 @@ func listPersonalRoomData(username string) ([]RoomData, error) {
 	return rooms, nil
 }
 
-// TODO: Move to business layer
+// Deletes a room and all enteties that depend on the room
+func DeleteRoomQuery(id string) error {
+	query, err := db.Prepare(`
+	DELETE FROM
+	room
+	WHERE Id=?
+	`)
+	if err != nil {
+		log.Error("Failed to delete room: preparing query failed: ", err.Error())
+		return err
+	}
+	if _, err := query.Exec(id); err != nil {
+		log.Error("Failed to delete room: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}
+
+// TODO: Move to business logic layer
 // Returns a complete list of rooms, includes metadata like switches
 func ListPersonalRooms(username string) ([]Room, error) {
 	rooms, err := listPersonalRoomData(username)
@@ -189,4 +209,14 @@ func ListPersonalRooms(username string) ([]Room, error) {
 		})
 	}
 	return outputRooms, nil
+}
+
+func DeleteRoom(id string) error {
+	if err := DeleteRoomSwitches(id); err != nil {
+		return err
+	}
+	if err := DeleteRoomQuery(id); err != nil {
+		return err
+	}
+	return nil
 }
