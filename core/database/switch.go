@@ -55,10 +55,10 @@ func CreateSwitch(id string, name string, roomId string, watts uint16) error {
 	)
 	VALUES(?, ?, DEFAULT, ?, ?)
 	ON DUPLICATE KEY
-	UPDATE
-	Name=VALUES(Name),
-	RoomId=VALUES(RoomId),
-	Watts=VALUES(Watts)
+		UPDATE
+		Name=VALUES(Name),
+		RoomId=VALUES(RoomId),
+		Watts=VALUES(Watts)
 	`)
 	if err != nil {
 		log.Error("Failed to add switch: preparing query failed: ", err.Error())
@@ -121,10 +121,7 @@ func DeleteRoomSwitches(roomId string) error {
 
 // Returns a list of available switches with their attributes
 func ListSwitches() ([]Switch, error) {
-	query := `
-	SELECT Id, Name, RoomId, Watts FROM switch
-	`
-	res, err := db.Query(query)
+	res, err := db.Query(`SELECT Id, Name, RoomId, Watts FROM switch`)
 	if err != nil {
 		log.Error("Could not list switches: failed to execute query: ", err.Error())
 		return nil, err
