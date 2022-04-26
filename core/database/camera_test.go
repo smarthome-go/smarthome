@@ -50,7 +50,7 @@ func TestCreateCamera(t *testing.T) {
 		if !found {
 			t.Errorf("Camera %s not found after creation", camera.Id)
 		}
-		assert.Equal(t, camera, cam)
+		assert.Equal(t, camera, cam, "camera from id has invalid metadata")
 	}
 
 	// Check the listing function
@@ -58,5 +58,5 @@ func TestCreateCamera(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	assert.Equal(t, cameras, table)
+	assert.Equal(t, cameras, table, "listed cameras do not match table")
 }

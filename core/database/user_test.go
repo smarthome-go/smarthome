@@ -210,8 +210,11 @@ func TestSetScheduleEnabled(t *testing.T) {
 		return
 	}
 }
-
-func assertDarkTheme(username string, want bool, t *testing.T) {
+func TestSetUserDarkTheme(t *testing.T) {
+	if err := SetUserDarkThemeEnabled("admin", false); err != nil {
+		t.Error(err.Error())
+		return
+	}
 	user, found, err := GetUserByUsername("admin")
 	if err != nil {
 		t.Error(err.Error())
@@ -222,22 +225,28 @@ func assertDarkTheme(username string, want bool, t *testing.T) {
 		return
 	}
 	if user.DarkTheme {
-		t.Errorf("Dark theme does not match: want: %t got: %t", want, user.DarkTheme)
+		t.Errorf("Dark theme does not match: want: %t got: %t", false, user.DarkTheme)
 		return
 	}
-}
 
-func TestSetUserDarkTheme(t *testing.T) {
-	if err := SetUserDarkThemeEnabled("admin", false); err != nil {
+	if err := SetUserDarkThemeEnabled("admin", true); err != nil {
 		t.Error(err.Error())
 		return
 	}
-	assertDarkTheme("admin", false, t)
-	if err := SetUserDarkThemeEnabled("admin", false); err != nil {
+
+	user, found, err = GetUserByUsername("admin")
+	if err != nil {
 		t.Error(err.Error())
 		return
 	}
-	assertDarkTheme("admin", false, t)
+	if !found {
+		t.Errorf("user with username `admin` not found in database")
+		return
+	}
+	if !user.DarkTheme {
+		t.Errorf("Dark theme does not match: want: %t got: %t", true, user.DarkTheme)
+		return
+	}
 }
 
 func assertUserData(username string, wantForname string, wantSurname string, wantDark string, wantLight string, t *testing.T) {
