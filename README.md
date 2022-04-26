@@ -38,6 +38,7 @@ This file is scanned and evaluated at startup.
             ],
             "cameras": [
                 {
+                    "id": "test_camera",
                     "name": "Test Camera",
                     "url": "https://mik-mueller.de/assets/foo.png"
                 }

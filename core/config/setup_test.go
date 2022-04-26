@@ -84,7 +84,7 @@ func TestRunSetup(t *testing.T) {
 				},
 				Cameras: []database.Camera{
 					{
-						Id:     1,
+						Id:     "test camera",
 						RoomId: "test",
 						Url:    "",
 						Name:   "test",
@@ -100,6 +100,7 @@ func TestRunSetup(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
+
 	if err := ioutil.WriteFile(
 		setupPath,
 		content,
