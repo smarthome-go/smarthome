@@ -142,7 +142,7 @@ func GetForeignUserAvatar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !exists {
-		w.WriteHeader(http.StatusUnprocessableEntity)
+		w.WriteHeader(http.StatusNotFound)
 		Res(w, Response{Success: false, Message: "failed to serve avatar", Error: "invalid username"})
 		return
 	}
