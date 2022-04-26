@@ -3,6 +3,10 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
+
+	"github.com/gorilla/mux"
+	"golang.org/x/exp/utf8string"
 
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/server/middleware"
@@ -43,6 +47,11 @@ func AddRoom(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
+	if strings.Contains(request.Id, " ") || !utf8string.NewString(request.Id).IsASCII() {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "id should only include ASCII characterst and must not have whitespaces"})
+		return
+	}
 	_, alreadyExists, err := database.GetRoomDataById(request.Id)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
@@ -73,7 +82,6 @@ func ModifyRoomData(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-
 	room, found, err := database.GetRoomDataById(request.Id)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
@@ -95,4 +103,33 @@ func ModifyRoomData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	Res(w, Response{Success: true, Message: "successfully modified room"})
+}
+
+// Deletes a room and all its dependencies
+func DeleteRoom(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to delete room", Error: "invalid room-id"})
+		return
+	}
+	_, exists, err := database.GetRoomDataById(id)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to delete room", Error: "database failure"})
+		return
+	}
+	if !exists {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to delete room", Error: "invalid room-id"})
+		return
+	}
+	if err := database.DeleteRoom(id); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to delete room", Error: "database failure"})
+		return
+	}
+	Res(w, Response{Success: true, Message: "successfully deleted room"})
 }
