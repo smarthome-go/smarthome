@@ -1,6 +1,40 @@
 package database
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+	"time"
+)
+
+var table = []struct {
+	Room     RoomData
+	Listable bool // If the room will be in user rooms
+}{
+	{
+		Room: RoomData{
+			Id:          "test_1",
+			Name:        "test_1",
+			Description: "test_1",
+		},
+		Listable: true,
+	},
+	{
+		Room: RoomData{
+			Id:          "test_2",
+			Name:        "test_2",
+			Description: "test_2",
+		},
+		Listable: true,
+	},
+	{
+		Room: RoomData{
+			Id:          "test_3",
+			Name:        "test_3",
+			Description: "test_3",
+		},
+		Listable: false,
+	},
+}
 
 func TestCreateRoomTable(t *testing.T) {
 	if err := createRoomTable(); err != nil {
@@ -37,36 +71,7 @@ func createMockSwitches() error {
 	return nil
 }
 
-func TestCreateRoom(t *testing.T) {
-	table := []struct {
-		Room     RoomData
-		Listable bool // If the room will be in user rooms
-	}{
-		{
-			Room: RoomData{
-				Id:          "test_1",
-				Name:        "test_1",
-				Description: "test_1",
-			},
-			Listable: true,
-		},
-		{
-			Room: RoomData{
-				Id:          "test_2",
-				Name:        "test_2",
-				Description: "test_2",
-			},
-			Listable: true,
-		},
-		{
-			Room: RoomData{
-				Id:          "test_3",
-				Name:        "test_3",
-				Description: "test_3",
-			},
-			Listable: false,
-		},
-	}
+func TestRooms(t *testing.T) {
 	for _, test := range table {
 		if err := CreateRoom(test.Room); err != nil {
 			t.Error(err.Error())
@@ -151,19 +156,38 @@ func TestCreateRoom(t *testing.T) {
 
 func TestDeleteRoom(t *testing.T) {
 	// Create Test Data
-	TestCreateRoom(t)
-
+	for _, test := range table {
+		if err := CreateRoom(test.Room); err != nil {
+			t.Error(err.Error())
+			return
+		}
+	}
+	// Work with test data
 	rooms, err := ListRooms()
 	if err != nil {
 		t.Error(err)
 		return
 	}
 	for _, room := range rooms {
+		// Validate creation in order to avoid false positives
+		_, found, err := GetRoomDataById(room.Id)
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+		if !found {
+			t.Errorf("Room %s was not found after creation", room.Id)
+			return
+		}
+
+		// Perform deletion
 		if err := DeleteRoom(room.Id); err != nil {
 			t.Error(err.Error())
 			return
 		}
-		_, found, err := GetRoomDataById(room.Id)
+
+		// Validate Deletion
+		_, found, err = GetRoomDataById(room.Id)
 		if err != nil {
 			t.Error(err.Error())
 			return
@@ -175,4 +199,35 @@ func TestDeleteRoom(t *testing.T) {
 	}
 }
 
+func TestModifyRoom(t *testing.T) {
+	// Create Test Data
+	for _, test := range table {
+		if err := CreateRoom(test.Room); err != nil {
+			t.Error(err.Error())
+			return
+		}
 
+		// Used as a random data source in order to guarantee unique labels
+		currentTime := time.Now().UnixMilli()
+
+		if err := ModifyRoomData(test.Room.Id, fmt.Sprintf("name:%d", currentTime), fmt.Sprintf("description:%d", currentTime)); err != nil {
+			t.Error(err.Error())
+			return
+		}
+
+		room, found, err := GetRoomDataById(test.Room.Id)
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+		if !found {
+			t.Errorf("Room %s not found after modifycation", test.Room.Id)
+			return
+		}
+
+		if room.Name != fmt.Sprintf("name:%d", currentTime) || room.Description != fmt.Sprintf("description:%d", currentTime) {
+			t.Errorf("Invalid values after modification: want: (name:%d, description:%d), got(%s, %s)", currentTime, currentTime, room.Name, room.Description)
+			return
+		}
+	}
+}

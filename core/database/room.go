@@ -5,7 +5,6 @@ import (
 	"fmt"
 )
 
-// Camera struct, used in `config.rooms.cameras``
 type Camera struct {
 	Id     int    `json:"id"`
 	RoomId string `json:"roomId"`
@@ -13,8 +12,6 @@ type Camera struct {
 	Name   string `json:"name"`
 }
 
-// Identified by a unique Id, has a Name and Description
-// When used in config file, the Switches slice is also populated
 type Room struct {
 	Data     RoomData `json:"data"`
 	Switches []Switch `json:"switches"`
@@ -46,15 +43,19 @@ func createRoomTable() error {
 	return nil
 }
 
-// Creates a new room
+// Creates a new room given an arbitrary, non-existing id
 func CreateRoom(room RoomData) error {
 	query, err := db.Prepare(`
-	INSERT INTO
-	room(Id, Name, Description)
-	VALUES(?,?,?)
+	INSERT INTO 
+	room(
+		Id,
+		Name,
+		Description
+	)
+	VALUES(?, ?, ?)
 	ON DUPLICATE KEY
-	UPDATE Name=VALUES(Name),
-	Description=VALUES(Description)
+		UPDATE Name=VALUES(Name),
+		Description=VALUES(Description)
 	`)
 	if err != nil {
 		log.Error("Could not create room: preparing query failed: ", err.Error())
@@ -79,15 +80,34 @@ func CreateRoom(room RoomData) error {
 }
 
 // Updates the rooms name and description
+func ModifyRoomData(id string, newName string, newDescription string) error {
+	query, err := db.Prepare(`
+	UPDATE room
+	SET
+		Name=?,
+		Description=?
+	WHERE Id=?
+	`)
+	if err != nil {
+		log.Error("Failed to modify room: preparing query failed: ", err.Error())
+		return err
+	}
+	if _, err := query.Exec(newName, newDescription, id); err != nil {
+		log.Error("Failed to modify room: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}
 
 // Returns a list of room data
 func ListRooms() ([]RoomData, error) {
-	query := `
+	res, err := db.Query(`
 	SELECT
-	Id, Name, Description
+		Id,
+		Name,
+		Description
 	FROM room
-	`
-	res, err := db.Query(query)
+	`)
 	if err != nil {
 		log.Error("Failed to list rooms: executing query failed: ", err.Error())
 		return nil, err
@@ -109,7 +129,7 @@ func ListRooms() ([]RoomData, error) {
 func GetRoomDataById(id string) (RoomData, bool, error) {
 	query, err := db.Prepare(`
 	SELECT
-	Id, Name, Description
+		Id, Name, Description
 	FROM room
 	WHERE Id=?
 	`)
@@ -132,12 +152,12 @@ func GetRoomDataById(id string) (RoomData, bool, error) {
 func listPersonalRoomData(username string) ([]RoomData, error) {
 	query, err := db.Prepare(`
 	SELECT DISTINCT
-	room.Id, room.Name, room.Description
+		room.Id,
+		room.Name,
+		room.Description
 	FROM room
-	JOIN switch
-	ON switch.RoomId=room.Id
-	JOIN hasSwitchPermission
-	ON switch.Id=hasSwitchPermission.Switch
+		JOIN switch ON switch.RoomId=room.Id
+		JOIN hasSwitchPermission ON switch.Id=hasSwitchPermission.Switch
 	WHERE username=?
 	`)
 	if err != nil {
@@ -165,8 +185,7 @@ func listPersonalRoomData(username string) ([]RoomData, error) {
 // Deletes a room and all enteties that depend on the room
 func DeleteRoomQuery(id string) error {
 	query, err := db.Prepare(`
-	DELETE FROM
-	room
+	DELETE FROM room
 	WHERE Id=?
 	`)
 	if err != nil {
