@@ -60,7 +60,15 @@ func CreateNewReminder(name string, description string, dueDate time.Time, owner
 	query, err := db.Prepare(`
 	INSERT INTO
 	reminder(
-		Id, Name, Description, CreatedDate, DueDate, Owner, Priority, UserWasNotified, UserWasNotifiedAt
+		Id,
+		Name,
+		Description,
+		CreatedDate,
+		DueDate,
+		Owner,
+		Priority,
+		UserWasNotified,
+		UserWasNotifiedAt
 	)
 	VALUES(DEFAULT, ?, ?, DEFAULT, ?, ?, ?, FALSE, ?)
 	`)
@@ -86,7 +94,15 @@ func CreateNewReminder(name string, description string, dueDate time.Time, owner
 func GetUserReminders(username string) ([]Reminder, error) {
 	query, err := db.Prepare(`
 	SELECT
-	Id, Name, Description, Priority, CreatedDate, DueDate, Owner, UserWasNotified, UserWasNotifiedAt
+		Id,
+		Name,
+		Description,
+		Priority,
+		CreatedDate,
+		DueDate,
+		Owner,
+		UserWasNotified,
+		UserWasNotifiedAt
 	FROM reminder
 	WHERE
 	Owner=?
@@ -144,10 +160,10 @@ func ModifyReminder(id uint, name string, description string, dueDate time.Time,
 	query, err := db.Prepare(`
 	UPDATE reminder
 	SET
-	Name=?,
-	Description=?,
-	DueDate=?,
-	Priority=?
+		Name=?,
+		Description=?,
+		DueDate=?,
+		Priority=?
 	WHERE
 	Id=?
 	`)
