@@ -5,13 +5,6 @@ import (
 	"fmt"
 )
 
-type Camera struct {
-	Id     int    `json:"id"`
-	RoomId string `json:"roomId"`
-	Url    string `json:"url"`
-	Name   string `json:"name"`
-}
-
 type Room struct {
 	Data     RoomData `json:"data"`
 	Switches []Switch `json:"switches"`
@@ -54,7 +47,8 @@ func CreateRoom(room RoomData) error {
 	)
 	VALUES(?, ?, ?)
 	ON DUPLICATE KEY
-		UPDATE Name=VALUES(Name),
+		UPDATE
+		Name=VALUES(Name),
 		Description=VALUES(Description)
 	`)
 	if err != nil {
@@ -79,7 +73,7 @@ func CreateRoom(room RoomData) error {
 	return nil
 }
 
-// Updates the rooms name and description
+// Updates the room's name and description
 func ModifyRoomData(id string, newName string, newDescription string) error {
 	query, err := db.Prepare(`
 	UPDATE room
@@ -182,7 +176,7 @@ func listPersonalRoomData(username string) ([]RoomData, error) {
 	return rooms, nil
 }
 
-// Deletes a room and all enteties that depend on the room
+// Deletes a room and all entities that depend on the room
 func DeleteRoomQuery(id string) error {
 	query, err := db.Prepare(`
 	DELETE FROM room
@@ -200,7 +194,7 @@ func DeleteRoomQuery(id string) error {
 }
 
 // TODO: Move to business logic layer
-// Returns a complete list of rooms, includes metadata like switches
+// Returns a complete list of rooms, includes its metadata like switches and cameras
 func ListPersonalRooms(username string) ([]Room, error) {
 	rooms, err := listPersonalRoomData(username)
 	if err != nil {
@@ -232,6 +226,9 @@ func ListPersonalRooms(username string) ([]Room, error) {
 
 func DeleteRoom(id string) error {
 	if err := DeleteRoomSwitches(id); err != nil {
+		return err
+	}
+	if err := DeleteRoomCameras(id); err != nil {
 		return err
 	}
 	if err := DeleteRoomQuery(id); err != nil {

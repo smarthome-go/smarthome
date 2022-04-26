@@ -17,14 +17,18 @@ require (
 )
 
 require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
 
 require (
 	github.com/go-co-op/gocron v1.13.0
 	github.com/gorilla/securecookie v1.1.1
 	github.com/nathan-osman/go-sunrise v1.0.0
+	github.com/stretchr/testify v1.7.1
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
 	golang.org/x/image v0.0.0-20220302094943-723b81ca9867
 	golang.org/x/sys v0.0.0-20220403020550-483a9cbc67c0 // indirect

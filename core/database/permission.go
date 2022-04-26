@@ -54,10 +54,14 @@ func createPermissionTable() error {
 func initializePermissions() error {
 	query, err := db.Prepare(`
 	INSERT INTO
-	permission(Permission, Name, Description)
+	permission(
+		Permission,
+		Name,
+		Description)
 	VALUES(?, ?, ?)
 	ON DUPLICATE KEY UPDATE
-	Name=VALUES(Name)`)
+		Name=VALUES(Name)
+	`)
 	if err != nil {
 		log.Error("Failed to create permission: preparing query failed: ", err.Error())
 		return err
