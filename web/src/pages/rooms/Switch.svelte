@@ -66,7 +66,7 @@
     .switch {
         background-color: var(--clr-height-1-3);
         border-radius: 0.3rem;
-        min-width: 15rem;
+        width: 15rem;
         height: 3.3rem;
         padding: 0.5rem;
         display: flex;

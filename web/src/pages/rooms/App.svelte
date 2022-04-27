@@ -169,8 +169,8 @@
                     />
                 {/each}
                 {#if hasEditPermission}
-                    <div id="add-switch">
-                        <Label>Add Switch</Label>
+                    <div id="add-switch" class="switch mdc-elevation--z3">
+                        <span>Add Switch</span>
                         <IconButton class="material-icons">add</IconButton>
                     </div>
                 {/if}
@@ -178,8 +178,8 @@
         </div>
         <div id="cameras" class="mdc-elevation--z1">
             {#if hasEditPermission && currentRoom !== undefined}
-                <div id="add-camera">
-                    <Label>Add Camera</Label>
+                <div id="add-camera" class="switch mdc-elevation--z3">
+                    <span>Add Camera</span>
                     <IconButton class="material-icons">add</IconButton>
                 </div>
             {/if}
@@ -261,9 +261,13 @@
         border-radius: 0.3rem;
         width: 15rem;
         height: 3.3rem;
-        padding: 0.5rem 1rem;
+        padding: 0.5rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
+
+        span {
+            margin-left: .5rem;
+        }
     }
 </style>
