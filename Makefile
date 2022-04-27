@@ -79,7 +79,7 @@ mysql:
 	cd docker && docker-compose up -d
 
 # Builds
-build: web all linux clean
+build: setup web all linux clean
 
 docker-prepare:
 	CGO_ENABLED=0 GOOS=linux go build -v -installsuffix cgo -ldflags '-s -w' -o smarthome
