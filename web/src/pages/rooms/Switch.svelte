@@ -6,7 +6,8 @@
     import { createSnackbar,hasPermission,sleep } from '../../global'
 
     export let id: string
-    export let label: string
+    export let name: string
+    export let watts: number
     export let checked: boolean
 
     let requests = 0
@@ -35,7 +36,7 @@
             if (!res.success) throw Error()
         } catch {
             $createSnackbar(
-                `Failed to set switch '${label}' to ${
+                `Failed to set switch '${name}' to ${
                     event.detail.selected ? 'on' : 'off'
                 }`
             )
@@ -48,7 +49,7 @@
 <div class="switch mdc-elevation--z3">
     <div>
         <Switch icons={false} bind:checked on:SMUISwitch:change={toggle} />
-        <span>{label}</span>
+        <span>{name}</span>
     </div>
     <div class="right">
         {#if hasEditPermission}

@@ -165,7 +165,8 @@
                     <Switch
                         bind:checked={sw.powerOn}
                         id={sw.id}
-                        label={sw.name}
+                        name={sw.name}
+                        watts={sw.watts}
                     />
                 {/each}
                 {#if hasEditPermission}
@@ -248,11 +249,13 @@
         border-radius: 0.4rem;
         padding: 1.5rem;
         box-sizing: border-box;
+        display: flex;
+        justify-content: center;
 
         @include widescreen {
             height: auto;
             min-height: 100%;
-            width: 20rem;
+            min-width: 20rem;
         }
     }
     #add-switch,
@@ -267,7 +270,7 @@
         align-items: center;
 
         span {
-            margin-left: .5rem;
+            margin-left: .7rem;
         }
     }
 </style>

@@ -21,6 +21,13 @@ type DeleteRoomRequest struct {
 	Id string `json:"id"`
 }
 
+type AddSwitchRequest struct {
+	Id     string `json:"id"`
+	Name   string `json:"name"`
+	RoomId string `json:"roomId"`
+	Watts  uint16 `json:"watts"`
+}
+
 // Returns list of rooms which contain switches that the user is allowed to use
 func ListUserRoomsWithSwitches(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -156,4 +163,18 @@ func DeleteRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	Res(w, Response{Success: true, Message: "successfully deleted room"})
+}
+
+// Creates a switch
+func CreateSwitch(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request AddSwitchRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	// TODO: implement function and backend logic
 }
