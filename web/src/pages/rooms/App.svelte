@@ -1,4 +1,5 @@
 <script lang="ts">
+    import Button from '@smui/button/src/Button.svelte'
     import IconButton from '@smui/icon-button'
     import Tab,{ Label } from '@smui/tab'
     import TabBar from '@smui/tab-bar'
@@ -6,34 +7,27 @@
     import Progress from '../../components/Progress.svelte'
     import { createSnackbar,hasPermission,sleep } from '../../global'
     import Page from '../../Page.svelte'
+    import AddRoom from './dialogs/AddRoom.svelte'
+    import EditRoom from './dialogs/EditRoom.svelte'
+    import type { Room } from './main'
     import Switch from './Switch.svelte'
 
-    interface RoomResponse {
-        data: {
-            id: string
-            name: string
-            description: string
-        }
-        switches: SwitchResponse[]
-        cameras: CameraRespomse[]
-    }
-    interface SwitchResponse {
-        id: string
-        name: string
-        powerOn: boolean
-        watts: number
-    }
-
-    interface CameraRespomse {
-
-    }
-
+    let editOpen = false
     let loading = false
-    let rooms: RoomResponse[]
+    let rooms: Room[]
 
-    let currentRoom: RoomResponse
+    let addRoomShow: () => void
+
+    let currentRoom: Room
     $: if (currentRoom !== undefined)
         window.localStorage.setItem('current_room', currentRoom.data.id)
+
+    $: if (
+        rooms !== undefined &&
+        currentRoom !== undefined &&
+        !rooms.find((r) => r.data.id === currentRoom.data.id)
+    )
+        currentRoom = rooms.slice(-1)[0]
 
     // Determines if additional buttons for editing rooms should be visible
     let hasEditPermission: boolean
@@ -44,19 +38,30 @@
     async function loadRooms(updateExisting: boolean = false) {
         loading = true
         try {
-            const res = await (await fetch('/api/room/list/personal')).json()
+            const res = await (
+                await fetch(
+                    `/api/room/list/${
+                        (await hasPermission('modifyRooms'))
+                            ? 'all'
+                            : 'personal'
+                    }`
+                )
+            ).json()
             if (res.success === false) throw Error()
             if (updateExisting) {
                 for (const room of rooms) {
-                    room.switches = (res as RoomResponse[]).find(
+                    room.switches = (res as Room[]).find(
                         (r) => r.data.id === room.data.id
                     ).switches
                 }
             } else rooms = res
             const roomId = window.localStorage.getItem('current_room')
             const room =
-                roomId === null ? undefined : rooms.find((r) => r.data.id === roomId)
+                roomId === null
+                    ? undefined
+                    : rooms.find((r) => r.data.id === roomId)
             currentRoom = room === undefined ? rooms[0] : room
+            console.log(rooms, room, roomId)
         } catch {
             $createSnackbar('Could not load rooms', [
                 {
@@ -68,9 +73,49 @@
         loading = false
         while (rooms === undefined) await sleep(10)
     }
+
+    async function addRoom(id: string, name: string, description: string) {
+        try {
+            const res = await (
+                await fetch(`/api/room/add`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, name }),
+                })
+            ).json()
+            if (!res.success) throw Error(res.error)
+            rooms = [
+                ...rooms,
+                {
+                    data: {
+                        id,
+                        name,
+                        description,
+                    },
+                    switches: [],
+                    cameras: [],
+                },
+            ]
+            rooms = rooms.sort((a, b) => a.data.name.localeCompare(b.data.name))
+            await sleep(0) // Just for fixing js
+            currentRoom = rooms[rooms.findIndex((r) => r.data.id === id)]
+        } catch (err) {
+            $createSnackbar(`Failed to create room: ${err}`)
+        }
+    }
 </script>
 
 <Page>
+    <AddRoom blacklist={rooms} bind:show={addRoomShow} onAdd={addRoom} />
+    {#if currentRoom !== undefined}
+        <EditRoom
+            bind:open={editOpen}
+            bind:id={currentRoom.data.id}
+            bind:name={currentRoom.data.name}
+            bind:description={currentRoom.data.description}
+            bind:rooms
+        />
+    {/if}
     <div id="tabs" class="mdc-elevation--z8">
         {#await loadRooms() then}
             <TabBar
@@ -85,30 +130,54 @@
             </TabBar>
         {/await}
         {#if hasEditPermission}
-            <IconButton class="material-icons" title="Edit Rooms"
-                >edit</IconButton
+            {#if currentRoom !== undefined}
+                <IconButton
+                    class="material-icons"
+                    title="Edit Rooms"
+                    on:click={() => (editOpen = true)}>edit</IconButton
+                >
+                <IconButton
+                    class="material-icons"
+                    on:click={() => loadRooms(true)}>refresh</IconButton
+                >
+            {/if}
+            <IconButton
+                class="material-icons"
+                title="Add Room"
+                on:click={addRoomShow}>add</IconButton
             >
-            <IconButton class="material-icons" title="Add Room">add</IconButton>
         {/if}
-        <IconButton class="material-icons" on:click={() => loadRooms(true)}
-            >refresh</IconButton
-        >
+
         <Progress id="loader" bind:loading />
     </div>
+
     <div id="content">
         <div id="switches" class="mdc-elevation--z1">
-            {#each currentRoom !== undefined ? currentRoom.switches : [] as sw (sw.id)}
-                <Switch bind:checked={sw.powerOn} id={sw.id} label={sw.name} />
-            {/each}
-            {#if hasEditPermission}
-                <div id="add-switch">
-                    <Label>Add Switch</Label>
-                    <IconButton class="material-icons">add</IconButton>
+            {#if currentRoom == undefined}
+                <div>
+                    <h6>There are currently no rooms.</h6>
+                    <Button variant="outlined" on:click={addRoomShow}>
+                        <Label>Create Room</Label>
+                    </Button>
                 </div>
+            {:else}
+                {#each currentRoom !== undefined ? currentRoom.switches : [] as sw (sw.id)}
+                    <Switch
+                        bind:checked={sw.powerOn}
+                        id={sw.id}
+                        label={sw.name}
+                    />
+                {/each}
+                {#if hasEditPermission}
+                    <div id="add-switch">
+                        <Label>Add Switch</Label>
+                        <IconButton class="material-icons">add</IconButton>
+                    </div>
+                {/if}
             {/if}
         </div>
         <div id="cameras" class="mdc-elevation--z1">
-            {#if hasEditPermission}
+            {#if hasEditPermission && currentRoom !== undefined}
                 <div id="add-camera">
                     <Label>Add Camera</Label>
                     <IconButton class="material-icons">add</IconButton>
@@ -120,13 +189,13 @@
 
 <style lang="scss">
     @use '../../mixins' as *;
-
     #tabs {
         background-color: var(--clr-height-0-8);
         padding-right: 1rem;
         min-height: 48px;
         position: relative;
         display: flex;
+        overflow-x: auto;
 
         & :global(#loader) {
             position: absolute;
@@ -134,7 +203,6 @@
             top: auto;
         }
     }
-
     #content {
         min-height: calc(100vh - 48px);
         padding: 1rem 1.5rem;
@@ -161,6 +229,10 @@
         box-sizing: border-box;
         min-height: calc(100% - 16rem);
         flex-grow: 1;
+
+        h6 {
+            margin: 1rem 0;
+        }
 
         @include widescreen {
             min-height: 100%;
