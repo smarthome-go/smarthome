@@ -69,7 +69,6 @@ func CreateRoom(room RoomData) error {
 	if rowsAffected > 0 {
 		log.Debug(fmt.Sprintf("Added room `%s` with name `%s`", room.Id, room.Name))
 	}
-	defer query.Close()
 	return nil
 }
 
@@ -86,6 +85,7 @@ func ModifyRoomData(id string, newName string, newDescription string) error {
 		log.Error("Failed to modify room: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err := query.Exec(newName, newDescription, id); err != nil {
 		log.Error("Failed to modify room: executing query failed: ", err.Error())
 		return err
@@ -131,6 +131,7 @@ func GetRoomDataById(id string) (RoomData, bool, error) {
 		log.Error("Failed to get room data by id: preparing query failed: ", err.Error())
 		return RoomData{}, false, err
 	}
+	defer query.Close()
 	var room RoomData
 	if err := query.QueryRow(id).Scan(&room.Id, &room.Name, &room.Description); err != nil {
 		if err == sql.ErrNoRows {
@@ -158,6 +159,7 @@ func listPersonalRoomData(username string) ([]RoomData, error) {
 		log.Error("Failed to list personal room data: preparing query failed: ", err.Error())
 		return nil, err
 	}
+	defer query.Close()
 	res, err := query.Query(username)
 	if err != nil {
 		log.Error("Failed to list personal room data: executing query failed: ", err.Error())
@@ -186,6 +188,7 @@ func DeleteRoomQuery(id string) error {
 		log.Error("Failed to delete room: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err := query.Exec(id); err != nil {
 		log.Error("Failed to delete room: executing query failed: ", err.Error())
 		return err

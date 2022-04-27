@@ -46,6 +46,7 @@ func CreateCamera(data Camera) error {
 		log.Error("Failed to create camera: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err := query.Exec(
 		data.Id,
 		data.Name,
@@ -70,6 +71,7 @@ func ModifyCamera(id string, newName string, newUrl string) error {
 		log.Error("Failed to modify camera: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err := query.Exec(newName, newUrl, id); err != nil {
 		log.Error("Failed to modify camera: executing query failed: ", err.Error())
 		return err
@@ -90,7 +92,7 @@ func ListCameras() ([]Camera, error) {
 		log.Error("Failed to list cameras: executing query failed: ", err.Error())
 		return nil, err
 	}
-
+	defer res.Close()
 	cameras := make([]Camera, 0)
 	for res.Next() {
 		var camera Camera
@@ -122,6 +124,7 @@ func GetCameraById(id string) (Camera, bool, error) {
 		log.Error("Failed to get camera by id: preparing query failed: ", err.Error())
 		return Camera{}, false, err
 	}
+	defer query.Close()
 	var camera Camera
 	if err := query.QueryRow(id).Scan(
 		&camera.Id,
@@ -147,6 +150,7 @@ func DeleteCamera(id string) error {
 		log.Error("Failed to delete camera: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err := query.Exec(id); err != nil {
 		log.Error("Failed to delete camera: executing query failed: ", err.Error())
 		return err
@@ -165,6 +169,7 @@ func DeleteRoomCameras(roomId string) error {
 		log.Error("Failed to delete room cameras: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err := query.Exec(roomId); err != nil {
 		log.Error("Failed to delete room cameras: executing query failed: ", err.Error())
 		return err
