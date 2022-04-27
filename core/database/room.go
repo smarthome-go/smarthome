@@ -101,6 +101,7 @@ func ListRooms() ([]RoomData, error) {
 		Name,
 		Description
 	FROM room
+	ORDER BY NAME ASC
 	`)
 	if err != nil {
 		log.Error("Failed to list rooms: executing query failed: ", err.Error())
@@ -154,6 +155,7 @@ func listPersonalRoomData(username string) ([]RoomData, error) {
 		JOIN switch ON switch.RoomId=room.Id
 		JOIN hasSwitchPermission ON switch.Id=hasSwitchPermission.Switch
 	WHERE username=?
+	ORDER BY NAME ASC
 	`)
 	if err != nil {
 		log.Error("Failed to list personal room data: preparing query failed: ", err.Error())
@@ -196,13 +198,43 @@ func DeleteRoomQuery(id string) error {
 	return nil
 }
 
-// Returns a complete list of rooms, includes its metadata like switches and cameras
-func ListPersonalRooms(username string) ([]Room, error) {
+// Returns a complete list of rooms to which a user has access to, includes its metadata like switches and cameras
+func ListPersonalRoomsWithData(username string) ([]Room, error) {
 	rooms, err := listPersonalRoomData(username)
 	if err != nil {
 		return nil, err
 	}
 	switches, err := ListUserSwitches(username)
+	if err != nil {
+		return nil, err
+	}
+	outputRooms := make([]Room, 0)
+	for _, room := range rooms {
+		switchesTemp := make([]Switch, 0)
+		camerasTemp := make([]Camera, 0)
+
+		for _, switchItem := range switches {
+			if switchItem.RoomId == room.Id {
+				switchesTemp = append(switchesTemp, switchItem)
+			}
+		}
+
+		outputRooms = append(outputRooms, Room{
+			Data:     room,
+			Switches: switchesTemp,
+			Cameras:  camerasTemp,
+		})
+	}
+	return outputRooms, nil
+}
+
+// Returns a complete list of rooms, includes its metadata like switches and cameras
+func ListAllRoomsWithData() ([]Room, error) {
+	rooms, err := ListRooms()
+	if err != nil {
+		return nil, err
+	}
+	switches, err := ListSwitches()
 	if err != nil {
 		return nil, err
 	}
