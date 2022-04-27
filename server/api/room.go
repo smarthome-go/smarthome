@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gorilla/mux"
 	"golang.org/x/exp/utf8string"
 
 	"github.com/MikMuellerDev/smarthome/core/database"
@@ -18,14 +17,18 @@ type RoomRequest struct {
 	Description string `json:"description"`
 }
 
+type DeleteRoomRequest struct {
+	Id string `json:"id"`
+}
+
 // Returns list of rooms which contain switches that the user is allowed to use
-func GetUserRoomsWithSwitches(w http.ResponseWriter, r *http.Request) {
+func ListUserRoomsWithSwitches(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
 		return
 	}
-	rooms, err := database.ListPersonalRooms(username)
+	rooms, err := database.ListPersonalRoomsWithData(username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "could not list personal rooms", Error: "database failure"})
@@ -33,7 +36,22 @@ func GetUserRoomsWithSwitches(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := json.NewEncoder(w).Encode(rooms); err != nil {
 		log.Error(err.Error())
-		Res(w, Response{Success: false, Message: "failed to get user rooms", Error: "could not encode content"})
+		Res(w, Response{Success: false, Message: "could not list personal rooms", Error: "could not encode content"})
+	}
+}
+
+// Returns list of all rooms
+func ListAllRoomsWithSwitches(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	rooms, err := database.ListAllRoomsWithData()
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "could not list all rooms", Error: "database failure"})
+		return
+	}
+	if err := json.NewEncoder(w).Encode(rooms); err != nil {
+		log.Error(err.Error())
+		Res(w, Response{Success: false, Message: "could not list all rooms", Error: "could not encode content"})
 	}
 }
 
@@ -50,6 +68,11 @@ func AddRoom(w http.ResponseWriter, r *http.Request) {
 	if strings.Contains(request.Id, " ") || !utf8string.NewString(request.Id).IsASCII() {
 		w.WriteHeader(http.StatusBadRequest)
 		Res(w, Response{Success: false, Message: "bad request", Error: "id should only include ASCII characterst and must not have whitespaces"})
+		return
+	}
+	if len(request.Id) > 30 || len(request.Name) > 50 {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "maximum lengths for id and name are 30 and 50 "})
 		return
 	}
 	_, alreadyExists, err := database.GetRoomDataById(request.Id)
@@ -108,14 +131,15 @@ func ModifyRoomData(w http.ResponseWriter, r *http.Request) {
 // Deletes a room and all its dependencies
 func DeleteRoom(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	vars := mux.Vars(r)
-	id, ok := vars["id"]
-	if !ok {
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		Res(w, Response{Success: false, Message: "failed to delete room", Error: "invalid room-id"})
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request DeleteRoomRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	_, exists, err := database.GetRoomDataById(id)
+	_, exists, err := database.GetRoomDataById(request.Id)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to delete room", Error: "database failure"})
@@ -126,7 +150,7 @@ func DeleteRoom(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to delete room", Error: "invalid room-id"})
 		return
 	}
-	if err := database.DeleteRoom(id); err != nil {
+	if err := database.DeleteRoom(request.Id); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to delete room", Error: "database failure"})
 		return
