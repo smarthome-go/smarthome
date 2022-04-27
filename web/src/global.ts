@@ -137,7 +137,7 @@ export async function fetchNotificationCount(): Promise<number> {
 export const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms))
 
 export async function hasPermission(permission: string): Promise<boolean> {
-    while (isFetching) await sleep(5)
+    while (!hasFetched) await sleep(5)
     const permissions = get(data).userData.permissions
     return (permissions.includes(permission) || permissions.includes('*'))
 }
