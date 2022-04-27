@@ -1,4 +1,4 @@
-package database
+ipackage database
 
 import (
 	"testing"
@@ -59,4 +59,34 @@ func TestCreateCamera(t *testing.T) {
 		t.Error(err.Error())
 	}
 	assert.Equal(t, cameras, table, "listed cameras do not match table")
+}
+
+func TestModifyCamera(t * testing.T) {
+  // Create test room
+  if err := CreateRoom(Room{Id: "test"}); err != nil {
+    t.Error(err.Error())
+  }
+
+  table := []struct {
+    Original Camera
+    Modified Camera
+  } {
+    {
+      Original: Camera {
+        Id: "test_3"
+        RoomId: "test"
+      },
+      Modified: Camera {
+        Id: "test_3",
+        RoomId: "test",
+        Name: "Test Name",
+        Url: "https://example.com/1"
+      }
+    }
+  }
+  for _, test := range table {
+    if err := CreateCamera(test.Original); err != nil {
+      t.Error(err.Error())
+    }
+  }
 }
