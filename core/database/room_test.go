@@ -139,7 +139,7 @@ func TestListRooms(t *testing.T) {
 		if valid != test.Listable {
 			t.Errorf("Room %s did not follow `listable` spec: want: %t got: %t", test.Room.Id, test.Listable, valid)
 		}
-		newRooms, err := ListPersonalRooms("admin")
+		newRooms, err := ListPersonalRoomsWithData("admin")
 		if err != nil {
 			t.Error(err.Error())
 		}
