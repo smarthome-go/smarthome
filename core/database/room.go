@@ -196,7 +196,6 @@ func DeleteRoomQuery(id string) error {
 	return nil
 }
 
-// TODO: Move to business logic layer
 // Returns a complete list of rooms, includes its metadata like switches and cameras
 func ListPersonalRooms(username string) ([]Room, error) {
 	rooms, err := listPersonalRoomData(username)
