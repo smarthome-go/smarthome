@@ -59,22 +59,22 @@ func CreateCamera(data Camera) error {
 }
 
 func ModifyCamera(id string, newName string, newUrl string) error {
-  query, err := db.Prepare(`
+	query, err := db.Prepare(`
   UPDATE camera
   SET
     Name=?,
     Url=?
   WHERE ID=?
   `)
-  if err != nil {
-    log.Error("Failed to modify camera: preparing query failed: ", err.Error())
-    return err
-  }
-  if _, err := query.Exec(newName, newUrl, id); err != nil {
-    log.Error("Failed to modify camera: executing query failed: ", err.Error())
-    return err
-  } 
-  return nil
+	if err != nil {
+		log.Error("Failed to modify camera: preparing query failed: ", err.Error())
+		return err
+	}
+	if _, err := query.Exec(newName, newUrl, id); err != nil {
+		log.Error("Failed to modify camera: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
 }
 
 func ListCameras() ([]Camera, error) {
