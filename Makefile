@@ -1,7 +1,7 @@
 appname := smarthome
 workingdir := smarthome
 sources := $(wildcard *.go)
-version := 0.0.25-beta-rc.2-fix
+version := 0.0.25-beta-rc.3
 
 build = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -ldflags "-s -w" -v -o $(appname) $(4)
 tar = mkdir -p build && cd ../ && tar -cvzf ./$(appname)_$(1)_$(2).tar.gz $(workingdir)/$(appname) $(workingdir)/web/dist $(workingdir)/web/html $(workingdir)/resources && mv $(appname)_$(1)_$(2).tar.gz $(workingdir)/build
