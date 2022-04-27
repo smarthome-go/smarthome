@@ -51,7 +51,7 @@
         />
     </Content>
     <Actions>
-        <Button on:click={() => {}}>
+        <Button>
             <Label>Cancel</Label>
         </Button>
         <Button
