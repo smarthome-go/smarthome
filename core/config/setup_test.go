@@ -115,7 +115,7 @@ func TestRunSetup(t *testing.T) {
 		return
 	}
 	for _, switchItem := range setup.Rooms[0].Switches {
-		exists, err := database.DoesSwitchExist(switchItem.Id)
+		_, exists, err := database.GetSwitchById(switchItem.Id)
 		if err != nil {
 			t.Error(err.Error())
 			return
