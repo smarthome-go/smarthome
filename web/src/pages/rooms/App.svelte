@@ -7,16 +7,17 @@
     import Progress from '../../components/Progress.svelte'
     import { createSnackbar,hasPermission,sleep } from '../../global'
     import Page from '../../Page.svelte'
-    import AddRoom from './dialogs/AddRoom.svelte'
-    import EditRoom from './dialogs/EditRoom.svelte'
-    import type { Room } from './main'
+    import AddRoom from './dialogs/room/AddRoom.svelte'
+    import EditRoom from './dialogs/room/EditRoom.svelte'
+    import AddSwitch from './dialogs/switch/AddSwitch.svelte'
+    import { loading,Room } from './main'
     import Switch from './Switch.svelte'
 
     let editOpen = false
-    let loading = false
     let rooms: Room[]
 
     let addRoomShow: () => void
+    let addSwitchShow: () => void
 
     let currentRoom: Room
     $: if (currentRoom !== undefined)
@@ -36,7 +37,7 @@
     })
 
     async function loadRooms(updateExisting: boolean = false) {
-        loading = true
+        $loading = true
         try {
             const res = await (
                 await fetch(
@@ -70,11 +71,12 @@
                 },
             ])
         }
-        loading = false
         while (rooms === undefined) await sleep(10)
+        $loading = false
     }
 
     async function addRoom(id: string, name: string, description: string) {
+        $loading = true
         try {
             const res = await (
                 await fetch(`/api/room/add`, {
@@ -102,6 +104,38 @@
         } catch (err) {
             $createSnackbar(`Failed to create room: ${err}`)
         }
+        $loading = false
+    }
+
+    async function addSwitch(id: string, name: string, watts: number) {
+        $loading = true
+        try {
+            const res = await (
+                await fetch('/api/switch/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id,
+                        name,
+                        watts,
+                        roomId: currentRoom.data.id,
+                    }),
+                })
+            ).json()
+            if (!res.success) throw Error(res.error)
+            const currentRoomIndex = rooms.findIndex(
+                (r) => r.data.id == currentRoom.data.id
+            )
+
+            currentRoom.switches = [
+                ...currentRoom.switches,
+                { id, name, powerOn: false, watts },
+            ]
+            rooms[currentRoomIndex] = currentRoom
+        } catch (err) {
+            $createSnackbar(`Could not create switch: ${err}`)
+        }
+        $loading = false
     }
 </script>
 
@@ -114,6 +148,11 @@
             bind:name={currentRoom.data.name}
             bind:description={currentRoom.data.description}
             bind:rooms
+        />
+        <AddSwitch
+            switches={currentRoom.switches}
+            bind:show={addSwitchShow}
+            onAdd={addSwitch}
         />
     {/if}
     <div id="tabs" class="mdc-elevation--z8">
@@ -147,8 +186,7 @@
                 on:click={addRoomShow}>add</IconButton
             >
         {/if}
-
-        <Progress id="loader" bind:loading />
+        <Progress id="loader" bind:loading={$loading} />
     </div>
 
     <div id="content">
@@ -164,6 +202,7 @@
                 {#each currentRoom !== undefined ? currentRoom.switches : [] as sw (sw.id)}
                     <Switch
                         bind:checked={sw.powerOn}
+                        bind:switches={currentRoom.switches}
                         id={sw.id}
                         name={sw.name}
                         watts={sw.watts}
@@ -172,7 +211,10 @@
                 {#if hasEditPermission}
                     <div id="add-switch" class="switch mdc-elevation--z3">
                         <span>Add Switch</span>
-                        <IconButton class="material-icons">add</IconButton>
+                        <IconButton
+                            class="material-icons"
+                            on:click={addSwitchShow}>add</IconButton
+                        >
                     </div>
                 {/if}
             {/if}
@@ -240,7 +282,10 @@
         }
 
         @include mobile {
-            justify-content: center;
+            flex-direction: column;
+            flex-wrap: nowrap;
+            align-content: unset;
+            align-items: center;
         }
     }
     #cameras {
@@ -270,7 +315,7 @@
         align-items: center;
 
         span {
-            margin-left: .7rem;
+            margin-left: 0.7rem;
         }
     }
 </style>

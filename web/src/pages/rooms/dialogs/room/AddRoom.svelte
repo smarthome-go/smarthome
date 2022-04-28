@@ -3,7 +3,7 @@
     import Dialog,{ Actions,Content,InitialFocus,Title } from '@smui/dialog'
     import Textfield from '@smui/textfield'
     import CharacterCounter from '@smui/textfield/character-counter'
-    import type { Room } from '../main'
+    import type { Room } from '../../main'
 
     let open = false
     export let blacklist: Room[] = []

@@ -65,6 +65,8 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/switch/list/all", api.GetAllSwitches).Methods("GET")
 	r.HandleFunc("/api/switch/list/personal", mdl.ApiAuth(api.GetUserSwitches)).Methods("GET")
 	r.HandleFunc("/api/switch/add", mdl.ApiAuth(mdl.Perm(api.CreateSwitch, database.PermissionModifyRooms))).Methods("POST")
+	r.HandleFunc("/api/switch/modify", mdl.ApiAuth(mdl.Perm(api.ModifySwitch, database.PermissionModifyRooms))).Methods("PUT")
+	r.HandleFunc("/api/switch/delete", mdl.ApiAuth(mdl.Perm(api.DeleteSwitch, database.PermissionModifyRooms))).Methods("DELETE")
 
 	// Logs for the admin user
 	r.HandleFunc("/api/logs/delete/old", mdl.ApiAuth(mdl.Perm(api.FlushOldLogs, database.PermissionLogs))).Methods("DELETE")

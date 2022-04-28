@@ -3,8 +3,8 @@
     import Dialog,{ Actions,Content,InitialFocus,Title } from '@smui/dialog'
     import Textfield from '@smui/textfield'
     import CharacterCounter from '@smui/textfield/character-counter'
-    import { createSnackbar } from '../../../global'
-    import type { Room } from '../main'
+    import { createSnackbar } from '../../../../global'
+    import { loading,Room } from '../../main'
 
     export let open = false
     let deleteOpen = false
@@ -19,6 +19,7 @@
     export let rooms: Room[]
 
     async function modifyRoom() {
+        $loading = true
         try {
             const res = await (
                 await fetch('/api/room/modify', {
@@ -42,9 +43,11 @@
         } catch (err) {
             $createSnackbar(`Failed to modify room: ${err}`)
         }
+        $loading = false
     }
 
     async function deleteRoom() {
+        $loading = true
         try {
             const res = await (
                 await fetch('/api/room/delete', {
@@ -59,6 +62,7 @@
         } catch (err) {
             $createSnackbar(`Failed to delete room: ${err}`)
         }
+        $loading = false
     }
 </script>
 
@@ -123,6 +127,5 @@
 <style lang="scss">
     #delete {
         margin-top: 1rem;
-        // padding: 1rem;
     }
 </style>

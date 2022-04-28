@@ -4,6 +4,10 @@
     import { onMount } from 'svelte/internal'
     import Progress from '../../components/Progress.svelte'
     import { createSnackbar,hasPermission,sleep } from '../../global'
+    import EditSwitch from './dialogs/switch/EditSwitch.svelte'
+    import type { SwitchResponse } from './main'
+
+    export let switches: SwitchResponse[]
 
     export let id: string
     export let name: string
@@ -13,12 +17,14 @@
     let requests = 0
     let loading = false
 
+    let showEditSwitch: () => void
+
     // Determines if edit button should be shown
     let hasEditPermission: boolean
     onMount(async () => {
         hasEditPermission = await hasPermission('modifyRooms')
     })
-
+    
     $: loading = requests !== 0
     async function toggle(event: CustomEvent<{ selected: boolean }>) {
         requests++
@@ -46,24 +52,29 @@
     }
 </script>
 
+<EditSwitch bind:switches bind:id bind:name bind:watts bind:show={showEditSwitch} />
+
 <div class="switch mdc-elevation--z3">
-    <div>
+    <div class="switch__left">
         <Switch icons={false} bind:checked on:SMUISwitch:change={toggle} />
-        <span>{name}</span>
+        <span class="switch__name">{name}</span>
     </div>
-    <div class="right">
-        {#if hasEditPermission}
-            <IconButton class="material-icons" title="Edit Switch"
-                >edit</IconButton
-            >
-        {/if}
+    <div class="switch__right">
         <div>
             <Progress type="circular" bind:loading />
         </div>
+        {#if hasEditPermission}
+            <IconButton
+                class="material-icons"
+                title="Edit Switch"
+                on:click={showEditSwitch}>edit</IconButton
+            >
+        {/if}
     </div>
 </div>
 
 <style lang="scss">
+    @use '../../mixins' as *;
     .switch {
         background-color: var(--clr-height-1-3);
         border-radius: 0.3rem;
@@ -71,17 +82,31 @@
         height: 3.3rem;
         padding: 0.5rem;
         display: flex;
-        justify-content: space-between;
         align-items: center;
+        justify-content: space-between;
 
         & > * {
             display: flex;
             align-items: center;
         }
-    }
-    .right {
-        div {
-            margin-right: 14px;
+        &__left {
+            max-width: 70%;
+        }
+        &__right {
+            div {
+                margin-right: 14px;
+                display: flex;
+                align-items: center;
+            }
+        }
+        &__name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        @include mobile {
+            width: 90%;
+            height: auto;
+            flex-wrap: wrap;
         }
     }
 </style>
