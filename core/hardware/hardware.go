@@ -57,6 +57,13 @@ func SetSwitchPowerAll(switchId string, powerOn bool, username string) error {
 	if !userHasPowerPermission {
 		return errors.New("Failed to set power: user is not allowed to interact with switches")
 	}
+	userHasSwitchPermission, err := database.UserHasSwitchPermission(username, switchId)
+	if err != nil {
+		return fmt.Errorf("Failed to set power: could not check if user is allowed to interact with this switch: %s", err.Error())
+	}
+	if !userHasSwitchPermission {
+		return fmt.Errorf("Failed to set power: user is not allowed to interact with switch '%s'", switchId)
+	}
 	if err := SetPower(switchId, powerOn); err != nil {
 		return fmt.Errorf("Failed to set power: hardware error: %s", err.Error())
 	}
