@@ -1,6 +1,9 @@
 package database
 
-import "fmt"
+import (
+	"database/sql"
+	"fmt"
+)
 
 // Stores the n:m relation between the user and their switch-permissions
 func createHasSwitchPermissionTable() error {
@@ -128,7 +131,9 @@ func RemoveAllSwitchPermissionsOfUser(username string) error {
 // Returns a list of strings which resemble switch permissions
 func GetUserSwitchPermissions(username string) ([]string, error) {
 	query, err := db.Prepare(`
-	SELECT Switch FROM hasSwitchPermission WHERE Username=?
+	SELECT Switch
+	FROM hasSwitchPermission
+	WHERE Username=?
 	`)
 	if err != nil {
 		log.Error("Could not list user switch permissions: failed to prepare query: ", err.Error())
@@ -154,18 +159,36 @@ func GetUserSwitchPermissions(username string) ([]string, error) {
 	return permissions, nil
 }
 
-// Will return a boolean if a user has a switch permission
-// TODO: Replace with QueryRow
-func UserHasSwitchPermission(username string, switchId string) (bool, error) {
-	permissions, err := GetUserSwitchPermissions(username)
+// Returns true or false indicating whether a user has a permission
+func UserHasSwitchPermissionQuery(username string, switchId string) (bool, error) {
+	query, err := db.Prepare(`
+	SELECT Switch
+	FROM hasSwitchPermission
+	WHERE Username=? AND Switch=?
+	`)
 	if err != nil {
-		log.Error("Failed to check for user permission: ", err.Error())
+		log.Error("Failed to test user switch permission: preparing query failed: ", err.Error())
 		return false, err
 	}
-	for _, permission := range permissions {
-		if permission == switchId {
-			return true, nil
+	if err := query.QueryRow(username, switchId).Scan(&switchId); err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
 		}
+		log.Error("Failed to test user switch permission: executing query failed: ", err.Error())
+		return false, err
 	}
-	return false, nil
+	return true, nil
+}
+
+// Returns a boolean if a user has a switch permission
+func UserHasSwitchPermission(username string, switchId string) (bool, error) {
+	hasPermission, err := UserHasSwitchPermissionQuery(username, switchId)
+	if err != nil {
+		return false, err
+	}
+	if hasPermission {
+		return true, nil
+	}
+	// If there is no matching permission, check for the '* | modifyRooms' permissions
+	return UserHasPermission(username, PermissionModifyRooms)
 }
