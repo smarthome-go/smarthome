@@ -67,11 +67,19 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-wrap: wrap;
 
         h6 {
             margin: 0;
             margin-bottom: 0.5rem;
             color: var(--clr-text);
+            max-width: 20rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+
+            @include mobile {
+                max-width: 10rem;
+            }
         }
 
         div {
@@ -84,9 +92,16 @@
                 background-color: var(--clr-height-3-6);
                 padding: 0.1rem 0.2rem;
                 border-radius: 0.1rem;
+                max-width: 20rem;
+                overflow: hidden;
+                text-overflow: ellipsis;
 
                 span {
                     color: var(--clr-text);
+                }
+
+                @include mobile {
+                    max-width: 10rem;
                 }
             }
         }

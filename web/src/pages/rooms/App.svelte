@@ -295,9 +295,14 @@
         padding: 1.5rem;
         box-sizing: border-box;
         display: flex;
-        justify-content: center;
-
+        
+        @include mobile {
+            align-items: flex-start;
+            justify-content: center;
+        }
+        
         @include widescreen {
+            justify-content: center;
             height: auto;
             min-height: 100%;
             min-width: 20rem;
@@ -316,6 +321,12 @@
 
         span {
             margin-left: 0.7rem;
+        }
+
+        @include mobile {
+            width: 90%;
+            height: auto;
+            flex-wrap: wrap;
         }
     }
 </style>

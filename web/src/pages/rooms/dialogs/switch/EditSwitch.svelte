@@ -93,7 +93,7 @@
             </Button>
         </Actions>
     </Dialog>
-    <Title id="title">Edit Switch</Title>
+    <Title id="title">Edit Switch <code>{id}</code></Title>
     <Content id="content">
         <Textfield bind:value={name} input$maxlength={30} label="Name" required>
             <svelte:fragment slot="helper">
@@ -123,6 +123,11 @@
 </Dialog>
 
 <style style="scss">
+    code {
+        background-color: var(--clr-height-0-3);
+        padding: 0.1rem .5rem;
+        border-radius: 0.3rem;
+    }
     #delete {
         margin-top: 1rem;
     }
