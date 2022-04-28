@@ -50,7 +50,6 @@ func PowerPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !userHasPermission {
-		log.Debug("User requested to use a switch but lacks permission to use it")
 		w.WriteHeader(http.StatusForbidden)
 		Res(w, Response{Success: false, Message: "permission denied", Error: "missing permission to interact with this switch, contact your administrator"})
 		return
@@ -70,11 +69,10 @@ func PowerPostHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // Returns a list of available switches as JSON to the user, no authentication required
-func GetSwitches(w http.ResponseWriter, r *http.Request) {
+func GetAllSwitches(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	switches, err := database.ListSwitches()
 	if err != nil {
-		log.Error("Exception in getSwitches: database failure: ", err.Error())
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "database error", Error: "database error"})
 		return
@@ -82,6 +80,7 @@ func GetSwitches(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(switches); err != nil {
 		log.Error(err.Error())
 		Res(w, Response{Success: false, Message: "failed get switches", Error: "could not encode content"})
+		return
 	}
 }
 
@@ -94,7 +93,6 @@ func GetUserSwitches(w http.ResponseWriter, r *http.Request) {
 	}
 	switches, err := database.ListUserSwitches(username)
 	if err != nil {
-		log.Error("Exception in getUserSwitches: database failure: ", err.Error())
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "database error", Error: "database error"})
 		return
@@ -111,7 +109,6 @@ func GetPowerStates(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	powerStates, err := database.GetPowerStates()
 	if err != nil {
-		log.Error("Could not list powerstates: database failure: ", err.Error())
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "database error", Error: "database error"})
 		return
