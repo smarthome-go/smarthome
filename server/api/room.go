@@ -176,5 +176,39 @@ func CreateSwitch(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	// TODO: implement function and backend logic
+	// Validate that no conflicts are present
+	_, alreadyExists, err := database.GetSwitchById(request.Id)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to create switch", Error: "database failure"})
+		return
+	}
+	if alreadyExists {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to create switch", Error: "id already exists"})
+		return
+	}
+	// Validate that the room exists
+	_, roomExists, err := database.GetRoomDataById(request.RoomId)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to create switch", Error: "database failure"})
+		return
+	}
+	if !roomExists {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to create switch", Error: "invalid room id"})
+		return
+	}
+	if err := database.CreateSwitch(
+		request.Id,
+		request.Name,
+		request.RoomId,
+		request.Watts,
+	); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to create switch", Error: "database failure"})
+		return
+	}
+	Res(w, Response{Success: true, Message: "successfully created switch"})
 }

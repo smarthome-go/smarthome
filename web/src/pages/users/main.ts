@@ -50,7 +50,7 @@ export async function fetchAllPermissions() {
 
 export async function fetchAllSwitches() {
   try {
-    const res = await (await fetch('/api/switch/list')).json()
+    const res = await (await fetch('/api/switch/list/all')).json()
     if (res.success !== undefined && !res.success) throw Error(res.error)
     allSwitches.set(res)
   } catch (err) {

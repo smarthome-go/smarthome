@@ -51,8 +51,6 @@ func NewRouter() *mux.Router {
 
 	//// API ////
 	// Power
-	r.HandleFunc("/api/switch/list", api.GetSwitches).Methods("GET")
-	r.HandleFunc("/api/switch/list/personal", mdl.ApiAuth(api.GetUserSwitches)).Methods("GET")
 	r.HandleFunc("/api/power/states", api.GetPowerStates).Methods("GET")
 	r.HandleFunc("/api/power/set", mdl.ApiAuth(mdl.Perm(api.PowerPostHandler, database.PermissionPower))).Methods("POST")
 
@@ -62,6 +60,11 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/room/add", mdl.ApiAuth(mdl.Perm(api.AddRoom, database.PermissionModifyRooms))).Methods("POST")
 	r.HandleFunc("/api/room/modify", mdl.ApiAuth(mdl.Perm(api.ModifyRoomData, database.PermissionModifyRooms))).Methods("PUT")
 	r.HandleFunc("/api/room/delete", mdl.ApiAuth(mdl.Perm(api.DeleteRoom, database.PermissionModifyRooms))).Methods("DELETE")
+
+	// Switches
+	r.HandleFunc("/api/switch/list/all", api.GetAllSwitches).Methods("GET")
+	r.HandleFunc("/api/switch/list/personal", mdl.ApiAuth(api.GetUserSwitches)).Methods("GET")
+	r.HandleFunc("/api/switch/add", mdl.ApiAuth(mdl.Perm(api.CreateSwitch, database.PermissionModifyRooms)))
 
 	// Logs for the admin user
 	r.HandleFunc("/api/logs/delete/old", mdl.ApiAuth(mdl.Perm(api.FlushOldLogs, database.PermissionLogs))).Methods("DELETE")
