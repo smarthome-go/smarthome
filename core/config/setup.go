@@ -75,10 +75,6 @@ func createRoomsInDatabase(rooms []database.Room) error {
 				log.Error("Could not create switches from setup file: ", err.Error())
 				return err
 			}
-			if _, err := database.AddUserSwitchPermission("admin", switchItem.Id); err != nil {
-				log.Error("Could not add switch to switchPermissions of the admin user: ", err.Error())
-				return err
-			}
 		}
 	}
 	return nil
