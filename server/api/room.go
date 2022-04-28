@@ -16,19 +16,8 @@ type RoomRequest struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
-type AddSwitchRequest struct {
-	Id     string `json:"id"`
-	Name   string `json:"name"`
-	RoomId string `json:"roomId"`
-	Watts  uint16 `json:"watts"`
-}
-type ModifySwitchRequest struct {
-	Id    string `json:"id"`
-	Name  string `json:"name"`
-	Watts uint16 `json:"watts"`
-}
 
-type DeleteRoomSwitchRequest struct {
+type DeleteRoomRequest struct {
 	Id string `json:"id"`
 }
 
@@ -144,7 +133,7 @@ func DeleteRoom(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
-	var request DeleteRoomSwitchRequest
+	var request DeleteRoomRequest
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
@@ -167,131 +156,4 @@ func DeleteRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	Res(w, Response{Success: true, Message: "successfully deleted room"})
-}
-
-// Creates a switch
-func CreateSwitch(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	decoder := json.NewDecoder(r.Body)
-	decoder.DisallowUnknownFields()
-	var request AddSwitchRequest
-	if err := decoder.Decode(&request); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
-		return
-	}
-	// Validate length and encoding
-	if strings.Contains(request.Id, " ") || !utf8string.NewString(request.Id).IsASCII() {
-		w.WriteHeader(http.StatusBadRequest)
-		Res(w, Response{Success: false, Message: "bad request", Error: "id should only include ASCII characters and must not have whitespaces"})
-		return
-	}
-	if len(request.Id) > 20 || len(request.Name) > 30 {
-		w.WriteHeader(http.StatusBadRequest)
-		Res(w, Response{Success: false, Message: "bad request", Error: "maximum lengths for id and name are 20 and 30 "})
-		return
-	}
-	// Validate that no conflicts are present
-	_, alreadyExists, err := database.GetSwitchById(request.Id)
-	if err != nil {
-		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Success: false, Message: "failed to create switch", Error: "database failure"})
-		return
-	}
-	if alreadyExists {
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		Res(w, Response{Success: false, Message: "failed to create switch", Error: "id already exists"})
-		return
-	}
-	// Validate that the room exists
-	_, roomExists, err := database.GetRoomDataById(request.RoomId)
-	if err != nil {
-		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Success: false, Message: "failed to create switch", Error: "database failure"})
-		return
-	}
-	if !roomExists {
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		Res(w, Response{Success: false, Message: "failed to create switch", Error: "invalid room id"})
-		return
-	}
-	if err := database.CreateSwitch(
-		request.Id,
-		request.Name,
-		request.RoomId,
-		request.Watts,
-	); err != nil {
-		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Success: false, Message: "failed to create switch", Error: "database failure"})
-		return
-	}
-	Res(w, Response{Success: true, Message: "successfully created switch"})
-}
-
-func ModifySwitch(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	decoder := json.NewDecoder(r.Body)
-	decoder.DisallowUnknownFields()
-	var request ModifySwitchRequest
-	if err := decoder.Decode(&request); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
-		return
-	}
-	switchItem, found, err := database.GetSwitchById(request.Id)
-	if err != nil {
-		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Success: false, Message: "failed to modify switch", Error: "database failure"})
-		return
-	}
-	if !found {
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		Res(w, Response{Success: false, Message: "failed to modify switch", Error: "no switch with id exists"})
-		return
-	}
-	if switchItem.Name == request.Name && switchItem.Watts == request.Watts {
-		Res(w, Response{Success: true, Message: "properties unchanged"})
-		return
-	}
-	// Validate length
-	if len(request.Name) > 30 {
-		w.WriteHeader(http.StatusBadRequest)
-		Res(w, Response{Success: false, Message: "bad request", Error: "maximum lengths for id and name are 20 and 30 "})
-		return
-	}
-	if err := database.ModifySwitch(request.Id, request.Name, request.Watts); err != nil {
-		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Success: false, Message: "failed to modify switch", Error: "database failure"})
-		return
-	}
-	Res(w, Response{Success: true, Message: "successfully modified switch"})
-}
-
-func DeleteSwitch(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	decoder := json.NewDecoder(r.Body)
-	decoder.DisallowUnknownFields()
-	var request DeleteRoomSwitchRequest
-	if err := decoder.Decode(&request); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
-		return
-	}
-	_, found, err := database.GetSwitchById(request.Id)
-	if err != nil {
-		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Success: false, Message: "failed to delete switch", Error: "database failure"})
-		return
-	}
-	if !found {
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		Res(w, Response{Success: false, Message: "failed to delete switch", Error: "no switch with id exists"})
-		return
-	}
-	if err := database.DeleteSwitch(request.Id); err != nil {
-		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Success: false, Message: "failed to delete switch", Error: "database failure"})
-		return
-	}
-	Res(w, Response{Success: true, Message: "successfully deleted switch"})
 }

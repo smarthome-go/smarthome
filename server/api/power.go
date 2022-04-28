@@ -68,41 +68,6 @@ func PowerPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Returns a list of available switches as JSON to the user, no authentication required
-func GetAllSwitches(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	switches, err := database.ListSwitches()
-	if err != nil {
-		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Success: false, Message: "database error", Error: "database error"})
-		return
-	}
-	if err := json.NewEncoder(w).Encode(switches); err != nil {
-		log.Error(err.Error())
-		Res(w, Response{Success: false, Message: "failed get switches", Error: "could not encode content"})
-		return
-	}
-}
-
-// Only returns switches which the user has access to, authentication required
-func GetUserSwitches(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	username, err := middleware.GetUserFromCurrentSession(w, r)
-	if err != nil {
-		return
-	}
-	switches, err := database.ListUserSwitches(username)
-	if err != nil {
-		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Success: false, Message: "database error", Error: "database error"})
-		return
-	}
-	if err := json.NewEncoder(w).Encode(switches); err != nil {
-		log.Error(err.Error())
-		Res(w, Response{Success: false, Message: "failed to get personal switches", Error: "could not encode content"})
-	}
-}
-
 // Returns a list of power states, no authentication required
 // Request: empty | Response: `[{"switchId": "x", power: false}, {...}]`
 func GetPowerStates(w http.ResponseWriter, r *http.Request) {
