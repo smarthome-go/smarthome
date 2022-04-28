@@ -80,7 +80,7 @@ var (
 			// (Admin) is allowed to modify rooms, switches and cameras
 			Permission:  PermissionModifyRooms,
 			Name:        "Manage Rooms",
-			Description: "Add, modify and delete rooms and room contents",
+			Description: "Add, modify and delete rooms and room like switches and cameras. If enabled, the user also has access to every switch of the system.",
 		},
 		{
 			// (Admin) is allowed to change global config parameters
