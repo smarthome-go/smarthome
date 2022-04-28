@@ -63,7 +63,7 @@ func TestCreateCamera(t *testing.T) {
 		if err != nil {
 			t.Error(err.Error())
 		}
-		assert.Equal(t, cameras, table, "listed cameras do not match table")
+		assert.Equal(t, table, cameras, "listed cameras do not match table")
 	})
 }
 

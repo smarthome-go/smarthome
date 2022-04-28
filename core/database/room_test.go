@@ -154,8 +154,8 @@ func TestListRooms(t *testing.T) {
 				if !found {
 					t.Errorf("`GetRoomDataById` indicates that it was not found want: %t got: %t", valid, found)
 				}
-				assert.Equal(t, roomTemp, test.Room, "room from id has invalid metadata")
-				assert.Equal(t, room.Data, test.Room, "room from listings has invalid metadata")
+				assert.Equal(t, test.Room, roomTemp, "room from id has invalid metadata")
+				assert.Equal(t, test.Room, room.Data, "room from listings has invalid metadata")
 				valid = true
 			}
 		}
