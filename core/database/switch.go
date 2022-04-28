@@ -1,6 +1,7 @@
 package database
 
 import (
+	"database/sql"
 	"fmt"
 )
 
@@ -81,6 +82,26 @@ func CreateSwitch(id string, name string, roomId string, watts uint16) error {
 	return nil
 }
 
+// Modifies the metadata of a given switch
+func ModifySwitch(id string, name string, watts uint16) error {
+	query, err := db.Prepare(`
+	UPDATE switch
+	SET
+		Name=?,
+		Watts=?
+	WHERE Id=?
+	`)
+	if err != nil {
+		log.Error("Failed to modify switch: preparing query failed: ", err.Error())
+		return err
+	}
+	if _, err := query.Exec(name, watts, id); err != nil {
+		log.Error("Failed to modify switch: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}
+
 // Delete a given switch after all data which depends on this switch has been deleted
 func DeleteSwitch(switchId string) error {
 	if err := RemoveSwitchFromPermissions(switchId); err != nil {
@@ -147,7 +168,12 @@ func ListSwitches() ([]Switch, error) {
 // Same as `ListSwitches()` but takes a user sting as a filter
 func ListUserSwitches(username string) ([]Switch, error) {
 	query, err := db.Prepare(`
-	SELECT Id, Name, RoomId, Power, Watts
+	SELECT
+		Id,
+		Name,
+		RoomId,
+		Power,
+		Watts
 	FROM switch
 	JOIN hasSwitchPermission
 	ON hasSwitchPermission.Switch=switch.Id
@@ -179,6 +205,39 @@ func ListUserSwitches(username string) ([]Switch, error) {
 		switches = append(switches, switchItem)
 	}
 	return switches, nil
+}
+
+// Returns an arbitrary switch given its id
+func GetSwitchById(id string) (Switch, bool, error) {
+	query, err := db.Prepare(`
+	SELECT
+		Id,
+		Name,
+		RoomId,
+		Power,
+		Watts
+	FROM switch
+	WHERE Id=?
+	`)
+	if err != nil {
+		log.Error("Failed to get switch by id: preparing query failed: ", err.Error())
+		return Switch{}, false, err
+	}
+	var switchItem Switch
+	if err := query.QueryRow(id).Scan(
+		&switchItem.Id,
+		&switchItem.Name,
+		&switchItem.RoomId,
+		&switchItem.PowerOn,
+		&switchItem.Watts,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return Switch{}, false, nil
+		}
+		log.Error("Failed to get switch by id: scanning results failed: ", err.Error())
+		return Switch{}, false, err
+	}
+	return switchItem, true, nil
 }
 
 // Used when marking a power state of a switch

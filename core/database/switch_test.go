@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func createTestRoom() error {
@@ -113,11 +115,7 @@ func TestSwitches(t *testing.T) {
 			}
 			valid := false
 			for _, s := range switches {
-				if s.Id == test.Switch.Id &&
-					s.Name == test.Switch.Name &&
-					s.PowerOn == test.Switch.PowerOn &&
-					s.RoomId == test.Switch.RoomId &&
-					s.Watts == test.Switch.Watts {
+				if s.Id == test.Switch.Id {
 					valid = true
 				}
 			}
@@ -332,5 +330,84 @@ func TestDoesSwitchExist(t *testing.T) {
 	if switchExists {
 		t.Error("Switch 'invalid' exists but should not")
 		return
+	}
+}
+
+func TestModifySwitch(t *testing.T) {
+	if err := CreateRoom(RoomData{Id: "test"}); err != nil {
+		t.Error(err.Error())
+	}
+	table := []struct {
+		Origin   Switch
+		Modified Switch
+	}{
+		{
+			Origin: Switch{
+				Id:      "test_1",
+				Name:    "Test 1",
+				RoomId:  "test",
+				Watts:   0,
+				PowerOn: false, // Power is set to false because the power state is not modified
+			},
+			Modified: Switch{
+				Id:      "test_1",
+				Name:    "Test 1-2",
+				RoomId:  "test",
+				Watts:   1,
+				PowerOn: false,
+			},
+		},
+		{
+			Origin: Switch{
+				Id:      "test_2",
+				Name:    "Test 2",
+				RoomId:  "test",
+				Watts:   2,
+				PowerOn: false,
+			},
+			Modified: Switch{
+				Id:      "test_2",
+				Name:    "Test 2-2",
+				RoomId:  "test",
+				Watts:   3,
+				PowerOn: false,
+			},
+		},
+	}
+	for _, test := range table {
+		// Create Switch
+		if err := CreateSwitch(
+			test.Origin.Id,
+			test.Origin.Name,
+			test.Origin.RoomId,
+			test.Origin.Watts,
+		); err != nil {
+			t.Error(err.Error())
+		}
+
+		// Validate Creation
+		switchDb, found, err := GetSwitchById(test.Origin.Id)
+		if err != nil {
+			t.Error(err.Error())
+		}
+		assert.True(t, found)
+		assert.Equal(t, test.Origin, switchDb, "Created switch does not match origin")
+
+		// Modify Switch
+		if err := ModifySwitch(
+			test.Origin.Id,
+			test.Modified.Name,
+			test.Modified.Watts,
+		); err != nil {
+			t.Error(err.Error())
+		}
+
+		// Validate Modification
+		switchDb, found, err = GetSwitchById(test.Origin.Id)
+		if err != nil {
+			t.Error(err.Error())
+		}
+		assert.True(t, found)
+		assert.Equal(t, test.Modified, switchDb, "Modified switch does not match")
 	}
 }
