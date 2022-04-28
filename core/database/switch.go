@@ -166,7 +166,7 @@ func ListSwitches() ([]Switch, error) {
 }
 
 // Same as `ListSwitches()` but takes a user sting as a filter
-func ListUserSwitches(username string) ([]Switch, error) {
+func ListUserSwitchesQuery(username string) ([]Switch, error) {
 	query, err := db.Prepare(`
 	SELECT
 		Id,
@@ -205,6 +205,17 @@ func ListUserSwitches(username string) ([]Switch, error) {
 		switches = append(switches, switchItem)
 	}
 	return switches, nil
+}
+
+func ListUserSwitches(username string) ([]Switch, error) {
+	hasPermissionToAllSwitches, err := UserHasPermission(username, PermissionModifyRooms)
+	if err != nil {
+		return nil, err
+	}
+	if hasPermissionToAllSwitches {
+		return ListSwitches()
+	}
+	return ListUserSwitchesQuery(username)
 }
 
 // Returns an arbitrary switch given its id
