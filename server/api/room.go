@@ -74,7 +74,7 @@ func AddRoom(w http.ResponseWriter, r *http.Request) {
 	}
 	if strings.Contains(request.Id, " ") || !utf8string.NewString(request.Id).IsASCII() {
 		w.WriteHeader(http.StatusBadRequest)
-		Res(w, Response{Success: false, Message: "bad request", Error: "id should only include ASCII characterst and must not have whitespaces"})
+		Res(w, Response{Success: false, Message: "bad request", Error: "id should only include ASCII characters and must not have whitespaces"})
 		return
 	}
 	if len(request.Id) > 30 || len(request.Name) > 50 {
@@ -174,6 +174,17 @@ func CreateSwitch(w http.ResponseWriter, r *http.Request) {
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	// Validate length and encoding
+	if strings.Contains(request.Id, " ") || !utf8string.NewString(request.Id).IsASCII() {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "id should only include ASCII characters and must not have whitespaces"})
+		return
+	}
+	if len(request.Id) > 20 || len(request.Name) > 30 {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "maximum lengths for id and name are 20 and 30 "})
 		return
 	}
 	// Validate that no conflicts are present
