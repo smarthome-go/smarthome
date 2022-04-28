@@ -41,7 +41,7 @@ version:
 	python3 update_version.py
 
 # Change version on build
-release: cleanall version test build docker docker-push
+release: cleanall version test build docker
 
 vite-dev:
 	cd web && npm run dev
