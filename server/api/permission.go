@@ -204,7 +204,7 @@ func AddSwitchPermission(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	switchExists, err := database.DoesSwitchExist(request.Switch)
+	_, switchExists, err := database.GetSwitchById(request.Switch)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to add switch permission", Error: "database failure"})
@@ -254,7 +254,7 @@ func RemoveSwitchPermission(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	switchExists, err := database.DoesSwitchExist(request.Switch)
+	_, switchExists, err := database.GetSwitchById(request.Switch)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to remove switch permission", Error: "database failure"})

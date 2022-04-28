@@ -272,7 +272,6 @@ func SetPowerState(switchId string, isPoweredOn bool) (bool, error) {
 
 // Returns a list of PowerStates
 // Can return a database error
-// TODO: not really needed
 func GetPowerStates() ([]PowerState, error) {
 	res, err := db.Query(`
 	SELECT 
@@ -301,38 +300,38 @@ func GetPowerStates() ([]PowerState, error) {
 // Does not check if the switch exists.
 // If the switch does not exist, an error is returned
 // TODO: also remove this, add GetSwitchById
-func GetPowerStateOfSwitch(switchId string) (bool, error) {
-	query, err := db.Prepare(`
-	SELECT Power
-	FROM switch
-	WHERE Id=?
-	`)
-	if err != nil {
-		log.Error("Failed to get switch power state: preparing query failed: ", err.Error())
-		return false, err
-	}
-	defer query.Close()
-	var powerState bool
-	err = query.QueryRow(switchId).Scan(&powerState)
-	if err != nil {
-		log.Error("Failed to get switch power state: executing query failed: ", err.Error())
-		return false, err
-	}
-	return powerState, err
-}
+// func GetPowerStateOfSwitch(switchId string) (bool, error) {
+// 	query, err := db.Prepare(`
+// 	SELECT Power
+// 	FROM switch
+// 	WHERE Id=?
+// 	`)
+// 	if err != nil {
+// 		log.Error("Failed to get switch power state: preparing query failed: ", err.Error())
+// 		return false, err
+// 	}
+// 	defer query.Close()
+// 	var powerState bool
+// 	err = query.QueryRow(switchId).Scan(&powerState)
+// 	if err != nil {
+// 		log.Error("Failed to get switch power state: executing query failed: ", err.Error())
+// 		return false, err
+// 	}
+// 	return powerState, err
+// }
 
 // Returns (exists, error), err when the database fails
 // TODO: abolish this function, create GetSwitchById
-func DoesSwitchExist(switchId string) (bool, error) {
-	switches, err := ListSwitches()
-	if err != nil {
-		log.Error("Cold not validate existence of switch: fatabase failure: ", err.Error())
-		return false, err
-	}
-	for _, switchItem := range switches {
-		if switchItem.Id == switchId {
-			return true, nil
-		}
-	}
-	return false, nil
-}
+// func DoesSwitchExist(switchId string) (bool, error) {
+// 	switches, err := ListSwitches()
+// 	if err != nil {
+// 		log.Error("Cold not validate existence of switch: fatabase failure: ", err.Error())
+// 		return false, err
+// 	}
+// 	for _, switchItem := range switches {
+// 		if switchItem.Id == switchId {
+// 			return true, nil
+// 		}
+// 	}
+// 	return false, nil
+// }

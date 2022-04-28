@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/core/event"
@@ -172,12 +173,13 @@ func TestAutomation(t *testing.T) {
 	valid := false
 	for i := 0; i < 7; i++ {
 		time.Sleep(time.Second * 10)
-		power, err := database.GetPowerStateOfSwitch("test_switch")
+		switchItem, found, err := database.GetSwitchById("test_switch")
 		if err != nil {
 			t.Error(err.Error())
 			return
 		}
-		if power {
+		assert.True(t, found, "Switch not found")
+		if switchItem.PowerOn {
 			valid = true
 			break
 		}
@@ -237,12 +239,13 @@ func TestModificationToDifferentScript(t *testing.T) {
 	valid := false
 	for i := 0; i < 7; i++ {
 		time.Sleep(time.Second * 10)
-		power, err := database.GetPowerStateOfSwitch("test_switch_modify")
+		switchItem, found, err := database.GetSwitchById("test_switch_modify")
 		if err != nil {
 			t.Error(err.Error())
 			return
 		}
-		if power {
+		assert.True(t, found, "Switch not found")
+		if switchItem.PowerOn {
 			valid = true
 		}
 	}
@@ -306,12 +309,13 @@ func TestModificationToAbort(t *testing.T) {
 	// Wait for approx. a minute until the test can be considered to be successful
 	for i := 0; i < 7; i++ {
 		time.Sleep(time.Second * 10)
-		power, err := database.GetPowerStateOfSwitch("test_switch_abort")
+		switchItem, found, err := database.GetSwitchById("test_switch_abort")
 		if err != nil {
 			t.Error(err.Error())
 			return
 		}
-		if power {
+		assert.True(t, found, "Switch not found")
+		if switchItem.PowerOn {
 			t.Errorf("Power of `test_switch_abort` changed but should not")
 			return
 		}
@@ -342,12 +346,13 @@ func TestStartInactiveAutomation(t *testing.T) {
 	// Wait for approx. a minute until to decide that the test was executed successfully
 	for i := 0; i < 7; i++ {
 		time.Sleep(time.Second * 10)
-		power, err := database.GetPowerStateOfSwitch("test_switch_inactive")
+		switchItem, found, err := database.GetSwitchById("test_switch_inactive")
 		if err != nil {
 			t.Error(err.Error())
 			return
 		}
-		if power {
+		assert.True(t, found, "Switch not found")
+		if switchItem.PowerOn {
 			t.Errorf("Power of `test_switch_inactive` changed but should not")
 			return
 		}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -260,23 +261,24 @@ func TestUserSwitches(t *testing.T) {
 		})
 
 		t.Run("test power states", func(t *testing.T) {
-			for _, switchId := range switches {
-				powerStatePrev, err := GetPowerStateOfSwitch(switchId.Id)
+			for _, switchTest := range switches {
+				switchPrev, found, err := GetSwitchById(switchTest.Id)
+				if err != nil {
+					t.Error(err.Error())
+				}
+				assert.True(t, found, "Switch not found")
+				if _, err := SetPowerState(switchTest.Id, !switchPrev.PowerOn); err != nil {
+					t.Error(err.Error())
+					return
+				}
+				switchItem, found, err := GetSwitchById(switchTest.Id)
 				if err != nil {
 					t.Error(err.Error())
 					return
 				}
-				if _, err := SetPowerState(switchId.Id, !powerStatePrev); err != nil {
-					t.Error(err.Error())
-					return
-				}
-				powerState, err := GetPowerStateOfSwitch(switchId.Id)
-				if err != nil {
-					t.Error(err.Error())
-					return
-				}
-				if powerState == powerStatePrev {
-					t.Errorf("Power state did not change after toggle. want: %t got: %t", !powerStatePrev, powerState)
+				assert.True(t, found, "Switch not found")
+				if switchItem.PowerOn == switchPrev.PowerOn {
+					t.Errorf("Power state did not change after toggle. want: %t got: %t", !switchPrev.PowerOn, switchItem.PowerOn)
 					return
 				}
 				powerStates, err := GetPowerStates()
@@ -286,12 +288,12 @@ func TestUserSwitches(t *testing.T) {
 				}
 				valid := false
 				for _, s := range powerStates {
-					if s.Switch == switchId.Id && s.PowerOn != powerStatePrev {
+					if s.Switch == switchTest.Id && s.PowerOn != switchPrev.PowerOn {
 						valid = true
 					}
 				}
 				if !valid {
-					t.Errorf("Switch %s with correct power state not matched in power states", switchId.Id)
+					t.Errorf("Switch %s with correct power state not matched in power states", switchTest.Id)
 					return
 				}
 			}
@@ -313,24 +315,18 @@ func TestDoesSwitchExist(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
-	switchExists, err := DoesSwitchExist("test1")
+	_, switchExists, err := GetSwitchById("test1")
 	if err != nil {
 		t.Error(err.Error())
 		return
 	}
-	if !switchExists {
-		t.Errorf("Switch 'test1' does not exist after creation")
-		return
-	}
-	switchExists, err = DoesSwitchExist("invalid")
+	assert.True(t, switchExists, "Switch 'test1' does not exist after creation")
+	_, switchExists, err = GetSwitchById("invalid")
 	if err != nil {
 		t.Error(err.Error())
 		return
 	}
-	if switchExists {
-		t.Error("Switch 'invalid' exists but should not")
-		return
-	}
+	assert.False(t, switchExists, "Switch 'invalid' exists but should not")
 }
 
 func TestModifySwitch(t *testing.T) {
@@ -410,4 +406,10 @@ func TestModifySwitch(t *testing.T) {
 		assert.True(t, found)
 		assert.Equal(t, test.Modified, switchDb, "Modified switch does not match")
 	}
+	invalidSwitch, found, err := GetSwitchById(fmt.Sprint(time.Now().Unix()))
+	if err != nil {
+		t.Error(err.Error())
+	}
+	assert.False(t, found, "invalid switch found")
+	assert.Empty(t, invalidSwitch, "invalid switch is not empty")
 }

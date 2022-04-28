@@ -32,7 +32,7 @@ func PowerPostHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	switchExists, err := database.DoesSwitchExist(request.Switch)
+	_, switchExists, err := database.GetSwitchById(request.Switch)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to check existence of this switch", Error: "database error"})
@@ -121,4 +121,3 @@ func GetPowerStates(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to get power states", Error: "could not encode content"})
 	}
 }
-
