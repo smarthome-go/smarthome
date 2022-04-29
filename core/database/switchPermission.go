@@ -2,26 +2,21 @@ package database
 
 import (
 	"database/sql"
-	"fmt"
 )
 
 // Stores the n:m relation between the user and their switch-permissions
 func createHasSwitchPermissionTable() error {
-	query := `
+	_, err := db.Query(`
 	CREATE TABLE
 	IF NOT EXISTS
 	hasSwitchPermission(
-		Username VARCHAR(20),
-		Switch VARCHAR(20),
-		CONSTRAINT HasSwitchPermissionUsername
+		Username    VARCHAR(20),
+		Switch      VARCHAR(20),
 		FOREIGN KEY (Username)
 		REFERENCES user(Username),
-		CONSTRAINT HasSwitchPermissionSwitch
 		FOREIGN KEY (Switch)
 		REFERENCES switch(Id)
-	)
-	`
-	_, err := db.Query(query)
+	)`)
 	if err != nil {
 		log.Error("Failed to create hasSwitchPermissionTable: Executing query failed: ", err.Error())
 		return err
@@ -48,19 +43,17 @@ func AddUserSwitchPermission(username string, switchId string) (bool, error) {
 		Username,
 		Switch
 	)
-	VALUES(?,?)
+	VALUES(?, ?)
 	`)
 	if err != nil {
 		log.Error("Could not add switch permission to user: preparing query failed: ", err.Error())
 		return false, err
 	}
 	defer query.Close()
-	_, err = query.Exec(username, switchId)
-	if err != nil {
+	if _, err = query.Exec(username, switchId); err != nil {
 		log.Error("Failed to add switch permission to user: executing query failed: ", err.Error())
 		return false, err
 	}
-	defer query.Close()
 	return true, nil
 }
 
@@ -76,7 +69,12 @@ func RemoveUserSwitchPermission(username string, switchId string) (bool, error) 
 	if !userHasPermission {
 		return false, nil
 	}
-	query, err := db.Prepare(`DELETE FROM hasSwitchPermission WHERE Username=? AND Switch=?`)
+	query, err := db.Prepare(`
+	DELETE FROM
+	hasSwitchPermission
+	WHERE
+		Username=? AND Switch=?
+	`)
 	if err != nil {
 		log.Error("Failed to remove switch permission from user: failed to prepare query: ", err.Error())
 		return false, err
@@ -89,7 +87,7 @@ func RemoveUserSwitchPermission(username string, switchId string) (bool, error) 
 	return true, nil
 }
 
-// Deletes all occurrences of a given switch, used if a certain switch is deleted completely
+// Deletes all occurrences of a given switch, used if a certain switch is deleted
 func RemoveSwitchFromPermissions(switchId string) error {
 	query, err := db.Prepare(`
 	DELETE FROM
@@ -105,17 +103,17 @@ func RemoveSwitchFromPermissions(switchId string) error {
 		log.Error("Failed to remove switch completely from switch permissions: executing query failed: ", err.Error())
 		return err
 	}
-	log.Debug(fmt.Sprintf("Completely removed switch %s from switch permissions", switchId))
 	return nil
 }
 
-// Removes all switch permission of a given user, used when deleing a user
+// Removes all switch permissions of a given user, used when deleting a user
 // Does not validate the existence of said user
 func RemoveAllSwitchPermissionsOfUser(username string) error {
 	query, err := db.Prepare(`
 	DELETE FROM
 	hasSwitchPermission
-	WHERE Username=?`)
+	WHERE Username=?
+	`)
 	if err != nil {
 		log.Error("Failed to remove all switch permissions of user: preparing query failed: ", err.Error())
 		return err
@@ -159,7 +157,7 @@ func GetUserSwitchPermissions(username string) ([]string, error) {
 	return permissions, nil
 }
 
-// Returns true or false indicating whether a user has a permission
+// Used in userHasSwitchPermission
 func UserHasSwitchPermissionQuery(username string, switchId string) (bool, error) {
 	query, err := db.Prepare(`
 	SELECT Switch

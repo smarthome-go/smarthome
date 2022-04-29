@@ -100,7 +100,6 @@ func TestRunSetup(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
-
 	if err := ioutil.WriteFile(
 		setupPath,
 		content,
