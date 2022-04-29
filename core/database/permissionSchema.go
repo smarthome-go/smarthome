@@ -12,6 +12,7 @@ type PermissionType string
 // Different types of permissions
 const (
 	PermissionPower              PermissionType = "setPower"
+	PermissionViewCameras        PermissionType = "viewCameras"
 	PermissionLogs               PermissionType = "logs"
 	PermissionManageUsers        PermissionType = "manageUsers"
 	PermissionDebug              PermissionType = "debug"
@@ -80,7 +81,12 @@ var (
 			// (Admin) is allowed to modify rooms, switches and cameras
 			Permission:  PermissionModifyRooms,
 			Name:        "Manage Rooms",
-			Description: "Add, modify and delete rooms and room like switches and cameras. If enabled, the user also has access to every switch of the system.",
+			Description: "View, add, modify and delete rooms and room like switches and cameras. If enabled, the user also has access to every switch of the system.",
+		},
+		{
+			Permission:  PermissionViewCameras,
+			Name:        "View Cameras",
+			Description: "View camera video feed. However, which camera can be viewed still depends on the camera permissions.",
 		},
 		{
 			// (Admin) is allowed to change global config parameters
