@@ -12,7 +12,7 @@ require (
 )
 
 require (
-	github.com/MikMuellerDev/homescript v0.4.0-beta
+	github.com/MikMuellerDev/homescript v0.5.0-beta
 	github.com/lnquy/cron v1.1.1
 	golang.org/x/exp v0.0.0-20220426173459-3bcf042a4bf5
 )

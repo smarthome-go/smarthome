@@ -74,6 +74,55 @@ func (self *Executor) Notify(
 	return nil
 }
 
+func (self *Executor) AddUser(username string, password string, forename string, surname string) error {
+	if err := database.AddUser(database.FullUser{
+		Username: username,
+		Password: password,
+		Forename: forename,
+		Surname:  surname,
+	}); err != nil {
+		log.Error(fmt.Sprintf("[Homescript] ERROR: script: '%s' user: '%s': failed to create user: %s", self.ScriptName, username, err.Error()))
+		return err
+	}
+	return nil
+}
+
+func (self *Executor) DelUser(username string) error {
+	if err := user.DeleteUser(username); err != nil {
+		log.Error(fmt.Sprintf("[Homescript] ERROR: script: '%s' user: '%s': failed to delete user: %s", self.ScriptName, username, err.Error()))
+		return err
+	}
+	return nil
+}
+
+func (self *Executor) AddPerm(username string, permission string) error {
+	if !database.DoesPermissionExist(permission) {
+		return fmt.Errorf("The permission '%s' does not exist.", permission)
+	}
+	edited, err := database.AddUserPermission(username, database.PermissionType(permission))
+	if err != nil {
+		return fmt.Errorf("Failed to add permission: database failure: %s", err.Error())
+	}
+	if !edited {
+		return errors.New("User already has this permission")
+	}
+	return nil
+}
+
+func (self *Executor) DelPerm(username string, permission string) error {
+	if !database.DoesPermissionExist(permission) {
+		return fmt.Errorf("The permission '%s' does not exist.", permission)
+	}
+	edited, err := database.RemoveUserPermission(username, database.PermissionType(permission))
+	if err != nil {
+		return fmt.Errorf("Failed to add permission: database failure: %s", err.Error())
+	}
+	if !edited {
+		return errors.New("User does not have this permission")
+	}
+	return nil
+}
+
 // Adds a log entry to the internal logging system
 func (self *Executor) Log(
 	title string,
