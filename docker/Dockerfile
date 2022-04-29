@@ -14,13 +14,14 @@ RUN addgroup smarthome && adduser \
     --uid 1000 \
     smarthome
 
+RUN mkdir -p /app/.config
 RUN apk add curl bash && rm -rf /var/cache/apk/*
 
 COPY motd /etc/motd
 COPY .bashrc /app/.bashrc
 ENV ENV=/app/.bashrc
 
-RUN curl -L https://github.com/MikMuellerDev/homescript-cli/releases/download/v0.6.1-beta/homescript_linux_amd64.tar.gz -o /tmp/homescript.tar.gz
+RUN curl -L https://github.com/MikMuellerDev/homescript-cli/releases/download/v0.7.1-beta/homescript_linux_amd64.tar.gz -o /tmp/homescript.tar.gz
 WORKDIR /bin
 RUN tar -xvf /tmp/homescript.tar.gz && chmod +x /bin/homescript && rm -rf /tmp/homescript.tar.gz
 
