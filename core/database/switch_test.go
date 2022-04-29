@@ -413,3 +413,5 @@ func TestModifySwitch(t *testing.T) {
 	assert.False(t, found, "invalid switch found")
 	assert.Empty(t, invalidSwitch, "invalid switch is not empty")
 }
+
+// TODO: add method which tests user switches with modifyRoom permission and powertStates
