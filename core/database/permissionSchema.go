@@ -84,6 +84,7 @@ var (
 			Description: "View, add, modify and delete rooms and room like switches and cameras. If enabled, the user also has access to every switch of the system.",
 		},
 		{
+			// User is allowed to view the video feed of cameras to which he has access
 			Permission:  PermissionViewCameras,
 			Name:        "View Cameras",
 			Description: "View camera video feed. However, which camera can be viewed still depends on the camera permissions.",
