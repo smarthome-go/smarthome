@@ -27,7 +27,7 @@ func HealthCheck(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, node := range nodes {
 		if !node.Online && node.Enabled {
-			w.WriteHeader(http.StatusServiceUnavailable)
+			w.WriteHeader(http.StatusBadGateway)
 			log.Error(fmt.Sprintf("Healthcheck failed: node %s is offline", node.Url))
 			Res(w, Response{Success: false, Message: "healthcheck failed: one or more nodes offline", Error: fmt.Sprintf("Node '%s' %s is offline", node.Name, node.Url)})
 			return

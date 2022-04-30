@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	"golang.org/x/exp/utf8string"
+
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/core/user"
 	"github.com/MikMuellerDev/smarthome/server/middleware"
@@ -52,6 +54,21 @@ func AddUser(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
+	if len(request.Username) == 0 || strings.Contains(request.Username, " ") || !utf8string.NewString(request.Username).IsASCII() {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "username should only include ASCII characters and must not contain whitespaces or be blank"})
+		return
+	}
+	if len(request.Username) > 20 {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "maximum length for username is 20"})
+		return
+	}
+	if len(request.Password) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "blank passwords are not allowed"})
+		return
+	}
 	_, userAlreadyExists, err := database.GetUserByUsername(request.Username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
@@ -61,11 +78,6 @@ func AddUser(w http.ResponseWriter, r *http.Request) {
 	if userAlreadyExists {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		Res(w, Response{Success: false, Message: "failed to add user", Error: "user already exists"})
-		return
-	}
-	if len(request.Username) == 0 || strings.Contains(request.Username, " ") {
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		Res(w, Response{Success: false, Message: "failed to add user", Error: "bad format: username should not be blank and may not contain whitespaces"})
 		return
 	}
 	if err = database.AddUser(
