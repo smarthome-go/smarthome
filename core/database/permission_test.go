@@ -6,7 +6,7 @@ import (
 
 func addAllPermissions() error {
 	for _, permission := range Permissions {
-		if _, err := AddUserPermission("admin", permission.Permission); err != nil {
+		if err := AddUserPermission("admin", permission.Permission); err != nil {
 			return err
 		}
 	}
@@ -39,13 +39,8 @@ func TestAddUserPermission(t *testing.T) {
 		t.Error(err.Error())
 	}
 	for _, permission := range Permissions {
-		alreadyHasPermission, err := AddUserPermission("admin", permission.Permission)
-		if err != nil {
+		if err := AddUserPermission("admin", permission.Permission); err != nil {
 			t.Error(err.Error())
-			return
-		}
-		if alreadyHasPermission {
-			t.Errorf("Add User permission failed: user does not already have permission %s", permission.Permission)
 			return
 		}
 	}
@@ -100,7 +95,7 @@ func TestRemovePermissionOfUser(t *testing.T) {
 		return
 	}
 	for _, permission := range Permissions {
-		if _, err := RemoveUserPermission("admin", permission.Permission); err != nil {
+		if err := RemoveUserPermission("admin", permission.Permission); err != nil {
 			t.Error(err.Error())
 			return
 		}

@@ -21,7 +21,7 @@ func createUserMockData() error {
 	}
 	// Give him permissions
 	for _, permission := range Permissions {
-		if _, err := AddUserPermission("delete_me", permission.Permission); err != nil {
+		if err := AddUserPermission("delete_me", permission.Permission); err != nil {
 			return err
 		}
 	}

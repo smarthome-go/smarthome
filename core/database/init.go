@@ -113,7 +113,7 @@ func initAdminUser(password string) error {
 			return err
 		}
 	}
-	if _, err := AddUserPermission("admin", "*"); err != nil {
+	if err := AddUserPermission("admin", "*"); err != nil {
 		log.Error("Failed to create admin user: permission setup failed: ", err.Error())
 		return err
 	}

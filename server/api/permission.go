@@ -102,7 +102,7 @@ func AddUserPermission(w http.ResponseWriter, r *http.Request) {
 	validPermission := database.DoesPermissionExist(request.Permission)
 	if !validPermission {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		Res(w, Response{Success: false, Message: "could not add permission to user", Error: "invalid permission type"})
+		Res(w, Response{Success: false, Message: "failed to add permission", Error: "invalid permission type"})
 		return
 	}
 	_, userExists, err := database.GetUserByUsername(request.Username)
@@ -113,10 +113,10 @@ func AddUserPermission(w http.ResponseWriter, r *http.Request) {
 	}
 	if !userExists {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		Res(w, Response{Success: false, Message: "could not add permission to user", Error: "invalid user"})
+		Res(w, Response{Success: false, Message: "failed to add permission", Error: "invalid user"})
 		return
 	}
-	modified, err := database.AddUserPermission(request.Username, database.PermissionType(request.Permission))
+	modified, err := user.AddPermission(request.Username, database.PermissionType(request.Permission))
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to add permission", Error: "database failure"})
@@ -124,10 +124,9 @@ func AddUserPermission(w http.ResponseWriter, r *http.Request) {
 	}
 	if !modified {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		Res(w, Response{Success: false, Message: "did not add permission", Error: "user is already in possession of this permission"})
+		Res(w, Response{Success: false, Message: "failed to add permission", Error: "user is already in possession of this permission"})
 		return
 	}
-	w.WriteHeader(http.StatusCreated)
 	go event.Info("Added User Permission", fmt.Sprintf("Added permission %s to user %s.", request.Permission, request.Username))
 	Res(w, Response{Success: true, Message: fmt.Sprintf("successfully added permission `%s` to user `%s`", request.Permission, request.Username)})
 }
@@ -162,7 +161,9 @@ func RemoveUserPermission(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "could not remove permission from user", Error: "invalid user"})
 		return
 	}
-	// If a potentially dangerous permission should be removed, assure that it will not break the system
+	// If the `manageUsers` permission should be removed, assure that it will not break the system
+	// Otherwise, a complete reset would be required because no new users could be created or permission edited
+	// If other users with this permission exist, it is safe to remove
 	if request.Permission == string(database.PermissionManageUsers) || request.Permission == string(database.PermissionWildCard) {
 		isAlone, err := user.IsStandaloneUserAdmin(request.Username)
 		if err != nil {
@@ -172,11 +173,11 @@ func RemoveUserPermission(w http.ResponseWriter, r *http.Request) {
 		}
 		if isAlone {
 			w.WriteHeader(http.StatusUnprocessableEntity)
-			Res(w, Response{Success: false, Message: "failed to remove permission", Error: "user is the only user with permission to manage other users"})
+			Res(w, Response{Success: false, Message: "failed to remove permission", Error: "permission is not safe to remove: removal would lock system because the requested user is the only user-administrator"})
 			return
 		}
 	}
-	modified, err := database.RemoveUserPermission(request.Username, database.PermissionType(request.Permission))
+	modified, err := user.RemovePermission(request.Username, database.PermissionType(request.Permission))
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to remove permission", Error: "database failure"})
@@ -187,8 +188,6 @@ func RemoveUserPermission(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "did remove permission", Error: "user does not have this permission"})
 		return
 	}
-	w.WriteHeader(http.StatusCreated)
-	go event.Info("Removed User Permission", fmt.Sprintf("Removed permission %s from user %s.", request.Permission, request.Username))
 	Res(w, Response{Success: true, Message: "successfully removed permission from user"})
 }
 

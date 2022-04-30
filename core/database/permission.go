@@ -1,9 +1,5 @@
 package database
 
-import (
-	"fmt"
-)
-
 // Used during <Init> of the database, only called once
 // Creates the table containing <permissions> if it doesn't exists already
 // Can return an error if the database fails
@@ -87,62 +83,59 @@ func initializePermissions() error {
 
 // Adds a permission to a user, if database fails, then an error is returned
 // Does not check for username so additional checks should be completed beforehand
-func AddUserPermission(username string, permission PermissionType) (bool, error) {
-	alreadyHasPermission, err := UserHasPermission(username, permission)
+func AddUserPermission(username string, permission PermissionType) error {
+	query, err := db.Prepare(`
+	INSERT INTO
+	hasPermission(
+		Username,
+		Permission
+	)
+	VALUES(?,?)
+	`)
 	if err != nil {
-		log.Error("Could not add permission: could not determine if user is already in posession of this permission: ", err.Error())
-		return false, err
-	}
-	if alreadyHasPermission {
-		return false, nil
-	}
-	query, err := db.Prepare("INSERT INTO hasPermission(Username, Permission) VALUES(?,?) ON DUPLICATE KEY UPDATE Permission=VALUES(Permission)")
-	if err != nil {
-		log.Error("Could not add permission. Failed to prepare query: ", err.Error())
-		return false, err
+		log.Error("Could not add permission: preparing query failed: ", err.Error())
+		return err
 	}
 	defer query.Close()
 	_, err = query.Exec(username, permission)
 	if err != nil {
-		log.Error("Could not add permission. Failed to execute query: ", err.Error())
-		return false, err
+		log.Error("Could not add permission: executing query failed: ", err.Error())
+		return err
 	}
-	log.Debug(fmt.Sprintf("Successfully added permission: `%s` to user: `%s`", permission, username))
-	return true, nil
+	return nil
 }
 
 // Attempts to remove a provided permission from a provided user
 // Fails if permission does not exist or if the database fails
 // Warns and returns `false` for the `modified` boolean the user does not have the permission
-// TODO: the business logic will need to be put to user
-func RemoveUserPermission(username string, permission PermissionType) (bool, error) {
-	hasPermission, err := UserHasPermission(username, permission)
+func RemoveUserPermission(username string, permission PermissionType) error {
+	query, err := db.Prepare(`
+	DELETE FROM
+	hasPermission
+	WHERE
+		username=? AND Permission=?
+	`)
 	if err != nil {
-		return false, err
-	}
-	if !hasPermission {
-		log.Warn("Will not remove abundant permission: User does not have requested permission: ", permission)
-		return false, nil
-	}
-	query, err := db.Prepare("DELETE FROM hasPermission WHERE username=? AND Permission=?")
-	if err != nil {
-		log.Error("Could not remove permission: Failed to prepare query: ", err.Error())
-		return false, err
+		log.Error("Could not remove permission: preparing query failed: ", err.Error())
+		return err
 	}
 	defer query.Close()
 	_, err = query.Exec(username, permission)
 	if err != nil {
-		log.Error("Failed to remove permission: Failed to execute query: ", err.Error())
-		return false, err
+		log.Error("Failed to remove permission: executing query failed: ", err.Error())
+		return err
 	}
-	log.Debug(fmt.Sprintf("Successfully removed permission: `%s` from user: `%s`", permission, username))
-	return true, nil
+	return nil
 }
 
 // Removes all permissions of a given user, used when deleting a user in order to prevent foreign key failure
 // Does not validate username, additional checks required, returns an error if the database fails
 func RemoveAllPermissionsOfUser(username string) error {
-	query, err := db.Prepare(`DELETE FROM hasPermission WHERE Username=?`)
+	query, err := db.Prepare(`
+	DELETE
+	FROM hasPermission
+	WHERE Username=?
+	`)
 	if err != nil {
 		log.Error("Could not delete all permissions of user: preparing query failed: ", err.Error())
 		return err
@@ -157,7 +150,11 @@ func RemoveAllPermissionsOfUser(username string) error {
 
 // Returns a list of permissions assigned to a given user, if it exists
 func GetUserPermissions(username string) ([]string, error) {
-	query, err := db.Prepare("SELECT Permission FROM hasPermission WHERE Username=?")
+	query, err := db.Prepare(`
+	SELECT Permission
+	FROM hasPermission
+	WHERE Username=?
+	`)
 	if err != nil {
 		log.Error("Could get user permissions. Failed to prepare query: ", err.Error())
 		return nil, err
@@ -183,7 +180,6 @@ func GetUserPermissions(username string) ([]string, error) {
 }
 
 // Checks the validity of a given permission string
-// TODO: Can also be abolished because of ENUM type
 func DoesPermissionExist(permission string) bool {
 	for _, permissionItem := range Permissions {
 		if string(permissionItem.Permission) == permission {
@@ -192,8 +188,6 @@ func DoesPermissionExist(permission string) bool {
 	}
 	return false
 }
-
-// TODO: move to business logic layer
 
 // Checks if a provided user is in possession of a provided permission, can return an error, if the database fails
 func UserHasPermission(username string, permission PermissionType) (bool, error) {

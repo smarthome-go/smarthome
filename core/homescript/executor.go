@@ -99,7 +99,7 @@ func (self *Executor) AddPerm(username string, permission string) error {
 	if !database.DoesPermissionExist(permission) {
 		return fmt.Errorf("The permission '%s' does not exist.", permission)
 	}
-	edited, err := database.AddUserPermission(username, database.PermissionType(permission))
+	edited, err := user.AddPermission(username, database.PermissionType(permission))
 	if err != nil {
 		return fmt.Errorf("Failed to add permission: database failure: %s", err.Error())
 	}
@@ -113,7 +113,7 @@ func (self *Executor) DelPerm(username string, permission string) error {
 	if !database.DoesPermissionExist(permission) {
 		return fmt.Errorf("The permission '%s' does not exist.", permission)
 	}
-	edited, err := database.RemoveUserPermission(username, database.PermissionType(permission))
+	edited, err := user.RemovePermission(username, database.PermissionType(permission))
 	if err != nil {
 		return fmt.Errorf("Failed to add permission: database failure: %s", err.Error())
 	}
