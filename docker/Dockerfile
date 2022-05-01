@@ -1,7 +1,7 @@
 FROM alpine:3
 
 LABEL author="MikMuellerDev"
-LABEL version="0.0.26-beta-rc.1"
+LABEL version="0.0.26-beta-rc.2"
 
 COPY ./app /app
 
