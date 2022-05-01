@@ -133,6 +133,9 @@ func DeleteRoomSwitches(roomId string) error {
 		return err
 	}
 	for _, switchItem := range switches {
+		if switchItem.RoomId != roomId {
+			continue
+		}
 		if err := DeleteSwitch(switchItem.Id); err != nil {
 			return err
 		}
