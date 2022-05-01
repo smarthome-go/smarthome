@@ -35,7 +35,7 @@ EXPOSE 80/tcp
 
 USER smarthome:smarthome
 
-RUN homescript config admin admin http://localhost
+RUN homescript config set -n admin -t admin -a http://localhost
 
 ENV SMARTHOME_LOG_LEVEL=INFO
 
