@@ -39,6 +39,9 @@ func NewRouter() *mux.Router {
 	// User Management
 	r.HandleFunc("/users", mdl.Auth(usersGetHandler)).Methods("GET")
 
+	// Editor
+	r.HandleFunc("/editor", mdl.Auth(editorGetHandler)).Methods("GET")
+
 	// Healthcheck for uptime monitoring
 	r.HandleFunc("/health", api.HealthCheck).Methods("GET")
 
