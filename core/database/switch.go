@@ -126,7 +126,7 @@ func DeleteSwitch(switchId string) error {
 }
 
 // Deletes all switches from an arbitrary room
-// TODO: move to business layer
+// TODO: use one database query
 func DeleteRoomSwitches(roomId string) error {
 	switches, err := ListSwitches()
 	if err != nil {
