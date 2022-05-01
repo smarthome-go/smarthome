@@ -142,7 +142,15 @@ func DeleteRoomSwitches(roomId string) error {
 
 // Returns a list of available switches with their attributes
 func ListSwitches() ([]Switch, error) {
-	res, err := db.Query(`SELECT Id, Name, Power, RoomId, Watts FROM switch`)
+	res, err := db.Query(`
+	SELECT
+		Id,
+		Name,
+		Power,
+		RoomId,
+		Watts
+	FROM switch
+	`)
 	if err != nil {
 		log.Error("Could not list switches: failed to execute query: ", err.Error())
 		return nil, err
