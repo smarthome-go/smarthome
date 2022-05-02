@@ -176,8 +176,8 @@ func ListSwitches() ([]Switch, error) {
 	return switches, nil
 }
 
-// Same as `ListSwitches()` but takes a user string as a filter
-// Only shows switches which are contained in the switch-permission table with the given user
+// Like `ListSwitches()` but takes a user string as a filter
+// Only returns switches which are contained in the switch-permission table with the given user
 func ListUserSwitchesQuery(username string) ([]Switch, error) {
 	query, err := db.Prepare(`
 	SELECT
@@ -192,7 +192,7 @@ func ListUserSwitchesQuery(username string) ([]Switch, error) {
 	WHERE hasSwitchPermission.Username=?`,
 	)
 	if err != nil {
-		log.Error("Could not list user switches: preparing query failed.", err.Error())
+		log.Error("Could not list user switches: preparing query failed: ", err.Error())
 		return nil, err
 	}
 	defer query.Close()

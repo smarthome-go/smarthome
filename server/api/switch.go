@@ -34,12 +34,13 @@ func GetAllSwitches(w http.ResponseWriter, r *http.Request) {
 	switches, err := database.ListSwitches()
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Success: false, Message: "database error", Error: "database error"})
+		Res(w, Response{Success: false, Message: "databas", Error: "database failure"})
 		return
 	}
 	if err := json.NewEncoder(w).Encode(switches); err != nil {
 		log.Error(err.Error())
-		Res(w, Response{Success: false, Message: "failed get switches", Error: "could not encode content"})
+		w.WriteHeader(http.StatusInternalServerError)
+		Res(w, Response{Success: false, Message: "failed to get switches", Error: "could not encode content"})
 		return
 	}
 }
@@ -63,7 +64,7 @@ func GetUserSwitches(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Creates a switch
+// Creates a switch in the database
 func CreateSwitch(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
@@ -82,7 +83,7 @@ func CreateSwitch(w http.ResponseWriter, r *http.Request) {
 	}
 	if len(request.Id) > 20 || len(request.Name) > 30 {
 		w.WriteHeader(http.StatusBadRequest)
-		Res(w, Response{Success: false, Message: "bad request", Error: "maximum lengths for id and name are 20 and 30 "})
+		Res(w, Response{Success: false, Message: "bad request", Error: "maximum lengths for id and name are 20 and 30"})
 		return
 	}
 	// Validate that no conflicts are present
@@ -150,7 +151,7 @@ func ModifySwitch(w http.ResponseWriter, r *http.Request) {
 	// Validate length
 	if len(request.Name) > 30 {
 		w.WriteHeader(http.StatusBadRequest)
-		Res(w, Response{Success: false, Message: "bad request", Error: "maximum lengths for id and name are 20 and 30 "})
+		Res(w, Response{Success: false, Message: "bad request", Error: "maximum name length of 30 chars. was exceeded"})
 		return
 	}
 	if err := database.ModifySwitch(request.Id, request.Name, request.Watts); err != nil {

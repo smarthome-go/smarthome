@@ -48,7 +48,7 @@ func SysInfo() DebugInfo {
 			nodesEnabled += 1
 		}
 		// Remove token visibility from debug info
-		nodes[index].Token = ""
+		nodes[index].Token = "redacted"
 	}
 
 	err = database.CheckDatabase()

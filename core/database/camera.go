@@ -117,6 +117,62 @@ func ListCameras() ([]Camera, error) {
 	return cameras, nil
 }
 
+// Like `ListCameras()` but takes a user string as a filter
+// Only returns camerass to wich the user has access to
+// Used in `ListUserCameras()`
+func ListUserCamerasQuery(username string) ([]Camera, error) {
+	query, err := db.Prepare(`
+	SELECT
+		Id,
+		Name,
+		Url,
+		RoomId
+	FROM camera
+	JOIN hasCameraPermission
+	ON hasCameraPermission.Camera=camera.Id
+	WHERE hasCameraPermission.Username=?
+	`)
+	if err != nil {
+		log.Error("Could not list user cameras: preparing query failed: ", err.Error())
+		return nil, err
+	}
+	defer query.Close()
+	res, err := query.Query(username)
+	if err != nil {
+		log.Error("Could not list user cameras: executing query failed: ", err.Error())
+		return nil, err
+	}
+	defer res.Close()
+	cameras := make([]Camera, 0)
+	for res.Next() {
+		var camera Camera
+		if err := res.Scan(
+			&camera.Id,
+			&camera.Name,
+			&camera.Url,
+			&camera.RoomId,
+		); err != nil {
+			log.Error("Could not list user cameras: scanning results failed: ", err.Error())
+			return nil, err
+		}
+		cameras = append(cameras, camera)
+	}
+	return cameras, nil
+}
+
+// Combines the logic from `ListUserCamerasQuery()`
+// With an exception: if the user has the permission to modify rooms, all cameras are granted
+func ListUserCameras(username string) ([]Camera, error) {
+	hasPermissionToAllCameras, err := UserHasPermission(username, PermissionModifyRooms)
+	if err != nil {
+		return nil, err
+	}
+	if hasPermissionToAllCameras {
+		return ListCameras()
+	}
+	return ListUserCamerasQuery(username)
+}
+
 // Returns the metadata of a given camera, wheter it could be found and a potential error
 func GetCameraById(id string) (cam Camera, exists bool, err error) {
 	query, err := db.Prepare(`
