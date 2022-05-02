@@ -76,6 +76,14 @@ func createRoomsInDatabase(rooms []database.Room) error {
 				return err
 			}
 		}
+		for _, camera := range room.Cameras {
+			// Override the (possible) empty room-id to match the current room
+			camera.RoomId = room.Data.Id
+			if err := database.CreateCamera(camera); err != nil {
+				log.Error("Could not create cameras from setup file: ", err.Error())
+				return err
+			}
+		}
 	}
 	return nil
 }
