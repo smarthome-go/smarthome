@@ -158,3 +158,32 @@ func ModifyCamera(w http.ResponseWriter, r *http.Request) {
 	}
 	Res(w, Response{Success: true, Message: "successfully modified camera"})
 }
+
+func DeleteCamera(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request DeleteCameraRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	_, found, err := database.GetCameraById(request.Id)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to delete camera", Error: "database failure"})
+		return
+	}
+	if !found {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to delete camera", Error: "no camera with id exists"})
+		return
+	}
+	if err := database.DeleteCamera(request.Id); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to delete camera", Error: "database failure"})
+		return
+	}
+	Res(w, Response{Success: true, Message: "succesfully deleted camera"})
+}
