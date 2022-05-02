@@ -33,7 +33,6 @@ func createSwitchTable() error {
 		Power BOOLEAN DEFAULT FALSE,
 		RoomId VARCHAR(30),
 		Watts INT,
-		CONSTRAINT SwitchRoomId
 		FOREIGN KEY (RoomId)
 		REFERENCES room(Id)
 	) 
