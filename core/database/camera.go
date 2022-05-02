@@ -9,6 +9,7 @@ type Camera struct {
 	RoomId string `json:"roomId"`
 }
 
+// Creates the table which contains all the cameras
 func createCameraTable() error {
 	_, err := db.Exec(`
 	CREATE TABLE
@@ -28,6 +29,8 @@ func createCameraTable() error {
 	return nil
 }
 
+// Creates a new camera
+// Checks, for example if the camera already exists should be completed beforehand
 func CreateCamera(data Camera) error {
 	query, err := db.Prepare(`
 	INSERT INTO
@@ -40,7 +43,9 @@ func CreateCamera(data Camera) error {
 	VALUES(?, ?, ?, ?)
 	ON DUPLICATE KEY
 		UPDATE
-		Name=VALUES(Name)
+		Name=VALUES(Name),
+		Url=VALUES(Url),
+		RoomId=VALUES(RoomId)
 	`)
 	if err != nil {
 		log.Error("Failed to create camera: preparing query failed: ", err.Error())
@@ -79,6 +84,8 @@ func ModifyCamera(id string, newName string, newUrl string) error {
 	return nil
 }
 
+// Returns a list containing all cameras
+// Used when deleting all cameras in a room
 func ListCameras() ([]Camera, error) {
 	res, err := db.Query(`
 	SELECT
@@ -110,7 +117,8 @@ func ListCameras() ([]Camera, error) {
 	return cameras, nil
 }
 
-func GetCameraById(id string) (Camera, bool, error) {
+// Returns the metadata of a given camera, wheter it could be found and a potential error
+func GetCameraById(id string) (cam Camera, exists bool, err error) {
 	query, err := db.Prepare(`
 	SELECT
 		Id,
@@ -141,7 +149,12 @@ func GetCameraById(id string) (Camera, bool, error) {
 	return camera, true, nil
 }
 
+// Deletes a camera, removes dependencies, such as camera-permission first
+// Used in deleting all room cameras and deleting one camera
 func DeleteCamera(id string) error {
+	if err := RemoveCameraFromPermissions(id); err != nil {
+		return err
+	}
 	query, err := db.Prepare(`
 	DELETE FROM camera
 	WHERE Id=?
@@ -160,19 +173,20 @@ func DeleteCamera(id string) error {
 }
 
 // Deletes all cameras in an arbitrary room
+// Uses `DeleteCamera` in order to remove dependencies beforehand
 func DeleteRoomCameras(roomId string) error {
-	query, err := db.Prepare(`
-	DELETE FROM camera
-	WHERE RoomId=?
-	`)
+	cameras, err := ListCameras()
 	if err != nil {
-		log.Error("Failed to delete room cameras: preparing query failed: ", err.Error())
 		return err
 	}
-	defer query.Close()
-	if _, err := query.Exec(roomId); err != nil {
-		log.Error("Failed to delete room cameras: executing query failed: ", err.Error())
-		return err
+	for _, cam := range cameras {
+		// Skip any cameras which are not in the given room
+		if cam.RoomId != roomId {
+			continue
+		}
+		if err := DeleteCamera(cam.Id); err != nil {
+			return err
+		}
 	}
 	return nil
 }

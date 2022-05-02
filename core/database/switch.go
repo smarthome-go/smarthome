@@ -105,7 +105,6 @@ func ModifySwitch(id string, name string, watts uint16) error {
 // Delete a given switch after all data which depends on this switch has been deleted
 func DeleteSwitch(switchId string) error {
 	if err := RemoveSwitchFromPermissions(switchId); err != nil {
-		log.Error("Failed to remove switch: dependencies could not be removed: ", err.Error())
 		return err
 	}
 	query, err := db.Prepare(`
@@ -126,7 +125,7 @@ func DeleteSwitch(switchId string) error {
 }
 
 // Deletes all switches from an arbitrary room
-// TODO: use one database query
+// Before deleting the switch, dependencies like switch-permissions are deleted
 func DeleteRoomSwitches(roomId string) error {
 	switches, err := ListSwitches()
 	if err != nil {
@@ -143,7 +142,7 @@ func DeleteRoomSwitches(roomId string) error {
 	return nil
 }
 
-// Returns a list of available switches with their attributes
+// Returns a list of all available switches with their attributes
 func ListSwitches() ([]Switch, error) {
 	res, err := db.Query(`
 	SELECT
@@ -177,7 +176,8 @@ func ListSwitches() ([]Switch, error) {
 	return switches, nil
 }
 
-// Same as `ListSwitches()` but takes a user sting as a filter
+// Same as `ListSwitches()` but takes a user string as a filter
+// Only shows switches which are contained in the switch-permission table with the given user
 func ListUserSwitchesQuery(username string) ([]Switch, error) {
 	query, err := db.Prepare(`
 	SELECT
