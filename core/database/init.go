@@ -70,6 +70,12 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 	if err := createReminderTable(); err != nil {
 		return err
 	}
+	if err := createCameraTable(); err != nil {
+		return err
+	}
+	if err := createHasCameraPermissionsTable(); err != nil {
+		return err
+	}
 	return nil
 }
 

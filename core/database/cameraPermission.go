@@ -9,13 +9,12 @@ func createHasCameraPermissionsTable() error {
 	IF NOT EXISTS
 	hasCameraPermission(
 		Username VARCHAR(20),
-		Camera   VARCHAR(50)
+		Camera   VARCHAR(50),
 		FOREIGN KEY (Username)
 		REFERENCES user(Username),
 		FOREIGN KEY (Camera)
 		REFERENCES camera(Id)
-	)
-	`); err != nil {
+	)`); err != nil {
 		log.Error("Failed to create hasCameraPermissionsTable: Executing query failed: ", err.Error())
 		return err
 	}
