@@ -204,21 +204,34 @@ func ListPersonalRoomsWithData(username string) ([]Room, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Get the user's switches
 	switches, err := ListUserSwitches(username)
 	if err != nil {
 		return nil, err
 	}
+	// Get the user's cameras
+	cameras, err := ListUserCameras(username)
+	if err != nil {
+		return nil, err
+	}
+
 	outputRooms := make([]Room, 0)
 	for _, room := range rooms {
 		switchesTemp := make([]Switch, 0)
 		camerasTemp := make([]Camera, 0)
-
+		// Add every switch which is in the current room
 		for _, switchItem := range switches {
 			if switchItem.RoomId == room.Id {
 				switchesTemp = append(switchesTemp, switchItem)
 			}
 		}
-
+		// Add every camera which is in the current room
+		for _, camera := range cameras {
+			if camera.RoomId == room.Id {
+				camerasTemp = append(camerasTemp, camera)
+			}
+		}
+		// Append to the output rooms
 		outputRooms = append(outputRooms, Room{
 			Data:     room,
 			Switches: switchesTemp,
@@ -234,7 +247,13 @@ func ListAllRoomsWithData() ([]Room, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Get all switches
 	switches, err := ListSwitches()
+	if err != nil {
+		return nil, err
+	}
+	// Get all cameras
+	cameras, err := ListCameras()
 	if err != nil {
 		return nil, err
 	}
@@ -242,13 +261,18 @@ func ListAllRoomsWithData() ([]Room, error) {
 	for _, room := range rooms {
 		switchesTemp := make([]Switch, 0)
 		camerasTemp := make([]Camera, 0)
-
+		// Add all switches of the current room
 		for _, switchItem := range switches {
 			if switchItem.RoomId == room.Id {
 				switchesTemp = append(switchesTemp, switchItem)
 			}
 		}
-
+		// Add all cameras of the current room
+		for _, camera := range cameras {
+			if camera.RoomId == room.Id {
+				camerasTemp = append(camerasTemp, camera)
+			}
+		}
 		outputRooms = append(outputRooms, Room{
 			Data:     room,
 			Switches: switchesTemp,
