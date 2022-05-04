@@ -264,6 +264,7 @@
             {#each currentRoom !== undefined ? currentRoom.cameras : [] as cam (cam.id)}
                 <Camera
                     bind:cameras={currentRoom.cameras}
+                    switches={currentRoom.switches}
                     id={cam.id}
                     name={cam.name}
                     url={cam.url}
@@ -346,17 +347,24 @@
         padding: 1.5rem;
         box-sizing: border-box;
         display: flex;
+        gap: 1.5rem;
+        overflow-x: auto;
+        align-items: center;
 
         @include mobile {
             align-items: flex-start;
             justify-content: center;
+            flex-direction: column;
+            height: 100%;
         }
 
         @include widescreen {
-            justify-content: center;
             height: auto;
             min-height: 100%;
             min-width: 20rem;
+            flex-direction: column;
+            overflow-y: auto;
+            align-items: flex-start;
         }
     }
     #add-switch,
