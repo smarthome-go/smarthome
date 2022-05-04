@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-
-	"github.com/MikMuellerDev/smarthome/services/camera"
 )
 
 var log *logrus.Logger
@@ -24,19 +22,5 @@ func Res(w http.ResponseWriter, res Response) {
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		log.Error("Could not send response to client: ", err.Error())
 		return
-	}
-}
-
-// TEST IMAGE FETCHING MODULE
-func TestImageProxy(w http.ResponseWriter, r *http.Request) {
-	imageData, err := camera.TestReturn()
-	if err != nil {
-		log.Error("Failed to test proxy: ", err.Error())
-		w.WriteHeader(http.StatusBadGateway)
-		return
-	}
-	w.Header().Set("Content-Type", http.DetectContentType(imageData))
-	if _, err := w.Write(imageData); err != nil {
-		log.Error(err.Error())
 	}
 }

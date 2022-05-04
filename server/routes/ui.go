@@ -15,27 +15,27 @@ func indexGetHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // Serves HTML for the dashboard
-func dashGetHandler(w http.ResponseWriter, r *http.Request) {
+func dashGetHandler(w http.ResponseWriter, _ *http.Request) {
 	templates.ExecuteTemplate(w, "dash.html", http.StatusOK)
 }
 
 // Serves HTML for rooms
-func roomsGetHandler(w http.ResponseWriter, r *http.Request) {
+func roomsGetHandler(w http.ResponseWriter, _ *http.Request) {
 	templates.ExecuteTemplate(w, "rooms.html", http.StatusOK)
 }
 
 // Serves HTML for reminders
-func reminderGetHandler(w http.ResponseWriter, r *http.Request) {
+func reminderGetHandler(w http.ResponseWriter, _ *http.Request) {
 	templates.ExecuteTemplate(w, "reminders.html", http.StatusOK)
 }
 
 // Serves HTML for user management
-func usersGetHandler(w http.ResponseWriter, r *http.Request) {
+func usersGetHandler(w http.ResponseWriter, _ *http.Request) {
 	templates.ExecuteTemplate(w, "users.html", http.StatusOK)
 }
 
 // Serves HTML for user the homescript editor
-func editorGetHandler(w http.ResponseWriter, r *http.Request) {
+func editorGetHandler(w http.ResponseWriter, _ *http.Request) {
 	templates.ExecuteTemplate(w, "editor.html", http.StatusOK)
 }
 
@@ -73,6 +73,6 @@ func loginGetHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // Serves HTML for profile settings
-func userProfileGetHandler(w http.ResponseWriter, r *http.Request) {
+func userProfileGetHandler(w http.ResponseWriter, _ *http.Request) {
 	templates.ExecuteTemplate(w, "profile.html", http.StatusOK)
 }

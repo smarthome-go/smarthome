@@ -124,7 +124,7 @@ func UserHasCameraPermissionQuery(username string, cameraId string) (bool, error
 }
 
 // Returns a boolean indicating whether a user has a camera permission
-func userHasCameraPermission(username string, cameraId string) (bool, error) {
+func UserHasCameraPermission(username string, cameraId string) (bool, error) {
 	hasPermission, err := UserHasCameraPermissionQuery(username, cameraId)
 	if err != nil {
 		return false, err

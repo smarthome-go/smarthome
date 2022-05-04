@@ -155,9 +155,8 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/reminder/delete", mdl.ApiAuth(mdl.Perm(api.DeleteReminder, database.PermissionReminder))).Methods("DELETE")
 
 	// TODO: remove this one below
-	// TODO: add camera modification / management features
 	// Test camera module here
-	r.HandleFunc("/api/camera/test", api.TestImageProxy).Methods("GET")
+	r.HandleFunc("/api/camera/feed/{id}", api.GetCameraFeed).Methods("GET")
 
 	/// Static files ///
 	assetsFilepath := "./web/dist/assets/"

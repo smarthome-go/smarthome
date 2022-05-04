@@ -1,6 +1,9 @@
 package camera
 
 import (
+	"fmt"
+
+	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/sirupsen/logrus"
 )
 
@@ -14,4 +17,26 @@ func InitLogger(logger *logrus.Logger) {
 	log = logger
 }
 
-// TODO: add access to the cameras which are in the database
+// Returns the current image (from feed) of the given camera
+// Returns an error if fetching or encoding data fails
+// Uses the arguments (camera-id and fetch timeout in seconds)
+func GetCameraFeed(id string, timeoutSecs int) (data []byte, err error) {
+	camera, found, err := database.GetCameraById(id)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return nil, fmt.Errorf("no such camera exists")
+	}
+	byteData, err := fetchImageBytes(camera.Url, timeoutSecs)
+	if err != nil {
+		log.Error("Failed to fetch camera feed: ", err.Error())
+		return nil, err
+	}
+	img, err := convertBytesToPng(byteData)
+	if err != nil {
+		log.Error("Failed to fetch camera feed: could not convert bytes to image: ", err.Error())
+		return nil, err
+	}
+	return img, nil
+}

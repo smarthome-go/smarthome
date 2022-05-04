@@ -7,6 +7,8 @@ import (
 
 	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/MikMuellerDev/smarthome/server/middleware"
+	"github.com/MikMuellerDev/smarthome/services/camera"
+	"github.com/gorilla/mux"
 	"golang.org/x/exp/utf8string"
 )
 
@@ -29,7 +31,7 @@ type DeleteCameraRequest struct {
 
 // Returns a list of available cameras as JSON to the user,
 // admin authentication is required because such information is confidential
-func GetAllCameras(w http.ResponseWriter, r *http.Request) {
+func GetAllCameras(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	cameras, err := database.ListCameras()
 	if err != nil {
@@ -186,4 +188,69 @@ func DeleteCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	Res(w, Response{Success: true, Message: "succesfully deleted camera"})
+}
+
+///Camera feed and image fetching ///
+func GetCameraFeed(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(w, r)
+	if err != nil {
+		return
+	}
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok || id == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "failed to get camera feed", Error: "no camera id provided"})
+		return
+	}
+	_, cameraExists, err := database.GetCameraById(id)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{
+			Success: false,
+			Message: "failed to get camera feed",
+			Error:   "database failure",
+		})
+		return
+	}
+	if !cameraExists {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{
+			Success: false,
+			Message: "failed to get camera feed",
+			Error:   "invalid camera id: no such camera exists",
+		})
+		return
+	}
+	hasPermission, err := database.UserHasCameraPermission(username, id)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{
+			Success: false,
+			Message: "failed to get camera feed",
+			Error:   "database failure",
+		})
+		return
+	}
+	if !hasPermission {
+		w.WriteHeader(http.StatusForbidden)
+		Res(w, Response{
+			Success: false,
+			Message: "failed to get camera feed",
+			Error:   "you lack permission to view this camera's video feed",
+			Time:    "",
+		})
+		return
+	}
+	imageData, err := camera.TestReturn()
+	if err != nil {
+		log.Error("Failed to test proxy: ", err.Error())
+		w.WriteHeader(http.StatusBadGateway)
+		return
+	}
+	w.Header().Set("Content-Type", http.DetectContentType(imageData))
+	if _, err := w.Write(imageData); err != nil {
+		log.Error(err.Error())
+	}
 }
