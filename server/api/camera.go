@@ -243,9 +243,9 @@ func GetCameraFeed(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	imageData, err := camera.TestReturn()
+	// The timeout is set to 45 seconds
+	imageData, err := camera.GetCameraFeed(id, 45)
 	if err != nil {
-		log.Error("Failed to test proxy: ", err.Error())
 		w.WriteHeader(http.StatusBadGateway)
 		return
 	}
