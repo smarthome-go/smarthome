@@ -1,6 +1,7 @@
 package camera
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/MikMuellerDev/smarthome/core/database"
@@ -8,7 +9,7 @@ import (
 )
 
 // Can be adjusted to define a maximum image size
-// Between 0 and 255 Megabytes
+// Size is in megabytes
 const maxImageSize uint8 = 10
 
 var log *logrus.Logger
@@ -33,10 +34,19 @@ func GetCameraFeed(id string, timeoutSecs int) (data []byte, err error) {
 		log.Error("Failed to fetch camera feed: ", err.Error())
 		return nil, err
 	}
+	// [DEPRECATED] for the same reason the convertBytesToPng function is depreacted
+	/**
 	img, err := convertBytesToPng(byteData)
 	if err != nil {
 		log.Error("Failed to fetch camera feed: could not convert bytes to image: ", err.Error())
 		return nil, err
 	}
 	return img, nil
+	*/
+	// [INSTEAD], the fetched data is just validated to match modern browser's requirements
+	if !ensureValidFormat(byteData) {
+		log.Warn("invalid media-type of fetched bytes: not a supprted image type")
+		return nil, errors.New("media-type of fetched bytes not supported")
+	}
+	return byteData, nil
 }

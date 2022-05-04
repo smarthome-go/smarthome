@@ -239,7 +239,6 @@ func GetCameraFeed(w http.ResponseWriter, r *http.Request) {
 			Success: false,
 			Message: "failed to get camera feed",
 			Error:   "you lack permission to view this camera's video feed",
-			Time:    "",
 		})
 		return
 	}
@@ -247,10 +246,17 @@ func GetCameraFeed(w http.ResponseWriter, r *http.Request) {
 	imageData, err := camera.GetCameraFeed(id, 45)
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
+		Res(w, Response{
+			Success: false,
+			Message: "failed to fetch camera video feed",
+			Error:   "camera communication failure",
+			Time:    "",
+		})
 		return
 	}
 	w.Header().Set("Content-Type", http.DetectContentType(imageData))
 	if _, err := w.Write(imageData); err != nil {
-		log.Error(err.Error())
+		log.Debug("Client disconnected before awaiting response")
+		return
 	}
 }

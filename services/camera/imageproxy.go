@@ -19,6 +19,8 @@ import (
 // Fetches an image given an url, returns the image data as `[]byte`
 // WIll return an error if connection or parsing problems occur
 func fetchImageBytes(url string, timeout int) ([]byte, error) {
+	start := time.Now()
+	log.Trace(fmt.Sprintf("Initiating image fetching from: '%s'", url))
 	client := http.Client{Timeout: time.Second * time.Duration(timeout)}
 	response, err := client.Get(url)
 	if err != nil {
@@ -34,14 +36,17 @@ func fetchImageBytes(url string, timeout int) ([]byte, error) {
 	}
 	imageMegabytes := len(imageData) / 1024 / 1024
 	if imageMegabytes > int(maxImageSize) {
-		log.Warn("Failed to fetch image with a size over allowed limit")
+		log.Warn("Failed to fetch image with a size greater than allowed limit")
 		return nil, errors.New("failed to fetch image: size to large")
 	}
+	log.Trace(fmt.Sprintf("Finished image fetching. (size: %d MB) in %v", imageMegabytes, time.Since(start)))
 	return imageData, nil
 }
 
 // Converts the fetched bytes (any of the following formats) to PNG bytes, supported media types are `png, jpeg, and webp`
+// [DEPRECATED] this function is temporarely depreacted due to extreme delays (* 1000) when converting jpeg to png
 func convertBytesToPng(imageBytes []byte) ([]byte, error) {
+	log.Trace("Converting image to PNG")
 	contentType := http.DetectContentType(imageBytes)
 	var intermediateImage image.Image
 	switch contentType {
@@ -73,6 +78,19 @@ func convertBytesToPng(imageBytes []byte) ([]byte, error) {
 		log.Error("Could not decode image: ", err.Error())
 		return nil, errors.Wrap(err, "unable to encode png")
 	}
+	log.Trace("Successfully converted image to PNG")
 	return buffer.Bytes(), nil
+}
 
+// Validates an arbitrary set of bytes to match any of the formats below
+// Supported formates: webp, png or jpeg/jpg
+// Used to validate result when fetching a camera's video preview
+func ensureValidFormat(data []byte) (valid bool) {
+	supportedTypes := []string{"image/png", "image/webp", "image/jpeg"}
+	for _, format := range supportedTypes {
+		if format == http.DetectContentType(data) {
+			return true
+		}
+	}
+	return false
 }
