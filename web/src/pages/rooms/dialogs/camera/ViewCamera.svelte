@@ -1,17 +1,13 @@
 <script lang="ts">
-    import Button, { Label } from "@smui/button";
-    import { onMount } from "svelte";
-    import Dialog, {
-        Actions,
-        Content,
-        InitialFocus,
-        Title,
-    } from "@smui/dialog";
-    import Textfield from "@smui/textfield";
-    import CharacterCounter from "@smui/textfield/character-counter";
-    import { createSnackbar } from "../../../../global";
-    import IconButton from "@smui/icon-button/src/IconButton.svelte";
-    import Progress from "../../../../components/Progress.svelte";
+    import Button,{ Label } from "@smui/button"
+    import Dialog,{
+    Actions,
+    Content,
+    Title
+    } from "@smui/dialog"
+    import IconButton from "@smui/icon-button/src/IconButton.svelte"
+    import Progress from "../../../../components/Progress.svelte"
+    import { createSnackbar } from "../../../../global"
 
     let loading = false;
 
@@ -38,7 +34,9 @@
     <Content id="content">
         <Title id="title">{name}</Title>
         <Progress id="loader" bind:loading />
-        <img bind:this={img} alt="video feed of camera" />
+        <div class="img__wrapper">
+            <img bind:this={img} alt="video feed of camera" />
+        </div>
     </Content>
     <Actions>
         <IconButton
@@ -56,13 +54,23 @@
 
 <style lang="scss">
     @use '../../../../_mixins.scss' as *;
+    .img__wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
     img {
+        height: 100%; 
         width: 100%;
-        height: 100%;
         object-fit: cover;
 
         @include mobile {
             height: min-content;
+        }
+
+        @include widescreen {
+            height: available;
+            width: min-content;
         }
     }
 </style>

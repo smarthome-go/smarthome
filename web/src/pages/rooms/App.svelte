@@ -1,19 +1,19 @@
 <script lang="ts">
-    import Button from "@smui/button/src/Button.svelte";
-    import IconButton from "@smui/icon-button";
-    import Tab, { Label } from "@smui/tab";
-    import TabBar from "@smui/tab-bar";
-    import { onMount } from "svelte";
-    import Progress from "../../components/Progress.svelte";
-    import { createSnackbar, hasPermission, sleep } from "../../global";
-    import Page from "../../Page.svelte";
-    import AddCamera from "./dialogs/camera/AddCamera.svelte";
-    import AddRoom from "./dialogs/room/AddRoom.svelte";
-    import EditRoom from "./dialogs/room/EditRoom.svelte";
-    import AddSwitch from "./dialogs/switch/AddSwitch.svelte";
-    import { loading, Room } from "./main";
-    import Switch from "./Switch.svelte";
-    import Camera from "./Camera.svelte";
+    import Button from "@smui/button/src/Button.svelte"
+    import IconButton from "@smui/icon-button"
+    import Tab,{ Label } from "@smui/tab"
+    import TabBar from "@smui/tab-bar"
+    import { onMount } from "svelte"
+    import Progress from "../../components/Progress.svelte"
+    import { createSnackbar,hasPermission,sleep } from "../../global"
+    import Page from "../../Page.svelte"
+    import Camera from "./Camera.svelte"
+    import AddCamera from "./dialogs/camera/AddCamera.svelte"
+    import AddRoom from "./dialogs/room/AddRoom.svelte"
+    import EditRoom from "./dialogs/room/EditRoom.svelte"
+    import AddSwitch from "./dialogs/switch/AddSwitch.svelte"
+    import { loading,Room } from "./main"
+    import Switch from "./Switch.svelte"
 
     let editOpen = false;
     let rooms: Room[];
@@ -218,7 +218,7 @@
                 >
                 <IconButton
                     class="material-icons"
-                    on:click={() => loadRooms(true)}>refresh</IconButton
+                    on:click={() => {loadRooms(true)}}>refresh</IconButton
                 >
             {/if}
             <IconButton
@@ -359,11 +359,11 @@
         }
 
         @include widescreen {
-            height: auto;
-            min-height: 100%;
+            height: calc(100vh - 5rem);
             min-width: 20rem;
             flex-direction: column;
             overflow-y: auto;
+            overflow-x: hidden;
             align-items: flex-start;
         }
     }
@@ -387,5 +387,12 @@
             height: auto;
             flex-wrap: wrap;
         }
+    }
+    #add-camera {
+        flex-shrink: 0;
+        height: 9rem;
+        position: relative;
+        border-radius: 0.4rem;
+        overflow: hidden;
     }
 </style>

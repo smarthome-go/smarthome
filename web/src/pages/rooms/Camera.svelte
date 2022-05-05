@@ -1,12 +1,10 @@
 <script lang="ts">
-    import IconButton from "@smui/icon-button";
-    import Switch from "@smui/switch";
-    import { onMount } from "svelte/internal";
-    import Progress from "../../components/Progress.svelte";
-    import { createSnackbar, hasPermission, sleep } from "../../global";
-    import EditSwitch from "./dialogs/switch/EditSwitch.svelte";
-    import ViewCamera from "./dialogs/camera/ViewCamera.svelte";
-    import type { Camera, SwitchResponse } from "./main";
+    import IconButton from "@smui/icon-button"
+    import { onMount } from "svelte/internal"
+    import Progress from "../../components/Progress.svelte"
+    import { createSnackbar,hasPermission,sleep } from "../../global"
+    import ViewCamera from "./dialogs/camera/ViewCamera.svelte"
+    import type { Camera,SwitchResponse } from "./main"
 
     export let cameras: Camera[];
     export let switches: SwitchResponse[];
@@ -30,7 +28,6 @@
 
     let viewOpen = false;
     let loading = true;
-
     let loaded = false;
 
     let showEditCamera: () => void;
@@ -82,9 +79,7 @@
                 <IconButton
                     class="material-icons"
                     title="Reload"
-                    on:click={() => {
-                        loading = true;
-                    }}>refresh</IconButton
+                    on:click={loadImage}>refresh</IconButton
                 >
                 <IconButton
                     class="material-icons"
@@ -107,6 +102,7 @@
         position: relative;
         border-radius: 0.4rem;
         overflow: hidden;
+        flex-shrink: 0;
     }
     .loader {
         width: 100%;
