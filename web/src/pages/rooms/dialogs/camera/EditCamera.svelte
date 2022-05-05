@@ -4,69 +4,51 @@
     import Textfield from '@smui/textfield'
     import CharacterCounter from '@smui/textfield/character-counter'
     import { createSnackbar } from '../../../../global'
-    import { loading,SwitchResponse } from '../../main'
+    import { Camera,loading } from '../../main'
 
     let deleteOpen = false
-    let open = false
+    export let open = false
 
-    export let switches: SwitchResponse[]
+    export let cameras: Camera[]
     export let id: string
     export let name: string
-    export let watts: number
+    export let url: string
 
     let nameBefore: string
-    let wattsBefore: number
+    let urlBefore: string
     let nameDirty = false
-    let wattsDirty = false
 
     $: nameDirty = name != nameBefore
-    $: wattsDirty = watts != wattsBefore
+    $: urlDirty = url != urlBefore
 
     export function show() {
         open = true
         nameBefore = name
-        wattsBefore = watts
+        urlBefore = url
     }
 
     function cancel() {
         name = nameBefore
-        watts = wattsBefore
+        url = urlBefore
     }
 
-    async function modifySwitch() {
+    export let modifyCamera: () => void;
+
+    async function deleteCamera() {
         $loading = true
         try {
             const res = await (
-                await fetch('/api/switch/modify', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id, name, watts }),
-                })
-            ).json()
-            if (!res.success) throw Error(res.error)
-            nameBefore = name
-            wattsBefore = watts
-        } catch (err) {
-            $createSnackbar(`Could not edit this switch: ${err}`)
-        }
-        $loading = false
-    }
-
-    async function deleteSwitch() {
-        $loading = true
-        try {
-            const res = await (
-                await fetch('/api/switch/delete', {
+                await fetch('/api/camera/delete', {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id }),
                 })
             ).json()
             if (!res.success) throw Error(res.error)
-            switches = switches.filter((s) => s.id !== id)
+            cameras = cameras.filter((c) => c.id !== id)
             open = false
         } catch (err) {
-            $createSnackbar(`Could not delete this switch: ${err}`)
+            $createSnackbar(`Could not delete camera: ${err}`)
         }
         $loading = false
     }
@@ -81,11 +63,11 @@
     >
         <Title id="confirmation-title">Confirm Deletion</Title>
         <Content id="confirmation-content">
-            You are about to delete the switch '{name}'. This action is
+            You are about to delete the camera '{name}'. This action is
             irreversible, do you want to proceed?
         </Content>
         <Actions>
-            <Button on:click={deleteSwitch}>
+            <Button on:click={deleteCamera}>
                 <Label>Delete</Label>
             </Button>
             <Button use={[InitialFocus]}>
@@ -93,14 +75,14 @@
             </Button>
         </Actions>
     </Dialog>
-    <Title id="title">Edit Switch <code>{id}</code></Title>
+    <Title id="title">Edit Camera <code>{id}</code></Title>
     <Content id="content">
         <Textfield bind:value={name} input$maxlength={30} label="Name" required>
             <svelte:fragment slot="helper">
                 <CharacterCounter>0 / 30</CharacterCounter>
             </svelte:fragment>
         </Textfield>
-        <Textfield bind:value={watts} label="Watts" type="number" />
+        <Textfield bind:value={url} label="Url" type="url" />
         <div id="delete">
             <Button variant="outlined" on:click={() => (deleteOpen = true)}>
                 <Icon class="material-icons">delete</Icon>
@@ -113,9 +95,13 @@
             <Label>Cancel</Label>
         </Button>
         <Button
-            disabled={!nameDirty && !wattsDirty}
+            disabled={!nameDirty && !urlDirty}
             use={[InitialFocus]}
-            on:click={modifySwitch}
+            on:click={() => {
+                nameBefore = name
+                urlBefore = url
+                modifyCamera()
+            }}
         >
             <Label>Modify</Label>
         </Button>
@@ -125,7 +111,7 @@
 <style style="scss">
     code {
         background-color: var(--clr-height-0-3);
-        padding: 0.1rem .5rem;
+        padding: 0.1rem 0.5rem;
         border-radius: 0.3rem;
     }
     #delete {

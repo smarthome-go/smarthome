@@ -1,33 +1,28 @@
 <script lang="ts">
-    import Button,{ Label } from "@smui/button"
-    import Dialog,{
-    Actions,
-    Content,
-    Title
-    } from "@smui/dialog"
-    import IconButton from "@smui/icon-button/src/IconButton.svelte"
-    import Progress from "../../../../components/Progress.svelte"
-    import { createSnackbar } from "../../../../global"
+    import Button,{ Label } from '@smui/button'
+    import Dialog,{ Actions,Content,Title } from '@smui/dialog'
+    import IconButton from '@smui/icon-button/src/IconButton.svelte'
+    import Progress from '../../../../components/Progress.svelte'
+    import { createSnackbar } from '../../../../global'
 
-    let loading = false;
+    let loading = false
+    export let open = false
+    export let name = ''
+    export let id = ''
 
-    export let open = false;
-    export let name = "";
-    export let id = "";
-
-    let img = new Image();
+    let img = new Image()
     function loadImage() {
-        loading = true;
+        loading = true
         img.onload = () => {
-            loading = false;
-        };
-        img.onerror = (err) => {
-            loading = false;
-            $createSnackbar(`Video feed of camera '${id}' failed to load`);
-        };
-        img.src = `/api/camera/feed/${id}?${new Date().getTime()}`;
+            loading = false
+        }
+        img.onerror = () => {
+            loading = false
+            $createSnackbar(`Video feed of camera '${id}' failed to load`)
+        }
+        img.src = `/api/camera/feed/${id}?${new Date().getTime()}`
     }
-    $: if (open) loadImage();
+    $: if (open) loadImage()
 </script>
 
 <Dialog bind:open aria-labelledby="title" aria-describedby="content" fullscreen>
@@ -43,7 +38,7 @@
             class="material-icons"
             title="Reload"
             on:click={() => {
-                loadImage();
+                loadImage()
             }}>refresh</IconButton
         >
         <Button>
@@ -60,7 +55,7 @@
         align-items: center;
     }
     img {
-        height: 100%; 
+        height: 100%;
         width: 100%;
         object-fit: cover;
 
