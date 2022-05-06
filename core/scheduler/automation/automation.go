@@ -7,7 +7,7 @@ import (
 	"github.com/go-co-op/gocron"
 	"github.com/sirupsen/logrus"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/database"
 )
 
 // The scheduler which will run all predefined automation jobs

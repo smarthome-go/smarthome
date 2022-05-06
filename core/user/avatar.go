@@ -7,7 +7,7 @@ import (
 	"mime/multipart"
 	"os"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/database"
 )
 
 const defaultFilePath = "./resources/avatar/default.png"

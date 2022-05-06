@@ -7,9 +7,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
-	"github.com/MikMuellerDev/smarthome/server/api"
-	mdl "github.com/MikMuellerDev/smarthome/server/middleware"
+	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/server/api"
+	mdl "github.com/smarthome-go/smarthome/server/middleware"
 )
 
 var log *logrus.Logger

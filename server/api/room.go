@@ -7,8 +7,8 @@ import (
 
 	"golang.org/x/exp/utf8string"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
-	"github.com/MikMuellerDev/smarthome/server/middleware"
+	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/server/middleware"
 )
 
 type RoomRequest struct {

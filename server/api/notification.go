@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
-	"github.com/MikMuellerDev/smarthome/server/middleware"
+	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/server/middleware"
 )
 
 type NotificationCountResponse struct {

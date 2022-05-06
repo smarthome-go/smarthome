@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
-	"github.com/MikMuellerDev/smarthome/core/hardware"
-	"github.com/MikMuellerDev/smarthome/core/scheduler/scheduler"
-	"github.com/MikMuellerDev/smarthome/server/middleware"
+	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/hardware"
+	"github.com/smarthome-go/smarthome/core/scheduler/scheduler"
+	"github.com/smarthome-go/smarthome/server/middleware"
 )
 
 type NewScheduleRequest struct {

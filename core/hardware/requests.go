@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
-	"github.com/MikMuellerDev/smarthome/core/event"
+	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/event"
 )
 
 type PowerRequest struct {

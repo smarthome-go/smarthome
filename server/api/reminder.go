@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
-	"github.com/MikMuellerDev/smarthome/server/middleware"
-	"github.com/MikMuellerDev/smarthome/services/reminder"
+	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/server/middleware"
+	"github.com/smarthome-go/smarthome/services/reminder"
 )
 
 type AddReminderRequest struct {

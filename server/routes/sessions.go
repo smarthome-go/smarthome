@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/MikMuellerDev/smarthome/core/event"
-	"github.com/MikMuellerDev/smarthome/core/user"
-	"github.com/MikMuellerDev/smarthome/server/api"
-	"github.com/MikMuellerDev/smarthome/server/middleware"
+	"github.com/smarthome-go/smarthome/core/event"
+	"github.com/smarthome-go/smarthome/core/user"
+	"github.com/smarthome-go/smarthome/server/api"
+	"github.com/smarthome-go/smarthome/server/middleware"
 )
 
 // Accepts a json request like `"username": "user",  "password":"password"`

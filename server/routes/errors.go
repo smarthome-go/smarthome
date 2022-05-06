@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/MikMuellerDev/smarthome/server/api"
-	"github.com/MikMuellerDev/smarthome/server/templates"
+	"github.com/smarthome-go/smarthome/server/api"
+	"github.com/smarthome-go/smarthome/server/templates"
 )
 
 // If a `404 - not found` error occurs, this page is served, no authentication required

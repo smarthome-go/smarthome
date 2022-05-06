@@ -4,7 +4,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/database"
 )
 
 var log *logrus.Logger

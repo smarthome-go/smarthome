@@ -3,10 +3,10 @@ package routes
 import (
 	"net/http"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
-	"github.com/MikMuellerDev/smarthome/server/api"
-	"github.com/MikMuellerDev/smarthome/server/middleware"
-	"github.com/MikMuellerDev/smarthome/server/templates"
+	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/server/api"
+	"github.com/smarthome-go/smarthome/server/middleware"
+	"github.com/smarthome-go/smarthome/server/templates"
 )
 
 // Redirects to the dashboard

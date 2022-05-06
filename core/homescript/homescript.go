@@ -6,9 +6,9 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/MikMuellerDev/homescript/homescript"
-	hmsError "github.com/MikMuellerDev/homescript/homescript/error"
-	"github.com/MikMuellerDev/smarthome/core/database"
+	"github.com/smarthome-go/homescript/homescript"
+	hmsError "github.com/smarthome-go/homescript/homescript/error"
+	"github.com/smarthome-go/smarthome/core/database"
 )
 
 var log *logrus.Logger

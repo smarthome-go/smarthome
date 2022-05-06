@@ -7,9 +7,9 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
-	"github.com/MikMuellerDev/smarthome/core/user"
-	"github.com/MikMuellerDev/smarthome/server/middleware"
+	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/user"
+	"github.com/smarthome-go/smarthome/server/middleware"
 )
 
 // Accepts the upload of an image of following allowed formats (png / webp / jpeg / jpg)

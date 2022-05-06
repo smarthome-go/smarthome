@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-co-op/gocron"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/database"
 )
 
 var scheduler *gocron.Scheduler

@@ -3,10 +3,10 @@ package automation
 import (
 	"fmt"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
-	"github.com/MikMuellerDev/smarthome/core/event"
-	"github.com/MikMuellerDev/smarthome/core/homescript"
-	"github.com/MikMuellerDev/smarthome/core/user"
+	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/event"
+	"github.com/smarthome-go/smarthome/core/homescript"
+	"github.com/smarthome-go/smarthome/core/user"
 )
 
 // Is called when the scheduler executes the given automation

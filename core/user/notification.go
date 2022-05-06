@@ -1,7 +1,7 @@
 package user
 
 import (
-	"github.com/MikMuellerDev/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/database"
 )
 
 type NotificationLevel uint8

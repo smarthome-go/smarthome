@@ -1,5 +1,5 @@
 // Smarthome: A completely self-built Smarthome-system written in Go
-// https://github.com/MikMuellerDev/smarthome
+// https://github.com/smarthome-go/smarthome
 package main
 
 import (
@@ -11,21 +11,21 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/MikMuellerDev/smarthome/core/config"
-	"github.com/MikMuellerDev/smarthome/core/database"
-	"github.com/MikMuellerDev/smarthome/core/event"
-	"github.com/MikMuellerDev/smarthome/core/hardware"
-	"github.com/MikMuellerDev/smarthome/core/homescript"
-	"github.com/MikMuellerDev/smarthome/core/scheduler/automation"
-	"github.com/MikMuellerDev/smarthome/core/scheduler/scheduler"
-	"github.com/MikMuellerDev/smarthome/core/user"
-	"github.com/MikMuellerDev/smarthome/core/utils"
-	"github.com/MikMuellerDev/smarthome/server/api"
-	"github.com/MikMuellerDev/smarthome/server/middleware"
-	"github.com/MikMuellerDev/smarthome/server/routes"
-	"github.com/MikMuellerDev/smarthome/server/templates"
-	"github.com/MikMuellerDev/smarthome/services/camera"
-	"github.com/MikMuellerDev/smarthome/services/reminder"
+	"github.com/smarthome-go/smarthome/core/config"
+	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/event"
+	"github.com/smarthome-go/smarthome/core/hardware"
+	"github.com/smarthome-go/smarthome/core/homescript"
+	"github.com/smarthome-go/smarthome/core/scheduler/automation"
+	"github.com/smarthome-go/smarthome/core/scheduler/scheduler"
+	"github.com/smarthome-go/smarthome/core/user"
+	"github.com/smarthome-go/smarthome/core/utils"
+	"github.com/smarthome-go/smarthome/server/api"
+	"github.com/smarthome-go/smarthome/server/middleware"
+	"github.com/smarthome-go/smarthome/server/routes"
+	"github.com/smarthome-go/smarthome/server/templates"
+	"github.com/smarthome-go/smarthome/services/camera"
+	"github.com/smarthome-go/smarthome/services/reminder"
 )
 
 var port = 8082 // Port used during development, can be overridden by config file or environment variables

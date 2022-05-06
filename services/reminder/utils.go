@@ -1,6 +1,6 @@
 package reminder
 
-import "github.com/MikMuellerDev/smarthome/core/database"
+import "github.com/smarthome-go/smarthome/core/database"
 
 type Reminder struct {
 	Id                uint                          `json:"id"`

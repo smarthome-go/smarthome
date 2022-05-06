@@ -3,8 +3,8 @@ package utils
 import (
 	"runtime"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
-	"github.com/MikMuellerDev/smarthome/core/hardware"
+	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/hardware"
 )
 
 type DebugInfo struct {

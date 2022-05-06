@@ -3,7 +3,7 @@ package automation
 import (
 	"testing"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/database"
 )
 
 func TestCreateAutomation(t *testing.T) {

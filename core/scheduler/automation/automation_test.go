@@ -8,10 +8,10 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
-	"github.com/MikMuellerDev/smarthome/core/event"
-	"github.com/MikMuellerDev/smarthome/core/hardware"
-	"github.com/MikMuellerDev/smarthome/core/homescript"
+	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/event"
+	"github.com/smarthome-go/smarthome/core/hardware"
+	"github.com/smarthome-go/smarthome/core/homescript"
 )
 
 // Sets up the tests dependencies

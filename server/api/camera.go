@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
-	"github.com/MikMuellerDev/smarthome/server/middleware"
-	"github.com/MikMuellerDev/smarthome/services/camera"
 	"github.com/gorilla/mux"
+	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/server/middleware"
+	"github.com/smarthome-go/smarthome/services/camera"
 	"golang.org/x/exp/utf8string"
 )
 

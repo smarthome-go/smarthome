@@ -6,13 +6,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/smarthome-go/homescript/homescript/interpreter"
+	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/event"
+	"github.com/smarthome-go/smarthome/core/hardware"
+	"github.com/smarthome-go/smarthome/core/user"
 	"golang.org/x/exp/utf8string"
-
-	"github.com/MikMuellerDev/homescript/homescript/interpreter"
-	"github.com/MikMuellerDev/smarthome/core/database"
-	"github.com/MikMuellerDev/smarthome/core/event"
-	"github.com/MikMuellerDev/smarthome/core/hardware"
-	"github.com/MikMuellerDev/smarthome/core/user"
 )
 
 type Executor struct {

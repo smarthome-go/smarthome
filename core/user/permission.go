@@ -3,8 +3,8 @@ package user
 import (
 	"fmt"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
-	"github.com/MikMuellerDev/smarthome/core/event"
+	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/event"
 )
 
 // Adds a permission to an arbitrary user.

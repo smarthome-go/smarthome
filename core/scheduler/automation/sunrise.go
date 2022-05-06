@@ -7,7 +7,7 @@ import (
 
 	"github.com/nathan-osman/go-sunrise"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/database"
 )
 
 // Utils for determining the times for sunrise and sunset

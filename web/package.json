@@ -10,7 +10,7 @@
   "license": "GPL-2.0-only",
   "repository": {
     "type": "git",
-    "url": "github.com/MikMuellerDev/smarthome"
+    "url": "github.com/smarthome-go/smarthome"
   },
   "keywords": [
     "smarthome",

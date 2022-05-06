@@ -7,7 +7,7 @@ import (
 	"github.com/go-co-op/gocron"
 	"github.com/sirupsen/logrus"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/database"
 )
 
 // This scheduler is executed only once, then disabled the job it should run

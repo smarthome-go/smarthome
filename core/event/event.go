@@ -3,8 +3,8 @@ package event
 import (
 	"fmt"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/sirupsen/logrus"
+	"github.com/smarthome-go/smarthome/core/database"
 )
 
 var log *logrus.Logger

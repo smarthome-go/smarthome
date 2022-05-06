@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/MikMuellerDev/smarthome/core/database"
 	"github.com/sirupsen/logrus"
+	"github.com/smarthome-go/smarthome/core/database"
 )
 
 // Can be adjusted to define a maximum image size
