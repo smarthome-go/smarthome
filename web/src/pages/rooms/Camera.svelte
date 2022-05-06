@@ -7,7 +7,10 @@
     import ViewCamera from './dialogs/camera/ViewCamera.svelte'
     import type { Camera,SwitchResponse } from './main'
 
+    // Cameras are binded in order to use the editor
     export let cameras: Camera[]
+
+    // Switches are also exported in order to detect if power states change
     export let switches: SwitchResponse[]
 
     // Reload the image if a switch was changed
@@ -15,18 +18,21 @@
         updateImage()
     }
 
+    // Reloads the image 3 times with a delay of 4s between each iteration
     async function updateImage() {
-        if (!loaded) return
+        if (!loaded) return // If the image is not initially loaded, (first page load), then stop here
         for (let i = 0; i < 3; i++) {
             await sleep(4000)
             await loadImage()
         }
     }
 
+    // Camera metadata
     export let id: string
     export let name: string
     export let url: string
 
+    // Keeps track of dialog state
     let viewOpen = false
     let editOpen = false
 
@@ -42,7 +48,11 @@
         hasEditPermission = await hasPermission('modifyRooms')
     })
 
+    // Creates an empty image
     let img = new Image()
+
+    // Appends the suffix of the currenty unix-millis to the image's url in order to force a refresh
+    // If the image fails to load, a snackbar is created and the `error` boolean is set to `true` 
     async function loadImage() {
         loading = true
         img.onload = () => {
@@ -59,6 +69,7 @@
         while (loading) await sleep(5)
     }
 
+    // Sends a modification request to the server
     async function modifyCamera() {
         loading = true
         try {
@@ -77,10 +88,14 @@
         loading = false
     }
 
+    // Load the image initially
     onMount(loadImage)
 </script>
 
+<!-- Fullscreen camera feed -->
 <ViewCamera {id} {name} bind:open={viewOpen} />
+
+<!-- If the user is allowed to modify rooms, mount the edit-camera popup -->
 {#if hasEditPermission}
     <EditCamera
         {modifyCamera}
@@ -91,21 +106,27 @@
         bind:url
     />
 {/if}
+
+<!-- Actual camera DIV -->
 <div class="camera mdc-elevation--z3">
+    <!-- Camera feed image, has the class `error` if the stream fails to load -->
     <img
         bind:this={img}
         alt="video feed of camera"
         style:display={error ? 'none' : 'block'}
     />
+    <!-- Is loading when the stream fetches -->
     <div class="loader">
         <Progress bind:loading />
     </div>
+    <!-- Buttons and texts with a transparent background, serves as the overlay -->
     <div class="over" class:blur={!loaded} class:error>
         {#if loaded || error}
             <div class="over__top">
                 <h6>{name}</h6>
                 <code>{id}</code>
             </div>
+            <!-- Edit-camera button is shown when the user has the permission -->
             <div class="over__buttons">
                 {#if hasEditPermission}
                     <IconButton
@@ -189,13 +210,11 @@
         h6 {
             margin: 0;
         }
-
         @include mobile {
             opacity: 1;
             backdrop-filter: none;
             background: none;
             padding: 0.5rem;
-
             &__top {
                 display: flex;
                 h6 {
@@ -213,7 +232,6 @@
                     display: none;
                 }
             }
-
             &__buttons {
                 backdrop-filter: blur(10px);
                 border-radius: 0.5rem;
