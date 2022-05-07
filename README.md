@@ -3,7 +3,7 @@
 
 A completely self-built Smarthome-system written in Go.
 
-[![Go Build](https://github.com/smarthome-go/smarthome/actions/workflows/go.yml/badge.svg)](https://github.com/smarthome-go/smarthome/actions/workflows/go.yml)
+[![Go](https://github.com/smarthome-go/smarthome/actions/workflows/go.yml/badge.svg)](https://github.com/smarthome-go/smarthome/actions/workflows/go.yml)
 [![](https://tokei.rs/b1/github/smarthome-go/smarthome?category=code)](https://github.com/smarthome-go/smarthome).
 
 ## What is Smarthome?
