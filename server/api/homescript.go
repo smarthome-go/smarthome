@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/server/middleware"
@@ -229,4 +230,35 @@ func ModifyHomescript(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	Res(w, Response{Success: true, Message: "successfully modified homescript"})
+}
+
+// Returns the metadata of an arbitrary homescript-id to which the user has access to
+func GetUserHomescriptById(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(w, r)
+	if err != nil {
+		return
+	}
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "failed to get homescript by id", Error: "no id provided"})
+		return
+	}
+	homescript, exists, err := database.GetUserHomescriptById(id, username)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to get homescript by id", Error: "database failure"})
+		return
+	}
+	if !exists {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to get homescript by id", Error: "invalid id: no such homescript exists"})
+		return
+	}
+	if err := json.NewEncoder(w).Encode(homescript); err != nil {
+		log.Error(err.Error())
+		Res(w, Response{Success: false, Message: "failed to list personal homescript", Error: "could not encode response"})
+	}
 }
