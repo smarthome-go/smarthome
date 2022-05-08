@@ -1,0 +1,19 @@
+{
+    "background_color": "#181818",
+    "theme_color": "#6FC55E",
+    "orientation": "portrait-primary",
+    "lang": "en-US",
+    "categories": ["utilities"],
+    "description": "A completely self-built Smarthome system which focusses on functionality and reliability.",
+    "display": "standalone",
+    "icons": [
+      {
+        "src": "/assets/logo-green.webp",
+        "sizes": "192x192",
+        "type": "image/png"
+      }
+    ],
+    "name": "Smarthome",
+    "short_name": "Smarthome",
+    "start_url": "/dash"
+}
