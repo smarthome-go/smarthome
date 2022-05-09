@@ -1,3 +1,4 @@
+//go:generate swagger generate spec
 // Smarthome: A completely self-built Smarthome-system written in Go
 // https://github.com/smarthome-go/smarthome
 package main

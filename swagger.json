@@ -1,0 +1,115 @@
+{
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "schemes": [
+    "http"
+  ],
+  "swagger": "2.0",
+  "info": {
+    "description": "Documentation of the Smarthome server API.",
+    "title": "Smarthome API.",
+    "version": "1.0.0"
+  },
+  "host": "localhost",
+  "basePath": "/",
+  "paths": {
+    "/api/automation/list/personal": {
+      "get": {
+        "tags": [
+          "automations"
+        ],
+        "summary": "Get a list of automations set up by the current user.",
+        "operationId": "getUserAutomations",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/automationList"
+          },
+          "500": {
+            "$ref": "#/responses/genericResponse"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Automation": {
+      "type": "object",
+      "properties": {
+        "CronDescription": {
+          "type": "string"
+        },
+        "CronExpression": {
+          "type": "string"
+        },
+        "Description": {
+          "type": "string"
+        },
+        "Enabled": {
+          "type": "boolean"
+        },
+        "HomescriptId": {
+          "type": "string"
+        },
+        "Id": {
+          "type": "integer",
+          "format": "uint64"
+        },
+        "Name": {
+          "type": "string"
+        },
+        "Owner": {
+          "type": "string"
+        },
+        "TimingMode": {
+          "$ref": "#/definitions/TimingMode"
+        }
+      },
+      "x-go-package": "github.com/smarthome-go/smarthome/core/scheduler/automation"
+    },
+    "TimingMode": {
+      "type": "string",
+      "x-go-package": "github.com/smarthome-go/smarthome/core/database"
+    }
+  },
+  "responses": {
+    "automationList": {
+      "description": "A list of automation objects",
+      "schema": {
+        "type": "array",
+        "items": {
+          "$ref": "#/definitions/Automation"
+        }
+      }
+    },
+    "genericResponse": {
+      "description": "A generic response used in most routes",
+      "headers": {
+        "error": {
+          "type": "string",
+          "description": "If the request was unsuccessfull, the error will describe what went wrong\nin: string"
+        },
+        "message": {
+          "type": "string",
+          "description": "A summary of the request's outcome\nin: string"
+        },
+        "success": {
+          "type": "boolean",
+          "description": "Status of the request\nin: bool"
+        },
+        "time": {
+          "type": "string",
+          "description": "A timestamp which indicates when the server was ready and sent the request\nin: string"
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "basic": {
+      "type": "basic"
+    }
+  }
+}

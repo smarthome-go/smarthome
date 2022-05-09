@@ -41,13 +41,29 @@ type AutomationActivationRequest struct {
 	Enabled bool `json:"enabled"`
 }
 
+// A list of automation objects
+// swagger:response automationList
+type AutomationListWrapper struct {
+	// in:body
+	Body []automation.Automation
+}
+
 // Returns a list of all automations set up by the current user
+// swagger:route GET /api/automation/list/personal automations getUserAutomations
+//
+// Get a list of automations set up by the current user.
+//
+// ---
+// responses:
+//   200: automationList
+//   500: genericResponse
 func GetUserAutomations(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
 		return
 	}
+	// swagger:response automations
 	automations, err := automation.GetUserAutomations(username)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
