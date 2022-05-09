@@ -112,7 +112,7 @@ func (self *Executor) AddUser(username string, password string, forename string,
 	return nil
 }
 
-// Deletes
+// Deletes a given user: checks whether it is okay to delete this user
 func (self *Executor) DelUser(username string) error {
 	hasPermission, err := database.UserHasPermission(self.Username, database.PermissionManageUsers)
 	if err != nil {
@@ -134,6 +134,7 @@ func (self *Executor) DelUser(username string) error {
 	return nil
 }
 
+// Adds an arbitrary permission to a given user
 func (self *Executor) AddPerm(username string, permission string) error {
 	hasPermission, err := database.UserHasPermission(self.Username, database.PermissionManageUsers)
 	if err != nil {
@@ -155,6 +156,7 @@ func (self *Executor) AddPerm(username string, permission string) error {
 	return nil
 }
 
+// Removes an arbitrary permission from a given user
 func (self *Executor) DelPerm(username string, permission string) error {
 	hasPermission, err := database.UserHasPermission(self.Username, database.PermissionManageUsers)
 	if err != nil {
