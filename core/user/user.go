@@ -14,7 +14,7 @@ func InitLogger(logger *logrus.Logger) {
 }
 
 // Will return <true / false> based on authentication validity
-// <true> means valid authentication
+// `true` means valid authentication parameters provided
 // Can return an error if the database fails to return a valid result, meaning service downtime
 func ValidateCredentials(username string, password string) (bool, error) {
 	_, userExists, err := database.GetUserByUsername(username)
@@ -43,7 +43,8 @@ func ValidateCredentials(username string, password string) (bool, error) {
 	return false, nil
 }
 
-// Removes a user, also removes everything that depends on the user (permissions, switchPermissions)
+// Removes a user, also removes everything that depends on the user:
+// permissions, switchPermissions, cameraPermissions, notifications, reminders, schedulers, automations, homescripts
 func DeleteUser(username string) error {
 	if err := RemoveAvatar(username); err != nil {
 		log.Error("Failed to delete user: removing avatar failed: ", err.Error())
