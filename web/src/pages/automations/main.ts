@@ -13,6 +13,17 @@ export interface automation {
 	timingMode:      'normal' | 'sunrise' | 'sunset'
 }
 
+export interface addAutomation {
+	name         :string              
+	description  :string              
+	hour         :number                
+	minute       :number                
+	days         :number[] 
+	homescriptId :string              
+	enabled      :boolean                
+	timingMode:      'normal' | 'sunrise' | 'sunset'
+}
+
 export const automations: Writable<automation[]> = writable([])
 
 export const loading: Writable<boolean> = writable(false)

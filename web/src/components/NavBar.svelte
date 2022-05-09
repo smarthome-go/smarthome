@@ -59,7 +59,7 @@
         },
         {
             label: 'Automation',
-            uri: '/automation',
+            uri: '/automations',
             icon: 'event_repeat',
             position: 'top',
             permission: 'automation',

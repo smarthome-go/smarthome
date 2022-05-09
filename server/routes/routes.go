@@ -26,21 +26,12 @@ func NewRouter() *mux.Router {
 	// Dashboard
 	r.HandleFunc("/", mdl.Auth(indexGetHandler)).Methods("GET")
 	r.HandleFunc("/dash", mdl.Auth(dashGetHandler)).Methods("GET")
-
-	// Rooms
 	r.HandleFunc("/rooms", mdl.Auth(roomsGetHandler)).Methods("GET")
-
-	// Reminders
 	r.HandleFunc("/reminders", mdl.Auth(reminderGetHandler)).Methods("GET")
-
-	// User profile (settings)
 	r.HandleFunc("/profile", mdl.Auth(userProfileGetHandler)).Methods("GET")
-
-	// User Management
 	r.HandleFunc("/users", mdl.Auth(usersGetHandler)).Methods("GET")
-
-	// Editor
 	r.HandleFunc("/editor", mdl.Auth(editorGetHandler)).Methods("GET")
+	r.HandleFunc("/automations", mdl.Auth(automationsGetHandler)).Methods("GET")
 
 	// Healthcheck for uptime monitoring
 	r.HandleFunc("/health", api.HealthCheck).Methods("GET")
