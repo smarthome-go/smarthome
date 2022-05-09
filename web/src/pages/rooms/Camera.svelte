@@ -1,20 +1,24 @@
 <script lang="ts">
     import IconButton from '@smui/icon-button'
-    import { onMount } from 'svelte/internal'
+    import { createEventDispatcher,onMount } from 'svelte/internal'
     import Progress from '../../components/Progress.svelte'
     import { createSnackbar,hasPermission,sleep } from '../../global'
     import EditCamera from './dialogs/camera/EditCamera.svelte'
     import ViewCamera from './dialogs/camera/ViewCamera.svelte'
-    import type { Camera,SwitchResponse } from './main'
 
     // Cameras are binded in order to use the editor
-    export let cameras: Camera[]
+    // export let cameras: Camera[]
 
-    // Switches are also exported in order to detect if power states change
-    export let switches: SwitchResponse[]
+    // Event dispatcher
+    const dispatch = createEventDispatcher()
+    function deleteSelf() {
+        dispatch('delete', null)
+    }
 
+    // Exported in order to allow the parent to tell the camera to reload
     // Reload the image if a switch was changed
-    $: if (switches) {
+    export let reload
+    $: if (reload) {
         updateImage()
     }
 
@@ -98,12 +102,13 @@
 <!-- If the user is allowed to modify rooms, mount the edit-camera popup -->
 {#if hasEditPermission}
     <EditCamera
-        {modifyCamera}
         bind:open={editOpen}
-        bind:cameras
         {id}
         bind:name
         bind:url
+
+        on:modify={modifyCamera}
+        on:delete={deleteSelf}
     />
 {/if}
 
@@ -195,7 +200,6 @@
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-
         &.error {
             border: 0.1rem solid var(--clr-error);
             background: linear-gradient(

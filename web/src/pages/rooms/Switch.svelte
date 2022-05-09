@@ -1,13 +1,13 @@
 <script lang="ts">
     import IconButton from '@smui/icon-button'
     import Switch from '@smui/switch'
-    import { onMount } from 'svelte/internal'
+    import { createEventDispatcher,onMount } from 'svelte/internal'
     import Progress from '../../components/Progress.svelte'
     import { createSnackbar,hasPermission,sleep } from '../../global'
     import EditSwitch from './dialogs/switch/EditSwitch.svelte'
-    import type { SwitchResponse } from './main'
 
-    export let switches: SwitchResponse[]
+    // Event dispatcher
+    const dispatch = createEventDispatcher()
 
     export let id: string
     export let name: string
@@ -17,6 +17,7 @@
     let requests = 0
     let loading = false
 
+    // Is binded to the `editSwitch` in order to pass an event to a child
     let showEditSwitch: () => void
 
     // Determines if edit button should be shown
@@ -24,9 +25,11 @@
     onMount(async () => {
         hasEditPermission = await hasPermission('modifyRooms')
     })
-    
+
     $: loading = requests !== 0
     async function toggle(event: CustomEvent<{ selected: boolean }>) {
+        // Send a event in order to signal that the cameras should be reloaded
+        dispatch('powerChange', null)
         requests++
         try {
             const res = await (
@@ -49,10 +52,17 @@
         }
         await sleep(500)
         requests--
+        dispatch('powerChangeDone', null)
     }
 </script>
 
-<EditSwitch bind:switches bind:id bind:name bind:watts bind:show={showEditSwitch} />
+<EditSwitch
+    on:delete={() => dispatch('delete', null)}
+    {id}
+    bind:name
+    bind:watts
+    bind:show={showEditSwitch}
+/>
 
 <div class="switch mdc-elevation--z3">
     <div class="switch__left">

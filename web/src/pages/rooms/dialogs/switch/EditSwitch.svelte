@@ -3,13 +3,17 @@
     import Dialog,{ Actions,Content,InitialFocus,Title } from '@smui/dialog'
     import Textfield from '@smui/textfield'
     import CharacterCounter from '@smui/textfield/character-counter'
+    import { createEventDispatcher } from 'svelte'
     import { createSnackbar } from '../../../../global'
-    import { loading,SwitchResponse } from '../../main'
+    import { loading } from '../../main'
+
+    // Event dispatcher for deletion events
+    const dispatch = createEventDispatcher()
+    const deleteSelf = () => {dispatch("delete", null)}
 
     let deleteOpen = false
     let open = false
 
-    export let switches: SwitchResponse[]
     export let id: string
     export let name: string
     export let watts: number
@@ -51,25 +55,6 @@
         }
         $loading = false
     }
-
-    async function deleteSwitch() {
-        $loading = true
-        try {
-            const res = await (
-                await fetch('/api/switch/delete', {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id }),
-                })
-            ).json()
-            if (!res.success) throw Error(res.error)
-            switches = switches.filter((s) => s.id !== id)
-            open = false
-        } catch (err) {
-            $createSnackbar(`Could not delete this switch: ${err}`)
-        }
-        $loading = false
-    }
 </script>
 
 <Dialog bind:open aria-labelledby="title" aria-describedby="content">
@@ -85,7 +70,7 @@
             irreversible, do you want to proceed?
         </Content>
         <Actions>
-            <Button on:click={deleteSwitch}>
+            <Button on:click={deleteSelf}>
                 <Label>Delete</Label>
             </Button>
             <Button use={[InitialFocus]}>

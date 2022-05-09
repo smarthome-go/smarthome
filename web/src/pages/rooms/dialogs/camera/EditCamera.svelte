@@ -3,13 +3,20 @@
     import Dialog,{ Actions,Content,InitialFocus,Title } from '@smui/dialog'
     import Textfield from '@smui/textfield'
     import CharacterCounter from '@smui/textfield/character-counter'
-    import { createSnackbar } from '../../../../global'
-    import { Camera,loading } from '../../main'
+    import { createEventDispatcher } from 'svelte'
+
+    // Event dispatcher
+    const dispatch = createEventDispatcher()
+    function modifySelf() {
+        dispatch('modify', null)
+    }
+    function deleteSelf() {
+        dispatch('delete', null)
+    }
 
     let deleteOpen = false
     export let open = false
 
-    export let cameras: Camera[]
     export let id: string
     export let name: string
     export let url: string
@@ -31,27 +38,6 @@
         name = nameBefore
         url = urlBefore
     }
-
-    export let modifyCamera: () => void;
-
-    async function deleteCamera() {
-        $loading = true
-        try {
-            const res = await (
-                await fetch('/api/camera/delete', {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id }),
-                })
-            ).json()
-            if (!res.success) throw Error(res.error)
-            cameras = cameras.filter((c) => c.id !== id)
-            open = false
-        } catch (err) {
-            $createSnackbar(`Could not delete camera: ${err}`)
-        }
-        $loading = false
-    }
 </script>
 
 <Dialog bind:open aria-labelledby="title" aria-describedby="content">
@@ -67,7 +53,7 @@
             irreversible, do you want to proceed?
         </Content>
         <Actions>
-            <Button on:click={deleteCamera}>
+            <Button on:click={deleteSelf}>
                 <Label>Delete</Label>
             </Button>
             <Button use={[InitialFocus]}>
@@ -100,7 +86,7 @@
             on:click={() => {
                 nameBefore = name
                 urlBefore = url
-                modifyCamera()
+                modifySelf()
             }}
         >
             <Label>Modify</Label>
