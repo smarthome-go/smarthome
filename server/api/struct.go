@@ -5,19 +5,9 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
-// A generic response used in most routes
-// swagger:response genericResponse
 type Response struct {
-	// Status of the request
-	// in: bool
-	Success bool `json:"success"`
-	// A summary of the request's outcome
-	// in: string
+	Success bool   `json:"success"`
 	Message string `json:"message"`
-	// If the request was unsuccessfull, the error will describe what went wrong
-	// in: string
-	Error string `json:"error"`
-	// A timestamp which indicates when the server was ready and sent the request
-	// in: string
-	Time string `json:"time"`
+	Error   string `json:"error"`
+	Time    string `json:"time"`
 }
