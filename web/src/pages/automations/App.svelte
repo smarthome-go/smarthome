@@ -36,7 +36,7 @@
         {#if $automations.length == 0}
             No automations
             <Button on:click={() => (addOpen = true)}>
-                <Label>Add User</Label>
+                <Label>Create</Label>
                 <Icon class="material-icons">add</Icon>
             </Button>
         {:else}
