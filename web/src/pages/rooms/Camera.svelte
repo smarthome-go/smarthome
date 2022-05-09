@@ -6,9 +6,6 @@
     import EditCamera from './dialogs/camera/EditCamera.svelte'
     import ViewCamera from './dialogs/camera/ViewCamera.svelte'
 
-    // Cameras are binded in order to use the editor
-    // export let cameras: Camera[]
-
     // Event dispatcher
     const dispatch = createEventDispatcher()
     function deleteSelf() {
@@ -51,10 +48,9 @@
     onMount(async () => {
         hasEditPermission = await hasPermission('modifyRooms')
     })
-
     // Creates an empty image
     let img = new Image()
-
+    
     // Appends the suffix of the currenty unix-millis to the image's url in order to force a refresh
     // If the image fails to load, a snackbar is created and the `error` boolean is set to `true` 
     async function loadImage() {
@@ -72,7 +68,6 @@
         img.src = `/api/camera/feed/${id}?${new Date().getTime()}`
         while (loading) await sleep(5)
     }
-
     // Sends a modification request to the server
     async function modifyCamera() {
         loading = true
@@ -91,7 +86,6 @@
         }
         loading = false
     }
-
     // Load the image initially
     onMount(loadImage)
 </script>

@@ -15,11 +15,14 @@
     import { loading,Room } from './main'
     import Switch from './Switch.svelte'
 
+    // If set to true, a camera-reload is triggered
     let reloadCameras = false
 
+    // Wheter the current-room dialog is open
     let editOpen = false
     let rooms: Room[]
 
+    // Are binded backwards to pass the `open` event to the children
     let addRoomShow: () => void
     let addSwitchShow: () => void
     let addCameraShow: () => void
@@ -41,6 +44,7 @@
         hasEditPermission = await hasPermission('modifyRooms')
     })
 
+    // Fetches the available rooms
     async function loadRooms(updateExisting: boolean = false) {
         $loading = true
         try {
@@ -67,7 +71,6 @@
                     ? undefined
                     : rooms.find((r) => r.data.id === roomId)
             currentRoom = room === undefined ? rooms[0] : room
-            console.log(rooms, room, roomId)
         } catch {
             $createSnackbar('Could not load rooms', [
                 {
@@ -80,6 +83,7 @@
         $loading = false
     }
 
+    // Adds a room
     async function addRoom(id: string, name: string, description: string) {
         $loading = true
         try {
@@ -112,6 +116,7 @@
         $loading = false
     }
 
+    // Adds a switch
     async function addSwitch(id: string, name: string, watts: number) {
         $loading = true
         try {
@@ -143,6 +148,7 @@
         $loading = false
     }
 
+    // Adds a camera
     async function addCamera(id: string, name: string, url: string) {
         $loading = true
         try {
@@ -162,7 +168,6 @@
             const currentRoomIndex = rooms.findIndex(
                 (r) => r.data.id == currentRoom.data.id
             )
-
             currentRoom.cameras = [
                 ...currentRoom.cameras,
                 { id, name, url, roomId: currentRoom.data.id },
@@ -174,6 +179,7 @@
         $loading = false
     }
 
+    // Deletes a camera
     async function deleteCamera(id: string) {
         $loading = true
         try {
@@ -192,6 +198,7 @@
         $loading = false
     }
 
+    // Deletes a switch
     async function deleteSwitch(id: string) {
         $loading = true
         try {
