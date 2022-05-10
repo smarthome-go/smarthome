@@ -227,6 +227,7 @@ func ModifyHomescript(w http.ResponseWriter, r *http.Request) {
 		QuickActionsEnabled: request.QuickActionsEnabled,
 		SchedulerEnabled:    request.SchedulerEnabled,
 		Code:                request.Code,
+		MDIcon:              request.MDIcon,
 	}
 	if err := database.ModifyHomescriptById(request.Id, homescriptMetadata); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
