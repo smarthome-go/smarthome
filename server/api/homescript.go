@@ -26,6 +26,7 @@ type CreateHomescriptRequest struct {
 	QuickActionsEnabled bool   `json:"quickActionsEnabled"`
 	SchedulerEnabled    bool   `json:"schedulerEnabled"`
 	Code                string `json:"code"`
+	MDIcon              string `json:"mdIcon"`
 }
 
 type HomescriptLiveRunRequest struct {
@@ -149,6 +150,7 @@ func CreateNewHomescript(w http.ResponseWriter, r *http.Request) {
 			QuickActionsEnabled: request.QuickActionsEnabled,
 			SchedulerEnabled:    request.SchedulerEnabled,
 			Code:                request.Code,
+			MDIcon:              request.MDIcon,
 		},
 	}
 	if err := database.CreateNewHomescript(homescriptToAdd); err != nil {
