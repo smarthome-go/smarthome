@@ -141,13 +141,15 @@ func CreateNewHomescript(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	homescriptToAdd := database.Homescript{
-		Id:                  request.Id,
-		Owner:               username,
-		Name:                request.Name,
-		Description:         request.Description,
-		QuickActionsEnabled: request.QuickActionsEnabled,
-		SchedulerEnabled:    request.SchedulerEnabled,
-		Code:                request.Code,
+		Owner: username,
+		Data: database.HomescriptData{
+			Id:                  request.Id,
+			Name:                request.Name,
+			Description:         request.Description,
+			QuickActionsEnabled: request.QuickActionsEnabled,
+			SchedulerEnabled:    request.SchedulerEnabled,
+			Code:                request.Code,
+		},
 	}
 	if err := database.CreateNewHomescript(homescriptToAdd); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
@@ -217,7 +219,7 @@ func ModifyHomescript(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to modify homescript", Error: "not found / permission denied: no data is associated to this id"})
 		return
 	}
-	homescriptMetadata := database.HomescriptFrontend{
+	homescriptMetadata := database.HomescriptData{
 		Name:                request.Name,
 		Description:         request.Description,
 		QuickActionsEnabled: request.QuickActionsEnabled,

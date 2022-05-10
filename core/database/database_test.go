@@ -17,8 +17,10 @@ func TestMain(m *testing.M) {
 	}
 	// Create a test homescript for some tests
 	if err := CreateNewHomescript(Homescript{
-		Id:    "test",
 		Owner: "admin",
+		Data: HomescriptData{
+			Id: "test",
+		},
 	}); err != nil {
 		panic(err.Error())
 	}

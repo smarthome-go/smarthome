@@ -78,7 +78,7 @@ func RunById(username string, homescriptId string) (string, int, error) {
 	if !hasBeenFound {
 		return "not found error", 404, errors.New("Invalid Homescript id: no data associated with id")
 	}
-	output, exitCode, errorsHms := Run(username, homescriptItem.Id, homescriptItem.Code)
+	output, exitCode, errorsHms := Run(username, homescriptItem.Data.Id, homescriptItem.Data.Code)
 	if len(errorsHms) > 0 {
 		return "execution error", exitCode, fmt.Errorf("Homescript terminated with exit code %d: %s", exitCode, errorsHms[0].Message)
 	}

@@ -57,13 +57,15 @@ func createMockData() error {
 	if !doesExists {
 		// Create Homescript
 		if err := database.CreateNewHomescript(database.Homescript{
-			Id:                  "test",
-			Owner:               "admin",
-			Name:                "Testing",
-			Description:         "A Homescript for testing purposes",
-			QuickActionsEnabled: false,
-			SchedulerEnabled:    false,
-			Code:                "switch('test_switch', on)",
+			Owner: "admin",
+			Data: database.HomescriptData{
+				Id:                  "test",
+				Name:                "Testing",
+				Description:         "A Homescript for testing purposes",
+				QuickActionsEnabled: false,
+				SchedulerEnabled:    false,
+				Code:                "switch('test_switch', on)",
+			},
 		}); err != nil {
 			panic(err.Error())
 		}
@@ -75,13 +77,15 @@ func createMockData() error {
 	if !doesExists {
 		// Create another Homescript
 		if err := database.CreateNewHomescript(database.Homescript{
-			Id:                  "test_modify",
-			Owner:               "admin",
-			Name:                "Testing 2",
-			Description:         "Another Homescript for testing purposes",
-			QuickActionsEnabled: false,
-			SchedulerEnabled:    false,
-			Code:                "switch('test_switch_modify', on)",
+			Owner: "admin",
+			Data: database.HomescriptData{
+				Id:                  "test_modify",
+				Name:                "Testing 2",
+				Description:         "Another Homescript for testing purposes",
+				QuickActionsEnabled: false,
+				SchedulerEnabled:    false,
+				Code:                "switch('test_switch_modify', on)",
+			},
 		}); err != nil {
 			panic(err.Error())
 		}
@@ -93,13 +97,15 @@ func createMockData() error {
 	if !doesExists {
 		// Create another Homescript
 		if err := database.CreateNewHomescript(database.Homescript{
-			Id:                  "test_inactive",
-			Owner:               "admin",
-			Name:                "Testing 2",
-			Description:         "Another Homescript for testing purposes",
-			QuickActionsEnabled: false,
-			SchedulerEnabled:    false,
-			Code:                "switch('test_switch_inactive', on)",
+			Owner: "admin",
+			Data: database.HomescriptData{
+				Id:                  "test_inactive",
+				Name:                "Testing 2",
+				Description:         "Another Homescript for testing purposes",
+				QuickActionsEnabled: false,
+				SchedulerEnabled:    false,
+				Code:                "switch('test_switch_inactive', on)",
+			},
 		}); err != nil {
 			panic(err.Error())
 		}
@@ -111,13 +117,15 @@ func createMockData() error {
 	if !doesExists {
 		// Create another Homescript
 		if err := database.CreateNewHomescript(database.Homescript{
-			Id:                  "test_abort",
-			Owner:               "admin",
-			Name:                "Testing 2",
-			Description:         "Another Homescript for testing purposes",
-			QuickActionsEnabled: false,
-			SchedulerEnabled:    false,
-			Code:                "switch('test_switch_abort', on)",
+			Owner: "admin",
+			Data: database.HomescriptData{
+				Id:                  "test_abort",
+				Name:                "Testing 2",
+				Description:         "Another Homescript for testing purposes",
+				QuickActionsEnabled: false,
+				SchedulerEnabled:    false,
+				Code:                "switch('test_switch_abort', on)",
+			},
 		}); err != nil {
 			panic(err.Error())
 		}

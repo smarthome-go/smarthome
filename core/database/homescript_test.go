@@ -21,54 +21,74 @@ func TestHomescript(t *testing.T) {
 	}{
 		{
 			Homescript: Homescript{
-				Id:                  "test1",
-				Owner:               "admin",
-				Name:                "test",
-				Description:         "test",
-				QuickActionsEnabled: false,
-				SchedulerEnabled:    false,
-				Code:                "print('a')",
+				Owner: "admin",
+				Data: HomescriptData{
+					Id:                  "test1",
+					Name:                "test",
+					Description:         "test",
+					QuickActionsEnabled: false,
+					SchedulerEnabled:    false,
+					Code:                "print('a')",
+					MDIcon:              "code",
+				},
 			},
 			Error: "",
 			AfterModification: Homescript{
-				Id:                  "test1",
-				Owner:               "admin",
-				Name:                "test2",
-				Description:         "test2",
-				QuickActionsEnabled: true,
-				SchedulerEnabled:    false,
-				Code:                "print('b')",
+				Owner: "admin",
+				Data: HomescriptData{
+
+					Id:                  "test1",
+					Name:                "test2",
+					Description:         "test2",
+					QuickActionsEnabled: true,
+					SchedulerEnabled:    false,
+					Code:                "print('b')",
+					MDIcon:              "code_off",
+				},
 			},
 			ErrorModification: "",
 		},
 		{
 			Homescript: Homescript{
-				Id:                  "test2",
-				Owner:               "admin",
-				Name:                "test",
-				Description:         "test",
-				QuickActionsEnabled: true,
-				SchedulerEnabled:    false,
+				Owner: "admin",
+				Data: HomescriptData{
+
+					Id:                  "test2",
+					Name:                "test",
+					Description:         "test",
+					QuickActionsEnabled: true,
+					SchedulerEnabled:    false,
+					Code:                "",
+					MDIcon:              "check",
+				},
 			},
 			Error: "",
 			AfterModification: Homescript{
-				Id:                  "test2",
-				Owner:               "admin",
-				Name:                "test",
-				Description:         "test",
-				QuickActionsEnabled: true,
-				SchedulerEnabled:    true,
+				Owner: "admin",
+				Data: HomescriptData{
+
+					Id:                  "test2",
+					Name:                "test",
+					Description:         "test",
+					QuickActionsEnabled: true,
+					SchedulerEnabled:    true,
+					Code:                ";",
+					MDIcon:              "cancel",
+				},
 			},
 			ErrorModification: "",
 		},
 		{
 			Homescript: Homescript{
-				Id:                  "test4",
-				Owner:               "invalid",
-				Name:                "test",
-				Description:         "test",
-				QuickActionsEnabled: false,
-				SchedulerEnabled:    false,
+				Owner: "invalid",
+				Data: HomescriptData{
+
+					Id:                  "test4",
+					Name:                "test",
+					Description:         "test",
+					QuickActionsEnabled: false,
+					SchedulerEnabled:    false,
+				},
 			},
 			Error:             "Error 1452: Cannot add or update a child row: a foreign key constraint fails (`smarthome`.`homescript`, CONSTRAINT `HomescriptOwner` FOREIGN KEY (`Owner`) REFERENCES `user` (`Username`))",
 			AfterModification: Homescript{},
@@ -78,14 +98,14 @@ func TestHomescript(t *testing.T) {
 	for _, item := range table {
 		if err := CreateNewHomescript(item.Homescript); err != nil {
 			if item.Error != err.Error() {
-				t.Errorf("Unexpected error at script %s: want: %s got: %s", item.Homescript.Id, item.Error, err.Error())
+				t.Errorf("Unexpected error at script %s: want: %s got: %s", item.Homescript.Data.Id, item.Error, err.Error())
 				return
 			}
 		} else if item.Error != "" {
 			t.Errorf("Expected abundant error: want: %s got: ", item.Error)
 			return
 		}
-		homescript, exists, err := GetUserHomescriptById(item.Homescript.Id, item.Homescript.Owner)
+		homescript, exists, err := GetUserHomescriptById(item.Homescript.Data.Id, item.Homescript.Owner)
 		if err != nil {
 			t.Error(err.Error())
 			return
@@ -94,73 +114,67 @@ func TestHomescript(t *testing.T) {
 			if item.Error != "" {
 				continue
 			}
-			t.Errorf("Expected existence of Homescript %s but it does not exist", item.Homescript.Id)
+			t.Errorf("Expected existence of Homescript %s but it does not exist", item.Homescript.Data.Id)
 			return
 		}
 		// Check metadata
-		if homescript.Code != item.Homescript.Code ||
-			homescript.Description != item.Homescript.Description ||
-			homescript.Id != item.Homescript.Id ||
-			homescript.Name != item.Homescript.Name ||
+		if homescript.Data.Code != item.Homescript.Data.Code ||
+			homescript.Data.Description != item.Homescript.Data.Description ||
+			homescript.Data.Id != item.Homescript.Data.Id ||
+			homescript.Data.Name != item.Homescript.Data.Name ||
 			homescript.Owner != item.Homescript.Owner ||
-			homescript.QuickActionsEnabled != item.Homescript.QuickActionsEnabled ||
-			homescript.SchedulerEnabled != item.Homescript.SchedulerEnabled {
+			homescript.Data.QuickActionsEnabled != item.Homescript.Data.QuickActionsEnabled ||
+			homescript.Data.SchedulerEnabled != item.Homescript.Data.SchedulerEnabled {
 			t.Errorf("Metadata of newly created homescript does not match: want: %v got: %v", item.Homescript, homescript)
 			return
 		}
 		// Modify Homescript
 		if item.Error == "" {
 			if err := ModifyHomescriptById(
-				item.Homescript.Id,
-				HomescriptFrontend{
-					Name:                item.AfterModification.Name,
-					Description:         item.AfterModification.Description,
-					QuickActionsEnabled: item.AfterModification.QuickActionsEnabled,
-					SchedulerEnabled:    item.AfterModification.SchedulerEnabled,
-					Code:                item.AfterModification.Code,
-				},
+				item.Homescript.Data.Id,
+				item.AfterModification.Data,
 			); err != nil {
 				if err.Error() != item.ErrorModification {
-					t.Errorf("Unexpected error during modification of %s: want: %s got: %s", item.Homescript.Id, item.ErrorModification, err.Error())
+					t.Errorf("Unexpected error during modification of %s: want: %s got: %s", item.Homescript.Data.Id, item.ErrorModification, err.Error())
 					return
 				}
 				continue
 			} else if item.ErrorModification != "" {
-				t.Errorf("Expected abundant error during modification of %s: want: %s got: %s", item.Homescript.Id, item.ErrorModification, "")
+				t.Errorf("Expected abundant error during modification of %s: want: %s got: %s", item.Homescript.Data.Id, item.ErrorModification, "")
 				return
 			}
-			homescript, exists, err := GetUserHomescriptById(item.Homescript.Id, item.Homescript.Owner)
+			homescript, exists, err := GetUserHomescriptById(item.Homescript.Data.Id, item.Homescript.Owner)
 			if err != nil {
 				t.Error(err.Error())
 				return
 			}
 			if !exists {
-				t.Errorf("Homescript %s does not exists after modification", item.Homescript.Id)
+				t.Errorf("Homescript %s does not exists after modification", item.Homescript.Data.Id)
 				return
 			}
-			if homescript.Id != item.AfterModification.Id ||
-				homescript.Name != item.AfterModification.Name ||
-				homescript.Description != item.AfterModification.Description ||
+			if homescript.Data.Id != item.AfterModification.Data.Id ||
+				homescript.Data.Name != item.AfterModification.Data.Name ||
+				homescript.Data.Description != item.AfterModification.Data.Description ||
 				homescript.Owner != item.AfterModification.Owner ||
-				homescript.QuickActionsEnabled != item.AfterModification.QuickActionsEnabled ||
-				homescript.SchedulerEnabled != item.AfterModification.SchedulerEnabled ||
-				homescript.Code != item.AfterModification.Code {
-				t.Errorf("Metadata of %s did not change completely after modification: want: %v got: %v", item.Homescript.Id, item.AfterModification, homescript)
+				homescript.Data.QuickActionsEnabled != item.AfterModification.Data.QuickActionsEnabled ||
+				homescript.Data.SchedulerEnabled != item.AfterModification.Data.SchedulerEnabled ||
+				homescript.Data.Code != item.AfterModification.Data.Code {
+				t.Errorf("Metadata of %s did not change completely after modification: want: %v got: %v", item.Homescript.Data.Id, item.AfterModification, homescript)
 				return
 			}
 		}
 		// Delete Homescript
-		if err := DeleteHomescriptById(item.Homescript.Id); err != nil {
+		if err := DeleteHomescriptById(item.Homescript.Data.Id); err != nil {
 			t.Error(err.Error())
 			return
 		}
-		exists, err = DoesHomescriptExist(item.Homescript.Id)
+		exists, err = DoesHomescriptExist(item.Homescript.Data.Id)
 		if err != nil {
 			t.Error(err.Error())
 			return
 		}
 		if exists {
-			t.Errorf("Homescript %s still exists after deletion", homescript.Id)
+			t.Errorf("Homescript %s still exists after deletion", homescript.Data.Id)
 			return
 		}
 	}
@@ -177,40 +191,52 @@ func TestListHomeScript(t *testing.T) {
 	// Add one script for the admin and one for the testuser
 	scripts := []Homescript{
 		{
-			Id:                  "hms_testing",
-			Owner:               "hms_testing",
-			Name:                "test",
-			Description:         "test",
-			QuickActionsEnabled: false,
-			SchedulerEnabled:    false,
-			Code:                "",
+			Owner: "hms_testing",
+			Data: HomescriptData{
+				Id:                  "hms_testing",
+				Name:                "test",
+				Description:         "test",
+				QuickActionsEnabled: false,
+				SchedulerEnabled:    false,
+				Code:                "",
+				MDIcon:              "code",
+			},
 		},
 		{
-			Id:                  "admin",
-			Owner:               "admin",
-			Name:                "test",
-			Description:         "test",
-			QuickActionsEnabled: false,
-			SchedulerEnabled:    false,
-			Code:                "",
+			Owner: "admin",
+			Data: HomescriptData{
+				Id:                  "admin",
+				Name:                "test",
+				Description:         "test",
+				QuickActionsEnabled: false,
+				SchedulerEnabled:    false,
+				Code:                ";",
+				MDIcon:              "code_off",
+			},
 		},
 		{
-			Id:                  "hms_testing2",
-			Owner:               "hms_testing",
-			Name:                "test",
-			Description:         "test",
-			QuickActionsEnabled: false,
-			SchedulerEnabled:    false,
-			Code:                "",
+			Owner: "hms_testing",
+			Data: HomescriptData{
+				Id:                  "hms_testing2",
+				Name:                "test",
+				Description:         "test",
+				QuickActionsEnabled: false,
+				SchedulerEnabled:    false,
+				Code:                ";;",
+				MDIcon:              "check",
+			},
 		},
 		{
-			Id:                  "admin2",
-			Owner:               "admin",
-			Name:                "test",
-			Description:         "test",
-			QuickActionsEnabled: false,
-			SchedulerEnabled:    false,
-			Code:                "",
+			Owner: "admin",
+			Data: HomescriptData{
+				Id:                  "admin2",
+				Name:                "test",
+				Description:         "test",
+				QuickActionsEnabled: false,
+				SchedulerEnabled:    false,
+				Code:                ";;;",
+				MDIcon:              "cancel",
+			},
 		},
 	}
 	for _, script := range scripts {
@@ -241,12 +267,16 @@ func TestGetUserHomescriptById(t *testing.T) {
 	}
 	table := []Homescript{
 		{
-			Id:    "admin_new",
 			Owner: "admin",
+			Data: HomescriptData{
+				Id: "admin_new",
+			},
 		},
 		{
-			Id:    "hms_testing_temp",
 			Owner: "hms_testing2",
+			Data: HomescriptData{
+				Id: "hms_testing_temp",
+			},
 		},
 	}
 	for _, item := range table {

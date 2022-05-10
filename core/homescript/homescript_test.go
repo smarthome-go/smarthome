@@ -66,17 +66,21 @@ func TestRun(t *testing.T) {
 	}
 	// Add homescript which will be later used for exec
 	if err := database.CreateNewHomescript(database.Homescript{
-		Id:    "test",
 		Owner: "admin",
-		Code:  "print('exec works')",
+		Data: database.HomescriptData{
+			Id:   "test",
+			Code: "print('exec works')",
+		},
 	}); err != nil {
 		t.Error(err.Error())
 		return
 	}
 	if err := database.CreateNewHomescript(database.Homescript{
-		Id:    "test2",
 		Owner: "test",
-		Code:  "print('exec should not work')",
+		Data: database.HomescriptData{
+			Id:   "test2",
+			Code: "print('exec should not work')",
+		},
 	}); err != nil {
 		t.Error(err.Error())
 		return

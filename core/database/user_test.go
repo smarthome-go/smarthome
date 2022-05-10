@@ -38,7 +38,7 @@ func createUserMockData() error {
 		return err
 	}
 	// Create a homescript
-	if err := CreateNewHomescript(Homescript{Id: "delete_me", Owner: "delete_me"}); err != nil {
+	if err := CreateNewHomescript(Homescript{Data: HomescriptData{Id: "delete_me"}, Owner: "delete_me"}); err != nil {
 		return err
 	}
 	// Create a automation
