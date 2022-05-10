@@ -7,7 +7,7 @@
     import Page from '../../Page.svelte'
     import Automation from './Automation.svelte'
     import AddAutomation from './dialogs/AddAutomation.svelte'
-    import { automation,automations,loading } from './main'
+    import { automations,homescripts,loading } from './main'
 
     let addOpen = false
 
@@ -17,15 +17,34 @@
         try {
             const res = (await (
                 await fetch('/api/automation/list/personal')
-            ).json()) as automation[]
+            ).json())
+            if (res.success !== undefined && !res.success)
+                throw Error(res.error)
             automations.set(res)
         } catch (err) {
-            $createSnackbar('Could not load automations')
+            $createSnackbar(`Could not load automations: ${err}`)
         }
         $loading = false
     }
 
-    onMount(() => loadAutomations()) // Load automations as soon as the component is mounted
+    // Fetches the available homescripts for the selection and naming
+    async function loadHomescript() {
+        $loading = true
+        try {
+            const res = await (await (fetch('/api/homescript/list/personal'))).json()
+            if (res.success !== undefined && !res.success)
+                throw Error(res.error)
+            homescripts.set(res)
+        }catch(err) {
+            $createSnackbar(`Could not load homescript: ${err}`)
+        }
+        $loading = false
+    }
+
+    onMount(() => {
+        loadAutomations()
+        loadHomescript()
+    }) // Load automations as soon as the component is mounted
 </script>
 
 <Page>

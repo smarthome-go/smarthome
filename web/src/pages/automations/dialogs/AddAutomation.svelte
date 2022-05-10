@@ -13,7 +13,9 @@
     import CharacterCounter from '@smui/textfield/character-counter'
     import { createEventDispatcher } from 'svelte'
     import TimePicker from '../../../components/TimePicker.svelte'
+    import HmsSelector from '../HmsSelector.svelte'
     import type { addAutomation } from '../main'
+
     // Event dispatcher
     const dispatch = createEventDispatcher()
 
@@ -35,6 +37,9 @@
 
     let selectedHour = 0
     let selectedMinute = 0
+
+    let selectedHms = 'Tom Hanks'
+    $: console.log(selectedHms)
 </script>
 
 <Dialog bind:open aria-labelledby="title" aria-describedby="content" fullscreen>
@@ -56,8 +61,7 @@
                     </svelte:fragment>
                 </Textfield>
                 <Textfield bind:value={data.description} label="Description" />
-            </div>
-            <div class="right">
+
                 <div class="days">
                     <span class="text-hint"
                         >Specifies on which days of the week the automation will
@@ -75,15 +79,28 @@
                 </div>
                 <div class="time">
                     <span class="text-hint"
-                    >The time on which the automation will run</span
-                >
+                        >The time on which the automation will run</span
+                    >
                     <TimePicker
-                    bind:hour={selectedHour}
-                    bind:minute={selectedMinute}
-                    helperText={'Time'}
-                    invalidText={'error'}
+                        bind:hour={selectedHour}
+                        bind:minute={selectedMinute}
+                        helperText={'Time'}
+                        invalidText={'error'}
                     />
                 </div>
+
+                <!-- List
+                <div class="list">
+                    <Select bind:value={selectedHms} label="Select Menu">
+                        {#each ['a', 'b'] as selectedHms}
+                            <Option value={selectedHms}>{selectedHms}</Option>
+                        {/each}
+                    </Select>
+                    <pre class="status">Selected: {selectedHms}</pre>
+                </div> -->
+            </div>
+            <div class="right">
+                <HmsSelector bind:selection={selectedHms} />
             </div>
         </div>
     </Content>
@@ -109,7 +126,7 @@
     .time {
         display: flex;
         flex-direction: column;
-        gap: .5rem;
+        gap: 0.5rem;
     }
     .time {
         display: flex;
@@ -118,5 +135,6 @@
     .container {
         display: flex;
         justify-content: space-between;
+        flex-wrap: wrap;
     }
 </style>
