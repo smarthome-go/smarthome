@@ -33,13 +33,16 @@
     export let open = false
 
     const days: string[] = ['su', 'mo', 'tu', 'we', 'th', 'fr', 'sa']
-    let selectedDays: string[] = []
+    
+    let selectedDays: string[] = ['mo']
+
+    // BROKEN HERE
+    $: console.log(selectedDays)
 
     let selectedHour = 0
     let selectedMinute = 0
 
-    let selectedHms = 'Tom Hanks'
-    $: console.log(selectedHms)
+    let selectedHms = ''
 </script>
 
 <Dialog bind:open aria-labelledby="title" aria-describedby="content" fullscreen>
@@ -49,23 +52,34 @@
     </Header>
     <Content id="content">
         <div class="container">
+            <!-- Left -->
             <div class="left">
-                <Textfield
-                    bind:value={data.name}
-                    input$maxlength={1}
-                    label="Name"
-                    required
-                >
-                    <svelte:fragment slot="helper">
-                        <CharacterCounter>0 / 1</CharacterCounter>
-                    </svelte:fragment>
-                </Textfield>
-                <Textfield bind:value={data.description} label="Description" />
+                <!-- Names and Text -->
+                <div class="text">
+                    <Textfield
+                        bind:value={data.name}
+                        input$maxlength={30}
+                        label="Name"
+                        required
+                        style="width: 100%;"
+                        helperLine$style="width: 100%;"
+                    >
+                        <svelte:fragment slot="helper">
+                            <CharacterCounter>0 / 30</CharacterCounter>
+                        </svelte:fragment>
+                    </Textfield>
+                    <Textfield
+                        bind:value={data.description}
+                        label="Description"
+                        style="width: 100%;"
+                        helperLine$style="width: 100%;"
+                    />
+                </div>
 
+                <!-- Days -->
                 <div class="days">
                     <span class="text-hint"
-                        >Specifies on which days of the week the automation will
-                        run.</span
+                        >Days on which the automation should run</span
                     >
                     <SegmentedButton
                         segments={days}
@@ -77,10 +91,10 @@
                         </Segment>
                     </SegmentedButton>
                 </div>
+
+                <!-- Time -->
                 <div class="time">
-                    <span class="text-hint"
-                        >The time on which the automation will run</span
-                    >
+                    <span class="text-hint">Time when the automation runs</span>
                     <TimePicker
                         bind:hour={selectedHour}
                         bind:minute={selectedMinute}
@@ -88,19 +102,14 @@
                         invalidText={'error'}
                     />
                 </div>
-
-                <!-- List
-                <div class="list">
-                    <Select bind:value={selectedHms} label="Select Menu">
-                        {#each ['a', 'b'] as selectedHms}
-                            <Option value={selectedHms}>{selectedHms}</Option>
-                        {/each}
-                    </Select>
-                    <pre class="status">Selected: {selectedHms}</pre>
-                </div> -->
             </div>
+
+            <!-- Right -->
             <div class="right">
-                <HmsSelector bind:selection={selectedHms} />
+                <div class="hms">
+                    <span class="text-hint">The Homescript to be executed</span>
+                    <HmsSelector bind:selection={selectedHms} />
+                </div>
             </div>
         </div>
     </Content>
@@ -109,9 +118,11 @@
             <Label>Cancel</Label>
         </Button>
         <Button
-            disabled={true}
+            disabled={false}
             use={[InitialFocus]}
             on:click={() => {
+                // Transform the selected days into data that the server understands
+                data.days = selectedDays.map(d => days.indexOf(d))
                 dispatch('add', data)
                 // Reset values here
             }}
@@ -122,19 +133,39 @@
 </Dialog>
 
 <style lang="scss">
-    .days,
-    .time {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-    .time {
-        display: flex;
-        margin-top: 1.5rem;
-    }
+    @use '../../../mixins' as *;
     .container {
         display: flex;
-        justify-content: space-between;
         flex-wrap: wrap;
+
+        @include not-widescreen {
+            flex-direction: column;
+        }
+    }
+
+    .left,
+    .right {
+        @include widescreen {
+            width: 50%;
+            box-sizing: border-box;
+            padding: 0 1rem;
+        }
+    }
+
+    .days,
+    .time {
+        margin-top: 1.8rem;
+    }
+
+    .hms,
+    .time,
+    .days {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
+    .text {
+        width: 90%;
     }
 </style>

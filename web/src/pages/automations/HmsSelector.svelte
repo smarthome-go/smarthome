@@ -30,18 +30,19 @@
                 selected={selection === item.data.name}
             >
                 <!-- <Graphic
-            style="background-image: url(https://place-hold.it/40x40?text={item.name
-              .split(' ')
-              .map((val) => val.substring(0, 1))
-              .join('')}&fontsize=16);"
-          /> -->
+                    style="background-image: url(https://place-hold.it/40x40?text={item.data.name
+                        .split(' ')
+                        .map((val) => val.substring(0, 1))
+                        .join('')}&fontsize=16);"
+                /> -->
                 <Text>
                     <PrimaryText>{item.data.name}</PrimaryText>
                     <SecondaryText>{item.data.description}</SecondaryText>
                 </Text>
                 <Meta class="material-icons">
                     {#if item.data.schedulerEnabled}
-                        {$homescripts.find((h) => h.data.id === item.data.id)}
+                        {$homescripts.find((h) => h.data.id === item.data.id)
+                            .data.mdIcon}
                     {/if}
                 </Meta>
             </Item>
@@ -51,8 +52,11 @@
 
 <style>
     .list {
-        width: 300px;
-        max-height: 200px;
+        width: 100%;
+        height: 80%;
         overflow: auto;
+        background-color: var(--clr-height-0-3);
+        border-radius: .4rem;
+        padding: 1rem 0;
     }
 </style>

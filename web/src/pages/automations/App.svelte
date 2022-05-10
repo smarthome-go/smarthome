@@ -41,6 +41,10 @@
         $loading = false
     }
 
+    function handleAddAutomation(event) {
+        console.log(event.detail)
+    }
+
     onMount(() => {
         loadAutomations()
         loadHomescript()
@@ -49,7 +53,7 @@
 
 <Page>
     <Progress id="loader" bind:loading={$loading} />
-    <AddAutomation open={addOpen} on:add={() => console.log('add automation')} />
+    <AddAutomation open={addOpen} on:add={handleAddAutomation} />
 
     <div class="automations">
         {#if $automations.length == 0}

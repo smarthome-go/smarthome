@@ -34,6 +34,7 @@ export interface homescript {
 		quickActionsEnabled: boolean
 		schedulerEnabled: boolean
 		code: string
+		mdIcon: string
 	}
 }
 
