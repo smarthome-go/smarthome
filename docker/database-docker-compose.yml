@@ -1,0 +1,16 @@
+version: '3.7'
+services:
+  smarthome-mariadb:
+    image: mariadb
+    container_name: smarthome-mariadb
+    hostname: smarthome-db
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MARIADB_ROOT_PASSWORD=password
+      - TZ=Europe/Berlin
+      - MYSQL_DATABASE=smarthome
+      - MYSQL_USER=smarthome
+      - MYSQL_PASSWORD=password
+    ports:
+      - 3313:3306
+    restart: unless-stopped

@@ -24,25 +24,48 @@ Naturally, the use of smarthome-hw requires physical hardware in order to commun
 However, support for additional hardware, for example Zigbee devices is planned and would open additional possibilities for integration with other hardware.
 
 ## Getting Started
-### The `setup.json`
-Most of the configuration of the smarthome server can be achieved using the `setup.json` file.
+### Config.json
+The config file can be used to setup database access, networking and debug mode.
+
+**Docker:**
+When running Smarthome via Docker, you might skip to the *setup.json* section 
+```json
+{
+    "server": {
+        "production": false,
+        "port": 8082
+    },
+    "database": {
+        "username": "smarthome",
+        "password": "password",
+        "database": "smarthome",
+        "hostname": "localhost",
+        "port": 3313
+    }
+}
+```
+
+### Setup.json
+Basic parts of the configuration can be achieved using the `data/config/setup.json` file.
 This file is scanned and evaluated at startup.
+
+#### Example Configuration
 
 ```json
 {
     "hardwareNodes": [
         {
             "name": "test raspberry pi",
-            "url": "http://localhost:8070",
-            "token": "smarthome"
+            "url": "http://localhost:80",
+            "token": "secret_token"
         }
     ],
     "rooms": [
         {
             "data": {
-                "id": "test_room",
+                "id": "test",
                 "name": "Test Room",
-                "description": "This is a test room"
+                "description": "This is a test"
             },
             "switches": [
                 {
@@ -58,7 +81,7 @@ This file is scanned and evaluated at startup.
                 {
                     "id": "test_camera",
                     "name": "Test Camera",
-                    "url": "https://mik-mueller.de/assets/foo.png"
+                    "url": "https://mik-mueller.de"
                 }
             ]
         }
