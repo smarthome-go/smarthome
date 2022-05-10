@@ -21,7 +21,7 @@ The system focuses on functionality and simplicity in order to guarantee a stabl
 As of April 27, 2022 the only way to make Smarthome interact with the real world is through the use of [node](https://github.com/smarthome-go/node), a Hardware interface which is required in order to interact with most generic 433mhz remote-sockets.
 Naturally, the use of smarthome-hw requires physical hardware in order to communicate with remote sockets.
 
-However, support for additional hardware, for example Zigbee devices is planned and would open additional possibilities for integration with other hardware.
+However, support for additional hardware, for example Zigbee devices is planned and would open additional possibilities, for example integration with other hardware.
 
 ## Getting Started
 ### The `setup.json`
