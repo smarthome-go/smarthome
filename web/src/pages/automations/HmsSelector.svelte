@@ -11,7 +11,7 @@
     export let selection: string
 
     $: if ($homescripts !== undefined && $homescripts.length > 0)
-        $homescripts[0].data.name
+        selection = $homescripts[0].data.id
 
     let selectionIndex: number | undefined = undefined
 </script>
@@ -27,7 +27,7 @@
             <Item
                 on:SMUI:action={() => (selection = item.data.id)}
                 disabled={!item.data.schedulerEnabled}
-                selected={selection === item.data.name}
+                selected={selection === item.data.id}
             >
                 <!-- <Graphic
                     style="background-image: url(https://place-hold.it/40x40?text={item.data.name
@@ -55,8 +55,8 @@
         width: 100%;
         height: 80%;
         overflow: auto;
-        background-color: var(--clr-height-0-3);
-        border-radius: .4rem;
+        /* background-color: var(--clr-height-0-3); */
+        border-radius: 0.4rem;
         padding: 1rem 0;
     }
 </style>

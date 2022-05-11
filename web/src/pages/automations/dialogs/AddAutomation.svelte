@@ -56,6 +56,9 @@
             <div class="left">
                 <!-- Names and Text -->
                 <div class="text">
+                    <span class="text-hint"
+                    >Name and description of the automation</span
+                >
                     <Textfield
                         bind:value={data.name}
                         input$maxlength={30}
@@ -154,7 +157,7 @@
 
     .days,
     .time {
-        margin-top: 1.8rem;
+        margin-top: 2rem;
     }
 
     .hms,

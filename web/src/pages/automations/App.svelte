@@ -15,9 +15,9 @@
     async function loadAutomations() {
         $loading = true
         try {
-            const res = (await (
+            const res = await (
                 await fetch('/api/automation/list/personal')
-            ).json())
+            ).json()
             if (res.success !== undefined && !res.success)
                 throw Error(res.error)
             automations.set(res)
@@ -31,11 +31,17 @@
     async function loadHomescript() {
         $loading = true
         try {
-            const res = await (await (fetch('/api/homescript/list/personal'))).json()
+            let res = await (
+                await fetch('/api/homescript/list/personal')
+            ).json()
             if (res.success !== undefined && !res.success)
                 throw Error(res.error)
+
+            // Filter out any homescripts which are not meant to be used for automations
+            res = res.filter((a) => a.data.schedulerEnabled)
+
             homescripts.set(res)
-        }catch(err) {
+        } catch (err) {
             $createSnackbar(`Could not load homescript: ${err}`)
         }
         $loading = false
