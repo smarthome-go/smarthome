@@ -80,39 +80,38 @@
     onMount(() => loadUsers())
 </script>
 
+<AddUser
+onAdd={addUser}
+bind:show={addUserShow}
+blacklist={$users.map((u) => u.user.username)}
+/>
+
 <Page>
-    <div id="container">
-        <div id="header">
-            <h6>User Management</h6>
+    <div id="header" class="mdc-elevation--z4">
+        <h6>User Management</h6>
+        <div>
+            <IconButton
+                title="Refresh"
+                class="material-icons"
+                on:click={loadUsers}>refresh</IconButton
+            >
+            <Button on:click={addUserShow} variant="raised">
+                <Label>Add User</Label>
+                <Icon class="material-icons">person_add</Icon>
+            </Button>
+        </div>
+    </div>
+    <Progress id="loader" bind:loading={$loading} />
+    <div id="users">
+        {#each $users as user (user.user.username)}
             <div>
-                <IconButton
-                    title="Refresh"
-                    class="material-icons"
-                    on:click={loadUsers}>refresh</IconButton
-                >
-                <AddUser
-                    onAdd={addUser}
-                    bind:show={addUserShow}
-                    blacklist={$users.map((u) => u.user.username)}
+                <User
+                    {...user.user}
+                    bind:permissions={user.permissions}
+                    bind:switchPermissions={user.switchPermissions}
                 />
-                <Button on:click={addUserShow} variant="raised">
-                    <Label>Add User</Label>
-                    <Icon class="material-icons">person_add</Icon>
-                </Button>
             </div>
-        </div>
-        <Progress id="loader" bind:loading={$loading} />
-        <div id="users">
-            {#each $users as user (user.user.username)}
-                <div>
-                    <User
-                        {...user.user}
-                        bind:permissions={user.permissions}
-                        bind:switchPermissions={user.switchPermissions}
-                    />
-                </div>
-            {/each}
-        </div>
+        {/each}
     </div>
 </Page>
 
@@ -122,14 +121,14 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: .1rem 1.3rem;
+        padding: 0.1rem 1.3rem;
         box-sizing: border-box;
-        background-color: var(--clr-height-1-2);
+        background-color: var(--clr-height-1-4);
 
         h6 {
             margin: 0.5rem 0;
-
-            @include mobile {
+            
+            @include mobile { // Hide title on mobile due to space limitations
                 display: none;
             }
         }

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Button,{ Label } from '@smui/button'
+    import Button,{ Icon,Label } from '@smui/button'
     import Dialog,{
     Actions,
     Content,
@@ -8,17 +8,16 @@
     Title
     } from '@smui/dialog'
     import IconButton from '@smui/icon-button'
-    import SegmentedButton,{ Segment } from '@smui/segmented-button'
-    import Textfield from '@smui/textfield'
-    import CharacterCounter from '@smui/textfield/character-counter'
     import { createEventDispatcher } from 'svelte'
-    import TimePicker from '../../../components/TimePicker.svelte'
-    import HmsSelector from '../HmsSelector.svelte'
-    import type { addAutomation } from '../main'
+    import { addAutomation,hmsLoaded,homescripts } from '../main'
+    import Inputs from './Inputs.svelte'
+
+    export let open = false
 
     // Event dispatcher
     const dispatch = createEventDispatcher()
 
+    // Binded to the `Inputs.svelte` component
     let data: addAutomation = {
         days: [],
         description: '',
@@ -30,145 +29,85 @@
         timingMode: 'normal',
     }
 
-    export let open = false
-
-    const days: string[] = ['su', 'mo', 'tu', 'we', 'th', 'fr', 'sa']
-    
-    let selectedDays: string[] = ['mo']
-
-    // BROKEN HERE
-    $: console.log(selectedDays)
-
-    let selectedHour = 0
-    let selectedMinute = 0
-
-    let selectedHms = ''
+    function reset() {
+        console.log('RESET')
+        data = {
+            days: [],
+            description: '',
+            enabled: true,
+            // `$homescripts` can be used because it is likely
+            // that the user can ony invoke reset when homescripts are loaded
+            homescriptId: $homescripts[0].data.id,
+            hour: 0,
+            minute: 0,
+            name: '',
+            timingMode: 'normal',
+        }
+        open = false
+    }
 </script>
 
 <Dialog bind:open aria-labelledby="title" aria-describedby="content" fullscreen>
     <Header>
-        <Title id="title">Add Automation</Title>
+        <Title id="title">
+            {#if $hmsLoaded && $homescripts.length == 0}
+                There are currently no Homescripts.
+            {:else}
+                Add Automation
+            {/if}
+        </Title>
         <IconButton action="close" class="material-icons">close</IconButton>
     </Header>
     <Content id="content">
-        <div class="container">
-            <!-- Left -->
-            <div class="left">
-                <!-- Names and Text -->
-                <div class="text">
-                    <span class="text-hint"
-                    >Name and description of the automation</span
+        {#if $hmsLoaded && $homescripts.length == 0}
+            <p>
+                You must create a Homescript in order to continue. <br /> If there are Homescripts, check that they are enabled for automations / scheduler.
+                <!-- TODO: write CLI documentation and link it here -->
+                <span class="text-hint"
+                    >You can also use the CLI to create Homescripts. <a
+                        href="https://github.com/smarthome-go/cli" target="_blank">learn more</a
+                    ></span
                 >
-                    <Textfield
-                        bind:value={data.name}
-                        input$maxlength={30}
-                        label="Name"
-                        required
-                        style="width: 100%;"
-                        helperLine$style="width: 100%;"
-                    >
-                        <svelte:fragment slot="helper">
-                            <CharacterCounter>0 / 30</CharacterCounter>
-                        </svelte:fragment>
-                    </Textfield>
-                    <Textfield
-                        bind:value={data.description}
-                        label="Description"
-                        style="width: 100%;"
-                        helperLine$style="width: 100%;"
-                    />
-                </div>
-
-                <!-- Days -->
-                <div class="days">
-                    <span class="text-hint"
-                        >Days on which the automation should run</span
-                    >
-                    <SegmentedButton
-                        segments={days}
-                        let:segment
-                        bind:selectedDays
-                    >
-                        <Segment {segment}>
-                            <Label>{segment}</Label>
-                        </Segment>
-                    </SegmentedButton>
-                </div>
-
-                <!-- Time -->
-                <div class="time">
-                    <span class="text-hint">Time when the automation runs</span>
-                    <TimePicker
-                        bind:hour={selectedHour}
-                        bind:minute={selectedMinute}
-                        helperText={'Time'}
-                        invalidText={'error'}
-                    />
-                </div>
-            </div>
-
-            <!-- Right -->
-            <div class="right">
-                <div class="hms">
-                    <span class="text-hint">The Homescript to be executed</span>
-                    <HmsSelector bind:selection={selectedHms} />
-                </div>
-            </div>
-        </div>
+            </p>
+            <Button on:click={() => (window.location.href = '/homescript')}>
+                <Icon class="material-icons">code</Icon>
+                Create one
+            </Button>
+        {:else}
+            <Inputs bind:data />
+        {/if}
     </Content>
     <Actions>
-        <Button>
+        {#if $hmsLoaded && $homescripts.length > 0}
+        <Button on:click={reset}>
             <Label>Cancel</Label>
         </Button>
-        <Button
-            disabled={false}
-            use={[InitialFocus]}
-            on:click={() => {
-                // Transform the selected days into data that the server understands
-                data.days = selectedDays.map(d => days.indexOf(d))
-                dispatch('add', data)
-                // Reset values here
-            }}
-        >
-            <Label>Create</Label>
+            <Button
+                disabled={data.name == '' || data.days.length == 0}
+                use={[InitialFocus]}
+                on:click={() => {
+                    dispatch('add', data)
+                    // Reset values after creation
+                    reset()
+                }}
+            >
+                <Label>Create</Label>
+            </Button>
+        {:else}
+        <Button>
+            <Label>Dismiss</Label>
         </Button>
+        {/if}
     </Actions>
 </Dialog>
 
 <style lang="scss">
-    @use '../../../mixins' as *;
-    .container {
-        display: flex;
-        flex-wrap: wrap;
-
-        @include not-widescreen {
-            flex-direction: column;
-        }
+    .text-hint {
+        font-size: 0.9rem;
+        display: block;
     }
-
-    .left,
-    .right {
-        @include widescreen {
-            width: 50%;
-            box-sizing: border-box;
-            padding: 0 1rem;
-        }
-    }
-
-    .days,
-    .time {
-        margin-top: 2rem;
-    }
-
-    .hms,
-    .time,
-    .days {
-        display: flex;
-        flex-direction: column;
-        gap: 0.3rem;
-    }
-
-    .text {
-        width: 90%;
+    a {
+        color: var(--clr-primary);
+        opacity: 90%;
     }
 </style>

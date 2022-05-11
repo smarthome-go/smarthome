@@ -1,13 +1,20 @@
 <script lang="ts">
-    import { Icon,Label } from '@smui/button'
-    import Button from '@smui/button/src/Button.svelte'
+    import Button,{ Icon } from '@smui/button'
+    import IconButton from '@smui/icon-button'
+    import { Label } from '@smui/list'
     import { onMount } from 'svelte'
     import Progress from '../../components/Progress.svelte'
-    import { createSnackbar } from '../../global'
+    import { createSnackbar,data as userData } from '../../global'
     import Page from '../../Page.svelte'
     import Automation from './Automation.svelte'
     import AddAutomation from './dialogs/AddAutomation.svelte'
-    import { automations,homescripts,loading } from './main'
+    import {
+    addAutomation,
+    automations,
+    hmsLoaded,
+    homescripts,
+    loading
+    } from './main'
 
     let addOpen = false
 
@@ -18,8 +25,10 @@
             const res = await (
                 await fetch('/api/automation/list/personal')
             ).json()
+
             if (res.success !== undefined && !res.success)
                 throw Error(res.error)
+
             automations.set(res)
         } catch (err) {
             $createSnackbar(`Could not load automations: ${err}`)
@@ -34,21 +43,58 @@
             let res = await (
                 await fetch('/api/homescript/list/personal')
             ).json()
+
             if (res.success !== undefined && !res.success)
                 throw Error(res.error)
-
             // Filter out any homescripts which are not meant to be used for automations
             res = res.filter((a) => a.data.schedulerEnabled)
-
-            homescripts.set(res)
+            homescripts.set(res) // Move the fetched homescripts into the store
+            hmsLoaded.set(true) // Signal that the homescripts are loaded
         } catch (err) {
             $createSnackbar(`Could not load homescript: ${err}`)
         }
         $loading = false
     }
 
+    // Sends a request to the server to create a new automation
+    async function createAutomation(data: addAutomation) {
+        $loading = true
+        try {
+            const res = await (
+                await fetch('/api/automation/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                })
+            ).json()
+            if (!res.success) throw Error(res.error)
+            // Create a placeholder item while the automations are being updated
+            // Fetching from the server is needed in order to get the generated id
+            // TODO: return id from POST request
+            $automations = [
+                ...$automations,
+                {
+                    cronDescription: 'not yet generated',
+                    cronExpression: '* * * * *',
+                    description: data.description,
+                    enabled: data.enabled,
+                    homescriptId: data.homescriptId,
+                    id: 0,
+                    name: data.name,
+                    owner: $userData.userData.user.username,
+                    timingMode: data.timingMode,
+                },
+            ]
+            loadAutomations()
+        } catch (err) {
+            $createSnackbar(`Could not create automation: ${err}`)
+        }
+        $loading = false
+    }
+
     function handleAddAutomation(event) {
-        console.log(event.detail)
+        const data = event.detail as addAutomation
+        createAutomation(data).then()
     }
 
     onMount(() => {
@@ -57,17 +103,32 @@
     }) // Load automations as soon as the component is mounted
 </script>
 
-<Page>
-    <Progress id="loader" bind:loading={$loading} />
-    <AddAutomation open={addOpen} on:add={handleAddAutomation} />
+<!-- Popup is shown when an automation is being added -->
+<AddAutomation bind:open={addOpen} on:add={handleAddAutomation} />
 
-    <div class="automations">
-        {#if $automations.length == 0}
-            No automations
+<Page>
+    <div id="header" class="mdc-elevation--z4">
+        <h6>Automations</h6>
+        <div>
+            <IconButton
+                title="Refresh"
+                class="material-icons"
+                on:click={async () => {
+                    await loadAutomations()
+                    await loadHomescript()
+                }}>refresh</IconButton
+            >
             <Button on:click={() => (addOpen = true)}>
                 <Label>Create</Label>
                 <Icon class="material-icons">add</Icon>
             </Button>
+        </div>
+    </div>
+    <Progress id="loader" bind:loading={$loading} />
+
+    <div class="automations">
+        {#if $automations.length == 0}
+            No automations
         {:else}
             {#each $automations as automation (automation.id)}
                 <Automation bind:data={automation} />
@@ -78,4 +139,46 @@
 
 <style lang="scss">
     @use '../../mixins' as *;
+    .automations {
+        padding: 1.5rem;
+        border-radius: 0.4rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        box-sizing: border-box;
+
+        @include mobile {
+            justify-content: center;
+        }
+    }
+
+    #header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.1rem 1.3rem;
+        box-sizing: border-box;
+        background-color: var(--clr-height-1-4);
+    }
+
+    h6 {
+        margin: 0.5rem 0;
+
+        @include mobile {
+            // Hide title on mobile due to space limitations
+            display: none;
+        }
+    }
+
+    div {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+
+        @include mobile {
+            flex-direction: row-reverse;
+            justify-content: space-between;
+            width: 100%;
+        }
+    }
 </style>

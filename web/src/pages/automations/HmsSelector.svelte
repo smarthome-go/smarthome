@@ -6,7 +6,7 @@
     SecondaryText,
     Text
     } from '@smui/list'
-    import { homescripts } from './main'
+    import { hmsLoaded,homescripts } from './main'
 
     export let selection: string
 
@@ -40,7 +40,7 @@
                     <SecondaryText>{item.data.description}</SecondaryText>
                 </Text>
                 <Meta class="material-icons">
-                    {#if item.data.schedulerEnabled}
+                    {#if item.data.schedulerEnabled && hmsLoaded}
                         {$homescripts.find((h) => h.data.id === item.data.id)
                             .data.mdIcon}
                     {/if}
