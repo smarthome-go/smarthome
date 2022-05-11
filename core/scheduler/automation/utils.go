@@ -9,15 +9,15 @@ import (
 )
 
 type Automation struct {
-	Id              uint
-	Name            string
-	Description     string
-	CronExpression  string
-	CronDescription string
-	HomescriptId    string
-	Owner           string
-	Enabled         bool
-	TimingMode      database.TimingMode
+	Id              uint                `json:"id"`
+	Name            string              `json:"name"`
+	Description     string              `json:"description"`
+	CronExpression  string              `json:"cronExpression"`
+	CronDescription string              `json:"cronDescription"`
+	HomescriptId    string              `json:"homescriptId"`
+	Owner           string              `json:"owner"`
+	Enabled         bool                `json:"enabled"`
+	TimingMode      database.TimingMode `json:"timingMode"`
 }
 
 // Creates a new automation which an according database entry
