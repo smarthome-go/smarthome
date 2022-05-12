@@ -1,7 +1,9 @@
 <script lang="ts">
     import { Icon } from '@smui/button'
+    import IconButton from '@smui/icon-button/src/IconButton.svelte'
     import { onMount } from 'svelte'
     import { sleep } from '../../global'
+    import EditAutomation from './dialogs/EditAutomation.svelte'
     import {
     automation,
     hmsLoaded,
@@ -33,6 +35,8 @@
         days: [],
     }
 
+    let editOpen = false
+
     // Generates a 12h string from 24h time data
     let timeString = ''
     $: timeString =
@@ -54,6 +58,8 @@
         timeData = parseCronExpressionToTime(data.cronExpression)
     })
 </script>
+
+<EditAutomation bind:open={editOpen} bind:data />
 
 <div class="automation mdc-elevation--z3">
     <!-- Top -->
@@ -91,6 +97,9 @@
                 </Icon>
             {/if}
         </span>
+        <IconButton class="material-icons" on:click={() => (editOpen = true)}
+            >edit</IconButton
+        >
     </div>
 </div>
 
@@ -118,11 +127,16 @@
             justify-content: space-between;
         }
 
-        .top,
-        .bottom {
+        .top {
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
+        }
+        .bottom {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            justify-content: space-between;
         }
 
         &__days {
@@ -131,22 +145,22 @@
         }
 
         .day {
-                border-radius: 0.6rem;
-                background-color: var(--clr-height-3-4);
-                color: var(--clr-primary);
-                opacity: 70%;
-                padding: 0 0.5rem;
-                font-size: 0.8rem;
-                cursor: default;
+            border-radius: 0.6rem;
+            background-color: var(--clr-height-3-4);
+            color: var(--clr-primary);
+            opacity: 70%;
+            padding: 0 0.5rem;
+            font-size: 0.8rem;
+            cursor: default;
 
-                display: flex;
-                align-items: center;
-                gap: 0.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
 
-                i {
-                    font-size: 1rem;
-                }
+            i {
+                font-size: 1rem;
             }
+        }
 
         @include mobile {
             width: 80vw;

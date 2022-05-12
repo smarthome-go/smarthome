@@ -30,7 +30,6 @@
     }
 
     function reset() {
-        console.log('RESET')
         data = {
             days: [],
             description: '',
