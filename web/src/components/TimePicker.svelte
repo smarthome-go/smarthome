@@ -2,7 +2,7 @@
     import Ripple from '@smui/ripple'
     import { onMount } from 'svelte'
 
-    /** Usage detection: Approximates if the component is currently in use / active */
+    // Usage detection: Approximates if the component is currently in use / active
     let active = false
     let inputElement: HTMLInputElement // Needed for detecting usage
     document.addEventListener(
@@ -14,7 +14,7 @@
         true
     )
 
-    /** Bindable values */
+    // Bindable values
     export let hour = 0
     export let minute = 0
     export let helperText: string
@@ -23,27 +23,26 @@
     // If set to true, a warning will be displayed
     export let invalid = false
 
-    /** Clears the input field and resets the value */
+    // Clears the input field and resets the value
     export function clear() {
         hour = 0
         minute = 0
         inputElement.value = ''
     }
 
-    $: {
+    onMount(() => {
+        /// If the date picker is created wih a predefined value, it is set here
         if (inputElement !== null && inputElement !== undefined) {
-            /** If the date picker is created wih a predefined value, it is set here */
             inputElement.value = `${hour.toString().padStart(2, '0')}:${minute
                 .toString()
                 .padStart(2, '0')}`
         }
-    }
-
-    onMount(() => {
+        
         inputElement.onfocus = () => {
             // Always show the helper text when the input is focused
             active = true
         }
+        
         inputElement.oninput = () => {
             // Needed because binding to value is not optimal
             hour =
