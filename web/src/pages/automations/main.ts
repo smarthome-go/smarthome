@@ -52,25 +52,25 @@ export function parseCronExpressionToTime(expr: string): { hours: number, minute
 }
 
 // // Generates a cron-expression based on the provided data
-// // Loginc ported from `backend: /core/scheduler/automation/cron.go`
-// export function generateCronExpression(hour: number, minute: number, days: number[]): string {
-// 	let outputRep = ['', '', '*', '*', ''] // Cron-expression representation as list
-// 	outputRep[0] = `${minute}` // Assign minute
-// 	outputRep[1] = `${hour}` // Assign hour
-// 	// Omit validation of days and time because the function is only used in a pre validated context
-// 	if (days.length == 7) {
-// 		// Set the days to '*' when all days are included in the list, does not check for duplicate days
-// 		outputRep[4] = "*"
-// 		return outputRep.join(" ")
-// 	}
-// 	// Append the days to the list
-// 	for (let index=0; index<days.length; index++) {
-// 		outputRep[4] += `${days[index]}`
-// 		// If the current day is not the last in the list, add a `,`
-// 		if (index < days.length) outputRep[4] += ","
-// 	}
-// 	return outputRep.join(" ")
-// }
+// Loginc ported from `backend: /core/scheduler/automation/cron.go`
+export function generateCronExpression(hour: number, minute: number, days: number[]): string {
+	let outputRep = ['', '', '*', '*', ''] // Cron-expression representation as list
+	outputRep[0] = `${minute}` // Assign minute
+	outputRep[1] = `${hour}` // Assign hour
+	// Omit validation of days and time because the function is only used in a pre validated context
+	if (days.length == 7) {
+		// Set the days to '*' when all days are included in the list, does not check for duplicate days
+		outputRep[4] = "*"
+		return outputRep.join(" ")
+	}
+	// Append the days to the list
+	for (let index=0; index<days.length; index++) {
+		outputRep[4] += `${days[index]}`
+		// If the current day is not the last in the list, add a `,`
+		if (index < days.length) outputRep[4] += ","
+	}
+	return outputRep.join(" ")
+}
 
 // States that homescripts have been loaded
 // used when trying to access the data of the automation's homescript

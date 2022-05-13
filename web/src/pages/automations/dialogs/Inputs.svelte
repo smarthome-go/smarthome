@@ -4,6 +4,7 @@
     import SegmentedButton,{ Segment } from '@smui/segmented-button'
     import Textfield from '@smui/textfield'
     import CharacterCounter from '@smui/textfield/character-counter'
+    import { onMount } from 'svelte'
     import TimePicker from '../../../components/TimePicker.svelte'
     import type { addAutomation } from '../main'
     import HmsSelector from './HmsSelector.svelte'
@@ -12,24 +13,26 @@
     const days: string[] = ['su', 'mo', 'tu', 'we', 'th', 'fr', 'sa']
 
     // Data which is dispatched as soon as the create button is pressed
-    export let data: addAutomation = {
-        days: [],
-        description: '',
-        enabled: true,
-        homescriptId: '',
-        hour: 0,
-        minute: 0,
-        name: '',
-        timingMode: 'normal',
-    }
+    export let data: addAutomation
+    //     = {
+    //     days: [],
+    //     description: '',
+    //     enabled: true,
+    //     homescriptId: '',
+    //     hour: 0,
+    //     minute: 0,
+    //     name: '',
+    //     timingMode: 'normal',
+    // }
 
     // Selected days are stored in a string[] instead of the final number[] representation
     // Is transformed into the final representation when the event is dispatched
     let selectedDays: string[] = []
 
-    // Transform the selected days into data that the server understands
-    $: data.days = selectedDays.map((d) => days.indexOf(d))
-
+    // Allows inititially set days
+    onMount(() => {
+        selectedDays = data.days.map((d) => days[d])
+    })
 </script>
 
 <div class="container">
@@ -69,7 +72,14 @@
                 let:segment
                 bind:selected={selectedDays}
             >
-                <Segment {segment}>
+                <Segment
+                    {segment}
+                    on:click={async () => {
+                        data.days = selectedDays.map((d) => days.indexOf(d))
+                        console.log(data.days)
+                        data = data
+                    }}
+                >
                     <Label>{segment}</Label>
                 </Segment>
             </SegmentedButton>

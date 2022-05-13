@@ -54,9 +54,11 @@
         )
         if (homescriptDataTemp !== undefined && homescriptDataTemp !== null)
             homescriptData = homescriptDataTemp
-        // Set time
-        timeData = parseCronExpressionToTime(data.cronExpression)
     })
+
+    // Update days and time
+    $: timeData = parseCronExpressionToTime(data.cronExpression)
+    $: console.log(data)
 </script>
 
 <EditAutomation bind:open={editOpen} bind:data />
