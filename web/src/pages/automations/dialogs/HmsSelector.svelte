@@ -6,7 +6,7 @@
     SecondaryText,
     Text
     } from '@smui/list'
-    import { hmsLoaded,homescripts } from './main'
+    import { hmsLoaded,homescripts } from '../main'
 
     export let selection: string
 

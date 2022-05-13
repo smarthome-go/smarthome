@@ -17,6 +17,7 @@
     // Bindable values
     export let hour = 0
     export let minute = 0
+
     export let helperText: string
     // Will be displayed instead of the helper text if invalid is set to true
     export let invalidText: string
@@ -37,12 +38,12 @@
                 .toString()
                 .padStart(2, '0')}`
         }
-        
+
         inputElement.onfocus = () => {
             // Always show the helper text when the input is focused
             active = true
         }
-        
+
         inputElement.oninput = () => {
             // Needed because binding to value is not optimal
             hour =

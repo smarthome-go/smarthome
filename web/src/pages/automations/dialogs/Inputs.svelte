@@ -5,8 +5,8 @@
     import Textfield from '@smui/textfield'
     import CharacterCounter from '@smui/textfield/character-counter'
     import TimePicker from '../../../components/TimePicker.svelte'
-    import HmsSelector from '../HmsSelector.svelte'
     import type { addAutomation } from '../main'
+    import HmsSelector from './HmsSelector.svelte'
 
     // Static ressource for displaying the segmented buttons
     const days: string[] = ['su', 'mo', 'tu', 'we', 'th', 'fr', 'sa']
