@@ -46,7 +46,8 @@
     }
 </script>
 
-<Dialog bind:open aria-labelledby="title" aria-describedby="content" fullscreen>
+<Dialog bind:open aria-labelledby="title" aria-describedby="content" 
+  fullscreen={$hmsLoaded && $homescripts.length > 0}>
     <Header>
         <Title id="title">
             {#if $hmsLoaded && $homescripts.length == 0}
@@ -55,7 +56,10 @@
                 Add Automation
             {/if}
         </Title>
+        {#if $hmsLoaded && $homescripts.length > 0}
         <IconButton action="close" class="material-icons">close</IconButton>
+        {/if}
+        <!-- TODO: better code -->
     </Header>
     <Content id="content">
         {#if $hmsLoaded && $homescripts.length == 0}
