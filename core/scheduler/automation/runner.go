@@ -30,7 +30,7 @@ func automationRunnerFunc(id uint) {
 		)
 		return
 	}
-	// Notify and reminf the user about the disabled automation
+	// Notify and remind the user about the disabled automation
 	if !job.Enabled {
 		log.Info(fmt.Sprintf("Automation '%s' was not executed because it is deactivated", job.Name))
 		if err := user.Notify(

@@ -56,11 +56,11 @@ func scheduleRunnerFunc(id uint) {
 	log.Debug(fmt.Sprintf("Schedule '%d' is running", id))
 	_, exitCode, hmsErrors := homescript.Run(
 		owner.Username,
-		fmt.Sprintf("schedule_%d_job.hms", id),
+		fmt.Sprintf("%d.hms", id),
 		job.HomescriptCode,
 	)
 	if len(hmsErrors) > 0 {
-		log.Error("Executing scheduler's homescript failed: ", hmsErrors[0].ErrorType)
+		log.Error("Executing schedule's homescript failed: ", hmsErrors[0].ErrorType)
 		if err := user.Notify(
 			owner.Username,
 			"Schedule Failed",
@@ -82,10 +82,10 @@ func scheduleRunnerFunc(id uint) {
 		fmt.Sprintf("Schedule '%s' has been executed successfully", job.Name),
 		1,
 	); err != nil {
-		log.Error("Failed to notify user: ", err.Error())
+		log.Error("Failed to notify user about failing schedule: ", err.Error())
 		return
 	}
-	event.Info("Scheduler Executed Successfully",
+	event.Info("Schedule Executed Successfully",
 		fmt.Sprintf("Schedule '%s' of user '%s' has been executed successfully", job.Name, job.Owner),
 	)
 }
