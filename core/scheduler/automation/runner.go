@@ -20,15 +20,6 @@ func automationRunnerFunc(id uint) {
 			"Automation Failed",
 			fmt.Sprintf("Automation with id: '%d' could not be executed due to database failure: %s", id, err.Error()),
 		)
-		if err := user.Notify(
-			job.Owner,
-			"Automation Failed",
-			fmt.Sprintf("Automation with id: '%d' was not executed because it could not be found in the database due to an internal error, contact your administrator", id),
-			user.NotificationLevelError,
-		); err != nil {
-			log.Error("Failed to notify user: ", err.Error())
-			return
-		}
 		return
 	}
 	if !jobFound {
@@ -37,15 +28,6 @@ func automationRunnerFunc(id uint) {
 			"Automation Failed",
 			fmt.Sprintf("Automation with id: '%d' could not be executed because it could not be found in the database", id),
 		)
-		if err := user.Notify(
-			job.Owner,
-			"Automation Failed",
-			fmt.Sprintf("Automation with id: '%d' was not executed because it could not be found in the database, contact your administrator", id),
-			user.NotificationLevelError,
-		); err != nil {
-			log.Error("Failed to notify user: ", err.Error())
-			return
-		}
 		return
 	}
 	// Notify and reminf the user about the disabled automation
