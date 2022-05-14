@@ -2,13 +2,16 @@
     import { Icon } from '@smui/button'
     import IconButton from '@smui/icon-button/src/IconButton.svelte'
     import { onMount } from 'svelte'
-    import { sleep } from '../../global'
+    import { createSnackbar,sleep } from '../../global'
     import EditAutomation from './dialogs/EditAutomation.svelte'
     import {
+    addAutomation,
     automation,
+    generateCronExpression,
     hmsLoaded,
     homescript,
     homescripts,
+    loading,
     parseCronExpressionToTime
     } from './main'
 
@@ -29,10 +32,37 @@
         },
     }
 
-    let timeData = {
+    interface  timeDataType {
+        hours: number
+        minutes: number
+        days: number[]
+    }
+
+    let timeData: timeDataType = {
         hours: 0,
         minutes: 0,
         days: [],
+    }
+
+    async function modifyAutomation(id: number, payload: addAutomation) {
+        $loading = true
+        try {
+            payload["id"] = id
+            const res = await (
+                await fetch('/api/automation/modify', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                })
+            ).json()
+            if (!res.success) throw Error(res.error)
+            data.cronExpression = generateCronExpression(payload.hour, payload.minute, payload.days)
+            // timeData = {days: payload.days, hours: payload.hour, minutes: payload.minute}
+            
+        } catch (err) {
+            $createSnackbar(`Could not modify automation: ${err}`)
+        }
+        $loading = false
     }
 
     let editOpen = false
@@ -58,10 +88,15 @@
 
     // Update days and time
     $: timeData = parseCronExpressionToTime(data.cronExpression)
-    $: console.log(data)
+    $: console.log(timeData)
+
+    function handleEditAutomation(event) {
+        const dataTemp = event.detail
+        modifyAutomation(dataTemp.id, dataTemp.data).then()
+    }
 </script>
 
-<EditAutomation bind:open={editOpen} bind:data />
+<EditAutomation bind:open={editOpen} {data} on:modify={handleEditAutomation} />
 
 <div class="automation mdc-elevation--z3">
     <!-- Top -->

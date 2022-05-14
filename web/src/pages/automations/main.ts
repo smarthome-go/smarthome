@@ -52,7 +52,7 @@ export function parseCronExpressionToTime(expr: string): { hours: number, minute
 }
 
 // // Generates a cron-expression based on the provided data
-// Loginc ported from `backend: /core/scheduler/automation/cron.go`
+// Logic ported from `backend: /core/scheduler/automation/cron.go`
 export function generateCronExpression(hour: number, minute: number, days: number[]): string {
 	let outputRep = ['', '', '*', '*', ''] // Cron-expression representation as list
 	outputRep[0] = `${minute}` // Assign minute

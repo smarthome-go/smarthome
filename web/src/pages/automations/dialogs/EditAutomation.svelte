@@ -9,15 +9,12 @@
     } from '@smui/dialog'
     import IconButton from '@smui/icon-button'
     import { createEventDispatcher,onMount } from 'svelte'
-    import { createSnackbar } from '../../../global'
     import {
     addAutomation,
     automation,
     generateCronExpression,
     hmsLoaded,
-    homescripts,
-    loading,
-    parseCronExpressionToTime
+    homescripts,parseCronExpressionToTime
     } from '../main'
     import Inputs from './Inputs.svelte'
 
@@ -31,7 +28,7 @@
     // Binded to the `Inputs.svelte` component, will be binded to `data` reversely
     let inputsData: addAutomation
 
-    // Only binded externally in order to handle reactivity
+    // Only binded externally in order to use preset values
     export let data: automation
 
     onMount(() => {
@@ -48,27 +45,6 @@
         }
     })
 
-    async function modifyAutomation() {
-        $loading = true
-        try {
-            inputsData['id'] = data.id
-            const res = await (
-                await fetch('/api/automation/modify', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(inputsData),
-                })
-            ).json()
-            if (!res.success) throw Error(res.error)
-            updatePrevious()
-            applyCurrentState()
-        } catch (err) {
-            restorePrevious()
-            $createSnackbar(`Could not modify automation: ${err}`)
-        }
-        $loading = false
-    }
-
     let inputDataBefore = data
 
     function applyCurrentState() {
@@ -82,7 +58,6 @@
             inputsData.days
         )
         data.timingMode = inputsData.timingMode
-        dispatch("modify", data)
     }
     function updatePrevious() {
         inputDataBefore = data
@@ -111,7 +86,8 @@
         disabled={data.name == '' || inputsData.days.length == 0}
         use={[InitialFocus]}
         on:click={() => {
-            modifyAutomation()
+           dispatch("modify", {data: inputsData, id: data.id})
+           applyCurrentState()
         }}
             >
             <Label>Edit</Label>
