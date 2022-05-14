@@ -67,7 +67,7 @@ export function generateCronExpression(hour: number, minute: number, days: numbe
 	for (let index=0; index<days.length; index++) {
 		outputRep[4] += `${days[index]}`
 		// If the current day is not the last in the list, add a `,`
-		if (index < days.length) outputRep[4] += ","
+		if (index < days.length-1) outputRep[4] += ","
 	}
 	return outputRep.join(" ")
 }

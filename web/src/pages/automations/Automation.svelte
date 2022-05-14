@@ -56,9 +56,7 @@
                 })
             ).json()
             if (!res.success) throw Error(res.error)
-            data.cronExpression = generateCronExpression(payload.hour, payload.minute, payload.days)
-            // timeData = {days: payload.days, hours: payload.hour, minutes: payload.minute}
-            
+            data.cronExpression = generateCronExpression(payload.hour, payload.minute, payload.days)            
         } catch (err) {
             $createSnackbar(`Could not modify automation: ${err}`)
         }
@@ -88,7 +86,6 @@
 
     // Update days and time
     $: timeData = parseCronExpressionToTime(data.cronExpression)
-    $: console.log(timeData)
 
     function handleEditAutomation(event) {
         const dataTemp = event.detail

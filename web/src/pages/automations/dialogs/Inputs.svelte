@@ -14,16 +14,6 @@
 
     // Data which is dispatched as soon as the create button is pressed
     export let data: addAutomation
-    //     = {
-    //     days: [],
-    //     description: '',
-    //     enabled: true,
-    //     homescriptId: '',
-    //     hour: 0,
-    //     minute: 0,
-    //     name: '',
-    //     timingMode: 'normal',
-    // }
 
     // Selected days are stored in a string[] instead of the final number[] representation
     // Is transformed into the final representation when the event is dispatched
@@ -74,9 +64,8 @@
             >
                 <Segment
                     {segment}
-                    on:click={async () => {
+                    on:click={() => {
                         data.days = selectedDays.map((d) => days.indexOf(d))
-                        console.log(data.days)
                         data = data
                     }}
                 >
