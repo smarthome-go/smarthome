@@ -1,17 +1,22 @@
 <script lang="ts">
+    import { Icon } from '@smui/button'
     import List,{
+    Graphic,
     Item,
-    Meta,
     PrimaryText,
     SecondaryText,
     Text
     } from '@smui/list'
-    import { hmsLoaded,homescripts } from '../main'
+    import { homescripts } from '../main'
 
     export let selection: string
 
     // Checks if the selection is empty for handling preset values as well as no preset values
-    $: if ($homescripts !== undefined && $homescripts.length > 0 && selection === '')
+    $: if (
+        $homescripts !== undefined &&
+        $homescripts.length > 0 &&
+        selection === ''
+    )
         selection = $homescripts[0].data.id
 
     let selectionIndex: number | undefined = undefined
@@ -30,33 +35,29 @@
                 disabled={!item.data.schedulerEnabled}
                 selected={selection === item.data.id}
             >
-                <!-- <Graphic
-                    style="background-image: url(https://place-hold.it/40x40?text={item.data.name
-                        .split(' ')
-                        .map((val) => val.substring(0, 1))
-                        .join('')}&fontsize=16);"
-                /> -->
-                <Text>
-                    <PrimaryText>{item.data.name}</PrimaryText>
-                    <SecondaryText>{item.data.description}</SecondaryText>
-                </Text>
-                <Meta class="material-icons">
-                    {#if item.data.schedulerEnabled && hmsLoaded}
+                <Graphic>
+                    <Icon class="material-icons">
                         {$homescripts.find((h) => h.data.id === item.data.id)
                             .data.mdIcon}
-                    {/if}
-                </Meta>
+                    </Icon>
+                </Graphic>
+                <Text>
+                    <PrimaryText>{item.data.name}</PrimaryText>
+                    <SecondaryText>
+                        {item.data.description}
+                    </SecondaryText>
+                </Text>
             </Item>
         {/each}
     </List>
 </div>
 
-<style>
+<style lang="scss">
+    @use '../../../mixins' as *;
     .list {
         width: 100%;
-        height: 80%;
+        height: 100%;
         overflow: auto;
-        /* background-color: var(--clr-height-0-3); */
         border-radius: 0.4rem;
         padding: 1rem 0;
     }

@@ -100,6 +100,3 @@
     </Actions>
 </Dialog>
 {/if}
-
-<style lang="scss">
-</style>

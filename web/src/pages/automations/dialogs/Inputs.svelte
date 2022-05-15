@@ -115,6 +115,10 @@
             box-sizing: border-box;
             padding: 0 1rem;
         }
+
+        @include not-widescreen {
+            width: 99%;
+        }
     }
     .days,
     .time {
