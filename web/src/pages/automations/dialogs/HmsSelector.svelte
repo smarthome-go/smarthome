@@ -10,7 +10,8 @@
 
     export let selection: string
 
-    $: if ($homescripts !== undefined && $homescripts.length > 0)
+    // Checks if the selection is empty for handling preset values as well as no preset values
+    $: if ($homescripts !== undefined && $homescripts.length > 0 && selection === '')
         selection = $homescripts[0].data.id
 
     let selectionIndex: number | undefined = undefined
