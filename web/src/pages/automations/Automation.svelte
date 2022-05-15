@@ -100,7 +100,9 @@
     <div class="top">
         <span class="automation__name">{data.name}</span>
         <span class="automation__time">
-            At {timeString}
+            At 
+            {timeString}
+            <!-- {timeData.hours.toString().padStart(2, "0")}:{timeData.minutes.toString().padStart(2, "0")} -->
             {#if timeData.days.length === 7}
                 <span class="day"
                     >every day <i class="material-icons">restart_alt</i>

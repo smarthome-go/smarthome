@@ -6,6 +6,7 @@
     import CharacterCounter from '@smui/textfield/character-counter'
     import { onMount } from 'svelte'
     import TimePicker from '../../../components/TimePicker.svelte'
+    import { sleep } from '../../../global'
     import type { addAutomation } from '../main'
     import HmsSelector from './HmsSelector.svelte'
 
@@ -64,7 +65,8 @@
             >
                 <Segment
                     {segment}
-                    on:click={() => {
+                    on:click={async() => {
+                        await sleep(1)
                         data.days = selectedDays.map((d) => days.indexOf(d))
                         data = data
                     }}

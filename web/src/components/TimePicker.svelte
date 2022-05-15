@@ -48,18 +48,19 @@
             // Needed because binding to value is not optimal
             hour =
                 inputElement != undefined
-                    ? inputElement.valueAsDate.getHours()
+                    ? inputElement.valueAsDate.getHours() -1
                     : 0
             minute =
                 inputElement != undefined
                     ? inputElement.valueAsDate.getMinutes()
                     : 0
+                console.log(inputElement.valueAsDate.getHours())
         }
         inputElement.onchange = () => {
             // Needed because binding to value is not optimal
             hour =
                 inputElement != undefined
-                    ? inputElement.valueAsDate.getHours()
+                    ? inputElement.valueAsDate.getHours() - 1
                     : 0
             minute =
                 inputElement != undefined
