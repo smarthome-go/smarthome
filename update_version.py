@@ -9,7 +9,7 @@ package_json_path = "web/package.json"
 main_go_path = "main.go"
 readme_path = "README.md"
 makefile_path = "Makefile"
-docker_compose_path = "docker-compose.yml"
+docker_compose_path = "docker/docker-compose.yml"
 
 with open(main_go_path, "r") as main_go:
     content = main_go.read()
