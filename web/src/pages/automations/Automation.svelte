@@ -32,7 +32,7 @@
         },
     }
 
-    interface  timeDataType {
+    interface timeDataType {
         hours: number
         minutes: number
         days: number[]
@@ -47,7 +47,7 @@
     async function modifyAutomation(id: number, payload: addAutomation) {
         $loading = true
         try {
-            payload["id"] = id
+            payload['id'] = id
             const res = await (
                 await fetch('/api/automation/modify', {
                     method: 'PUT',
@@ -56,7 +56,16 @@
                 })
             ).json()
             if (!res.success) throw Error(res.error)
-            data.cronExpression = generateCronExpression(payload.hour, payload.minute, payload.days)            
+            data.cronExpression = generateCronExpression(
+                payload.hour,
+                payload.minute,
+                payload.days
+            )
+            const homescriptDataTemp = $homescripts.find(
+                (s) => s.data.id === data.homescriptId
+            )
+            if (homescriptDataTemp !== undefined)
+                homescriptData = homescriptDataTemp
         } catch (err) {
             $createSnackbar(`Could not modify automation: ${err}`)
         }
@@ -100,7 +109,7 @@
     <div class="top">
         <span class="automation__name">{data.name}</span>
         <span class="automation__time">
-            At 
+            At
             {timeString}
             <!-- {timeData.hours.toString().padStart(2, "0")}:{timeData.minutes.toString().padStart(2, "0")} -->
             {#if timeData.days.length === 7}
