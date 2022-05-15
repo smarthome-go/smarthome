@@ -105,12 +105,12 @@ func automationRunnerFunc(id uint) {
 		log.Warn(fmt.Sprintf("Automation '%s' failed during the execution of Homescript: '%s', which terminated abnormally", job.Name, job.HomescriptId))
 		event.Error(
 			"Automation Failed",
-			fmt.Sprintf("Automation '%s' failed during execution of the referenced Homescript (id: '%s'). Error: %s", job.Name, job.HomescriptId, err.Error()),
+			fmt.Sprintf("Automation '%s' failed during execution of Homescript '%s'. Error: %s", job.Name, job.HomescriptId, err.Error()),
 		)
 		if err := user.Notify(
 			job.Owner,
 			"Automation Failed",
-			fmt.Sprintf("Automation '%s' failed during execution of the referenced Homescript (id: '%s'). Homescript-error: %s", job.Name, job.HomescriptId, err.Error()),
+			fmt.Sprintf("Automation '%s' failed during execution of Homescript '%s'. Error: %s", job.Name, job.HomescriptId, err.Error()),
 			user.NotificationLevelError,
 		); err != nil {
 			log.Error("Failed to notify user: ", err.Error())
