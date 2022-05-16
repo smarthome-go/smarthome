@@ -1,7 +1,7 @@
 <script lang="ts">
     import { Icon } from '@smui/button'
     import IconButton from '@smui/icon-button/src/IconButton.svelte'
-    import { onMount } from 'svelte'
+    import { createEventDispatcher,onMount } from 'svelte'
     import { createSnackbar,sleep } from '../../global'
     import EditAutomation from './dialogs/EditAutomation.svelte'
     import {
@@ -14,6 +14,10 @@
     loading,
     parseCronExpressionToTime
     } from './main'
+
+
+    // Event dispatcher
+    const dispatch = createEventDispatcher()
 
     const days: string[] = ['su', 'mo', 'tu', 'we', 'th', 'fr', 'sa']
 
@@ -78,7 +82,7 @@
     let timeString = ''
     $: timeString =
         `${
-            timeData.hours < 12 ? timeData.hours : timeData.hours - 12
+            timeData.hours <= 12 ? timeData.hours : timeData.hours - 12
         }`.padStart(2, '0') +
         ':' +
         `${timeData.minutes}`.padStart(2, '0') +
@@ -100,18 +104,38 @@
         const dataTemp = event.detail
         modifyAutomation(dataTemp.id, dataTemp.data).then()
     }
+
+    function handleDeleteAutomation(_event) {
+        dispatch("delete", null)
+    }
 </script>
 
-<EditAutomation bind:open={editOpen} {data} on:modify={handleEditAutomation} />
+<EditAutomation
+    bind:open={editOpen}
+    {data}
+    on:modify={handleEditAutomation}
+    on:delete={handleDeleteAutomation}
+/>
 
-<div class="automation mdc-elevation--z3">
+<div class="automation mdc-elevation--z3" class:disabled={!data.enabled}>
     <!-- Top -->
     <div class="top">
-        <span class="automation__name">{data.name}</span>
+        <span class="automation__name">
+            {data.name}
+            <i
+                class="material-icons automation__indicator"
+                class:disabled={!data.enabled}
+            >
+                {#if data.enabled}
+                    published_with_changes
+                {:else}
+                    sync_disabled
+                {/if}
+            </i>
+        </span>
         <span class="automation__time">
             At
             {timeString}
-            <!-- {timeData.hours.toString().padStart(2, "0")}:{timeData.minutes.toString().padStart(2, "0")} -->
             {#if timeData.days.length === 7}
                 <span class="day"
                     >every day <i class="material-icons">restart_alt</i>
@@ -154,12 +178,15 @@
         height: 9rem;
         width: 15rem;
         border-radius: 0.3rem;
-        background-color: var(--clr-height-1-3);
         padding: 1rem;
-
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        background-color: var(--clr-height-1-3);
+
+        &.disabled {
+            opacity: 80%;
+        }
 
         &__homescript {
             display: flex;
@@ -169,6 +196,19 @@
 
         &__time {
             display: flex;
+            justify-content: space-between;
+        }
+
+        &__indicator {
+            color: var(--clr-success);
+            &.disabled {
+                color: var(--clr-error);
+            }
+        }
+
+        &__name {
+            display: flex;
+            align-items: center;
             justify-content: space-between;
         }
 

@@ -28,8 +28,12 @@
 
             if (res.success !== undefined && !res.success)
                 throw Error(res.error)
-
-            automations.set(res)
+            // Group together automations which are disabled
+            automations.set(
+                res.sort((a) => {
+                    return a.enabled ? -1 : 1
+                })
+            )
         } catch (err) {
             $createSnackbar(`Could not load automations: ${err}`)
         }
@@ -92,6 +96,25 @@
         $loading = false
     }
 
+    // Sends a request to the server to delete an automation
+    async function deleteAutomation(id: number) {
+        $loading = true
+        try {
+            const res = await (
+                await fetch('/api/automation/delete', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id }),
+                })
+            ).json()
+            if (!res.success) throw Error(res.error)
+            $automations = $automations.filter((a) => a.id !== id)
+        } catch (err) {
+            $createSnackbar(`Could not delete automation: ${err}`)
+        }
+        $loading = false
+    }
+
     function handleAddAutomation(event) {
         const data = event.detail as addAutomation
         createAutomation(data).then()
@@ -118,20 +141,30 @@
                     await loadHomescript()
                 }}>refresh</IconButton
             >
-            <Button on:click={() => (addOpen = true)}>
-                <Label>Create</Label>
-                <Icon class="material-icons">add</Icon>
-            </Button>
+            {#if $automations.length > 0}
+                <Button on:click={() => (addOpen = true)}>
+                    <Label>Create</Label>
+                    <Icon class="material-icons">add</Icon>
+                </Button>
+            {/if}
         </div>
     </div>
     <Progress id="loader" bind:loading={$loading} />
 
-    <div class="automations">
+    <div class="automations" class:empty={$automations.length == 0}>
         {#if $automations.length == 0}
-            No automations
+            <i class="material-icons" id="no-automations-icon">event_repeat</i>
+            <h6 class="text-hint">No automations</h6>
+            <Button on:click={() => (addOpen = true)} variant="outlined">
+                <Label>Create</Label>
+                <Icon class="material-icons">add</Icon>
+            </Button>
         {:else}
             {#each $automations as automation (automation.id)}
-                <Automation bind:data={automation} />
+                <Automation
+                    bind:data={automation}
+                    on:delete={() => deleteAutomation(automation.id)}
+                />
             {/each}
         {/if}
     </div>
@@ -147,6 +180,16 @@
         gap: 1rem;
         box-sizing: border-box;
 
+        &.empty {
+            padding-top: 5rem;
+            justify-content: center;
+            flex-direction: column;
+
+            h6 {
+                margin: 0.5rem 0;
+            }
+        }
+
         @include mobile {
             justify-content: center;
         }
@@ -159,14 +202,14 @@
         padding: 0.1rem 1.3rem;
         box-sizing: border-box;
         background-color: var(--clr-height-1-4);
-    }
 
-    h6 {
-        margin: 0.5rem 0;
+        h6 {
+            margin: 0.5rem 0;
 
-        @include mobile {
-            // Hide title on mobile due to space limitations
-            display: none;
+            @include mobile {
+                // Hide title on mobile due to space limitations
+                display: none;
+            }
         }
     }
 
@@ -180,5 +223,10 @@
             justify-content: space-between;
             width: 100%;
         }
+    }
+
+    #no-automations-icon {
+        font-size: 5rem;
+        color: var(--clr-text-disabled);
     }
 </style>

@@ -72,7 +72,7 @@
                     ></span
                 >
             </p>
-            <Button on:click={() => (window.location.href = '/homescript')}>
+            <Button on:click={() => (window.location.href = '/homescript')} variant="outlined">
                 <Icon class="material-icons">code</Icon>
                 Create one
             </Button>
