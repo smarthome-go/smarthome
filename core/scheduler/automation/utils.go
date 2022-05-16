@@ -287,7 +287,7 @@ func ModifyAutomationById(automationId uint, newAutomation database.AutomationWi
 				return err
 			}
 		}
-		log.Debug(fmt.Sprintf("Automation %d has been modified but not added to jobs to being disabled", automationId))
+		log.Debug(fmt.Sprintf("Automation %d has been modified and disabled", automationId))
 	}
 	return nil
 }
