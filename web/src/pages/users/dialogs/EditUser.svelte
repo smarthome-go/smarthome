@@ -39,7 +39,7 @@
     let darkThemeBefore: boolean
 
     const isCurrentUser = username == $data.userData.user.username
-    
+
     // If the dialog edits the current user, some values can be changed directly in order to display a preview
     $: if (isCurrentUser) {
         $data.userData.user.darkTheme = darkTheme
@@ -182,6 +182,7 @@
 </script>
 
 <Dialog bind:open fullscreen aria-labelledby="title" aria-describedby="content">
+    <!-- Deletion confirmation dialog -->
     <Dialog
         bind:open={deleteOpen}
         slot="over"
