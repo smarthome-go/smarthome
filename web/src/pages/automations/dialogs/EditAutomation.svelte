@@ -14,16 +14,20 @@
     automation,
     generateCronExpression,
     hmsLoaded,
-    homescripts,parseCronExpressionToTime
+    homescripts,
+    parseCronExpressionToTime
     } from '../main'
     import Inputs from './Inputs.svelte'
 
     export let open = false
-
+    let hasUpdatedPrevious = false
+    $: if (open && !hasUpdatedPrevious) {
+        updatePrevious()
+        hasUpdatedPrevious = true
+    }
 
     // Event dispatcher
     const dispatch = createEventDispatcher()
-
 
     // Binded to the `Inputs.svelte` component, will be binded to `data` reversely
     let inputsData: addAutomation
@@ -45,7 +49,7 @@
         }
     })
 
-    let inputDataBefore = data
+    let inputDataBefore: addAutomation
 
     function applyCurrentState() {
         data.name = inputsData.name
@@ -60,43 +64,69 @@
         data.timingMode = inputsData.timingMode
     }
     function updatePrevious() {
-        inputDataBefore = data
+        inputDataBefore = {
+            days: inputsData.days,
+            description: inputsData.description,
+            enabled: inputsData.enabled,
+            homescriptId: inputsData.homescriptId,
+            hour: inputsData.hour,
+            minute: inputsData.minute,
+            name: inputsData.name,
+            timingMode: inputsData.timingMode,
+        }
+        console.log('Updated previous')
     }
     function restorePrevious() {
-        data = inputDataBefore
-        open = false
+        inputsData = {
+            days: inputDataBefore.days,
+            description: inputDataBefore.description,
+            enabled: inputDataBefore.enabled,
+            homescriptId: inputDataBefore.homescriptId,
+            hour: inputDataBefore.hour,
+            minute: inputDataBefore.minute,
+            name: inputDataBefore.name,
+            timingMode: inputDataBefore.timingMode,
+        }
+        console.log('rollback', inputsData.name)
     }
 </script>
 
+<!-- TODO: fix before value undefined -->
 {#if inputsData !== undefined}
-<Dialog bind:open aria-labelledby="title" aria-describedby="content" fullscreen>
-    <Header>
-        <Title id="title">Edit Automation</Title>
-        <IconButton action="close" class="material-icons">close</IconButton>
-    </Header>
-    <Content id="content">
-        <Inputs bind:data={inputsData} />
-    </Content>
-    <Actions>
-        {#if $hmsLoaded && $homescripts.length > 0}
-        <Button on:click={() => (open = false)}>
-            <Label>Cancel</Label>
-        </Button>
-        <Button
-        disabled={data.name == '' || inputsData.days.length == 0}
-        use={[InitialFocus]}
-        on:click={() => {
-           dispatch("modify", {data: inputsData, id: data.id})
-           applyCurrentState()
-        }}
-            >
-            <Label>Edit</Label>
-        </Button>
-        {:else}
-        <Button>
-            <Label>Cancel</Label>
-            </Button>
-        {/if}
-    </Actions>
-</Dialog>
+    <Dialog
+        bind:open
+        aria-labelledby="title"
+        aria-describedby="content"
+        fullscreen
+    >
+        <Header>
+            <Title id="title">Edit Automation</Title>
+            <IconButton action="close" class="material-icons">close</IconButton>
+        </Header>
+        <Content id="content">
+            <Inputs bind:data={inputsData} />
+        </Content>
+        <Actions>
+            {#if $hmsLoaded && $homescripts.length > 0}
+                <Button on:click={restorePrevious}>
+                    <Label>Cancel</Label>
+                </Button>
+                <Button
+                    disabled={data.name == '' || inputsData.days.length == 0}
+                    use={[InitialFocus]}
+                    on:click={() => {
+                        dispatch('modify', { data: inputsData, id: data.id })
+                        updatePrevious()
+                        applyCurrentState()
+                    }}
+                >
+                    <Label>Edit</Label>
+                </Button>
+            {:else}
+                <Button>
+                    <Label>Cancel</Label>
+                </Button>
+            {/if}
+        </Actions>
+    </Dialog>
 {/if}
