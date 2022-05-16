@@ -1,3 +1,48 @@
 # Docker
 
-Write info here
+## Getting Started Via Docker
+1. Copy the content of `docker-compose.yml` or download it.
+
+
+
+## Example Docker-Compose File
+
+```yml
+version: '3.7'
+services:
+  smarthome:
+    image: mikmuellerdev/smarthome:0.0.28-beta
+    container_name: smarthome
+    depends_on:
+      - "smarthome-mariadb"
+    hostname: smarthome
+    environment:
+      - TZ=Europe/Berlin
+      - SMARTHOME_ADMIN_PASSWORD=password
+      - SMARTHOME_DB_HOSTNAME=smarthome-db
+      - SMARTHOME_DB_PASSWORD=password
+      - SMARTHOME_DB_USER=smarthome
+      - SMARTHOME_DB_DATABASE=smarthome
+      - SMARTHOME_DB_PORT=3306
+      - SMARTHOME_PORT=80
+    ports:
+      - 8123:80 #should be the same as SMARTHOME_PORT
+    restart: unless-stopped
+    volumes:
+      - smarthome_data:/app/data/
+
+  smarthome-mariadb:
+    image: mariadb
+    container_name: smarthome-db
+    hostname: smarthome-db
+    environment:
+      - TZ=Europe/Berlin
+      - MARIADB_ROOT_PASSWORD=password
+      - MARIADB_DATABASE=smarthome
+      - MARIADB_USER=smarthome
+      - MARIADB_PASSWORD=password
+    restart: unless-stopped
+
+volumes:
+  smarthome_data:
+```
