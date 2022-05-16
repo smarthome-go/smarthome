@@ -161,10 +161,7 @@
     }
 </script>
 
-
-<!-- TODO: use on:open more often -->
 <Dialog
-    on:$container$open={() => console.log('open')}
     bind:open
     fullscreen
     aria-labelledby="title"

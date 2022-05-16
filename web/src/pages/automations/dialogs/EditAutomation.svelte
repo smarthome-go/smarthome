@@ -74,7 +74,6 @@
             name: inputsData.name,
             timingMode: inputsData.timingMode,
         }
-        console.log('Updated previous')
     }
     function restorePrevious() {
         inputsData = {
@@ -87,7 +86,6 @@
             name: inputDataBefore.name,
             timingMode: inputDataBefore.timingMode,
         }
-        console.log('rollback', inputsData.name)
     }
 </script>
 
