@@ -161,12 +161,7 @@
     }
 </script>
 
-<Dialog
-    bind:open
-    fullscreen
-    aria-labelledby="title"
-    aria-describedby="content"
->
+<Dialog bind:open fullscreen aria-labelledby="title" aria-describedby="content">
     <Header>
         <Title id="title">Manage User Permissions</Title>
         <IconButton action="close" class="material-icons">close</IconButton>
@@ -250,7 +245,7 @@
     #tabs {
         margin-bottom: 1rem;
         display: flex;
-        
+
         @include mobile {
             flex-wrap: wrap;
             gap: 1rem;
