@@ -14,14 +14,16 @@
         true
     )
 
-    // Bindable values
+    // Bindable values for outside access to the time picker
     export let hour = 0
     export let minute = 0
 
     export let helperText: string
+    
     // Will be displayed instead of the helper text if invalid is set to true
     export let invalidText: string
-    // If set to true, a warning will be displayed
+    
+    // If set to true, a warning will be displayed (invalid text is shown)
     export let invalid = false
 
     // Clears the input field and resets the value
@@ -31,14 +33,14 @@
         inputElement.value = ''
     }
 
-    onMount(() => {
-        /// If the date picker is created wih a predefined value, it is set here
-        if (inputElement !== null && inputElement !== undefined) {
-            inputElement.value = `${hour.toString().padStart(2, '0')}:${minute
-                .toString()
-                .padStart(2, '0')}`
-        }
+    // Reactively update values when set from outside of the component
+    $: if (inputElement !== null && inputElement !== undefined) {
+        inputElement.value = `${hour.toString().padStart(2, '0')}:${minute
+            .toString()
+            .padStart(2, '0')}`
+    }
 
+    onMount(() => {
         inputElement.onfocus = () => {
             // Always show the helper text when the input is focused
             active = true
