@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/sirupsen/logrus"
+
 	"github.com/smarthome-go/smarthome/core/database"
 )
 
@@ -59,4 +60,14 @@ func Fatal(name string, description string) {
 	if err := logEvent(name, description, 5); err != nil {
 		log.Error("Failed to log fatal event")
 	}
+}
+
+func FlushOldLogs() error {
+	log.Debug("Flushing logs older than 30 days")
+	return database.FlushOldLogs()
+}
+
+func FlushAllLogs() error {
+	log.Debug("Flushing all logs")
+	return database.FlushAllLogs()
 }

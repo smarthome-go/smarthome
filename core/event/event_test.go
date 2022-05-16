@@ -81,7 +81,7 @@ func TestLogEvent(t *testing.T) {
 }
 
 func TestDeleteLogs(t *testing.T) {
-	if err := database.FlushAllLogs(); err != nil {
+	if err := FlushAllLogs(); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -93,7 +93,7 @@ func TestDeleteLogs(t *testing.T) {
 	if len(logs) != 0 {
 		t.Errorf("Log deletion test failed: want 0 logs, got %d", len(logs))
 	}
-	if err := database.FlushOldLogs(); err != nil {
+	if err := FlushOldLogs(); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -101,7 +101,7 @@ func TestDeleteLogs(t *testing.T) {
 
 func TestHelperFunctions(t *testing.T) {
 	for i := 0; i < 2; i++ {
-		if err := database.FlushAllLogs(); err != nil {
+		if err := FlushAllLogs(); err != nil {
 			t.Error(err.Error())
 			return
 		}

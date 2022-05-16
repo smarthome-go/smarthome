@@ -28,13 +28,15 @@ import (
 	"github.com/smarthome-go/smarthome/services/reminder"
 )
 
-var port = 8082 // Port used during development, can be overridden by config file or environment variables
+var port = 8082 // Default port on which the server listens, can be overwritten by config file or the environment variable
 
 func main() {
+	// Do not change manually, use the `make version` command instead
 	utils.Version = "0.0.28-beta"
 
 	startTime := time.Now()
-	// Create logger
+
+	// Logging configuration
 	logLevel := logrus.TraceLevel
 	if newLogLevel, newLogLevelOk := os.LookupEnv("SMARTHOME_LOG_LEVEL"); newLogLevelOk {
 		switch newLogLevel {
@@ -59,7 +61,7 @@ func main() {
 		panic(err.Error())
 	}
 
-	// Initialize <module> loggers
+	// Initialize module loggers
 	config.InitLogger(log)
 	camera.InitLogger(log)
 	database.InitLogger(log)
@@ -75,7 +77,7 @@ func main() {
 	scheduler.InitLogger(log)
 	reminder.InitLogger(log)
 
-	// Read config file
+	// Read configuration file
 	if err := config.ReadConfigFile(); err != nil {
 		log.Fatal("Failed to read config file: startup halted: ", err.Error())
 	}
@@ -83,9 +85,9 @@ func main() {
 	if configStruct.Server.Port != 0 {
 		port = int(configStruct.Server.Port)
 	}
-	log.Debug("Loaded and successfully initialized config")
+	log.Debug("Successfully loaded configuration file")
 
-	// Environment variables
+	// Process environment variables
 	/*
 		`SMARTHOME_ADMIN_PASSWORD`: If set, the admin user that is created on first launch will get this password instead of `admin`
 		`SMARTHOME_DB_DATABASE`   : Sets the database name
@@ -93,7 +95,6 @@ func main() {
 		`SMARTHOME_DB_PASSWORD`   : Sets the database user's password
 		`SMARTHOME_DB_USER`       : Sets the database user
 	*/
-
 	newAdminPassword := "admin"
 	if adminPassword, adminPasswordOk := os.LookupEnv("SMARTHOME_ADMIN_PASSWORD"); adminPasswordOk {
 		newAdminPassword = adminPassword
@@ -123,7 +124,6 @@ func main() {
 			port = webPortInt
 		}
 	}
-
 	if dbPort, dbPortOk := os.LookupEnv("SMARTHOME_DB_PORT"); dbPortOk {
 		portInt, err := strconv.Atoi(dbPort)
 		if err != nil {
@@ -134,68 +134,64 @@ func main() {
 		}
 	}
 
-	// Initialize / connect to database, try 5 times before giving up
+	// Database connection and initialization
+	const retryInterval = 5 // Time to wait before retrying
 	var dbErr error = nil
 
+	// Allows up to 5 failed connections before quitting
 	for i := 0; i <= 5; i++ {
 		dbErr = database.Init(configStruct.Database, newAdminPassword)
 		if dbErr == nil {
 			break
 		} else {
-			log.Warn("Failed to connect to database, retrying in 5 seconds")
-			time.Sleep(time.Second * 5)
+			log.Warn(fmt.Sprintf("Failed to connect to database, retrying in %d seconds", retryInterval))
+			time.Sleep(retryInterval * time.Second)
 		}
 	}
-
 	if dbErr != nil {
-		log.Error("Failed to connect to database after 5 retries, exiting now")
-		panic(dbErr.Error())
+		// Quit if 5 attempts failed
+		log.Fatal(fmt.Sprintf("Failed to connect to database after 5 retries. Please ensure a correct database configuration.\nError: %s", dbErr.Error()))
 	}
 
-	// Run setup file if it exists
+	/** Setup file */
 	if err := config.RunSetup(); err != nil {
-		log.Fatal("Could not run setup: ", err.Error())
+		log.Fatal("Could not process setup.json file: ", err.Error())
 	}
 
-	// If the server is in development mode, all logs should be flushed
-	if !configStruct.Server.Production {
-		if err := database.FlushAllLogs(); err != nil {
-			log.Fatal("Failed to flush logs: ", err.Error())
+	/** Logs */
+	if !configStruct.Server.Production { // If the server is in development mode, all logs should be deleted
+		if err := event.FlushAllLogs(); err != nil {
+			log.Fatal("Failed to flush all logs: ", err.Error())
 		}
 	}
-
-	// Always flush old logs
-	// TODO: move deletion of old logs to a scheduler
-	log.Info("Flushing logs older than 30 days")
-	if err := database.FlushOldLogs(); err != nil {
-		log.Fatal("Failed to flush logs older that 30 days: ", err.Error())
+	if err := event.FlushOldLogs(); err != nil { // Always flush old logs
+		log.Fatal("Failed to flush logs older that 30 days: ", err.Error()) // TODO: setup deletion of old logs with a scheduler
 	}
 
-	// Initializes the automation scheduler
-	if err := automation.Init(); err != nil {
+	/** Schedulers */
+	if err := automation.Init(); err != nil { // Initializes the automation scheduler
 		log.Fatal("Failed to activate automation system: ", err.Error())
 	}
-	// Initializes the normal scheduler
-	if err := scheduler.Init(); err != nil {
+	if err := scheduler.Init(); err != nil { // Initializes the normal scheduler
 		log.Fatal("Failed to activate scheduler system: ", err.Error())
 	}
-
-	// Initialize notification scheduler for reminders
-	if err := reminder.InitSchedule(); err != nil {
+	if err := reminder.InitSchedule(); err != nil { // Initialize notification scheduler for reminders
 		log.Fatal("Failed to activate reminder scheduler: ", err.Error())
 	}
 
-	// Init the hardware handler
-	hardware.Init() // Needed for initializing atomics
+	/** Hardware handler */
+	hardware.Init()
 
+	/** Server, middleware and templates */
 	r := routes.NewRouter()
 	middleware.Init(configStruct.Server.Production)
 	templates.LoadTemplates("./web/dist/html/*.html")
 	http.Handle("/", r)
 
+	/** Finish startup */
 	event.Info("System Started", fmt.Sprintf("The Smarthome server completed startup in %.2f seconds", time.Since(startTime).Seconds()))
 	log.Info(fmt.Sprintf("Smarthome v%s is running on http://localhost:%d", utils.Version, port))
 	if err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
-		panic(err)
+		log.Fatal(err.Error())
 	}
 }

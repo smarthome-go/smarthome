@@ -78,7 +78,7 @@ func addJobToQueue(switchId string, turnOn bool, id int64) {
 		daemonRunning.Store(true)
 		ch := make(chan bool)
 		go jobDaemon(ch)
-		// TODO: Maybe replace with waitgroup
+		// TODO: Evaluate whether to replace with waitgroup
 		for {
 			select {
 			case <-ch:
@@ -184,6 +184,7 @@ func hasFinished(id int64) bool {
 }
 
 func Init() {
+	// Needed for initializing atomics
 	// Initialize thread-safe variables, for more info, look at the top for mutexes
 	jobsWithErrorInHandlerCount.Store(0)
 	daemonRunning.Store(false)

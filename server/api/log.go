@@ -12,7 +12,7 @@ import (
 // Request: empty | Response: Response
 func FlushOldLogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	if err := database.FlushOldLogs(); err != nil {
+	if err := event.FlushOldLogs(); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to flush logs", Error: "database failure"})
 		return
@@ -25,7 +25,7 @@ func FlushOldLogs(w http.ResponseWriter, r *http.Request) {
 // Request: empty | Response: Response
 func FlushAllLogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	if err := database.FlushAllLogs(); err != nil {
+	if err := event.FlushAllLogs(); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to flush logs", Error: "database failure"})
 		return
