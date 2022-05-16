@@ -187,7 +187,7 @@
         background-color: var(--clr-height-1-3);
 
         &.disabled {
-            opacity: 80%;
+            opacity: 75%;
         }
 
         &__homescript {
@@ -203,8 +203,11 @@
 
         &__indicator {
             color: var(--clr-success);
+            opacity: 80%;
             &.disabled {
                 color: var(--clr-error);
+                opacity: 100%;
+                filter: brightness(110%);
             }
         }
 
