@@ -1,7 +1,7 @@
 FROM alpine:3
 
 LABEL author="MikMuellerDev"
-LABEL version="0.0.27"
+LABEL version="0.0.27-beta.1"
 
 COPY ./app /app
 
@@ -16,7 +16,7 @@ RUN addgroup smarthome && adduser \
 
 RUN mkdir -p /app/.config
 RUN mkdir -p /app/.cache
-RUN apk add curl bash && rm -rf /var/cache/apk/*
+RUN apk add curl bash tzdata && rm -rf /var/cache/apk/*
 
 COPY motd /etc/motd
 COPY .bashrc /app/.bashrc
