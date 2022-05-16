@@ -31,7 +31,7 @@ func TestServer(t *testing.T) {
 		return
 	}
 
-	// Initialize <module> loggers
+	// Initialize module loggers
 	config.InitLogger(log)
 	camera.InitLogger(log)
 	database.InitLogger(log)
@@ -45,6 +45,7 @@ func TestServer(t *testing.T) {
 	homescript.InitLogger(log)
 	automation.InitLogger(log)
 	scheduler.InitLogger(log)
+	// Simulates a typical server startup
 
 	// Initialize database, try 5 times before giving up
 	var dbErr error = nil
@@ -73,13 +74,13 @@ func TestServer(t *testing.T) {
 		t.Errorf("Could not run setup: %s", err.Error())
 	}
 
-	if err := database.FlushAllLogs(); err != nil {
+	if err := event.FlushAllLogs(); err != nil {
 		t.Errorf("Failed to flush logs: %s", err.Error())
 	}
 
 	// Always flush old logs
 	log.Info("Flushing logs older than 30 days")
-	if err := database.FlushOldLogs(); err != nil {
+	if err := event.FlushOldLogs(); err != nil {
 		t.Errorf("Failed to flush logs older that 30 days: %s", err.Error())
 	}
 
