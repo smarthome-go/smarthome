@@ -1,3 +1,5 @@
+# Docker-compose file used for creating a development database instance
+
 version: '3.7'
 services:
   smarthome-mariadb:
