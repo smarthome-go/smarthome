@@ -123,6 +123,7 @@ func jobDaemon(ch chan bool) {
 		jobResults.JobResults = append(jobResults.JobResults, JobResult{Id: currentJob.Id, Error: err})
 		jobResults.m.Unlock()
 
+		// Increase `job-with-error count` if the job failed
 		if err != nil {
 			jobsWithErrorInHandlerCount.Store(jobsWithErrorInHandlerCount.Load().(int) + 1)
 		}
