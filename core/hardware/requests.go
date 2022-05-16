@@ -64,7 +64,7 @@ func checkNodeOnline(node database.HardwareNode) error {
 // A check if  a node is online again can be still executed afterwards
 func sendPowerRequest(node database.HardwareNode, switchName string, powerOn bool) error {
 	if !node.Enabled {
-		log.Trace("Not sending power request to disabled node")
+		log.Trace("Skipping power request to disabled node")
 		return nil
 	}
 	requestBody, err := json.Marshal(PowerRequest{
