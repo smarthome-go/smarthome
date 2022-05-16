@@ -1,7 +1,7 @@
 FROM alpine:3
 
 LABEL author="MikMuellerDev"
-LABEL version="0.0.27-beta.1"
+LABEL version="0.0.28-beta"
 
 COPY ./app /app
 
@@ -16,6 +16,7 @@ RUN addgroup smarthome && adduser \
 
 RUN mkdir -p /app/.config
 RUN mkdir -p /app/.cache
+# Tzdata is installed to allow setting of the timezone via the environment variables
 RUN apk add curl bash tzdata && rm -rf /var/cache/apk/*
 
 COPY motd /etc/motd
