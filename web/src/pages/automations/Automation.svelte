@@ -15,7 +15,6 @@
     parseCronExpressionToTime
     } from './main'
 
-
     // Event dispatcher
     const dispatch = createEventDispatcher()
 
@@ -100,13 +99,16 @@
     // Update days and time
     $: timeData = parseCronExpressionToTime(data.cronExpression)
 
-    function handleEditAutomation(event) {
+    async function handleEditAutomation(event) {
         const dataTemp = event.detail
-        modifyAutomation(dataTemp.id, dataTemp.data).then()
+        const dataTempEnabled = dataTemp.data.enabled
+        const enabledStatusBefore = data.enabled
+        await modifyAutomation(dataTemp.id, dataTemp.data)
+        if (dataTempEnabled !== enabledStatusBefore) dispatch('modify', null)
     }
 
     function handleDeleteAutomation(_event) {
-        dispatch("delete", null)
+        dispatch('delete', null)
     }
 </script>
 

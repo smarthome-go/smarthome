@@ -164,6 +164,12 @@
                 <Automation
                     bind:data={automation}
                     on:delete={() => deleteAutomation(automation.id)}
+                    on:modify={() => {
+                        console.log('a')
+                        $automations= $automations.sort((a) => {
+                            return a.enabled ? -1 : 1
+                        })
+                    }}
                 />
             {/each}
         {/if}

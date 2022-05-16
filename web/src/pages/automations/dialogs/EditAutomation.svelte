@@ -87,6 +87,7 @@
             name: inputData.name,
             timingMode: inputData.timingMode,
         }
+        inputDataBefore["id"] = data.id
     }
     function restorePrevious() {
         inputData = {
@@ -150,21 +151,18 @@
                 <div class="delete">
                     <Button
                         on:click={() => {
-                            console.log('a')
                             deleteOpen = true
                         }}
                     >
                         <Label>Delete</Label>
                     </Button>
-                    <span class="text-hint">
-                       Delete Automation
-                    </span>
+                    <span class="text-hint"> Delete Automation </span>
                 </div>
                 <div class="activation">
-                        <Switch bind:checked={inputData.enabled} />
-                        <span class="text-hint">
-                            Automation {inputData.enabled ? 'enabled' : 'disabled'}
-                        </span>
+                    <Switch bind:checked={inputData.enabled} />
+                    <span class="text-hint">
+                        Automation {inputData.enabled ? 'enabled' : 'disabled'}
+                    </span>
                 </div>
             </div>
         </Content>
@@ -174,12 +172,15 @@
                     <Label>Cancel</Label>
                 </Button>
                 <Button
-                    disabled={data.name == '' || inputData.days.length == 0}
+                    disabled={data.name == '' ||
+                        inputData.days.length == 0 ||
+                        JSON.stringify(inputData) ===
+                            JSON.stringify(inputDataBefore)}
                     use={[InitialFocus]}
                     on:click={() => {
                         dispatch('modify', { data: inputData, id: data.id })
-                        updatePrevious()
                         applyCurrentState()
+                        updatePrevious()
                     }}
                 >
                     <Label>Edit</Label>
