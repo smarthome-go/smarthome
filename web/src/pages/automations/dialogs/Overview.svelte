@@ -7,10 +7,8 @@
     InitialFocus,
     Title
     } from '@smui/dialog'
-    import IconButton from '@smui/icon-button'
     import {
     automations,
-    hmsLoaded,
     homescripts,
     parseCronExpressionToTime
     } from '../main'
@@ -62,22 +60,21 @@
     export let open = false
 </script>
 
-<Dialog
-    bind:open
-    aria-labelledby="title"
-    aria-describedby="content"
-    fullscreen={$hmsLoaded && $homescripts.length > 0}
->
+<Dialog bind:open aria-labelledby="title" aria-describedby="content" fullscreen>
     <Header>
         <Title id="title">Automation Overview</Title>
-        {#if $hmsLoaded && $homescripts.length > 0}
-            <IconButton action="close" class="material-icons">close</IconButton>
-        {/if}
     </Header>
     <Content id="content">
         <div id="days">
             {#each days as day (day.short)}
-                <div class="day">
+                <div
+                    class="day"
+                    class:empty={$automations.filter((a) =>
+                        parseCronExpressionToTime(
+                            a.cronExpression
+                        ).days.includes(day.index)
+                    ).length == 0}
+                >
                     <div class="day__header">
                         {day.long}
                     </div>
@@ -88,7 +85,7 @@
                                 return parseCronExpressionToTime(a.cronExpression).hours - parseCronExpressionToTime(b.cronExpression).hours
                             }) as automation (automation.id)}
                             <div
-                                class="automation"
+                                class="automation mdc-elevation--z2"
                                 class:disabled={!automation.enabled}
                             >
                                 <span class="automation__name">
@@ -133,7 +130,7 @@
     </Content>
     <Actions>
         <Button use={[InitialFocus]}>
-            <Label>Done</Label>
+            <Label>Close</Label>
         </Button>
     </Actions>
 </Dialog>
@@ -147,9 +144,17 @@
         height: 100%;
         min-height: 40vh;
         gap: 0.5rem;
+        .empty {
+            @include mobile {
+                display: none;
+            }
+
+            opacity: 60%;
+        }
 
         @include mobile {
             flex-direction: column;
+            gap: 1.5rem;
         }
 
         @include widescreen {
@@ -165,12 +170,25 @@
             width: 100%;
         }
 
+        @include mobile {
+            background-color: var(--clr-height-0-1);
+            padding: 1rem;
+            border-radius: 0.3rem;
+        }
+
         &__header {
             background-color: var(--clr-height-0-1);
             border-radius: 0.3rem;
             padding: 0.3rem;
             display: flex;
             justify-content: center;
+
+            @include mobile {
+                color: var(--clr-primary);
+                justify-content: flex-start;
+                background-color: transparent;
+                padding: 0.1rem 0.2rem;
+            }
         }
 
         &__automations {
@@ -182,6 +200,10 @@
             @include widescreen {
                 gap: 0.65rem;
             }
+
+            @include mobile {
+                padding-top: 0.75rem;
+            }
         }
     }
 
@@ -190,8 +212,13 @@
         border-radius: 0.3rem;
         padding: 0.4rem 0.6rem;
 
+        @include mobile {
+            background-color: var(--clr-height-1-3);
+        }
+
         @include widescreen {
             padding: 0.7rem 0.5rem;
+            min-width: 4rem;
         }
 
         &__name {
@@ -227,8 +254,11 @@
         }
 
         &.disabled {
-            background-color: var(--clr-height-0-1);
-            opacity: 80%;
+            opacity: 45%;
+
+            @include mobile {
+                opacity: 50%;
+            }
         }
     }
 </style>

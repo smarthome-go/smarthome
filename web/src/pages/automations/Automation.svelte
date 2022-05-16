@@ -138,15 +138,14 @@
         <span class="automation__time">
             At
             {timeString}
+        </span>
+        <!-- Days -->
+        <span class="automation__days">
             {#if timeData.days.length === 7}
                 <span class="day"
                     >every day <i class="material-icons">restart_alt</i>
                 </span>
-            {/if}
-        </span>
-        <!-- Days -->
-        <span class="automation__days">
-            {#if timeData.days.length !== 7}
+            {:else}
                 {#each timeData.days.map((d) => days[d]) as day}
                     <span class="day">{day}</span>
                 {/each}
@@ -202,8 +201,10 @@
         }
 
         &__indicator {
+            font-size: 1.3rem;
             color: var(--clr-success);
-            opacity: 80%;
+            opacity: 85%;
+
             &.disabled {
                 color: var(--clr-error);
                 opacity: 100%;
