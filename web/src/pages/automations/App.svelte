@@ -8,6 +8,7 @@
     import Page from '../../Page.svelte'
     import Automation from './Automation.svelte'
     import AddAutomation from './dialogs/AddAutomation.svelte'
+    import Overview from './dialogs/Overview.svelte'
     import {
     addAutomation,
     automations,
@@ -17,6 +18,7 @@
     } from './main'
 
     let addOpen = false
+    let overviewOpen = false
 
     // Fetches the current automations from the server
     async function loadAutomations() {
@@ -129,6 +131,8 @@
 <!-- Popup is shown when an automation is being added -->
 <AddAutomation bind:open={addOpen} on:add={handleAddAutomation} />
 
+<Overview bind:open={overviewOpen} />
+
 <Page>
     <div id="header" class="mdc-elevation--z4">
         <h6>Automations</h6>
@@ -142,6 +146,13 @@
                 }}>refresh</IconButton
             >
             {#if $automations.length > 0}
+                <IconButton
+                    title="Week View"
+                    class="material-icons"
+                    on:click={() => (overviewOpen = true)}
+                >
+                    view_list
+                </IconButton>
                 <Button on:click={() => (addOpen = true)}>
                     <Label>Create</Label>
                     <Icon class="material-icons">add</Icon>
@@ -165,8 +176,7 @@
                     bind:data={automation}
                     on:delete={() => deleteAutomation(automation.id)}
                     on:modify={() => {
-                        console.log('a')
-                        $automations= $automations.sort((a) => {
+                        $automations = $automations.sort((a) => {
                             return a.enabled ? -1 : 1
                         })
                     }}

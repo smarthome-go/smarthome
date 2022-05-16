@@ -53,7 +53,6 @@
 </div>
 
 <style lang="scss">
-    @use '../../../mixins' as *;
     .list {
         width: 100%;
         height: 100%;
