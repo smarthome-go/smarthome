@@ -1,8 +1,8 @@
 <script lang="ts">
-    import { Icon } from '@smui/button'
     import IconButton from '@smui/icon-button/src/IconButton.svelte'
     import { createEventDispatcher,onMount } from 'svelte'
     import { createSnackbar,sleep } from '../../global'
+    import AutomationInfo from './dialogs/AutomationInfo.svelte'
     import EditAutomation from './dialogs/EditAutomation.svelte'
     import {
     addAutomation,
@@ -76,6 +76,7 @@
     }
 
     let editOpen = false
+    let infoOpen = false
 
     // Generates a 12h string from 24h time data
     let timeString = ''
@@ -118,6 +119,8 @@
     on:modify={handleEditAutomation}
     on:delete={handleDeleteAutomation}
 />
+
+<AutomationInfo bind:data bind:open={infoOpen} />
 
 <div class="automation mdc-elevation--z3" class:disabled={!data.enabled}>
     <!-- Top -->
@@ -162,14 +165,21 @@
                 <!-- If Homescript is loaded, display the script's icon for better readability -->
             </span>
             {#if hmsLoaded}
-                <Icon class="material-icons">
+                <i class="material-icons automation__homescript__icon">
                     {homescriptData.data.mdIcon}
-                </Icon>
+                </i>
             {/if}
         </span>
-        <IconButton class="material-icons" on:click={() => (editOpen = true)}
-            >edit</IconButton
-        >
+        <div class="bottom__buttons">
+            <IconButton
+                class="material-icons"
+                on:click={() => (editOpen = true)}>edit</IconButton
+            >
+            <IconButton
+                class="material-icons"
+                on:click={() => (infoOpen = true)}>info</IconButton
+            >
+        </div>
     </div>
 </div>
 
@@ -191,8 +201,13 @@
 
         &__homescript {
             display: flex;
+            align-items: center;
             gap: 0.5rem;
             font-size: 0.9rem;
+
+            &__icon {
+                font-size: 1.2rem;
+            }
         }
 
         &__time {
@@ -228,6 +243,10 @@
             gap: 0.5rem;
             align-items: center;
             justify-content: space-between;
+
+            &__buttons {
+                display: flex;
+            }
         }
 
         &__days {
