@@ -92,33 +92,62 @@
                                     {automation.name}
                                 </span>
                                 {#if automation.enabled}
-                                    <div class="automation__hms">
-                                        <span
-                                            >{$homescripts.find(
-                                                (h) =>
-                                                    h.data.id ===
-                                                    automation.homescriptId
-                                            ) !== undefined
-                                                ? $homescripts.find(
-                                                      (h) =>
-                                                          h.data.id ===
-                                                          automation.homescriptId
-                                                  ).data.name
-                                                : 'No script'}</span
-                                        >
-                                        <i class="material-icons">
-                                            {$homescripts.find(
-                                                (h) =>
-                                                    h.data.id ===
-                                                    automation.homescriptId
-                                            ) !== undefined
-                                                ? $homescripts.find(
-                                                      (h) =>
-                                                          h.data.id ===
-                                                          automation.homescriptId
-                                                  ).data.mdIcon
-                                                : 'code'}
-                                        </i>
+                                    <div class="automation__time-hms">
+                                        <span>
+                                            {`${
+                                                parseCronExpressionToTime(
+                                                    automation.cronExpression
+                                                ).hours <= 12
+                                                    ? parseCronExpressionToTime(
+                                                          automation.cronExpression
+                                                      ).hours
+                                                    : parseCronExpressionToTime(
+                                                          automation.cronExpression
+                                                      ).hours - 12
+                                            }`.padStart(2, '0') +
+                                                ':' +
+                                                `${
+                                                    parseCronExpressionToTime(
+                                                        automation.cronExpression
+                                                    ).minutes
+                                                }`.padStart(2, '0') +
+                                                ` ${
+                                                    parseCronExpressionToTime(
+                                                        automation.cronExpression
+                                                    ).hours < 12
+                                                        ? 'AM'
+                                                        : 'PM'
+                                                }`}
+                                        </span>
+
+                                        <div class="automation__time-hms__hms">
+                                            <span
+                                                >{$homescripts.find(
+                                                    (h) =>
+                                                        h.data.id ===
+                                                        automation.homescriptId
+                                                ) !== undefined
+                                                    ? $homescripts.find(
+                                                          (h) =>
+                                                              h.data.id ===
+                                                              automation.homescriptId
+                                                      ).data.name
+                                                    : 'No script'}</span
+                                            >
+                                            <i class="material-icons">
+                                                {$homescripts.find(
+                                                    (h) =>
+                                                        h.data.id ===
+                                                        automation.homescriptId
+                                                ) !== undefined
+                                                    ? $homescripts.find(
+                                                          (h) =>
+                                                              h.data.id ===
+                                                              automation.homescriptId
+                                                      ).data.mdIcon
+                                                    : 'code'}
+                                            </i>
+                                        </div>
                                     </div>
                                 {/if}
                             </div>
@@ -219,6 +248,7 @@
         @include widescreen {
             padding: 0.7rem 0.5rem;
             min-width: 4rem;
+            min-height: 3rem;
         }
 
         &__name {
@@ -229,7 +259,7 @@
             }
         }
 
-        &__hms {
+        &__time-hms {
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -242,13 +272,18 @@
                 }
             }
 
-            i {
-                color: var(--clr-primary);
-                font-size: 1rem;
-                opacity: 85%;
+            &__hms {
+                display: flex;
+                gap: 0.3rem;
+                align-items: center;
+                i {
+                    color: var(--clr-primary);
+                    font-size: 1rem;
+                    opacity: 85%;
 
-                @include widescreen {
-                    font-size: 1.25rem;
+                    @include widescreen {
+                        font-size: 1.25rem;
+                    }
                 }
             }
         }
