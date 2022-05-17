@@ -60,12 +60,6 @@ func CreateNewAutomation(
 		log.Error("Could not create automation: database failure: ", err.Error())
 		return 0, err
 	}
-	// TODO: why is it necessary to generate the HumanReadableCronExpression?
-	cronDescription, err := generateHumanReadableCronExpression(cronExpression)
-	if err != nil {
-		log.Error("Could not create automation: failed to generate human readable string: ", err.Error())
-		return 0, err
-	}
 	if enabled {
 		// TODO: decide whether it is a good idea to notify the user
 		// if err := user.Notify(
@@ -77,7 +71,7 @@ func CreateNewAutomation(
 		// 	log.Error("Failed to notify user: ", err.Error())
 		// 	return 0, err
 		// }
-		log.Debug(fmt.Sprintf("Created new automation '%s' for user '%s'. It will be executed %s", name, owner, cronDescription))
+		log.Debug(fmt.Sprintf("Created new automation '%s' for user '%s'. Cron-Expression: `%s`", name, owner, cronExpression))
 	} else {
 		if err := user.Notify(
 			owner,
