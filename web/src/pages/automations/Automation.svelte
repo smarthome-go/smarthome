@@ -104,8 +104,10 @@
         const dataTemp = event.detail
         const dataTempEnabled = dataTemp.data.enabled
         const enabledStatusBefore = data.enabled
+        const dataTempTimingMode = dataTemp.data.timingMode
+        const timingModeBefore = data.timingMode
         await modifyAutomation(dataTemp.id, dataTemp.data)
-        if (dataTempEnabled !== enabledStatusBefore) dispatch('modify', null)
+        if (dataTempEnabled !== enabledStatusBefore || dataTempTimingMode !== timingModeBefore) dispatch('modify', null)
     }
 
     function handleDeleteAutomation(_event) {

@@ -65,7 +65,7 @@
             >
                 <Segment
                     {segment}
-                    on:click={async() => {
+                    on:click={async () => {
                         await sleep(1)
                         data.days = selectedDays.map((d) => days.indexOf(d))
                         data = data
@@ -76,15 +76,32 @@
             </SegmentedButton>
         </div>
 
-        <!-- Time -->
-        <div class="time">
-            <span class="text-hint">Time when the automation runs</span>
-            <TimePicker
-                bind:hour={data.hour}
-                bind:minute={data.minute}
-                helperText={'Time'}
-                invalidText={'error'}
-            />
+        <div class="timing">
+            <!-- Timing Mode -->
+            <div class="timing-mode">
+                <span class="text-hint">Timing mode</span>
+                <SegmentedButton
+                    segments={['normal', 'sunrise', 'sunset']}
+                    let:segment
+                    singleSelect
+                    bind:selected={data.timingMode}
+                >
+                    <Segment {segment}>
+                        <Label>{segment}</Label>
+                    </Segment>
+                </SegmentedButton>
+            </div>
+
+            <!-- Time -->
+            <div class="time" class:disabled={data.timingMode !== 'normal'}>
+                <span class="text-hint">Time when the automation runs</span>
+                <TimePicker
+                    bind:hour={data.hour}
+                    bind:minute={data.minute}
+                    helperText={'Time'}
+                    invalidText={'error'}
+                />
+            </div>
         </div>
     </div>
 
@@ -120,12 +137,37 @@
             width: 99%;
         }
     }
-    .days,
-    .time {
+    .days {
         margin-top: 2rem;
     }
+
+    .time {
+        margin-top: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+
+        transition: .2s opacity;
+
+        &.disabled {
+            user-select: none;
+            pointer-events: none;
+            opacity: 40%;
+        }
+    }
+
+    .timing {
+        display: flex;
+        align-items: center;
+        gap: 2.5rem;
+    }
+
+    .timing-mode {
+        margin-top: 0.5rem;
+    }
+
     .hms,
-    .time,
+    .timing-mode,
     .days {
         display: flex;
         flex-direction: column;

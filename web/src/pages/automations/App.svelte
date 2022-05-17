@@ -76,7 +76,6 @@
             if (!res.success) throw Error(res.error)
             // Create a placeholder item while the automations are being updated
             // Fetching from the server is needed in order to get the generated id
-            // TODO: return id from POST request
             $automations = [
                 ...$automations,
                 {
@@ -118,6 +117,7 @@
     }
 
     function handleAddAutomation(event) {
+        console.log(event.detail)
         const data = event.detail as addAutomation
         createAutomation(data).then()
     }
@@ -176,6 +176,12 @@
                     bind:data={automation}
                     on:delete={() => deleteAutomation(automation.id)}
                     on:modify={() => {
+                        // If there is an automation with non-normal timing-mode, update it
+                        for (let automationItem of $automations) {
+                            if (automationItem.timingMode !== 'normal') {
+                                loadAutomations()
+                            }
+                        }
                         $automations = $automations.sort((a) => {
                             return a.enabled ? -1 : 1
                         })
