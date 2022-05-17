@@ -241,6 +241,35 @@ func ModifyAutomationById(automationId uint, newAutomation database.AutomationWi
 		log.Error("Failed to modify automation by id: could not get previous automation: not found")
 		return fmt.Errorf("failed to modify automation by id: could not get previous automation: not found")
 	}
+	// Update sunset / sunrise times if changed
+	if newAutomation.TimingMode != database.TimingNormal {
+		// Obtain the server's configuration in order to determine the latitude and longitude
+		config, found, err := database.GetServerConfiguration()
+		if err != nil || !found {
+			log.Error("Failed to update job launch time: could not obtain the server's configuration")
+			return errors.New("could not update launch time: failed to obtain server config")
+		}
+		// Calculate both the sunrise and sunset time
+		sunRise, sunSet := CalculateSunRiseSet(config.Latitude, config.Longitude)
+		// Select the time which is desired
+		var finalTime SunTime
+		if newAutomation.TimingMode == database.TimingSunrise {
+			finalTime = sunRise
+		} else {
+			finalTime = sunSet
+		}
+		// Extract the days from the cron-expression
+		days, err := GetDaysFromCronExpression(newAutomation.CronExpression)
+		if err != nil {
+			log.Error(fmt.Sprintf("Failed to extract days from cron-expression '%s': Error: %s", newAutomation.CronExpression, err))
+			return err
+		}
+		cronExpression, err := GenerateCronExpression(uint8(finalTime.Hour), uint8(finalTime.Minute), days)
+		if err != nil {
+			return err
+		}
+		newAutomation.CronExpression = cronExpression
+	}
 	if err := database.ModifyAutomation(automationId, newAutomation); err != nil {
 		log.Error("Failed to modify automation by id: database failure during modification: ", err.Error())
 		return err
