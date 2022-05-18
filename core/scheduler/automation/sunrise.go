@@ -66,13 +66,13 @@ func updateJobTime(id uint, useSunRise bool) error {
 	// }
 
 	// Only triggers the generic modification due to a lot of work being done in the modification function
-	if err := ModifyAutomationById(id, database.AutomationWithoutIdAndUsername{
-		Name:           job.Name,
-		Description:    job.Description,
-		CronExpression: job.CronExpression,
-		HomescriptId:   job.HomescriptId,
-		Enabled:        job.Enabled,
-		TimingMode:     job.TimingMode,
+	if err := ModifyAutomationById(id, database.AutomationData{
+		Name:           job.Data.Name,
+		Description:    job.Data.Description,
+		CronExpression: job.Data.CronExpression,
+		HomescriptId:   job.Data.HomescriptId,
+		Enabled:        job.Data.Enabled,
+		TimingMode:     job.Data.TimingMode,
 	}); err != nil {
 		log.Error(fmt.Sprintf("Failed to update next execution time of automation '%d': could not modify automation: %s", id, err.Error()))
 		return err

@@ -232,7 +232,7 @@ func TestModificationToDifferentScript(t *testing.T) {
 		return
 	}
 	if err := ModifyAutomationById(modifyId,
-		database.AutomationWithoutIdAndUsername{
+		database.AutomationData{
 			Name:           "name",
 			Description:    "description",
 			CronExpression: cronExpression,
@@ -303,10 +303,10 @@ func TestModificationToAbort(t *testing.T) {
 	}
 	// Set its activation status to `disabled`
 	if err := ModifyAutomationById(abortId,
-		database.AutomationWithoutIdAndUsername{
+		database.AutomationData{
 			Name:           "name",
 			Description:    "description",
-			CronExpression: automation.CronExpression,
+			CronExpression: automation.Data.CronExpression,
 			HomescriptId:   "test_abort",
 			Enabled:        false,
 			TimingMode:     database.TimingNormal,
@@ -421,8 +421,8 @@ func TestTimingModes(t *testing.T) {
 		t.Errorf("Automation %d was not found after creation", sunSetId)
 		return
 	}
-	if sunrise.CronExpression == sunSet.CronExpression {
-		t.Errorf("Cron expression of sunrise and sunset is not valid. `%s`|`%s`", sunSet.CronExpression, sunrise.CronExpression)
+	if sunrise.Data.CronExpression == sunSet.Data.CronExpression {
+		t.Errorf("Cron expression of sunrise and sunset is not valid. `%s`|`%s`", sunSet.Data.CronExpression, sunrise.Data.CronExpression)
 	}
 }
 

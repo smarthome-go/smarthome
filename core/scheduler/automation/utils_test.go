@@ -32,9 +32,9 @@ func TestCreateAutomation(t *testing.T) {
 		t.Errorf("Automation '%d' not found after creation", id)
 		return
 	}
-	if fromDb.Name != "name" ||
-		fromDb.Description != "description" ||
-		fromDb.Enabled ||
+	if fromDb.Data.Name != "name" ||
+		fromDb.Data.Description != "description" ||
+		fromDb.Data.Enabled ||
 		fromDb.Owner != "admin" {
 		t.Errorf("Automation '%d' has invalid metadata", id)
 	}
@@ -57,7 +57,7 @@ func TestModifyAutomation(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
-	if err := ModifyAutomationById(id, database.AutomationWithoutIdAndUsername{
+	if err := ModifyAutomationById(id, database.AutomationData{
 		Name:           "name2",
 		Description:    "description2",
 		CronExpression: "* * * * *",

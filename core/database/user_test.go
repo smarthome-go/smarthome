@@ -42,7 +42,7 @@ func createUserMockData() error {
 		return err
 	}
 	// Create a automation
-	if _, err := CreateNewAutomation(Automation{Owner: "delete_me", TimingMode: TimingNormal, HomescriptId: "delete_me"}); err != nil {
+	if _, err := CreateNewAutomation(Automation{Owner: "delete_me", Data: AutomationData{TimingMode: TimingNormal, HomescriptId: "delete_me"}}); err != nil {
 		return err
 	}
 	// Create a schedule

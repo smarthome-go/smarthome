@@ -47,13 +47,15 @@ func CreateNewAutomation(
 	// Insert the automation into the database
 	newAutomationId, err := database.CreateNewAutomation(
 		database.Automation{
-			Name:           name,
-			Description:    description,
-			CronExpression: cronExpression,
-			HomescriptId:   homescriptId,
-			Owner:          owner,
-			Enabled:        enabled,
-			TimingMode:     timingMode,
+			Owner: owner,
+			Data: database.AutomationData{
+				Name:           name,
+				Description:    description,
+				CronExpression: cronExpression,
+				HomescriptId:   homescriptId,
+				Enabled:        enabled,
+				TimingMode:     timingMode,
+			},
 		},
 	)
 	if err != nil {
@@ -135,7 +137,7 @@ func RemoveAutomation(automationId uint) error {
 		log.Error("Failed to remove automation: could not retrieve server configuration due to database failure")
 		return errors.New("failed to remove automation: could not retrieve server configuration due to database failure")
 	}
-	if !previousAutomation.Enabled || !serverConfig.AutomationEnabled { // A disabled automation cannot be removed from the scheduler, so return here
+	if !previousAutomation.Data.Enabled || !serverConfig.AutomationEnabled { // A disabled automation cannot be removed from the scheduler, so return here
 		log.Trace(fmt.Sprintf("Removed an already disabled automation id: '%d'", automationId))
 		return nil
 	}
@@ -147,7 +149,7 @@ func RemoveAutomation(automationId uint) error {
 	if err := user.Notify(
 		previousAutomation.Owner,
 		"Removed Automation",
-		fmt.Sprintf("The Automation '%s' has been successfully removed from the system and will not execute again", previousAutomation.Name),
+		fmt.Sprintf("The Automation '%s' has been successfully removed from the system and will not execute again", previousAutomation.Data.Name),
 		1,
 	); err != nil {
 		log.Error("Failed to notify user: ", err.Error())
@@ -166,7 +168,7 @@ func GetUserAutomations(username string) ([]Automation, error) {
 		return nil, err
 	}
 	for _, automation := range automationsTemp {
-		cronDescription, err := generateHumanReadableCronExpression(automation.CronExpression)
+		cronDescription, err := generateHumanReadableCronExpression(automation.Data.CronExpression)
 		if err != nil {
 			log.Error("Failed to list automations of user: could not generate cron description: ", err.Error())
 			return nil, err
@@ -174,14 +176,14 @@ func GetUserAutomations(username string) ([]Automation, error) {
 		automations = append(automations,
 			Automation{
 				Id:              automation.Id,
-				Name:            automation.Name,
-				Description:     automation.Description,
-				CronExpression:  automation.CronExpression,
+				Name:            automation.Data.Name,
+				Description:     automation.Data.Description,
+				CronExpression:  automation.Data.CronExpression,
 				CronDescription: cronDescription,
-				HomescriptId:    automation.HomescriptId,
+				HomescriptId:    automation.Data.HomescriptId,
 				Owner:           automation.Owner,
-				Enabled:         automation.Enabled,
-				TimingMode:      automation.TimingMode,
+				Enabled:         automation.Data.Enabled,
+				TimingMode:      automation.Data.TimingMode,
 			},
 		)
 	}
@@ -199,21 +201,21 @@ func GetUserAutomationById(username string, automationId uint) (Automation, bool
 		if automation.Id != automationId {
 			continue // Skip any automations which don't match
 		}
-		cronDescription, err := generateHumanReadableCronExpression(automation.CronExpression)
+		cronDescription, err := generateHumanReadableCronExpression(automation.Data.CronExpression)
 		if err != nil {
 			log.Error("Failed to get user automation by id: could not generate cron description: ", err.Error())
 			return Automation{}, false, err
 		}
 		return Automation{
 			Id:              automation.Id,
-			Name:            automation.Name,
-			Description:     automation.Description,
-			CronExpression:  automation.CronExpression,
+			Name:            automation.Data.Name,
+			Description:     automation.Data.Description,
+			CronExpression:  automation.Data.CronExpression,
 			CronDescription: cronDescription,
-			HomescriptId:    automation.HomescriptId,
+			HomescriptId:    automation.Data.HomescriptId,
 			Owner:           automation.Owner,
-			Enabled:         automation.Enabled,
-			TimingMode:      automation.TimingMode,
+			Enabled:         automation.Data.Enabled,
+			TimingMode:      automation.Data.TimingMode,
 		}, true, nil
 	}
 	return Automation{}, false, nil
@@ -221,7 +223,7 @@ func GetUserAutomationById(username string, automationId uint) (Automation, bool
 
 // Changes the metadata of a given automation, then restarts it so it uses the updated values such as execution time
 // Is also used after an automation with non-normal timing has been added
-func ModifyAutomationById(automationId uint, newAutomation database.AutomationWithoutIdAndUsername) error {
+func ModifyAutomationById(automationId uint, newAutomation database.AutomationData) error {
 	if !IsValidCronExpression(newAutomation.CronExpression) {
 		log.Error("Failed to modify automation: invalid cron expression provided")
 		return errors.New("failed to modify automation: invalid cron expression provided")
@@ -268,7 +270,7 @@ func ModifyAutomationById(automationId uint, newAutomation database.AutomationWi
 		log.Error("Failed to modify automation by id: database failure during modification: ", err.Error())
 		return err
 	}
-	if automationBefore.Enabled { // If the automation was enabled before it was modified, remove it from the cron jobs
+	if automationBefore.Data.Enabled { // If the automation was enabled before it was modified, remove it from the cron jobs
 		// After the metadata has been changed, restart the scheduler
 		if err := scheduler.RemoveByTag(fmt.Sprintf("%d", automationId)); err != nil {
 			log.Error("Failed to remove automation item: could not stop cron job: ", err.Error())
@@ -285,7 +287,7 @@ func ModifyAutomationById(automationId uint, newAutomation database.AutomationWi
 			return err
 		}
 		log.Debug(fmt.Sprintf("Automation %d has been modified and restarted", automationId))
-		if !automationBefore.Enabled {
+		if !automationBefore.Data.Enabled {
 			log.Trace(fmt.Sprintf("Automation with id %d has been activated", automationId))
 			if err := user.Notify(
 				automationBefore.Owner,
@@ -298,12 +300,12 @@ func ModifyAutomationById(automationId uint, newAutomation database.AutomationWi
 			}
 		}
 	} else {
-		if automationBefore.Enabled {
+		if automationBefore.Data.Enabled {
 			log.Trace(fmt.Sprintf("Automation with id %d has been disabled", automationId))
 			if err := user.Notify(
 				automationBefore.Owner,
 				"Automation Temporarely Disabled",
-				fmt.Sprintf("Automation '%s' has been disabled", automationBefore.Name),
+				fmt.Sprintf("Automation '%s' has been disabled", automationBefore.Data.Name),
 				2,
 			); err != nil {
 				log.Error("Failed to notify user: ", err.Error())

@@ -258,7 +258,7 @@ func ModifyAutomation(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to modify automation", Error: "could not create cron expression"})
 		return
 	}
-	newAutomation := database.AutomationWithoutIdAndUsername{
+	newAutomation := database.AutomationData{
 		Name:           request.Name,
 		Description:    request.Description,
 		CronExpression: cronExpr,

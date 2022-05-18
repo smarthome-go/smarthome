@@ -13,17 +13,12 @@ const (
 )
 
 type Automation struct {
-	Id             uint       `json:"id"`
-	Name           string     `json:"name"`
-	Description    string     `json:"description"`
-	CronExpression string     `json:"cronExpression"`
-	HomescriptId   string     `json:"homescriptId"`
-	Owner          string     `json:"owner"`
-	Enabled        bool       `json:"enabled"`
-	TimingMode     TimingMode `json:"timingMode"`
+	Id    uint           `json:"id"`
+	Owner string         `json:"owner"`
+	Data  AutomationData `json:"data"`
 }
 
-type AutomationWithoutIdAndUsername struct {
+type AutomationData struct {
 	Name           string     `json:"name"`
 	Description    string     `json:"description"`
 	CronExpression string     `json:"cronExpression"`
@@ -65,7 +60,14 @@ func CreateNewAutomation(automation Automation) (uint, error) {
 	query, err := db.Prepare(`
 	INSERT INTO
 	automation(
-		Id, Name, Description, CronExpression, HomescriptId, Owner, Enabled, TimingMode
+		Id,
+		Name,
+		Description,
+		CronExpression,
+		HomescriptId,
+		Owner,
+		Enabled,
+		TimingMode
 	)	
 	VALUES(DEFAULT, ?, ?, ?, ?, ?, ?, ?)
 	`)
@@ -75,13 +77,13 @@ func CreateNewAutomation(automation Automation) (uint, error) {
 	}
 	defer query.Close()
 	res, err := query.Exec(
-		automation.Name,
-		automation.Description,
-		automation.CronExpression,
-		automation.HomescriptId,
+		automation.Data.Name,
+		automation.Data.Description,
+		automation.Data.CronExpression,
+		automation.Data.HomescriptId,
 		automation.Owner,
-		automation.Enabled,
-		automation.TimingMode,
+		automation.Data.Enabled,
+		automation.Data.TimingMode,
 	)
 	if err != nil {
 		log.Error("Failed to create new automation: executing query failed: ", err.Error())
@@ -100,7 +102,14 @@ func CreateNewAutomation(automation Automation) (uint, error) {
 func GetAutomationById(id uint) (Automation, bool, error) {
 	query, err := db.Prepare(`
 	SELECT
-	Id, Name, Description, CronExpression, HomescriptId, Owner, Enabled, TimingMode
+		Id,
+		Name,
+		Description,
+		CronExpression,
+		HomescriptId,
+		Owner,
+		Enabled,
+		TimingMode
 	FROM automation
 	WHERE Id=?
 	`)
@@ -112,13 +121,13 @@ func GetAutomationById(id uint) (Automation, bool, error) {
 	var automation Automation
 	err = query.QueryRow(id).Scan(
 		&automation.Id,
-		&automation.Name,
-		&automation.Description,
-		&automation.CronExpression,
-		&automation.HomescriptId,
+		&automation.Data.Name,
+		&automation.Data.Description,
+		&automation.Data.CronExpression,
+		&automation.Data.HomescriptId,
 		&automation.Owner,
-		&automation.Enabled,
-		&automation.TimingMode,
+		&automation.Data.Enabled,
+		&automation.Data.TimingMode,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -154,13 +163,13 @@ func GetUserAutomations(username string) ([]Automation, error) {
 		var automation Automation
 		if err := res.Scan(
 			&automation.Id,
-			&automation.Name,
-			&automation.Description,
-			&automation.CronExpression,
-			&automation.HomescriptId,
+			&automation.Data.Name,
+			&automation.Data.Description,
+			&automation.Data.CronExpression,
+			&automation.Data.HomescriptId,
 			&automation.Owner,
-			&automation.Enabled,
-			&automation.TimingMode,
+			&automation.Data.Enabled,
+			&automation.Data.TimingMode,
 		); err != nil {
 			log.Error("Failed to list user automations: scanning for results failed: ", err.Error())
 			return nil, err
@@ -188,13 +197,13 @@ func GetAutomations() ([]Automation, error) {
 		var automation Automation
 		if err := res.Scan(
 			&automation.Id,
-			&automation.Name,
-			&automation.Description,
-			&automation.CronExpression,
-			&automation.HomescriptId,
+			&automation.Data.Name,
+			&automation.Data.Description,
+			&automation.Data.CronExpression,
+			&automation.Data.HomescriptId,
 			&automation.Owner,
-			&automation.Enabled,
-			&automation.TimingMode,
+			&automation.Data.Enabled,
+			&automation.Data.TimingMode,
 		); err != nil {
 			log.Error("Failed to list all automations: scanning for results failed: ", err.Error())
 			return nil, err
@@ -206,7 +215,7 @@ func GetAutomations() ([]Automation, error) {
 
 // Modifies the metadata of a given automation item
 // Does not validate the provided metadata
-func ModifyAutomation(id uint, newItem AutomationWithoutIdAndUsername) error {
+func ModifyAutomation(id uint, newItem AutomationData) error {
 	query, err := db.Prepare(`
 	UPDATE automation
 	SET

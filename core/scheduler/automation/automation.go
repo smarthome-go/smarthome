@@ -30,15 +30,15 @@ func ActivateAutomationSystem() error {
 	}
 	var activatedItems uint = 0
 	for _, automation := range automations {
-		if !IsValidCronExpression(automation.CronExpression) {
+		if !IsValidCronExpression(automation.Data.CronExpression) {
 			log.Error(fmt.Sprintf("Could not activate automation '%d': invalid cron expression", automation.Id))
 			continue // non-critical error
 		}
-		if !automation.Enabled {
+		if !automation.Data.Enabled {
 			log.Debug(fmt.Sprintf("Skipping activation of automation %d: automation is disabled", automation.Id))
 			continue // Skip disabled automations
 		}
-		automationJob := scheduler.Cron(automation.CronExpression)
+		automationJob := scheduler.Cron(automation.Data.CronExpression)
 		automationJob.Tag(fmt.Sprintf("%d", automation.Id))
 		_, err := automationJob.Do(automationRunnerFunc, automation.Id)
 		if err != nil {
@@ -60,7 +60,7 @@ func DeactivateAutomationSystem() error {
 		return err // This is a critical error which can not be recovered from
 	}
 	for _, automation := range automations {
-		if automation.Enabled {
+		if automation.Data.Enabled {
 			if err := scheduler.RemoveByTag(fmt.Sprintf("%d", automation.Id)); err != nil {
 				log.Error(fmt.Sprintf("Failed to deactivate automation '%d': could not stop scheduler: %s", automation.Id, err.Error()))
 				continue
