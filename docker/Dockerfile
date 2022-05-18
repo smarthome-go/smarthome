@@ -1,7 +1,7 @@
 FROM alpine:3
 
 LABEL author="MikMuellerDev"
-LABEL version="0.0.29-beta"
+LABEL version="0.0.29"
 
 COPY ./app /app
 
@@ -23,7 +23,7 @@ COPY motd /etc/motd
 COPY .bashrc /app/.bashrc
 ENV ENV=/app/.bashrc
 
-RUN curl -L https://github.com/smarthome-go/cli/releases/download/v2.0.3-beta/homescript_linux_amd64.tar.gz -o /tmp/homescript.tar.gz
+RUN curl -L https://github.com/smarthome-go/cli/releases/download/v2.3.0-beta/homescript_linux_amd64.tar.gz -o /tmp/homescript.tar.gz
 WORKDIR /bin
 RUN tar -xvf /tmp/homescript.tar.gz && chmod +x /bin/homescript && rm -rf /tmp/homescript.tar.gz
 
