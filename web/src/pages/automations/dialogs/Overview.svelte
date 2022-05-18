@@ -82,7 +82,16 @@
                         {#each $automations
                             .filter( (a) => parseCronExpressionToTime(a.cronExpression).days.includes(day.index) )
                             .sort((a, b) => {
-                                return parseCronExpressionToTime(a.cronExpression).hours - parseCronExpressionToTime(b.cronExpression).hours
+                                // Sorts the automations by time (descending)
+                                const timeDataA = parseCronExpressionToTime(a.cronExpression)
+                                const timeDataB = parseCronExpressionToTime(b.cronExpression)
+                                
+                                // If the hour of two automations to be compared match, the earlier minute is chosen.
+                                if (timeDataA.hours === timeDataB.hours) {
+                                    return timeDataA.minutes - timeDataB.minutes
+                                }
+                                // Otherwise, chose the earlier hour
+                                return timeDataA.hours - timeDataB.hours
                             }) as automation (automation.id)}
                             <div
                                 class="automation mdc-elevation--z2"
