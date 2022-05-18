@@ -146,7 +146,6 @@
         display: flex;
         flex-direction: column;
         gap: 0.3rem;
-
         transition: .2s opacity;
 
         &.disabled {
@@ -160,6 +159,11 @@
         display: flex;
         align-items: center;
         gap: 2.5rem;
+        flex-wrap: wrap;
+
+        @include mobile {
+            gap: 0;
+        }
     }
 
     .timing-mode {
