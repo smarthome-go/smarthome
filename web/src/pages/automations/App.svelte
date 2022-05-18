@@ -117,7 +117,6 @@
     }
 
     function handleAddAutomation(event) {
-        console.log(event.detail)
         const data = event.detail as addAutomation
         createAutomation(data).then()
     }
@@ -182,9 +181,10 @@
                                 loadAutomations()
                             }
                         }
-                        $automations = $automations.sort((a) => {
-                            return a.enabled ? -1 : 1
-                        })
+                        // Sorting of automations after reload will lead to a content shift
+                        // $automations = $automations.sort((a) => {
+                        //     return a.enabled ? -1 : 1
+                        // })
                     }}
                 />
             {/each}
