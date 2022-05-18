@@ -19,6 +19,11 @@
     const dispatch = createEventDispatcher()
 
     const days: string[] = ['su', 'mo', 'tu', 'we', 'th', 'fr', 'sa']
+    const timingModes = {
+        normal: { name: '', icon: 'schedule' },
+        sunrise: { name: 'Sunrise', icon: 'wb_twilight' },
+        sunset: { name: 'Sunset', icon: 'nights_stay' },
+    }
 
     export let data: automation
 
@@ -107,7 +112,11 @@
         const dataTempTimingMode = dataTemp.data.timingMode
         const timingModeBefore = data.timingMode
         await modifyAutomation(dataTemp.id, dataTemp.data)
-        if (dataTempEnabled !== enabledStatusBefore || dataTempTimingMode !== timingModeBefore) dispatch('modify', null)
+        if (
+            dataTempEnabled !== enabledStatusBefore ||
+            dataTempTimingMode !== timingModeBefore
+        )
+            dispatch('modify', null)
     }
 
     function handleDeleteAutomation(_event) {
@@ -142,7 +151,17 @@
         </span>
         <span class="automation__time">
             At
-            {timeString}
+            {#if data.timingMode === 'normal'}
+                {timeString}
+            {:else}
+                {timingModes[data.timingMode].name}
+                <div class="automation__time__mode">
+                    <span class="text-hint">{timeString}</span>
+                    <i class="material-icons">
+                        {timingModes[data.timingMode].icon}
+                    </i>
+                </div>
+            {/if}
         </span>
         <!-- Days -->
         <span class="automation__days">
@@ -215,6 +234,16 @@
         &__time {
             display: flex;
             justify-content: space-between;
+
+            &__mode {
+                display: flex;
+                gap: 0.6rem;
+                align-items: center;
+
+                span {
+                    font-size: 0.8rem;
+                }
+            }
         }
 
         &__indicator {
