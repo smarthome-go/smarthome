@@ -174,7 +174,7 @@ func TestRun(t *testing.T) {
 			}{
 				Output:     "",
 				Code:       1,
-				FirstError: "can not get power state of switch 'does_not_exist': switch does not exists",
+				FirstError: "Could not get power state of switch 'does_not_exist': switch does not exists",
 			},
 		},
 		{

@@ -7,6 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/event"
 )
 
 type PowerJob struct {
@@ -34,9 +35,24 @@ func GetPowerState(switchId string) (bool, error) {
 		return false, err
 	}
 	if !switchExists {
-		return false, fmt.Errorf("can not get power state of switch '%s': switch does not exists", switchId)
+		return false, fmt.Errorf("Could not get power state of switch '%s': switch does not exists", switchId)
 	}
 	return switchItem.PowerOn, nil
+}
+
+// As setPower, just with additional logs
+func SetPower(switchId string, powerOn bool) error {
+	err := setPower(switchId, powerOn)
+	if err != nil {
+		go event.Warn("Hardware Error", fmt.Sprintf("The hardware failed while a user tried to interact with switch '%s': Error: %s", switchId, err.Error()))
+		return err
+	}
+	if powerOn {
+		go event.Info("User Activated Switch", fmt.Sprintf("Switch %s was activated", switchId))
+	} else {
+		go event.Info("User Deactivated Switch", fmt.Sprintf("Switch %s was deactivated", switchId))
+	}
+	return nil
 }
 
 // Sets the powerstate of a specific switch

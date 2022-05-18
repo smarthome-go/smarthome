@@ -8,7 +8,6 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/user"
 	"github.com/smarthome-go/smarthome/server/middleware"
 )
@@ -127,7 +126,6 @@ func AddUserPermission(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to add permission", Error: "user is already in possession of this permission"})
 		return
 	}
-	go event.Info("Added User Permission", fmt.Sprintf("Added permission %s to user %s.", request.Permission, request.Username))
 	Res(w, Response{Success: true, Message: fmt.Sprintf("successfully added permission `%s` to user `%s`", request.Permission, request.Username)})
 }
 
@@ -237,7 +235,6 @@ func AddSwitchPermission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
-	go event.Info("Added Switch Permission", fmt.Sprintf("Added switch permission %s to user %s.", request.Switch, request.Username))
 	Res(w, Response{Success: true, Message: "successfully added switch permission to user"})
 }
 
@@ -287,7 +284,6 @@ func RemoveSwitchPermission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
-	go event.Info("Removed Switch Permission", fmt.Sprintf("Removed switch permission %s from user %s.", request.Switch, request.Username))
 	Res(w, Response{Success: true, Message: "successfully removed switch permission from user"})
 }
 

@@ -52,9 +52,9 @@ const cooldown = 500
 // Main interface for interacting with the queuing system
 // Usage: SetPower("s1", true)
 // Waits until all jobs are completed, can return an error
-func SetPower(switchName string, powerOn bool) error {
+func setPower(switchId string, powerOn bool) error {
 	uniqueId := time.Now().UnixNano()
-	addJobToQueue(switchName, powerOn, uniqueId)
+	addJobToQueue(switchId, powerOn, uniqueId)
 	result := consumeResult(uniqueId)
 	return result.Error
 }

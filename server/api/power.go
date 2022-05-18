@@ -2,11 +2,9 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/hardware"
 	"github.com/smarthome-go/smarthome/server/middleware"
 )
@@ -57,15 +55,9 @@ func PowerPostHandler(w http.ResponseWriter, r *http.Request) {
 	if err := hardware.SetPower(request.Switch, request.PowerOn); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "hardware error", Error: "failed to communicate with hardware"})
-		go event.Warn("Hardware Error", fmt.Sprintf("The hardware failed while %s tried to interact with switch %s.", username, request.Switch))
 		return
 	}
 	Res(w, Response{Success: true, Message: "power action successful"})
-	if request.PowerOn {
-		go event.Info("User Activated Switch", fmt.Sprintf("%s activated switch %s", username, request.Switch))
-	} else {
-		go event.Info("User Deactivated Switch", fmt.Sprintf("%s deactivated switch %s", username, request.Switch))
-	}
 }
 
 // Returns a list of power states, no authentication required
