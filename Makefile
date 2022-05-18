@@ -73,11 +73,6 @@ cleanall: clean
 	rm -rf build
 	rm -f smarthome
 
-# Mysql Database
-mysql:
-	sudo systemctl start docker
-	cd docker && docker-compose up -d
-
 # Builds
 build: setup web all linux clean
 

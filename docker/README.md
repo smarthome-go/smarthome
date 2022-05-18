@@ -1,10 +1,4 @@
 # Docker
-
-## Getting Started Via Docker
-1. Copy the content of `docker-compose.yml` or download it.
-
-
-
 ## Example Docker-Compose File
 
 ```yml
