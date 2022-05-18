@@ -28,6 +28,8 @@ services:
     ports:
       - 8123:80 # Right side must be equal to `SMARTHOME_PORT`
     restart: unless-stopped
+    # volumes:
+      #  - /path/to/data:/app/data
 
   smarthome-mariadb:
     image: mariadb
@@ -45,4 +47,8 @@ services:
       # Root password for maintenance only
       - MARIADB_ROOT_PASSWORD=password
     restart: unless-stopped
+    # volumes:
+      # - /path/to/db:/var/lib/mysql
+
+
 ```
