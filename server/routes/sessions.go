@@ -26,7 +26,6 @@ func loginPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	loginValid, err := user.ValidateCredentials(loginRequest.Username, loginRequest.Password)
 	if err != nil {
-		log.Error("User failed to login: database failure.")
 		w.WriteHeader(http.StatusServiceUnavailable)
 		api.Res(w, api.Response{Success: false, Message: "login failed", Error: "could not validate login: internal error: database failure"})
 		return
@@ -42,13 +41,12 @@ func loginPostHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		w.WriteHeader(http.StatusNoContent)
 		log.Debug(fmt.Sprintf("User %s logged in successfully", loginRequest.Username))
-		go event.Info("Successful login", fmt.Sprintf("%s logged in", loginRequest.Username))
+		go event.Info("Successful login", fmt.Sprintf("User %s logged in", loginRequest.Username))
 		return
 	}
-	log.Debug("Login failed: invalid credentials")
 	w.WriteHeader(http.StatusUnauthorized)
 	api.Res(w, api.Response{Success: false, Message: "login failed", Error: "invalid credentials"})
-	go event.Warn("Failed Login", fmt.Sprintf("Someone is tying to login to the account of %s", loginRequest.Username))
+	event.Warn("Failed Login Attempt", fmt.Sprintf("Failed login attempt of user account %s", loginRequest.Username))
 }
 
 // invalidates the user session and then redirects back to the login page
