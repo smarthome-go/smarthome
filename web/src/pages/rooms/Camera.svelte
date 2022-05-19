@@ -1,76 +1,76 @@
 <script lang="ts">
-    import IconButton from '@smui/icon-button'
-    import { createEventDispatcher,onMount } from 'svelte/internal'
-    import Progress from '../../components/Progress.svelte'
-    import { createSnackbar,hasPermission,sleep } from '../../global'
-    import EditCamera from './dialogs/camera/EditCamera.svelte'
-    import ViewCamera from './dialogs/camera/ViewCamera.svelte'
+    import IconButton from '@smui/icon-button';
+    import { createEventDispatcher,onMount } from 'svelte/internal';
+    import Progress from '../../components/Progress.svelte';
+    import { createSnackbar,hasPermission,sleep } from '../../global';
+    import EditCamera from './dialogs/camera/EditCamera.svelte';
+    import ViewCamera from './dialogs/camera/ViewCamera.svelte';
 
     // Event dispatcher
-    const dispatch = createEventDispatcher()
+    const dispatch = createEventDispatcher();
     function deleteSelf() {
-        dispatch('delete', null)
+        dispatch('delete', null);
     }
 
     // Exported in order to allow the parent to tell the camera to reload
     // Reload the image if a switch was changed
-    export let reload
+    export let reload;
     $: if (reload) {
-        updateImage()
+        updateImage();
     }
 
     // Reloads the image 3 times with a delay of 4s between each iteration
     async function updateImage() {
-        if (!loaded) return // If the image is not initially loaded, (first page load), then stop here
+        if (!loaded) return; // If the image is not initially loaded, (first page load), then stop here
         for (let i = 0; i < 3; i++) {
-            await sleep(4000)
-            await loadImage()
+            await sleep(4000);
+            await loadImage();
         }
     }
 
     // Camera metadata
-    export let id: string
-    export let name: string
-    export let url: string
+    export let id: string;
+    export let name: string;
+    export let url: string;
 
     // Keeps track of dialog state
-    let viewOpen = false
-    let editOpen = false
+    let viewOpen = false;
+    let editOpen = false;
 
-    let loading = true
+    let loading = true;
     // Indicates that the fetching of the camera feed is complete
-    let loaded = false
+    let loaded = false;
     // Indicates wheter the fetching of the camera feed has failed
-    let error = false
+    let error = false;
 
     // Determines if edit button should be shown
-    let hasEditPermission: boolean
+    let hasEditPermission: boolean;
     onMount(async () => {
-        hasEditPermission = await hasPermission('modifyRooms')
-    })
+        hasEditPermission = await hasPermission('modifyRooms');
+    });
     // Creates an empty image
-    let img = new Image()
-    
+    let img = new Image();
+
     // Appends the suffix of the currenty unix-millis to the image's url in order to force a refresh
-    // If the image fails to load, a snackbar is created and the `error` boolean is set to `true` 
+    // If the image fails to load, a snackbar is created and the `error` boolean is set to `true`
     async function loadImage() {
-        loading = true
+        loading = true;
         img.onload = () => {
-            loaded = true
-            loading = false
-            error = false
-        }
+            loaded = true;
+            loading = false;
+            error = false;
+        };
         img.onerror = () => {
-            loading = false
-            $createSnackbar(`Video feed of camera '${id}' failed to load`)
-            error = true
-        }
-        img.src = `/api/camera/feed/${id}?${new Date().getTime()}`
-        while (loading) await sleep(5)
+            loading = false;
+            $createSnackbar(`Video feed of camera '${id}' failed to load`);
+            error = true;
+        };
+        img.src = `/api/camera/feed/${id}?${new Date().getTime()}`;
+        while (loading) await sleep(5);
     }
     // Sends a modification request to the server
     async function modifyCamera() {
-        loading = true
+        loading = true;
         try {
             const res = await (
                 await fetch('/api/camera/modify', {
@@ -78,16 +78,16 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id, name, url }),
                 })
-            ).json()
-            if (!res.success) throw Error(res.error)
-            loadImage()
+            ).json();
+            if (!res.success) throw Error(res.error);
+            loadImage();
         } catch (err) {
-            $createSnackbar(`Could not edit camera: ${err}`)
+            $createSnackbar(`Could not edit camera: ${err}`);
         }
-        loading = false
+        loading = false;
     }
     // Load the image initially
-    onMount(loadImage)
+    onMount(loadImage);
 </script>
 
 <!-- Fullscreen camera feed -->
@@ -100,7 +100,6 @@
         {id}
         bind:name
         bind:url
-
         on:modify={modifyCamera}
         on:delete={deleteSelf}
     />
@@ -132,7 +131,7 @@
                         class="material-icons"
                         title="Edit Camera"
                         on:click={() => {
-                            editOpen = true
+                            editOpen = true;
                         }}>edit</IconButton
                     >
                 {/if}
@@ -145,7 +144,7 @@
                     class="material-icons"
                     title="View Camera"
                     on:click={() => {
-                        viewOpen = true
+                        viewOpen = true;
                     }}>preview</IconButton
                 >
             </div>
@@ -156,13 +155,24 @@
 <style lang="scss">
     @use '../../mixins' as *;
     .camera {
-        height: 9rem;
-        min-width: 16rem;
+        height: 100%;
+        width: auto;
+        aspect-ratio: 16/9;
         background-color: var(--clr-height-1-3);
         position: relative;
         border-radius: 0.4rem;
         overflow: hidden;
         flex-shrink: 0;
+
+        @include widescreen {
+            width: 100%;
+            height: auto;
+        }
+
+        @include mobile {
+            width: 100%;
+            heigt: auto;
+        }
     }
     .loader {
         width: 100%;
