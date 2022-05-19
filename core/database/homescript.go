@@ -251,12 +251,12 @@ func DeleteHomescriptById(homescriptId string) error {
 	WHERE Id=?
 	`)
 	if err != nil {
-		log.Error("Failed to delete homescript by id: preparing query failed")
+		log.Error("Failed to delete homescript by id: preparing query failed: ", err.Error())
 		return err
 	}
 	defer query.Close()
 	if _, err := query.Exec(homescriptId); err != nil {
-		log.Error("Failed to delete homescript by id: executing query failed")
+		log.Error("Failed to delete homescript by id: executing query failed: ", err.Error())
 		return err
 	}
 	return nil
