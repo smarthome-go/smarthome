@@ -67,6 +67,7 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/camera/modify", mdl.ApiAuth(mdl.Perm(api.ModifyCamera, database.PermissionModifyRooms))).Methods("PUT")
 	r.HandleFunc("/api/camera/delete", mdl.ApiAuth(mdl.Perm(api.DeleteCamera, database.PermissionModifyRooms))).Methods("DELETE")
 	r.HandleFunc("/api/camera/list/all", mdl.ApiAuth(mdl.Perm(api.GetAllCameras, database.PermissionModifyRooms))).Methods("GET")
+	r.HandleFunc("/api/camera/list/redacted", mdl.ApiAuth(api.GetAllRedactedCameras)).Methods("GET")
 	r.HandleFunc("/api/camera/list/personal", mdl.ApiAuth(mdl.Perm(api.GetCurrentUserCameras, database.PermissionViewCameras))).Methods("GET")
 
 	// Logs for the admin user

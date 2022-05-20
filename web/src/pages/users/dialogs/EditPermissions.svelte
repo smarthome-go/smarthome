@@ -8,12 +8,15 @@
     import { createSnackbar } from '../../../global'
     import {
     allCameras,
+    allCamerasFetched,
     allPermissions,
     allSwitches,
     allSwitchesFetched,
+    fetchAllCameras,
     fetchAllPermissions,
     fetchAllSwitches
     } from '../main'
+    import CameraPermissions from './CameraPermissions.svelte'
     import Permission from './Permission.svelte'
     import SwitchPermission from './SwitchPermission.svelte'
 
@@ -35,7 +38,7 @@
     export let username = ''
     export let permissions: string[] = []
     export let switchPermissions: string[] = []
-    export let cameraPermissions: string[]
+    export let cameraPermissions: string[] = []
 
     $: {
         // Calls handleOpen when `open` or `currentMode` changes
@@ -46,6 +49,7 @@
     function handleOpen() {
         if ($allPermissions.length === 0) fetchAllPermissions()
         if (!$allSwitchesFetched) fetchAllSwitches()
+        if (!$allCamerasFetched) fetchAllCameras()
         if (currentMode == 'Permissions' && !permissionsFetched)
             fetchUserPermissions()
         if (currentMode == 'Switch Permissions' && !switchPermissionsFetched)
@@ -201,18 +205,18 @@
     }
 
     // Removes an arbitrary camera-permission if it is valid and held by the user
-    async function removeCameraPermission(permission: string) {
+    async function removeCameraPermission(id: string) {
         try {
             const res = await (
                 await fetch('/api/user/permissions/camera/delete', {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, switch: permission }),
+                    body: JSON.stringify({ username, id }),
                 })
             ).json()
             if (!res.success) throw Error(res.error)
             cameraPermissions = cameraPermissions.filter(
-                (s) => s !== permission
+                (s) => s !== id
             )
         } catch (err) {
             $createSnackbar(`Failed to remove camera-permission: ${err}`)
@@ -299,13 +303,12 @@
             {/if}
             <div id="switch-permissions">
                 {#each $allCameras as camera (camera.id)}
-                    <SwitchPermission
+                    <CameraPermissions
                         id={camera.id}
                         name={camera.name}
-                        roomId={camera.roomId}
-                        active={switchPermissions.includes(camera.id)}
-                        grantFunc={grantSwitchPermission}
-                        removeFunc={removeSwitchPermission}
+                        active={cameraPermissions.includes(camera.id)}
+                        grantFunc={grantCameraPermission}
+                        removeFunc={removeCameraPermission}
                     />
                 {/each}
             </div>

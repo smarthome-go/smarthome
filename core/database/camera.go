@@ -9,6 +9,11 @@ type Camera struct {
 	RoomId string `json:"roomId"`
 }
 
+type RedactedCamera struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+}
+
 // Creates the table which contains all the cameras
 func createCameraTable() error {
 	_, err := db.Exec(`
@@ -117,8 +122,37 @@ func ListCameras() ([]Camera, error) {
 	return cameras, nil
 }
 
+// Returns a list a list containing all cameras, just without the Url and RoomId
+// Can be used to hide the confidential URL and roomId whilst still listing all cameras
+func ListCamerasRedacted() ([]RedactedCamera, error) {
+	res, err := db.Query(`
+	SELECT
+		Id,
+		Name
+	FROM camera
+	`)
+	if err != nil {
+		log.Error("Failed to list all cameras (redacted): executing query failed: ", err.Error())
+		return nil, err
+	}
+	defer res.Close()
+	cameras := make([]RedactedCamera, 0)
+	for res.Next() {
+		var camera RedactedCamera
+		if err := res.Scan(
+			&camera.Id,
+			&camera.Name,
+		); err != nil {
+			log.Error("Failed to list all cameras (redacted): scanning results failed: ", err.Error())
+			return nil, err
+		}
+		cameras = append(cameras, camera)
+	}
+	return cameras, nil
+}
+
 // Like `ListCameras()` but takes a user string as a filter
-// Only returns camerass to wich the user has access to
+// Only returns cameras to wich the user has access to
 // Used in `ListUserCameras()`
 func ListUserCamerasQuery(username string) ([]Camera, error) {
 	query, err := db.Prepare(`
@@ -173,7 +207,7 @@ func ListUserCameras(username string) ([]Camera, error) {
 	return ListUserCamerasQuery(username)
 }
 
-// Returns the metadata of a given camera, wheter it could be found and a potential error
+// Returns the metadata of a given camera, whether it could be found and a potential error
 func GetCameraById(id string) (cam Camera, exists bool, err error) {
 	query, err := db.Prepare(`
 	SELECT

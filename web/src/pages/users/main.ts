@@ -47,6 +47,7 @@ export const allPermissions: Writable<Permission[]> = writable([])
 export const allSwitches: Writable<Switch[]> = writable([])
 export const allCameras: Writable<Camera[]> = writable([])
 export const allSwitchesFetched: Writable<boolean> = writable(false)
+export const allCamerasFetched: Writable<boolean> = writable(false)
 
 export async function fetchAllPermissions() {
   try {
@@ -67,6 +68,17 @@ export async function fetchAllSwitches() {
     get(createSnackbar)(`Could not load system switches: ${err}`)
   }
   allSwitchesFetched.set(true)
+}
+
+export async function fetchAllCameras() {
+  try {
+    const res = await (await fetch('/api/camera/list/redacted')).json()
+    if (res.success !== undefined && !res.success) throw Error(res.error)
+    allCameras.set(res)
+  } catch (err) {
+    get(createSnackbar)(`Could not load system cameras: ${err}`)
+  }
+  allCamerasFetched.set(true)
 }
 
 export default new App({

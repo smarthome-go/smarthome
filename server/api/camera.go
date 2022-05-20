@@ -53,6 +53,24 @@ func GetAllCameras(w http.ResponseWriter, _ *http.Request) {
 	}
 }
 
+// Returns a list of available redacted cameras as JSON to the user,
+// basic authentication is required because such information is still confidential
+func GetAllRedactedCameras(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	cameras, err := database.ListCamerasRedacted()
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to get cameras", Error: "database failure"})
+		return
+	}
+	if err := json.NewEncoder(w).Encode(cameras); err != nil {
+		log.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		Res(w, Response{Success: false, Message: "failed to get cameras", Error: "could not encode contents"})
+		return
+	}
+}
+
 // Only returns cameras to which the user has access to, authentication required
 func GetCurrentUserCameras(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
