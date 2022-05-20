@@ -48,7 +48,18 @@ func GetForeignUserPermissions(w http.ResponseWriter, r *http.Request) {
 	username, ok := vars["username"]
 	if !ok {
 		w.WriteHeader(http.StatusBadRequest)
-		Res(w, Response{Success: false, Message: "no username provided", Error: "no username provided"})
+		Res(w, Response{Success: false, Message: "failed to get user permissions", Error: "no username provided"})
+		return
+	}
+	_, exists, err := database.GetUserByUsername(username)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to get user permissions", Error: "database failure"})
+		return
+	}
+	if !exists {
+		w.WriteHeader(http.StatusNotFound)
+		Res(w, Response{Success: false, Message: "failed to get user permissions", Error: "invalid username"})
 		return
 	}
 	permissions, err := database.GetUserPermissions(username)
@@ -71,6 +82,17 @@ func GetForeignUserSwitchPermissions(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		w.WriteHeader(http.StatusBadRequest)
 		Res(w, Response{Success: false, Message: "no username provided", Error: "no username provided"})
+		return
+	}
+	_, exists, err := database.GetUserByUsername(username)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to get user permissions", Error: "database failure"})
+		return
+	}
+	if !exists {
+		w.WriteHeader(http.StatusNotFound)
+		Res(w, Response{Success: false, Message: "failed to get user permissions", Error: "invalid username"})
 		return
 	}
 	permissions, err := database.GetUserSwitchPermissions(username)
