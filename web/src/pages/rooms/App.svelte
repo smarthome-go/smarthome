@@ -1,52 +1,52 @@
 <script lang="ts">
-    import Button from '@smui/button/src/Button.svelte';
-    import IconButton from '@smui/icon-button';
-    import Tab,{ Label } from '@smui/tab';
-    import TabBar from '@smui/tab-bar';
-    import { onMount } from 'svelte';
-    import Progress from '../../components/Progress.svelte';
-    import { createSnackbar,hasPermission,sleep } from '../../global';
-    import Page from '../../Page.svelte';
-    import Camera from './Camera.svelte';
-    import AddCamera from './dialogs/camera/AddCamera.svelte';
-    import AddRoom from './dialogs/room/AddRoom.svelte';
-    import EditRoom from './dialogs/room/EditRoom.svelte';
-    import AddSwitch from './dialogs/switch/AddSwitch.svelte';
-    import { loading,Room } from './main';
-    import Switch from './Switch.svelte';
+    import Button from '@smui/button/src/Button.svelte'
+    import IconButton from '@smui/icon-button'
+    import Tab,{ Label } from '@smui/tab'
+    import TabBar from '@smui/tab-bar'
+    import { onMount } from 'svelte'
+    import Progress from '../../components/Progress.svelte'
+    import { createSnackbar,hasPermission,sleep } from '../../global'
+    import Page from '../../Page.svelte'
+    import Camera from './Camera.svelte'
+    import AddCamera from './dialogs/camera/AddCamera.svelte'
+    import AddRoom from './dialogs/room/AddRoom.svelte'
+    import EditRoom from './dialogs/room/EditRoom.svelte'
+    import AddSwitch from './dialogs/switch/AddSwitch.svelte'
+    import { loading,Room } from './main'
+    import Switch from './Switch.svelte'
 
     // If set to true, a camera-reload is triggered
-    let reloadCameras = false;
+    let reloadCameras = false
 
     // Wheter the current-room dialog is open
-    let editOpen = false;
-    let rooms: Room[];
+    let editOpen = false
+    let rooms: Room[]
 
     // Are binded backwards to pass the `open` event to the children
-    let addRoomShow: () => void;
-    let addSwitchShow: () => void;
-    let addCameraShow: () => void;
+    let addRoomShow: () => void
+    let addSwitchShow: () => void
+    let addCameraShow: () => void
 
-    let currentRoom: Room;
+    let currentRoom: Room
     $: if (currentRoom !== undefined)
-        window.localStorage.setItem('current_room', currentRoom.data.id);
+        window.localStorage.setItem('current_room', currentRoom.data.id)
 
     $: if (
         rooms !== undefined &&
         currentRoom !== undefined &&
         !rooms.find((r) => r.data.id === currentRoom.data.id)
     )
-        currentRoom = rooms.slice(-1)[0];
+        currentRoom = rooms.slice(-1)[0]
 
     // Determines if additional buttons for editing rooms should be visible
-    let hasEditPermission: boolean;
+    let hasEditPermission: boolean
     onMount(async () => {
-        hasEditPermission = await hasPermission('modifyRooms');
-    });
+        hasEditPermission = await hasPermission('modifyRooms')
+    })
 
     // Fetches the available rooms
     async function loadRooms(updateExisting: boolean = false) {
-        $loading = true;
+        $loading = true
         try {
             const res = await (
                 await fetch(
@@ -56,36 +56,36 @@
                             : 'personal'
                     }`
                 )
-            ).json();
-            if (res.success === false) throw Error();
+            ).json()
+            if (res.success === false) throw Error()
             if (updateExisting) {
                 for (const room of rooms) {
                     room.switches = (res as Room[]).find(
                         (r) => r.data.id === room.data.id
-                    ).switches;
+                    ).switches
                 }
-            } else rooms = res;
-            const roomId = window.localStorage.getItem('current_room');
+            } else rooms = res
+            const roomId = window.localStorage.getItem('current_room')
             const room =
                 roomId === null
                     ? undefined
-                    : rooms.find((r) => r.data.id === roomId);
-            currentRoom = room === undefined ? rooms[0] : room;
+                    : rooms.find((r) => r.data.id === roomId)
+            currentRoom = room === undefined ? rooms[0] : room
         } catch {
             $createSnackbar('Could not load rooms', [
                 {
                     onClick: () => loadRooms(updateExisting),
                     text: 'retry',
                 },
-            ]);
+            ])
         }
-        while (rooms === undefined) await sleep(10);
-        $loading = false;
+        while (rooms === undefined) await sleep(10)
+        $loading = false
     }
 
     // Adds a room
     async function addRoom(id: string, name: string, description: string) {
-        $loading = true;
+        $loading = true
         try {
             const res = await (
                 await fetch(`/api/room/add`, {
@@ -93,8 +93,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id, name }),
                 })
-            ).json();
-            if (!res.success) throw Error(res.error);
+            ).json()
+            if (!res.success) throw Error(res.error)
             rooms = [
                 ...rooms,
                 {
@@ -106,21 +106,19 @@
                     switches: [],
                     cameras: [],
                 },
-            ];
-            rooms = rooms.sort((a, b) =>
-                a.data.name.localeCompare(b.data.name)
-            );
-            await sleep(0); // Just for fixing js
-            currentRoom = rooms[rooms.findIndex((r) => r.data.id === id)];
+            ]
+            rooms = rooms.sort((a, b) => a.data.name.localeCompare(b.data.name))
+            await sleep(0) // Just for fixing js
+            currentRoom = rooms[rooms.findIndex((r) => r.data.id === id)]
         } catch (err) {
-            $createSnackbar(`Failed to create room: ${err}`);
+            $createSnackbar(`Failed to create room: ${err}`)
         }
-        $loading = false;
+        $loading = false
     }
 
     // Adds a switch
     async function addSwitch(id: string, name: string, watts: number) {
-        $loading = true;
+        $loading = true
         try {
             const res = await (
                 await fetch('/api/switch/add', {
@@ -133,26 +131,26 @@
                         roomId: currentRoom.data.id,
                     }),
                 })
-            ).json();
-            if (!res.success) throw Error(res.error);
+            ).json()
+            if (!res.success) throw Error(res.error)
             const currentRoomIndex = rooms.findIndex(
                 (r) => r.data.id == currentRoom.data.id
-            );
+            )
 
             currentRoom.switches = [
                 ...currentRoom.switches,
                 { id, name, powerOn: false, watts },
-            ];
-            rooms[currentRoomIndex] = currentRoom;
+            ]
+            rooms[currentRoomIndex] = currentRoom
         } catch (err) {
-            $createSnackbar(`Could not create switch: ${err}`);
+            $createSnackbar(`Could not create switch: ${err}`)
         }
-        $loading = false;
+        $loading = false
     }
 
     // Adds a camera
     async function addCamera(id: string, name: string, url: string) {
-        $loading = true;
+        $loading = true
         try {
             const res = await (
                 await fetch('/api/camera/add', {
@@ -165,25 +163,25 @@
                         roomId: currentRoom.data.id,
                     }),
                 })
-            ).json();
-            if (!res.success) throw Error(res.error);
+            ).json()
+            if (!res.success) throw Error(res.error)
             const currentRoomIndex = rooms.findIndex(
                 (r) => r.data.id == currentRoom.data.id
-            );
+            )
             currentRoom.cameras = [
                 ...currentRoom.cameras,
                 { id, name, url, roomId: currentRoom.data.id },
-            ];
-            rooms[currentRoomIndex] = currentRoom;
+            ]
+            rooms[currentRoomIndex] = currentRoom
         } catch (err) {
-            $createSnackbar(`Could not create camera: ${err}`);
+            $createSnackbar(`Could not create camera: ${err}`)
         }
-        $loading = false;
+        $loading = false
     }
 
     // Deletes a camera
     async function deleteCamera(id: string) {
-        $loading = true;
+        $loading = true
         try {
             const res = await (
                 await fetch('/api/camera/delete', {
@@ -191,20 +189,18 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id }),
                 })
-            ).json();
-            if (!res.success) throw Error(res.error);
-            currentRoom.cameras = currentRoom.cameras.filter(
-                (c) => c.id !== id
-            );
+            ).json()
+            if (!res.success) throw Error(res.error)
+            currentRoom.cameras = currentRoom.cameras.filter((c) => c.id !== id)
         } catch (err) {
-            $createSnackbar(`Could not delete camera: ${err}`);
+            $createSnackbar(`Could not delete camera: ${err}`)
         }
-        $loading = false;
+        $loading = false
     }
 
     // Deletes a switch
     async function deleteSwitch(id: string) {
-        $loading = true;
+        $loading = true
         try {
             const res = await (
                 await fetch('/api/switch/delete', {
@@ -212,15 +208,15 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id }),
                 })
-            ).json();
-            if (!res.success) throw Error(res.error);
+            ).json()
+            if (!res.success) throw Error(res.error)
             currentRoom.switches = currentRoom.switches.filter(
                 (s) => s.id !== id
-            );
+            )
         } catch (err) {
-            $createSnackbar(`Could not delete this switch: ${err}`);
+            $createSnackbar(`Could not delete this switch: ${err}`)
         }
-        $loading = false;
+        $loading = false
     }
 </script>
 
@@ -268,7 +264,7 @@
                 <IconButton
                     class="material-icons"
                     on:click={() => {
-                        loadRooms(true);
+                        loadRooms(true)
                     }}>refresh</IconButton
                 >
             {/if}
@@ -284,12 +280,17 @@
     <div id="content">
         <div id="switches" class="mdc-elevation--z1">
             {#if currentRoom == undefined}
-                <div>
+                <div id="no-rooms">
+                    <i class="material-icons">no_meeting_room</i>
                     <h6>There are currently no rooms.</h6>
-                    <Button variant="outlined" on:click={addRoomShow}>
-                        <Label>Create Room</Label>
-                    </Button>
                 </div>
+                {#if hasEditPermission}
+                    <div>
+                        <Button variant="outlined" on:click={addRoomShow}>
+                            <Label>Create Room</Label>
+                        </Button>
+                    </div>
+                {/if}
             {:else}
                 {#each currentRoom !== undefined ? currentRoom.switches : [] as sw (sw.id)}
                     <Switch
@@ -337,6 +338,21 @@
 
 <style lang="scss">
     @use '../../mixins' as *;
+
+    #no-rooms {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        width: 100%;
+        margin-top: 3rem;
+        color: var(--clr-text-hint);
+
+        i {
+            font-size: 5rem;
+        }
+    }
+
     #tabs {
         background-color: var(--clr-height-0-8);
         padding-right: 1rem;
