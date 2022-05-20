@@ -21,9 +21,40 @@ func createHasCameraPermissionsTable() error {
 	return nil
 }
 
+// Returns the camera-permissions of an arbitrary user in the form of a slice of strings
+func GetUserCameraPermissions(username string) ([]string, error) {
+	query, err := db.Prepare(`
+	SELECT Camera
+	FROM hasCameraPermission
+	WHERE Username=?
+	`)
+	if err != nil {
+		log.Error("Could not list user camera permissions: failed to prepare query: ", err.Error())
+		return make([]string, 0), err
+	}
+	defer query.Close()
+	res, err := query.Query(username)
+	if err != nil {
+		log.Error("Could not list user switch camera: failed to execute query: ", err.Error())
+		return make([]string, 0), err
+	}
+	defer res.Close()
+	permissions := make([]string, 0)
+	for res.Next() {
+		var permission string
+		err := res.Scan(&permission)
+		if err != nil {
+			log.Error("Could get userCameraPermissions. Failed to scan query: ", err.Error())
+			return permissions, err
+		}
+		permissions = append(permissions, permission)
+	}
+	return permissions, nil
+}
+
 // Adds a given cameraId to an arbitrary user
 // The existence of the camera and the user should be validated beforehand
-func AddUserCameraPermission(username string, cameraId string) error {
+func AddUserCameraPermission(username string, cameraId string) (modified bool, err error) {
 	query, err := db.Prepare(`
 	INSERT INTO
 	hasCameraPermission(
@@ -34,18 +65,24 @@ func AddUserCameraPermission(username string, cameraId string) error {
 	`)
 	if err != nil {
 		log.Error("Failed to add camera permission to user: preparing query failed: ", err.Error())
-		return err
+		return false, err
 	}
 	defer query.Close()
-	if _, err := query.Exec(username, cameraId); err != nil {
+	res, err := query.Exec(username, cameraId)
+	if err != nil {
 		log.Error("Failed to add camera permission to user: executing query failed: ", err.Error())
-		return err
+		return false, err
 	}
-	return nil
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		log.Error("Failed to add camera permission to user: failed to retrieve rows affected count: ", err.Error())
+		return false, err
+	}
+	return rowsAffected == 1, nil
 }
 
 // Removes a camera permission of an arbitrary user
-func RemoveUserCameraPermission(username string, cameraId string) error {
+func RemoveUserCameraPermission(username string, cameraId string) (modified bool, err error) {
 	query, err := db.Prepare(`
 	DELETE FROM
 	hasCameraPermission
@@ -54,17 +91,23 @@ func RemoveUserCameraPermission(username string, cameraId string) error {
 	`)
 	if err != nil {
 		log.Error("Failed to remove user camera permission: preparing query failed: ", err.Error())
-		return err
+		return false, err
 	}
 	defer query.Close()
-	if _, err := query.Exec(username, cameraId); err != nil {
+	res, err := query.Exec(username, cameraId)
+	if err != nil {
 		log.Error("Failed to remove user camera permission: executing query failed: ", err.Error())
-		return err
+		return false, err
 	}
-	return nil
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		log.Error("Failed to add camera permission to user: failed to retrieve rows affected count: ", err.Error())
+		return false, err
+	}
+	return rowsAffected == 1, nil
 }
 
-// Deletes all occurences of a given camera, used if a camera is deleted
+// Deletes all occurrences of a given camera, used if a camera is deleted
 func RemoveCameraFromPermissions(cameraId string) error {
 	query, err := db.Prepare(`
 	DELETE FROM

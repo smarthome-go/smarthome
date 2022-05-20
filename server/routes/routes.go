@@ -63,11 +63,11 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/switch/delete", mdl.ApiAuth(mdl.Perm(api.DeleteSwitch, database.PermissionModifyRooms))).Methods("DELETE")
 
 	// Cameras
-	r.HandleFunc("/api/camera/list/all", mdl.ApiAuth(mdl.Perm(api.GetAllCameras, database.PermissionModifyRooms))).Methods("GET")
-	r.HandleFunc("/api/camera/list/personal", mdl.ApiAuth(mdl.Perm(api.GetUserCameras, database.PermissionViewCameras))).Methods("GET")
 	r.HandleFunc("/api/camera/add", mdl.ApiAuth(mdl.Perm(api.CreateCamera, database.PermissionModifyRooms))).Methods("POST")
 	r.HandleFunc("/api/camera/modify", mdl.ApiAuth(mdl.Perm(api.ModifyCamera, database.PermissionModifyRooms))).Methods("PUT")
 	r.HandleFunc("/api/camera/delete", mdl.ApiAuth(mdl.Perm(api.DeleteCamera, database.PermissionModifyRooms))).Methods("DELETE")
+	r.HandleFunc("/api/camera/list/all", mdl.ApiAuth(mdl.Perm(api.GetAllCameras, database.PermissionModifyRooms))).Methods("GET")
+	r.HandleFunc("/api/camera/list/personal", mdl.ApiAuth(mdl.Perm(api.GetCurrentUserCameras, database.PermissionViewCameras))).Methods("GET")
 
 	// Logs for the admin user
 	r.HandleFunc("/api/logs/delete/old", mdl.ApiAuth(mdl.Perm(api.FlushOldLogs, database.PermissionLogs))).Methods("DELETE")
@@ -81,17 +81,23 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/user/avatar/upload", mdl.ApiAuth(api.HandleAvatarUpload)).Methods("POST")
 	r.HandleFunc("/api/user/avatar/delete", mdl.ApiAuth(api.DeleteAvatar)).Methods("DELETE")
 
-	// Permissions
+	/** Permissions */
+	// Normal Permissions
 	r.HandleFunc("/api/user/permissions/add", mdl.ApiAuth(mdl.Perm(api.AddUserPermission, database.PermissionManageUsers))).Methods("POST")
 	r.HandleFunc("/api/user/permissions/delete", mdl.ApiAuth(mdl.Perm(api.RemoveUserPermission, database.PermissionManageUsers))).Methods("DELETE")
 	r.HandleFunc("/api/permissions/list/all", api.ListPermissions).Methods("GET")
 	r.HandleFunc("/api/user/permissions/list/personal", mdl.ApiAuth(api.GetCurrentUserPermissions)).Methods("GET")
-	r.HandleFunc("/api/user/permissions/list/user/{username}", mdl.ApiAuth(api.GetForeignUserPermissions)).Methods("GET")
+	r.HandleFunc("/api/user/permissions/list/user/{username}", mdl.ApiAuth(mdl.Perm(api.GetForeignUserPermissions, database.PermissionManageUsers))).Methods("GET")
 
 	// Switch Permissions
 	r.HandleFunc("/api/user/permissions/switch/add", mdl.ApiAuth(mdl.Perm(api.AddSwitchPermission, database.PermissionManageUsers))).Methods("POST")
 	r.HandleFunc("/api/user/permissions/switch/delete", mdl.ApiAuth(mdl.Perm(api.RemoveSwitchPermission, database.PermissionManageUsers))).Methods("DELETE")
 	r.HandleFunc("/api/user/permissions/switch/list/user/{username}", mdl.ApiAuth(mdl.Perm(api.GetForeignUserSwitchPermissions, database.PermissionManageUsers))).Methods("GET")
+
+	// Camera Permissions
+	r.HandleFunc("/api/user/permissions/camera/add", mdl.ApiAuth(mdl.Perm(api.AddCameraPermission, database.PermissionManageUsers))).Methods("POST")
+	r.HandleFunc("/api/user/permissions/camera/delete", mdl.ApiAuth(mdl.Perm(api.RemoveCameraPermission, database.PermissionManageUsers))).Methods("DELETE")
+	r.HandleFunc("/api/user/permissions/camera/list/user/{username}", mdl.ApiAuth(mdl.Perm(api.GetForeignUserCameraPermission, database.PermissionManageUsers))).Methods("GET")
 
 	// Creating and removing users
 	r.HandleFunc("/api/user/manage/list", mdl.ApiAuth(mdl.Perm(api.ListUsers, database.PermissionManageUsers))).Methods("GET")

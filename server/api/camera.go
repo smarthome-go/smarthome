@@ -6,10 +6,11 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"golang.org/x/exp/utf8string"
+
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/server/middleware"
 	"github.com/smarthome-go/smarthome/services/camera"
-	"golang.org/x/exp/utf8string"
 )
 
 type AddCameraRequest struct {
@@ -27,6 +28,11 @@ type ModifyCameraRequest struct {
 
 type DeleteCameraRequest struct {
 	Id string `json:"id"`
+}
+
+type CameraPermissionRequest struct {
+	Id       string `json:"id"`
+	Username string `json:"username"`
 }
 
 // Returns a list of available cameras as JSON to the user,
@@ -48,7 +54,7 @@ func GetAllCameras(w http.ResponseWriter, _ *http.Request) {
 }
 
 // Only returns cameras to which the user has access to, authentication required
-func GetUserCameras(w http.ResponseWriter, r *http.Request) {
+func GetCurrentUserCameras(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
@@ -187,7 +193,7 @@ func DeleteCamera(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to delete camera", Error: "database failure"})
 		return
 	}
-	Res(w, Response{Success: true, Message: "succesfully deleted camera"})
+	Res(w, Response{Success: true, Message: "successfully deleted camera"})
 }
 
 ///Camera feed and image fetching ///

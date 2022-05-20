@@ -7,6 +7,7 @@
     import Progress from '../../../components/Progress.svelte'
     import { createSnackbar } from '../../../global'
     import {
+    allCameras,
     allPermissions,
     allSwitches,
     allSwitchesFetched,
@@ -28,11 +29,13 @@
     // Keeps track of content and wether it has been fetched
     let permissionsFetched = false
     let switchPermissionsFetched = false
+    let cameraPermissionsFetched = false
 
     // Exported user data
     export let username = ''
     export let permissions: string[] = []
     export let switchPermissions: string[] = []
+    export let cameraPermissions: string[]
 
     $: {
         // Calls handleOpen when `open` or `currentMode` changes
@@ -47,6 +50,8 @@
             fetchUserPermissions()
         if (currentMode == 'Switch Permissions' && !switchPermissionsFetched)
             fetchUserSwitchPermissions()
+        if (currentMode == 'Camera Permissions' && !cameraPermissionsFetched)
+            fetchUserCameraPermissions()
     }
 
     /**
@@ -83,6 +88,23 @@
             switchPermissions = res
         } catch (err) {
             $createSnackbar(`Failed to load user switch permissions: ${err}`)
+        }
+    }
+
+    // Retrieves the users personal camera permissions
+    async function fetchUserCameraPermissions() {
+        try {
+            const res = await (
+                await fetch(
+                    `/api/user/permissions/camera/list/user/${username}`
+                )
+            ).json()
+            if (res.success !== undefined && !res.success)
+                throw Error(res.error)
+            cameraPermissionsFetched = true
+            cameraPermissions = res
+        } catch (err) {
+            $createSnackbar(`Failed to load user camera permissions: ${err}`)
         }
     }
 
@@ -159,6 +181,44 @@
             throw Error()
         }
     }
+
+    // Adds an arbitrary camera-permission if it is valid and not held by the user
+    async function grantCameraPermission(id: string) {
+        try {
+            const res = await (
+                await fetch('/api/user/permissions/camera/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, id }),
+                })
+            ).json()
+            if (!res.success) throw Error(res.error)
+            cameraPermissions = [...cameraPermissions, id]
+        } catch (err) {
+            $createSnackbar(`Failed to grant camera-permisssion: ${err}`)
+            throw Error()
+        }
+    }
+
+    // Removes an arbitrary camera-permission if it is valid and held by the user
+    async function removeCameraPermission(permission: string) {
+        try {
+            const res = await (
+                await fetch('/api/user/permissions/camera/delete', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, switch: permission }),
+                })
+            ).json()
+            if (!res.success) throw Error(res.error)
+            cameraPermissions = cameraPermissions.filter(
+                (s) => s !== permission
+            )
+        } catch (err) {
+            $createSnackbar(`Failed to remove camera-permission: ${err}`)
+            throw Error()
+        }
+    }
 </script>
 
 <Dialog bind:open fullscreen aria-labelledby="title" aria-describedby="content">
@@ -170,7 +230,15 @@
         <div id="tabs">
             <TabBar
                 tabs={permissions.includes('setPower')
-                    ? ['Permissions', 'Switch Permissions']
+                    ? permissions.includes('viewCameras')
+                        ? [
+                              'Permissions',
+                              'Switch Permissions',
+                              'Camera Permissions',
+                          ]
+                        : ['Permissions', 'Switch Permissions']
+                    : permissions.includes('viewCameras')
+                    ? ['Permissions', 'Camera Permissions']
                     : ['Permissions']}
                 let:tab={mode}
                 bind:active={currentMode}
@@ -190,7 +258,7 @@
                 }}>refresh</IconButton
             >
         </div>
-        {#if currentMode == 'Permissions'}
+        {#if currentMode === 'Permissions'}
             {#if $allPermissions.length == 0 || !permissionsFetched}
                 <Progress type="linear" loading={true} />
                 <span>Preparing editor...</span>
@@ -207,7 +275,7 @@
                     />
                 {/each}
             </div>
-        {:else}
+        {:else if currentMode === 'Switch Permissions'}
             {#if !switchPermissionsFetched}
                 <Progress type="linear" loading={true} />
                 <span>Preparing editor...</span>
@@ -219,6 +287,23 @@
                         name={switchItem.name}
                         roomId={switchItem.roomId}
                         active={switchPermissions.includes(switchItem.id)}
+                        grantFunc={grantSwitchPermission}
+                        removeFunc={removeSwitchPermission}
+                    />
+                {/each}
+            </div>
+        {:else if currentMode === 'Camera Permissions'}
+            {#if !cameraPermissionsFetched}
+                <Progress type="linear" loading={true} />
+                <span>Preparing editor...</span>
+            {/if}
+            <div id="switch-permissions">
+                {#each $allCameras as camera (camera.id)}
+                    <SwitchPermission
+                        id={camera.id}
+                        name={camera.name}
+                        roomId={camera.roomId}
+                        active={switchPermissions.includes(camera.id)}
                         grantFunc={grantSwitchPermission}
                         removeFunc={removeSwitchPermission}
                     />

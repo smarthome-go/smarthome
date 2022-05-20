@@ -33,11 +33,21 @@ export interface UserData {
   switchPermissions: string[]
 }
 
+export interface Camera {
+  id: string
+  name: string
+  url: string
+  roomId: string
+}
+
+
 export const loading: Writable<boolean> = writable(false)
 export const users: Writable<UserData[]> = writable([])
 export const allPermissions: Writable<Permission[]> = writable([])
 export const allSwitches: Writable<Switch[]> = writable([])
+export const allCameras: Writable<Camera[]> = writable([])
 export const allSwitchesFetched: Writable<boolean> = writable(false)
+
 export async function fetchAllPermissions() {
   try {
     const res = await (await fetch('/api/permissions/list/all')).json()
