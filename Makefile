@@ -43,6 +43,9 @@ version:
 # Change version on build
 release: cleanall test build docker
 
+gh-release:
+	gh release create $(version) ./build/*.tar.gz -F ./docs/CHANGELOG.md --prerelease
+
 vite-dev:
 	cd web && npm run dev
 
