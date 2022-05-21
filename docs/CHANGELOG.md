@@ -1,9 +1,25 @@
-## Changelog for 0.0.30-beta
+## Changelog for 0.0.30
 
-## Rooms Page
-- Added support for different screen sizes, such as mobile.
-- Cameras will now use the maximum space available in the *cameras* section
-- The *rooms* feature is now completely finished (*rc*)
+### Rooms Page
+- Added a *local settings* dialog for configuring the reload behavior of cameras for the current device
+- Fixed switch-modification in GUI via intermediate stage
+- Optimized GUI code for accessibility and better scaling
+- Improved display of cam GUI (add perm. indicator)
+- Added additional texts for empty sections in rooms
+- Accounted for cameras when listing personal rooms
+- Added camera-permissions frontend in user settings
+- Added better display for when the user has no rooms
 
-## Backend
-- Added additional error log to the function which deletes a *Homescript*
+### User Management
+- Changed user-permissions editor icon
+### Backend
+- Added camera permissions API backend
+- Accounted for cameras when listing personal rooms
+- (*Bugfix*) Added safety checks for user management backend
+- (*Bugfix*) Added safety validation when deleting a Homescript 
+- (*Bugfix*) Removed double-log in camera backend error
+- (*Bugfix*) Fixed additional 2 bugs in backend camera-permissions
+- (*Improvement*) Improved efficiency of ensureValidFormat in cams
+
+### Workflow
+- Added Github-CLI makefile target for creating a GH release
