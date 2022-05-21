@@ -20,8 +20,7 @@ func fetchImageBytes(imgURL string, timeout int) ([]byte, error) {
 		return nil, err
 	}
 	if imgURLStruct.Scheme != "https" && imgURLStruct.Scheme != "http" {
-		log.Warn(fmt.Sprintf("Protocol '%s' is not supported to fetch images. Please use 'http' or 'https'", imgURLStruct.Scheme))
-		return nil, fmt.Errorf("Unsupported protocol error: Protocol: '%s' can not be used to fetch images. Please use 'http' or 'https' instead", imgURLStruct.Scheme)
+		return nil, fmt.Errorf("Unsupported protocol error: Protocol: '%s' can not be used to fetch images. Please use 'http' or 'https' instead.", imgURLStruct.Scheme)
 	}
 	log.Trace(fmt.Sprintf("Initiating image fetching from: '%s'", imgURLStruct.Host))
 	client := http.Client{Timeout: time.Second * time.Duration(timeout)}
