@@ -516,7 +516,7 @@
 
         @include widescreen {
             height: calc(100vh - 5rem);
-            width: 21rem;
+            min-width: 21rem;
             flex-direction: column;
             overflow-y: auto;
             overflow-x: hidden;
