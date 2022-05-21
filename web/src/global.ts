@@ -50,7 +50,7 @@ export function contrast(color: string): 'black' | 'white' {
 const cachedColorDark: string = localStorage.getItem("smarthome_primary_color_dark")
 const cachedColorLight: string = localStorage.getItem("smarthome_primary_color_light")
 let cachedTheme = true
-const cachedThemeTemp = localStorage.getItem("smarthome_theme") === 'true'
+const cachedThemeTemp = localStorage.getItem("smarthome_dark_theme_enabled") === 'true'
 
 if (cachedColorDark !== null && cachedColorLight !== null && cachedTheme !== null) {
     document.documentElement.style.setProperty('--clr-primary-dark', cachedColorDark)
@@ -111,7 +111,7 @@ export async function fetchData() {
     // Update cached primary colors
     localStorage.setItem("smarthome_primary_color_dark", get(data).userData.user.primaryColorDark)
     localStorage.setItem("smarthome_primary_color_light", get(data).userData.user.primaryColorLight)
-    localStorage.setItem("smarthome_theme", get(data).userData.user.darkTheme ? 'true' : 'false')
+    localStorage.setItem("smarthome_dark_theme_enabled", get(data).userData.user.darkTheme ? 'true' : 'false')
 }
 
 export async function fetchUserData(): Promise<UserData> {
