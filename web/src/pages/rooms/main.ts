@@ -26,6 +26,11 @@ export interface Camera {
 
 export const loading: Writable<boolean> = writable(false)
 
+// Specifies whether the cameras will reload every 10 seconds
+export const periodicCamReloadEnabled: Writable<boolean> = writable(localStorage.getItem("smarthome_periodic_cam_reload_enabled") === "true")
+// Specifies whether
+export const powerCamReloadEnabled: Writable<boolean> = writable(localStorage.getItem("smarthome_power_cam_reload_enabled") === "true")
+
 export default new App({
     target: document.body,
 })

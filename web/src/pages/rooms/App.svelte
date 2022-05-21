@@ -13,7 +13,7 @@
     import EditRoom from './dialogs/room/EditRoom.svelte'
     import LocalSettings from './dialogs/room/LocalSettings.svelte'
     import AddSwitch from './dialogs/switch/AddSwitch.svelte'
-    import { loading,Room } from './main'
+    import { loading,powerCamReloadEnabled,Room } from './main'
     import PowerSwitch from './PowerSwitch.svelte'
 
     // If set to true, a camera-reload is triggered
@@ -29,11 +29,6 @@
 
     // Whether the local settings dialog is open
     let localSettingsOpen = false
-
-    // Specifies whether the cameras will reload every 10 seconds
-    let periodicCamReloadEnabled = false
-    // Specifies whether
-    let powerCamReloadEnabled = false
 
     // Are binded backwards to pass the `open` event to the children
     let addRoomShow: () => void
@@ -262,11 +257,7 @@
 
 <Page>
     <AddRoom blacklist={rooms} bind:show={addRoomShow} onAdd={addRoom} />
-    <LocalSettings
-        bind:open={localSettingsOpen}
-        bind:periodicCamReloadEnabled
-        bind:powerCamReloadEnabled
-    />
+    <LocalSettings bind:open={localSettingsOpen} />
     {#if currentRoom !== undefined && hasEditPermission}
         <EditRoom
             bind:open={editOpen}
@@ -350,7 +341,7 @@
                         bind:checked={sw.powerOn}
                         on:delete={() => deleteSwitch(sw.id)}
                         on:modify={modifySwitch}
-                        on:powerChange={() => (reloadCameras = true)}
+                        on:powerChange={() => (reloadCameras = $powerCamReloadEnabled)}
                         on:powerChangeDone={() => (reloadCameras = false)}
                         id={sw.id}
                         name={sw.name}

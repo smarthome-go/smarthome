@@ -5,6 +5,7 @@
     import { createSnackbar,hasPermission,sleep } from '../../global'
     import EditCamera from './dialogs/camera/EditCamera.svelte'
     import ViewCamera from './dialogs/camera/ViewCamera.svelte'
+    import { periodicCamReloadEnabled } from './main'
 
     // Event dispatcher
     const dispatch = createEventDispatcher()
@@ -17,6 +18,17 @@
     export let reload
     $: if (reload) {
         updateImage()
+    }
+
+    // Reloads the image every 10 secons
+    // Only loads the image if the user has activated this function
+    async function constantReload() {
+        // Only load the image if the user has activated it
+        if ($periodicCamReloadEnabled) {
+            await loadImage()
+        }
+        await sleep(10000)
+        constantReload()
     }
 
     // Reloads the image 3 times with a delay of 4s between each iteration
@@ -49,10 +61,11 @@
     onMount(async () => {
         hasEditPermission = await hasPermission('modifyRooms')
         hasViewPermission = await hasPermission('viewCameras')
-        console.log(hasViewPermission)
         // Only load image if the user is allowed to
         if (hasViewPermission || hasEditPermission) await loadImage()
         else loading = false
+        // Activate constant reload function
+        constantReload()
     })
 
     // Creates an empty image

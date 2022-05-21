@@ -3,11 +3,21 @@
     import Dialog,{ Actions,Content,Title } from '@smui/dialog'
     import FormField from '@smui/form-field'
     import Switch from '@smui/switch'
+    import { periodicCamReloadEnabled,powerCamReloadEnabled } from '../../main'
 
     export let open = false
 
-    export let powerCamReloadEnabled = false
-    export let periodicCamReloadEnabled = false
+    function onChange() {
+        console.log('change')
+        localStorage.setItem(
+            'smarthome_periodic_cam_reload_enabled',
+            `${$periodicCamReloadEnabled}`
+        )
+        localStorage.setItem(
+            'smarthome_power_cam_reload_enabled',
+            `${$powerCamReloadEnabled}`
+        )
+    }
 </script>
 
 <Dialog bind:open aria-labelledby="title" aria-describedby="content">
@@ -15,28 +25,34 @@
     <Content id="content">
         <div id="container">
             <div>
-                <span style="color: var(--clr-text);">Description for below</span>
+                <span style="color: var(--clr-text);"
+                    >Reload cameras on power change</span
+                >
                 <FormField>
                     <Switch
-                        bind:checked={powerCamReloadEnabled}
+                        bind:checked={$powerCamReloadEnabled}
+                        on:SMUISwitch:change={onChange}
                         icons={false}
                     />
-                    <span slot="label" class="text-hint"
-                        >Switch reload {powerCamReloadEnabled
+                    <span slot="label" class="text-hint indicator"
+                        >Switch reload {$powerCamReloadEnabled
                             ? 'enabled'
                             : 'disabled'}</span
                     >
                 </FormField>
             </div>
             <div>
-                <span style="color: var(--clr-text);">Description for below</span>
+                <span style="color: var(--clr-text);"
+                    >Reload cameras every 10 seconds</span
+                >
                 <FormField>
                     <Switch
-                        bind:checked={periodicCamReloadEnabled}
+                        bind:checked={$periodicCamReloadEnabled}
+                        on:SMUISwitch:change={onChange}
                         icons={false}
                     />
-                    <span slot="label" class="text-hint"
-                        >Periodic reload {periodicCamReloadEnabled
+                    <span slot="label" class="text-hint indicator"
+                        >Periodic reload {$periodicCamReloadEnabled
                             ? 'enabled'
                             : 'disabled'}</span
                     >
@@ -55,12 +71,13 @@
     #container {
         display: flex;
         flex-direction: column;
+        align-items: center;
         gap: 1rem;
 
         div {
             background-color: var(--clr-height-0-1);
             padding: 1rem;
-            border-radius: .4rem;
+            border-radius: 0.4rem;
             display: flex;
             flex-direction: column;
         }
