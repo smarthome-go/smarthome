@@ -1,6 +1,6 @@
 version: '3.7'
 services:
-  smarthome-mariadb:
+  testing-smarthome-mariadb:
     image: mariadb
     container_name: smarthome-mariadb-testing
     hostname: smarthome-db-testing
@@ -14,3 +14,8 @@ services:
     ports:
       - 3330:3306
     restart: unless-stopped
+    volumes:
+      - testing-data:/var/lib/mysql
+
+volumes:
+  testing-data:

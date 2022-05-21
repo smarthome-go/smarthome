@@ -16,3 +16,7 @@ services:
     ports:
       - 3313:3306
     restart: unless-stopped
+    volumes:
+      - smarthome-data:/var/lib/mysql
+volumes:
+  smarthome-data:
