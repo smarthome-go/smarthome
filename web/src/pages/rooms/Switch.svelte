@@ -59,9 +59,15 @@
 <!-- TODO: make editing work -->
 <EditSwitch
     on:delete={() => dispatch('delete', null)}
+    on:modify={(event) => {
+        name = event.detail.name
+        watts = event.detail.watts
+        event.detail.id = id
+        dispatch('modify', event.detail)
+    }}
     {id}
-    bind:name
-    bind:watts
+    {name}
+    {watts}
     bind:show={showEditSwitch}
 />
 

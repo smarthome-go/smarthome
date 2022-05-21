@@ -44,8 +44,10 @@
 
     // Determines if additional buttons for editing rooms should be visible
     let hasEditPermission: boolean
+    let hasViewCamerasPermission: boolean
     onMount(async () => {
         hasEditPermission = await hasPermission('modifyRooms')
+        hasViewCamerasPermission = await hasPermission('viewCameras')
     })
 
     // Fetches the available rooms
@@ -223,6 +225,28 @@
         }
         $loading = false
     }
+
+    async function modifySwitch(event) {
+        const data = event.detail
+        $loading = true
+        try {
+            const res = await (
+                await fetch('/api/switch/modify', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                })
+            ).json()
+            if (!res.success) throw Error(res.error)
+            // Would be reset on power change if not updated in `currentRoom`
+            let switchInCurrentRoom = currentRoom.switches.find(s => s.id == data.id)
+            switchInCurrentRoom.name = data.name
+            switchInCurrentRoom.watts = data.watts
+        } catch (err) {
+            $createSnackbar(`Could not edit this switch: ${err}`)
+        }
+        $loading = false
+    }
 </script>
 
 <Page>
@@ -303,6 +327,7 @@
                     <Switch
                         bind:checked={sw.powerOn}
                         on:delete={() => deleteSwitch(sw.id)}
+                        on:modify={modifySwitch}
                         on:powerChange={() => (reloadCameras = true)}
                         on:powerChangeDone={() => (reloadCameras = false)}
                         id={sw.id}
@@ -326,7 +351,7 @@
                 {/if}
             {/if}
         </div>
-        <div id="cameras" class="mdc-elevation--z1">
+        <div id="cameras" class="mdc-elevation--z1" class:denied={!hasViewCamerasPermission && !hasEditPermission}>
             {#each currentRoom !== undefined ? currentRoom.cameras : [] as cam (cam.id)}
                 <Camera
                     on:delete={() => deleteCamera(cam.id)}
@@ -459,6 +484,11 @@
         gap: 1.5rem;
         overflow-x: auto;
         align-items: center;
+
+        &.denied {
+            opacity: 60%;
+            pointer-events: none;
+        }
 
         @include mobile {
             align-items: flex-start;

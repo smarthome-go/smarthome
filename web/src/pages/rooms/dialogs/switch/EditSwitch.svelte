@@ -4,8 +4,6 @@
     import Textfield from '@smui/textfield'
     import CharacterCounter from '@smui/textfield/character-counter'
     import { createEventDispatcher } from 'svelte'
-    import { createSnackbar } from '../../../../global'
-    import { loading } from '../../main'
 
     // Event dispatcher for deletion events
     const dispatch = createEventDispatcher()
@@ -35,25 +33,6 @@
     function cancel() {
         name = nameBefore
         watts = wattsBefore
-    }
-
-    async function modifySwitch() {
-        $loading = true
-        try {
-            const res = await (
-                await fetch('/api/switch/modify', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id, name, watts }),
-                })
-            ).json()
-            if (!res.success) throw Error(res.error)
-            nameBefore = name
-            wattsBefore = watts
-        } catch (err) {
-            $createSnackbar(`Could not edit this switch: ${err}`)
-        }
-        $loading = false
     }
 </script>
 
@@ -100,7 +79,7 @@
         <Button
             disabled={!nameDirty && !wattsDirty}
             use={[InitialFocus]}
-            on:click={modifySwitch}
+            on:click={ () =>   dispatch("modify", {name, watts})}
         >
             <Label>Modify</Label>
         </Button>
