@@ -1,38 +1,41 @@
 package camera
 
 import (
-	"bytes"
 	"fmt"
-	"image"
-	"image/jpeg"
-	"image/png"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/pkg/errors"
-	"golang.org/x/image/webp"
 )
 
-// Todo: setup camera sql table(s)
-
 // Fetches an image given an url, returns the image data as `[]byte`
-// WIll return an error if connection or parsing problems occur
-func fetchImageBytes(url string, timeout int) ([]byte, error) {
+// WIil return an error if connection or parsing problems occur
+func fetchImageBytes(imgURL string, timeout int) ([]byte, error) {
 	start := time.Now()
-	log.Trace(fmt.Sprintf("Initiating image fetching from: '%s'", url))
+	imgURLStruct, err := url.Parse(imgURL)
+	if err != nil {
+		log.Error(fmt.Sprintf("Failed to fetch image from %s: Could not parse URL: %s", imgURL, err.Error()))
+		return nil, err
+	}
+	if imgURLStruct.Scheme != "https" && imgURLStruct.Scheme != "http" {
+		log.Warn(fmt.Sprintf("Protocol '%s' is not supported to fetch images. Please use 'http' or 'https'", imgURLStruct.Scheme))
+		return nil, fmt.Errorf("Unsupported protocol error: Protocol: '%s' can not be used to fetch images. Please use 'http' or 'https' instead", imgURLStruct.Scheme)
+	}
+	log.Trace(fmt.Sprintf("Initiating image fetching from: '%s'", imgURLStruct.Host))
 	client := http.Client{Timeout: time.Second * time.Duration(timeout)}
-	response, err := client.Get(url)
+	response, err := client.Get(imgURL)
 	if err != nil {
 		log.Error("Failed to fetch image through proxy: ", err.Error())
-		return make([]byte, 0), err
+		return nil, err
 	}
 	if response.StatusCode != 200 {
 		log.Error("Received non 200 response code\n")
 	}
 	imageData, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return make([]byte, 0), err
+		return nil, err
 	}
 	imageMegabytes := len(imageData) / 1024 / 1024
 	if imageMegabytes > int(maxImageSize) {
@@ -43,8 +46,23 @@ func fetchImageBytes(url string, timeout int) ([]byte, error) {
 	return imageData, nil
 }
 
+// Validates an arbitrary set of bytes to match any of the formats below
+// Supported formates: webp, png or jpeg/jpg
+// Used to validate result when fetching a camera's video preview
+func ensureValidFormat(data []byte) (valid bool) {
+	supportedTypes := []string{"image/png", "image/webp", "image/jpeg"}
+	contentType := http.DetectContentType(data)
+	for _, format := range supportedTypes {
+		if format == contentType {
+			return true
+		}
+	}
+	return false
+}
+
 // Converts the fetched bytes (any of the following formats) to PNG bytes, supported media types are `png, jpeg, and webp`
-// [DEPRECATED] this function is temporarely depreacted due to extreme delays (* 1000) when converting jpeg to png
+// [DEPRECATED] this function is temporarely depreacted due to extreme delays (1000t) when converting jpeg to png
+/**
 func convertBytesToPng(imageBytes []byte) ([]byte, error) {
 	log.Trace("Converting image to PNG")
 	contentType := http.DetectContentType(imageBytes)
@@ -81,16 +99,4 @@ func convertBytesToPng(imageBytes []byte) ([]byte, error) {
 	log.Trace("Successfully converted image to PNG")
 	return buffer.Bytes(), nil
 }
-
-// Validates an arbitrary set of bytes to match any of the formats below
-// Supported formates: webp, png or jpeg/jpg
-// Used to validate result when fetching a camera's video preview
-func ensureValidFormat(data []byte) (valid bool) {
-	supportedTypes := []string{"image/png", "image/webp", "image/jpeg"}
-	for _, format := range supportedTypes {
-		if format == http.DetectContentType(data) {
-			return true
-		}
-	}
-	return false
-}
+*/
