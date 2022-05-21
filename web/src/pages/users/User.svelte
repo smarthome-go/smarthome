@@ -61,7 +61,7 @@
             <IconButton
                 class="material-icons"
                 on:click={() => (permissionsOpen = true)}
-                >admin_panel_settings</IconButton
+                >lock_person</IconButton
             >
             <Tooltip xPos="start">Edit User Permissions</Tooltip>
         </Wrapper>
