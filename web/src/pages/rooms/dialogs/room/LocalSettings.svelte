@@ -8,7 +8,6 @@
     export let open = false
 
     function onChange() {
-        console.log('change')
         localStorage.setItem(
             'smarthome_periodic_cam_reload_enabled',
             `${$periodicCamReloadEnabled}`
