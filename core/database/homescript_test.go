@@ -180,7 +180,7 @@ func TestHomescript(t *testing.T) {
 	}
 }
 
-func TestListHomeScript(t *testing.T) {
+func TestListHomescript(t *testing.T) {
 	// Create test user
 	if err := AddUser(FullUser{
 		Username: "hms_testing",
