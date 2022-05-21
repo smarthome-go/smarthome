@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/sirupsen/logrus"
+
 	"github.com/smarthome-go/smarthome/core/database"
 )
 
@@ -45,8 +46,8 @@ func GetCameraFeed(id string, timeoutSecs int) (data []byte, err error) {
 	*/
 	// [INSTEAD], the fetched data is just validated to match modern browser's requirements
 	if !ensureValidFormat(byteData) {
-		log.Warn("invalid media-type of fetched bytes: not a supprted image type")
-		return nil, errors.New("media-type of fetched bytes not supported")
+		log.Warn("invalid content-type of fetched bytes: not a supported image type")
+		return nil, errors.New("content-type of fetched bytes not supported")
 	}
 	return byteData, nil
 }
