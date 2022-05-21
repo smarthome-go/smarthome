@@ -1,5 +1,7 @@
 package camera
 
+// [DEPRECATED], only used for testing
+/**
 func TestReturn() ([]byte, error) {
 	url := "https://mik-mueller.de/assets/icon_1.png"
 	byt, err := fetchImageBytes(url, 1)
@@ -13,3 +15,4 @@ func TestReturn() ([]byte, error) {
 	}
 	return img, nil
 }
+*/
