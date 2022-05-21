@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/server/middleware"
@@ -185,6 +186,17 @@ func DeleteHomescriptById(w http.ResponseWriter, r *http.Request) {
 	if !exists {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		Res(w, Response{Success: false, Message: "failed to delete homescript", Error: "not found / permission denied: no data is associated to this id"})
+		return
+	}
+	hasDependentAutomations, err := homescript.HasDependentAutomations(request.Id)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to delete homescript: could not validate deletion safety", Error: "database failure"})
+		return
+	}
+	if hasDependentAutomations {
+		w.WriteHeader(http.StatusConflict)
+		Res(w, Response{Success: false, Message: "can not delete homescript: safety violation", Error: "script is used in one or more automations"})
 		return
 	}
 	if err := database.DeleteHomescriptById(request.Id); err != nil {

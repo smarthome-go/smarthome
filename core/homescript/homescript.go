@@ -51,7 +51,7 @@ func convertErrors(errorItems ...hmsError.Error) []HomescriptError {
 	return outputErrors
 }
 
-// Executes a given homescript as a given user, returns the output and a possible error slice
+// Executes arbitrary homescript-code as a given user, returns the output and a possible error slice
 func Run(username string, scriptLabel string, scriptCode string) (string, int, []HomescriptError) {
 	executor := &Executor{
 		Username:   username,
@@ -70,6 +70,7 @@ func Run(username string, scriptLabel string, scriptCode string) (string, int, [
 	return executor.Output, exitCode, make([]HomescriptError, 0)
 }
 
+// Executes a given homescript from the database and returns it's output, exit-code and possible error
 func RunById(username string, homescriptId string) (string, int, error) {
 	homescriptItem, hasBeenFound, err := database.GetUserHomescriptById(homescriptId, username)
 	if err != nil {
@@ -83,4 +84,19 @@ func RunById(username string, homescriptId string) (string, int, error) {
 		return "execution error", exitCode, fmt.Errorf("Homescript terminated with exit code %d: %s", exitCode, errorsHms[0].Message)
 	}
 	return output, exitCode, nil
+}
+
+// Checks if a given homescript has automations which rely on it
+// Is used to decide whether a homescript is safe to delete or not
+func HasDependentAutomations(homescriptId string) (bool, error) {
+	automations, err := database.GetAutomations()
+	if err != nil {
+		return false, err
+	}
+	for _, automation := range automations {
+		if automation.Data.HomescriptId == homescriptId {
+			return true, nil
+		}
+	}
+	return false, nil
 }
