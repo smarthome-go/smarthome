@@ -29,7 +29,7 @@
      * Only fetches content, such as user permissions when it is needed in order to make the website faster
      */
 
-    // Keeps track of content and wether it has been fetched
+    // Keeps track of content and whether it has been fetched
     let permissionsFetched = false
     let switchPermissionsFetched = false
     let cameraPermissionsFetched = false

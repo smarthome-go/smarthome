@@ -40,7 +40,7 @@
     let loading = true
     // Indicates that the fetching of the camera feed is complete
     let loaded = false
-    // Indicates wheter the fetching of the camera feed has failed
+    // Indicates Whether the fetching of the camera feed has failed
     let error = false
 
     // Determines if edit button should be shown

@@ -11,9 +11,10 @@
     import AddCamera from './dialogs/camera/AddCamera.svelte'
     import AddRoom from './dialogs/room/AddRoom.svelte'
     import EditRoom from './dialogs/room/EditRoom.svelte'
+    import LocalSettings from './dialogs/room/LocalSettings.svelte'
     import AddSwitch from './dialogs/switch/AddSwitch.svelte'
     import { loading,Room } from './main'
-    import Switch from './Switch.svelte'
+    import PowerSwitch from './PowerSwitch.svelte'
 
     // If set to true, a camera-reload is triggered
     let reloadCameras = false
@@ -22,9 +23,17 @@
     // Used to hide the `no-xy` banners if the data is not loaded yet
     let loadedData = false
 
-    // Wheter the current-room dialog is open
+    // Whether the current-room dialog is open
     let editOpen = false
     let rooms: Room[]
+
+    // Whether the local settings dialog is open
+    let localSettingsOpen = false
+
+    // Specifies whether the cameras will reload every 10 seconds
+    let periodicCamReloadEnabled = false
+    // Specifies whether
+    let powerCamReloadEnabled = false
 
     // Are binded backwards to pass the `open` event to the children
     let addRoomShow: () => void
@@ -239,7 +248,9 @@
             ).json()
             if (!res.success) throw Error(res.error)
             // Would be reset on power change if not updated in `currentRoom`
-            let switchInCurrentRoom = currentRoom.switches.find(s => s.id == data.id)
+            let switchInCurrentRoom = currentRoom.switches.find(
+                (s) => s.id == data.id
+            )
             switchInCurrentRoom.name = data.name
             switchInCurrentRoom.watts = data.watts
         } catch (err) {
@@ -251,7 +262,12 @@
 
 <Page>
     <AddRoom blacklist={rooms} bind:show={addRoomShow} onAdd={addRoom} />
-    {#if currentRoom !== undefined}
+    <LocalSettings
+        bind:open={localSettingsOpen}
+        bind:periodicCamReloadEnabled
+        bind:powerCamReloadEnabled
+    />
+    {#if currentRoom !== undefined && hasEditPermission}
         <EditRoom
             bind:open={editOpen}
             bind:id={currentRoom.data.id}
@@ -294,6 +310,12 @@
             <IconButton
                 class="material-icons"
                 on:click={() => {
+                    localSettingsOpen = true
+                }}>settings</IconButton
+            >
+            <IconButton
+                class="material-icons"
+                on:click={() => {
                     loadRooms(true)
                 }}>refresh</IconButton
             >
@@ -324,7 +346,7 @@
                 {/if}
             {:else}
                 {#each currentRoom !== undefined ? currentRoom.switches : [] as sw (sw.id)}
-                    <Switch
+                    <PowerSwitch
                         bind:checked={sw.powerOn}
                         on:delete={() => deleteSwitch(sw.id)}
                         on:modify={modifySwitch}
@@ -351,7 +373,11 @@
                 {/if}
             {/if}
         </div>
-        <div id="cameras" class="mdc-elevation--z1" class:denied={!hasViewCamerasPermission && !hasEditPermission}>
+        <div
+            id="cameras"
+            class="mdc-elevation--z1"
+            class:denied={!hasViewCamerasPermission && !hasEditPermission}
+        >
             {#each currentRoom !== undefined ? currentRoom.cameras : [] as cam (cam.id)}
                 <Camera
                     on:delete={() => deleteCamera(cam.id)}
@@ -528,6 +554,7 @@
             flex-wrap: wrap;
         }
     }
+    // Needed in order to account for special dimensions of the camera-layout
     #add-camera {
         flex-shrink: 0;
         height: 100%;
