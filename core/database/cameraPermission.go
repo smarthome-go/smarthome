@@ -87,7 +87,7 @@ func RemoveUserCameraPermission(username string, cameraId string) (modified bool
 	DELETE FROM
 	hasCameraPermission
 	WHERE
-		Username=? AND CameraId=?
+		Username=? AND Camera=?
 	`)
 	if err != nil {
 		log.Error("Failed to remove user camera permission: preparing query failed: ", err.Error())
@@ -149,7 +149,7 @@ func RemoveAllCameraPermissionsOfUser(username string) error {
 func UserHasCameraPermissionQuery(username string, cameraId string) (bool, error) {
 	query, err := db.Prepare(`
 	SELECT Camera
-	FROM hasCameraPermission
+		FROM hasCameraPermission
 	WHERE Username=? AND Camera=?
 	`)
 	if err != nil {
@@ -163,7 +163,7 @@ func UserHasCameraPermissionQuery(username string, cameraId string) (bool, error
 		}
 		log.Error("Failed to check user camera permission: executing query failed: ")
 	}
-	return false, nil
+	return true, nil
 }
 
 // Returns a boolean indicating whether a user has a camera permission
