@@ -146,7 +146,6 @@ func GetRoomDataById(id string) (RoomData, bool, error) {
 
 // Returns a list containing room data of rooms which contain switches the user is allowed to use
 func listPersonalRoomData(username string) ([]RoomData, error) {
-	// TODO: restructure query to also account for cameraPermissions
 	query, err := db.Prepare(`
 	SELECT
 		room.Id,
