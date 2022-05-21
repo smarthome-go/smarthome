@@ -18,6 +18,10 @@
     // If set to true, a camera-reload is triggered
     let reloadCameras = false
 
+    // Specifies if all required data has been loaden
+    // Used to hide the `no-xy` banners if the data is not loaded yet
+    let loadedData = false
+
     // Wheter the current-room dialog is open
     let editOpen = false
     let rooms: Room[]
@@ -71,6 +75,7 @@
                     ? undefined
                     : rooms.find((r) => r.data.id === roomId)
             currentRoom = room === undefined ? rooms[0] : room
+            loadedData = true
         } catch {
             $createSnackbar('Could not load rooms', [
                 {
@@ -254,20 +259,22 @@
                 </Tab>
             </TabBar>
         {/await}
-        {#if hasEditPermission}
-            {#if currentRoom !== undefined}
+        {#if currentRoom !== undefined}
+            {#if hasEditPermission}
                 <IconButton
                     class="material-icons"
-                    title="Edit Rooms"
+                    title="Edit Current Room"
                     on:click={() => (editOpen = true)}>edit</IconButton
                 >
-                <IconButton
-                    class="material-icons"
-                    on:click={() => {
-                        loadRooms(true)
-                    }}>refresh</IconButton
-                >
             {/if}
+            <IconButton
+                class="material-icons"
+                on:click={() => {
+                    loadRooms(true)
+                }}>refresh</IconButton
+            >
+        {/if}
+        {#if hasEditPermission}
             <IconButton
                 class="material-icons"
                 title="Add Room"
@@ -279,7 +286,7 @@
 
     <div id="content">
         <div id="switches" class="mdc-elevation--z1">
-            {#if currentRoom == undefined}
+            {#if currentRoom == undefined && loadedData}
                 <div id="no-rooms">
                     <i class="material-icons">no_meeting_room</i>
                     <h6>There are currently no rooms.</h6>
@@ -311,6 +318,11 @@
                             on:click={addSwitchShow}>add</IconButton
                         >
                     </div>
+                {:else if currentRoom !== undefined && currentRoom.switches.length == 0 && loadedData}
+                    <div id="no-switches">
+                        <i class="material-icons">power_off</i>
+                        <h6>No Switches</h6>
+                    </div>
                 {/if}
             {/if}
         </div>
@@ -331,6 +343,11 @@
                         >add</IconButton
                     >
                 </div>
+            {:else if currentRoom !== undefined && currentRoom.cameras.length == 0 && loadedData}
+                <div id="no-cameras">
+                    <i class="material-icons">videocam_off</i>
+                    <h6>No Cameras</h6>
+                </div>
             {/if}
         </div>
     </div>
@@ -339,7 +356,8 @@
 <style lang="scss">
     @use '../../mixins' as *;
 
-    #no-rooms {
+    #no-rooms,
+    #no-switches {
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -350,6 +368,27 @@
 
         i {
             font-size: 5rem;
+        }
+    }
+
+    #no-cameras {
+        // Similar to `#no-rooms`, but smaller
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        color: var(--clr-text-hint);
+
+        i {
+            font-size: 3rem;
+        }
+
+        h6 {
+            margin: 0.3rem 0;
+        }
+
+        @include widescreen {
+            margin-top: 1.5rem;
         }
     }
 
