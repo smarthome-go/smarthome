@@ -148,22 +148,33 @@ func GetRoomDataById(id string) (RoomData, bool, error) {
 func listPersonalRoomData(username string) ([]RoomData, error) {
 	// TODO: restructure query to also account for cameraPermissions
 	query, err := db.Prepare(`
-	SELECT DISTINCT
+	SELECT
 		room.Id,
 		room.Name,
 		room.Description
 	FROM room
-		JOIN switch ON switch.RoomId=room.Id
-		JOIN hasSwitchPermission ON switch.Id=hasSwitchPermission.Switch
-	WHERE username=?
-	ORDER BY NAME ASC
+		WHERE (
+			SELECT COUNT(*)
+			FROM switch
+			JOIN hasSwitchPermission
+				ON switch.Id = hasSwitchPermission.Switch
+			WHERE hasSwitchPermission.Username=? AND switch.RoomId=room.Id
+		) > 0
+		OR (
+			SELECT COUNT(*)
+			FROM camera
+			JOIN hasCameraPermission
+				ON camera.Id = hasCameraPermission.Camera
+			WHERE hasCameraPermission.Username=? AND camera.RoomId=room.Id
+		) > 0
+	ORDER BY room.Name ASC;
 	`)
 	if err != nil {
 		log.Error("Failed to list personal room data: preparing query failed: ", err.Error())
 		return nil, err
 	}
 	defer query.Close()
-	res, err := query.Query(username)
+	res, err := query.Query(username, username)
 	if err != nil {
 		log.Error("Failed to list personal room data: executing query failed: ", err.Error())
 		return nil, err
