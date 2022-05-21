@@ -1,6 +1,6 @@
 <script lang="ts">
     import Button from '@smui/button/src/Button.svelte'
-    import IconButton from '@smui/icon-button'
+    import IconButton,{ Icon } from '@smui/icon-button'
     import Tab,{ Label } from '@smui/tab'
     import TabBar from '@smui/tab-bar'
     import { onMount } from 'svelte'
@@ -339,9 +339,10 @@
             {#if hasEditPermission && currentRoom !== undefined}
                 <div id="add-camera" class="switch mdc-elevation--z3">
                     <span>Add Camera</span>
-                    <IconButton class="material-icons" on:click={addCameraShow}
-                        >add</IconButton
-                    >
+                    <Button on:click={addCameraShow}>
+                        <Label>Add</Label>
+                        <Icon class="material-icons">add</Icon>
+                    </Button>
                 </div>
             {:else if currentRoom !== undefined && currentRoom.cameras.length == 0 && loadedData}
                 <div id="no-cameras">
@@ -479,7 +480,7 @@
     #add-camera {
         background-color: var(--clr-height-1-3);
         border-radius: 0.3rem;
-        width: 15rem;
+        width: 17rem;
         height: 3.3rem;
         padding: 0.5rem;
         display: flex;
@@ -488,6 +489,7 @@
 
         span {
             margin-left: 0.7rem;
+            color: var(--clr-text-hint);
         }
 
         @include mobile {

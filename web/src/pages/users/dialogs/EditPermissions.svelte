@@ -227,7 +227,10 @@
 
 <Dialog bind:open fullscreen aria-labelledby="title" aria-describedby="content">
     <Header>
-        <Title id="title">Manage User Permissions</Title>
+        <Title id="title">
+            
+            Manage User Permissions
+        </Title>
         <IconButton action="close" class="material-icons">close</IconButton>
     </Header>
     <Content id="content">

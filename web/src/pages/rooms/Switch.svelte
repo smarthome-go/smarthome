@@ -56,6 +56,7 @@
     }
 </script>
 
+<!-- TODO: make editing work -->
 <EditSwitch
     on:delete={() => dispatch('delete', null)}
     {id}
@@ -64,7 +65,7 @@
     bind:show={showEditSwitch}
 />
 
-<div class="switch mdc-elevation--z3">
+<div class="switch mdc-elevation--z3" class:wide={hasEditPermission}>
     <div class="switch__left">
         <Switch icons={false} bind:checked on:SMUISwitch:change={toggle} />
         <span class="switch__name">{name}</span>
@@ -95,12 +96,21 @@
         align-items: center;
         justify-content: space-between;
 
+        &.wide {
+            width: 17rem;
+
+            @include mobile {
+                width: 90%;
+            }
+        }
+
         & > * {
             display: flex;
             align-items: center;
         }
         &__left {
             max-width: 70%;
+            gap: 0.2rem;
         }
         &__right {
             div {

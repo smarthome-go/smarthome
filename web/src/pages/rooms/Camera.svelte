@@ -111,7 +111,7 @@
 {/if}
 
 <!-- Actual camera DIV -->
-<div class="camera mdc-elevation--z3" class:denied={!hasViewPermission}>
+<div class="camera mdc-elevation--z3" class:denied={!hasViewPermission && !hasEditPermission}>
     <!-- Only show if the user has the `view` permission -->
     <!-- Camera feed image, has the class `error` if the stream fails to load -->
     <img
@@ -127,7 +127,7 @@
     </div>
     <!-- Buttons and texts with a transparent background, serves as the overlay -->
     <div class="over" class:blur={!loaded} class:error>
-        {#if !hasViewPermission}
+        {#if !hasViewPermission && !hasEditPermission}
             <div class="permission-denied">
                 <i class="material-icons">videocam_off</i>
                 <h6>Permission Denied</h6>
