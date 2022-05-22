@@ -103,10 +103,12 @@ func (self *Executor) AddUser(username string, password string, forename string,
 		return errors.New("length of username, forename, and surname must not exceed 20 characters")
 	}
 	if err := database.AddUser(database.FullUser{
-		Username: username,
-		Password: password,
-		Forename: forename,
-		Surname:  surname,
+		Username:          username,
+		Password:          password,
+		Forename:          forename,
+		Surname:           surname,
+		PrimaryColorDark:  "#88FF70",
+		PrimaryColorLight: "#2E7D32",
 	}); err != nil {
 		return err
 	}
