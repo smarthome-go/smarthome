@@ -63,11 +63,11 @@ func Fatal(name string, description string) {
 }
 
 func FlushOldLogs() error {
-	log.Debug("Flushing logs older than 30 days")
+	log.Trace("Flushing logs older than 30 days...")
 	return database.FlushOldLogs()
 }
 
 func FlushAllLogs() error {
-	log.Debug("Flushing all logs")
+	log.Trace("Flushing all logs...")
 	return database.FlushAllLogs()
 }

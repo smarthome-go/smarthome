@@ -20,7 +20,7 @@ var setupPath = "./data/config/setup.json"
 // TODO: add some sort of web import / export later
 // Returns the setup struct, a bool that indicates that a setup file has been read and an error
 func readSetupFile() (Setup, bool, error) {
-	log.Trace("Looking for `setup.json`")
+	log.Trace(fmt.Sprintf("Detecting setup file at `%s`", setupPath))
 	// Read file from <setupPath> on disk
 	content, err := ioutil.ReadFile(setupPath)
 	if err != nil {
@@ -48,18 +48,18 @@ func RunSetup() error {
 		return err
 	}
 	if !shouldProceed {
-		log.Debug("No setup file found: starting without setup.")
+		log.Debug("No setup file detected: skipping setup")
 		return nil
 	}
 	if err := createRoomsInDatabase(setup.Rooms); err != nil {
-		log.Error("Aborting setup: could not create room entries in database: ", err.Error())
+		log.Error("Aborting setup: could not create rooms in database: ", err.Error())
 		return err
 	}
 	if err := createHardwareNodesInDatabase(setup.HardwareNodes); err != nil {
-		log.Error("Aborting setup: could not create hardware node entries in database: ", err.Error())
+		log.Error("Aborting setup: could not create hardware nodes in database: ", err.Error())
 		return err
 	}
-	log.Info("Successfully ran setup")
+	log.Info(fmt.Sprintf("Successfully ran setup using `%s`", setupPath))
 	return nil
 }
 

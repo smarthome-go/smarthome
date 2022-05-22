@@ -19,6 +19,7 @@ func InitLogger(logger *logrus.Logger) {
 }
 
 func NewRouter() *mux.Router {
+	log.Trace("Initializing server router...")
 	r := mux.NewRouter()
 	// Auth: middleware that checks if the user is logged in, will redirect to `/login` if the user is not logged in
 	// ApiAuth: middleware that checks if the user is logged in for API request, will return JSON errors if the user is not logged in

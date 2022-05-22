@@ -189,6 +189,7 @@ func Init() {
 	// Initialize thread-safe variables, for more info, look at the top for mutexes
 	jobsWithErrorInHandlerCount.Store(0)
 	daemonRunning.Store(false)
+	log.Debug("Initialized hardware handler and job scheduler")
 }
 
 // Returns the number of currently pending jobs in the queue

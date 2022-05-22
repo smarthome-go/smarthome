@@ -17,4 +17,5 @@ func Init(useRandomSeed bool) {
 		log.Warn("\x1b[33mUsing static session encryption. This is a security risk.")
 		Store = sessions.NewCookieStore([]byte(""))
 	}
+	log.Debug("Successfully initialized middleware session store")
 }

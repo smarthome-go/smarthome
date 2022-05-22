@@ -10,6 +10,7 @@ import (
 )
 
 func Init(databaseConfig DatabaseConfig, adminPassword string) error {
+	log.Trace("Initializing database connection...")
 	config = databaseConfig
 	if err := createDatabase(); err != nil {
 		return err
@@ -18,6 +19,7 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 	if err != nil {
 		return err
 	}
+	log.Trace("Initializing database schema...")
 	db = dbTemp
 	if err := createConfigTable(); err != nil {
 		return err
@@ -76,13 +78,14 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 	if err := createHasCameraPermissionsTable(); err != nil {
 		return err
 	}
+	log.Info(fmt.Sprintf("Successfully initialized database `%s`", databaseConfig.Database))
 	return nil
 }
 
 func createDatabase() error {
 	dbTemp, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%d)/", config.Username, config.Password, config.Hostname, config.Port))
 	if err != nil {
-		log.Error("Could not connect to Database: ", err.Error())
+		log.Error("Could not connect to intermediate database: ", err.Error())
 		return err
 	}
 	defer dbTemp.Close()
@@ -90,18 +93,19 @@ func createDatabase() error {
 	defer cancelfunc()
 	res, err := dbTemp.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS "+config.Database)
 	if err != nil {
-		log.Error(fmt.Sprintf("Failed to create database `%s`: Query execution error: %s", config.Database, err.Error()))
+		log.Error(fmt.Sprintf("Failed to create database `%s`: executing query failed: %s", config.Database, err.Error()))
 		return err
 	}
+	log.Trace("Successfully connected to database using intermediate connection")
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		log.Error(fmt.Sprintf("Failed to get result of `create database` `%s`: Reading rows affected failed with error: %s", config.Database, err.Error()))
+		log.Error(fmt.Sprintf("Failed to evaluate outcome of database creation: reading rows affected failed: %s", err.Error()))
 		return err
 	}
 	if rowsAffected == 1 {
-		log.Info(fmt.Sprintf("Successfully initialized database `%s`", config.Database))
+		log.Info(fmt.Sprintf("Successfully created new database `%s`", config.Database))
 	} else {
-		log.Debug(fmt.Sprintf("Using existing database `%s`", config.Database))
+		log.Debug(fmt.Sprintf("Skipped database creation: using existing database `%s`", config.Database))
 	}
 	return nil
 }

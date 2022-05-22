@@ -18,12 +18,12 @@ var templates *template.Template
 
 func LoadTemplates(pattern string) {
 	templates = template.Must(template.ParseGlob(pattern))
-	log.Debug(fmt.Sprintf("Templates loaded: %s", pattern))
+	log.Debug(fmt.Sprintf("Successfully loaded templates using pattern: %s", pattern))
 }
 
 func ExecuteTemplate(responseWriter http.ResponseWriter, templateName string, data interface{}) {
 	if err := templates.ExecuteTemplate(responseWriter, templateName, data); err != nil {
-		log.Error("Could not render template: ", err.Error())
+		log.Error(fmt.Sprintf("Could not render template '%s': %s", templateName, err.Error()))
 		return
 	}
 }

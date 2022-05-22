@@ -8,6 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/user"
 )
 
 // The scheduler which will run all predefined automation jobs
@@ -32,23 +33,28 @@ func ActivateAutomationSystem() error {
 	for _, automation := range automations {
 		if !IsValidCronExpression(automation.Data.CronExpression) {
 			log.Error(fmt.Sprintf("Could not activate automation '%d': invalid cron expression", automation.Id))
-			continue // non-critical error
+			if err := user.Notify(automation.Owner, "Automation Activation Failed", fmt.Sprintf("The automation %s could not be activated due to an internall error. Please remove it from the system.", automation.Data.Name), 3); err != nil {
+				log.Error("Failed to notify user about failing automation: ", err.Error())
+			}
+			continue // non-critical error, will only affect this automation
 		}
 		if !automation.Data.Enabled {
-			log.Debug(fmt.Sprintf("Skipping activation of automation %d: automation is disabled", automation.Id))
+			log.Debug(fmt.Sprintf("Skipping activation of automation '%d': automation is disabled", automation.Id))
 			continue // Skip disabled automations
 		}
 		automationJob := scheduler.Cron(automation.Data.CronExpression)
 		automationJob.Tag(fmt.Sprintf("%d", automation.Id))
 		_, err := automationJob.Do(automationRunnerFunc, automation.Id)
 		if err != nil {
-			log.Error("Failed to register cron job: ", err.Error())
+			log.Error(fmt.Sprintf("Could not activate automation '%d': failed to register cron job: %s", automation.Id, err.Error()))
 			return err
 		}
 		activatedItems += 1
 		log.Debug(fmt.Sprintf("Successfully activated automation '%d' of user '%s'", automation.Id, automation.Owner))
 	}
-	log.Debug(fmt.Sprintf("Activated saved automations: registered %d total automation jobs", activatedItems))
+	if activatedItems > 0 {
+		log.Info(fmt.Sprintf("Successfully activated saved automations: registered %d total automation jobs", activatedItems))
+	}
 	return nil
 }
 
@@ -62,7 +68,7 @@ func DeactivateAutomationSystem() error {
 	for _, automation := range automations {
 		if automation.Data.Enabled {
 			if err := scheduler.RemoveByTag(fmt.Sprintf("%d", automation.Id)); err != nil {
-				log.Error(fmt.Sprintf("Failed to deactivate automation '%d': could not stop scheduler: %s", automation.Id, err.Error()))
+				log.Error(fmt.Sprintf("Failed to deactivate automation '%d': could not stop scheduler: '%s'", automation.Id, err.Error()))
 				continue
 			}
 			log.Debug(fmt.Sprintf("Successfully deactivated automation '%d' of user '%s'", automation.Id, automation.Owner))
@@ -80,7 +86,7 @@ func Init() error {
 		return err
 	}
 	if !found {
-		log.Error("Failed to initialize automation scheduler: could not retrieve server configuration: no results in query")
+		log.Error("Failed to initialize automation scheduler: could not retrieve server configuration: no results for server config")
 		return err
 	}
 	scheduler = gocron.NewScheduler(time.Local)
@@ -90,9 +96,9 @@ func Init() error {
 			log.Error("Failed to activate automation system: could not activate persistent jobs: ", err.Error())
 			return err
 		}
-		log.Info("Successfully activated automation scheduler system")
+		log.Info("Successfully activated automation system")
 	} else {
-		log.Info("Not activating scheduler automation system because it is disabled")
+		log.Info("Skipping activation of automation system due to it being disabled")
 	}
 	scheduler.StartAsync()
 	return nil
