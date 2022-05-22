@@ -1,6 +1,6 @@
 ## Changelog for 0.0.32
 
-## Rooms Frontend
+### Rooms Frontend
 - (*Bugfix*) Fixed wrong alignment of add room button in rooms GUI
 ### Backend
 - (*Addition*) Added `SMARTHOME_ENV_PRODUCTION` environment variable to the server
