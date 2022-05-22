@@ -81,9 +81,9 @@
 </script>
 
 <AddUser
-onAdd={addUser}
-bind:show={addUserShow}
-blacklist={$users.map((u) => u.user.username)}
+    on:add={(e) => addUser(e.detail.username, e.detail.password)}
+    bind:show={addUserShow}
+    blacklist={$users.map((u) => u.user.username)}
 />
 
 <Page>
@@ -127,8 +127,9 @@ blacklist={$users.map((u) => u.user.username)}
 
         h6 {
             margin: 0.5rem 0;
-            
-            @include mobile { // Hide title on mobile due to space limitations
+
+            @include mobile {
+                // Hide title on mobile due to space limitations
                 display: none;
             }
         }

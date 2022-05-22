@@ -3,12 +3,18 @@
     import Dialog,{ Actions,Content,InitialFocus,Title } from '@smui/dialog'
     import Textfield from '@smui/textfield'
     import CharacterCounter from '@smui/textfield/character-counter'
+    import { createEventDispatcher } from 'svelte'
     export let open = false
+
+    // Event dispatcher for deletion events
+    const dispatch = createEventDispatcher()
 
     export let username = ''
     let usernameDirty = false
     export let password = ''
     let passwordDirty = false
+
+    let confirmPassword = ''
 
     export function show() {
         open = true
@@ -18,8 +24,6 @@
 
     // Will be used in order to show if a username is already taken
     export let blacklist: string[]
-
-    export let onAdd = (_username: string, _password: string) => {}
 
     let usernameInvalid = false
     $: usernameInvalid =
@@ -47,6 +51,16 @@
             bind:value={password}
             bind:dirty={passwordDirty}
             label="Password"
+            type="password"
+            required
+        />
+        <br />
+        <br />
+        <Textfield
+            bind:value={confirmPassword}
+            invalid={password !== confirmPassword && passwordDirty}
+            label="Repeat Password"
+            type="password"
             required
         />
     </Content>
@@ -55,10 +69,12 @@
             <Label>Cancel</Label>
         </Button>
         <Button
-            disabled={usernameInvalid || password === ''}
+            disabled={usernameInvalid ||
+                password === '' ||
+                password !== confirmPassword}
             use={[InitialFocus]}
             on:click={() => {
-                onAdd(username, password)
+                dispatch('add', { username, password })
                 username = ''
                 password = ''
             }}

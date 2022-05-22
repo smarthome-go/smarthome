@@ -19,37 +19,38 @@
     let permissionsOpen = false
 </script>
 
-<div id="root">
-    <!-- Dialogs -->
-    <EditUser
-        bind:primaryColorDark
-        bind:primaryColorLight
-        bind:schedulerEnabled
-        bind:darkTheme
-        bind:username
-        bind:forename
-        bind:surname
-        bind:open={editOpen}
-    />
-    <EditPermissions
-        {username}
-        bind:permissions
-        bind:switchPermissions
-        bind:open={permissionsOpen}
-    />
-    <div id="left">
+<!-- Dialogs -->
+<EditUser
+    bind:primaryColorDark
+    bind:primaryColorLight
+    bind:schedulerEnabled
+    bind:darkTheme
+    bind:username
+    bind:forename
+    bind:surname
+    bind:open={editOpen}
+/>
+<EditPermissions
+    {username}
+    bind:permissions
+    bind:switchPermissions
+    bind:open={permissionsOpen}
+/>
+
+<div class="root">
+    <div class="left">
         <img
             src={`/api/user/avatar/user/${username}`}
             alt="the users avatar"
             class="mdc-elevation--z3"
         />
-        <div id="labels">
+        <div class="labels">
             <h6>{username}</h6>
             <span>{forename} {surname}</span>
         </div>
     </div>
 
-    <div id="actions">
+    <div class="actions">
         <Wrapper>
             <IconButton
                 class="material-icons"
@@ -70,7 +71,7 @@
 
 <style lang="scss">
     @use '../../mixins' as *;
-    #root {
+    .root {
         background-color: var(--clr-height-1-3);
         border-radius: 0.3rem;
         padding: 0.5rem;
@@ -84,17 +85,17 @@
             width: 80vw;
         }
     }
-    #left {
+    .left {
         display: flex;
         align-items: center;
         gap: 1rem;
     }
-    #actions {
+    .actions {
         @include mobile {
             display: block;
         }
     }
-    #labels {
+    .labels {
         max-width: 7rem; // Needed adjustment due to second action button
         overflow: hidden;
 
@@ -117,7 +118,7 @@
         border-radius: 50%;
         width: 3rem;
         height: 3rem;
-        margin-left: .1rem;
+        margin-left: 0.1rem;
 
         @include mobile {
             width: 3rem;
