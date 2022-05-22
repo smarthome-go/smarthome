@@ -312,6 +312,10 @@
         </div>
     </Content>
     <Actions>
+        <!-- Restore changes if the user cancels the action -->
+        <Button on:click={restoreChanges}>
+            <Label>Cancel</Label>
+        </Button>
         <!-- Only allow save if data has been changed -->
         <Button
             disabled={// Performs various integrity checks before sending data to the server for better UX
@@ -329,10 +333,6 @@
             on:click={modify}
         >
             <Label>Save</Label>
-        </Button>
-        <!-- Restore changes if the user cancels the action -->
-        <Button on:click={restoreChanges}>
-            <Label>Cancel</Label>
         </Button>
     </Actions>
 </Dialog>

@@ -215,9 +215,7 @@
                 })
             ).json()
             if (!res.success) throw Error(res.error)
-            cameraPermissions = cameraPermissions.filter(
-                (s) => s !== id
-            )
+            cameraPermissions = cameraPermissions.filter((s) => s !== id)
         } catch (err) {
             $createSnackbar(`Failed to remove camera-permission: ${err}`)
             throw Error()
@@ -227,14 +225,11 @@
 
 <Dialog bind:open fullscreen aria-labelledby="title" aria-describedby="content">
     <Header>
-        <Title id="title">
-            
-            Manage User Permissions
-        </Title>
+        <Title id="title">Manage User Permissions</Title>
         <IconButton action="close" class="material-icons">close</IconButton>
     </Header>
     <Content id="content">
-        <div id="tabs">
+        <div class="tabs">
             <TabBar
                 tabs={permissions.includes('setPower')
                     ? permissions.includes('viewCameras')
@@ -259,18 +254,28 @@
                 title="Refresh"
                 class="material-icons"
                 on:click={() => {
-                    currentMode === 'Permissions'
-                        ? fetchUserPermissions()
-                        : fetchUserSwitchPermissions()
+                    switch (currentMode) {
+                        case 'Permissions':
+                            fetchUserPermissions()
+                            break
+                        case 'Switch Permissions':
+                            fetchUserSwitchPermissions()
+                            break
+                        case 'Camera Permissions':
+                            fetchUserCameraPermissions()
+                            break
+                    }
                 }}>refresh</IconButton
             >
         </div>
         {#if currentMode === 'Permissions'}
-            {#if $allPermissions.length == 0 || !permissionsFetched}
-                <Progress type="linear" loading={true} />
-                <span>Preparing editor...</span>
-            {/if}
-            <div id="permissions">
+            <div class="permissions">
+                {#if $allPermissions.length == 0 || !permissionsFetched}
+                    <div class="no-permissions">
+                        <Progress type="circular" loading={true} />
+                        <h6>Preparing editor...</h6>
+                    </div>
+                {/if}
                 {#each $allPermissions as permission (permission.permission)}
                     <Permission
                         description={permission.description}
@@ -283,11 +288,13 @@
                 {/each}
             </div>
         {:else if currentMode === 'Switch Permissions'}
-            {#if !switchPermissionsFetched}
-                <Progress type="linear" loading={true} />
-                <span>Preparing editor...</span>
-            {/if}
-            <div id="switch-permissions">
+            <div class="switch-permissions">
+                {#if !switchPermissionsFetched}
+                    <div class="no-permissions">
+                        <Progress type="circular" loading={true} />
+                        <h6>Preparing editor...</h6>
+                    </div>
+                {/if}
                 {#each $allSwitches as switchItem (switchItem.id)}
                     <SwitchPermission
                         id={switchItem.id}
@@ -298,13 +305,28 @@
                         removeFunc={removeSwitchPermission}
                     />
                 {/each}
+                {#if $allSwitches.length === 0 && switchPermissionsFetched}
+                    <div class="no-permissions">
+                        <i class="material-icons">power_off</i>
+                        <div class="bottom">
+                            <h6>No switches available</h6>
+                            <span
+                                >You can create switches in the <a href="/rooms"
+                                    >rooms</a
+                                > section.</span
+                            >
+                        </div>
+                    </div>
+                {/if}
             </div>
         {:else if currentMode === 'Camera Permissions'}
-            {#if !cameraPermissionsFetched}
-                <Progress type="linear" loading={true} />
-                <span>Preparing editor...</span>
-            {/if}
-            <div id="switch-permissions">
+            <div class="camera-permissions">
+                {#if !cameraPermissionsFetched}
+                    <div class="no-permissions">
+                        <Progress type="circular" loading={true} />
+                        <h6>Preparing editor...</h6>
+                    </div>
+                {/if}
                 {#each $allCameras as camera (camera.id)}
                     <CameraPermissions
                         id={camera.id}
@@ -314,6 +336,19 @@
                         removeFunc={removeCameraPermission}
                     />
                 {/each}
+                {#if $allSwitches.length === 0 && cameraPermissionsFetched}
+                    <div class="no-permissions">
+                        <i class="material-icons">videocam_off</i>
+                        <div class="bottom">
+                            <h6>No cameras available</h6>
+                            <span
+                                >You can create cameras in the <a href="/rooms"
+                                    >rooms</a
+                                > section.</span
+                            >
+                        </div>
+                    </div>
+                {/if}
             </div>
         {/if}
     </Content>
@@ -326,20 +361,49 @@
 
 <style lang="scss">
     @use '../../../mixins' as *;
-    #permissions,
-    #switch-permissions {
+
+    .permissions,
+    .switch-permissions,
+    .camera-permissions {
         display: flex;
         flex-wrap: wrap;
         gap: 1rem;
+        height: 60vh;
     }
 
-    #tabs {
+    .tabs {
         margin-bottom: 1rem;
         display: flex;
 
         @include mobile {
             flex-wrap: wrap;
             gap: 1rem;
+        }
+    }
+
+    .no-permissions {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        gap: 1.5rem;
+        margin-top: 7rem;
+        color: var(--clr-text-hint);
+
+        h6 {
+            margin: 0.5rem 0rem;
+        }
+        a {
+            color: var(--clr-primary);
+        }
+        i {
+            font-size: 5rem;
+        }
+
+        .bottom {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
     }
 </style>
