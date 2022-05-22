@@ -19,7 +19,22 @@ func fetchImageBytes(imgURL string, timeout int) ([]byte, error) {
 		log.Error(fmt.Sprintf("Failed to fetch image from %s: Could not parse URL: %s", imgURL, err.Error()))
 		return nil, err
 	}
-	if imgURLStruct.Scheme != "https" && imgURLStruct.Scheme != "http" {
+	switch imgURLStruct.Scheme {
+	case "http", "https":
+		break
+	case "":
+		log.Warn("Omitting the camera feed's request method is not recommended, using default 'http'")
+		// If no protocol was provided, try prefixing the url with `http`
+		imgURL = "http://" + imgURL
+
+		// Parse the URL again in order to display the (maybe) corrent hostname
+		imgURLStructTemp, err := url.Parse(imgURL)
+		if err != nil {
+			log.Error(fmt.Sprintf("Failed to fetch image from %s: Could not parse URL: %s", imgURL, err.Error()))
+			return nil, err
+		}
+		imgURLStruct = imgURLStructTemp
+	default:
 		return nil, fmt.Errorf("Unsupported protocol error: Protocol: '%s' can not be used to fetch images. Please use 'http' or 'https' instead.", imgURLStruct.Scheme)
 	}
 	log.Trace(fmt.Sprintf("Initiating image fetching from: '%s'", imgURLStruct.Host))
