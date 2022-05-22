@@ -56,25 +56,25 @@ var (
 		{
 			// User is allowed to run, add, delete, and modify Homescript, scheduler homescript excluded
 			Permission:  PermissionHomescript,
-			Name:        "Use Homescript",
+			Name:        "Homescript",
 			Description: "List, add, delete, run, and modify Homescripts",
 		},
 		{
 			// User is allowed to set up, modify, delete, and view personal automations
 			Permission:  PermissionAutomation,
-			Name:        "Use Automations",
+			Name:        "Automations",
 			Description: "List, add, delete, and modify automations",
 		},
 		{
 			// User is allowed to set up, modify, delete, and view personal schedules
 			Permission:  PermissionScheduler,
-			Name:        "Use the Scheduler",
+			Name:        "Scheduler",
 			Description: "List, add, delete, and modify schedules",
 		},
 		{
 			// User is allowed to set up, modify, delete, and view personal reminders
 			Permission:  PermissionReminder,
-			Name:        "Use Reminders",
+			Name:        "Reminders",
 			Description: "List, add, delete, and modify reminders",
 		},
 		{
@@ -98,7 +98,7 @@ var (
 		{
 			// WARNING: This allows a user to do everything, should only be allowed to admin users
 			Permission:  PermissionWildCard,
-			Name:        "Permission Wildcard *",
+			Name:        "Permission Wildcard",
 			Description: "Allows all permissions",
 		},
 	}
