@@ -39,5 +39,6 @@ USER smarthome:smarthome
 RUN homescript config set -n admin -t admin -a http://localhost
 
 ENV SMARTHOME_LOG_LEVEL=INFO
+ENV SMARTHOME_ENV_PRODUCTION=TRUE
 
 ENTRYPOINT ["/app/smarthome"]

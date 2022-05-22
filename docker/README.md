@@ -24,6 +24,7 @@ services:
       # Smarthome sever configuration
       - SMARTHOME_PORT=80                           # Default is 8082
       - SMARTHOME_LOG_LEVEL=TRACE                   # Default is INFO
+      - SMARTHOME_ENV_PRODUCTION=TRUE               # Default is FALSE, however TRUE is recommended
       - SMARTHOME_ADMIN_PASSWORD=password           # Only set on first start
     ports:
       - 8123:80 # Right side must be equal to `SMARTHOME_PORT`
