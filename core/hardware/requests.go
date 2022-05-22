@@ -108,7 +108,7 @@ func sendPowerRequest(node database.HardwareNode, switchName string, powerOn boo
 
 // More user-friendly API to directly address all hardware nodes
 // However, the preferred method of communication is by using the API `ExecuteJob()` this way, priorities and interrupts are scheduled automatically
-// This method is internally used by `ExecuteJob`
+// This function is internally used by `ExecuteJob`
 // Makes a database request at the beginning in order to obtain information about the available nodes
 // Updates the power state in the database after the jobs have been sent to the hardware nodes
 func setPowerOnAllNodes(switchName string, powerOn bool) error {
@@ -130,7 +130,7 @@ func setPowerOnAllNodes(switchName string, powerOn bool) error {
 		errTemp := sendPowerRequest(node, switchName, powerOn)
 		if errTemp != nil {
 			// Log the error
-			event.Error("Node Request Failed", fmt.Sprintf("Power request to node '%s' failed because the request existed with: %s", node.Name, errTemp.Error()))
+			event.Error("Node Request Failed", fmt.Sprintf("Power request to node '%s' failed: %s", node.Name, errTemp.Error()))
 			// If the request failed, check the node and mark it as offline
 			if err := checkNodeOnline(node); err != nil {
 				log.Error("Failed to check node online: ", err.Error())
@@ -153,7 +153,8 @@ func setPowerOnAllNodes(switchName string, powerOn bool) error {
 	return err
 }
 
-// Check all nodes for uptime
+// Runs a health-check on all nodes of the system
+// Used in system-level healthcheck
 func RunNodeCheck() error {
 	nodes, err := database.GetHardwareNodes()
 	if err != nil {
