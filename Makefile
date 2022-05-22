@@ -1,7 +1,7 @@
 appname := smarthome
 workingdir := smarthome
 sources := $(wildcard *.go)
-version := 0.0.31
+version := 0.0.32
 
 build = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -ldflags "-s -w" -v -o $(appname) $(4)
 tar = mkdir -p build && cd ../ && tar -cvzf ./$(appname)_$(1)_$(2).tar.gz $(workingdir)/$(appname) $(workingdir)/web/dist $(workingdir)/web/html $(workingdir)/resources && mv $(appname)_$(1)_$(2).tar.gz $(workingdir)/build
@@ -44,7 +44,7 @@ version:
 release: cleanall test build docker
 
 gh-release:
-	gh release create $(version) ./build/*.tar.gz -F ./docs/CHANGELOG.md --prerelease
+	gh release create v$(version) ./build/*.tar.gz -F ./docs/CHANGELOG.md -t 'Smarthome v$(version)'  --prerelease
 
 vite-dev:
 	cd web && npm run dev
