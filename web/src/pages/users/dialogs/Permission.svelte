@@ -14,9 +14,14 @@
     export let grantFunc: (_: string) => {}
     export let removeFunc: (_: string) => {}
 
+    let loadingStart: number = Date.now()
+    let loadingTime: number
+
     // Handle switch updates
     async function toggle(event: CustomEvent<{ selected: boolean }>) {
+        loadingStart = Date.now()
         loading = true
+        updateLoadingTime()
         try {
             if (event.detail.selected) {
                 await grantFunc(permission)
@@ -26,6 +31,17 @@
             active = !active
         }
         loading = false
+    }
+
+    // Calculate the time spent waiting for the serve'rs response
+    // Is used in the switch to disabled it when the time is greater than 50ms
+    // Prevents ugly flickering and stops the user from clicking multiple times causing interference
+    async function updateLoadingTime() {
+        if (loading) {
+            loadingTime = (loadingStart - Date.now()) * -1
+            await sleep(5)
+            updateLoadingTime()
+        }
     }
 </script>
 
@@ -40,8 +56,12 @@
     <span class="description">{description}</span>
 
     <FormField>
-        <Switch on:SMUISwitch:change={toggle} bind:checked={active} />
-        <span slot="label">{active ? 'granted' : 'denied'}</span>
+        <Switch
+            on:SMUISwitch:change={toggle}
+            checked={active}
+            disabled={loading && loadingTime > 50}
+        />
+        <span slot="label">Permission {active ? 'granted' : 'denied'}</span>
     </FormField>
 </div>
 
@@ -49,6 +69,7 @@
     @use '../../../mixins' as *;
     .permission {
         width: 100%;
+        height: 10rem;
         display: flex;
         padding: 1rem;
         border-radius: 0.3rem;
@@ -63,6 +84,10 @@
 
         @include widescreen {
             width: 29%;
+        }
+
+        @include mobile {
+            height: auto;
         }
     }
     .top {
@@ -94,7 +119,9 @@
         overflow-y: auto;
 
         @include mobile {
-            height: 2rem;
+            height: 100%;
+            overflow-y: hidden;
+            color: var(--clr-text-hint) !important;
         }
     }
 </style>

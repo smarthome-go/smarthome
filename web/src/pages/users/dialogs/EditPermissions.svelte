@@ -16,7 +16,7 @@
     fetchAllPermissions,
     fetchAllSwitches
     } from '../main'
-    import CameraPermissions from './CameraPermissions.svelte'
+    import CameraPermissions from './CameraPermission.svelte'
     import Permission from './Permission.svelte'
     import SwitchPermission from './SwitchPermission.svelte'
 
@@ -275,17 +275,18 @@
                         <Progress type="circular" loading={true} />
                         <h6>Preparing editor...</h6>
                     </div>
+                {:else}
+                    {#each $allPermissions as permission (permission.permission)}
+                        <Permission
+                            description={permission.description}
+                            name={permission.name}
+                            permission={permission.permission}
+                            grantFunc={grantPermission}
+                            removeFunc={removePermission}
+                            active={permissions.includes(permission.permission)}
+                        />
+                    {/each}
                 {/if}
-                {#each $allPermissions as permission (permission.permission)}
-                    <Permission
-                        description={permission.description}
-                        name={permission.name}
-                        permission={permission.permission}
-                        grantFunc={grantPermission}
-                        removeFunc={removePermission}
-                        active={permissions.includes(permission.permission)}
-                    />
-                {/each}
             </div>
         {:else if currentMode === 'Switch Permissions'}
             <div class="switch-permissions">
@@ -294,17 +295,18 @@
                         <Progress type="circular" loading={true} />
                         <h6>Preparing editor...</h6>
                     </div>
+                {:else}
+                    {#each $allSwitches as switchItem (switchItem.id)}
+                        <SwitchPermission
+                            id={switchItem.id}
+                            name={switchItem.name}
+                            roomId={switchItem.roomId}
+                            active={switchPermissions.includes(switchItem.id)}
+                            grantFunc={grantSwitchPermission}
+                            removeFunc={removeSwitchPermission}
+                        />
+                    {/each}
                 {/if}
-                {#each $allSwitches as switchItem (switchItem.id)}
-                    <SwitchPermission
-                        id={switchItem.id}
-                        name={switchItem.name}
-                        roomId={switchItem.roomId}
-                        active={switchPermissions.includes(switchItem.id)}
-                        grantFunc={grantSwitchPermission}
-                        removeFunc={removeSwitchPermission}
-                    />
-                {/each}
                 {#if $allSwitches.length === 0 && switchPermissionsFetched}
                     <div class="no-permissions">
                         <i class="material-icons">power_off</i>
@@ -326,16 +328,17 @@
                         <Progress type="circular" loading={true} />
                         <h6>Preparing editor...</h6>
                     </div>
+                {:else}
+                    {#each $allCameras as camera (camera.id)}
+                        <CameraPermissions
+                            id={camera.id}
+                            name={camera.name}
+                            active={cameraPermissions.includes(camera.id)}
+                            grantFunc={grantCameraPermission}
+                            removeFunc={removeCameraPermission}
+                        />
+                    {/each}
                 {/if}
-                {#each $allCameras as camera (camera.id)}
-                    <CameraPermissions
-                        id={camera.id}
-                        name={camera.name}
-                        active={cameraPermissions.includes(camera.id)}
-                        grantFunc={grantCameraPermission}
-                        removeFunc={removeCameraPermission}
-                    />
-                {/each}
                 {#if $allSwitches.length === 0 && cameraPermissionsFetched}
                     <div class="no-permissions">
                         <i class="material-icons">videocam_off</i>
@@ -367,6 +370,7 @@
     .camera-permissions {
         display: flex;
         flex-wrap: wrap;
+        align-content: flex-start;
         gap: 1rem;
         height: 60vh;
     }
