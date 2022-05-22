@@ -1,4 +1,4 @@
-## Changelog for 0.0.32
+## Changelog for v0.0.32
 
 ### Rooms Frontend
 - (*Bugfix*) Fixed wrong alignment of add room button in rooms GUI

@@ -61,7 +61,7 @@ with open(package_json_path, "r") as package_json:
     print(f"Found old version in {package_json_path}: {old_version}")
 
 with open(package_json_path, "w") as package_json:
-    package_json.write(content.replace(old_version, VERSION))
+    package_json.write(content.replace(f'"version": "{old_version}', f'"version": "{VERSION}'))
 
 # The `README.md`
 with open(readme_path, "r") as readme:
@@ -75,7 +75,7 @@ with open(readme_path, "w") as readme:
 # The `CHANGELOG.md`
 with open(changelog_path, "r") as changelog:
     content = changelog.read()
-    old_version = content.split("## Changelog for ")[1].split("\n")[0]
+    old_version = content.split("## Changelog for v")[1].split("\n")[0]
     print(f"Found old version in {changelog_path}: {old_version}")
 
 with open(changelog_path, "w") as changelog:
