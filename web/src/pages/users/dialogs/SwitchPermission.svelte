@@ -91,7 +91,6 @@
         flex-wrap: wrap;
 
         @include widescreen {
-            flex-direction: column;
             align-items: flex-start;
         }
 
@@ -142,7 +141,7 @@
 
                 @include widescreen {
                     display: block;
-                    max-width: 17rem;
+                    max-width: 13rem;
                 }
 
                 @include mobile {

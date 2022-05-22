@@ -90,7 +90,6 @@
         flex-wrap: wrap;
 
         @include widescreen {
-            flex-direction: column;
             align-items: flex-start;
         }
 
