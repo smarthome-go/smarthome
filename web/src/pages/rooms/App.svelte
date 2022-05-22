@@ -327,21 +327,22 @@
                 <div id="no-rooms">
                     <i class="material-icons">no_meeting_room</i>
                     <h6>There are currently no rooms.</h6>
+                    {#if hasEditPermission}
+                        <div>
+                            <Button variant="outlined" on:click={addRoomShow}>
+                                <Label>Create Room</Label>
+                            </Button>
+                        </div>
+                    {/if}
                 </div>
-                {#if hasEditPermission}
-                    <div>
-                        <Button variant="outlined" on:click={addRoomShow}>
-                            <Label>Create Room</Label>
-                        </Button>
-                    </div>
-                {/if}
             {:else}
                 {#each currentRoom !== undefined ? currentRoom.switches : [] as sw (sw.id)}
                     <PowerSwitch
                         bind:checked={sw.powerOn}
                         on:delete={() => deleteSwitch(sw.id)}
                         on:modify={modifySwitch}
-                        on:powerChange={() => (reloadCameras = $powerCamReloadEnabled)}
+                        on:powerChange={() =>
+                            (reloadCameras = $powerCamReloadEnabled)}
                         on:powerChangeDone={() => (reloadCameras = false)}
                         id={sw.id}
                         name={sw.name}
