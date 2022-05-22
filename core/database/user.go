@@ -43,13 +43,13 @@ func createUserTable() error {
 	CREATE TABLE
 	IF NOT EXISTS
 	user(
-		Username VARCHAR(20) PRIMARY KEY,
-		Forename VARCHAR(20) DEFAULT "Forename",
-		Surname VARCHAR(20)   DEFAULT "Surname",
-		PrimaryColorDark CHAR(7),
-		PrimaryColorLight CHAR(7),
-		SchedulerEnabled BOOLEAN DEFAULT TRUE,
-		DarkTheme BOOLEAN DEFAULT TRUE,
+		Username          VARCHAR(20) PRIMARY KEY,
+		Forename          VARCHAR(20) DEFAULT "Forename",
+		Surname           VARCHAR(20) DEFAULT "Surname",
+		PrimaryColorDark  CHAR(7)     DEFAULT #88FF70,
+		PrimaryColorLight CHAR(7)     DEFAULT #2E7D32,
+		SchedulerEnabled  BOOLEAN     DEFAULT TRUE,
+		DarkTheme         BOOLEAN     DEFAULT TRUE,
 		Password text,
 		AvatarPath text
 	)`
@@ -62,11 +62,16 @@ func createUserTable() error {
 }
 
 // Lists users which are currently in the Database
-// Returns an empty list with an error when failing
 func ListUsers() ([]User, error) {
 	query := `
 	SELECT
-	Username, Forename, Surname, PrimaryColorDark, PrimaryColorLight, SchedulerEnabled, DarkTheme
+		Username,
+		Forename,
+		Surname,
+		PrimaryColorDark,
+		PrimaryColorLight,
+		SchedulerEnabled,
+		DarkTheme
 	FROM user`
 	res, err := db.Query(query)
 	if err != nil {
@@ -137,13 +142,26 @@ func ListUsers() ([]User, error) {
 // }
 
 // Creates a new user based on a the supplied `User` struct
-// Won't panic if user already exists, but will change password
+// Won't return an error if user already exists, but will change the password
 func InsertUser(user FullUser) error {
 	query, err := db.Prepare(`
 	INSERT INTO
-	user(Username, Forename, Surname, PrimaryColorDark, PrimaryColorLight, Password, AvatarPath, SchedulerEnabled, DarkTheme)
+	user(
+		Username,
+		Forename,
+		Surname,
+		PrimaryColorDark,
+		PrimaryColorLight,
+		Password,
+		AvatarPath,
+		SchedulerEnabled,
+		DarkTheme
+	)
 	VALUES(?, ?, ?, ?, ?, ?, ?, DEFAULT, DEFAULT)
-	ON DUPLICATE KEY UPDATE Password=VALUES(Password)`)
+	ON DUPLICATE KEY
+	UPDATE
+		Password=VALUES(Password)
+	`)
 	if err != nil {
 		log.Error("Could not create user. Failed to prepare query: ", err.Error())
 		return err
@@ -188,7 +206,8 @@ func DeleteUser(username string) error {
 		return err
 	}
 	query, err := db.Prepare(`
-	DELETE FROM user WHERE Username=?
+	DELETE FROM user
+	WHERE Username=?
 	`)
 	if err != nil {
 		log.Error("Could not delete user. Failed to prepare query: ", err.Error())
@@ -234,7 +253,13 @@ func AddUser(user FullUser) error {
 func GetUserByUsername(username string) (User, bool, error) {
 	query, err := db.Prepare(`
 	SELECT
-	Username, Forename, Surname, PrimaryColorDark, PrimaryColorLight, SchedulerEnabled, DarkTheme
+		Username,
+		Forename,
+		Surname,
+		PrimaryColorDark,
+		PrimaryColorLight,
+		SchedulerEnabled,
+		DarkTheme
 	FROM user
 	WHERE Username=?
 	`)
@@ -285,7 +310,7 @@ func GetUserDetails(username string) (UserDetails, bool, error) {
 func GetUserPasswordHash(username string) (string, error) {
 	query, err := db.Prepare(`
 	SELECT
-	Password
+		Password
 	FROM user
 	WHERE Username=?
 	`)
@@ -307,7 +332,8 @@ func GetUserPasswordHash(username string) (string, error) {
 // Returns the path of the avatar image of a given user, does not check if the user exists, additional checks needed beforehand
 func GetAvatarPathByUsername(username string) (string, error) {
 	query, err := db.Prepare(`
-	SELECT AvatarPath
+	SELECT
+		AvatarPath
 	FROM user
 	WHERE Username=?
 	`)
@@ -398,10 +424,10 @@ func UpdateUserMetadata(username string, forename string, surname string, primar
 	query, err := db.Prepare(`
 	UPDATE user
 	SET
-	Forename=?,
-	Surname=?,
-	PrimaryColorDark=?,
-	PrimaryColorLight=?
+		Forename=?,
+		Surname=?,
+		PrimaryColorDark=?,
+		PrimaryColorLight=?
 	WHERE Username=?
 	`)
 	if err != nil {
