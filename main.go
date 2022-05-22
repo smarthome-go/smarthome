@@ -89,15 +89,29 @@ func main() {
 
 	// Process environment variables
 	/*
-		`SMARTHOME_ADMIN_PASSWORD`: If set, the admin user that is created on first launch will get this password instead of `admin`
-		`SMARTHOME_DB_DATABASE`   : Sets the database name
-		`SMARTHOME_DB_HOSTNAME`   : Sets the database hostname
-		`SMARTHOME_DB_PASSWORD`   : Sets the database user's password
-		`SMARTHOME_DB_USER`       : Sets the database user
+		`SMARTHOME_ADMIN_PASSWORD`: (String) If set, the admin user that is created on first launch will get this password instead of `admin`
+		`SMARTHOME_ENV_PRODUCTION`: (Bool  ) Whether the server should use production presets
+		`SMARTHOME_DB_DATABASE`   : (String) Sets the database name
+		`SMARTHOME_DB_HOSTNAME`   : (String) Sets the database hostname
+		`SMARTHOME_DB_PORT`       : (Int   ) Sets the database port
+		`SMARTHOME_DB_PASSWORD`   : (String) Sets the database user's password
+		`SMARTHOME_DB_USER`       : (String) Sets the database user
 	*/
 	newAdminPassword := "admin"
 	if adminPassword, adminPasswordOk := os.LookupEnv("SMARTHOME_ADMIN_PASSWORD"); adminPasswordOk {
 		newAdminPassword = adminPassword
+	}
+	if productionEnvStr, productionEnvStrOk := os.LookupEnv("SMARTHOME_ENV_PRODUCTION"); productionEnvStrOk {
+		switch productionEnvStr {
+		case "TRUE":
+			configStruct.Server.Production = true
+			log.Debug("Detected `SMARTHOME_ENV_PRODUCTION` (TRUE), server will start using production presets")
+		case "FALSE":
+			configStruct.Server.Production = false
+			log.Debug("Detected `SMARTHOME_ENV_PRODUCTION` (FALSE), server will start in development mode")
+		default:
+			log.Warn("Could not use `SMARTHOME_ENV_PRODUCTION` as boolean value, using development mode\nValid modes are `TRUE` and `FALSE`")
+		}
 	}
 	if dbUsername, dbUsernameOk := os.LookupEnv("SMARTHOME_DB_USER"); dbUsernameOk {
 		log.Debug("Selected SMARTHOME_DB_USER over value from config file")
@@ -161,22 +175,22 @@ func main() {
 	/** Logs */
 	if !configStruct.Server.Production { // If the server is in development mode, all logs should be deleted
 		if err := event.FlushAllLogs(); err != nil {
-			log.Fatal("Failed to flush all logs: ", err.Error())
+			log.Error("Failed to flush all logs: ", err.Error())
 		}
 	}
 	if err := event.FlushOldLogs(); err != nil { // Always flush old logs
-		log.Fatal("Failed to flush logs older that 30 days: ", err.Error()) // TODO: setup deletion of old logs with a scheduler
+		log.Error("Failed to flush logs older that 30 days: ", err.Error()) // TODO: setup deletion of old logs with a scheduler
 	}
 
 	/** Schedulers */
 	if err := automation.Init(); err != nil { // Initializes the automation scheduler
-		log.Fatal("Failed to activate automation system: ", err.Error())
+		log.Error("Failed to activate automation system: ", err.Error())
 	}
 	if err := scheduler.Init(); err != nil { // Initializes the normal scheduler
-		log.Fatal("Failed to activate scheduler system: ", err.Error())
+		log.Error("Failed to activate scheduler system: ", err.Error())
 	}
 	if err := reminder.InitSchedule(); err != nil { // Initialize notification scheduler for reminders
-		log.Fatal("Failed to activate reminder scheduler: ", err.Error())
+		log.Error("Failed to activate reminder scheduler: ", err.Error())
 	}
 
 	/** Hardware handler */
@@ -190,8 +204,12 @@ func main() {
 
 	/** Finish startup */
 	event.Info("System Started", fmt.Sprintf("The Smarthome server completed startup at %s (%.2f seconds).", time.Now().Format(time.ANSIC), time.Since(startTime).Seconds()))
-	log.Info(fmt.Sprintf("Smarthome v%s is running on http://localhost:%d", utils.Version, port))
+	operatingMode := "development"
+	if configStruct.Server.Production {
+		operatingMode = "production"
+	}
+	log.Info(fmt.Sprintf("Smarthome v%s is listening on http://localhost:%d using %s mode", utils.Version, port, operatingMode))
 	if err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
-		log.Fatal(err.Error())
+		log.Fatal("Web server failed unexpectedly: ", err.Error())
 	}
 }
