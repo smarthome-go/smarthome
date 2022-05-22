@@ -58,14 +58,9 @@ run-full: web mysql
 
 # Cleaning
 clean: cleanweb
-	rm -rf app
 	rm -rf bin
 	rm -rf log
-	rm -rf docker/app
-	rm -rf docker/bin
-	rm -rf docker/homescript
-	rm -rf docker/homescript_linux_amd64.tar.gz
-	rm -rf docker/smarthome
+	rm -rf docker/container/cache
 	rm -rf coverage.out
 	rm -rf coverage.html
 
@@ -81,20 +76,20 @@ build: setup web all linux clean
 
 docker-prepare:
 	CGO_ENABLED=0 GOOS=linux go build -v -installsuffix cgo -ldflags '-s -w' -o smarthome
-	mkdir -p docker/app/web
-	rsync -rv resources docker/app/
-	rsync -rv web/dist docker/app/web/
-	cp smarthome docker/app/
+	mkdir -p docker/container/cache/web
+	rsync -rv resources docker/container/cache/
+	rsync -rv web/dist docker/container/cache/web/
+	cp smarthome docker/container/cache/
 
 docker-push:
 	docker push mikmuellerdev/smarthome:$(version)
 	docker push mikmuellerdev/smarthome:latest
 
 docker: cleanall web docker-prepare
-	cd docker && docker build . -t mikmuellerdev/smarthome:$(version) -t mikmuellerdev/smarthome:latest --network=host
+	cd docker/container && docker build . -t mikmuellerdev/smarthome:$(version) -t mikmuellerdev/smarthome:latest --network=host
 
 sudo-docker: cleanall web docker-prepare
-	cd docker && sudo docker build . -t mikmuellerdev/smarthome:$(version) -t mikmuellerdev/smarthome:latest --network=host
+	cd docker/container && sudo docker build . -t mikmuellerdev/smarthome:$(version) -t mikmuellerdev/smarthome:latest --network=host
 
 web: cleanweb
 	cd web && npm run build

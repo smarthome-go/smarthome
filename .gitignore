@@ -32,7 +32,7 @@ data/avatar
 log
 
 # docker build files
-docker/app
+docker/container/cache
 
 # Setup file
 data/config/setup.json

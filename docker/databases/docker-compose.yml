@@ -1,0 +1,41 @@
+# Docker-compose file used for creating development database instances
+version: '3.7'
+
+services:
+  # App database for development
+  smarthome-mariadb:
+    image: mariadb
+    container_name: smarthome-mariadb
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MARIADB_ROOT_PASSWORD=password
+      - TZ=Europe/Berlin
+      - MYSQL_DATABASE=smarthome
+      - MYSQL_USER=smarthome
+      - MYSQL_PASSWORD=password
+    ports:
+      - 3313:3306
+    volumes:
+      - smarthome-data:/var/lib/mysql
+
+  # Testing database for ci/cd
+  testing-smarthome-mariadb:
+    image: mariadb
+    container_name: smarthome-mariadb-testing
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=testing
+      - MARIADB_ROOT_PASSWORD=testing
+      - TZ=Europe/Berlin
+      - MYSQL_DATABASE=smarthome
+      - MYSQL_USER=smarthome
+      - MYSQL_PASSWORD=testing
+    ports:
+      - 3330:3306
+    volumes:
+      - testing-data:/var/lib/mysql
+
+volumes:
+  testing-data:
+  smarthome-data:

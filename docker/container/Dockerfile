@@ -3,7 +3,7 @@ FROM alpine:3
 LABEL author="MikMuellerDev"
 LABEL version="0.0.31"
 
-COPY ./app /app
+COPY ./cache /app
 
 RUN addgroup smarthome && adduser \
     --disabled-password \

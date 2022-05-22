@@ -3,14 +3,14 @@
 # The SemVer (https://semver.org) versioning system is used.
 import re
 
-docker_motd_path = "docker/motd"
-dockerfile_path = "docker/Dockerfile"
+docker_motd_path = "docker/container/motd"
+dockerfile_path = "docker/container/Dockerfile"
 package_json_path = "web/package.json"
 main_go_path = "main.go"
 readme_path = "README.md"
 changelog_path = "./docs/CHANGELOG.md"
 makefile_path = "Makefile"
-docker_compose_path = "docker/docker-compose.yml"
+docker_compose_path = "./docker-compose.yml"
 
 with open(main_go_path, "r") as main_go:
     content = main_go.read()
