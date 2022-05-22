@@ -35,7 +35,11 @@ func createConfigTable() error {
 	if !found {
 		if _, err := db.Exec(`
 		INSERT INTO
-		configuration(Id, AutomationEnabled, LockDownMode)
+		configuration(
+			Id,
+			AutomationEnabled,
+			LockDownMode
+		)
 		VALUES(0, TRUE, FALSE)
 		`); err != nil {
 			log.Error("Failed to create configuration: insert failed: executing query failed: ", err.Error())
@@ -51,7 +55,10 @@ func GetServerConfiguration() (ServerConfig, bool, error) {
 	var config ServerConfig
 	err := db.QueryRow(`
 	SELECT
-	AutomationEnabled, LockDownMode, Latitude, Longitude
+		AutomationEnabled,
+		LockDownMode,
+		Latitude,
+		Longitude
 	FROM configuration
 	WHERE Id=0
 	`).Scan(
@@ -76,10 +83,10 @@ func SetServerConfiguration(config ServerConfig) error {
 	query, err := db.Prepare(`
 	UPDATE configuration
 	SET
-	AutomationEnabled=?,
-	LockDownMode=?,
-	Latitude=?,
-	Longitude=?
+		AutomationEnabled=?,
+		LockDownMode=?,
+		Latitude=?,
+		Longitude=?
 	WHERE Id=0
 	`)
 	if err != nil {
@@ -103,7 +110,7 @@ func SetAutomationSystemActivation(enabled bool) error {
 	query, err := db.Prepare(`
 	UPDATE configuration
 	SET
-	AutomationEnabled=?
+		AutomationEnabled=?
 	WHERE Id=0
 	`)
 	if err != nil {
@@ -122,8 +129,8 @@ func UpdateLocation(lat float32, lon float32) error {
 	query, err := db.Prepare(`
 	UPDATE configuration
 	SET
-	Latitude=?,
-	Longitude=?
+		Latitude=?,
+		Longitude=?
 	WHERE Id=0
 	`)
 	if err != nil {

@@ -72,8 +72,7 @@ func RemoveUserSwitchPermission(username string, switchId string) (bool, error) 
 	query, err := db.Prepare(`
 	DELETE FROM
 	hasSwitchPermission
-	WHERE
-		Username=? AND Switch=?
+	WHERE Username=? AND Switch=?
 	`)
 	if err != nil {
 		log.Error("Failed to remove switch permission from user: failed to prepare query: ", err.Error())
@@ -160,7 +159,8 @@ func GetUserSwitchPermissions(username string) ([]string, error) {
 // Used in userHasSwitchPermission
 func UserHasSwitchPermissionQuery(username string, switchId string) (bool, error) {
 	query, err := db.Prepare(`
-	SELECT Switch
+	SELECT
+		Switch
 	FROM hasSwitchPermission
 	WHERE Username=? AND Switch=?
 	`)

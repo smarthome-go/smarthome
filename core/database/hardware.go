@@ -42,7 +42,11 @@ func CreateHardwareNode(node HardwareNode) error {
 	query, err := db.Prepare(`
 	INSERT INTO
 	hardware(
-		Url, Online, Enabled, Name, Token
+		Url,
+		Online,
+		Enabled,
+		Name,
+		Token
 	)
 	VALUES(?, DEFAULT, DEFAULT, ?, ?)
 	ON DUPLICATE KEY
@@ -112,7 +116,11 @@ func DeleteHardwareNode(url string) error {
 func GetHardwareNodes() ([]HardwareNode, error) {
 	query := `
 	SELECT
-	Url, Online, Enabled, Name, Token
+		Url,
+		Online,
+		Enabled,
+		Name,
+		Token
 	FROM hardware
 	`
 	res, err := db.Query(query)
@@ -143,7 +151,11 @@ func GetHardwareNodes() ([]HardwareNode, error) {
 func GetHardwareNodeByUrl(url string) (HardwareNode, bool, error) {
 	query, err := db.Prepare(`
 	SELECT
-	Url, Online, Enabled, Name, Token
+		Url,
+		Online,
+		Enabled,
+		Name,
+		Token
 	FROM hardware
 	WHERE Url=?
 	`)
@@ -175,9 +187,9 @@ func ModifyHardwareNode(url string, node HardwareNode) error {
 	query, err := db.Prepare(`
 	UPDATE hardware
 	SET
-	Enabled=?,
-	Name=?,
-	Token=?
+		Enabled=?,
+		Name=?,
+		Token=?
 	WHERE Url=?
 	`)
 	if err != nil {

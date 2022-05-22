@@ -143,7 +143,14 @@ func GetAutomationById(id uint) (Automation, bool, error) {
 func GetUserAutomations(username string) ([]Automation, error) {
 	query, err := db.Prepare(`
 	SELECT
-	Id, Name, Description, CronExpression, HomescriptId, Owner, Enabled, TimingMode
+		Id,
+		Name,
+		Description,
+		CronExpression,
+		HomescriptId,
+		Owner,
+		Enabled,
+		TimingMode
 	FROM automation
 	WHERE Owner=?
 	`)
@@ -184,7 +191,14 @@ func GetUserAutomations(username string) ([]Automation, error) {
 func GetAutomations() ([]Automation, error) {
 	res, err := db.Query(`
 	SELECT
-	Id, Name, Description, CronExpression, HomescriptId, Owner, Enabled, TimingMode
+		Id,
+		Name,
+		Description,
+		CronExpression,
+		HomescriptId,
+		Owner,
+		Enabled,
+		TimingMode
 	FROM automation
 	`)
 	if err != nil {
@@ -219,12 +233,12 @@ func ModifyAutomation(id uint, newItem AutomationData) error {
 	query, err := db.Prepare(`
 	UPDATE automation
 	SET
-	Name=?,
-	Description=?,
-	CronExpression=?,
-	HomescriptId=?,
-	Enabled=?,
-	TimingMode=?
+		Name=?,
+		Description=?,
+		CronExpression=?,
+		HomescriptId=?,
+		Enabled=?,
+		TimingMode=?
 	WHERE Id=?
 	`)
 	if err != nil {

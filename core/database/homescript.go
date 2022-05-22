@@ -86,12 +86,12 @@ func ModifyHomescriptById(id string, homescript HomescriptData) error {
 	query, err := db.Prepare(`
 	UPDATE homescript
 	SET 
-	Name=?,
-	Description=?,
-	QuickActionsEnabled=?,
-	SchedulerEnabled=?,
-	Code=?,
-	MDIcon=?
+		Name=?,
+		Description=?,
+		QuickActionsEnabled=?,
+		SchedulerEnabled=?,
+		Code=?,
+		MDIcon=?
 	WHERE Id=?
 	`)
 	if err != nil {

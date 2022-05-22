@@ -119,8 +119,9 @@ func DeleteNotificationFromUserById(notificationId uint, username string) error 
 // Used in the frontend before the actual permissions are fetched
 func GetUserNotificationCount(username string) (uint16, error) {
 	query, err := db.Prepare(`
-	SELECT COUNT(Id)
-	AS Count
+	SELECT
+		COUNT(Id)
+		AS Count
 	FROM notifications
 	WHERE Username=?
 	`)
@@ -142,7 +143,12 @@ func GetUserNotificationCount(username string) (uint16, error) {
 // Returns a list containing the permissions of a given user
 func GetUserNotifications(username string) ([]Notification, error) {
 	query, err := db.Prepare(`
-	SELECT Id, Priority, Name, Description, Date
+	SELECT
+		Id,
+		Priority,
+		Name,
+		Description,
+		Date
 	FROM notifications
 	WHERE Username=?
 	`)

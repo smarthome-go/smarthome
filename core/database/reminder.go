@@ -190,8 +190,8 @@ func SetReminderUserWasNotified(id uint, wasNotified bool, wasNotifiedAt time.Ti
 	query, err := db.Prepare(`
 	UPDATE reminder
 	SET
-	UserWasNotified=?,
-	UserWasNotifiedAt=?
+		UserWasNotified=?,
+		UserWasNotifiedAt=?
 	WHERE Id=?
 	`)
 	if err != nil {
@@ -210,7 +210,15 @@ func SetReminderUserWasNotified(id uint, wasNotified bool, wasNotifiedAt time.Ti
 func GetReminderById(id uint, owner string) (Reminder, bool, error) {
 	query, err := db.Prepare(`
 	SELECT
-	Id, Name, Description, CreatedDate, DueDate, Priority, Owner, UserWasNotified, UserWasNotifiedAt
+		Id,
+		Name,
+		Description,
+		CreatedDate,
+		DueDate,
+		Priority,
+		Owner,
+		UserWasNotified,
+		UserWasNotifiedAt
 	FROM reminder
 	WHERE
 	Id=? AND Owner=?
@@ -261,8 +269,7 @@ func DeleteAllRemindersFromUser(username string) error {
 	query, err := db.Prepare(`
 	DELETE FROM
 	reminder
-	WHERE
-	Owner=?
+	WHERE Owner=?
 	`)
 	if err != nil {
 		log.Error("Failed to remove all reminders from user: preparing query failed: ", err.Error())
@@ -280,8 +287,7 @@ func DeleteUserReminderById(owner string, id uint) error {
 	query, err := db.Prepare(`
 	DELETE FROM
 	reminder
-	WHERE
-	Owner=? AND Id=?
+	WHERE Owner=? AND Id=?
 	`)
 	if err != nil {
 		log.Error("Deleting user reminder failed: preparing query failed: ", err.Error())

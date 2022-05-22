@@ -124,7 +124,9 @@ func ListRooms() ([]RoomData, error) {
 func GetRoomDataById(id string) (RoomData, bool, error) {
 	query, err := db.Prepare(`
 	SELECT
-		Id, Name, Description
+		Id,
+		Name,
+		Description
 	FROM room
 	WHERE Id=?
 	`)

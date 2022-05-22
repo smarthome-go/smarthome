@@ -51,7 +51,11 @@ func CreateSwitch(id string, name string, roomId string, watts uint16) error {
 	query, err := db.Prepare(`
 	INSERT INTO
 	switch(
-		Id, Name, Power, RoomId, Watts
+		Id,
+		Name,
+		Power,
+		RoomId,
+		Watts
 	)
 	VALUES(?, ?, DEFAULT, ?, ?)
 	ON DUPLICATE KEY
@@ -187,7 +191,7 @@ func ListUserSwitchesQuery(username string) ([]Switch, error) {
 		Watts
 	FROM switch
 	JOIN hasSwitchPermission
-	ON hasSwitchPermission.Switch=switch.Id
+		ON hasSwitchPermission.Switch=switch.Id
 	WHERE hasSwitchPermission.Username=?`,
 	)
 	if err != nil {

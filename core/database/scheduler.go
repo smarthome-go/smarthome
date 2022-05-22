@@ -46,7 +46,12 @@ func CreateNewSchedule(schedule Schedule) (uint, error) {
 	query, err := db.Prepare(`
 	INSERT INTO
 	schedule(
-		Id, Name, Owner, Hour, Minute, HomescriptCode
+		Id,
+		Name,
+		Owner,
+		Hour,
+		Minute,
+		HomescriptCode
 	)
 	VALUES(DEFAULT, ?, ?, ?, ?, ?)
 	`)
@@ -79,7 +84,12 @@ func CreateNewSchedule(schedule Schedule) (uint, error) {
 func GetScheduleById(id uint) (Schedule, bool, error) {
 	query, err := db.Prepare(`
 	SELECT
-	Id, Name, Owner, Hour, Minute, HomescriptCode
+		Id,
+		Name,
+		Owner,
+		Hour,
+		Minute,
+		HomescriptCode
 	FROM schedule
 	WHERE Id=?
 	`)
@@ -110,7 +120,12 @@ func GetScheduleById(id uint) (Schedule, bool, error) {
 func GetUserSchedules(username string) ([]Schedule, error) {
 	query, err := db.Prepare(`
 	SELECT
-	Id, Name, Owner, Hour, Minute, HomescriptCode
+		Id,
+		Name,
+		Owner,
+		Hour,
+		Minute,
+		HomescriptCode
 	FROM schedule
 	WHERE Owner=?
 	`)
@@ -148,7 +163,12 @@ func GetUserSchedules(username string) ([]Schedule, error) {
 func GetSchedules() ([]Schedule, error) {
 	query, err := db.Prepare(`
 	SELECT
-	Id, Name, Owner, Hour, Minute, HomescriptCode
+		Id,
+		Name,
+		Owner,
+		Hour,
+		Minute,
+		HomescriptCode
 	FROM schedule
 	`)
 	if err != nil {
@@ -187,10 +207,10 @@ func ModifySchedule(id uint, newItem ScheduleWithoudIdAndUsername) error {
 	query, err := db.Prepare(`
 	UPDATE schedule
 	SET
-	Name=?,
-	Hour=?,
-	Minute=?,
-	HomescriptCode=?
+		Name=?,
+		Hour=?,
+		Minute=?,
+		HomescriptCode=?
 	WHERE Id=?
 	`)
 	if err != nil {

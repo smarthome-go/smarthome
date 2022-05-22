@@ -163,7 +163,7 @@ func ListUserCamerasQuery(username string) ([]Camera, error) {
 		RoomId
 	FROM camera
 	JOIN hasCameraPermission
-	ON hasCameraPermission.Camera=camera.Id
+		ON hasCameraPermission.Camera=camera.Id
 	WHERE hasCameraPermission.Username=?
 	`)
 	if err != nil {

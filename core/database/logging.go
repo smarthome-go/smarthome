@@ -66,7 +66,8 @@ func AddLogEvent(name string, description string, level int) error {
 func FlushOldLogs() error {
 	query := `
 	DELETE FROM logs
-	WHERE Date < NOW() - INTERVAL 30 DAY
+	WHERE
+	Date < NOW() - INTERVAL 30 DAY
 	`
 	res, err := db.Exec(query)
 	if err != nil {
@@ -101,7 +102,11 @@ func FlushAllLogs() error {
 func GetLogs() ([]LogEvent, error) {
 	query := `
 	SELECT
-	Id, Name, Description, Level, Date
+		Id,
+		Name,
+		Description,
+		Level,
+		Date
 	FROM logs`
 	res, err := db.Query(query)
 	if err != nil {

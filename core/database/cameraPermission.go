@@ -24,7 +24,8 @@ func createHasCameraPermissionsTable() error {
 // Returns the camera-permissions of an arbitrary user in the form of a slice of strings
 func GetUserCameraPermissions(username string) ([]string, error) {
 	query, err := db.Prepare(`
-	SELECT Camera
+	SELECT
+		Camera
 	FROM hasCameraPermission
 	WHERE Username=?
 	`)
@@ -86,8 +87,7 @@ func RemoveUserCameraPermission(username string, cameraId string) (modified bool
 	query, err := db.Prepare(`
 	DELETE FROM
 	hasCameraPermission
-	WHERE
-		Username=? AND Camera=?
+	WHERE Username=? AND Camera=?
 	`)
 	if err != nil {
 		log.Error("Failed to remove user camera permission: preparing query failed: ", err.Error())
@@ -148,8 +148,9 @@ func RemoveAllCameraPermissionsOfUser(username string) error {
 // Used in userHasCameraPermission
 func UserHasCameraPermissionQuery(username string, cameraId string) (bool, error) {
 	query, err := db.Prepare(`
-	SELECT Camera
-		FROM hasCameraPermission
+	SELECT
+		Camera
+	FROM hasCameraPermission
 	WHERE Username=? AND Camera=?
 	`)
 	if err != nil {

@@ -4,7 +4,7 @@ package database
 // Creates the table containing <permissions> if it doesn't exists already
 // Can return an error if the database fails
 func createHasPermissionTable() error {
-	query := `
+	_, err := db.Exec(`
 	CREATE TABLE
 	IF NOT EXISTS
 	hasPermission(
@@ -17,8 +17,7 @@ func createHasPermissionTable() error {
 		FOREIGN KEY (Permission)
 		REFERENCES permission(Permission)
 	)
-	`
-	_, err := db.Exec(query)
+	`)
 	if err != nil {
 		log.Error("Could not create hasPermission table: Executing query failed: ", err.Error())
 		return err
@@ -29,16 +28,15 @@ func createHasPermissionTable() error {
 // Used during <init> of the database, only called once
 // May return an error if the database fails
 func createPermissionTable() error {
-	query := `
-  CREATE TABLE
-  IF NOT EXISTS
-  permission(
-	  Permission VARCHAR(30) PRIMARY KEY,
-	  Name VARCHAR(100),
-	  Description TEXT
+	_, err := db.Exec(`
+	CREATE TABLE
+	IF NOT EXISTS
+	permission(
+		Permission VARCHAR(30) PRIMARY KEY,
+		Name VARCHAR(100),
+		Description TEXT
 	)
-  `
-	_, err := db.Exec(query)
+	`)
 	if err != nil {
 		log.Error("Could not create permissions table: Executing query failed: ", err.Error())
 		return err
@@ -113,7 +111,7 @@ func RemoveUserPermission(username string, permission PermissionType) error {
 	DELETE FROM
 	hasPermission
 	WHERE
-		username=? AND Permission=?
+	username=? AND Permission=?
 	`)
 	if err != nil {
 		log.Error("Could not remove permission: preparing query failed: ", err.Error())
@@ -132,8 +130,8 @@ func RemoveUserPermission(username string, permission PermissionType) error {
 // Does not validate username, additional checks required, returns an error if the database fails
 func RemoveAllPermissionsOfUser(username string) error {
 	query, err := db.Prepare(`
-	DELETE
-	FROM hasPermission
+	DELETE FROM
+	hasPermission
 	WHERE Username=?
 	`)
 	if err != nil {
@@ -151,7 +149,8 @@ func RemoveAllPermissionsOfUser(username string) error {
 // Returns a list of permissions assigned to a given user, if it exists
 func GetUserPermissions(username string) ([]string, error) {
 	query, err := db.Prepare(`
-	SELECT Permission
+	SELECT
+		Permission
 	FROM hasPermission
 	WHERE Username=?
 	`)
