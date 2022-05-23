@@ -39,3 +39,4 @@ data/config/setup.json
 
 # go coverage file
 coverage.html
+.vscode/configurationCache.log
