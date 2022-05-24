@@ -1,7 +1,7 @@
 {
     "background_color": "#181818",
     "theme_color": "#6FC55E",
-    "orientation": "portrait-primary",
+    "orientation": "natural",
     "lang": "en-US",
     "categories": ["utilities"],
     "description": "A completely self-built Smarthome system which focusses on functionality and reliability.",
