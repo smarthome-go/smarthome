@@ -16,12 +16,14 @@ const (
 	PermissionLogs               PermissionType = "logs"
 	PermissionManageUsers        PermissionType = "manageUsers"
 	PermissionDebug              PermissionType = "debug"
-	PermissionHomescript         PermissionType = "homescript"
 	PermissionAutomation         PermissionType = "automation"
 	PermissionScheduler          PermissionType = "scheduler"
 	PermissionReminder           PermissionType = "reminder"
 	PermissionModifyServerConfig PermissionType = "modifyServerConfig"
 	PermissionModifyRooms        PermissionType = "modifyRooms"
+
+	PermissionHomescript        PermissionType = "homescript"
+	PermissionHomescriptNetwork PermissionType = "hmsNetwork"
 
 	// Dangerous
 	PermissionWildCard PermissionType = "*"
@@ -58,6 +60,12 @@ var (
 			Permission:  PermissionHomescript,
 			Name:        "Homescript",
 			Description: "List, add, delete, run, and modify Homescripts",
+		},
+		{
+			// User is allowed to make network requests from Homescript
+			Permission:  PermissionHomescriptNetwork,
+			Name:        "Homescript Network",
+			Description: "Make network requests inside Homescript, use http functions",
 		},
 		{
 			// User is allowed to set up, modify, delete, and view personal automations

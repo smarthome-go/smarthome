@@ -3,6 +3,8 @@ package homescript
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"strings"
 	"time"
 
@@ -63,6 +65,52 @@ func (self *Executor) Switch(switchId string, powerOn bool) error {
 // TODO: implement this feature
 func (self *Executor) Play(server string, mode string) error {
 	return errors.New("The feature 'radiGo' is not yet implemented")
+}
+
+// Makes a GET request to an arbitrary URL and returns the result
+func (self *Executor) Get(url string) (string, error) {
+	hasPermission, err := database.UserHasPermission(self.Username, database.PermissionHomescriptNetwork)
+	if err != nil {
+		return "", fmt.Errorf("Could not send GET request: failed to validate your permissions: %s", err.Error())
+	}
+	if !hasPermission {
+		return "", fmt.Errorf("Will not send GET request: you lack permission to access the network via homescript. If this is unintentional, contact your administrator")
+	}
+	res, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
+}
+
+// Makes a request to an arbitrary URL using a custom method and body in order to return the result
+func (self *Executor) Http(url string, method string, body string) (string, error) {
+	hasPermission, err := database.UserHasPermission(self.Username, database.PermissionHomescriptNetwork)
+	if err != nil {
+		return "", fmt.Errorf("Could not send %s request: failed to validate your permissions: %s", method, err.Error())
+	}
+	if !hasPermission {
+		return "", fmt.Errorf("Will not send %s request: you lack permission to access the network via homescript. If this is unintentional, contact your administrator", method)
+	}
+	req, err := http.NewRequest(method, url, strings.NewReader(body))
+	if err != nil {
+		return "", err
+	}
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer res.Body.Close()
+	resBody, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(resBody), nil
 }
 
 // Sends a notification to the user who issues this command
