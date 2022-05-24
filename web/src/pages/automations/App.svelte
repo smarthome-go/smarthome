@@ -153,7 +153,7 @@
                     view_list
                 </IconButton>
                 <Button on:click={() => (addOpen = true)}>
-                    <Label>Create</Label>
+                    <Label>Create New</Label>
                     <Icon class="material-icons">add</Icon>
                 </Button>
             {/if}
@@ -166,7 +166,7 @@
             <i class="material-icons" id="no-automations-icon">event_repeat</i>
             <h6 class="text-hint">No automations</h6>
             <Button on:click={() => (addOpen = true)} variant="outlined">
-                <Label>Create</Label>
+                <Label>Create New</Label>
                 <Icon class="material-icons">add</Icon>
             </Button>
         {:else}
