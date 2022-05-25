@@ -205,6 +205,9 @@ func DeleteUser(username string) error {
 	if err := DeleteAllSchedulesFromUser(username); err != nil {
 		return err
 	}
+	if err := RemoveAllCameraPermissionsOfUser(username); err != nil {
+		return err
+	}
 	query, err := db.Prepare(`
 	DELETE FROM user
 	WHERE Username=?
