@@ -14,6 +14,10 @@ func TestCreateCameraTable(t *testing.T) {
 }
 
 func TestCreateCamera(t *testing.T) {
+	// Delete database first
+	if err := initDB(true); err != nil {
+		t.Error(err.Error())
+	}
 	// Create test rooms
 	if err := CreateRoom(RoomData{Id: "test"}); err != nil {
 		t.Error(err.Error())
@@ -22,7 +26,6 @@ func TestCreateCamera(t *testing.T) {
 	if err := CreateRoom(RoomData{Id: "test2"}); err != nil {
 		t.Error(err.Error())
 	}
-
 	table := []Camera{
 		{
 			Id:     "test_1",
@@ -44,7 +47,6 @@ func TestCreateCamera(t *testing.T) {
 			if err := CreateCamera(camera); err != nil {
 				t.Error(err.Error())
 			}
-
 			// Assert equality
 			cam, found, err := GetCameraById(camera.Id)
 			if err != nil {
@@ -249,4 +251,85 @@ func TestDeleteCameraById(t *testing.T) {
 			assert.Empty(t, cam)
 		})
 	}
+}
+
+func TestListUserCameras(t *testing.T) {
+	// Flush database first
+	if err := initDB(true); err != nil {
+		t.Error(err.Error())
+	}
+	// Create a room for the cameras
+	if err := CreateRoom(RoomData{Id: "test"}); err != nil {
+		t.Error(err.Error())
+	}
+	// Create test users
+	if err := AddUser(FullUser{
+		Username: "cameras",
+	}); err != nil {
+		t.Error(err.Error())
+	}
+	// Is required later in order to check if the function is able to return all cameras to a user with the modifyRooms permission
+	if err := AddUser(FullUser{
+		Username: "room_admin",
+	}); err != nil {
+		t.Error(err.Error())
+	}
+	if err := AddUserPermission("room_admin", PermissionModifyRooms); err != nil {
+		t.Error(err.Error())
+	}
+	// Create test cameras
+	cams := []Camera{
+		{
+			Id:     "test_user_1",
+			Name:   "test 1",
+			Url:    "http://example/com/1",
+			RoomId: "test",
+		},
+		{
+			Id:     "test_user_2",
+			Name:   "test 2",
+			Url:    "http://example.com/2",
+			RoomId: "test",
+		},
+	}
+	for _, cam := range cams {
+		if err := CreateCamera(cam); err != nil {
+			t.Error(err.Error())
+		}
+	}
+	// Add an additional camera which will not be added to the permissions in order to check if the function does not return ungranted cameras
+	if err := CreateCamera(Camera{
+		Id:     "unlisted",
+		RoomId: "test",
+	}); err != nil {
+		t.Error(err.Error())
+	}
+	// Check if the method returns something despite the user having no permission
+	userCamsBefPerm, err := ListUserCameras("cameras")
+	if err != nil {
+		t.Error(err.Error())
+	}
+	assert.Empty(t, userCamsBefPerm)
+	// Grant the user permission to all cameras
+	for _, cam := range cams {
+		if _, err := AddUserCameraPermission("cameras", cam.Id); err != nil {
+			t.Error(err.Error())
+		}
+	}
+	// Check the cameras again after giving the user permission, expected are just the granted cameras without the `unlisted` one
+	userCamsAfterPerm, err := ListUserCameras("cameras")
+	if err != nil {
+		t.Error(err.Error())
+	}
+	assert.Equal(t, cams, userCamsAfterPerm)
+	// Check the user-cameras of the `room_admin` user, expected are all cameras, inluding the `unlisted` one
+	userCamsAdmin, err := ListUserCameras("room_admin")
+	if err != nil {
+		t.Error(err.Error())
+	}
+	allCameras, err := ListCameras()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	assert.Equal(t, allCameras, userCamsAdmin)
 }
