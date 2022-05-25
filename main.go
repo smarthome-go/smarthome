@@ -32,7 +32,7 @@ var port = 8082 // Default port on which the server listens, can be overwritten 
 
 func main() {
 	// Do not change manually, use the `make version` command instead
-	utils.Version = "0.0.33"
+	utils.Version = "0.0.34"
 
 	startTime := time.Now()
 

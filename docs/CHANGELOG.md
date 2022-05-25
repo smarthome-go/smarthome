@@ -1,4 +1,4 @@
-## Changelog for v0.0.33
+## Changelog for v0.0.34
 
 ### Homescript
 - Added Http methods for making network requests via Homescript
