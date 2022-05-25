@@ -1,4 +1,4 @@
-## Changelog for v0.0.34
+## Changelog for v0.0.34-fix.1
 
 ### Homescript
 - The `http` function now also requires the `Content-Type` agument
