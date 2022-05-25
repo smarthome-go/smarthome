@@ -264,7 +264,7 @@ func TestRun(t *testing.T) {
 	}
 	for _, test := range table {
 		output, code, errors := Run(
-			"admin", "testing", test.Code,
+			"admin", "testing", test.Code, false,
 		)
 		if len(errors) > 0 {
 			if errors[0].Message != test.Result.FirstError {
