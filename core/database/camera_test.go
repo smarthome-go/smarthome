@@ -67,6 +67,59 @@ func TestCreateCamera(t *testing.T) {
 	})
 }
 
+func TestListCamerasRedacted(t *testing.T) {
+	// Existent cameras are deleted to prevent interference with the `assert.Equal` function
+	oldCams, err := ListCameras()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	for _, cam := range oldCams {
+		if err := DeleteCamera(cam.Id); err != nil {
+			t.Error(err.Error())
+		}
+	}
+	// Create test data
+	if err := CreateRoom(RoomData{
+		Id:          "redacted",
+		Name:        "redacted",
+		Description: "redacted",
+	}); err != nil {
+		t.Error(err.Error())
+	}
+	data := []Camera{
+		{
+			Id:     "test_redacted_1",
+			Name:   "1",
+			Url:    "http://hidden.com",
+			RoomId: "redacted",
+		},
+		{
+			Id:     "test_redacted_2",
+			Name:   "2",
+			Url:    "http://hidden2.com",
+			RoomId: "redacted",
+		},
+	}
+	for _, camera := range data {
+		if err := CreateCamera(camera); err != nil {
+			t.Error(err.Error())
+		}
+	}
+	// Create a copy of the `data` slice but without urls
+	dataCpy := make([]RedactedCamera, 0)
+	for _, camera := range data {
+		dataCpy = append(dataCpy, RedactedCamera{
+			Id:   camera.Id,
+			Name: camera.Name,
+		})
+	}
+	fromFunc, err := ListCamerasRedacted()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	assert.Equal(t, dataCpy, fromFunc)
+}
+
 func TestModifyCamera(t *testing.T) {
 	// Create test room
 	if err := CreateRoom(RoomData{Id: "test"}); err != nil {
