@@ -45,6 +45,7 @@ func Shutdown() error {
 func DeleteTables() error {
 	tables := []string{
 		"SET FOREIGN_KEY_CHECKS = 0",
+		"DROP TABLE IF EXISTS hasCameraPermission",
 		"DROP TABLE IF EXISTS camera",
 		"DROP TABLE IF EXISTS rooms",
 		"DROP TABLE IF EXISTS hasSwitchPermission",
