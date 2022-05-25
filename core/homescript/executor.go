@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -19,9 +20,20 @@ import (
 )
 
 type Executor struct {
+	// Is required for error handling, allows pretty-print for these errors
 	ScriptName string
-	Username   string
-	Output     string
+
+	// The Username is required for functions which rely on permissions-check
+	// or need to access the username for other reasons, e.g. `notify`
+	Username string
+
+	// Will be appended to when the print function is used
+	// Is required in order to return the complete output of a Homescript
+	Output string
+
+	// If set to true, a script will only check its correctness
+	// Does not actually modify or wait for any data
+	DryRun bool
 }
 
 // Emulates printing to the console
@@ -49,6 +61,11 @@ func (self *Executor) SwitchOn(switchId string) (bool, error) {
 // Checks if the switch exists, if the user is allowed to interact with switches and if the user has the matching switch-permission
 // If a check fails, an error is returned
 func (self *Executor) Switch(switchId string, powerOn bool) error {
+	// If running in DryRun, only check the values
+	if self.DryRun {
+		return self.testSwitch(switchId, powerOn)
+	}
+	// Actual function implementation
 	err := hardware.SetSwitchPowerAll(switchId, powerOn, self.Username)
 	if err != nil {
 		log.Debug(fmt.Sprintf("[Homescript] ERROR: script: '%s' user: '%s': failed to set power: %s", self.ScriptName, self.Username, err.Error()))
@@ -62,6 +79,32 @@ func (self *Executor) Switch(switchId string, powerOn bool) error {
 	return nil
 }
 
+// Used for DryRun, only checks the existence of the specified switch and the user's permissions
+func (self *Executor) testSwitch(switchId string, powerOn bool) error {
+	_, switchExists, err := database.GetSwitchById(switchId)
+	if err != nil {
+		return err
+	}
+	if !switchExists {
+		return fmt.Errorf("Failed to set power: switch '%s' does not exist", switchId)
+	}
+	userHasPowerPermission, err := database.UserHasPermission(self.Username, database.PermissionPower)
+	if err != nil {
+		return fmt.Errorf("Failed to set power: could not check if user is allowed to interact with switches: %s", err.Error())
+	}
+	if !userHasPowerPermission {
+		return errors.New("Failed to set power: user is not allowed to interact with switches")
+	}
+	userHasSwitchPermission, err := database.UserHasSwitchPermission(self.Username, switchId)
+	if err != nil {
+		return fmt.Errorf("Failed to set power: could not check if user is allowed to interact with this switch: %s", err.Error())
+	}
+	if !userHasSwitchPermission {
+		return fmt.Errorf("Failed to set power: user is not allowed to interact with switch '%s'", switchId)
+	}
+	return nil
+}
+
 // Sends a mode request to a given radiGo server
 // TODO: implement this feature
 func (self *Executor) Play(server string, mode string) error {
@@ -69,7 +112,8 @@ func (self *Executor) Play(server string, mode string) error {
 }
 
 // Makes a GET request to an arbitrary URL and returns the result
-func (self *Executor) Get(url string) (string, error) {
+func (self *Executor) Get(requestUrl string) (string, error) {
+	// The permissions can be validated beforehand
 	hasPermission, err := database.UserHasPermission(self.Username, database.PermissionHomescriptNetwork)
 	if err != nil {
 		return "", fmt.Errorf("Could not send GET request: failed to validate your permissions: %s", err.Error())
@@ -77,7 +121,12 @@ func (self *Executor) Get(url string) (string, error) {
 	if !hasPermission {
 		return "", fmt.Errorf("Will not send GET request: you lack permission to access the network via homescript. If this is unintentional, contact your administrator")
 	}
-	res, err := http.Get(url)
+	// DryRun only checks the URL
+	if self.DryRun {
+		_, err := url.ParseRequestURI(requestUrl)
+		return "", fmt.Errorf("Invalid URL provided: could not parse URL: %s", err)
+	}
+	res, err := http.Get(requestUrl)
 	if err != nil {
 		return "", err
 	}
@@ -90,7 +139,8 @@ func (self *Executor) Get(url string) (string, error) {
 }
 
 // Makes a request to an arbitrary URL using a custom method and body in order to return the result
-func (self *Executor) Http(url string, method string, contentType string, body string) (string, error) {
+func (self *Executor) Http(requestUrl string, method string, contentType string, body string) (string, error) {
+	// Check permissions and request building beforehand
 	hasPermission, err := database.UserHasPermission(self.Username, database.PermissionHomescriptNetwork)
 	if err != nil {
 		return "", fmt.Errorf("Could not send %s request: failed to validate your permissions: %s", method, err.Error())
@@ -98,7 +148,7 @@ func (self *Executor) Http(url string, method string, contentType string, body s
 	if !hasPermission {
 		return "", fmt.Errorf("Will not send %s request: you lack permission to access the network via homescript. If this is unintentional, contact your administrator", method)
 	}
-	req, err := http.NewRequest(method, url, strings.NewReader(body))
+	req, err := http.NewRequest(method, requestUrl, strings.NewReader(body))
 	if err != nil {
 		return "", err
 	}
@@ -106,6 +156,10 @@ func (self *Executor) Http(url string, method string, contentType string, body s
 	req.Header.Set("User-Agent", fmt.Sprintf("Smarthome-homescript/%s", utils.Version))
 	client := http.Client{
 		Timeout: 30 * time.Second,
+	}
+	// If using DryRun, stop here
+	if self.DryRun {
+		return "", nil
 	}
 	res, err := client.Do(req)
 	if err != nil {
@@ -125,6 +179,10 @@ func (self *Executor) Notify(
 	description string,
 	level interpreter.LogLevel,
 ) error {
+	// If using DryRun, stop here
+	if self.DryRun {
+		return nil
+	}
 	err := user.Notify(
 		self.Username,
 		title,
@@ -154,7 +212,18 @@ func (self *Executor) AddUser(username string, password string, forename string,
 		return errors.New("Blank passwords are not allowed")
 	}
 	if len(username) > 20 || len(forename) > 20 || len(surname) > 20 {
-		return errors.New("length of username, forename, and surname must not exceed 20 characters")
+		return errors.New("Length of username, forename, and surname must not exceed 20 characters")
+	}
+	_, found, err := database.GetUserByUsername(username)
+	if err != nil {
+		return fmt.Errorf("Failed to check existence of user: %s", err.Error())
+	}
+	if found {
+		return fmt.Errorf("Will not add user: user '%s' already exists", username)
+	}
+	// If using DryRun, stop here
+	if self.DryRun {
+		return nil
 	}
 	if err := database.AddUser(database.FullUser{
 		Username:          username,
@@ -185,6 +254,10 @@ func (self *Executor) DelUser(username string) error {
 	if isStandaloneUserAdmin {
 		return errors.New("Did not delete user: target is the only user-administrator: deleting this user would break the system.")
 	}
+	// If using DryRun, stop here
+	if self.DryRun {
+		return nil
+	}
 	if err := user.DeleteUser(username); err != nil {
 		return err
 	}
@@ -202,6 +275,10 @@ func (self *Executor) AddPerm(username string, permission string) error {
 	}
 	if !database.DoesPermissionExist(permission) {
 		return fmt.Errorf("Failed to add permission: the permission '%s' does not exist. You can view a complete list of valid permissions under user-management > manage user permissions (any user) > permissions", permission)
+	}
+	// If using DryRun, stop here
+	if self.DryRun {
+		return nil
 	}
 	edited, err := user.AddPermission(username, database.PermissionType(permission))
 	if err != nil {
@@ -234,6 +311,10 @@ func (self *Executor) DelPerm(username string, permission string) error {
 			return errors.New("Did not remove permission: target user is the only user-administrator: removing this permission would break the system.")
 		}
 	}
+	// If using DryRun, stop here
+	if self.DryRun {
+		return nil
+	}
 	edited, err := user.RemovePermission(username, database.PermissionType(permission))
 	if err != nil {
 		return fmt.Errorf("Failed to add permission: database failure: %s", err.Error())
@@ -257,6 +338,13 @@ func (self *Executor) Log(
 	if !hasPermission {
 		return fmt.Errorf("Failed to add log event: user '%s' is not allowed to use the internal logging system.", self.Username)
 	}
+	// If using DryRun, stop here
+	if self.DryRun {
+		if level > 5 {
+			return fmt.Errorf("Failed to add log event: invalid logging level <%d>: valid logging levels are 1, 2, 3, 4, or 5", level)
+		}
+		return nil
+	}
 	switch level {
 	case 0:
 		event.Trace(title, description)
@@ -278,7 +366,8 @@ func (self *Executor) Log(
 
 // Executes another Homescript based on its Id
 func (self Executor) Exec(homescriptId string) (string, error) {
-	output, exitCode, err := RunById(self.Username, homescriptId)
+	// The DryRun value is passed to the execured script
+	output, exitCode, err := RunById(self.Username, homescriptId, self.DryRun)
 	if err != nil {
 		self.Print(fmt.Sprintf("Exec failed: called homescript failed with exit code %d", exitCode))
 		return output, err
@@ -293,11 +382,17 @@ func (self *Executor) GetUser() string {
 
 // TODO: Will later be implemented, should return the weather as a human-readable string
 func (self *Executor) GetWeather() (string, error) {
+	if self.DryRun {
+		return "", nil
+	}
 	return "rainy", nil
 }
 
 // TODO: Will later be implemented, should return the temperature in Celsius
 func (self *Executor) GetTemperature() (int, error) {
+	if self.DryRun {
+		return 0, nil
+	}
 	return 42, nil
 }
 

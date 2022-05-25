@@ -52,10 +52,11 @@ func convertErrors(errorItems ...hmsError.Error) []HomescriptError {
 }
 
 // Executes arbitrary homescript-code as a given user, returns the output and a possible error slice
-func Run(username string, scriptLabel string, scriptCode string) (string, int, []HomescriptError) {
+func Run(username string, scriptLabel string, scriptCode string, dryRun bool) (string, int, []HomescriptError) {
 	executor := &Executor{
 		Username:   username,
 		ScriptName: scriptLabel,
+		DryRun:     dryRun,
 	}
 	exitCode, runtimeErrors := homescript.Run(
 		executor,
@@ -71,7 +72,7 @@ func Run(username string, scriptLabel string, scriptCode string) (string, int, [
 }
 
 // Executes a given homescript from the database and returns it's output, exit-code and possible error
-func RunById(username string, homescriptId string) (string, int, error) {
+func RunById(username string, homescriptId string, dryRun bool) (string, int, error) {
 	homescriptItem, hasBeenFound, err := database.GetUserHomescriptById(homescriptId, username)
 	if err != nil {
 		return "database error", 500, err
@@ -79,7 +80,7 @@ func RunById(username string, homescriptId string) (string, int, error) {
 	if !hasBeenFound {
 		return "not found error", 404, errors.New("Invalid Homescript id: no data associated with id")
 	}
-	output, exitCode, errorsHms := Run(username, homescriptItem.Data.Id, homescriptItem.Data.Code)
+	output, exitCode, errorsHms := Run(username, homescriptItem.Data.Id, homescriptItem.Data.Code, dryRun)
 	if len(errorsHms) > 0 {
 		return "execution error", exitCode, fmt.Errorf("Homescript terminated with exit code %d: %s", exitCode, errorsHms[0].Message)
 	}

@@ -53,7 +53,7 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	output, exitCode, hmsErrors := homescript.Run(username, "live", request.Code)
+	output, exitCode, hmsErrors := homescript.Run(username, "live", request.Code, false)
 	if len(hmsErrors) > 0 {
 		w.WriteHeader(http.StatusInternalServerError)
 		if err := json.NewEncoder(w).Encode(
@@ -88,6 +88,65 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		HomescriptResponse{
 			Success:  true,
 			Message:  "Homescript ran successfully",
+			Output:   output,
+			Exitcode: exitCode,
+			Errors:   hmsErrors,
+		}); err != nil {
+		log.Error(err.Error())
+		Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
+	}
+}
+
+// Lints a given Homescript string and checks it for errors
+func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(w, r)
+	if err != nil {
+		return
+	}
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request HomescriptLiveRunRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	output, exitCode, hmsErrors := homescript.Run(username, "lint", request.Code, true)
+	if len(hmsErrors) > 0 {
+		w.WriteHeader(http.StatusInternalServerError)
+		if err := json.NewEncoder(w).Encode(
+			HomescriptResponse{
+				Success:  false,
+				Exitcode: exitCode,
+				Message:  "Linting discovered errors",
+				Output:   output,
+				Errors:   hmsErrors,
+			}); err != nil {
+			log.Error(err.Error())
+			Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
+		}
+		return
+	}
+	if exitCode != 0 {
+		w.WriteHeader(http.StatusInternalServerError)
+		if err := json.NewEncoder(w).Encode(
+			HomescriptResponse{
+				Success:  false,
+				Exitcode: exitCode,
+				Message:  "Linting exited with non-0 status code but ran successfully",
+				Output:   output,
+				Errors:   hmsErrors,
+			}); err != nil {
+			log.Error(err.Error())
+			Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
+		}
+		return
+	}
+	if err := json.NewEncoder(w).Encode(
+		HomescriptResponse{
+			Success:  true,
+			Message:  "Linting discovered no errors",
 			Output:   output,
 			Exitcode: exitCode,
 			Errors:   hmsErrors,
