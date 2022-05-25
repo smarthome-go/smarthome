@@ -15,6 +15,7 @@ import (
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/hardware"
 	"github.com/smarthome-go/smarthome/core/user"
+	"github.com/smarthome-go/smarthome/core/utils"
 )
 
 type Executor struct {
@@ -89,7 +90,7 @@ func (self *Executor) Get(url string) (string, error) {
 }
 
 // Makes a request to an arbitrary URL using a custom method and body in order to return the result
-func (self *Executor) Http(url string, method string, body string) (string, error) {
+func (self *Executor) Http(url string, method string, contentType string, body string) (string, error) {
 	hasPermission, err := database.UserHasPermission(self.Username, database.PermissionHomescriptNetwork)
 	if err != nil {
 		return "", fmt.Errorf("Could not send %s request: failed to validate your permissions: %s", method, err.Error())
@@ -101,7 +102,12 @@ func (self *Executor) Http(url string, method string, body string) (string, erro
 	if err != nil {
 		return "", err
 	}
-	res, err := http.DefaultClient.Do(req)
+	req.Header.Set("Content-Type", contentType)
+	req.Header.Set("User-Agent", fmt.Sprintf("Smarthome-homescript/%s", utils.Version))
+	client := http.Client{
+		Timeout: 30 * time.Second,
+	}
+	res, err := client.Do(req)
 	if err != nil {
 		return "", err
 	}
