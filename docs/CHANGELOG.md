@@ -1,4 +1,4 @@
-## Changelog for v0.0.35
+## Changelog for v0.0.36
 
 ### Homescript
 - Modified the Homescript implementation to support a `dry-run` setting which disables:
