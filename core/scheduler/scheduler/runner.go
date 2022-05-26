@@ -59,6 +59,7 @@ func scheduleRunnerFunc(id uint) {
 		fmt.Sprintf("%d.hms", id),
 		job.HomescriptCode,
 		false,
+		make(map[string]string, 0),
 	)
 	if len(hmsErrors) > 0 {
 		log.Error("Executing schedule's homescript failed: ", hmsErrors[0].ErrorType)

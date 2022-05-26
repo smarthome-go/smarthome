@@ -53,7 +53,7 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	output, exitCode, hmsErrors := homescript.Run(username, "live", request.Code, false)
+	output, exitCode, hmsErrors := homescript.Run(username, "live", request.Code, false, make(map[string]string, 0))
 	if len(hmsErrors) > 0 {
 		w.WriteHeader(http.StatusInternalServerError)
 		if err := json.NewEncoder(w).Encode(
@@ -112,7 +112,7 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	output, exitCode, hmsErrors := homescript.Run(username, "lint", request.Code, true)
+	output, exitCode, hmsErrors := homescript.Run(username, "lint", request.Code, true, make(map[string]string, 0))
 	if len(hmsErrors) > 0 {
 		w.WriteHeader(http.StatusInternalServerError)
 		if err := json.NewEncoder(w).Encode(

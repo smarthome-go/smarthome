@@ -34,6 +34,29 @@ type Executor struct {
 	// If set to true, a script will only check its correctness
 	// Does not actually modify or wait for any data
 	DryRun bool
+
+	// Holds the script's arguments as a map
+	// Is filled by a helper function like `Run`
+	// Is used by the `CheckArg` and `GetArg` methods for providing args
+	Args map[string]string
+}
+
+// Validates that a given argument has been passed to the Homescript runtime
+// Returns a boolean indicating whether the argument has been found in the `Args` map
+func (self *Executor) CheckArg(toCheck string) bool {
+	_, ok := self.Args[toCheck]
+	return ok
+}
+
+// Returns the value of an expected argument from the `Args` map
+// If the value could not be found in the map, it was not provided to the Homescript runtime.
+// This situation will cause the function to return an error, so `CheckArg` should be used beforehand
+func (self *Executor) GetArg(toGet string) (string, error) {
+	value, ok := self.Args[toGet]
+	if !ok {
+		return "", fmt.Errorf("Failed to retrieve argument '%s': not provided to the Homescript runtime", toGet)
+	}
+	return value, nil
 }
 
 // Emulates printing to the console
@@ -365,11 +388,11 @@ func (self *Executor) Log(
 }
 
 // Executes another Homescript based on its Id
-func (self Executor) Exec(homescriptId string) (string, error) {
+func (self Executor) Exec(homescriptId string, args map[string]string) (string, error) {
 	// The DryRun value is passed to the execured script
-	output, exitCode, err := RunById(self.Username, homescriptId, self.DryRun)
+	output, exitCode, err := RunById(self.Username, homescriptId, self.DryRun, args)
 	if err != nil {
-		self.Print(fmt.Sprintf("Exec failed: called homescript failed with exit code %d", exitCode))
+		self.Print(fmt.Sprintf("Exec failed: called Homescript failed with exit code %d", exitCode))
 		return output, err
 	}
 	return output, nil

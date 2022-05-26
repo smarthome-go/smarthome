@@ -100,7 +100,7 @@ func automationRunnerFunc(id uint) {
 		}
 		return
 	}
-	output, exitCode, err := homescript.RunById(job.Owner, job.Data.HomescriptId, false)
+	output, exitCode, err := homescript.RunById(job.Owner, job.Data.HomescriptId, false, make(map[string]string, 0))
 	if err != nil {
 		log.Warn(fmt.Sprintf("Automation '%s' failed during the execution of Homescript: '%s', which terminated abnormally", job.Data.Name, job.Data.HomescriptId))
 		event.Error(
