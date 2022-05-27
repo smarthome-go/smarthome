@@ -238,7 +238,7 @@ func TestRun(t *testing.T) {
 			},
 		},
 		{
-			Code: "print(exec('test'))",
+			Code: "print(exec('test', mkArgs()))",
 			Result: struct {
 				Output     string
 				Code       int
@@ -250,7 +250,7 @@ func TestRun(t *testing.T) {
 			},
 		},
 		{
-			Code: "exec('test2')",
+			Code: "exec('test2', mkArgs())",
 			Result: struct {
 				Output     string
 				Code       int
@@ -264,7 +264,7 @@ func TestRun(t *testing.T) {
 	}
 	for _, test := range table {
 		output, code, errors := Run(
-			"admin", "testing", test.Code, false,
+			"admin", "testing", test.Code, false, make(map[string]string, 0),
 		)
 		if len(errors) > 0 {
 			if errors[0].Message != test.Result.FirstError {
