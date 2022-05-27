@@ -49,8 +49,8 @@ type HomescriptIdRequest struct {
 	Id string `json:"id"`
 }
 
-// Runs any given Homescript as a string
-func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
+// Runs any given Homescript given its id
+func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
@@ -58,7 +58,7 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 	}
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
-	var request HomescriptLiveRunRequest
+	var request HomescriptIdRunRequest
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
@@ -69,8 +69,19 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 	for _, arg := range request.Args {
 		args[arg.Key] = arg.Value
 	}
+	hmsData, found, err := database.GetUserHomescriptById(request.Id, username)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "could not retrieve Homescript from database", Error: "database failure"})
+		return
+	}
+	if !found {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "Homescript not found", Error: "no data associated with id"})
+		return
+	}
 	// Run the Homescript
-	output, exitCode, hmsErrors := homescript.Run(username, "live", request.Code, false, args)
+	output, exitCode, hmsErrors := homescript.Run(username, request.Id, hmsData.Data.Code, false, args)
 	if len(hmsErrors) > 0 {
 		w.WriteHeader(http.StatusInternalServerError)
 		if err := json.NewEncoder(w).Encode(
@@ -105,6 +116,158 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		HomescriptResponse{
 			Success:  true,
 			Message:  "Homescript ran successfully",
+			Output:   output,
+			Exitcode: exitCode,
+			Errors:   hmsErrors,
+		}); err != nil {
+		log.Error(err.Error())
+		Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
+	}
+}
+
+// Lints any given Homescript given its id
+func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(w, r)
+	if err != nil {
+		return
+	}
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request HomescriptIdRunRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	// Fill the arguments using the request
+	args := make(map[string]string, 0)
+	for _, arg := range request.Args {
+		args[arg.Key] = arg.Value
+	}
+	hmsData, found, err := database.GetUserHomescriptById(request.Id, username)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "could not retrieve Homescript from database", Error: "database failure"})
+		return
+	}
+	if !found {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "Homescript not found", Error: "no data associated with id"})
+		return
+	}
+	// Run the Homescript
+	output, exitCode, hmsErrors := homescript.Run(username, request.Id, hmsData.Data.Code, false, args)
+	if len(hmsErrors) > 0 {
+		w.WriteHeader(http.StatusInternalServerError)
+		if err := json.NewEncoder(w).Encode(
+			HomescriptResponse{
+				Success:  false,
+				Exitcode: exitCode,
+				Message:  "Homescript terminated abnormally",
+				Output:   output,
+				Errors:   hmsErrors,
+			}); err != nil {
+			log.Error(err.Error())
+			Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
+		}
+		return
+	}
+	if exitCode != 0 {
+		w.WriteHeader(http.StatusInternalServerError)
+		if err := json.NewEncoder(w).Encode(
+			HomescriptResponse{
+				Success:  false,
+				Exitcode: exitCode,
+				Message:  "Homescript exited with a non-0 status code",
+				Output:   output,
+				Errors:   hmsErrors,
+			}); err != nil {
+			log.Error(err.Error())
+			Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
+		}
+		return
+	}
+	if err := json.NewEncoder(w).Encode(
+		HomescriptResponse{
+			Success:  true,
+			Message:  "Homescript ran successfully",
+			Output:   output,
+			Exitcode: exitCode,
+			Errors:   hmsErrors,
+		}); err != nil {
+		log.Error(err.Error())
+		Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
+	}
+}
+
+// Runs any given Homescript as a string
+func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(w, r)
+	if err != nil {
+		return
+	}
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request HomescriptIdRunRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	// Fill the arguments using the request
+	args := make(map[string]string, 0)
+	for _, arg := range request.Args {
+		args[arg.Key] = arg.Value
+	}
+	hmsData, found, err := database.GetUserHomescriptById(request.Id, username)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "could not retrieve Homescript from database", Error: "database failure"})
+		return
+	}
+	if !found {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "Homescript not found", Error: "no data associated with id"})
+		return
+	}
+	// Lint the Homescript
+	output, exitCode, hmsErrors := homescript.Run(username, request.Id, hmsData.Data.Code, true, args)
+	if len(hmsErrors) > 0 {
+		w.WriteHeader(http.StatusInternalServerError)
+		if err := json.NewEncoder(w).Encode(
+			HomescriptResponse{
+				Success:  false,
+				Exitcode: exitCode,
+				Message:  "Linting discovered errors",
+				Output:   output,
+				Errors:   hmsErrors,
+			}); err != nil {
+			log.Error(err.Error())
+			Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
+		}
+		return
+	}
+	if exitCode != 0 {
+		w.WriteHeader(http.StatusInternalServerError)
+		if err := json.NewEncoder(w).Encode(
+			HomescriptResponse{
+				Success:  false,
+				Exitcode: exitCode,
+				Message:  "Linting exited with non-0 status code but ran successfully",
+				Output:   output,
+				Errors:   hmsErrors,
+			}); err != nil {
+			log.Error(err.Error())
+			Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
+		}
+		return
+	}
+	if err := json.NewEncoder(w).Encode(
+		HomescriptResponse{
+			Success:  true,
+			Message:  "Linting discovered no errors",
 			Output:   output,
 			Exitcode: exitCode,
 			Errors:   hmsErrors,
