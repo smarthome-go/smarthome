@@ -15,7 +15,7 @@ docker_compose_path = "./docker-compose.yml"
 with open(main_go_path, "r") as main_go:
     content = main_go.read()
     old_version = content.split("utils.Version = \"")[1].split("\"\n")[0]
-    print(f"Found old version in {main_go_path}:", old_version)
+    print(f"Found old version in {main_go_path}: {old_version}")
 
 try:
     VERSION = input(
