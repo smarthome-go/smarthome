@@ -1,6 +1,5 @@
 ## Changelog for v0.0.38
 
 ### Homescript
-- Added functions for executing and linting Homescript via the script's id
-- Added API endpoints and routes for those functions
-- Fixed messy and broken Homescript API functions 
+- Upgraded Homescript to `v0.9.1-beta` which prevents a server panic
+- Fixed messy API endpoint Homescript implementation
