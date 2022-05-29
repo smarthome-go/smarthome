@@ -194,6 +194,7 @@
 
 <style lang="scss">
     @use '../../mixins' as *;
+
     .automations {
         padding: 1.5rem;
         border-radius: 0.4rem;
