@@ -1,32 +1,36 @@
+# Makefile for the smarthome-go/smarthome project
 appname := smarthome
 workingdir := smarthome
 sources := $(wildcard *.go)
+# Do not edit manually, use the `version` target to change the
+# version programmatically in all places
 version := 0.0.37-fix.1
 
 build = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -ldflags "-s -w" -v -o $(appname) $(4)
+# TODO: eliminate usage of workingdir
 tar = mkdir -p build && cd ../ && tar -cvzf ./$(appname)_$(1)_$(2).tar.gz $(workingdir)/$(appname) $(workingdir)/web/dist $(workingdir)/web/html $(workingdir)/resources && mv $(appname)_$(1)_$(2).tar.gz $(workingdir)/build
 
 .PHONY: all linux
 
 all:	linux
 
-# Setup
+# Setup dependencies for Go and NPM 
 setup:
 	go mod tidy
 	cd web && npm i
 	cd web && npm run prepare
 
-# Testing
+# Run a normal integration and unit test procedure
 test:
 	mkdir -p web/dist/html
 	touch web/dist/html/testing.html
 	# Prevents server panic
 
-	# cd docker && docker-compose -f testing-database-docker-compose.yml up -d
 	go test -v -p 1 ./... --timeout=10000s
 	# Tests should be run one after another due to deletion of the database at every test start
 	rm -rf web/dist/html/testing.html
 
+# Runs the integration and unit tests and outputs the test coverage as `coverage.html`
 vtest:
 	mkdir -p web/dist/html
 	touch web/dist/html/testing.html
@@ -40,23 +44,32 @@ vtest:
 version:
 	python3 update_version.py
 
-# Change version on build
+# Prepares everything for a version-release
+# In order to publish the release to official registries
+# run `make gh-release` and `make docker-push`
 release: cleanall test build docker
 
+# Publishes the local release to Github releases
 gh-release:
 	gh release create v$(version) ./build/*.tar.gz -F ./docs/CHANGELOG.md -t 'Smarthome v$(version)'  --prerelease
 
+# Starts the vite development server
 vite-dev:
 	cd web && npm run dev
 
-# Run
+# Start the project to mock production
+# Generates the frontend web output first
+# then runs the go backend
 run: web
 	go run -v -race .
 
+# Similar to `run` but starts a development database first
+# which is required for the backend to run
+# docker and docker-compose are required for this target
 run-full: web mysql
 	go run -v -race .
 
-# Cleaning
+# Removes most of the intermediate cache and build files 
 clean: cleanweb
 	rm -rf bin
 	rm -rf log
@@ -64,35 +77,50 @@ clean: cleanweb
 	rm -rf coverage.out
 	rm -rf coverage.html
 
+# Removes the output folder of the web interface
 cleanweb:
 	rm -rf web/dist
 
+# Removes all intermediate cache and build files
+# Also removes the `build` directory, which contains release-ready tarballs 
 cleanall: clean
 	rm -rf build
 	rm -f smarthome
 
-# Builds
+# Builds the Go backend and the frontend web interface 
+# Produces the `build` directory, which contains release-ready tarballs
 build: setup web all linux clean
 
-docker-prepare:
+# Prepares the local filesystem for a Docker build
+# Mostly copies precompiled dependencies to the docker cache directory
+# compiles the Go backend to an AMD64 binary and copies the
+# pre generated web output to a docker cache directory
+docker-prepare: web
 	CGO_ENABLED=0 GOOS=linux go build -v -installsuffix cgo -ldflags '-s -w' -o smarthome
 	mkdir -p docker/container/cache/web
 	rsync -rv resources docker/container/cache/
 	rsync -rv web/dist docker/container/cache/web/
 	cp smarthome docker/container/cache/
 
+# Is used after `release` in order to publish the built
+# Docker image to Docker-Hub
 docker-push:
 	docker push mikmuellerdev/smarthome:$(version)
 	docker push mikmuellerdev/smarthome:latest
 
+# Builds the Docker image using the pre compiled
+# and setup build cache
 docker: cleanall web docker-prepare
 	cd docker/container && docker build . -t mikmuellerdev/smarthome:$(version) -t mikmuellerdev/smarthome:latest --network=host
 
+# Similar to `docker`, just for users who require `sudo` in order
+# to interact with the Docker daemon
 sudo-docker: cleanall web docker-prepare
 	cd docker/container && sudo docker build . -t mikmuellerdev/smarthome:$(version) -t mikmuellerdev/smarthome:latest --network=host
 
+# Generates the output files for the frontend web interface
 web: cleanweb
-	cd web && npm run build
+	cd web && npm i && npm run build
 
 # Build architectures
 linux: build/linux_arm.tar.gz build/linux_arm64.tar.gz build/linux_386.tar.gz build/linux_amd64.tar.gz
