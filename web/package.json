@@ -43,6 +43,8 @@
     "vite": "^2.8.6"
   },
   "dependencies": {
+    "@codemirror/basic-setup": "^0.20.0",
+    "@codemirror/lang-javascript": "^0.20.0",
     "@smui/button": "^6.0.0-beta.15",
     "@smui/checkbox": "^6.0.0-beta.15",
     "@smui/circular-progress": "^6.0.0-beta.15",
@@ -61,7 +63,8 @@
     "@smui/textfield": "^6.0.0-beta.15",
     "@smui/tooltip": "^6.0.0-beta.16",
     "material-icons": "^1.10.8",
-    "svelte-ace": "^1.0.21",
+    "prism": "^1.0.0",
+    "prismjs": "^1.28.0",
     "svelte-fa": "^2.4.0",
     "uuid": "^8.3.2"
   }
