@@ -10,6 +10,13 @@ export interface ScheduleData {
     homescriptCode: string,
 }
 
+export interface addSchedule {
+    name: string,
+    hour: number,
+    minute: number,
+    homescriptCode: string,
+}
+
 export const schedules: Writable<ScheduleData[]> = writable([])
 export const loading: Writable<boolean> = writable(false)
 

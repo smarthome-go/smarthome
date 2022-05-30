@@ -1,29 +1,37 @@
 <script lang="ts">
-    import Button,{ Icon } from '@smui/button'
-    import IconButton from '@smui/icon-button'
-    import { Label } from '@smui/list'
-    import { onMount } from 'svelte'
-    import Progress from '../../components/Progress.svelte'
-    import { createSnackbar,data as userData } from '../../global'
-    import Page from '../../Page.svelte'
-    import {ScheduleData, loading, schedules} from './main'
+    import Button, { Icon } from "@smui/button";
+    import IconButton from "@smui/icon-button";
+    import { Label } from "@smui/list";
+    import { onMount } from "svelte";
+    import Progress from "../../components/Progress.svelte";
+    import { createSnackbar, data as userData } from "../../global";
+    import Page from "../../Page.svelte";
+    import AddSchedule from "./dialogs/AddSchedule.svelte";
+    import { ScheduleData, loading, schedules } from "./main";
+
+    let addOpen = false;
 
     // Fetches the current schedules from the server
     async function loadSchedules() {
-        $loading = true
+        $loading = true;
         try {
             const res = await (
-                await fetch('/api/schedules/list/personal')
-            ).json()
+                await fetch("/api/scheduler/list/personal")
+            ).json();
 
             if (res.success !== undefined && !res.success)
-                throw Error(res.error)
+                throw Error(res.error);
         } catch (err) {
-            $createSnackbar(`Could not load schedules: ${err}`)
+            $createSnackbar(`Could not load schedules: ${err}`);
         }
-        $loading = false
+        $loading = false;
     }
+
+    // Load the schedules as soon as possible
+    onMount(loadSchedules);
 </script>
+
+<AddSchedule bind:open={addOpen} />
 
 <Page>
     <div id="header" class="mdc-elevation--z4">
@@ -33,11 +41,11 @@
                 title="Refresh"
                 class="material-icons"
                 on:click={async () => {
-                    await loadSchedules()
+                    await loadSchedules();
                 }}>refresh</IconButton
             >
             {#if $schedules.length > 0}
-                <Button on:click={() => (addOpen = true)}>
+                <Button on:click={() => addOpen = true}>
                     <Label>Create New</Label>
                     <Icon class="material-icons">add</Icon>
                 </Button>
@@ -50,19 +58,22 @@
         {#if $schedules.length == 0}
             <i class="material-icons" id="no-schedules-icon">event_repeat</i>
             <h6 class="text-hint">No schedules</h6>
-            <Button on:click={() => (addOpen = true)} variant="outlined">
+            <Button on:click={() => {}} variant="outlined">
                 <Label>Create New</Label>
                 <Icon class="material-icons">add</Icon>
             </Button>
         {:else}
+            {#each $schedules as schedule (schedule.id)}
+                <span>{schedule.id}</span>
+            {/each}
         {/if}
     </div>
 </Page>
 
 <style lang="scss">
-    @use '../../mixins' as *;
+    @use "../../mixins" as *;
 
-    .schedules{
+    .schedules {
         padding: 1.5rem;
         border-radius: 0.4rem;
         display: flex;
