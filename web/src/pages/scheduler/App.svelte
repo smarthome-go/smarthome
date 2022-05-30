@@ -8,6 +8,7 @@
     import Page from "../../Page.svelte";
     import AddSchedule from "./dialogs/AddSchedule.svelte";
     import { ScheduleData, loading, schedules } from "./main";
+    import HmsEditor from "../../components/HmsEditor.svelte";
 
     let addOpen = false;
 
@@ -16,7 +17,7 @@
         $loading = true;
         try {
             const res = await (
-                await fetch("/api/schedules/list/personal")
+                await fetch("/api/scheduler/list/personal")
             ).json();
 
             if (res.success !== undefined && !res.success)
@@ -45,7 +46,7 @@
                 }}>refresh</IconButton
             >
             {#if $schedules.length > 0}
-                <Button on:click={() => addOpen = true}>
+                <Button on:click={() => (addOpen = true)}>
                     <Label>Create New</Label>
                     <Icon class="material-icons">add</Icon>
                 </Button>
@@ -54,11 +55,13 @@
     </div>
     <Progress id="loader" bind:loading={$loading} />
 
+    <HmsEditor />
+
     <div class="schedules" class:empty={$schedules.length == 0}>
         {#if $schedules.length == 0}
-            <i class="material-icons" id="no-schedules-icon">event_repeat</i>
+            <i class="material-icons">event_repeat</i>
             <h6 class="text-hint">No schedules</h6>
-            <Button on:click={() => {}} variant="outlined">
+            <Button on:click={() => (addOpen = true)} variant="outlined">
                 <Label>Create New</Label>
                 <Icon class="material-icons">add</Icon>
             </Button>
@@ -72,30 +75,6 @@
 
 <style lang="scss">
     @use "../../mixins" as *;
-
-    .schedules {
-        padding: 1.5rem;
-        border-radius: 0.4rem;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-        box-sizing: border-box;
-
-        &.empty {
-            padding-top: 5rem;
-            justify-content: center;
-            flex-direction: column;
-
-            h6 {
-                margin: 0.5rem 0;
-            }
-        }
-
-        @include mobile {
-            justify-content: center;
-        }
-    }
-
     #header {
         display: flex;
         align-items: center;
@@ -103,31 +82,29 @@
         padding: 0.1rem 1.3rem;
         box-sizing: border-box;
         background-color: var(--clr-height-1-4);
-
         h6 {
             margin: 0.5rem 0;
-
             @include mobile {
                 // Hide title on mobile due to space limitations
                 display: none;
             }
         }
     }
-
-    div {
+    .schedules {
         display: flex;
-        align-items: center;
-        gap: 1rem;
-
-        @include mobile {
-            flex-direction: row-reverse;
-            justify-content: space-between;
-            width: 100%;
+        &.empty {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding-top: 5rem;
+            color: var(--clr-text-disabled);
+            gap: 1rem;
+            i {
+                font-size: 5rem;
+            }
+            h6 {
+                margin: 0.5rem 0;
+            }
         }
-    }
-
-    #no-schedules-icon {
-        font-size: 5rem;
-        color: var(--clr-text-disabled);
     }
 </style>

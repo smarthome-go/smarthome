@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Button, { Icon, Label } from "@smui/button";
+    import Button, { Label } from "@smui/button";
     import Dialog, {
         Actions,
         Content,
@@ -10,8 +10,7 @@
     import IconButton from "@smui/icon-button";
     import { hasPermission } from "../../../global";
     import { createEventDispatcher, onMount } from "svelte";
-    import { schedules } from "../main";
-    import type { ScheduleData, addSchedule } from "../main";
+    import type { addSchedule } from "../main";
     import Inputs from "./Inputs.svelte";
 
     export let open = false;
@@ -38,6 +37,8 @@
         open = false;
     }
 
+    $:console.log(open)
+
     onMount(async () => {
         hasHomescriptPermission = await hasPermission("homescript");
     });
@@ -49,17 +50,11 @@
         <IconButton action="close" class="material-icons">close</IconButton>
     </Header>
     <Content id="content">
-        {#if hasHomescriptPermission}
+        {#if !hasHomescriptPermission}
             <p>
-                You are missing the <code>homescript</code> permission.
+                You are missing the homescript permission.
                 <br />
                 This permission is required in order to use the scheduler.
-                <span class="text-hint"
-                    >You can also use the CLI to create Homescripts. <a
-                        href="https://github.com/smarthome-go/cli"
-                        target="_blank">learn more</a
-                    ></span
-                >
             </p>
         {:else}
             <Inputs bind:data />
@@ -84,12 +79,4 @@
 </Dialog>
 
 <style lang="scss">
-    .text-hint {
-        font-size: 0.9rem;
-        display: block;
-    }
-    a {
-        color: var(--clr-primary);
-        opacity: 90%;
-    }
 </style>

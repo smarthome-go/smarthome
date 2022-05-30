@@ -9,6 +9,8 @@
     import { sleep } from "../../../global";
     import type { addSchedule } from "../main";
     import AddSchedule from "./AddSchedule.svelte";
+    import HelperText from "@smui/textfield/helper-text";
+    import HmsEditor from "../../../components/HmsEditor.svelte"
 
     // Data which is dispatched as soon as the create button is pressed
     export let data: addSchedule;
@@ -33,7 +35,6 @@
                 </svelte:fragment>
             </Textfield>
         </div>
-
         <div class="timing">
             <!-- Time -->
             <div class="time">
@@ -47,15 +48,9 @@
             </div>
         </div>
     </div>
-
     <!-- Right -->
     <div class="right">
-        <Textfield
-            bind:value={data.homescriptCode}
-            label="Homescrip Code"
-            style="width: 100%;"
-            helperLine$style="width: 100%;"
-        />
+        <HmsEditor/>
     </div>
 </div>
 
@@ -76,6 +71,7 @@
             width: 50%;
             box-sizing: border-box;
             padding: 0 1rem;
+            padding-top: 1rem;
         }
 
         @include not-widescreen {
