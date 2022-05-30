@@ -128,12 +128,6 @@ func (self *Executor) testSwitch(switchId string, powerOn bool) error {
 	return nil
 }
 
-// Sends a mode request to a given radiGo server
-// TODO: implement this feature
-func (self *Executor) Play(server string, mode string) error {
-	return errors.New("The feature 'radiGo' is not yet implemented")
-}
-
 // Makes a GET request to an arbitrary URL and returns the result
 func (self *Executor) Get(requestUrl string) (string, error) {
 	// The permissions can be validated beforehand

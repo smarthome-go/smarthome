@@ -226,18 +226,6 @@ func TestRun(t *testing.T) {
 			},
 		},
 		{
-			Code: "play('', '')",
-			Result: struct {
-				Output     string
-				Code       int
-				FirstError string
-			}{
-				Output:     "",
-				Code:       1,
-				FirstError: "The feature 'radiGo' is not yet implemented",
-			},
-		},
-		{
 			Code: "print(exec('test', mkArgs()))",
 			Result: struct {
 				Output     string
