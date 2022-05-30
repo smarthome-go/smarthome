@@ -16,7 +16,7 @@
         $loading = true;
         try {
             const res = await (
-                await fetch("/api/scheduler/list/personal")
+                await fetch("/api/schedules/list/personal")
             ).json();
 
             if (res.success !== undefined && !res.success)

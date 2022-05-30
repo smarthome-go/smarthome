@@ -44,20 +44,27 @@ func GetPowerState(switchId string) (bool, error) {
 func SetPower(switchId string, powerOn bool) error {
 	err := setPower(switchId, powerOn)
 	if err != nil {
-		go event.Warn("Hardware Error", fmt.Sprintf("The hardware failed while a user tried to interact with switch '%s': Error: %s", switchId, err.Error()))
+		go event.Warn(
+			"Hardware Error",
+			fmt.Sprintf("The hardware failed while a user tried to interact with switch '%s': Error: %s",
+				switchId,
+				err.Error(),
+			),
+		)
 		return err
 	}
 	if powerOn {
-		go event.Info("User Activated Switch", fmt.Sprintf("Switch %s was activated", switchId))
+		go event.Info("Switch Activated", fmt.Sprintf("Switch '%s' was activated", switchId))
 	} else {
-		go event.Info("User Deactivated Switch", fmt.Sprintf("Switch %s was deactivated", switchId))
+		go event.Info("Switch Deactivated", fmt.Sprintf("Switch '%s' was deactivated", switchId))
 	}
 	return nil
 }
 
-// Sets the powerstate of a specific switch
+// Sets the power-state of a specific switch
 // Checks if the switch exists
 // Checks if the user has all required permissions
+// Sends a power request to all available nodes
 func SetSwitchPowerAll(switchId string, powerOn bool, username string) error {
 	_, switchExists, err := database.GetSwitchById(switchId)
 	if err != nil {
