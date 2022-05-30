@@ -20,9 +20,23 @@ type PowerRequest struct {
 
 // Checks if a node is online and updates the database entry accordingly
 func checkNodeOnlineRequest(node database.HardwareNode) error {
-	// Client has timeout of a second too
-	client := http.Client{Timeout: time.Second}
-	res, err := client.Get(fmt.Sprintf("%s/health", node.Url))
+	// Client has timeout of 5 seconds in order to keep wait time short
+	client := http.Client{Timeout: time.Second * 5}
+
+	// Build URL
+	urlTemp, err := url.Parse(node.Url)
+	if err != nil {
+		log.Warn(fmt.Sprintf(
+			"Can not check health of node: '%s' due to malformed base URL: %s",
+			node.Name,
+			err.Error(),
+		))
+		return err
+	}
+	urlTemp.Path = "/health"
+
+	// Perform the health-check request
+	res, err := client.Get(urlTemp.String())
 	if err != nil {
 		log.Error("Hardware node checking request failed: ", err.Error())
 		return err
@@ -37,10 +51,12 @@ func checkNodeOnlineRequest(node database.HardwareNode) error {
 // Runs the check request and updated the database entry accordingly
 func checkNodeOnline(node database.HardwareNode) error {
 	if err := checkNodeOnlineRequest(node); err != nil {
+		// `node.Online` is checked to be `true` because it is still the value before the healthcheck
 		if node.Online {
-			log.Warn(fmt.Sprintf("Node `%s` failed to respond and is now offline", node.Name))
+			log.Warn(fmt.Sprintf("Node '%s' failed to respond and is now offline", node.Name))
 			go event.Error("Node Offline",
-				fmt.Sprintf("Node %s went offline. Users will have to deal with increased wait times. It is advised to address this issue as soon as possible", node.Name))
+				fmt.Sprintf("Node '%s' went offline. It is recommended to address this issue as soon as possible", node.Name),
+			)
 		}
 		if errDB := database.SetNodeOnline(node.Url, false); errDB != nil {
 			log.Error("Failed to update power state of node: ", errDB.Error())
@@ -48,9 +64,10 @@ func checkNodeOnline(node database.HardwareNode) error {
 		}
 		return nil
 	}
+	// `!node.Online` is checked because it is still the value before the healthcheck
 	if !node.Online {
-		log.Info(fmt.Sprintf("Node `%s` is now back online", node.Name))
-		go event.Info("Node Online", fmt.Sprintf("Node %s is back online.", node.Name))
+		log.Info(fmt.Sprintf("Node '%s' is back online", node.Name))
+		go event.Info("Node back Online", fmt.Sprintf("Node '%s' is back online.", node.Name))
 	}
 	if errDB := database.SetNodeOnline(node.Url, true); errDB != nil {
 		log.Error("Failed to update power state of node: ", errDB.Error())
@@ -59,7 +76,7 @@ func checkNodeOnline(node database.HardwareNode) error {
 	return nil
 }
 
-// Delivers a power job to a given hardware node
+// Dispatches a power job to a given hardware node
 // Returns an error if the job fails to execute on the hardware
 // However, the preferred method of communication is by using the API `SetPower()` this way, priorities and interrupts are scheduled automatically
 // A check if  a node is online again can be still executed afterwards
@@ -70,7 +87,7 @@ func sendPowerRequest(node database.HardwareNode, switchName string, powerOn boo
 		Power:  powerOn,
 	})
 	if err != nil {
-		log.Error("Could not parse node request: ", err.Error())
+		log.Error("Could not encode node request body: ", err.Error())
 		return err
 	}
 
@@ -80,7 +97,7 @@ func sendPowerRequest(node database.HardwareNode, switchName string, powerOn boo
 	// Build a URL using the node parameters
 	urlTemp, err := url.Parse(node.Url)
 	if err != nil {
-		log.Warn(fmt.Sprintf("Can not send power request to node '%s' due to invalid URL formatting: %s", node.Name, err.Error()))
+		log.Warn(fmt.Sprintf("Can not send power request to node '%s' due to malformed URL: %s", node.Name, err.Error()))
 	}
 	urlTemp.Path = "/power"
 
@@ -174,7 +191,7 @@ func setPowerOnAllNodes(switchName string, powerOn bool) error {
 			}
 			err = errTemp
 		} else {
-			// If the node was previously offline and is now online
+			// If the node was previously offline and is now online, run a healthcheck to update its state
 			// Log the event and mark the node as `online`
 			if !node.Online {
 				if err := checkNodeOnline(node); err != nil {
@@ -182,13 +199,13 @@ func setPowerOnAllNodes(switchName string, powerOn bool) error {
 					return err
 				}
 			}
-			log.Debug("Successfully sent power request to: ", node.Name)
+			log.Debug("Successfully dispatched power request to: ", node.Name)
 		}
 	}
 
 	// Update the switch power-state in the database
 	if _, err := database.SetPowerState(switchName, powerOn); err != nil {
-		log.Error("Failed to set power after addressing all nodes: updating database entry failed: ", err.Error())
+		log.Error("Failed to set power after dispatching to all nodes: updating power-state database entry failed: ", err.Error())
 		return err
 	}
 	return err
@@ -199,11 +216,11 @@ func setPowerOnAllNodes(switchName string, powerOn bool) error {
 func RunNodeCheck() error {
 	nodes, err := database.GetHardwareNodes()
 	if err != nil {
-		log.Error("Failed to check nodes: ", err.Error())
+		log.Error("Failed to check all hardware nodes: ", err.Error())
 	}
 	for _, node := range nodes {
 		if err := checkNodeOnline(node); err != nil {
-			log.Error("Failed to check node: checkNodeOnline failed: ", err.Error())
+			log.Error(fmt.Sprintf("Healthcheck of node '%s' failed: %s", node.Name, err.Error()))
 			return nil
 		}
 	}
