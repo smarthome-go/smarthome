@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/smarthome-go/smarthome/core/database"
@@ -63,10 +64,7 @@ func checkNodeOnline(node database.HardwareNode) error {
 // However, the preferred method of communication is by using the API `SetPower()` this way, priorities and interrupts are scheduled automatically
 // A check if  a node is online again can be still executed afterwards
 func sendPowerRequest(node database.HardwareNode, switchName string, powerOn bool) error {
-	if !node.Enabled {
-		log.Trace("Skipping power request to disabled node")
-		return nil
-	}
+	// Create the request body for the request
 	requestBody, err := json.Marshal(PowerRequest{
 		Switch: switchName,
 		Power:  powerOn,
@@ -75,13 +73,34 @@ func sendPowerRequest(node database.HardwareNode, switchName string, powerOn boo
 		log.Error("Could not parse node request: ", err.Error())
 		return err
 	}
-	// Create a client with a more realistic timeout of 1 second
-	client := http.Client{Timeout: time.Second}
-	res, err := client.Post(fmt.Sprintf("%s/power?token=%s", node.Url, node.Token), "application/json", bytes.NewBuffer(requestBody))
+
+	// Create a client with a timout of 2 seconds
+	client := http.Client{Timeout: time.Second * 2}
+
+	// Build a URL using the node parameters
+	urlTemp, err := url.Parse(node.Url)
+	if err != nil {
+		log.Warn(fmt.Sprintf("Can not send power request to node '%s' due to invalid URL formatting: %s", node.Name, err.Error()))
+	}
+	urlTemp.Path = "/power"
+
+	// Build the token query
+	query := url.Values{}
+	query.Add("token", node.Token)
+	urlTemp.RawQuery = query.Encode()
+
+	// Perform the request
+	res, err := client.Post(
+		urlTemp.String(),
+		"application/json",
+		bytes.NewBuffer(requestBody),
+	)
 	if err != nil {
 		log.Error("Hardware node request failed: ", err.Error())
 		return err
 	}
+
+	// Evaluate non-200 outcome
 	if res.StatusCode != 200 {
 		// TODO: check firmware version of the hardware nodes at startup / in the healthcheck
 		switch res.StatusCode {
@@ -102,8 +121,17 @@ func sendPowerRequest(node database.HardwareNode, switchName string, powerOn boo
 		}
 		return errors.New("set power failed: non 200 status code")
 	}
-	defer res.Body.Close()
 	return nil
+}
+
+// A wrapper function which calls `checkNodeOnline`
+// Does not return errors, just prints them
+// Is used for determining whether a node which was previously offline is back online
+// Is used via a `go` call for lower latency
+func checkNodeOnlineWrapper(node database.HardwareNode) {
+	if err := checkNodeOnline(node); err != nil {
+		log.Trace(fmt.Sprintf("Node: '%s' is still offline", node.Name))
+	}
 }
 
 // More user-friendly API to directly address all hardware nodes
@@ -121,31 +149,44 @@ func setPowerOnAllNodes(switchName string, powerOn bool) error {
 	}
 	for _, node := range nodes {
 		if !node.Online && node.Enabled {
-			if errTemp := checkNodeOnline(node); errTemp != nil {
-				log.Debug(fmt.Sprintf("Node %s is still offline", node.Name))
-			}
+			// Check if the node is back online
+			// a goroutine is used in order to keep up a fast response time
+			go checkNodeOnlineWrapper(node)
+
 			log.Warn(fmt.Sprintf("Skipping node: '%s' because it is currently marked as offline", node.Name))
 			continue
 		}
+
+		// If the node is not enabled, skip the request
+		if !node.Enabled {
+			log.Trace(fmt.Sprintf("Skipping power request to disabled node '%s'", node.Name))
+			continue
+		}
+
+		// Perform node request
 		errTemp := sendPowerRequest(node, switchName, powerOn)
 		if errTemp != nil {
-			// Log the error
 			event.Error("Node Request Failed", fmt.Sprintf("Power request to node '%s' failed: %s", node.Name, errTemp.Error()))
+
 			// If the request failed, check the node and mark it as offline
 			if err := checkNodeOnline(node); err != nil {
 				log.Error("Failed to check node online: ", err.Error())
 			}
 			err = errTemp
 		} else {
+			// If the node was previously offline and is now online
+			// Log the event and mark the node as `online`
 			if !node.Online {
-				// If the node was previously offline and is now online
 				if err := checkNodeOnline(node); err != nil {
 					log.Error("Failed to check node online: ", err.Error())
+					return err
 				}
 			}
 			log.Debug("Successfully sent power request to: ", node.Name)
 		}
 	}
+
+	// Update the switch power-state in the database
 	if _, err := database.SetPowerState(switchName, powerOn); err != nil {
 		log.Error("Failed to set power after addressing all nodes: updating database entry failed: ", err.Error())
 		return err
