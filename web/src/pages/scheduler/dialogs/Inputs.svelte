@@ -10,7 +10,7 @@
     import type { addSchedule } from "../main";
     import AddSchedule from "./AddSchedule.svelte";
     import HelperText from "@smui/textfield/helper-text";
-    import HmsEditor from "../../../components/HmsEditor.svelte"
+    import HmsEditor from "../../../components/HmsEditor/HmsEditor.svelte"
 
     // Data which is dispatched as soon as the create button is pressed
     export let data: addSchedule;
