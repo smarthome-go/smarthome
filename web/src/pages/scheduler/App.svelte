@@ -55,8 +55,6 @@
     </div>
     <Progress id="loader" bind:loading={$loading} />
 
-    <HmsEditor />
-
     <div class="schedules" class:empty={$schedules.length == 0}>
         {#if $schedules.length == 0}
             <i class="material-icons">event_repeat</i>

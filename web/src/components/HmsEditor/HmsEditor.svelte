@@ -4,22 +4,18 @@
         EditorView,
         basicSetup,
     } from "@codemirror/basic-setup";
-    import { EditorSelection, Compartment } from "@codemirror/state";
+    import { EditorSelection } from "@codemirror/state";
     import { onMount } from "svelte";
-    import { tags } from "@lezer/highlight";
-    import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
-    import { completeFromList } from "@codemirror/autocomplete";
+    //    import { tags } from "@lezer/highlight";
+    // import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
+    // import { completeFromList } from "@codemirror/autocomplete";
+
     // TODO: move local files to separate repository
     import { HomescriptLanguage, Homescript } from "./index.js";
     import { oneDark } from "./oneDark";
 
-    const myHighlightStyle = HighlightStyle.define([
-        { tag: tags.keyword, color: "#fc6" },
-        { tag: tags.number, color: "#fc6" },
-        { tag: tags.comment, color: "#f5d", fontStyle: "italic" },
-    ]);
-
-    let editorDiv: HTMLElement = null;
+    // Will later be binded to the target of the CodeMirror editor
+    let editorDiv: HTMLElement;
 
     onMount(() => {
         let editor = new EditorView({
@@ -38,10 +34,10 @@
     });
 </script>
 
-<div id="editor" bind:this={editorDiv} />
+<div class="hms-editor" bind:this={editorDiv} />
 
 <style lang="scss">
-    #editor {
+    .hms-editor {
         height: 100rem;
     }
 </style>

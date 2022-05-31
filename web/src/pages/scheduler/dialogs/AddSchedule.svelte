@@ -37,7 +37,6 @@
         open = false;
     }
 
-    $:console.log(open)
 
     onMount(async () => {
         hasHomescriptPermission = await hasPermission("homescript");
