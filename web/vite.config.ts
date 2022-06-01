@@ -15,6 +15,7 @@ export default defineConfig({
         profile: resolve(__dirname, 'html/profile.html'),
         users: resolve(__dirname, 'html/users.html'),
         editor: resolve(__dirname, 'html/editor.html'),
+        homescript: resolve(__dirname, 'html/homescript.html'),
         automations: resolve(__dirname, 'html/automations.html'),
         scheduler: resolve(__dirname, 'html/scheduler.html'),
         404: resolve(__dirname, 'html/404.html'),
