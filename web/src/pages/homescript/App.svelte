@@ -8,7 +8,6 @@
     import Page from "../../Page.svelte";
     import Inputs from "./dialogs/Inputs.svelte";
     import HmsSelector from "./dialogs/HmsSelector.svelte";
-    import HomescriptElement from "./HomescriptElement.svelte";
     import { hmsLoaded, homescripts, loading } from "./main";
 
     let selection = "";

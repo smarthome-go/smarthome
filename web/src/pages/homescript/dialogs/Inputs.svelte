@@ -70,4 +70,8 @@
             flex-direction: column;
         }
     }
+
+    .text {
+        width: 100%;
+    }
 </style>

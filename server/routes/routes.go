@@ -141,7 +141,6 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/automation/add", mdl.ApiAuth(mdl.Perm(api.CreateNewAutomation, database.PermissionAutomation))).Methods("POST")
 	r.HandleFunc("/api/automation/delete", mdl.ApiAuth(mdl.Perm(api.RemoveAutomation, database.PermissionAutomation))).Methods("DELETE")
 	r.HandleFunc("/api/automation/modify", mdl.ApiAuth(mdl.Perm(api.ModifyAutomation, database.PermissionAutomation))).Methods("PUT")
-	r.HandleFunc("/api/automation/state/global", mdl.ApiAuth(mdl.Perm(api.ChangeActivationAutomation, database.PermissionModifyServerConfig))).Methods("PUT")
 
 	// Schedule-related
 	r.HandleFunc("/api/scheduler/list/personal", mdl.ApiAuth(mdl.Perm(api.GetUserSchedules, database.PermissionScheduler))).Methods("GET")
@@ -158,6 +157,7 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/reminder/delete", mdl.ApiAuth(mdl.Perm(api.DeleteReminder, database.PermissionReminder))).Methods("DELETE")
 
 	/* Server Configuration */
+	r.HandleFunc("/api/automation/state/global", mdl.ApiAuth(mdl.Perm(api.ChangeActivationAutomation, database.PermissionModifyServerConfig))).Methods("PUT")
 	r.HandleFunc("/api/config/location/modify", mdl.ApiAuth(mdl.Perm(api.UpdateLocation, database.PermissionModifyServerConfig))).Methods("PUT")
 
 	/* Static files */
