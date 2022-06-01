@@ -21,10 +21,14 @@ func InitLogger(logger *logrus.Logger) {
 func NewRouter() *mux.Router {
 	log.Trace("Initializing server router...")
 	r := mux.NewRouter()
+	/* Middleware explaination */
 	// Auth: middleware that checks if the user is logged in, will redirect to `/login` if the user is not logged in
 	// ApiAuth: middleware that checks if the user is logged in for API request, will return JSON errors if the user is not logged in
 
-	// Dashboard
+	// Healthcheck for uptime monitoring
+	r.HandleFunc("/health", api.HealthCheck).Methods("GET")
+
+	// HTML-serving endpoints
 	r.HandleFunc("/", mdl.Auth(indexGetHandler)).Methods("GET")
 	r.HandleFunc("/dash", mdl.Auth(dashGetHandler)).Methods("GET")
 	r.HandleFunc("/rooms", mdl.Auth(roomsGetHandler)).Methods("GET")
@@ -33,18 +37,17 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/users", mdl.Auth(usersGetHandler)).Methods("GET")
 	r.HandleFunc("/editor", mdl.Auth(editorGetHandler)).Methods("GET")
 	r.HandleFunc("/automations", mdl.Auth(automationsGetHandler)).Methods("GET")
+	// Session management
+	r.HandleFunc("/login", loginGetHandler).Methods("GET")
+	r.HandleFunc("/logout", logoutGetHandler).Methods("GET")
 
-	// Healthcheck for uptime monitoring
-	r.HandleFunc("/health", api.HealthCheck).Methods("GET")
-
+	/* API */
 	// Debug information about the system
 	r.HandleFunc("/api/debug", mdl.ApiAuth(mdl.Perm(api.DebugInfo, database.PermissionDebug))).Methods("GET")
 
-	r.HandleFunc("/login", loginGetHandler).Methods("GET")
-	r.HandleFunc("/logout", logoutGetHandler).Methods("GET")
+	// Login handler
 	r.HandleFunc("/api/login", loginPostHandler).Methods("POST")
 
-	//// API ////
 	// Power
 	r.HandleFunc("/api/power/states", api.GetPowerStates).Methods("GET")
 	r.HandleFunc("/api/power/set", mdl.ApiAuth(mdl.Perm(api.PowerPostHandler, database.PermissionPower))).Methods("POST")
@@ -70,16 +73,20 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/camera/list/all", mdl.ApiAuth(mdl.Perm(api.GetAllCameras, database.PermissionModifyRooms))).Methods("GET")
 	r.HandleFunc("/api/camera/list/redacted", mdl.ApiAuth(api.GetAllRedactedCameras)).Methods("GET")
 	r.HandleFunc("/api/camera/list/personal", mdl.ApiAuth(mdl.Perm(api.GetCurrentUserCameras, database.PermissionViewCameras))).Methods("GET")
+	r.HandleFunc("/api/camera/feed/{id}", api.GetCameraFeed).Methods("GET")
 
 	// Logs for the admin user
 	r.HandleFunc("/api/logs/delete/old", mdl.ApiAuth(mdl.Perm(api.FlushOldLogs, database.PermissionLogs))).Methods("DELETE")
 	r.HandleFunc("/api/logs/delete/all", mdl.ApiAuth(mdl.Perm(api.FlushAllLogs, database.PermissionLogs))).Methods("DELETE")
 	r.HandleFunc("/api/logs", mdl.ApiAuth(mdl.Perm(api.ListLogs, database.PermissionLogs))).Methods("GET")
 
+	/* User Customization */
+	r.HandleFunc("/api/user/settings/theme/personal", mdl.ApiAuth(api.SetCurrentUserColorTheme)).Methods("PUT")
+	r.HandleFunc("/api/user/settings/theme/user", mdl.ApiAuth(api.SetUserColorTheme)).Methods("PUT")
 	// Customization for the user
-	// Profile picture upload test
 	r.HandleFunc("/api/user/avatar/personal", mdl.ApiAuth(api.GetAvatar)).Methods("GET")
 	r.HandleFunc("/api/user/avatar/user/{username}", mdl.ApiAuth(api.GetForeignUserAvatar)).Methods("GET")
+	// Personal avatar manipulation
 	r.HandleFunc("/api/user/avatar/upload", mdl.ApiAuth(api.HandleAvatarUpload)).Methods("POST")
 	r.HandleFunc("/api/user/avatar/delete", mdl.ApiAuth(api.DeleteAvatar)).Methods("DELETE")
 
@@ -144,24 +151,16 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/scheduler/state/personal", mdl.ApiAuth(mdl.Perm(api.SetCurrentUserSchedulerEnabled, database.PermissionScheduler))).Methods("PUT")
 	r.HandleFunc("/api/scheduler/state/user", mdl.ApiAuth(mdl.Perm(api.SetUserSchedulerEnabled, database.PermissionManageUsers))).Methods("PUT")
 
-	// Admin-specific
-	r.HandleFunc("/api/config/location/modify", mdl.ApiAuth(mdl.Perm(api.UpdateLocation, database.PermissionModifyServerConfig))).Methods("PUT")
-
-	// Customization
-	r.HandleFunc("/api/user/settings/theme/personal", mdl.ApiAuth(api.SetCurrentUserColorTheme)).Methods("PUT")
-	r.HandleFunc("/api/user/settings/theme/user", mdl.ApiAuth(api.SetUserColorTheme)).Methods("PUT")
-
 	// Reminders
 	r.HandleFunc("/api/reminder/add", mdl.ApiAuth(mdl.Perm(api.AddReminder, database.PermissionReminder))).Methods("POST")
 	r.HandleFunc("/api/reminder/list", mdl.ApiAuth(mdl.Perm(api.GetReminders, database.PermissionReminder))).Methods("GET")
 	r.HandleFunc("/api/reminder/modify", mdl.ApiAuth(mdl.Perm(api.ModifyReminder, database.PermissionReminder))).Methods("PUT")
 	r.HandleFunc("/api/reminder/delete", mdl.ApiAuth(mdl.Perm(api.DeleteReminder, database.PermissionReminder))).Methods("DELETE")
 
-	// TODO: remove this one below
-	// Test camera module here
-	r.HandleFunc("/api/camera/feed/{id}", api.GetCameraFeed).Methods("GET")
+	/* Server Configuration */
+	r.HandleFunc("/api/config/location/modify", mdl.ApiAuth(mdl.Perm(api.UpdateLocation, database.PermissionModifyServerConfig))).Methods("PUT")
 
-	/// Static files ///
+	/* Static files */
 	assetsFilepath := "./web/dist/assets/"
 	assetsPathPrefix := "/assets"
 	assetsFileserver := http.FileServer(http.Dir(assetsFilepath))
