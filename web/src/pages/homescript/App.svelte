@@ -8,13 +8,78 @@
     import Page from "../../Page.svelte";
     import Inputs from "./dialogs/Inputs.svelte";
     import HmsSelector from "./dialogs/HmsSelector.svelte";
-    import { hmsLoaded, homescripts, loading } from "./main";
+    import { hmsLoaded, homescriptData, homescripts, loading } from "./main";
+import IconPicker from "src/components/IconPicker/IconPicker.svelte";
 
-    let selection = "";
     let addOpen = false;
-    let overviewOpen = false;
 
-    // Fetches the available homescripts for the selection and naming
+    let selectedDataChanged = false;
+    let selection = "";
+    let selectedData: homescriptData = {
+        id: "",
+        name: "",
+        description: "",
+        mdIcon: "code",
+        code: "",
+        quickActionsEnabled: false,
+        schedulerEnabled: false,
+    };
+
+    // Using a copied `buffer` for the active script
+    // Useful for a cancel feature
+     $: if (selection != "") updateSelectedData();
+
+    // Updates the `selectedDataChanged` boolean
+    // Which is used to disable the action buttons conditionally
+
+     $: if (selectedData !== undefined && selection !== "")
+        updateSelectedDataChanged();
+
+    // Depending on whether the data has changed
+    function updateSelectedDataChanged() {
+        const data = $homescripts.find((h) => h.data.id === selection).data;
+        selectedDataChanged =
+            data.name !== selectedData.name ||
+            data.description !== selectedData.description ||
+            data.mdIcon !== selectedData.mdIcon ||
+            data.code !== selectedData.code ||
+            data.schedulerEnabled !== selectedData.schedulerEnabled ||
+            data.quickActionsEnabled !== selectedData.quickActionsEnabled;
+    }
+
+    // Is used as soon as the active script is changed and is not empty
+    function updateSelectedData() {
+        const selectedDataTemp = $homescripts.find(
+            (h) => h.data.id === selection
+        ).data;
+        // Static, contextual data
+        selectedData.id = selectedDataTemp.id; // Is required in order to send the request
+        selectedData.code = selectedDataTemp.code; // Required to preserve code
+
+        // Changeable data
+        selectedData.name = selectedDataTemp.name;
+        selectedData.description = selectedDataTemp.description;
+        selectedData.mdIcon = selectedDataTemp.mdIcon;
+        selectedData.quickActionsEnabled = selectedDataTemp.quickActionsEnabled;
+        selectedData.schedulerEnabled = selectedDataTemp.schedulerEnabled;
+    }
+
+    // Is called when the changes have been successfully submitted and applied
+    function updateSourceFromSelectedData() {
+        // The index is required because JS clones the object
+        const replaceIndex = $homescripts.findIndex(
+            (h) => h.data.id === selection
+        );
+        $homescripts[replaceIndex].data.name = selectedData.name;
+        $homescripts[replaceIndex].data.description = selectedData.description;
+        $homescripts[replaceIndex].data.mdIcon = selectedData.mdIcon;
+        $homescripts[replaceIndex].data.quickActionsEnabled =
+            selectedData.quickActionsEnabled;
+        $homescripts[replaceIndex].data.schedulerEnabled =
+            selectedData.schedulerEnabled;
+    }
+
+    // Fetches the available Homescripts for the selection and naming
     async function loadHomescripts() {
         $loading = true;
         try {
@@ -32,6 +97,25 @@
         $loading = false;
     }
 
+    // Requests modification of the currently-selected Homescript
+    async function modifyCurrentHomescript() {
+        $loading = true;
+        try {
+            let res = await (
+                await fetch("/api/homescript/modify", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(selectedData),
+                })
+            ).json();
+            if (!res.success) throw Error(res.error);
+            updateSourceFromSelectedData();
+        } catch (err) {
+            $createSnackbar(`Could not modify Homescript: ${err}`);
+        }
+        $loading = false;
+    }
+
     onMount(() => {
         loadHomescripts();
     }); // Load homescripts as soon as the component is mounted
@@ -40,7 +124,7 @@
 <Page>
     <div id="header" class="mdc-elevation--z4">
         <h6>Homescript</h6>
-        <div>
+        <div id="header__buttons">
             <IconButton
                 title="Refresh"
                 class="material-icons"
@@ -80,13 +164,23 @@
         </div>
         <div id="add" class="mdc-elevation--z1">
             <div class="header">
-                <h6>Current Homescript</h6>
+                <h6>Homescript {selection}</h6>
             </div>
-            {#if $homescripts !== undefined && selection !== ''}
-            <Inputs
-                bind:data={$homescripts[$homescripts.findIndex(h => h.data.id === selection)].data}
-            />
-        {/if}
+            {#if $homescripts !== undefined && selection !== ""}
+                <Inputs bind:data={selectedData} />
+
+                <div class="actions">
+                    <Button on:click={() => (addOpen = true)}>
+                        <Label>Cancel</Label>
+                    </Button>
+                    <Button
+                        on:click={modifyCurrentHomescript}
+                        disabled={!selectedDataChanged}
+                    >
+                        <Label>Apply Changes</Label>
+                    </Button>
+                </div>
+            {/if}
         </div>
     </div>
 </Page>
@@ -101,9 +195,13 @@
         box-sizing: border-box;
         background-color: var(--clr-height-1-4);
 
-        h6 {
-            margin: .5em 0;
+        &__buttons {
+            display: flex;
+            align-items: center;
+        }
 
+        h6 {
+            margin: 0.5em 0;
             @include mobile {
                 // Hide title on mobile due to space limitations
                 display: none;
@@ -145,11 +243,18 @@
         padding: 1.5rem;
 
         h6 {
-            margin: .5rem 0;
+            margin: 0.5rem 0;
         }
 
         @include widescreen {
             width: 50%;
         }
+    }
+
+    .actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        margin-top: 1rem;
     }
 </style>

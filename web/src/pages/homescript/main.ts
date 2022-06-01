@@ -10,11 +10,10 @@ export interface homescriptData {
     id: string
     name: string
     description: string
+    mdIcon: string
+    code: string
     quickActionsEnabled: boolean
     schedulerEnabled: boolean
-    code: string
-    mdIcon: string
-
 }
 
 // States that homescripts have been loaded
