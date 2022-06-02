@@ -2,8 +2,8 @@
     import Switch from "@smui/switch/src/Switch.svelte";
     import Textfield from "@smui/textfield";
     import CharacterCounter from "@smui/textfield/character-counter";
-    import type { homescriptData } from "../main";
-    import IconPicker from "../../../components/IconPicker/IconPicker.svelte";
+    import type { homescriptData } from "../../homescript";
+    import IconPicker from "../../components/IconPicker/IconPicker.svelte";
     import Button from "@smui/button";
 
     let iconPickerOpen = false;
@@ -17,7 +17,7 @@
 <div class="container">
     <!-- Names and Text -->
     <div class="text">
-        <span class="text-hint">Name and description of the Homescript</span>
+        <span class="text-hint">Name and Description</span>
         <Textfield
             bind:value={data.name}
             input$maxlength={30}
@@ -56,17 +56,19 @@
             </span>
         </div>
     </div>
-    <Button
-        on:click={() => {
-            iconPickerOpen = true;
-        }}
-    >
-        Pick Icon
-    </Button>
+    <div class="change-icon">
+        <Button
+            on:click={() => {
+                iconPickerOpen = true;
+            }}
+        >
+            Change Icon
+        </Button>
+    </div>
 </div>
 
 <style lang="scss">
-    @use "../../../mixins" as *;
+    @use "../../mixins" as *;
     .container {
         display: flex;
         flex-wrap: wrap;
@@ -79,9 +81,20 @@
 
     .toggles {
         background-color: var(--clr-height-1-2);
-        width: 100%;
         padding: 1rem;
         border-radius: 0.3rem;
+
+        @include widescreen {
+            width: 100%;
+        }
+
+        &__item {
+            @include mobile {
+                span {
+                    display: block;
+                }
+            }
+        }
     }
 
     .text {

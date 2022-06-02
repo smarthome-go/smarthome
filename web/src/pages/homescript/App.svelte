@@ -6,11 +6,15 @@
     import Progress from "../../components/Progress.svelte";
     import { createSnackbar, data as userData } from "../../global";
     import Page from "../../Page.svelte";
-    import Inputs from "./dialogs/Inputs.svelte";
+    import Inputs from "./Inputs.svelte";
+    import AddHomescript from "./dialogs/AddHomescript.svelte";
     import HmsSelector from "./dialogs/HmsSelector.svelte";
-    import { hmsLoaded, homescriptData, homescripts, loading } from "./main";
+    import { hmsLoaded, homescripts, loading } from "./main";
+    import type { homescriptData } from "src/homescript";
+    import DeleteHomescript from "./dialogs/DeleteHomescript.svelte";
 
     let addOpen = false;
+    let deleteOpen = false;
 
     let selectedDataChanged = false;
     let selection = "";
@@ -77,7 +81,7 @@
             selectedData.quickActionsEnabled;
         $homescripts[replaceIndex].data.schedulerEnabled =
             selectedData.schedulerEnabled;
-        updateSelectedData()
+        updateSelectedData();
     }
 
     // Fetches the available Homescripts for the selection and naming
@@ -117,10 +121,79 @@
         $loading = false;
     }
 
+    // Requests creation of a new Homescript
+    async function createHomescript(data: homescriptData) {
+        data.mdIcon = "code";
+        data.schedulerEnabled = false;
+        data.quickActionsEnabled = false;
+        $loading = true;
+        try {
+            let res = await (
+                await fetch("/api/homescript/add", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data),
+                })
+            ).json();
+            if (!res.success) throw Error(res.error);
+            // Append the new Homescript to the global store
+            $homescripts = [
+                ...$homescripts,
+                { owner: $userData.userData.user.username, data: data },
+            ];
+            // Select the newly created Homescript for editing
+            selection = data.id;
+            // Show the newly selected Homescript in the Inputs
+            updateSourceFromSelectedData();
+        } catch (err) {
+            $createSnackbar(`Could not create Homescript: ${err}`);
+        }
+        $loading = false;
+    }
+
+    // Requests deletion of a Homescript
+    async function deleteHomescript(id: string) {
+        $loading = true;
+        try {
+            let res = await (
+                await fetch("/api/homescript/delete", {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id }),
+                })
+            ).json();
+            if (!res.success) throw Error(res.error);
+            // Remove the current Homescript from the global store
+            $homescripts = $homescripts.filter((h) => h.data.id !== selection);
+            // Select the next Homescript as active
+            // If no Homescript exist besides this one, ignore it
+            if ($homescripts.length == 0) return;
+            selection = $homescripts[0].data.id;
+            // Show the newly selected Homescript in the Inputs
+            updateSourceFromSelectedData();
+        } catch (err) {
+            $createSnackbar(`Could not create Homescript: ${err}`);
+        }
+        $loading = false;
+    }
+
     onMount(() => {
         loadHomescripts();
-    }); // Load homescripts as soon as the component is mounted
+    }); // Load Homescripts as soon as the component is mounted
 </script>
+
+<AddHomescript
+    on:add={(event) => {
+        createHomescript(event.detail);
+    }}
+    bind:open={addOpen}
+/>
+
+<DeleteHomescript
+    bind:data={selectedData}
+    bind:open={deleteOpen}
+    on:delete={(event) => deleteHomescript(event.detail.id)}
+/>
 
 <Page>
     <div id="header" class="mdc-elevation--z4">
@@ -144,7 +217,10 @@
     <Progress id="loader" bind:loading={$loading} />
 
     <div id="content">
-        <div id="container" class="mdc-elevation--z1">
+        <div
+            class="container mdc-elevation--z1"
+            class:empty={$homescripts.length == 0}
+        >
             <div class="homescripts" class:empty={$homescripts.length == 0}>
                 {#if $homescripts.length == 0}
                     <i class="material-icons" id="no-homescripts-icon"
@@ -163,15 +239,28 @@
                 {/if}
             </div>
         </div>
-        <div id="add" class="mdc-elevation--z1">
+        <div
+            id="inputs"
+            class="mdc-elevation--z1"
+            class:disabled={$homescripts.length == 0}
+        >
             <div class="header">
-                <h6>Homescript {selection}</h6>
+                <h6>
+                    Homescript {selection}
+                </h6>
             </div>
             {#if $homescripts !== undefined && selection !== ""}
                 <Inputs bind:data={selectedData} />
-
+                <div>
+                    <Button on:click={() => (deleteOpen = true)}>
+                        <Label>Delete</Label>
+                    </Button>
+                </div>
                 <div class="actions">
-                    <Button on:click={updateSelectedData} disabled={!selectedDataChanged}>
+                    <Button
+                        on:click={updateSelectedData}
+                        disabled={!selectedDataChanged}
+                    >
                         <Label>Cancel</Label>
                     </Button>
                     <Button
@@ -215,6 +304,21 @@
         color: var(--clr-text-disabled);
     }
 
+    .container {
+        background-color: var(--clr-height-0-1);
+        border-radius: 0.4rem;
+
+        &.empty {
+            @include widescreen {
+                width: 100%;
+            }
+        }
+
+        @include widescreen {
+            width: 50%;
+        }
+    }
+
     #content {
         display: flex;
         flex-direction: column;
@@ -224,24 +328,34 @@
         transition-duration: 0.3s;
 
         @include widescreen {
+            height: calc(100vh - 91px);
             flex-direction: row;
-            gap: 2rem;
+            gap: 1rem;
         }
     }
 
-    #container {
-        background-color: var(--clr-height-0-1);
-        border-radius: 0.4rem;
+    .homescripts.empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem;
+        box-sizing: border-box;
+        height: calc(100vh - 91px);
+        width: 100%;
+        gap: 1.5rem;
 
-        @include widescreen {
-            width: 50%;
+        h6 {
+            margin: 0.5rem 0;
         }
     }
 
-    #add {
+    #inputs {
         background-color: var(--clr-height-0-1);
         border-radius: 0.4rem;
         padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
 
         h6 {
             margin: 0.5rem 0;
@@ -250,12 +364,21 @@
         @include widescreen {
             width: 50%;
         }
+
+        &.disabled {
+            display: none;
+        }
     }
 
     .actions {
         display: flex;
         justify-content: flex-end;
         gap: 0.5rem;
-        margin-top: 1rem;
+        margin-top: auto;
+
+        @include mobile {
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
     }
 </style>
