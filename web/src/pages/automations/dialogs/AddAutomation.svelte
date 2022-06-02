@@ -17,7 +17,11 @@
     // Event dispatcher
     const dispatch = createEventDispatcher()
 
-    // Binded to the `Inputs.svelte` component
+
+    // Is required in order to reset the previous day-state
+    let selectedDays : string[]= []
+
+    // Is bound to the `Inputs.svelte` component
     let data: addAutomation = {
         days: [],
         description: '',
@@ -30,12 +34,14 @@
     }
 
     function reset() {
+        // Reset the reverse-bound days
+        selectedDays = []
         data = {
             days: [],
             description: '',
             enabled: true,
             // `$homescripts` can be used because it is likely
-            // that the user can ony invoke reset when homescripts are loaded
+            // that the user can only invoke reset when Homescripts are loaded
             homescriptId: $homescripts[0].data.id,
             hour: 0,
             minute: 0,
@@ -77,7 +83,7 @@
                 Create one
             </Button>
         {:else}
-            <Inputs bind:data />
+            <Inputs bind:data bind:selectedDays={selectedDays} />
         {/if}
     </Content>
     <Actions>

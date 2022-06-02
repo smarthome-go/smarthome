@@ -34,19 +34,19 @@
 
     /**
      * Data flow:
-     *  - `data` is used for convinient binding from `Automation.svelete`
-     *  - `inputData` is binded to the `Inputs` element
+     *  - `data` is used for convenient binding from `Automation.svelte`
+     *  - `inputData` is bound to the `Inputs` element
      *  - `inputDataBefore` preserves the previous state before any modification
      */
 
-    // Binded to the `Inputs.svelte` component
+    // Bound to the `Inputs.svelte` component
     let inputData: addAutomation
 
     // Stores the input values before a modification
     // Is used for a rollback when using the `cancel` button
     let inputDataBefore: addAutomation
 
-    // Only binded externally in order to use preset values
+    // Only bound externally in order to use preset values
     export let data: automation
 
     onMount(() => {

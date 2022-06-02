@@ -18,7 +18,7 @@
 
     // Selected days are stored in a string[] instead of the final number[] representation
     // Is transformed into the final representation when the event is dispatched
-    let selectedDays: string[] = [];
+    export let selectedDays: string[] = [];
 
     // Allows initially set days
     onMount(() => {
