@@ -84,8 +84,9 @@
 <Dialog
     bind:open
     aria-labelledby="over-fullscreen-confirmation-title"
-    selection
     aria-describedby="over-fullscreen-confirmation-content"
+    slot="over"
+    selection
 >
     <Header>
         <div class="header">
