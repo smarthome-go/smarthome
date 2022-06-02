@@ -1,3 +1,0 @@
-<div>
-	Editor here
-</div>

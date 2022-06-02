@@ -34,9 +34,14 @@ func usersGetHandler(w http.ResponseWriter, _ *http.Request) {
 	templates.ExecuteTemplate(w, "users.html", http.StatusOK)
 }
 
-// Serves HTML for user the homescript editor
-func editorGetHandler(w http.ResponseWriter, _ *http.Request) {
-	templates.ExecuteTemplate(w, "editor.html", http.StatusOK)
+// Serves HTML for the Homesscript page
+func homescriptGetHandler(w http.ResponseWriter, _ *http.Request) {
+	templates.ExecuteTemplate(w, "homescript.html", http.StatusOK)
+}
+
+// Serves HTML for user the Homescript editor
+func hmsEditorGetHandler(w http.ResponseWriter, _ *http.Request) {
+	templates.ExecuteTemplate(w, "hmsEditor.html", http.StatusOK)
 }
 
 // Serves HTML for automations

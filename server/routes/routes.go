@@ -21,11 +21,11 @@ func InitLogger(logger *logrus.Logger) {
 func NewRouter() *mux.Router {
 	log.Trace("Initializing server router...")
 	r := mux.NewRouter()
-	/* Middleware explaination */
+	/* Middleware explanation */
 	// Auth: middleware that checks if the user is logged in, will redirect to `/login` if the user is not logged in
 	// ApiAuth: middleware that checks if the user is logged in for API request, will return JSON errors if the user is not logged in
 
-	// Healthcheck for uptime monitoring
+	// Health check for uptime monitoring
 	r.HandleFunc("/health", api.HealthCheck).Methods("GET")
 
 	// HTML-serving endpoints
@@ -35,7 +35,8 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/reminders", mdl.Auth(reminderGetHandler)).Methods("GET")
 	r.HandleFunc("/profile", mdl.Auth(userProfileGetHandler)).Methods("GET")
 	r.HandleFunc("/users", mdl.Auth(usersGetHandler)).Methods("GET")
-	r.HandleFunc("/editor", mdl.Auth(editorGetHandler)).Methods("GET")
+	r.HandleFunc("/homescript", mdl.Auth(homescriptGetHandler)).Methods("GET")
+	r.HandleFunc("/homescript/editor", mdl.Auth(hmsEditorGetHandler)).Methods("GET")
 	r.HandleFunc("/automations", mdl.Auth(automationsGetHandler)).Methods("GET")
 	// Session management
 	r.HandleFunc("/login", loginGetHandler).Methods("GET")
