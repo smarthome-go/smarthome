@@ -9,7 +9,6 @@
     import Inputs from "./dialogs/Inputs.svelte";
     import HmsSelector from "./dialogs/HmsSelector.svelte";
     import { hmsLoaded, homescriptData, homescripts, loading } from "./main";
-import IconPicker from "src/components/IconPicker/IconPicker.svelte";
 
     let addOpen = false;
 
@@ -27,12 +26,12 @@ import IconPicker from "src/components/IconPicker/IconPicker.svelte";
 
     // Using a copied `buffer` for the active script
     // Useful for a cancel feature
-     $: if (selection != "") updateSelectedData();
+    $: if (selection != "") updateSelectedData();
 
     // Updates the `selectedDataChanged` boolean
     // Which is used to disable the action buttons conditionally
 
-     $: if (selectedData !== undefined && selection !== "")
+    $: if (selectedData !== undefined && selection !== "")
         updateSelectedDataChanged();
 
     // Depending on whether the data has changed

@@ -1,29 +1,29 @@
 <!-- Contains the Input elements used by `AddAutomation` and `EditAutomation` -->
 <script lang="ts">
-    import { Label } from '@smui/list'
-    import SegmentedButton,{ Segment } from '@smui/segmented-button'
-    import Textfield from '@smui/textfield'
-    import CharacterCounter from '@smui/textfield/character-counter'
-    import { onMount } from 'svelte'
-    import TimePicker from '../../../components/TimePicker.svelte'
-    import { sleep } from '../../../global'
-    import type { addAutomation } from '../main'
-    import HmsSelector from './HmsSelector.svelte'
+    import { Label } from "@smui/list";
+    import SegmentedButton, { Segment } from "@smui/segmented-button";
+    import Textfield from "@smui/textfield";
+    import CharacterCounter from "@smui/textfield/character-counter";
+    import { onMount } from "svelte";
+    import TimePicker from "../../../components/TimePicker.svelte";
+    import { sleep } from "../../../global";
+    import type { addAutomation } from "../main";
+    import HmsSelector from "./HmsSelector.svelte";
 
-    // Static ressource for displaying the segmented buttons
-    const days: string[] = ['su', 'mo', 'tu', 'we', 'th', 'fr', 'sa']
+    // Static resource for displaying the segmented buttons
+    const days: string[] = ["su", "mo", "tu", "we", "th", "fr", "sa"];
 
     // Data which is dispatched as soon as the create button is pressed
-    export let data: addAutomation
+    export let data: addAutomation;
 
     // Selected days are stored in a string[] instead of the final number[] representation
     // Is transformed into the final representation when the event is dispatched
-    let selectedDays: string[] = []
+    let selectedDays: string[] = [];
 
-    // Allows inititially set days
+    // Allows initially set days
     onMount(() => {
-        selectedDays = data.days.map((d) => days[d])
-    })
+        selectedDays = data.days.map((d) => days[d]);
+    });
 </script>
 
 <div class="container">
@@ -66,9 +66,9 @@
                 <Segment
                     {segment}
                     on:click={async () => {
-                        await sleep(1)
-                        data.days = selectedDays.map((d) => days.indexOf(d))
-                        data = data
+                        await sleep(1);
+                        data.days = selectedDays.map((d) => days.indexOf(d));
+                        data = data;
                     }}
                 >
                     <Label>{segment}</Label>
@@ -81,7 +81,7 @@
             <div class="timing-mode">
                 <span class="text-hint">Timing mode</span>
                 <SegmentedButton
-                    segments={['normal', 'sunrise', 'sunset']}
+                    segments={["normal", "sunrise", "sunset"]}
                     let:segment
                     singleSelect
                     bind:selected={data.timingMode}
@@ -93,13 +93,13 @@
             </div>
 
             <!-- Time -->
-            <div class="time" class:disabled={data.timingMode !== 'normal'}>
+            <div class="time" class:disabled={data.timingMode !== "normal"}>
                 <span class="text-hint">Time when the automation runs</span>
                 <TimePicker
                     bind:hour={data.hour}
                     bind:minute={data.minute}
-                    helperText={'Time'}
-                    invalidText={'error'}
+                    helperText={"Time"}
+                    invalidText={"error"}
                 />
             </div>
         </div>
@@ -115,7 +115,7 @@
 </div>
 
 <style lang="scss">
-    @use '../../../mixins' as *;
+    @use "../../../mixins" as *;
 
     .container {
         display: flex;
@@ -146,7 +146,7 @@
         display: flex;
         flex-direction: column;
         gap: 0.3rem;
-        transition: .2s opacity;
+        transition: 0.2s opacity;
 
         &.disabled {
             user-select: none;
