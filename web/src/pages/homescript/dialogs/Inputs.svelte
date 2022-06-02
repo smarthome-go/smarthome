@@ -1,15 +1,8 @@
 <script lang="ts">
-    import FormField from "@smui/form-field";
-    import { Label } from "@smui/list";
-    import SegmentedButton, { Segment } from "@smui/segmented-button";
     import Switch from "@smui/switch/src/Switch.svelte";
     import Textfield from "@smui/textfield";
     import CharacterCounter from "@smui/textfield/character-counter";
-    import { onMount } from "svelte";
-    import TimePicker from "../../../components/TimePicker.svelte";
-    import { sleep } from "../../../global";
     import type { homescriptData } from "../main";
-    import HmsSelector from "./HmsSelector.svelte";
     import IconPicker from "../../../components/IconPicker/IconPicker.svelte";
     import Button from "@smui/button";
 
