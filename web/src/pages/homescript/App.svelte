@@ -35,6 +35,7 @@
         updateSelectedDataChanged();
 
     // Depending on whether the data has changed
+    // the according boolean is updated
     function updateSelectedDataChanged() {
         const data = $homescripts.find((h) => h.data.id === selection).data;
         selectedDataChanged =
@@ -76,6 +77,7 @@
             selectedData.quickActionsEnabled;
         $homescripts[replaceIndex].data.schedulerEnabled =
             selectedData.schedulerEnabled;
+        updateSelectedData()
     }
 
     // Fetches the available Homescripts for the selection and naming
@@ -169,7 +171,7 @@
                 <Inputs bind:data={selectedData} />
 
                 <div class="actions">
-                    <Button on:click={() => (addOpen = true)}>
+                    <Button on:click={updateSelectedData} disabled={!selectedDataChanged}>
                         <Label>Cancel</Label>
                     </Button>
                     <Button
