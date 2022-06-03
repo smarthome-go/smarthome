@@ -80,7 +80,8 @@ func ListAllHomescriptArgsOfUser(username string) ([]HomescriptArg, error) {
 	defer res.Close()
 	args := make([]HomescriptArg, 0)
 	for res.Next() {
-		var currentArg
+		var currentArg HomescriptArg
+		currentArg.Prompt = "TODO"
 	}
 	return args, nil
 }
