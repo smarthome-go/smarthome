@@ -67,7 +67,7 @@ func checkNodeOnline(node database.HardwareNode) error {
 	// `!node.Online` is checked because it is still the value before the healthcheck
 	if !node.Online {
 		log.Info(fmt.Sprintf("Node '%s' is back online", node.Name))
-		go event.Info("Node back Online", fmt.Sprintf("Node '%s' is back online.", node.Name))
+		go event.Info("Node back online", fmt.Sprintf("Node '%s' is back online.", node.Name))
 	}
 	if errDB := database.SetNodeOnline(node.Url, true); errDB != nil {
 		log.Error("Failed to update power state of node: ", errDB.Error())

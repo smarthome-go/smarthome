@@ -69,7 +69,7 @@ func TestRun(t *testing.T) {
 		Owner: "admin",
 		Data: database.HomescriptData{
 			Id:   "test",
-			Code: "print('exec works')",
+			Code: "print('exec works', getArg('key'))",
 		},
 	}); err != nil {
 		t.Error(err.Error())
@@ -226,19 +226,31 @@ func TestRun(t *testing.T) {
 			},
 		},
 		{
-			Code: "print(exec('test', mkArgs()))",
+			Code: "print(exec('test'))",
 			Result: struct {
 				Output     string
 				Code       int
 				FirstError string
 			}{
-				Output:     "exec works",
+				Output:     "",
+				Code:       1,
+				FirstError: "Homescript terminated with exit code 1: Failed to retrieve argument 'key': not provided to the Homescript runtime",
+			},
+		},
+		{
+			Code: "print(exec('test', mkArg('key', 'value')))",
+			Result: struct {
+				Output     string
+				Code       int
+				FirstError string
+			}{
+				Output:     "exec worksvalue",
 				Code:       0,
 				FirstError: "",
 			},
 		},
 		{
-			Code: "exec('test2', mkArgs())",
+			Code: "exec('test2')",
 			Result: struct {
 				Output     string
 				Code       int

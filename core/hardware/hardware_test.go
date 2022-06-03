@@ -134,7 +134,7 @@ func TestSendPowerRequest(t *testing.T) {
 				Url:     "http://1.1.1.1:3",
 				Token:   "",
 			},
-			Error: false,
+			Error: true,
 		},
 	}
 	for _, item := range table {
