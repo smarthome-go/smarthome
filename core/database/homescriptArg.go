@@ -1,5 +1,7 @@
 package database
 
+import "database/sql"
+
 type HmsArgInputType string
 
 var (
@@ -212,7 +214,7 @@ func ModifyHomescriptArg(id uint, newData HomescriptArgData) error {
 }
 
 // Returns the data matching one arbitrary Homescript Argument's id of a given user
-func GetUserHomescriptArgById(id uint, username string) (HomescriptArg, error) {
+func GetUserHomescriptArgById(id uint, username string) (data HomescriptArg, found bool, err error) {
 	query, err := db.Prepare(`
 	SELECT
 		Id,
@@ -229,8 +231,22 @@ func GetUserHomescriptArgById(id uint, username string) (HomescriptArg, error) {
 	`)
 	if err != nil {
 		log.Error("Could not get Homescript argument by username and id: preparing query failed: ", err.Error())
-		return HomescriptArg{}, err
+		return HomescriptArg{}, false, err
 	}
 	defer query.Close()
-	return HomescriptArg{}, nil
+	var currentArg HomescriptArg
+	if err := query.QueryRow(id, username).Scan(
+		&currentArg.Id,
+		&currentArg.HomescriptId,
+		&currentArg.Data.Prompt,
+		&currentArg.Data.InputType,
+		&currentArg.Data.Display,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return HomescriptArg{}, false, nil
+		}
+		log.Error("Failed to get Homescript argument by username and id: scanning results failed: ", err.Error())
+		return HomescriptArg{}, false, err
+	}
+	return currentArg, true, nil
 }
