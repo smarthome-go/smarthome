@@ -53,7 +53,12 @@
         display: flex;
         justify-content: center;
         align-items: center;
+
+        @include widescreen {
+            height: 70vh;
+        }
     }
+
     img {
         height: 100%;
         width: 100%;
@@ -66,6 +71,7 @@
         @include widescreen {
             height: available;
             width: min-content;
+            object-fit: contain;
         }
     }
 </style>
