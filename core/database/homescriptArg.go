@@ -213,7 +213,7 @@ func ModifyHomescriptArg(id uint, newData HomescriptArgData) error {
 	return nil
 }
 
-// Returns the data matching one arbitrary Homescript Argument's id of a given user
+// Returns the data matching the id of an argument which is associated of a given user
 func GetUserHomescriptArgById(id uint, username string) (data HomescriptArg, found bool, err error) {
 	query, err := db.Prepare(`
 	SELECT
@@ -249,4 +249,23 @@ func GetUserHomescriptArgById(id uint, username string) (data HomescriptArg, fou
 		return HomescriptArg{}, false, err
 	}
 	return currentArg, true, nil
+}
+
+// Deletes an arbitrary Homescript argument given its id
+func DeleteHomescriptArg(id uint) error {
+	query, err := db.Prepare(`
+	DELETE FROM
+	homescriptArg
+	WHERE Id=?
+	`)
+	if err != nil {
+		log.Error("Failed to delete Homescript argument: preparing query failed: ", err.Error())
+		return err
+	}
+	defer query.Close()
+	if _, err := query.Exec(id); err != nil {
+		log.Error("Failed to delete Homescript argument: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
 }
