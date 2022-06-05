@@ -67,6 +67,44 @@ func createHomescriptArgTable() error {
 	return nil
 }
 
+// Returns the data matching the id of an argument which is associated of a given user
+func GetUserHomescriptArgById(id uint, username string) (data HomescriptArg, found bool, err error) {
+	query, err := db.Prepare(`
+	SELECT
+		Id,
+		HomescriptId,
+		Prompt,
+		InputType,
+		Display
+	FROM homescriptArg
+	JOIN homescript
+		ON homescriptArg.homescriptId=homescript.Id
+	WHERE Id=?
+	AND
+	homescript.Owner=?
+	`)
+	if err != nil {
+		log.Error("Could not get Homescript argument by username and id: preparing query failed: ", err.Error())
+		return HomescriptArg{}, false, err
+	}
+	defer query.Close()
+	var currentArg HomescriptArg
+	if err := query.QueryRow(id, username).Scan(
+		&currentArg.Id,
+		&currentArg.HomescriptId,
+		&currentArg.Data.Prompt,
+		&currentArg.Data.InputType,
+		&currentArg.Data.Display,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return HomescriptArg{}, false, nil
+		}
+		log.Error("Failed to get Homescript argument by username and id: scanning results failed: ", err.Error())
+		return HomescriptArg{}, false, err
+	}
+	return currentArg, true, nil
+}
+
 // Returns all HomescriptArgs of a given user as a slice
 func ListAllHomescriptArgsOfUser(username string) ([]HomescriptArg, error) {
 	query, err := db.Prepare(`
@@ -213,44 +251,6 @@ func ModifyHomescriptArg(id uint, newData HomescriptArgData) error {
 	return nil
 }
 
-// Returns the data matching the id of an argument which is associated of a given user
-func GetUserHomescriptArgById(id uint, username string) (data HomescriptArg, found bool, err error) {
-	query, err := db.Prepare(`
-	SELECT
-		Id,
-		HomescriptId,
-		Prompt,
-		InputType,
-		Display
-	FROM homescriptArg
-	JOIN homescript
-		ON homescriptArg.homescriptId=homescript.Id
-	WHERE Id=?
-	AND
-	homescript.Owner=?
-	`)
-	if err != nil {
-		log.Error("Could not get Homescript argument by username and id: preparing query failed: ", err.Error())
-		return HomescriptArg{}, false, err
-	}
-	defer query.Close()
-	var currentArg HomescriptArg
-	if err := query.QueryRow(id, username).Scan(
-		&currentArg.Id,
-		&currentArg.HomescriptId,
-		&currentArg.Data.Prompt,
-		&currentArg.Data.InputType,
-		&currentArg.Data.Display,
-	); err != nil {
-		if err == sql.ErrNoRows {
-			return HomescriptArg{}, false, nil
-		}
-		log.Error("Failed to get Homescript argument by username and id: scanning results failed: ", err.Error())
-		return HomescriptArg{}, false, err
-	}
-	return currentArg, true, nil
-}
-
 // Deletes an arbitrary Homescript argument given its id
 func DeleteHomescriptArg(id uint) error {
 	query, err := db.Prepare(`
@@ -265,6 +265,26 @@ func DeleteHomescriptArg(id uint) error {
 	defer query.Close()
 	if _, err := query.Exec(id); err != nil {
 		log.Error("Failed to delete Homescript argument: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}
+
+// Deletes all arguments referencing a given Homescript
+// Used before deleting a Homescript from the database
+func DeleteAllHomescriptArgsFromScript(homescriptId string) error {
+	query, err := db.Prepare(`
+	DELETE FROM
+	homescriptArg
+	WHERE homescriptId=?
+	`)
+	if err != nil {
+		log.Error("Failed to delete all arguments from Homescript: preparing query failed: ", err.Error())
+		return err
+	}
+	defer query.Close()
+	if _, err := query.Exec(homescriptId); err != nil {
+		log.Error("Failed to delete all arguments from Homescript: executing query failed: ", err.Error())
 		return err
 	}
 	return nil
