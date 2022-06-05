@@ -34,7 +34,7 @@ type HomescriptArgData struct {
 }
 
 // Used for creating the table which contains the arguments of Homescripts
-// The `GuiDisplay` value is just used as a hint for user-interfaces for displaying a better selection of possible predefined values
+// The `GUIDisplay` value is just used as a hint for user-interfaces for displaying a better selection of possible predefined values
 func createHomescriptArgTable() error {
 	if _, err := db.Exec(`
 	CREATE TABLE
