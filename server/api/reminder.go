@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/smarthome-go/smarthome/core/database"
+
 	"github.com/smarthome-go/smarthome/server/middleware"
 	"github.com/smarthome-go/smarthome/services/reminder"
 )
@@ -99,7 +100,7 @@ func GetReminders(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Deletes a reminder, for example if it's task is finished
+// Deletes a reminder, for example if its task is finished
 func DeleteReminder(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(w, r)

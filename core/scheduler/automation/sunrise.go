@@ -32,7 +32,7 @@ func CalculateSunRiseSet(lat float32, lon float32) (SunTime, SunTime) {
 }
 
 // Given a jobId and whether sunrise or sunset should is activated, the next execution time is modified
-// Used when an automation with non-normal Timing-Mode is executed in order to update it's next start time
+// Used when an automation with non-normal Timing-Mode is executed in order to update its next start time
 func updateJobTime(id uint, useSunRise bool) error {
 	// Obtain the server's configuration in order to determine the latitude and longitude
 	// config, found, err := database.GetServerConfiguration()

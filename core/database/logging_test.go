@@ -70,7 +70,7 @@ func TestLogging(t *testing.T) {
 			}
 		}
 		if !found {
-			t.Errorf("Log item %v has not been found in dataset or it's metadata is invalid", logItem)
+			t.Errorf("Log item %v has not been found in dataset or its metadata is invalid", logItem)
 			return
 		}
 	}

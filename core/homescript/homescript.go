@@ -80,7 +80,7 @@ func Run(username string, scriptLabel string, scriptCode string, dryRun bool, ar
 	return executor.Output, exitCode, make([]HomescriptError, 0)
 }
 
-// Executes a given Homescript from the database and returns it's output, exit-code and possible error
+// Executes a given Homescript from the database and returns its output, exit-code and possible error
 func RunById(username string, homescriptId string, dryRun bool, args map[string]string) (string, int, error) {
 	homescriptItem, hasBeenFound, err := database.GetUserHomescriptById(homescriptId, username)
 	if err != nil {
