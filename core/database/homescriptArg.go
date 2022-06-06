@@ -71,7 +71,7 @@ func createHomescriptArgTable() error {
 func GetUserHomescriptArgById(id uint, username string) (data HomescriptArg, found bool, err error) {
 	query, err := db.Prepare(`
 	SELECT
-		Id,
+		homescriptArg.Id,
 		HomescriptId,
 		Prompt,
 		InputType,
@@ -79,7 +79,7 @@ func GetUserHomescriptArgById(id uint, username string) (data HomescriptArg, fou
 	FROM homescriptArg
 	JOIN homescript
 		ON homescriptArg.homescriptId=homescript.Id
-	WHERE Id=?
+	WHERE homescriptArg.Id=?
 	AND
 	homescript.Owner=?
 	`)
@@ -183,6 +183,7 @@ func ListArgsOfHomescript(homescriptId string) ([]HomescriptArg, error) {
 			log.Error("Failed to list HomescriptArgs of script: scanning results failed: ", err.Error())
 			return nil, err
 		}
+		args = append(args, currentArg)
 	}
 	return args, nil
 }
