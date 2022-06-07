@@ -135,7 +135,15 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/homescript/run", mdl.ApiAuth(mdl.Perm(api.RunHomescriptId, database.PermissionHomescript))).Methods("POST")
 	r.HandleFunc("/api/homescript/run/live", mdl.ApiAuth(mdl.Perm(api.RunHomescriptString, database.PermissionHomescript))).Methods("POST")
 	r.HandleFunc("/api/homescript/get/{id}", mdl.ApiAuth(mdl.Perm(api.GetUserHomescriptById, database.PermissionHomescript))).Methods("GET")
-	r.HandleFunc("/api/homescript/list/personal", mdl.ApiAuth(api.ListPersonalHomescripts)).Methods("GET")
+	r.HandleFunc("/api/homescript/list/personal", mdl.ApiAuth(mdl.Perm(api.ListPersonalHomescripts, database.PermissionHomescript))).Methods("GET")
+	r.HandleFunc("/api/homescript/list/personal/complete", mdl.ApiAuth(mdl.Perm(api.ListPersonalHomescriptsWithArgs, database.PermissionHomescript))).Methods("GET")
+
+	// Homescript arguments
+	r.HandleFunc("/api/homescript/arg/add", mdl.ApiAuth(mdl.Perm(api.CreateNewHomescriptArg, database.PermissionHomescript))).Methods("POST")
+	r.HandleFunc("/api/homescript/arg/modify", mdl.ApiAuth(mdl.Perm(api.ModifyHomescriptArgument, database.PermissionHomescript))).Methods("PUT")
+	r.HandleFunc("/api/homescript/arg/delete", mdl.ApiAuth(mdl.Perm(api.DeleteHomescriptArgument, database.PermissionHomescript))).Methods("DELETE")
+	r.HandleFunc("/api/homescript/arg/list/personal", mdl.ApiAuth(mdl.Perm(api.ListUserHomescriptArgs, database.PermissionHomescript))).Methods("GET")
+	r.HandleFunc("/api/homescript/arg/list/of/{id}", mdl.ApiAuth(mdl.Perm(api.GetHomescriptArgsByHmsId, database.PermissionHomescript))).Methods("GET")
 
 	// Automations-related
 	r.HandleFunc("/api/automation/list/personal", mdl.ApiAuth(mdl.Perm(api.GetUserAutomations, database.PermissionAutomation))).Methods("GET")

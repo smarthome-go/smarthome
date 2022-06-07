@@ -341,12 +341,32 @@ func ListPersonalHomescripts(w http.ResponseWriter, r *http.Request) {
 	homescriptList, err := database.ListHomescriptOfUser(username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Success: false, Message: "failed to list personal Homescript", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to list personal Homescripts", Error: "database failure"})
 		return
 	}
 	if err := json.NewEncoder(w).Encode(homescriptList); err != nil {
 		log.Error(err.Error())
-		Res(w, Response{Success: false, Message: "failed to list personal Homescript", Error: "could not encode response"})
+		Res(w, Response{Success: false, Message: "failed to list personal Homescripts", Error: "could not encode response"})
+	}
+}
+
+// Returns a list of Homescripts which are owned by the current user
+// Additionally, each Homescript also contains its arguments
+func ListPersonalHomescriptsWithArgs(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(w, r)
+	if err != nil {
+		return
+	}
+	homescriptList, err := homescript.ListPersonalHomescriptWithArgs(username)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to list personal Homescripts with arguments", Error: "database failure"})
+		return
+	}
+	if err := json.NewEncoder(w).Encode(homescriptList); err != nil {
+		log.Error(err.Error())
+		Res(w, Response{Success: false, Message: "failed to list personal Homescripts with arguments", Error: "could not encode response"})
 	}
 }
 

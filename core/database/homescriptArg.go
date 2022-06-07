@@ -4,6 +4,9 @@ import "database/sql"
 
 type HmsArgInputType string
 
+// Datatypes which a Homescript argument can use
+// Type conversion is handled by the target Homescript
+// These types act as a hint for the user and
 var (
 	String  HmsArgInputType = "string"
 	Number  HmsArgInputType = "number"
@@ -13,24 +16,25 @@ var (
 type HmsArgDisplay string
 
 var (
-	TypeDefault    HmsArgDisplay = "type_default"
-	StringSwitches HmsArgDisplay = "string_switches"
-	BooleanYesNo   HmsArgDisplay = "boolean_yes_no"
-	BooleanOnOff   HmsArgDisplay = "boolean_on_off"
-	NumberHour     HmsArgDisplay = "number_hour"
-	NumberMinute   HmsArgDisplay = "number_minute"
+	TypeDefault    HmsArgDisplay = "type_default"    // Uses a normal input field matching the specified data type
+	StringSwitches HmsArgDisplay = "string_switches" // Shows a list of switches from which the user can select one as a string
+	BooleanYesNo   HmsArgDisplay = "boolean_yes_no"  // Uses `yes` and `no` as substitutes for true and false
+	BooleanOnOff   HmsArgDisplay = "boolean_on_off"  // Uses `on` and `off` as substitutes for true and false
+	NumberHour     HmsArgDisplay = "number_hour"     // Displays a hour picker (0 <= h <= 24)
+	NumberMinute   HmsArgDisplay = "number_minute"   // Displays a minute picker (0 <= m <= 60)
 )
 
 type HomescriptArg struct {
-	Id           uint              `json:"id"`
-	HomescriptId string            `json:"homescriptId"`
-	Data         HomescriptArgData `json:"data"`
+	Id   uint              `json:"id"`   // The Id is automatically generated
+	Data HomescriptArgData `json:"data"` // The main data of the argument
 }
 
 type HomescriptArgData struct {
-	Prompt    string          `json:"prompt"`
-	InputType HmsArgInputType `json:"inputType"`
-	Display   HmsArgDisplay   `json:"display"`
+	ArgKey       string          `json:"argKey"`       // The unique key of the argument
+	HomescriptId string          `json:"homescriptId"` // The Homescript to which the argument belongs to
+	Prompt       string          `json:"prompt"`       // What the user will be prompted
+	InputType    HmsArgInputType `json:"inputType"`    // Which data type is expected
+	Display      HmsArgDisplay   `json:"display"`      // How the prompt will look like
 }
 
 // Used for creating the table which contains the arguments of Homescripts
@@ -41,6 +45,7 @@ func createHomescriptArgTable() error {
 	IF NOT EXISTS
 	homescriptArg(
 		Id INT AUTO_INCREMENT,
+		ArgKey VARCHAR(100),
 		HomescriptId VARCHAR(30),
 		Prompt TEXT,
 		InputType ENUM(
@@ -72,6 +77,7 @@ func GetUserHomescriptArgById(id uint, username string) (data HomescriptArg, fou
 	query, err := db.Prepare(`
 	SELECT
 		homescriptArg.Id,
+		ArgKey,
 		HomescriptId,
 		Prompt,
 		InputType,
@@ -91,7 +97,8 @@ func GetUserHomescriptArgById(id uint, username string) (data HomescriptArg, fou
 	var currentArg HomescriptArg
 	if err := query.QueryRow(id, username).Scan(
 		&currentArg.Id,
-		&currentArg.HomescriptId,
+		&currentArg.Data.ArgKey,
+		&currentArg.Data.HomescriptId,
 		&currentArg.Data.Prompt,
 		&currentArg.Data.InputType,
 		&currentArg.Data.Display,
@@ -109,14 +116,15 @@ func GetUserHomescriptArgById(id uint, username string) (data HomescriptArg, fou
 func ListAllHomescriptArgsOfUser(username string) ([]HomescriptArg, error) {
 	query, err := db.Prepare(`
 	SELECT
-		Id,
+		homescriptArg.Id,
+		ArgKey,
 		HomescriptId,
 		Prompt,
 		InputType,
 		Display
 	FROM homescriptArg
 	JOIN homescript
-		ON homescriptArgs.HomescriptId=homescript.Id
+		ON homescriptArg.HomescriptId=homescript.Id
 	WHERE homescript.Owner=?
 	`)
 	if err != nil {
@@ -135,7 +143,8 @@ func ListAllHomescriptArgsOfUser(username string) ([]HomescriptArg, error) {
 		var currentArg HomescriptArg
 		if err := res.Scan(
 			&currentArg.Id,
-			&currentArg.HomescriptId,
+			&currentArg.Data.ArgKey,
+			&currentArg.Data.HomescriptId,
 			&currentArg.Data.Prompt,
 			&currentArg.Data.InputType,
 			&currentArg.Data.Display,
@@ -143,15 +152,17 @@ func ListAllHomescriptArgsOfUser(username string) ([]HomescriptArg, error) {
 			log.Error("Failed to list HomescriptArgs of user: scanning results failed: ", err.Error())
 			return nil, err
 		}
+		args = append(args, currentArg)
 	}
 	return args, nil
 }
 
-// Returns the arguments of a given Homescript slice
+// Returns the arguments of a given Homescript as a slice
 func ListArgsOfHomescript(homescriptId string) ([]HomescriptArg, error) {
 	query, err := db.Prepare(`
 	SELECT
 		Id,
+		ArgKey,
 		HomescriptId,
 		Prompt,
 		InputType,
@@ -175,7 +186,8 @@ func ListArgsOfHomescript(homescriptId string) ([]HomescriptArg, error) {
 		var currentArg HomescriptArg
 		if err := res.Scan(
 			&currentArg.Id,
-			&currentArg.HomescriptId,
+			&currentArg.Data.ArgKey,
+			&currentArg.Data.HomescriptId,
 			&currentArg.Data.Prompt,
 			&currentArg.Data.InputType,
 			&currentArg.Data.Display,
@@ -190,17 +202,18 @@ func ListArgsOfHomescript(homescriptId string) ([]HomescriptArg, error) {
 
 // Adds a new item to a Homescript's argument list
 // Returns the newly created ID of the argument
-func AddHomescriptArg(data HomescriptArg) (uint, error) {
+func AddHomescriptArg(data HomescriptArgData) (uint, error) {
 	query, err := db.Prepare(`
 	INSERT INTO
 	homescriptArg(
 		Id,
+		ArgKey,
 		HomescriptId,
 		Prompt,
 		InputType,
 		Display
 	)
-	VALUES(DEFAULT, ?, ?, ?, ?)
+	VALUES(DEFAULT, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		log.Error("Failed to add Homescript argument: preparing query failed: ", err.Error())
@@ -208,10 +221,11 @@ func AddHomescriptArg(data HomescriptArg) (uint, error) {
 	}
 	defer query.Close()
 	res, err := query.Exec(
+		data.ArgKey,
 		data.HomescriptId,
-		data.Data.Prompt,
-		data.Data.InputType,
-		data.Data.Display,
+		data.Prompt,
+		data.InputType,
+		data.Display,
 	)
 	if err != nil {
 		log.Error("Failed to add Homescript argument: executing query failed: ", err.Error())
@@ -230,7 +244,8 @@ func ModifyHomescriptArg(id uint, newData HomescriptArgData) error {
 	query, err := db.Prepare(`
 	UPDATE homescriptArg
 	SET
-		Promt=?,
+		ArgKey=?,
+		Prompt=?,
 		InputType=?,
 		Display=?
 	WHERE Id=?
@@ -241,6 +256,7 @@ func ModifyHomescriptArg(id uint, newData HomescriptArgData) error {
 	}
 	defer query.Close()
 	if _, err := query.Exec(
+		newData.ArgKey,
 		newData.Prompt,
 		newData.InputType,
 		newData.Display,

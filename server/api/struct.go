@@ -5,6 +5,7 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
+// A generic return value for indicating the result of a request
 type Response struct {
 	Success bool   `json:"success"`
 	Message string `json:"message"`
