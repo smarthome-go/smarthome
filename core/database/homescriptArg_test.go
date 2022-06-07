@@ -26,132 +26,132 @@ func TestHomescriptArgs(t *testing.T) {
 	}{
 		{
 			Data: HomescriptArg{
-				HomescriptId: "error",
 				Data: HomescriptArgData{
-					Prompt:    "enter something",
-					InputType: String,
-					Display:   TypeDefault,
+					HomescriptId: "error",
+					Prompt:       "enter something",
+					InputType:    String,
+					Display:      TypeDefault,
 				},
 			},
 			Error: "Error 1452: Cannot add or update a child row: a foreign key constraint fails (`smarthome`.`homescriptArg`, CONSTRAINT `homescriptArg_ibfk_1` FOREIGN KEY (`HomescriptId`) REFERENCES `homescript` (`Id`))",
 		},
 		{
 			Data: HomescriptArg{
-				HomescriptId: "arg_test",
 				Data: HomescriptArgData{
-					Prompt:    "enter something",
-					InputType: "invalid",
-					Display:   TypeDefault,
+					HomescriptId: "arg_test",
+					Prompt:       "enter something",
+					InputType:    "invalid",
+					Display:      TypeDefault,
 				},
 			},
 			Error: "Error 1265: Data truncated for column 'InputType' at row 1",
 		},
 		{
 			Data: HomescriptArg{
-				HomescriptId: "arg_test",
 				Data: HomescriptArgData{
-					Prompt:    "enter something",
-					InputType: String,
-					Display:   "invalid",
+					HomescriptId: "arg_test",
+					Prompt:       "enter something",
+					InputType:    String,
+					Display:      "invalid",
 				},
 			},
 			Error: "Error 1265: Data truncated for column 'Display' at row 1",
 		},
 		{
 			Data: HomescriptArg{
-				HomescriptId: "arg_test",
 				Data: HomescriptArgData{
-					Prompt:    "enter something",
-					InputType: String,
-					Display:   TypeDefault,
+					HomescriptId: "arg_test",
+					Prompt:       "enter something",
+					InputType:    String,
+					Display:      TypeDefault,
 				},
 			},
 			Error: "",
 		},
 		{
 			Data: HomescriptArg{
-				HomescriptId: "arg_test",
 				Data: HomescriptArgData{
-					Prompt:    "enter something",
-					InputType: String,
-					Display:   TypeDefault,
+					HomescriptId: "arg_test",
+					Prompt:       "enter something",
+					InputType:    String,
+					Display:      TypeDefault,
 				},
 			},
 			Error: "",
 		},
 		{
 			Data: HomescriptArg{
-				HomescriptId: "arg_test",
 				Data: HomescriptArgData{
-					Prompt:    "enter something",
-					InputType: String,
-					Display:   StringSwitches,
+					HomescriptId: "arg_test",
+					Prompt:       "enter something",
+					InputType:    String,
+					Display:      StringSwitches,
 				},
 			},
 			Error: "",
 		},
 		{
 			Data: HomescriptArg{
-				HomescriptId: "arg_test",
 				Data: HomescriptArgData{
-					Prompt:    "enter something",
-					InputType: Boolean,
-					Display:   TypeDefault,
+					HomescriptId: "arg_test",
+					Prompt:       "enter something",
+					InputType:    Boolean,
+					Display:      TypeDefault,
 				},
 			},
 			Error: "",
 		},
 		{
 			Data: HomescriptArg{
-				HomescriptId: "arg_test",
 				Data: HomescriptArgData{
-					Prompt:    "enter something",
-					InputType: Boolean,
-					Display:   BooleanOnOff,
+					HomescriptId: "arg_test",
+					Prompt:       "enter something",
+					InputType:    Boolean,
+					Display:      BooleanOnOff,
 				},
 			},
 			Error: "",
 		},
 		{
 			Data: HomescriptArg{
-				HomescriptId: "arg_test",
 				Data: HomescriptArgData{
-					Prompt:    "enter something",
-					InputType: Boolean,
-					Display:   BooleanYesNo,
+					HomescriptId: "arg_test",
+					Prompt:       "enter something",
+					InputType:    Boolean,
+					Display:      BooleanYesNo,
 				},
 			},
 			Error: "",
 		},
 		{
 			Data: HomescriptArg{
-				HomescriptId: "arg_test",
 				Data: HomescriptArgData{
-					Prompt:    "enter something",
-					InputType: Number,
-					Display:   TypeDefault,
+					HomescriptId: "arg_test",
+					Prompt:       "enter something",
+					InputType:    Number,
+					Display:      TypeDefault,
 				},
 			},
 			Error: "",
 		},
 		{
 			Data: HomescriptArg{
-				HomescriptId: "arg_test",
 				Data: HomescriptArgData{
-					Prompt:    "enter something",
-					InputType: Number,
-					Display:   NumberHour,
+					HomescriptId: "arg_test",
+					Prompt:       "enter something",
+					InputType:    Number,
+					Display:      NumberHour,
 				},
 			},
 			Error: "",
 		},
 		{
 			Data: HomescriptArg{
-				HomescriptId: "arg_test",
 				Data: HomescriptArgData{
-					Prompt:    "enter something",
-					InputType: Number,
-					Display:   NumberMinute,
+					HomescriptId: "arg_test",
+					Prompt:       "enter something",
+					InputType:    Number,
+					Display:      NumberMinute,
 				},
 			},
 			Error: "",
@@ -160,7 +160,7 @@ func TestHomescriptArgs(t *testing.T) {
 	for testIndex, test := range table {
 		t.Run(fmt.Sprintf("homescript_args/add/iter-%d", testIndex), func(t *testing.T) {
 			// Add the argument to the database
-			newId, err := AddHomescriptArg(test.Data)
+			newId, err := AddHomescriptArg(test.Data.Data)
 			if err != nil {
 				if test.Error == "" {
 					assert.NoError(t, err)
@@ -212,7 +212,7 @@ func TestHomescriptArgs(t *testing.T) {
 	t.Run("homescript_args/delete_all_together", func(t *testing.T) {
 		// Add the test data first
 		for _, item := range table {
-			_, err := AddHomescriptArg(item.Data)
+			_, err := AddHomescriptArg(item.Data.Data)
 			if item.Error == "" {
 				assert.NoError(t, err)
 			}
