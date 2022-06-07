@@ -4,7 +4,7 @@
     import { Label } from "@smui/list";
     import { onMount } from "svelte";
     import Progress from "../../components/Progress.svelte";
-    import { createSnackbar, data as userData } from "../../global";
+    import { createSnackbar, data as userData, sleep } from "../../global";
     import Page from "../../Page.svelte";
     import Inputs from "./Inputs.svelte";
     import AddHomescript from "./dialogs/AddHomescript.svelte";
@@ -141,6 +141,8 @@
                 ...$homescripts,
                 { owner: $userData.userData.user.username, data: data },
             ];
+            // The wait is required in order to delay the selection
+            await sleep(50);
             // Select the newly created Homescript for editing
             selection = data.id;
             // Show the newly selected Homescript in the Inputs
@@ -165,9 +167,14 @@
             if (!res.success) throw Error(res.error);
             // Remove the current Homescript from the global store
             $homescripts = $homescripts.filter((h) => h.data.id !== selection);
-            // Select the next Homescript as active
             // If no Homescript exist besides this one, ignore it
-            if ($homescripts.length == 0) return;
+            if ($homescripts.length == 0) {
+                $loading = false;
+                return;
+            }
+            // Sleep 50ms in order to delay the selection
+            await sleep(50);
+            // Select the next Homescript as active
             selection = $homescripts[0].data.id;
             // Show the newly selected Homescript in the Inputs
             updateSourceFromSelectedData();
@@ -307,46 +314,67 @@
     .container {
         background-color: var(--clr-height-0-1);
         border-radius: 0.4rem;
+        overflow: hidden;
+        height: 28vh;
 
-        &.empty {
-            @include widescreen {
-                width: 100%;
-            }
+        @include mobile {
+            height: 100%;
         }
 
         @include widescreen {
+            height: 100%;
             width: 50%;
+        }
+
+        &.empty {
+            height: 100%;
+            @include widescreen {
+                width: 100%;
+            }
         }
     }
 
     #content {
         display: flex;
-        flex-direction: column;
+        flex-direction: column-reverse;
         margin: 1rem 1.5rem;
         gap: 1rem;
         transition-property: height;
         transition-duration: 0.3s;
 
         @include widescreen {
+            flex-direction: column;
             height: calc(100vh - 91px);
             flex-direction: row;
             gap: 1rem;
         }
     }
 
-    .homescripts.empty {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 3rem;
-        box-sizing: border-box;
-        height: calc(100vh - 91px);
-        width: 100%;
-        gap: 1.5rem;
+    .homescripts {
+        height: 100%;
+        overflow-y: auto;
 
-        h6 {
-            margin: 0.5rem 0;
+        &.empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            box-sizing: border-box;
+            height: calc(100vh - 91px);
+            width: 100%;
+            gap: 1.5rem;
+
+            h6 {
+                margin: 0.5rem 0;
+                font-size: 1.1rem;
+            }
+
+            @include mobile {
+                gap: 1rem;
+                height: calc(100vh - 143px);
+                overflow: hidden;
+            }
         }
     }
 
