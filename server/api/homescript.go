@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/gorilla/mux"
 
@@ -394,6 +396,21 @@ func CreateNewHomescript(w http.ResponseWriter, r *http.Request) {
 	if alreadyExists {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		Res(w, Response{Success: false, Message: "failed to add Homescript", Error: fmt.Sprintf("the id: '%s' is already present in the database, use another one", request.Id)})
+		return
+	}
+	if strings.Contains(request.Id, " ") || utf8.RuneCountInString(request.Id) > 30 {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to add Homescript", Error: fmt.Sprintf("the id: '%s' must not exceed 30 characters and must not include any whitespaces", request.Id)})
+		return
+	}
+	if utf8.RuneCountInString(request.MDIcon) > 100 {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to add Homescript", Error: fmt.Sprintf("the mdIcon: '%s' must not exceed 100 characters", request.MDIcon)})
+		return
+	}
+	if utf8.RuneCountInString(request.Name) > 30 {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to add Homescript", Error: fmt.Sprintf("the name: '%s' must not exceed 30 characters", request.Name)})
 		return
 	}
 	homescriptToAdd := database.Homescript{
