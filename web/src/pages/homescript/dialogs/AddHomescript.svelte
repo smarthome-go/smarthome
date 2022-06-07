@@ -10,7 +10,7 @@
     import Button, { Label } from "@smui/button";
     import Textfield from "@smui/textfield";
     import CharacterCounter from "@smui/textfield/character-counter";
-    import type { homescriptData } from "../main";
+    import {  homescripts } from "../main";
     export let open = false;
 
     // Input data
@@ -41,6 +41,7 @@
             >
             <Textfield
                 bind:value={id}
+                invalid={id.includes(" ") || $homescripts.find(h => h.data.id === id) !== undefined}
                 input$maxlength={30}
                 label="Id"
                 required

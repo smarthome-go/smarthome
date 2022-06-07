@@ -1,5 +1,6 @@
 import { writable, Writable } from 'svelte/store'
 import App from './App.svelte'
+import type {homescript} from "../../homescript"
 
 
 // States that homescripts have been loaded
