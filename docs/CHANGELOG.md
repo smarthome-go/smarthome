@@ -1,18 +1,10 @@
-## Changelog for v0.0.39
+## Changelog for v0.0.40
 
-### Homescript
-- Removed legacy *RadiGo* features due to the recent addition of network functions
-- Added a first working version of a Homescript management web GUI
-
-### Rooms
-- Improved camera-feed scaling: added better widescreen support to the `viewCamera` dialog
-
-### Automations
-- Fixed 1 bug in automation creation: selected days are now also reset on addition and cancelation
+### Homescript GUI
+- Improved device scaling and overflow handling 
 
 ### Backend
-- Significantly improved power-request response times when a node is offline
-- Increased backend reliabilty through the use of URL builders instead of string formatting
-
-### Development
-- Added the `IconPicker.svelte` component: It can be used to allow the selection of any compatible Google-MD icon from a given icon set
+- Added additional safety checks before allowing the creation of a new Homescript
+- Added database implementation of Homescript arguments
+- Added API layer for Homescript arguments
+- Fixed various failing tests
