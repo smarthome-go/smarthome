@@ -46,7 +46,7 @@ export interface location {
 
 /* Homescript arguments */
 // Container for homescript argument
-export interface homecriptArg {
+export interface homescriptArg {
     id: number
     data: homescriptArgData
 }
