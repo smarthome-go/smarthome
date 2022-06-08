@@ -40,9 +40,10 @@ vtest:
 	go tool cover --html=coverage.out -o coverage.html
 	rm -rf web/dist/html/testing.html
 
-# Updating the current version in all locations
+# Update the current version in all locations
 version:
 	python3 update_version.py
+	cd web && npm i
 
 # Prepares everything for a version-release
 # In order to publish the release to official registries
