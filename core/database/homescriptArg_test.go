@@ -29,6 +29,7 @@ func TestHomescriptArgs(t *testing.T) {
 				Data: HomescriptArgData{
 					HomescriptId: "error",
 					Prompt:       "enter something",
+					MdIcon:       "code",
 					InputType:    String,
 					Display:      TypeDefault,
 				},
@@ -40,6 +41,7 @@ func TestHomescriptArgs(t *testing.T) {
 				Data: HomescriptArgData{
 					HomescriptId: "arg_test",
 					Prompt:       "enter something",
+					MdIcon:       "code",
 					InputType:    "invalid",
 					Display:      TypeDefault,
 				},
@@ -51,6 +53,7 @@ func TestHomescriptArgs(t *testing.T) {
 				Data: HomescriptArgData{
 					HomescriptId: "arg_test",
 					Prompt:       "enter something",
+					MdIcon:       "code",
 					InputType:    String,
 					Display:      "invalid",
 				},
@@ -62,6 +65,7 @@ func TestHomescriptArgs(t *testing.T) {
 				Data: HomescriptArgData{
 					HomescriptId: "arg_test",
 					Prompt:       "enter something",
+					MdIcon:       "code",
 					InputType:    String,
 					Display:      TypeDefault,
 				},
@@ -73,6 +77,7 @@ func TestHomescriptArgs(t *testing.T) {
 				Data: HomescriptArgData{
 					HomescriptId: "arg_test",
 					Prompt:       "enter something",
+					MdIcon:       "code",
 					InputType:    String,
 					Display:      TypeDefault,
 				},
@@ -84,6 +89,7 @@ func TestHomescriptArgs(t *testing.T) {
 				Data: HomescriptArgData{
 					HomescriptId: "arg_test",
 					Prompt:       "enter something",
+					MdIcon:       "code",
 					InputType:    String,
 					Display:      StringSwitches,
 				},
@@ -95,6 +101,7 @@ func TestHomescriptArgs(t *testing.T) {
 				Data: HomescriptArgData{
 					HomescriptId: "arg_test",
 					Prompt:       "enter something",
+					MdIcon:       "code",
 					InputType:    Boolean,
 					Display:      TypeDefault,
 				},
@@ -106,6 +113,7 @@ func TestHomescriptArgs(t *testing.T) {
 				Data: HomescriptArgData{
 					HomescriptId: "arg_test",
 					Prompt:       "enter something",
+					MdIcon:       "code",
 					InputType:    Boolean,
 					Display:      BooleanOnOff,
 				},
@@ -117,6 +125,7 @@ func TestHomescriptArgs(t *testing.T) {
 				Data: HomescriptArgData{
 					HomescriptId: "arg_test",
 					Prompt:       "enter something",
+					MdIcon:       "code",
 					InputType:    Boolean,
 					Display:      BooleanYesNo,
 				},
@@ -128,6 +137,7 @@ func TestHomescriptArgs(t *testing.T) {
 				Data: HomescriptArgData{
 					HomescriptId: "arg_test",
 					Prompt:       "enter something",
+					MdIcon:       "code",
 					InputType:    Number,
 					Display:      TypeDefault,
 				},
@@ -139,6 +149,7 @@ func TestHomescriptArgs(t *testing.T) {
 				Data: HomescriptArgData{
 					HomescriptId: "arg_test",
 					Prompt:       "enter something",
+					MdIcon:       "code",
 					InputType:    Number,
 					Display:      NumberHour,
 				},
@@ -150,6 +161,7 @@ func TestHomescriptArgs(t *testing.T) {
 				Data: HomescriptArgData{
 					HomescriptId: "arg_test",
 					Prompt:       "enter something",
+					MdIcon:       "code",
 					InputType:    Number,
 					Display:      NumberMinute,
 				},

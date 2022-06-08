@@ -33,6 +33,7 @@ type HomescriptArgData struct {
 	ArgKey       string          `json:"argKey"`       // The unique key of the argument
 	HomescriptId string          `json:"homescriptId"` // The Homescript to which the argument belongs to
 	Prompt       string          `json:"prompt"`       // What the user will be prompted
+	MDIcon       string          `json:"mdIcon"`       // A Google MD icon which will be displayed
 	InputType    HmsArgInputType `json:"inputType"`    // Which data type is expected
 	Display      HmsArgDisplay   `json:"display"`      // How the prompt will look like
 }
@@ -48,6 +49,7 @@ func createHomescriptArgTable() error {
 		ArgKey VARCHAR(100),
 		HomescriptId VARCHAR(30),
 		Prompt TEXT,
+		MDIcon VARCHAR(100),
 		InputType ENUM(
 			'string',
 			'number',
@@ -80,6 +82,7 @@ func GetUserHomescriptArgById(id uint, username string) (data HomescriptArg, fou
 		ArgKey,
 		HomescriptId,
 		Prompt,
+		homescriptArg.MDIcon,
 		InputType,
 		Display
 	FROM homescriptArg
@@ -100,6 +103,7 @@ func GetUserHomescriptArgById(id uint, username string) (data HomescriptArg, fou
 		&currentArg.Data.ArgKey,
 		&currentArg.Data.HomescriptId,
 		&currentArg.Data.Prompt,
+		&currentArg.Data.MDIcon,
 		&currentArg.Data.InputType,
 		&currentArg.Data.Display,
 	); err != nil {
@@ -120,6 +124,7 @@ func ListAllHomescriptArgsOfUser(username string) ([]HomescriptArg, error) {
 		ArgKey,
 		HomescriptId,
 		Prompt,
+		homescriptArg.MDIcon,
 		InputType,
 		Display
 	FROM homescriptArg
@@ -146,6 +151,7 @@ func ListAllHomescriptArgsOfUser(username string) ([]HomescriptArg, error) {
 			&currentArg.Data.ArgKey,
 			&currentArg.Data.HomescriptId,
 			&currentArg.Data.Prompt,
+			&currentArg.Data.MDIcon,
 			&currentArg.Data.InputType,
 			&currentArg.Data.Display,
 		); err != nil {
@@ -165,6 +171,7 @@ func ListArgsOfHomescript(homescriptId string) ([]HomescriptArg, error) {
 		ArgKey,
 		HomescriptId,
 		Prompt,
+		MDIcon,
 		InputType,
 		Display
 	FROM homescriptArg
@@ -189,6 +196,7 @@ func ListArgsOfHomescript(homescriptId string) ([]HomescriptArg, error) {
 			&currentArg.Data.ArgKey,
 			&currentArg.Data.HomescriptId,
 			&currentArg.Data.Prompt,
+			&currentArg.Data.MDIcon,
 			&currentArg.Data.InputType,
 			&currentArg.Data.Display,
 		); err != nil {
@@ -210,10 +218,11 @@ func AddHomescriptArg(data HomescriptArgData) (uint, error) {
 		ArgKey,
 		HomescriptId,
 		Prompt,
+		MDIcon,
 		InputType,
 		Display
 	)
-	VALUES(DEFAULT, ?, ?, ?, ?, ?)
+	VALUES(DEFAULT, ?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		log.Error("Failed to add Homescript argument: preparing query failed: ", err.Error())
@@ -224,6 +233,7 @@ func AddHomescriptArg(data HomescriptArgData) (uint, error) {
 		data.ArgKey,
 		data.HomescriptId,
 		data.Prompt,
+		data.MDIcon,
 		data.InputType,
 		data.Display,
 	)
@@ -246,6 +256,7 @@ func ModifyHomescriptArg(id uint, newData HomescriptArgData) error {
 	SET
 		ArgKey=?,
 		Prompt=?,
+		MDIcon=?,
 		InputType=?,
 		Display=?
 	WHERE Id=?
@@ -258,6 +269,7 @@ func ModifyHomescriptArg(id uint, newData HomescriptArgData) error {
 	if _, err := query.Exec(
 		newData.ArgKey,
 		newData.Prompt,
+		newData.MDIcon,
 		newData.InputType,
 		newData.Display,
 		id,
