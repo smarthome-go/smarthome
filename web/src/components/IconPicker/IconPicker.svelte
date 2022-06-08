@@ -85,7 +85,6 @@
     bind:open
     aria-labelledby="over-fullscreen-confirmation-title"
     aria-describedby="over-fullscreen-confirmation-content"
-    slot="over"
     selection
 >
     <Header>
