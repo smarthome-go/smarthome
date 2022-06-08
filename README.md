@@ -24,4 +24,4 @@ Naturally, the use of smarthome-hw requires physical hardware in order to commun
 However, support for additional hardware, for example Zigbee devices is planned and would open additional possibilities, for example integration with other hardware.
 
 ## Getting Started
-A guide for getting started can be found [here](./docs/Quickstart.md)
+A guide for getting started can be found [here](./docs/Quickstart.md).
