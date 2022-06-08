@@ -4,6 +4,13 @@
 * /
 
 /* Homescript data type and container */
+
+// A Homescript with its arguments
+export interface homescriptWithArgs {
+    data: homescript
+    arguments: homescriptArg[]
+}
+
 // Homescript container
 export interface homescript {
     owner: string
