@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"unicode/utf8"
 
@@ -117,6 +118,12 @@ func CreateNewHomescriptArg(w http.ResponseWriter, r *http.Request) {
 	if utf8.RuneCountInString(request.ArgKey) > 100 {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		Res(w, Response{Success: false, Message: "failed to create new Homescript argument", Error: "the key must not exceed 100 characters"})
+		return
+	}
+	// Validate that the length of the MdIcon does not exceed 100 chars
+	if utf8.RuneCountInString(request.MDIcon) > 100 {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to add Homescript", Error: fmt.Sprintf("the mdIcon: '%s' must not exceed 100 characters", request.MDIcon)})
 		return
 	}
 	// Creates the argument
