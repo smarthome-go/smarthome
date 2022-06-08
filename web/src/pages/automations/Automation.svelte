@@ -1,126 +1,126 @@
 <script lang="ts">
-    import IconButton from '@smui/icon-button/src/IconButton.svelte'
-    import { createEventDispatcher,onMount } from 'svelte'
-    import { createSnackbar,sleep } from '../../global'
-    import AutomationInfo from './dialogs/AutomationInfo.svelte'
-    import EditAutomation from './dialogs/EditAutomation.svelte'
+    import IconButton from "@smui/icon-button/src/IconButton.svelte";
+    import { createEventDispatcher, onMount } from "svelte";
+    import { createSnackbar, sleep } from "../../global";
+    import AutomationInfo from "./dialogs/AutomationInfo.svelte";
+    import EditAutomation from "./dialogs/EditAutomation.svelte";
     import {
-    addAutomation,
-    automation,
-    generateCronExpression,
-    hmsLoaded,
-    homescript,
-    homescripts,
-    loading,
-    parseCronExpressionToTime
-    } from './main'
+        addAutomation,
+        automation,
+        generateCronExpression,
+        hmsLoaded,
+        homescript,
+        homescripts,
+        loading,
+        parseCronExpressionToTime,
+    } from "./main";
 
     // Event dispatcher
-    const dispatch = createEventDispatcher()
+    const dispatch = createEventDispatcher();
 
-    const days: string[] = ['su', 'mo', 'tu', 'we', 'th', 'fr', 'sa']
+    const days: string[] = ["su", "mo", "tu", "we", "th", "fr", "sa"];
     const timingModes = {
-        normal: { name: '', icon: 'schedule' },
-        sunrise: { name: 'Sunrise', icon: 'wb_twilight' },
-        sunset: { name: 'Sunset', icon: 'nights_stay' },
-    }
+        normal: { name: "", icon: "schedule" },
+        sunrise: { name: "Sunrise", icon: "wb_twilight" },
+        sunset: { name: "Sunset", icon: "nights_stay" },
+    };
 
-    export let data: automation
+    export let data: automation;
 
     let homescriptData: homescript = {
-        owner: '',
+        owner: "",
         data: {
-            code: '',
-            description: '',
-            id: '',
-            mdIcon: '',
-            name: '',
+            code: "",
+            description: "",
+            id: "",
+            mdIcon: "",
+            name: "",
             quickActionsEnabled: false,
             schedulerEnabled: false,
         },
-    }
+    };
 
     interface timeDataType {
-        hours: number
-        minutes: number
-        days: number[]
+        hours: number;
+        minutes: number;
+        days: number[];
     }
 
     let timeData: timeDataType = {
         hours: 0,
         minutes: 0,
         days: [],
-    }
+    };
 
     async function modifyAutomation(id: number, payload: addAutomation) {
-        $loading = true
+        $loading = true;
         try {
-            payload['id'] = id
+            payload["id"] = id;
             const res = await (
-                await fetch('/api/automation/modify', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                await fetch("/api/automation/modify", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(payload),
                 })
-            ).json()
-            if (!res.success) throw Error(res.error)
+            ).json();
+            if (!res.success) throw Error(res.error);
             data.cronExpression = generateCronExpression(
                 payload.hour,
                 payload.minute,
                 payload.days
-            )
+            );
             const homescriptDataTemp = $homescripts.find(
                 (s) => s.data.id === data.homescriptId
-            )
+            );
             if (homescriptDataTemp !== undefined)
-                homescriptData = homescriptDataTemp
+                homescriptData = homescriptDataTemp;
         } catch (err) {
-            $createSnackbar(`Could not modify automation: ${err}`)
+            $createSnackbar(`Could not modify automation: ${err}`);
         }
-        $loading = false
+        $loading = false;
     }
 
-    let editOpen = false
-    let infoOpen = false
+    let editOpen = false;
+    let infoOpen = false;
 
     // Generates a 12h string from 24h time data
-    let timeString = ''
+    let timeString = "";
     $: timeString =
         `${
             timeData.hours <= 12 ? timeData.hours : timeData.hours - 12
-        }`.padStart(2, '0') +
-        ':' +
-        `${timeData.minutes}`.padStart(2, '0') +
-        ` ${timeData.hours < 12 ? 'AM' : 'PM'}`
+        }`.padStart(2, "0") +
+        ":" +
+        `${timeData.minutes}`.padStart(2, "0") +
+        ` ${timeData.hours < 12 ? "AM" : "PM"}`;
 
     onMount(async () => {
-        while (!$hmsLoaded) await sleep(5)
+        while (!$hmsLoaded) await sleep(5);
         const homescriptDataTemp = $homescripts.find(
             (s) => s.data.id === data.homescriptId
-        )
+        );
         if (homescriptDataTemp !== undefined && homescriptDataTemp !== null)
-            homescriptData = homescriptDataTemp
-    })
+            homescriptData = homescriptDataTemp;
+    });
 
     // Update days and time
-    $: timeData = parseCronExpressionToTime(data.cronExpression)
+    $: timeData = parseCronExpressionToTime(data.cronExpression);
 
     async function handleEditAutomation(event) {
-        const dataTemp = event.detail
-        const dataTempEnabled = dataTemp.data.enabled
-        const enabledStatusBefore = data.enabled
-        const dataTempTimingMode = dataTemp.data.timingMode
-        const timingModeBefore = data.timingMode
-        await modifyAutomation(dataTemp.id, dataTemp.data)
+        const dataTemp = event.detail;
+        const dataTempEnabled = dataTemp.data.enabled;
+        const enabledStatusBefore = data.enabled;
+        const dataTempTimingMode = dataTemp.data.timingMode;
+        const timingModeBefore = data.timingMode;
+        await modifyAutomation(dataTemp.id, dataTemp.data);
         if (
             dataTempEnabled !== enabledStatusBefore ||
             dataTempTimingMode !== timingModeBefore
         )
-            dispatch('modify', null)
+            dispatch("modify", null);
     }
 
     function handleDeleteAutomation(_event) {
-        dispatch('delete', null)
+        dispatch("delete", null);
     }
 </script>
 
@@ -151,7 +151,7 @@
         </span>
         <span class="automation__time">
             At
-            {#if data.timingMode === 'normal'}
+            {#if data.timingMode === "normal"}
                 {timeString}
             {:else}
                 {timingModes[data.timingMode].name}
@@ -205,7 +205,7 @@
 </div>
 
 <style lang="scss">
-    @use '../../mixins' as *;
+    @use "../../mixins" as *;
     .automation {
         height: 9rem;
         width: 15rem;
@@ -298,9 +298,10 @@
             align-items: center;
             gap: 0.4rem;
 
-            i {
-                font-size: 1rem;
-            }
+            // Maybe not used?
+            //            i {
+            //                font-size: 1rem;
+            //            }
         }
 
         @include mobile {
