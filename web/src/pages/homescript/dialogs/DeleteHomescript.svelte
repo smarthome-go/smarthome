@@ -7,7 +7,7 @@
         Title,
     } from "@smui/dialog";
     import { createEventDispatcher } from "svelte";
-    import type { homescriptData } from "../main";
+    import type { homescriptData } from "../../../homescript";
 
     export let open = false;
     export let data: homescriptData;

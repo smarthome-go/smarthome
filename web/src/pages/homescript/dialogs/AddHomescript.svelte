@@ -10,7 +10,7 @@
     import Button, { Label } from "@smui/button";
     import Textfield from "@smui/textfield";
     import CharacterCounter from "@smui/textfield/character-counter";
-    import {  homescripts } from "../main";
+    import { homescripts } from "../main";
     export let open = false;
 
     // Input data
@@ -41,7 +41,9 @@
             >
             <Textfield
                 bind:value={id}
-                invalid={id.includes(" ") || $homescripts.find(h => h.data.id === id) !== undefined}
+                invalid={id.includes(" ") ||
+                    $homescripts.find((h) => h.data.data.id === id) !==
+                        undefined}
                 input$maxlength={30}
                 label="Id"
                 required
@@ -84,7 +86,7 @@
             <Label>Cancel</Label>
         </Button>
         <Button
-            disabled={name == ""}
+            disabled={name === ""}
             use={[InitialFocus]}
             on:click={() => {
                 submit();
