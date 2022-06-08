@@ -27,6 +27,7 @@ type ModifyHomescriptArgumentRequest struct {
 	Id        uint                     `json:"id"`
 	ArgKey    string                   `json:"argKey"`
 	Prompt    string                   `json:"prompt"`
+	MDIcon    string                   `json:"mdIcon"`
 	InputType database.HmsArgInputType `json:"inputType"`
 	Display   database.HmsArgDisplay   `json:"display"`
 }
@@ -157,6 +158,7 @@ func ModifyHomescriptArgument(w http.ResponseWriter, r *http.Request) {
 	decoder.DisallowUnknownFields()
 	var request ModifyHomescriptArgumentRequest
 	if err := decoder.Decode(&request); err != nil {
+		log.Error(err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
@@ -179,10 +181,17 @@ func ModifyHomescriptArgument(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to modify Homescript argument", Error: "the key must not exceed 100 characters"})
 		return
 	}
+	// Validate that the length of the MdIcon does not exceed 100 chars
+	if utf8.RuneCountInString(request.MDIcon) > 100 {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to add Homescript", Error: fmt.Sprintf("the mdIcon: '%s' must not exceed 100 characters", request.MDIcon)})
+		return
+	}
 	// Modifies the argument
 	if err := database.ModifyHomescriptArg(request.Id, database.HomescriptArgData{
 		ArgKey:    request.ArgKey,
 		Prompt:    request.Prompt,
+		MDIcon:    request.MDIcon,
 		InputType: request.InputType,
 		Display:   request.Display,
 	}); err != nil {
