@@ -60,7 +60,7 @@ func CreateNewHomescript(homescript Homescript) error {
 	VALUES(?, ?, ?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
-		log.Error("Failed to create new homescript entry: preparing query failed: ", err.Error())
+		log.Error("Failed to create new Homescript: preparing query failed: ", err.Error())
 		return err
 	}
 	defer query.Close()
@@ -74,7 +74,7 @@ func CreateNewHomescript(homescript Homescript) error {
 		homescript.Data.Code,
 		homescript.Data.MDIcon,
 	); err != nil {
-		log.Error("Failed to create new homescript entry: executing query failed: ", err.Error())
+		log.Error("Failed to create new Homescript: executing query failed: ", err.Error())
 		return err
 	}
 	return nil
@@ -95,7 +95,7 @@ func ModifyHomescriptById(id string, homescript HomescriptData) error {
 	WHERE Id=?
 	`)
 	if err != nil {
-		log.Error("Failed to update homescript item: preparing query failed: ", err.Error())
+		log.Error("Failed to update Homescript: preparing query failed: ", err.Error())
 		return err
 	}
 	defer query.Close()
@@ -109,7 +109,7 @@ func ModifyHomescriptById(id string, homescript HomescriptData) error {
 		id,
 	)
 	if err != nil {
-		log.Error("Failed to update homescript item: executing query failed: ", err.Error())
+		log.Error("Failed to update Homescript: executing query failed: ", err.Error())
 		return err
 	}
 	return nil
@@ -131,7 +131,7 @@ func ListHomescriptOfUser(username string) ([]Homescript, error) {
 	WHERE Owner=?
 	`)
 	if err != nil {
-		log.Error("Failed to list homescript of user: preparing query failed: ", err.Error())
+		log.Error("Failed to list Homescript of user: preparing query failed: ", err.Error())
 		return nil, err
 	}
 	defer query.Close()
@@ -155,7 +155,7 @@ func ListHomescriptOfUser(username string) ([]Homescript, error) {
 			&homescript.Data.MDIcon,
 		)
 		if err != nil {
-			log.Error("Failed to list homescript of user: scanning results failed: ", err.Error())
+			log.Error("Failed to list Homescript of user: scanning results failed: ", err.Error())
 			return nil, err
 		}
 		homescriptList = append(homescriptList, homescript)
@@ -178,13 +178,13 @@ func ListHomescriptFiles() ([]Homescript, error) {
 	FROM homescript
 	`)
 	if err != nil {
-		log.Error("Failed to list homescript files: preparing query failed: ", err.Error())
+		log.Error("Failed to list Homescript: preparing query failed: ", err.Error())
 		return nil, err
 	}
 	defer query.Close()
 	res, err := query.Query()
 	if err != nil {
-		log.Error("Failed to list homescript files: executing query failed: ", err.Error())
+		log.Error("Failed to list Homescript: executing query failed: ", err.Error())
 		return nil, err
 	}
 	defer res.Close()
@@ -202,7 +202,7 @@ func ListHomescriptFiles() ([]Homescript, error) {
 			&homescript.Data.MDIcon,
 		)
 		if err != nil {
-			log.Error("Failed to list homescript files: scanning results failed: ", err.Error())
+			log.Error("Failed to list Homescript: scanning results failed: ", err.Error())
 			return nil, err
 		}
 		homescriptList = append(homescriptList, homescript)
@@ -251,12 +251,12 @@ func DeleteHomescriptById(homescriptId string) error {
 	WHERE Id=?
 	`)
 	if err != nil {
-		log.Error("Failed to delete homescript by id: preparing query failed: ", err.Error())
+		log.Error("Failed to delete Homescript by id: preparing query failed: ", err.Error())
 		return err
 	}
 	defer query.Close()
 	if _, err := query.Exec(homescriptId); err != nil {
-		log.Error("Failed to delete homescript by id: executing query failed: ", err.Error())
+		log.Error("Failed to delete Homescript by id: executing query failed: ", err.Error())
 		return err
 	}
 	return nil
