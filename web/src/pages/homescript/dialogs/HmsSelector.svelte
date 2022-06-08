@@ -17,7 +17,7 @@
         $homescripts.length > 0 &&
         selection === ''
     )
-        selection = $homescripts[0].data.id
+        selection = $homescripts[0].data.data.id
 
     let selectionIndex: number | undefined = undefined
 </script>
@@ -31,19 +31,19 @@
     >
         {#each $homescripts as item}
             <Item
-                on:SMUI:action={() => (selection = item.data.id)}
-                selected={selection === item.data.id}
+                on:SMUI:action={() => (selection = item.data.data.id)}
+                selected={selection === item.data.data.id}
             >
                 <Graphic>
                     <Icon class="material-icons">
-                        {$homescripts.find((h) => h.data.id === item.data.id)
-                            .data.mdIcon}
+                        {$homescripts.find((h) => h.data.data.id === item.data.data.id)
+                            .data.data.mdIcon}
                     </Icon>
                 </Graphic>
                 <Text>
-                    <PrimaryText>{item.data.name}</PrimaryText>
+                    <PrimaryText>{item.data.data.name}</PrimaryText>
                     <SecondaryText>
-                        {item.data.description}
+                        {item.data.data.description}
                     </SecondaryText>
                 </Text>
             </Item>

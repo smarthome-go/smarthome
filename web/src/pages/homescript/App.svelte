@@ -12,6 +12,7 @@
     import { hmsLoaded, homescripts, loading } from "./main";
     import type { homescriptData } from "src/homescript";
     import DeleteHomescript from "./dialogs/DeleteHomescript.svelte";
+    import Argument from "./Argument.svelte";
 
     let addOpen = false;
     let deleteOpen = false;
@@ -30,7 +31,7 @@
 
     // Using a copied `buffer` for the active script
     // Useful for a cancel feature
-    $: if (selection != "") updateSelectedData();
+    $: if (selection !== "") updateSelectedData();
 
     // Updates the `selectedDataChanged` boolean
     // Which is used to disable the action buttons conditionally
@@ -41,7 +42,8 @@
     // Depending on whether the data has changed
     // the according boolean is updated
     function updateSelectedDataChanged() {
-        const data = $homescripts.find((h) => h.data.id === selection).data;
+        const data = $homescripts.find((h) => h.data.data.id === selection).data
+            .data;
         selectedDataChanged =
             data.name !== selectedData.name ||
             data.description !== selectedData.description ||
@@ -53,9 +55,11 @@
 
     // Is used as soon as the active script is changed and is not empty
     function updateSelectedData() {
+        console.log($homescripts);
+        console.log(selection);
         const selectedDataTemp = $homescripts.find(
-            (h) => h.data.id === selection
-        ).data;
+            (h) => h.data.data.id === selection
+        ).data.data;
         // Static, contextual data
         selectedData.id = selectedDataTemp.id; // Is required in order to send the request
         selectedData.code = selectedDataTemp.code; // Required to preserve code
@@ -72,14 +76,15 @@
     function updateSourceFromSelectedData() {
         // The index is required because JS clones the object
         const replaceIndex = $homescripts.findIndex(
-            (h) => h.data.id === selection
+            (h) => h.data.data.id === selection
         );
-        $homescripts[replaceIndex].data.name = selectedData.name;
-        $homescripts[replaceIndex].data.description = selectedData.description;
-        $homescripts[replaceIndex].data.mdIcon = selectedData.mdIcon;
-        $homescripts[replaceIndex].data.quickActionsEnabled =
+        $homescripts[replaceIndex].data.data.name = selectedData.name;
+        $homescripts[replaceIndex].data.data.description =
+            selectedData.description;
+        $homescripts[replaceIndex].data.data.mdIcon = selectedData.mdIcon;
+        $homescripts[replaceIndex].data.data.quickActionsEnabled =
             selectedData.quickActionsEnabled;
-        $homescripts[replaceIndex].data.schedulerEnabled =
+        $homescripts[replaceIndex].data.data.schedulerEnabled =
             selectedData.schedulerEnabled;
         updateSelectedData();
     }
@@ -89,7 +94,7 @@
         $loading = true;
         try {
             let res = await (
-                await fetch("/api/homescript/list/personal")
+                await fetch("/api/homescript/list/personal/complete")
             ).json();
 
             if (res.success !== undefined && !res.success)
@@ -139,7 +144,13 @@
             // Append the new Homescript to the global store
             $homescripts = [
                 ...$homescripts,
-                { owner: $userData.userData.user.username, data: data },
+                {
+                    arguments: [],
+                    data: {
+                        owner: $userData.userData.user.username,
+                        data: data,
+                    },
+                },
             ];
             // The wait is required in order to delay the selection
             await sleep(50);
@@ -166,7 +177,9 @@
             ).json();
             if (!res.success) throw Error(res.error);
             // Remove the current Homescript from the global store
-            $homescripts = $homescripts.filter((h) => h.data.id !== selection);
+            $homescripts = $homescripts.filter(
+                (h) => h.data.data.id !== selection
+            );
             // If no Homescript exist besides this one, ignore it
             if ($homescripts.length == 0) {
                 $loading = false;
@@ -175,7 +188,7 @@
             // Sleep 50ms in order to delay the selection
             await sleep(50);
             // Select the next Homescript as active
-            selection = $homescripts[0].data.id;
+            selection = $homescripts[0].data.data.id;
             // Show the newly selected Homescript in the Inputs
             updateSourceFromSelectedData();
         } catch (err) {
@@ -258,6 +271,12 @@
             </div>
             {#if $homescripts !== undefined && selection !== ""}
                 <Inputs bind:data={selectedData} />
+                <div class="arguments">
+                    <span class="text-hint">Name and Description</span>
+                    {#each $homescripts.find((h) => h.data.data.id === selection).arguments as arg (arg.id)}
+                        <Argument bind:data={arg} />
+                    {/each}
+                </div>
                 <div>
                     <Button on:click={() => (deleteOpen = true)}>
                         <Label>Delete</Label>
@@ -291,12 +310,10 @@
         padding: 0.1rem 1.3rem;
         box-sizing: border-box;
         background-color: var(--clr-height-1-4);
-
         &__buttons {
             display: flex;
             align-items: center;
         }
-
         h6 {
             margin: 0.5em 0;
             @include mobile {
@@ -305,27 +322,22 @@
             }
         }
     }
-
     #no-homescripts-icon {
         font-size: 5rem;
         color: var(--clr-text-disabled);
     }
-
     .container {
         background-color: var(--clr-height-0-1);
         border-radius: 0.4rem;
         overflow: hidden;
         height: 28vh;
-
         @include mobile {
             height: 100%;
         }
-
         @include widescreen {
             height: 100%;
             width: 50%;
         }
-
         &.empty {
             height: 100%;
             @include widescreen {
@@ -333,7 +345,6 @@
             }
         }
     }
-
     #content {
         display: flex;
         flex-direction: column-reverse;
@@ -341,7 +352,6 @@
         gap: 1rem;
         transition-property: height;
         transition-duration: 0.3s;
-
         @include widescreen {
             flex-direction: column;
             height: calc(100vh - 91px);
@@ -349,11 +359,9 @@
             gap: 1rem;
         }
     }
-
     .homescripts {
         height: 100%;
         overflow-y: auto;
-
         &.empty {
             display: flex;
             flex-direction: column;
@@ -364,12 +372,10 @@
             height: calc(100vh - 91px);
             width: 100%;
             gap: 1.5rem;
-
             h6 {
                 margin: 0.5rem 0;
                 font-size: 1.1rem;
             }
-
             @include mobile {
                 gap: 1rem;
                 height: calc(100vh - 143px);
@@ -377,33 +383,49 @@
             }
         }
     }
-
     #inputs {
         background-color: var(--clr-height-0-1);
         border-radius: 0.4rem;
         padding: 1.5rem;
         display: flex;
         flex-direction: column;
-
         h6 {
             margin: 0.5rem 0;
         }
-
         @include widescreen {
             width: 50%;
         }
-
         &.disabled {
             display: none;
         }
     }
+    .arguments {
+        height: 4rem;
+        border-radius: 0.3rem;
+        padding: 1rem;
+        background-color: var(--clr-height-1-2);
 
+        &__container {
+            display: flex;
+
+            &__item {
+                @include mobile {
+                    span {
+                        display: block;
+                    }
+                }
+            }
+        }
+
+        @include widescreen {
+            width: 100%;
+        }
+    }
     .actions {
         display: flex;
         justify-content: flex-end;
         gap: 0.5rem;
         margin-top: auto;
-
         @include mobile {
             margin-top: 1rem;
             flex-wrap: wrap;
