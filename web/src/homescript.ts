@@ -63,6 +63,7 @@ export interface homescriptArgData {
     argKey: string
     homescriptId: string
     prompt: string
+    mdIcon: string
     inputType: "string" | "number" | "boolean"
     display: "type_default" | "string_switches" | "boolean_yes_no" | "boolean_on_off" | "number_hour" | "number_minute"
 }
