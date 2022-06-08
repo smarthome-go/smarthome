@@ -47,7 +47,11 @@
                 required
                 style="width: 100%;"
                 helperLine$style="width: 100%;"
-            />
+            >
+                <svelte:fragment slot="helper">
+                    <CharacterCounter>0 / 30</CharacterCounter>
+                </svelte:fragment>
+            </Textfield>
             <Textfield
                 bind:value={name}
                 input$maxlength={30}

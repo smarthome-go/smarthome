@@ -157,7 +157,7 @@
             // Select the newly created Homescript for editing
             selection = data.id;
             // Show the newly selected Homescript in the Inputs
-            updateSourceFromSelectedData();
+            updateSelectedData();
         } catch (err) {
             $createSnackbar(`Could not create Homescript: ${err}`);
         }

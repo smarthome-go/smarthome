@@ -56,6 +56,6 @@
         width: 100%;
         height: 100%;
         border-radius: 0.4rem;
-        padding: 1rem 0;
+        // padding: 1rem 0;
     }
 </style>
