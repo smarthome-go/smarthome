@@ -121,7 +121,7 @@ sudo-docker: cleanall web docker-prepare
 
 # Generates the output files for the frontend web interface
 web: cleanweb
-	cd web && npm i && npm run build
+	cd web && npm run build
 
 # Build architectures
 linux: build/linux_arm.tar.gz build/linux_arm64.tar.gz build/linux_386.tar.gz build/linux_amd64.tar.gz
