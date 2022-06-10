@@ -230,7 +230,9 @@
             const modifyIndex = $homescripts.findIndex(
                 (h) => h.data.data.id === selection
             );
-            $homescripts[modifyIndex].arguments = $homescripts[modifyIndex].arguments.filter((a) => a.id !== id);
+            $homescripts[modifyIndex].arguments = $homescripts[
+                modifyIndex
+            ].arguments.filter((a) => a.id !== id);
         } catch (err) {
             $createSnackbar(`Could not delete Homescript argument: ${err}`);
         }
@@ -356,7 +358,6 @@
                 <Inputs bind:data={selectedData} />
                 <div class="arguments">
                     <span class="text-hint">Arguments</span>
-
                     <div
                         class="arguments__list"
                         class:empty={$homescripts.find(
@@ -381,6 +382,13 @@
                                     bind:data={arg}
                                 />
                             {/each}
+                            <div class="argument">
+                                <IconButton
+                                    class="material-icons"
+                                    on:click={() => (addArgOpen = true)}
+                                    >add</IconButton
+                                >
+                            </div>
                         {/if}
                     </div>
                 </div>
@@ -514,6 +522,8 @@
 
         &__list {
             display: flex;
+            align-items: center;
+            gap: .5rem;
 
             &.empty {
                 margin-top: 0.5rem;
@@ -523,7 +533,7 @@
         }
 
         @include widescreen {
-            width: 100%;
+            width: auto;
         }
     }
     .actions {
