@@ -17,7 +17,6 @@
     import type { homescriptArgData } from "../../homescript";
 
     let addOpen: boolean = false;
-    let addArgOpen: boolean = false;
     let deleteOpen: boolean = false;
 
     let selectedDataChanged: boolean = false;
@@ -165,79 +164,6 @@
         $loading = false;
     }
 
-    async function createHomescriptArg(
-        key: string,
-        prompt: string,
-        inputType: "string" | "number" | "boolean",
-        display:
-            | "type_default"
-            | "string_switches"
-            | "boolean_yes_no"
-            | "boolean_on_off"
-            | "number_hour"
-            | "number_minute" = "type_default"
-    ) {
-        $loading = true;
-        let payload: homescriptArgData = {
-            argKey: key,
-            homescriptId: selection,
-            prompt: prompt,
-            mdIcon: "data_array",
-            inputType: inputType,
-            display: display,
-        };
-        // Is required because the user may change the active script while this function is loading
-        const selectionBefore = selection;
-        try {
-            const res = await (
-                await fetch("/api/homescript/arg/add", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload),
-                })
-            ).json();
-            if (!res.response.success) throw Error(res.response.error);
-            // If successful, append the argument to the argument list of the current Homescript
-            const selectionIndex = $homescripts.findIndex(
-                (h) => h.data.data.id === selectionBefore
-            );
-            $homescripts[selectionIndex].arguments = [
-                ...$homescripts[selectionIndex].arguments,
-                {
-                    id: res.id,
-                    data: payload,
-                },
-            ];
-        } catch (err) {
-            $createSnackbar(`Could not create Homescript argument: ${err}`);
-        }
-        $loading = false;
-    }
-
-    // Requests deletion of a Homescript argument
-    async function deleteHomescriptArgument(id: number) {
-        $loading = true;
-        try {
-            let res = await (
-                await fetch("/api/homescript/arg/delete", {
-                    method: "DELETE",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ id }),
-                })
-            ).json();
-            if (!res.success) throw Error(res.error);
-            // Remove the deleted argument from the argument list
-            const modifyIndex = $homescripts.findIndex(
-                (h) => h.data.data.id === selection
-            );
-            $homescripts[modifyIndex].arguments = $homescripts[
-                modifyIndex
-            ].arguments.filter((a) => a.id !== id);
-        } catch (err) {
-            $createSnackbar(`Could not delete Homescript argument: ${err}`);
-        }
-        $loading = false;
-    }
 
     // Requests deletion of a Homescript
     async function deleteHomescript(id: string) {
@@ -282,17 +208,6 @@
         createHomescript(event.detail);
     }}
     bind:open={addOpen}
-/>
-<AddArgument
-    on:add={(event) => {
-        createHomescriptArg(
-            event.detail.argKey,
-            event.detail.prompt,
-            event.detail.inputType,
-            event.detail.display
-        );
-    }}
-    bind:open={addArgOpen}
 />
 <DeleteHomescript
     bind:data={selectedData}
@@ -355,48 +270,7 @@
                 </h6>
             </div>
             {#if $homescripts !== undefined && selection !== ""}
-                <Inputs bind:data={selectedData} />
-                <div class="arguments">
-                    <span class="text-hint">Arguments</span>
-                    <div
-                        class="arguments__list"
-                        class:empty={$homescripts.find(
-                            (h) => h.data.data.id === selection
-                        ).arguments.length === 0}
-                    >
-                        {#if $homescripts.find((h) => h.data.data.id === selection).arguments.length === 0}
-                            <span class="text-disabled"
-                                >No arguments set up.</span
-                            >
-                            <IconButton
-                                class="material-icons"
-                                on:click={() => (addArgOpen = true)}
-                                >add</IconButton
-                            >
-                        {:else}
-                            {#each $homescripts.find((h) => h.data.data.id === selection).arguments as arg (arg.id)}
-                                <Argument
-                                    on:delete={() => {
-                                        deleteHomescriptArgument(arg.id);
-                                    }}
-                                    bind:data={arg}
-                                />
-                            {/each}
-                            <div class="argument">
-                                <IconButton
-                                    class="material-icons"
-                                    on:click={() => (addArgOpen = true)}
-                                    >add</IconButton
-                                >
-                            </div>
-                        {/if}
-                    </div>
-                </div>
-                <div>
-                    <Button on:click={() => (deleteOpen = true)}>
-                        <Label>Delete</Label>
-                    </Button>
-                </div>
+                <Inputs bind:data={selectedData} bind:deleteOpen/>
                 <div class="actions">
                     <Button
                         on:click={updateSelectedData}
@@ -513,27 +387,6 @@
         }
         &.disabled {
             display: none;
-        }
-    }
-    .arguments {
-        border-radius: 0.3rem;
-        padding: 1rem;
-        background-color: var(--clr-height-1-2);
-
-        &__list {
-            display: flex;
-            align-items: center;
-            gap: .5rem;
-
-            &.empty {
-                margin-top: 0.5rem;
-                align-items: center;
-                justify-content: space-between;
-            }
-        }
-
-        @include widescreen {
-            width: auto;
         }
     }
     .actions {

@@ -67,3 +67,40 @@ export interface homescriptArgData {
     inputType: "string" | "number" | "boolean"
     display: "type_default" | "string_switches" | "boolean_yes_no" | "boolean_on_off" | "number_hour" | "number_minute"
 }
+
+// Is used for visual applications which require labels and a logical connection between type and display
+export interface DisplayOpt {
+    identifier: "type_default" | "string_switches" | "boolean_yes_no" | "boolean_on_off" | "number_hour" | "number_minute"
+    label: string,
+    type: "string" | "number" | "boolean"
+}
+
+// Used for displaying the options for `inputType` and `display`
+export const inputTypeOpts = ["string", "number", "boolean"];
+export const displayOpts: DisplayOpt[] = [
+    // Default display
+    { identifier: "type_default", label: "Type default", type: "string" },
+    { identifier: "type_default", label: "Type default", type: "number" },
+    { identifier: "type_default", label: "Type default", type: "boolean" },
+    // Switch listing as string
+    {
+        identifier: "string_switches",
+        label: "Select switch",
+        type: "string",
+    },
+    // Yes / No prompt as boolean
+    {
+        identifier: "boolean_yes_no",
+        label: "Yes / No (bool)",
+        type: "boolean",
+    },
+    // On / Off prompt as boolean
+    {
+        identifier: "boolean_on_off",
+        label: "On / Off (bool)",
+        type: "boolean",
+    },
+    // Time prompts as either hour or minute
+    { identifier: "number_hour", label: "Hour", type: "number" },
+    { identifier: "number_minute", label: "Minute", type: "number" },
+];

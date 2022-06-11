@@ -14,16 +14,15 @@
     import CharacterCounter from "@smui/textfield/character-counter";
     import { onMount } from "svelte";
     import IconPicker from "../../../../components/IconPicker/IconPicker.svelte";
+    import ArgumentInputs from "../../ArgumentInputs.svelte";
 
     export let open: boolean = false;
 
     // This is required as an override for the additional icon popup
-    $: document.body.style.overflow = open ? "hidden" : "auto"
+    // TODO: reevaluate this choice
+    $: document.body.style.overflow = open ? "hidden" : "auto";
 
     let pickIconOpen: boolean = false;
-
-    // For the icon picker
-    let searchingIcon: boolean = false;
 
     // Event dispatcher
     const dispatch = createEventDispatcher();
@@ -54,7 +53,6 @@
             mdIconBefore !== data.mdIcon ||
             inputTypeBefore !== data.inputType ||
             displayBefore !== data.display;
-        console.log(dataChanged);
     }
 
     // Restores any changes made to the data based on the previous saves
@@ -75,49 +73,23 @@
         mdIconBefore = data.mdIcon;
         inputTypeBefore = data.inputType;
         displayBefore = data.display;
-        console.log("updated bef");
     }
 
     onMount(updateBeforeData);
 </script>
 
-<Dialog bind:open fullscreen aria-labelledby="title" aria-describedby="content">
-    <IconPicker bind:open={pickIconOpen} bind:selected={data.mdIcon} slot="over" />
+<Dialog bind:open aria-labelledby="title" aria-describedby="content">
+    <IconPicker
+        bind:open={pickIconOpen}
+        bind:selected={data.mdIcon}
+        slot="over"
+    />
     <Header>
         <Title id="title">Edit Argument</Title>
-        <IconButton action="close" class="material-icons">close</IconButton>
     </Header>
     <Content id="content">
-        <span class="text-hint">Identifier and prompt of the argument</span>
-        <Textfield
-            bind:value={data.argKey}
-            input$maxlength={100}
-            label="Key"
-            required
-            style="width: 100%;"
-            helperLine$style="width: 100%;"
-        >
-            <svelte:fragment slot="helper">
-                <CharacterCounter>0 / 100</CharacterCounter>
-            </svelte:fragment>
-        </Textfield>
-        <Textfield
-            bind:value={data.prompt}
-            label="Prompt"
-            required
-            style="width: 100%;"
-            helperLine$style="width: 100%;"
-        />
+        <ArgumentInputs bind:data />
         <div class="actions">
-            <div>
-                <Button
-                    on:click={() => {
-                        pickIconOpen = true;
-                    }}
-                >
-                    <Label>Change icon</Label>
-                </Button>
-            </div>
             <div>
                 <Button
                     on:click={() => {
@@ -126,12 +98,21 @@
                 >
                     <Label>Delete</Label>
                 </Button>
-                <span class="text-hint"> Delete Argument</span>
+            </div>
+            <div>
+                <Button
+                    variant="outlined"
+                    on:click={() => {
+                        pickIconOpen = true;
+                    }}
+                >
+                    <Label>Change icon</Label>
+                </Button>
             </div>
         </div>
     </Content>
     <Actions>
-        <Button>
+        <Button on:click={resetChanges}>
             <Label>Cancel</Label>
         </Button>
         <Button
@@ -147,17 +128,21 @@
 </Dialog>
 
 <style lang="scss">
+    @use "../../../../mixins" as *;
     .actions {
         display: flex;
         gap: 2rem;
         align-items: center;
-        background-color: var(--clr-height-0-1);
         border-radius: 0.3rem;
-        padding: 1.5rem;
-        margin-top: 1.5rem;
+        margin: 0.5rem 0;
 
-        div {
-            width: 50%;
+        @include mobile {
+            gap: 1rem;
+            flex-direction: row-reverse;
+
+            div {
+                width: auto;
+            }
         }
     }
 </style>
