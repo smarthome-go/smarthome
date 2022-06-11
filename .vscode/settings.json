@@ -1,21 +1,4 @@
 {
-    "makefile.extensionOutputFolder": "./.vscode",
-    "cSpell.words": [
-        "gocron",
-        "lnquy",
-        "logrus",
-        "mikmuellerdev",
-        "mysql",
-        "osman",
-        "radi",
-        "smarthome",
-        "smui",
-        "stretchr",
-        "vite",
-        "webp"
-    ],
-    // Should only be enabled on a Desktop due to power draw
-    // "go.coverOnSave": true,
     "go.coverageDecorator": {
         "type": "highlight",
         "coveredHighlightColor": "rgba(13, 188, 138, 0.2)",
@@ -29,7 +12,6 @@
     "go.disableConcurrentTests": true,
     "typescript.format.semicolons": "remove",
     "javascript.format.semicolons": "remove",
-    // Override for Svelte extension
     "prettier.semi": false,
     "prettier.tabWidth": 4,
     "sqltools.connections": [
