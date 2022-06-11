@@ -40,7 +40,7 @@
     }
 </script>
 
-<Dialog bind:open aria-labelledby="title" aria-describedby="content" fullscreen>
+<Dialog bind:open aria-labelledby="title" aria-describedby="content">
     <Header>
         <Title id="title">Add Argument Prompt</Title>
     </Header>
