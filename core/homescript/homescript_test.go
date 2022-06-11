@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
@@ -264,7 +265,12 @@ func TestRun(t *testing.T) {
 	}
 	for _, test := range table {
 		output, code, errors := Run(
-			"admin", "testing", test.Code, false, make(map[string]string, 0),
+			"admin",
+			"testing",
+			test.Code,
+			make([]string, 0),
+			false,
+			make(map[string]string, 0),
 		)
 		if len(errors) > 0 {
 			if errors[0].Message != test.Result.FirstError {
@@ -284,4 +290,88 @@ func TestRun(t *testing.T) {
 			return
 		}
 	}
+}
+
+// Is used in order to test the recursion detector and call stack implementation
+func TestRecursion(t *testing.T) {
+	/* Recursive code */
+	t.Run("test_prevent_recursion", func(t *testing.T) {
+		// A script which calls another script which then calls the start again
+		if err := database.CreateNewHomescript(database.Homescript{
+			Owner: "admin",
+			Data: database.HomescriptData{
+				Id:   "recursive-start",
+				Code: "exec('recursive-end')",
+			},
+		}); err != nil {
+			t.Error(err.Error())
+		}
+		if err := database.CreateNewHomescript(database.Homescript{
+			Owner: "admin",
+			Data: database.HomescriptData{
+				Id:   "recursive-end",
+				Code: "exec('recursive-start')",
+			},
+		}); err != nil {
+			t.Error(err.Error())
+		}
+
+		// Run the actual test
+		output, exitCode, err := RunById(
+			"admin",
+			"recursive-start",
+			make([]string, 0),
+			false,
+			make(map[string]string),
+		)
+		assert.EqualError(t, err, "Homescript terminated with exit code 1: Homescript terminated with exit code 1: Exec violation: executing 'recursive-start' could cause infinite recursion.\n=== Call Stack ===\n   0: recursive-start (INITIAL)\n   1: recursive-end\n   2: recursive-start (PREVENTED)\n")
+		assert.Equal(t, 1, exitCode)
+		assert.Equal(t, "execution error", output)
+	})
+
+	/* Non-recursive code */
+	t.Run("test_no_false_positives", func(t *testing.T) {
+		// A normal script which calls another one multiple times
+		// Useful for checking if the recursion detector is too agressive and prevents executing scripts twice
+		// However, the current implementation never detects false positives because of the way of how the call stack is pushed to
+		if err := database.CreateNewHomescript(database.Homescript{
+			Owner: "admin",
+			Data: database.HomescriptData{
+				Id:   "normal1",
+				Code: "print(exec('normal2')); exec('normal2'); print(exec('normal3')); exec('normal3')",
+			},
+		}); err != nil {
+			t.Error(err.Error())
+		}
+		if err := database.CreateNewHomescript(database.Homescript{
+			Owner: "admin",
+			Data: database.HomescriptData{
+				Id:   "normal2",
+				Code: "print(2)",
+			},
+		}); err != nil {
+			t.Error(err.Error())
+		}
+		if err := database.CreateNewHomescript(database.Homescript{
+			Owner: "admin",
+			Data: database.HomescriptData{
+				Id:   "normal3",
+				Code: "print(3)",
+			},
+		}); err != nil {
+			t.Error(err.Error())
+		}
+
+		// Run the actual test
+		output2, exitCode, err := RunById(
+			"admin",
+			"normal1",
+			make([]string, 0),
+			false,
+			make(map[string]string),
+		)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, exitCode)
+		assert.Equal(t, "23", output2)
+	})
 }
