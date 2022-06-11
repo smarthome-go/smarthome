@@ -39,6 +39,13 @@ type Executor struct {
 	// Is filled by a helper function like `Run`
 	// Is used by the `CheckArg` and `GetArg` methods for providing args
 	Args map[string]string
+
+	// The CallStack saves the history of which script called another
+	// Additionally, it specifies which Homescripts have to be excluded from the `exec` function
+	// Is required in order to prevent recursion until the system's database runs out of ressources
+	// Acts like a blacklist which holds the blacklisted Homescript ids
+	// The last item in the CallStack is the script which was called the most recently (from script exit)
+	CallStack []string
 }
 
 // Validates that a given argument has been passed to the Homescript runtime
@@ -383,8 +390,41 @@ func (self *Executor) Log(
 
 // Executes another Homescript based on its Id
 func (self Executor) Exec(homescriptId string, args map[string]string) (string, error) {
-	// The DryRun value is passed to the execured script
-	output, exitCode, err := RunById(self.Username, homescriptId, self.DryRun, args)
+	// The dryRun value is passed to the executed script
+	// Before the target script can begin execution, the call stack is analyzed in order to prevent recursion
+
+	// If the CallStack is empty, the script was initially called by string
+	// In this case, the own id must be appended to the CallStack fist
+	if len(self.CallStack) == 0 {
+		self.CallStack = append(self.CallStack, self.ScriptName)
+	}
+
+	// Analyze call stack
+	for _, call := range self.CallStack {
+		if homescriptId == call {
+			// Would call a script which is located in the CallStack (upstream)
+			callStackVisual := "=== Call Stack ===\n"
+			for callIndex, callVis := range self.CallStack {
+				if callIndex == 0 {
+					callStackVisual += fmt.Sprintf("  %2d: %-10s (INITIAL)\n", 0, self.CallStack[0])
+				} else {
+					callStackVisual += fmt.Sprintf("  %2d: %-10s\n", callIndex, callVis)
+				}
+			}
+			callStackVisual += fmt.Sprintf("  %2d: %-10s (PREVENTED)\n", len(self.CallStack), homescriptId)
+			return self.Output, fmt.Errorf("Exec violation: executing '%s' could cause infinite recursion.\n%s", homescriptId, callStackVisual)
+		}
+	}
+
+	// Execute the target script after the checks
+	output, exitCode, err := RunById(
+		self.Username,
+		homescriptId,
+		// The previous CallStack is passed in order to preserve the history
+		// Because the RunById function implicitly appends its target id the provided call stack, it doesn't need to be added here
+		self.CallStack,
+		self.DryRun, args,
+	)
 	if err != nil {
 		self.Print(fmt.Sprintf("Exec failed: called Homescript failed with exit code %d", exitCode))
 		return output, err

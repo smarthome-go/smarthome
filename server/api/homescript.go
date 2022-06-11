@@ -83,7 +83,14 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Run the Homescript
-	output, exitCode, hmsErrors := homescript.Run(username, request.Id, hmsData.Data.Code, false, args)
+	output, exitCode, hmsErrors := homescript.Run(
+		username,
+		request.Id,
+		hmsData.Data.Code,
+		make([]string, 0),
+		false,
+		args,
+	)
 	if len(hmsErrors) > 0 {
 		w.WriteHeader(http.StatusInternalServerError)
 		if err := json.NewEncoder(w).Encode(
@@ -159,7 +166,14 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Lint the Homescript
-	output, exitCode, hmsErrors := homescript.Run(username, request.Id, hmsData.Data.Code, true, args)
+	output, exitCode, hmsErrors := homescript.Run(
+		username,
+		request.Id,
+		hmsData.Data.Code,
+		make([]string, 0),
+		true,
+		args,
+	)
 	if len(hmsErrors) > 0 {
 		w.WriteHeader(http.StatusInternalServerError)
 		if err := json.NewEncoder(w).Encode(
@@ -224,7 +238,14 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		args[arg.Key] = arg.Value
 	}
 	// Run the Homescript
-	output, exitCode, hmsErrors := homescript.Run(username, "live", request.Code, false, args)
+	output, exitCode, hmsErrors := homescript.Run(
+		username,
+		"live",
+		request.Code,
+		make([]string, 0),
+		false,
+		args,
+	)
 	if len(hmsErrors) > 0 {
 		w.WriteHeader(http.StatusInternalServerError)
 		if err := json.NewEncoder(w).Encode(
@@ -289,7 +310,14 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 		args[arg.Key] = arg.Value
 	}
 	// Lint the Homescript
-	output, exitCode, hmsErrors := homescript.Run(username, "lint", request.Code, true, args)
+	output, exitCode, hmsErrors := homescript.Run(
+		username,
+		"lint",
+		request.Code,
+		make([]string, 0),
+		true,
+		args,
+	)
 	if len(hmsErrors) > 0 {
 		w.WriteHeader(http.StatusInternalServerError)
 		if err := json.NewEncoder(w).Encode(

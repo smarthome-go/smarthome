@@ -58,6 +58,7 @@ func scheduleRunnerFunc(id uint) {
 		owner.Username,
 		fmt.Sprintf("%d.hms", id),
 		job.HomescriptCode,
+		make([]string, 0),
 		false,
 		make(map[string]string, 0),
 	)
