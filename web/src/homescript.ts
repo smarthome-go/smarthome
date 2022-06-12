@@ -118,7 +118,7 @@ export async function runHomescriptById(id: string, args: homescriptArgSubmit[])
     const res = await fetch(`/api/homescript/run`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id })
+        body: JSON.stringify({ id, args: args })
     })
     if (res.status !== 200 && res.status !== 500) throw Error(await (res.json()))
     return await (res.json())

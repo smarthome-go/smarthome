@@ -32,6 +32,11 @@
     background-color: var(--mdc-theme-primary);
 }
 
+// Slider value preview
+.mdc-slider .mdc-slider__value-indicator {
+    color: var(--clr-text) !important;
+}
+
 
 :root {
     // Ripple color

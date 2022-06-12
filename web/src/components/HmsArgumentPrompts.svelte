@@ -1,15 +1,16 @@
 <script lang="ts">
-    import Dialog, {
-        Actions,
-        Content,
-        Header,
-        InitialFocus,
-        Title,
-    } from "@smui/dialog";
+    import Dialog, { Content, Header, InitialFocus, Title } from "@smui/dialog";
     import { createEventDispatcher, onMount } from "svelte";
     import Button, { Label } from "@smui/button";
     import Textfield from "@smui/textfield";
-    import type { homescriptArgData, homescriptArgSubmit } from "../homescript";
+    import Switch from "@smui/switch";
+    import Slider from "@smui/slider";
+    import Select, { Option } from "@smui/select";
+    import type {
+        homescriptArgData,
+        homescriptArgSubmit,
+        inputTypeOpts,
+    } from "../homescript";
 
     export let open: boolean = false;
 
@@ -18,9 +19,17 @@
     // Saves the index of the argument which is currently shown
     let currentArgumentIndex: number = 0;
 
-    let currentPrompt: string = "";
+    let currentArg: homescriptArgData = {
+        argKey: "",
+        homescriptId: "",
+        prompt: "",
+        mdIcon: "",
+        inputType: "string",
+        display: "type_default",
+    };
+
     $: if (currentArgumentIndex + 1 <= args.length)
-        currentPrompt = args[currentArgumentIndex].prompt;
+        currentArg = args[currentArgumentIndex];
 
     // Is produced when the final submit button is pressed
     let argumentsWithValues: homescriptArgSubmit[] = [];
@@ -42,6 +51,30 @@
         currentArgumentIndex++;
     }
 
+    // Utility variables used for binding to non-string variables
+    // Will be converted to the `real` string representation using change listeners
+    let numberPlaceholder: number = 0;
+    let booleanPlaceholder: boolean = false;
+
+    function updateFromNumber() {
+        argumentsWithValues[currentArgumentIndex].value =
+            numberPlaceholder.toString();
+    }
+    function updateFromBoolean() {
+        argumentsWithValues[currentArgumentIndex].value =
+            booleanPlaceholder.toString();
+    }
+
+    $: if (currentArg.inputType == "number" && numberPlaceholder)
+        updateFromNumber();
+
+    $: if (
+        currentArg.inputType == "boolean" &&
+        // Used in order to trick svelte into running this every time the booleanPlaceholder changes
+        (booleanPlaceholder == false || booleanPlaceholder == true)
+    )
+        updateFromBoolean();
+
     onMount(() => {
         for (let arg of arguments)
             argumentsWithValues.push({ key: arg.argKey, value: "" });
@@ -50,21 +83,61 @@
 
 <Dialog bind:open aria-labelledby="title" aria-describedby="content">
     <Header>
-        <Title id="title">{currentPrompt}</Title>
+        <Title id="title">{currentArg.prompt}</Title>
     </Header>
     <Content id="content">
-        <span>{currentArgumentIndex}</span>
-        <Button
-            on:click={() => {
-                argumentsWithValues = [];
-                currentArgumentIndex = 0;
-                open = false;
-            }}
-        >
-            <Label>Cancel</Label>
-        </Button>
-        <Button use={[InitialFocus]} on:click={submit}>
-            <Label>Submit</Label>
-        </Button>
+        <div class="inputs">
+            {#if currentArg.inputType === "string"}
+                string
+            {:else if currentArg.inputType === "number"}
+                {#if currentArg.display === "type_default"}
+                    <Textfield
+                        style="width: 100%;"
+                        bind:value={numberPlaceholder}
+                        label={currentArg.argKey}
+                        type="number"
+                    />
+                {:else if currentArg.display === "number_hour"}
+                    <Slider
+                        bind:value={numberPlaceholder}
+                        min={0}
+                        max={24}
+                        step={1}
+                        discrete
+                    />
+                {/if}
+            {:else}
+                boolean
+            {/if}
+        </div>
+        <div class="actions">
+            <Button
+                on:click={() => {
+                    argumentsWithValues = [];
+                    currentArgumentIndex = 0;
+                    open = false;
+                }}
+            >
+                <Label>Cancel</Label>
+            </Button>
+            <Button use={[InitialFocus]} on:click={submit}>
+                <Label>Submit</Label>
+            </Button>
+        </div>
     </Content>
 </Dialog>
+
+<style lang="scss">
+    .inputs {
+        padding: 2rem 0;
+
+        // Some inputs, for example the slider require an elevated background
+        &.fill {
+        background-color: var(--clr-height-0-1);
+        }
+    }
+    .actions {
+        display: flex;
+        justify-content: flex-end;
+    }
+</style>
