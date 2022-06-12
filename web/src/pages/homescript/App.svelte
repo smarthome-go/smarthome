@@ -10,14 +10,16 @@
     import AddHomescript from "./dialogs/AddHomescript.svelte";
     import HmsSelector from "./dialogs/HmsSelector.svelte";
     import { hmsLoaded, homescripts, loading } from "./main";
-    import type { homescriptData } from "src/homescript";
     import DeleteHomescript from "./dialogs/DeleteHomescript.svelte";
-    import Argument from "./Argument.svelte";
-    import AddArgument from "./dialogs/AddArgument.svelte";
-    import type { homescriptArgData } from "../../homescript";
+    import type { homescriptArgSubmit, homescriptData } from "../../homescript";
+    import { runHomescriptById } from "../../homescript";
+    import HmsArgumentPrompts from "../../components/HmsArgumentPrompts.svelte";
 
     let addOpen: boolean = false;
     let deleteOpen: boolean = false;
+
+    // Is used when the run button is pressed
+    let argumentsPromptOpen = false;
 
     let selectedDataChanged: boolean = false;
     let selection: string = "";
@@ -164,7 +166,6 @@
         $loading = false;
     }
 
-
     // Requests deletion of a Homescript
     async function deleteHomescript(id: string) {
         $loading = true;
@@ -198,6 +199,31 @@
         $loading = false;
     }
 
+    /* Executing the currently selected Homescript */
+    // If the current Homescript contains arguments triggers the argument-prompt dialog opening
+    function initCurrentRun() {
+        if (
+            $homescripts.find((h) => h.data.data.id === selection).arguments
+                .length === 0
+        ) {
+            runCurrentWithArgs([]);
+            return;
+        }
+        // The script is executed via callback: refer to the argument dialog
+        argumentsPromptOpen = true;
+    }
+
+    // Used when the run button is pressed, error handling is accomplished here
+    async function runCurrentWithArgs(args: homescriptArgSubmit[]) {
+        $loading = true;
+        try {
+            const hmsRes = await runHomescriptById(selection, args);
+        } catch (err) {
+            $createSnackbar(`Could not execute ${selection}: ${err}`);
+        }
+        $loading = false;
+    }
+
     onMount(() => {
         loadHomescripts();
     }); // Load Homescripts as soon as the component is mounted
@@ -214,6 +240,16 @@
     bind:open={deleteOpen}
     on:delete={(event) => deleteHomescript(event.detail.id)}
 />
+
+{#if argumentsPromptOpen && $homescripts.find((h) => h.data.data.id === selection) !== undefined}
+    <HmsArgumentPrompts
+        on:submit={(event) => runCurrentWithArgs(event.detail)}
+        bind:open={argumentsPromptOpen}
+        args={$homescripts
+            .find((h) => h.data.data.id === selection)
+            .arguments.map((a) => a.data)}
+    />
+{/if}
 
 <Page>
     <div id="header" class="mdc-elevation--z4">
@@ -270,7 +306,15 @@
                 </h6>
             </div>
             {#if $homescripts !== undefined && selection !== ""}
-                <Inputs bind:data={selectedData} bind:deleteOpen/>
+                <Inputs bind:data={selectedData} bind:deleteOpen />
+                <div class="run">
+                    <Button
+                        on:click={initCurrentRun}
+                        disabled={selectedDataChanged}
+                    >
+                        <Label>Run</Label>
+                    </Button>
+                </div>
                 <div class="actions">
                     <Button
                         on:click={updateSelectedData}

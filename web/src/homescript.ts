@@ -52,6 +52,12 @@ export interface location {
 }
 
 /* Homescript arguments */
+// Is used when requesting the execution of a Homescript
+export interface homescriptArgSubmit {
+    key: string
+    value: string
+}
+
 // Container for homescript argument
 export interface homescriptArg {
     id: number
@@ -104,3 +110,16 @@ export const displayOpts: DisplayOpt[] = [
     { identifier: "number_hour", label: "Hour", type: "number" },
     { identifier: "number_minute", label: "Minute", type: "number" },
 ];
+
+// Sends an execution request to the server
+// Returns the Homescript Response
+// Can throw an error if non-Homescript errors occur
+export async function runHomescriptById(id: string, args: homescriptArgSubmit[]): Promise<homescriptResponse> {
+    const res = await fetch(`/api/homescript/run`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id })
+    })
+    if (res.status !== 200 && res.status !== 500) throw Error(await (res.json()))
+    return await (res.json())
+}
