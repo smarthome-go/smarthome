@@ -10,6 +10,7 @@ export interface Room {
     switches: SwitchResponse[]
     cameras: Camera[]
 }
+
 export interface SwitchResponse {
     id: string
     name: string
