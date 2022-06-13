@@ -8,7 +8,7 @@
     import Page from "../../Page.svelte";
     import AddSchedule from "./dialogs/AddSchedule.svelte";
     import { ScheduleData, loading, schedules } from "./main";
-    import HmsEditor from "../../components/HmsEditor/HmsEditor.svelte";
+    import HmsEditor from "../../components/Homescript/HmsEditor/HmsEditor.svelte";
 
     let addOpen = false;
 

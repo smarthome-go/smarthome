@@ -11,14 +11,21 @@
     import HmsSelector from "./dialogs/HmsSelector.svelte";
     import { hmsLoaded, homescripts, loading } from "./main";
     import DeleteHomescript from "./dialogs/DeleteHomescript.svelte";
-    import type { homescriptArgSubmit, homescriptData } from "../../homescript";
+    import type {
+        homescriptArgSubmit,
+        homescriptData,
+        homescriptResponse,
+    } from "../../homescript";
     import { runHomescriptById } from "../../homescript";
-    import HmsArgumentPrompts from "../../components/HmsArgumentPrompts.svelte";
+    import HmsArgumentPrompts from "../../components/Homescript/ArgumentPrompts/HmsArgumentPrompts.svelte";
+    import ExecutionResultPopup from "../../components/Homescript/ExecutionResultPopup/ExecutionResultPopup.svelte";
 
+    /*
+        //// Dialog state management ////
+     */
     let addOpen: boolean = false;
     let deleteOpen: boolean = false;
-
-    // Is used when the run button is pressed
+    // Is used when the run button is pressed and the current script has arguments
     let argumentsPromptOpen = false;
 
     let selectedDataChanged: boolean = false;
@@ -199,7 +206,11 @@
         $loading = false;
     }
 
-    /* Executing the currently selected Homescript */
+    /* 
+       Executing the currently selected Homescript
+    */
+    let hmsExecutionResults: homescriptResponse[] = [];
+
     // If the current Homescript contains arguments triggers the argument-prompt dialog opening
     function initCurrentRun() {
         if (
@@ -218,6 +229,7 @@
         $loading = true;
         try {
             const hmsRes = await runHomescriptById(selection, args);
+            hmsExecutionResults = [...hmsExecutionResults, hmsRes]
         } catch (err) {
             $createSnackbar(`Could not execute ${selection}: ${err}`);
         }
@@ -241,7 +253,7 @@
     on:delete={(event) => deleteHomescript(event.detail.id)}
 />
 
-{#if argumentsPromptOpen && $homescripts.find((h) => h.data.data.id === selection) !== undefined && $homescripts.find(h => h.data.data.id).arguments.length > 0}
+{#if argumentsPromptOpen && $homescripts.find((h) => h.data.data.id === selection) !== undefined && $homescripts.find((h) => h.data.data.id).arguments.length > 0}
     <HmsArgumentPrompts
         on:submit={(event) => runCurrentWithArgs(event.detail)}
         bind:open={argumentsPromptOpen}
@@ -249,6 +261,10 @@
             .find((h) => h.data.data.id === selection)
             .arguments.map((a) => a.data)}
     />
+{/if}
+
+{#if hmsExecutionResults[0] !== undefined}
+    <ExecutionResultPopup open={true} data={hmsExecutionResults[0]} on:close={() => hmsExecutionResults = hmsExecutionResults.slice(1)}/>
 {/if}
 
 <Page>
