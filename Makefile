@@ -14,7 +14,7 @@ tar = mkdir -p build && cd ../ && tar -cvzf ./$(appname)_$(1)_$(2).tar.gz $(work
 
 all:	linux
 
-# Setup dependencies for Go and NPM 
+# Setup dependencies for Go and NPM
 setup:
 	go mod tidy
 	cd web && npm i
@@ -70,7 +70,7 @@ run: web
 run-full: web mysql
 	go run -v -race .
 
-# Removes most of the intermediate cache and build files 
+# Removes most of the intermediate cache and build files
 clean: cleanweb
 	rm -rf bin
 	rm -rf log
@@ -83,12 +83,12 @@ cleanweb:
 	rm -rf web/dist
 
 # Removes all intermediate cache and build files
-# Also removes the `build` directory, which contains release-ready tarballs 
+# Also removes the `build` directory, which contains release-ready tarballs
 cleanall: clean
 	rm -rf build
 	rm -f smarthome
 
-# Builds the Go backend and the frontend web interface 
+# Builds the Go backend and the frontend web interface
 # Produces the `build` directory, which contains release-ready tarballs
 build: setup web all linux clean
 
@@ -102,12 +102,14 @@ docker-prepare: web
 	rsync -rv resources docker/container/cache/
 	rsync -rv web/dist docker/container/cache/web/
 	cp smarthome docker/container/cache/
+	echo "docker-prepare: build context has been written to ./docker/cache"
 
 # Is used after `release` in order to publish the built
 # Docker image to Docker-Hub
 docker-push:
 	docker push mikmuellerdev/smarthome:$(version)
 	docker push mikmuellerdev/smarthome:latest
+	echo "docker-push: successfully pushed to remote repository"
 
 # Builds the Docker image using the pre compiled
 # and setup build cache
