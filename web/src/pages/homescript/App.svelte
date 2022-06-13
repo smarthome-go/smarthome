@@ -241,7 +241,7 @@
     on:delete={(event) => deleteHomescript(event.detail.id)}
 />
 
-{#if argumentsPromptOpen && $homescripts.find((h) => h.data.data.id === selection) !== undefined}
+{#if argumentsPromptOpen && $homescripts.find((h) => h.data.data.id === selection) !== undefined && $homescripts.find(h => h.data.data.id).arguments.length > 0}
     <HmsArgumentPrompts
         on:submit={(event) => runCurrentWithArgs(event.detail)}
         bind:open={argumentsPromptOpen}
