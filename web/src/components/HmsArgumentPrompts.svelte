@@ -6,11 +6,8 @@
     import Switch from "@smui/switch";
     import Slider from "@smui/slider";
     import Select, { Option } from "@smui/select";
-    import type {
-        homescriptArgData,
-        homescriptArgSubmit,
-        inputTypeOpts,
-    } from "../homescript";
+    import type { homescriptArgData, homescriptArgSubmit } from "../homescript";
+    import { createSnackbar } from "../global";
 
     export let open: boolean = false;
 
@@ -75,6 +72,30 @@
     )
         updateFromBoolean();
 
+    /* Switches */
+    // Used for when the the `display` is set to `string_switches`
+    interface SwitchResponse {
+        id: string;
+        name: string;
+        powerOn: boolean;
+        watts: number;
+    }
+
+    let switchesLoaded: boolean = false;
+    let switches: SwitchResponse[] = [];
+
+    async function loadSwitches() {
+        try {
+            const res = await (await fetch("/api/switch/list/personal")).json();
+            if (res.success !== undefined && !res.success)
+                throw Error(res.error);
+            switches = res;
+            switchesLoaded = true;
+        } catch (err) {
+            $createSnackbar(`Could not load switches: ${err}`);
+        }
+    }
+
     onMount(() => {
         for (let arg of arguments)
             argumentsWithValues.push({ key: arg.argKey, value: "" });
@@ -86,9 +107,23 @@
         <Title id="title">{currentArg.prompt}</Title>
     </Header>
     <Content id="content">
-        <div class="inputs">
+        <div
+            class="inputs"
+            class:fill={currentArg.display === "number_hour" ||
+                currentArg.display === "number_minute"}
+        >
             {#if currentArg.inputType === "string"}
-                string
+                {#if currentArg.display === "string_switches"}
+                    <Select
+                        bind:value={argumentsWithValues[currentArgumentIndex]
+                            .value}
+                        label="Select Menu"
+                    >
+                        {#each fruits as fruit}
+                            <Option value={fruit}>{fruit}</Option>
+                        {/each}
+                    </Select>
+                {/if}
             {:else if currentArg.inputType === "number"}
                 {#if currentArg.display === "type_default"}
                     <Textfield
@@ -102,6 +137,14 @@
                         bind:value={numberPlaceholder}
                         min={0}
                         max={24}
+                        step={1}
+                        discrete
+                    />
+                {:else if currentArg.display === "number_minute"}
+                    <Slider
+                        bind:value={numberPlaceholder}
+                        min={0}
+                        max={60}
                         step={1}
                         discrete
                     />
@@ -129,11 +172,13 @@
 
 <style lang="scss">
     .inputs {
-        padding: 2rem 0;
+        padding: 2rem;
 
         // Some inputs, for example the slider require an elevated background
         &.fill {
-        background-color: var(--clr-height-0-1);
+            background-color: var(--clr-height-0-1);
+            border-radius: 0.3rem;
+            padding: 2rem 0;
         }
     }
     .actions {
