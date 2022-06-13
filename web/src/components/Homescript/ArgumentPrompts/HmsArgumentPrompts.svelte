@@ -4,9 +4,12 @@
     import Button, { Label } from "@smui/button";
     import Textfield from "@smui/textfield";
     import Switch from "@smui/switch";
-    import type { homescriptArgData, homescriptArgSubmit } from "../homescript";
-    import { createSnackbar } from "../global";
-    import Progress from "./Progress.svelte";
+    import type {
+        homescriptArgData,
+        homescriptArgSubmit,
+    } from "../../../homescript";
+    import { createSnackbar } from "../../../global";
+    import Progress from "../../Progress.svelte";
     import List, { Graphic, Item } from "@smui/list";
     import Radio from "@smui/radio";
     import FormField from "@smui/form-field/src/FormField.svelte";
@@ -16,7 +19,6 @@
 
     // Event dispatcher
     const dispatch = createEventDispatcher();
-
 
     /*
         /// Important variables ////
@@ -42,7 +44,6 @@
     $: if (currentArgumentIndex + 1 <= args.length)
         currentArg = args[currentArgumentIndex];
 
-
     /*
         //// Submit and next ////
         If the button is pressed the last time, the event dispatcher dispatches the 'submit' event.
@@ -63,7 +64,6 @@
         argumentsWithValues[currentArgumentIndex].key = currentArg.argKey;
         currentArgumentIndex++;
     }
-
 
     /*
         //// Non-String binding and conversion ////
@@ -103,7 +103,6 @@
     $: if (currentArg.display === "boolean_yes_no" && yesNoPlaceholder !== "")
         updateFromYesNo();
 
-
     /*
         //// Switches ////
         Used for when the `display` is set to `string_switches`
@@ -133,7 +132,6 @@
     }
     $: if (!switchesLoaded && currentArg.display === "string_switches")
         loadSwitches();
-
 
     /*
         //// Initialization on dialog opening ////
