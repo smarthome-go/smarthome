@@ -3,7 +3,6 @@
         Actions,
         Content,
         Header,
-        InitialFocus,
         Title,
     } from "@smui/dialog";
     import Button, { Label } from "@smui/button";
@@ -20,6 +19,7 @@
 
     onMount(() => {
         let term = new Terminal();
+        // TODO: bind terminal div to variable instead
         term.open(document.getElementById("terminal"));
         //  term.write("Hello from \x1B[1;3;31mxterm.js\x1B[0m $ ");
         term.write(data.output)

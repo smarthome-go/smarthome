@@ -1,15 +1,9 @@
 <!-- Contains the Input elements used by `AddAutomation` and `EditAutomation` -->
 <script lang="ts">
-    import { Label } from "@smui/list";
-    import SegmentedButton, { Segment } from "@smui/segmented-button";
     import Textfield from "@smui/textfield";
     import CharacterCounter from "@smui/textfield/character-counter";
-    import { onMount } from "svelte";
     import TimePicker from "../../../components/TimePicker.svelte";
-    import { sleep } from "../../../global";
     import type { addSchedule } from "../main";
-    import AddSchedule from "./AddSchedule.svelte";
-    import HelperText from "@smui/textfield/helper-text";
     import HmsEditor from "../../../components/Homescript/HmsEditor/HmsEditor.svelte"
 
     // Data which is dispatched as soon as the create button is pressed

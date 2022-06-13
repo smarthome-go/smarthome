@@ -4,11 +4,10 @@
     import { Label } from "@smui/list";
     import { onMount } from "svelte";
     import Progress from "../../components/Progress.svelte";
-    import { createSnackbar, data as userData } from "../../global";
+    import { createSnackbar } from "../../global";
     import Page from "../../Page.svelte";
     import AddSchedule from "./dialogs/AddSchedule.svelte";
-    import { ScheduleData, loading, schedules } from "./main";
-    import HmsEditor from "../../components/Homescript/HmsEditor/HmsEditor.svelte";
+    import { loading, schedules } from "./main";
 
     let addOpen = false;
 
