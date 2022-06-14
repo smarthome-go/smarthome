@@ -229,7 +229,7 @@
         $loading = true;
         try {
             const hmsRes = await runHomescriptById(selection, args);
-            hmsExecutionResults = [...hmsExecutionResults, hmsRes]
+            hmsExecutionResults = [...hmsExecutionResults, hmsRes];
         } catch (err) {
             $createSnackbar(`Could not execute ${selection}: ${err}`);
         }
@@ -267,8 +267,11 @@
     <ExecutionResultPopup
         open={true}
         data={hmsExecutionResults[0]}
-        code={$homescripts.find(h => h.data.data.id === hmsExecutionResults[0].id).data.data.code}
-        on:close={() => hmsExecutionResults = hmsExecutionResults.slice(1)}/>
+        code={$homescripts.find(
+            (h) => h.data.data.id === hmsExecutionResults[0].id
+        ).data.data.code}
+        on:close={() => (hmsExecutionResults = hmsExecutionResults.slice(1))}
+    />
 {/if}
 
 <Page>
