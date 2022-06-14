@@ -229,7 +229,6 @@
         padding: 0.9rem 1rem;
         background-color: var(--clr-height-1-2);
         display: block;
-        width: 100%;
 
         &__list {
             display: flex;
