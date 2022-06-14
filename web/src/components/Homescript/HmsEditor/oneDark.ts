@@ -23,6 +23,9 @@ const chalky = "#e5c07b",
     cursor = "#528bff"
 
 export const oneDarkTheme = EditorView.theme({
+    "*": {
+        fontFamily: "JetBrains Mono, monospace",
+    },
     "&": {
         color: ivory,
         backgroundColor: background,
