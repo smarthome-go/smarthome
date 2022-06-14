@@ -49,7 +49,7 @@
 
         return (
             `<span class="cyan bold">${err.errorType}</span><span class="bold">&nbsp;at&nbsp;${err.location.filename}:${err.location.line}:${err.location.column}</span>` +
-            `<br>${line1}<br>${line2}<br>${marker}${line3}<br><br><span class="red bold">${err.message}</span>`
+                `<br>${line1}<br>${line2}<br>${marker}${line3}<br><br><span class="red bold">${err.message.replaceAll(' ', '&nbsp;').replaceAll('\n', '<br>')}</span>`
         );
     }
 
@@ -225,7 +225,11 @@
         border-radius: 0.3rem;
         font-family: "JetBrains Mono", monospace;
         margin-top: 1rem;
-        // TODO: move output & error to unified div
+        overflow-wrap: break-word;
+
+        span {
+            overflow-wrap: break-word;
+        }
     }
 
     h6 {
