@@ -148,7 +148,9 @@
     bind:open
     aria-labelledby="title"
     aria-describedby="content"
-    selection={currentArg.display === "string_switches" && switchesLoaded && switches.length > 0}
+    selection={currentArg.display === "string_switches" &&
+        switchesLoaded &&
+        switches.length > 0}
 >
     <Header>
         <Title id="title">{currentArg.prompt}</Title>
@@ -164,7 +166,9 @@
                     {#if currentArg.display === "type_default"}
                         <Textfield
                             style="width: 100%;"
-                            bind:value={argumentsWithValues[currentArgumentIndex].value}
+                            bind:value={argumentsWithValues[
+                                currentArgumentIndex
+                            ].value}
                             label={currentArg.argKey}
                         />
                     {:else if currentArg.display === "string_switches"}
