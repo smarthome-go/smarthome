@@ -33,7 +33,7 @@ export interface homescriptData {
 export interface homescriptResponse {
     success: boolean
     id: string
-    exitcode: number
+    exitCode: number
     message: string
     output: string
     error: homescriptError[]
