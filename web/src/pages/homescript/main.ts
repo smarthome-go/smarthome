@@ -1,7 +1,7 @@
 import { writable, Writable } from 'svelte/store'
 import App from './App.svelte'
 import type { homescriptWithArgs } from "../../homescript"
-
+import "@fontsource/jetbrains-mono";
 
 // States that homescripts have been loaded
 // used when trying to access the data of the automation's homescript
