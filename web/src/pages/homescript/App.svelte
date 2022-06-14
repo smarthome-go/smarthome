@@ -264,7 +264,11 @@
 {/if}
 
 {#if hmsExecutionResults[0] !== undefined}
-    <ExecutionResultPopup open={true} data={hmsExecutionResults[0]} on:close={() => hmsExecutionResults = hmsExecutionResults.slice(1)}/>
+    <ExecutionResultPopup
+        open={true}
+        data={hmsExecutionResults[0]}
+        code={$homescripts.find(h => h.data.data.id === hmsExecutionResults[0].id).data.data.code}
+        on:close={() => hmsExecutionResults = hmsExecutionResults.slice(1)}/>
 {/if}
 
 <Page>

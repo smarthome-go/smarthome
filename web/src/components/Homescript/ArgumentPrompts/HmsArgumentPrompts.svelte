@@ -1,6 +1,6 @@
 <script lang="ts">
     import Dialog, { Content, Header, InitialFocus, Title } from "@smui/dialog";
-    import { createEventDispatcher, onMount } from "svelte";
+    import { createEventDispatcher } from "svelte";
     import Button, { Label } from "@smui/button";
     import Textfield from "@smui/textfield";
     import Switch from "@smui/switch";
@@ -12,7 +12,7 @@
     import Progress from "../../Progress.svelte";
     import List, { Graphic, Item } from "@smui/list";
     import Radio from "@smui/radio";
-    import FormField from "@smui/form-field/src/FormField.svelte";
+    import FormField from "@smui/form-field";
 
     // Keeps track of wether the dialog should be open or not
     export let open: boolean = false;
@@ -148,7 +148,7 @@
     bind:open
     aria-labelledby="title"
     aria-describedby="content"
-    selection={currentArg.display === "string_switches"}
+    selection={currentArg.display === "string_switches" && switchesLoaded && switches.length > 0}
 >
     <Header>
         <Title id="title">{currentArg.prompt}</Title>
@@ -161,7 +161,13 @@
                     currentArg.display === "number_minute"}
             >
                 {#if currentArg.inputType === "string"}
-                    {#if currentArg.display === "string_switches"}
+                    {#if currentArg.display === "type_default"}
+                        <Textfield
+                            style="width: 100%;"
+                            bind:value={argumentsWithValues[currentArgumentIndex].value}
+                            label={currentArg.argKey}
+                        />
+                    {:else if currentArg.display === "string_switches"}
                         {#if switchesLoaded && switches.length === 0}
                             <span>No switches, skip this prompt.</span>
                         {:else if !switchesLoaded}
@@ -197,12 +203,16 @@
                             bind:value={numberPlaceholder}
                             label={currentArg.argKey}
                             type="number"
+                            min={0}
+                            max={24}
                         />
                     {:else if currentArg.display === "number_minute"}
                         <Textfield
                             bind:value={numberPlaceholder}
                             label={currentArg.argKey}
                             type="number"
+                            min={0}
+                            max={60}
                         />
                     {/if}
                 {:else if currentArg.inputType === "boolean"}

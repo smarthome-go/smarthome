@@ -32,10 +32,11 @@ export interface homescriptData {
 // Is returned as a response to a Homescript run request
 export interface homescriptResponse {
     success: boolean
+    id: string
     exitcode: number
     message: string
     output: string
-    errors: homescriptError[]
+    error: homescriptError[]
 }
 
 export interface homescriptError {
