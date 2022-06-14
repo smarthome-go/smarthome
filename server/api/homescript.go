@@ -16,6 +16,7 @@ import (
 
 type HomescriptResponse struct {
 	Success  bool                         `json:"success"`
+	Id       string                       `json:"id"`
 	Exitcode int                          `json:"exitCode"`
 	Message  string                       `json:"message"`
 	Output   string                       `json:"output"`
@@ -96,6 +97,7 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewEncoder(w).Encode(
 			HomescriptResponse{
 				Success:  false,
+				Id:       request.Id,
 				Exitcode: exitCode,
 				Message:  "Homescript terminated abnormally",
 				Output:   output,
@@ -111,6 +113,7 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewEncoder(w).Encode(
 			HomescriptResponse{
 				Success:  false,
+				Id:       request.Id,
 				Exitcode: exitCode,
 				Message:  "Homescript exited with a non-0 status code",
 				Output:   output,
@@ -124,6 +127,7 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
 			Success:  true,
+			Id:       request.Id,
 			Message:  "Homescript ran successfully",
 			Output:   output,
 			Exitcode: exitCode,
@@ -179,6 +183,7 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewEncoder(w).Encode(
 			HomescriptResponse{
 				Success:  false,
+				Id:       request.Id,
 				Exitcode: exitCode,
 				Message:  "Linting discovered errors",
 				Output:   output,
@@ -194,6 +199,7 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewEncoder(w).Encode(
 			HomescriptResponse{
 				Success:  false,
+				Id:       request.Id,
 				Exitcode: exitCode,
 				Message:  "Linting exited with non-0 status code but ran successfully",
 				Output:   output,
@@ -207,6 +213,7 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
 			Success:  true,
+			Id:       request.Id,
 			Message:  "Linting discovered no errors",
 			Output:   output,
 			Exitcode: exitCode,
