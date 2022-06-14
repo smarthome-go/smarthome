@@ -22,13 +22,15 @@
         if (err.location.line > 1)
             line1 = `<br>&nbsp;<span class="gray">${(err.location.line - 1)
                 .toString()
-                .padStart(3, " ").replaceAll(" ", "&nbsp;")}&nbsp;|&nbsp;</span>${
+                .padStart(3, " ")
+                .replaceAll(" ", "&nbsp;")}&nbsp;|&nbsp;</span>${
                 lines[err.location.line - 2]
             }`;
 
-        const line2 = `&nbsp;<span class="gray">${(err.location.line - 1)
+        const line2 = `&nbsp;<span class="gray">${(err.location.line - 0)
             .toString()
-            .padStart(3, " ").replaceAll(' ', '&nbsp;')}&nbsp;|&nbsp;</span>${
+            .padStart(3, " ")
+            .replaceAll(" ", "&nbsp;")}&nbsp;|&nbsp;</span>${
             lines[err.location.line - 1]
         }`;
 
@@ -36,7 +38,8 @@
         if (err.location.line > lines.length)
             line1 = `<br>&nbsp;<span class="gray">${(err.location.line + 1)
                 .toString()
-                .padStart(3, " ").replaceAll(" ", "&nbsp;")}&nbsp;|&nbsp;</span>${
+                .padStart(3, " ")
+                .replaceAll(" ", "&nbsp;")}&nbsp;|&nbsp;</span>${
                 lines[err.location.line]
             }`;
 
@@ -125,21 +128,25 @@
         </div>
         <div class="output mdc-elevation-z1">
             <h6>Output</h6>
-            {data.output}
-            <br />
-            Homescript {data.success ? "finished" : "terminated"} with exit code
-            {data.exitCode}.
+            {#if data.output.length > 0}
+                {@html data.output
+                    .replaceAll("\n", "<br>")
+                    .replaceAll(" ", "&nbsp;")}
+                <br />
+            {/if}
+            {#if !data.success}
+                <br />
+                {#each data.error as err}
+                    {@html errToHtml(err, code)}
+                {/each}
+                <br />
+                <br />
+            {/if}
+            <span class="text-disabled">
+                Homescript stopped with exit code
+                {data.exitCode}
+            </span>
         </div>
-        {#if !data.success}
-            <div class="errors mdc-elevation-z1">
-                <h6>Errors</h6>
-                <div class="errors__container">
-                    {#each data.error as err}
-                        {@html errToHtml(data.error[0], code)}
-                    {/each}
-                </div>
-            </div>
-        {/if}
     </Content>
     <Actions>
         <Button
@@ -218,18 +225,7 @@
         border-radius: 0.3rem;
         font-family: "JetBrains Mono", monospace;
         margin-top: 1rem;
-    }
-
-    .errors {
-        background-color: var(--clr-height-0-1);
-        padding: 1rem 1.5rem;
-        border-radius: 0.3rem;
-        font-family: "JetBrains Mono", monospace;
-        margin-top: 1rem;
-
-        &__container {
-            margin-top: 1rem;
-        }
+        // TODO: move output & error to unified div
     }
 
     h6 {
