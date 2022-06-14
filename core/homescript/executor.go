@@ -145,10 +145,13 @@ func (self *Executor) Get(requestUrl string) (string, error) {
 	if !hasPermission {
 		return "", fmt.Errorf("Will not send GET request: you lack permission to access the network via homescript. If this is unintentional, contact your administrator")
 	}
-	// DryRun only checks the URL
+	// DryRun only checks the URL's validity
 	if self.DryRun {
 		_, err := url.ParseRequestURI(requestUrl)
-		return "", fmt.Errorf("Invalid URL provided: could not parse URL: %s", err)
+		if err != nil {
+			return "", fmt.Errorf("Invalid URL provided: could not parse URL: %s", err.Error())
+		}
+		return "", nil
 	}
 	res, err := http.Get(requestUrl)
 	if err != nil {
