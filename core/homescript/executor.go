@@ -186,6 +186,10 @@ func (self *Executor) Http(requestUrl string, method string, contentType string,
 	}
 	// If using DryRun, stop here
 	if self.DryRun {
+		_, err := url.ParseRequestURI(requestUrl)
+		if err != nil {
+			return "", fmt.Errorf("Invalid URL provided: could not parse URL: %s", err.Error())
+		}
 		return "", nil
 	}
 	res, err := client.Do(req)
