@@ -1,7 +1,6 @@
 <script lang="ts">
-    import Button, { Icon } from "@smui/button";
+    import Button, { Label, Icon } from "@smui/button";
     import IconButton from "@smui/icon-button";
-    import { Label } from "@smui/list";
     import { onMount } from "svelte";
     import Progress from "../../components/Progress.svelte";
     import { createSnackbar, data as userData, sleep } from "../../global";
@@ -206,7 +205,7 @@
         $loading = false;
     }
 
-    /* 
+    /*
        Executing the currently selected Homescript
     */
     let hmsExecutionResults: homescriptResponse[] = [];
@@ -334,8 +333,10 @@
                     <Button
                         on:click={initCurrentRun}
                         disabled={selectedDataChanged}
+                        variant='outlined'
                     >
                         <Label>Run</Label>
+                        <Icon class="material-icons">play_arrow</Icon>
                     </Button>
                 </div>
                 <div class="actions">
