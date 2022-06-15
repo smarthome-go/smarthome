@@ -5,7 +5,7 @@
         homescriptError,
         homescriptResponse,
     } from "../../../homescript";
-    import { createEventDispatcher, onMount } from "svelte";
+    import { createEventDispatcher } from "svelte";
 
     const dispatch = createEventDispatcher();
 
@@ -222,9 +222,10 @@
     .output {
         background-color: var(--clr-height-0-1);
         padding: 1rem 1.5rem;
+        margin-top: 1rem;
         border-radius: 0.3rem;
         font-family: "JetBrains Mono", monospace;
-        margin-top: 1rem;
+        font-size: .9rem;
         overflow-wrap: break-word;
 
         span {
