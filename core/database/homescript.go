@@ -245,6 +245,9 @@ func DoesHomescriptExist(homescriptId string) (bool, error) {
 
 // Deletes a homescript by its Id, does not check if the user has access to the homescript
 func DeleteHomescriptById(homescriptId string) error {
+	if err := DeleteAllHomescriptArgsFromScript(homescriptId); err != nil {
+		return err
+	}
 	query, err := db.Prepare(`
 	DELETE FROM
 	homescript
@@ -263,20 +266,16 @@ func DeleteHomescriptById(homescriptId string) error {
 }
 
 // Deletes all Homescripts of a given user
+// Uses the `DeleteHomescriptById` function
 func DeleteAllHomescriptsOfUser(username string) error {
-	query, err := db.Prepare(`
-	DELETE FROM
-	homescript
-	WHERE Owner=?
-	`)
+	homescripts, err := ListHomescriptOfUser(username)
 	if err != nil {
-		log.Error("Failed to delete all Homescripts of user: preparing query failed: ", err.Error())
 		return err
 	}
-	defer query.Close()
-	if _, err := query.Exec(username); err != nil {
-		log.Error("Failed to delete all Homescripts of user: preparing query failed: ", err.Error())
-		return err
+	for _, hms := range homescripts {
+		if err := DeleteAllHomescriptArgsFromScript(hms.Data.Id); err != nil {
+			return err
+		}
 	}
 	return nil
 }
