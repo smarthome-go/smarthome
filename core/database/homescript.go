@@ -276,6 +276,9 @@ func DeleteAllHomescriptsOfUser(username string) error {
 		if err := DeleteAllHomescriptArgsFromScript(hms.Data.Id); err != nil {
 			return err
 		}
+		if err := DeleteHomescriptById(hms.Data.Id); err != nil {
+			return err
+		}
 	}
 	return nil
 }
