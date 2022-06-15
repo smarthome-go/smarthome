@@ -46,6 +46,9 @@ func NewRouter() *mux.Router {
 	// Debug information about the system
 	r.HandleFunc("/api/debug", mdl.ApiAuth(mdl.Perm(api.DebugInfo, database.PermissionDebug))).Methods("GET")
 
+	// Version information
+	r.HandleFunc("/api/version", api.GetVersionInfo).Methods("GET")
+
 	// Login handler
 	r.HandleFunc("/api/login", loginPostHandler).Methods("POST")
 

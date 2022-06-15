@@ -4,10 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"runtime"
 
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/utils"
 )
+
+type VersionInfo struct {
+	Version   string `json:"version"`
+	GoVersion string `json:"goVersion"`
+}
 
 // Runs a healthcheck of most systems on which the appplication relies on, will be used by e.g `Uptime Kuma`, no authentication required
 func HealthCheck(w http.ResponseWriter, r *http.Request) {
@@ -41,6 +47,17 @@ func HealthCheck(w http.ResponseWriter, r *http.Request) {
 func DebugInfo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(utils.SysInfo()); err != nil {
+		log.Error(err.Error())
+		Res(w, Response{Success: false, Message: "failed to get debug info", Error: "could not encode content"})
+	}
+}
+
+func GetVersionInfo(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(VersionInfo{
+		Version:   utils.Version,
+		GoVersion: runtime.Version(),
+	}); err != nil {
 		log.Error(err.Error())
 		Res(w, Response{Success: false, Message: "failed to get debug info", Error: "could not encode content"})
 	}
