@@ -230,6 +230,10 @@
         background-color: var(--clr-height-1-2);
         display: block;
 
+        @include widescreen {
+            width: 100%;
+        }
+
         &__list {
             display: flex;
             align-items: center;
