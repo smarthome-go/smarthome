@@ -13,9 +13,9 @@
     import type {
         homescriptArgSubmit,
         homescriptData,
-        homescriptResponse,
+        homescriptResponseWrapper,
     } from "../../homescript";
-    import { runHomescriptById } from "../../homescript";
+    import { runHomescriptById, lintHomescriptById } from "../../homescript";
     import HmsArgumentPrompts from "../../components/Homescript/ArgumentPrompts/HmsArgumentPrompts.svelte";
     import ExecutionResultPopup from "../../components/Homescript/ExecutionResultPopup/ExecutionResultPopup.svelte";
 
@@ -24,8 +24,11 @@
      */
     let addOpen: boolean = false;
     let deleteOpen: boolean = false;
+
     // Is used when the run button is pressed and the current script has arguments
     let argumentsPromptOpen = false;
+    // Specifies whether the current argument prompts are used for linting or running
+    let currentExecModeLint = false;
 
     let selectedDataChanged: boolean = false;
     let selection: string = "";
@@ -208,9 +211,9 @@
     /*
        Executing the currently selected Homescript
     */
-    let hmsExecutionResults: homescriptResponse[] = [];
+    let hmsExecutionResults: homescriptResponseWrapper[] = [];
 
-    // If the current Homescript contains arguments triggers the argument-prompt dialog opening
+    // If the current Homescript contains arguments, the function triggers the argument-prompt dialog opening
     function initCurrentRun() {
         if (
             $homescripts.find((h) => h.data.data.id === selection).arguments
@@ -220,6 +223,21 @@
             return;
         }
         // The script is executed via callback: refer to the argument dialog
+        currentExecModeLint = false;
+        argumentsPromptOpen = true;
+    }
+
+    // If the current Homescript contains arguments, the function triggers the argument-prompt dialog opening
+    function initCurrentLint() {
+        if (
+            $homescripts.find((h) => h.data.data.id === selection).arguments
+                .length === 0
+        ) {
+            lintCurrentWithArgs([]);
+            return;
+        }
+        // The script is linted via callback: refer to the argument dialog
+        currentExecModeLint = true;
         argumentsPromptOpen = true;
     }
 
@@ -228,9 +246,35 @@
         $loading = true;
         try {
             const hmsRes = await runHomescriptById(selection, args);
-            hmsExecutionResults = [...hmsExecutionResults, hmsRes];
+            hmsExecutionResults = [
+                ...hmsExecutionResults,
+                {
+                    response: hmsRes,
+                    code: selectedData.code,
+                    modeLint: false,
+                },
+            ];
         } catch (err) {
             $createSnackbar(`Could not execute ${selection}: ${err}`);
+        }
+        $loading = false;
+    }
+
+    // Used when the check button is pressed, error handling is accomplished here
+    async function lintCurrentWithArgs(args: homescriptArgSubmit[]) {
+        $loading = true;
+        try {
+            const hmsRes = await lintHomescriptById(selection, args);
+            hmsExecutionResults = [
+                ...hmsExecutionResults,
+                {
+                    response: hmsRes,
+                    code: selectedData.code,
+                    modeLint: true,
+                },
+            ];
+        } catch (err) {
+            $createSnackbar(`Could not lint ${selection}: ${err}`);
         }
         $loading = false;
     }
@@ -263,14 +307,25 @@
 {/if}
 
 {#if hmsExecutionResults[0] !== undefined}
-    <ExecutionResultPopup
-        open={true}
-        data={hmsExecutionResults[0]}
-        code={$homescripts.find(
-            (h) => h.data.data.id === hmsExecutionResults[0].id
-        ).data.data.code}
-        on:close={() => (hmsExecutionResults = hmsExecutionResults.slice(1))}
-    />
+    {#if currentExecModeLint}
+        <ExecutionResultPopup
+            open={true}
+            data={{
+                response: hmsExecutionResults[0].response,
+                code: hmsExecutionResults[0].code,
+                modeLint: true,
+            }}
+            on:close={() =>
+                (hmsExecutionResults = hmsExecutionResults.slice(1))}
+        />
+    {:else}
+        <ExecutionResultPopup
+            open={true}
+            data={hmsExecutionResults[0]}
+            on:close={() =>
+                (hmsExecutionResults = hmsExecutionResults.slice(1))}
+        />
+    {/if}
 {/if}
 
 <Page>
@@ -330,14 +385,28 @@
             {#if $homescripts !== undefined && selection !== ""}
                 <Inputs bind:data={selectedData} bind:deleteOpen />
                 <div class="run">
-                    <Button
-                        on:click={initCurrentRun}
-                        disabled={selectedDataChanged}
-                        variant='outlined'
-                    >
-                        <Label>Run</Label>
-                        <Icon class="material-icons">play_arrow</Icon>
-                    </Button>
+                    <div class="run__title">
+                        <span class="text-hint">Execution and error checks</span
+                        >
+                    </div>
+                    <div class="run__buttons">
+                        <Button
+                            on:click={initCurrentRun}
+                            disabled={selectedDataChanged}
+                            variant="outlined"
+                        >
+                            <Label>Run</Label>
+                            <Icon class="material-icons">play_arrow</Icon>
+                        </Button>
+                        <Button
+                            on:click={initCurrentLint}
+                            disabled={selectedDataChanged}
+                            variant="outlined"
+                        >
+                            <Label>Check</Label>
+                            <Icon class="material-icons">bug_report</Icon>
+                        </Button>
+                    </div>
                 </div>
                 <div class="actions">
                     <Button
@@ -465,6 +534,28 @@
         @include mobile {
             margin-top: 1rem;
             flex-wrap: wrap;
+        }
+    }
+    .run {
+        margin-top: auto;
+
+        @include widescreen {
+            background-color: var(--clr-height-1-3);
+            border-radius: 0.4rem;
+            padding: 0.9rem 1rem;
+        }
+
+        &__title {
+            display: none;
+            @include widescreen {
+                display: block;
+            }
+        }
+
+        &__buttons {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.4rem 0;
         }
     }
 </style>

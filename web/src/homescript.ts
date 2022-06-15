@@ -30,6 +30,12 @@ export interface homescriptData {
 
 /* Homescript run request response */
 // Is returned as a response to a Homescript run request
+export interface homescriptResponseWrapper {
+    response: homescriptResponse,
+    code: string
+    modeLint: boolean
+}
+
 export interface homescriptResponse {
     success: boolean
     id: string
@@ -117,6 +123,20 @@ export const displayOpts: DisplayOpt[] = [
 // Can throw an error if non-Homescript errors occur
 export async function runHomescriptById(id: string, args: homescriptArgSubmit[]): Promise<homescriptResponse> {
     const res = await fetch(`/api/homescript/run`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, args: args })
+    })
+    if (res.status !== 200 && res.status !== 500) throw Error(await (res.json()))
+    return await (res.json())
+}
+
+
+// Sends a lint request to the server
+// Returns the Homescript Response
+// Can throw an error if non-Homescript errors occur
+export async function lintHomescriptById(id: string, args: homescriptArgSubmit[]): Promise<homescriptResponse> {
+    const res = await fetch(`/api/homescript/lint`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, args: args })

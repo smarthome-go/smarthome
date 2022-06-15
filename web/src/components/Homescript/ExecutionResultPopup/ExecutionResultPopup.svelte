@@ -3,7 +3,7 @@
     import Button, { Label } from "@smui/button";
     import type {
         homescriptError,
-        homescriptResponse,
+        homescriptResponseWrapper,
     } from "../../../homescript";
     import { createEventDispatcher } from "svelte";
 
@@ -12,13 +12,13 @@
     // Keeps track of wether the dialog should be open or not
     export let open: boolean = false;
 
-    export let data: homescriptResponse;
-    export let code: string = "";
+    // Data is bound to display the result
+    export let data: homescriptResponseWrapper;
 
     function errToHtml(err: homescriptError, programCode: string): string {
         const lines = programCode.split("\n");
-
         let line1 = "";
+
         if (err.location.line > 1)
             line1 = `<br>&nbsp;<span class="gray">${(err.location.line - 1)
                 .toString()
@@ -49,22 +49,11 @@
 
         return (
             `<span class="cyan bold">${err.errorType}</span><span class="bold">&nbsp;at&nbsp;${err.location.filename}:${err.location.line}:${err.location.column}</span>` +
-                `<br>${line1}<br>${line2}<br>${marker}${line3}<br><br><span class="red bold">${err.message.replaceAll(' ', '&nbsp;').replaceAll('\n', '<br>')}</span>`
+            `<br>${line1}<br>${line2}<br>${marker}${line3}<br><br><span class="red bold">${err.message
+                .replaceAll(" ", "&nbsp;")
+                .replaceAll("\n", "<br>")}</span>`
         );
     }
-
-    /*
-    onMount(() => {
-        let term = new Terminal();
-        // TODO: bind terminal div to variable instead
-        term.open(document.getElementById("terminal"));
-        //  term.write("Hello from \x1B[1;3;31mxterm.js\x1B[0m $ ");
-        term.write(data.output);
-        for (let err of data.error)
-            term.write(printError(err, code));
-    });
-
-    */
 </script>
 
 <Dialog
@@ -75,7 +64,7 @@
     on:SMUIDialog:closed={() => dispatch("close", null)}
 >
     <Header>
-        <Title id="title">Result of {data.id}</Title>
+        <Title id="title">Result of {data.response.id}</Title>
     </Header>
     <Content id="content">
         <div class="status mdc-elevation-z1">
@@ -84,42 +73,46 @@
                 <div class="status__group">
                     <div
                         class="status__indicator mdc-elevation-z3"
-                        class:failure={!data.success}
+                        class:failure={!data.response.success}
                     >
                         <i class="material-icons"
-                            >{data.success ? "check" : "error"}</i
+                            >{data.response.success ? "check" : "error"}</i
                         >
-                        {data.success ? "Success" : "Failure"}
+                        {#if data.modeLint}
+                            {data.response.success ? "No errors" : "Errors detected"}
+                        {:else}
+                            {data.response.success ? "Success" : "Failure"}
+                        {/if}
                     </div>
                     <div class="status__summary">
                         Exit Code:
                         <code>
-                            {data.exitCode}
+                            {data.response.exitCode}
                         </code>
                     </div>
                 </div>
                 <div class="status__group">
-                    {#if !data.success}
+                    {#if !data.response.success}
                         <div class="status__error">
                             <i class="material-icons">
-                                {#if data.error[0].errorType === "SyntaxError"}
+                                {#if data.response.error[0].errorType === "SyntaxError"}
                                     code
-                                {:else if data.error[0].errorType === "TypeError"}
+                                {:else if data.response.error[0].errorType === "TypeError"}
                                     tag
-                                {:else if data.error[0].errorType === "ReferenceError"}
+                                {:else if data.response.error[0].errorType === "ReferenceError"}
                                     alt_route
-                                {:else if data.error[0].errorType === "ValueError"}
+                                {:else if data.response.error[0].errorType === "ValueError"}
                                     rule
-                                {:else if data.error[0].errorType === "RuntimeError"}
+                                {:else if data.response.error[0].errorType === "RuntimeError"}
                                     running_with_errors
-                                {:else if data.error[0].errorType === "Panic"}
+                                {:else if data.response.error[0].errorType === "Panic"}
                                     sms_failed
                                 {:else}
                                     error
                                 {/if}
                             </i>
                             <code>
-                                {data.error[0].errorType}
+                                {data.response.error[0].errorType}
                             </code>
                         </div>
                     {/if}
@@ -128,23 +121,23 @@
         </div>
         <div class="output mdc-elevation-z1">
             <h6>Output</h6>
-            {#if data.output.length > 0}
-                {@html data.output
+            {#if data.response.output.length > 0}
+                {@html data.response.output
                     .replaceAll("\n", "<br>")
                     .replaceAll(" ", "&nbsp;")}
                 <br />
             {/if}
-            {#if !data.success}
+            {#if !data.response.success}
                 <br />
-                {#each data.error as err}
-                    {@html errToHtml(err, code)}
+                {#each data.response.error as err}
+                    {@html errToHtml(err, data.code)}
                 {/each}
                 <br />
                 <br />
             {/if}
             <span class="text-disabled">
                 Homescript stopped with exit code
-                {data.exitCode}
+                {data.response.exitCode}
             </span>
         </div>
     </Content>
@@ -225,7 +218,7 @@
         margin-top: 1rem;
         border-radius: 0.3rem;
         font-family: "JetBrains Mono", monospace;
-        font-size: .9rem;
+        font-size: 0.9rem;
         overflow-wrap: break-word;
 
         span {
