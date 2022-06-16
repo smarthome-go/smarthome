@@ -331,6 +331,7 @@
                         <div>
                             <Button variant="outlined" on:click={addRoomShow}>
                                 <Label>Create Room</Label>
+                                <Icon class='material-icons'>add</Icon>
                             </Button>
                         </div>
                     {/if}
