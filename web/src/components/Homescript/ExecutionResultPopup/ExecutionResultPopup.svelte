@@ -79,16 +79,10 @@
                             >{data.response.success ? "check" : "error"}</i
                         >
                         {#if data.modeLint}
-                            {data.response.success ? "No errors" : "Errors detected"}
+                            {data.response.success ? "Check successful" : "Errors detected"}
                         {:else}
-                            {data.response.success ? "Success" : "Failure"}
+                            {data.response.success ? "Run successful" : "Run failed"}
                         {/if}
-                    </div>
-                    <div class="status__summary">
-                        Exit Code:
-                        <code>
-                            {data.response.exitCode}
-                        </code>
                     </div>
                 </div>
                 <div class="status__group">
