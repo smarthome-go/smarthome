@@ -111,6 +111,10 @@
             if (res.success !== undefined && !res.success)
                 throw Error(res.error);
             homescripts.set(res); // Move the fetched homescripts into the store
+
+            // Required because JS was created in 7 days
+            await sleep(0);
+
             hmsLoaded.set(true); // Signal that the homescripts are loaded
         } catch (err) {
             $createSnackbar(`Could not load Homescript: ${err}`);
@@ -194,23 +198,24 @@
                 (h) => h.data.data.id !== selection
             );
 
-            // If no Homescript exist besides this one, ignore it
+            // If no Homescript exist besides this one, only make changes persistent
             if (homescriptsTemp.length == 0) {
-                selection = ""
+                selection = "";
+                await sleep(10);
+                $homescripts = homescriptsTemp;
                 $loading = false;
-                return;
+            } else {
+                // Select the first available Homescript as active
+                selection = homescriptsTemp[0].data.data.id;
+                // Assign the intermediate list to the store in order to make changes persistent
+                $homescripts = homescriptsTemp;
+
+                // Sleep 50ms in order to delay the selection update
+                await sleep(50);
+
+                // Show the newly selected Homescript in the Inputs
+                updateSourceFromSelectedData();
             }
-
-            // Select the first available Homescript as active
-            selection = homescriptsTemp[0].data.data.id;
-            // Assign the intermediate list to the store in order to make changes persistent
-            $homescripts = homescriptsTemp
-
-            // Sleep 50ms in order to delay the selection update
-            await sleep(50);
-
-            // Show the newly selected Homescript in the Inputs
-            updateSourceFromSelectedData();
         } catch (err) {
             $createSnackbar(`Could not delete Homescript: ${err}`);
         }
@@ -365,8 +370,11 @@
             class="container mdc-elevation--z1"
             class:empty={$homescripts.length == 0}
         >
-            <div class="homescripts" class:empty={$homescripts.length == 0}>
-                {#if $homescripts.length == 0}
+            <div
+                class="homescripts"
+                class:empty={$homescripts.length == 0 && $hmsLoaded}
+            >
+                {#if $homescripts.length == 0 && $hmsLoaded}
                     <i class="material-icons" id="no-homescripts-icon"
                         >code_off</i
                     >
@@ -393,7 +401,7 @@
                     Homescript {selection}
                 </h6>
             </div>
-            {#if $homescripts !== undefined && selection !== "" && $homescripts.find((h) => h.data.data.id === selection) !== undefined}
+            {#if $hmsLoaded && selection !== "" && selectedData !== undefined && $homescripts.find((h) => h.data.data.id === selection) !== undefined}
                 <Inputs bind:data={selectedData} bind:deleteOpen />
                 <div class="run">
                     <div class="run__title">
@@ -571,11 +579,14 @@
 
     .run {
         margin-top: auto;
+        background-color: var(--clr-height-1-3);
+        border-radius: 0.4rem;
+        padding: 0.9rem 1rem;
 
-        @include widescreen {
-            background-color: var(--clr-height-1-3);
-            border-radius: 0.4rem;
-            padding: 0.9rem 1rem;
+        @include mobile {
+            background-color: transparent;
+            border-radius: 0;
+            padding: 0;
         }
 
         &__title {

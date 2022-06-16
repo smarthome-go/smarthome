@@ -10,6 +10,7 @@
     import AddArgument from "./dialogs/AddArgument.svelte";
     import { createSnackbar } from "../../global";
     import Argument from "./Argument.svelte";
+    import AddHomescript from "./dialogs/AddHomescript.svelte";
 
     let iconPickerOpen = false;
     let addArgOpen: boolean = false;
@@ -141,37 +142,42 @@
             <span class="text-hint">Quick actions </span>
         </div>
     </div>
-    <div class="arguments">
-        <span class="text-hint">Argument Prompts</span>
-        <div
-            class="arguments__list"
-            class:empty={$homescripts.find((h) => h.data.data.id === data.id)
-                .arguments.length === 0}
-        >
-            {#if $homescripts.find((h) => h.data.data.id === data.id).arguments.length === 0}
-                <span class="text-disabled">No argument prompts set up.</span>
-                <IconButton
-                    class="material-icons"
-                    on:click={() => (addArgOpen = true)}>add</IconButton
-                >
-            {:else}
-                {#each $homescripts.find((h) => h.data.data.id === data.id).arguments as arg (arg.id)}
-                    <Argument
-                        on:delete={() => {
-                            deleteHomescriptArgument(arg.id);
-                        }}
-                        bind:data={arg}
-                    />
-                {/each}
-                <div class="argument">
+    {#if $homescripts.find((h) => h.data.data.id === data.id) !== undefined}
+        <div class="arguments">
+            <span class="text-hint">Argument Prompts</span>
+            <div
+                class="arguments__list"
+                class:empty={$homescripts.find(
+                    (h) => h.data.data.id === data.id
+                ).arguments.length === 0}
+            >
+                {#if $homescripts.find((h) => h.data.data.id === data.id).arguments.length === 0}
+                    <span class="text-disabled"
+                        >No argument prompts set up.</span
+                    >
                     <IconButton
                         class="material-icons"
                         on:click={() => (addArgOpen = true)}>add</IconButton
                     >
-                </div>
-            {/if}
+                {:else}
+                    {#each $homescripts.find((h) => h.data.data.id === data.id).arguments as arg (arg.id)}
+                        <Argument
+                            on:delete={() => {
+                                deleteHomescriptArgument(arg.id);
+                            }}
+                            bind:data={arg}
+                        />
+                    {/each}
+                    <div class="argument">
+                        <IconButton
+                            class="material-icons"
+                            on:click={() => (addArgOpen = true)}>add</IconButton
+                        >
+                    </div>
+                {/if}
+            </div>
         </div>
-    </div>
+    {/if}
     <div class="actions">
         <Button
             on:click={() => {
