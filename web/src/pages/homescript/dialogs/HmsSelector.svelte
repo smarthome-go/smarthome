@@ -41,9 +41,9 @@
                     </Icon>
                 </Graphic>
                 <Text>
-                    <PrimaryText>{item.data.data.name}</PrimaryText>
+                    <PrimaryText>{item.data.data.name != "" ? item.data.data.name : "Unknown Name"}</PrimaryText>
                     <SecondaryText>
-                        {item.data.data.description}
+                        {item.data.data.description != "" ? item.data.data.description : "No description provided"}
                     </SecondaryText>
                 </Text>
             </Item>
