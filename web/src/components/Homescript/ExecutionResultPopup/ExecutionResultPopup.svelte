@@ -79,9 +79,13 @@
                             >{data.response.success ? "check" : "error"}</i
                         >
                         {#if data.modeLint}
-                            {data.response.success ? "Check successful" : "Errors detected"}
+                            {data.response.success
+                                ? "Check successful"
+                                : "Errors detected"}
                         {:else}
-                            {data.response.success ? "Run successful" : "Run failed"}
+                            {data.response.success
+                                ? "Run successful"
+                                : "Run failed"}
                         {/if}
                     </div>
                 </div>
@@ -130,8 +134,13 @@
                 <br />
             {/if}
             <span class="text-disabled">
-                Homescript stopped with exit code
-                {data.response.exitCode}
+                {#if data.modeLint}
+                    Homescript stopped with exit code
+                    {data.response.exitCode}
+                {:else}
+                    Lint output: TODO: better
+                    {data.response.exitCode}
+                {/if}
             </span>
         </div>
     </Content>
