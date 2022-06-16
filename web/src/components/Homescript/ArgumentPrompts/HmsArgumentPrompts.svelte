@@ -10,7 +10,10 @@
     } from "../../../homescript";
     import { createSnackbar } from "../../../global";
     import Progress from "../../Progress.svelte";
-    import List, { Graphic, Item } from "@smui/list";
+    import List, {
+        Graphic,
+        Item,
+    } from "@smui/list";
     import Radio from "@smui/radio";
     import FormField from "@smui/form-field";
 
@@ -77,6 +80,12 @@
 
     // Conversion functions
     function updateFromNumber() {
+        if (currentArg.display === "number_hour" || currentArg.display === "number_minute" && numberPlaceholder < 0)
+            numberPlaceholder = 0
+        if (currentArg.display === "number_hour" && numberPlaceholder > 24)
+            numberPlaceholder = 24
+        if (currentArg.display === "number_minute" && numberPlaceholder > 60)
+            numberPlaceholder = 60
         argumentsWithValues[currentArgumentIndex].value =
             numberPlaceholder.toString();
     }
@@ -173,7 +182,11 @@
                         />
                     {:else if currentArg.display === "string_switches"}
                         {#if switchesLoaded && switches.length === 0}
-                            <span>No switches, skip this prompt.</span>
+                            <span>No switches available.</span>
+                            <br />
+                            <span class="text-disabled"
+                                >You can skip this prompt</span
+                            >
                         {:else if !switchesLoaded}
                             <Progress type="linear" loading={true} />
                         {:else}
@@ -188,7 +201,11 @@
                                                 value={sw.id}
                                             />
                                         </Graphic>
-                                        <Label>{sw.name}</Label>
+                                        <Label
+                                            >{sw.name != ""
+                                                ? sw.name
+                                                : "No Name"}
+                                        </Label>
                                     </Item>
                                 {/each}
                             </List>
@@ -245,7 +262,12 @@
                 {/if}
             </div>
         {/if}
-        <div class="actions">
+        <div
+            class="actions"
+            class:selection={currentArg.display === "string_switches" &&
+                switchesLoaded &&
+                switches.length > 0}
+        >
             <Button
                 on:click={() => {
                     argumentsWithValues = [];
@@ -264,7 +286,8 @@
 
 <style lang="scss">
     .inputs {
-        min-height: 20rem;
+        height: 20rem;
+
         &.centered {
             display: flex;
             justify-content: center;
@@ -274,6 +297,10 @@
         margin-top: 1rem;
         display: flex;
         justify-content: flex-end;
-        padding: 1rem;
+
+        &.selection {
+            padding-right: 24px;
+            padding-bottom: 20px;
+        }
     }
 </style>
