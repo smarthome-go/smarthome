@@ -1,7 +1,6 @@
 <script lang="ts">
-    import Button, { Icon } from "@smui/button";
+    import Button, { Icon, Label } from "@smui/button";
     import IconButton from "@smui/icon-button";
-    import { Label } from "@smui/list";
     import type { homescript } from "../../homescript";
     import { onMount } from "svelte";
     import Progress from "../../components/Progress.svelte";
