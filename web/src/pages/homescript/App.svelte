@@ -504,18 +504,12 @@
         transition-property: height;
         transition-duration: 0.3s;
 
-        // EXPERIMENTAL
-        height: calc(100vh - 91px);
+        height: calc(100vh - 92px);
         flex-direction: row;
 
         @include mobile {
             flex-direction: column-reverse;
             height: 100%;
-        }
-
-        @include widescreen {
-            height: calc(100vh - 91px);
-            flex-direction: row;
         }
     }
 
@@ -592,6 +586,7 @@
 
         &__title {
             display: none;
+
             @include widescreen {
                 display: block;
             }
