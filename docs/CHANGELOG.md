@@ -1,14 +1,22 @@
-## Changelog for v0.0.43
+## Changelog for v0.0.44
 
 ### Homescript GUI
-- Improved Homescript arguments GUI
-- Fixed various errors in Homescript frontend
-- Added `Jetbrains Mono` to Homescript editor and error output
-- Added Homescript run result popup dialog which shows the scripts status and output
+- Improved Homescript run result dialog display
+- Fixed frontend Homescript deletion bugs
+- Removed scrollbar from HMS management page
+- Implemented major layout redesign
+- Added placeholder text to HMS selector
+- Added minute & hour value checks to argument prompts
 
-### Homescript Backend
-- Fixed HMS bug when linting code which includes `Get`
-- Added additional lint check in HMS `Http` function
+### Automations GUI
+- Added has-loaded check before showing `no automations`
+- Fixed button label spacing
+- Added placeholder text to HMS selector
+
+### Other
+- Added icon to create button in rooms GUI
+- Refactored `404` page
+- Decreased size of top segment on the login page on mobile devices
 
 ### Backend
-- Added version route to API endpoints
+- Fixed delete-all Homescript function (used in user deletion)
