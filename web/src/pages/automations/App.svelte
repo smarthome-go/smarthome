@@ -2,6 +2,7 @@
     import Button,{ Icon } from '@smui/button'
     import IconButton from '@smui/icon-button'
     import { Label } from '@smui/list'
+    import type { homescript } from '../../homescript';
     import { onMount } from 'svelte'
     import Progress from '../../components/Progress.svelte'
     import { createSnackbar,data as userData } from '../../global'
@@ -11,7 +12,9 @@
     import Overview from './dialogs/Overview.svelte'
     import {
     addAutomation,
+    automation,
     automations,
+    automationsLoaded,
     hmsLoaded,
     homescripts,
     loading
@@ -32,10 +35,11 @@
                 throw Error(res.error)
             // Group together automations which are disabled
             automations.set(
-                res.sort((a) => {
+                res.sort((a: automation) => {
                     return a.enabled ? -1 : 1
                 })
             )
+            $automationsLoaded = true
         } catch (err) {
             $createSnackbar(`Could not load automations: ${err}`)
         }
@@ -53,7 +57,7 @@
             if (res.success !== undefined && !res.success)
                 throw Error(res.error)
             // Filter out any homescripts which are not meant to be used for automations
-            res = res.filter((a) => a.data.schedulerEnabled)
+            res = res.filter((a: homescript) => a.data.schedulerEnabled)
             homescripts.set(res) // Move the fetched homescripts into the store
             hmsLoaded.set(true) // Signal that the homescripts are loaded
         } catch (err) {
@@ -161,8 +165,8 @@
     </div>
     <Progress id="loader" bind:loading={$loading} />
 
-    <div class="automations" class:empty={$automations.length == 0}>
-        {#if $automations.length == 0}
+    <div class="automations" class:empty={$automationsLoaded && $automations.length == 0}>
+        {#if $automationsLoaded && $automations.length == 0}
             <i class="material-icons" id="no-automations-icon">event_repeat</i>
             <h6 class="text-hint">No automations</h6>
             <Button on:click={() => (addOpen = true)} variant="outlined">
@@ -176,15 +180,12 @@
                     on:delete={() => deleteAutomation(automation.id)}
                     on:modify={() => {
                         // If there is an automation with non-normal timing-mode, update it
+                        // Fetching data from the server is required because the client does not possess information about the long / latidute of the server
                         for (let automationItem of $automations) {
                             if (automationItem.timingMode !== 'normal') {
                                 loadAutomations()
                             }
                         }
-                        // Sorting of automations after reload will lead to a content shift
-                        // $automations = $automations.sort((a) => {
-                        //     return a.enabled ? -1 : 1
-                        // })
                     }}
                 />
             {/each}
