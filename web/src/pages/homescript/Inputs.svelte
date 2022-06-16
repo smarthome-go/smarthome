@@ -131,33 +131,25 @@
         />
     </div>
     <div class="toggles">
-        <span class="text-hint">Attributes and visibility</span>
+        <span class="text-hint">Selection and visibility</span>
         <div class="toggles__item">
             <Switch bind:checked={data.schedulerEnabled} />
-            <span class="text-hint">
-                Automation selection {data.schedulerEnabled
-                    ? "shown"
-                    : "hidden"}
-            </span>
+            <span class="text-hint">Automations</span>
         </div>
         <div class="right__toggles__item">
             <Switch bind:checked={data.quickActionsEnabled} />
-            <span class="text-hint">
-                Quick actions selection {data.quickActionsEnabled
-                    ? "shown"
-                    : "hidden"}
-            </span>
+            <span class="text-hint">Quick actions </span>
         </div>
     </div>
     <div class="arguments">
-        <span class="text-hint">Arguments</span>
+        <span class="text-hint">Argument Prompts</span>
         <div
             class="arguments__list"
             class:empty={$homescripts.find((h) => h.data.data.id === data.id)
                 .arguments.length === 0}
         >
             {#if $homescripts.find((h) => h.data.data.id === data.id).arguments.length === 0}
-                <span class="text-disabled">No arguments set up.</span>
+                <span class="text-disabled">No argument prompts set up.</span>
                 <IconButton
                     class="material-icons"
                     on:click={() => (addArgOpen = true)}>add</IconButton
@@ -200,10 +192,7 @@
         display: flex;
         flex-wrap: wrap;
         gap: 2rem;
-
-        @include not-widescreen {
-            flex-direction: column;
-        }
+        flex-direction: column;
     }
 
     .toggles {
@@ -226,9 +215,11 @@
 
     .arguments {
         border-radius: 0.3rem;
-        padding: 0.9rem 1rem;
+        padding: 0.7rem 1rem;
+        padding-top: 0.9rem;
         background-color: var(--clr-height-1-2);
         display: block;
+        min-height: 5rem;
 
         @include widescreen {
             width: 100%;
@@ -237,10 +228,11 @@
         &__list {
             display: flex;
             align-items: center;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
             gap: 0.5rem;
 
             &.empty {
-                margin-top: 0.5rem;
                 align-items: center;
                 justify-content: space-between;
             }

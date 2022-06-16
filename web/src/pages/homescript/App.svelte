@@ -307,7 +307,7 @@
 {/if}
 
 {#if hmsExecutionResults[0] !== undefined}
-    {#if currentExecModeLint}
+    {#if currentExecModeLint || hmsExecutionResults[0].modeLint}
         <ExecutionResultPopup
             open={true}
             data={{
@@ -315,8 +315,10 @@
                 code: hmsExecutionResults[0].code,
                 modeLint: true,
             }}
-            on:close={() =>
-                (hmsExecutionResults = hmsExecutionResults.slice(1))}
+            on:close={() => {
+                hmsExecutionResults = hmsExecutionResults.slice(1);
+                currentExecModeLint = false;
+            }}
         />
     {:else}
         <ExecutionResultPopup
@@ -382,7 +384,7 @@
                     Homescript {selection}
                 </h6>
             </div>
-            {#if $homescripts !== undefined && selection !== ""}
+            {#if $homescripts !== undefined && selection !== "" && $homescripts.find((h) => h.data.data.id === selection) !== undefined}
                 <Inputs bind:data={selectedData} bind:deleteOpen />
                 <div class="run">
                     <div class="run__title">
@@ -429,6 +431,7 @@
 
 <style lang="scss">
     @use "../../mixins" as *;
+
     #header {
         display: flex;
         align-items: center;
@@ -436,10 +439,12 @@
         padding: 0.1rem 1.3rem;
         box-sizing: border-box;
         background-color: var(--clr-height-1-4);
+
         &__buttons {
             display: flex;
             align-items: center;
         }
+
         h6 {
             margin: 0.5em 0;
             @include mobile {
@@ -448,30 +453,30 @@
             }
         }
     }
+
     #no-homescripts-icon {
         font-size: 5rem;
         color: var(--clr-text-disabled);
     }
+
     .container {
         background-color: var(--clr-height-0-1);
         border-radius: 0.4rem;
         overflow: hidden;
         height: 28vh;
 
+        height: 100%;
+        width: 50%;
+
         @include mobile {
-            height: 100%;
+            width: auto;
         }
-        @include widescreen {
-            height: 100%;
-            width: 50%;
-        }
+
         &.empty {
-            height: 100%;
-            @include widescreen {
-                width: 100%;
-            }
+            width: 100%;
         }
     }
+
     #content {
         display: flex;
         flex-direction: column-reverse;
@@ -479,16 +484,26 @@
         gap: 1rem;
         transition-property: height;
         transition-duration: 0.3s;
+
+        // EXPERIMENTAL
+        height: calc(100vh - 91px);
+        flex-direction: row;
+
+        @include mobile {
+            flex-direction: column-reverse;
+            height: 100%;
+        }
+
         @include widescreen {
-            flex-direction: column;
             height: calc(100vh - 91px);
             flex-direction: row;
-            gap: 1rem;
         }
     }
+
     .homescripts {
         height: 100%;
         overflow-y: auto;
+
         &.empty {
             display: flex;
             flex-direction: column;
@@ -499,10 +514,12 @@
             height: calc(100vh - 91px);
             width: 100%;
             gap: 1.5rem;
+
             h6 {
                 margin: 0.5rem 0;
                 font-size: 1.1rem;
             }
+
             @include mobile {
                 gap: 1rem;
                 height: calc(100vh - 143px);
@@ -516,26 +533,33 @@
         padding: 1.5rem;
         display: flex;
         flex-direction: column;
+        width: 50%;
+
         h6 {
             margin: 0.5rem 0;
         }
-        @include widescreen {
-            width: 50%;
+
+        @include mobile {
+            width: auto;
         }
+
         &.disabled {
             display: none;
         }
     }
+
     .actions {
         display: flex;
         justify-content: flex-end;
         gap: 0.5rem;
         margin-top: auto;
+
         @include mobile {
             margin-top: 1rem;
             flex-wrap: wrap;
         }
     }
+
     .run {
         margin-top: auto;
 
