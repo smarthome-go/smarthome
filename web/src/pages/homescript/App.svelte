@@ -456,6 +456,7 @@
         padding: 0.1rem 1.3rem;
         box-sizing: border-box;
         background-color: var(--clr-height-1-4);
+        min-height: 3.5rem;
 
         &__buttons {
             display: flex;
@@ -491,6 +492,7 @@
 
         &.empty {
             width: 100%;
+            background-color: transparent;
         }
     }
 
@@ -525,7 +527,6 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
             padding: 3rem;
             box-sizing: border-box;
             height: calc(100vh - 91px);

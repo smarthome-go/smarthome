@@ -124,6 +124,7 @@
         padding: 0.1rem 1.3rem;
         box-sizing: border-box;
         background-color: var(--clr-height-1-4);
+        min-height: 3.5rem;
 
         h6 {
             margin: 0.5rem 0;
