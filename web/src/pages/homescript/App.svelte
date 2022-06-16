@@ -188,18 +188,27 @@
             ).json();
             if (!res.success) throw Error(res.error);
             // Remove the current Homescript from the global store
-            $homescripts = $homescripts.filter(
+            // An intermediate version of the list is required to prevent an edge case in which the script at index 0 is also the script to-be-deleted
+            // In this case, a runtime error would occur in `Inputs.svelte`, and probably other places too
+            const homescriptsTemp = $homescripts.filter(
                 (h) => h.data.data.id !== selection
             );
+
             // If no Homescript exist besides this one, ignore it
-            if ($homescripts.length == 0) {
+            if (homescriptsTemp.length == 0) {
+                selection = ""
                 $loading = false;
                 return;
             }
-            // Sleep 50ms in order to delay the selection
+
+            // Select the first available Homescript as active
+            selection = homescriptsTemp[0].data.data.id;
+            // Assign the intermediate list to the store in order to make changes persistent
+            $homescripts = homescriptsTemp
+
+            // Sleep 50ms in order to delay the selection update
             await sleep(50);
-            // Select the next Homescript as active
-            selection = $homescripts[0].data.data.id;
+
             // Show the newly selected Homescript in the Inputs
             updateSourceFromSelectedData();
         } catch (err) {
