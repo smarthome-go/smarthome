@@ -95,7 +95,7 @@
                 class="material-icons"
                 on:click={loadUsers}>refresh</IconButton
             >
-            <Button on:click={addUserShow} variant="raised">
+            <Button on:click={addUserShow} variant="outlined">
                 <Label>Add User</Label>
                 <Icon class="material-icons">person_add</Icon>
             </Button>
