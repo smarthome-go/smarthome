@@ -189,7 +189,7 @@
         }
 
         @include mobile {
-            width: calc(100% + 2rem);
+            width: calc(100% + .5rem);
             height: auto;
             padding-block: 2rem;
         }
