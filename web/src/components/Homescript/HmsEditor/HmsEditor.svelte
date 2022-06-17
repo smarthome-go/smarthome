@@ -17,8 +17,10 @@
     // Will later be binded to the target of the CodeMirror editor
     let editorDiv: HTMLElement;
 
+    let editor: EditorView;
+
     onMount(() => {
-        let editor = new EditorView({
+        editor = new EditorView({
             state: EditorState.create({
                 extensions: [basicSetup, Homescript(), oneDark],
             }),
@@ -38,6 +40,6 @@
 
 <style lang="scss">
     .hms-editor {
-        height: 100rem;
+        height: 100%;
     }
 </style>

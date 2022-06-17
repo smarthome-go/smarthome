@@ -1,10 +1,8 @@
 <script lang="ts">
     import Dialog, { Actions, Content, Header, Title } from "@smui/dialog";
     import Button, { Label } from "@smui/button";
-    import type {
-        homescriptError,
-        homescriptResponseWrapper,
-    } from "../../../homescript";
+    import type { homescriptResponseWrapper } from "../../../homescript";
+    import Terminal from "./Terminal.svelte";
     import { createEventDispatcher } from "svelte";
 
     const dispatch = createEventDispatcher();
@@ -14,46 +12,6 @@
 
     // Data is bound to display the result
     export let data: homescriptResponseWrapper;
-
-    function errToHtml(err: homescriptError, programCode: string): string {
-        const lines = programCode.split("\n");
-        let line1 = "";
-
-        if (err.location.line > 1)
-            line1 = `<br>&nbsp;<span class="gray">${(err.location.line - 1)
-                .toString()
-                .padStart(3, " ")
-                .replaceAll(" ", "&nbsp;")}&nbsp;|&nbsp;</span>${
-                lines[err.location.line - 2]
-            }`;
-
-        const line2 = `&nbsp;<span class="gray">${(err.location.line - 0)
-            .toString()
-            .padStart(3, " ")
-            .replaceAll(" ", "&nbsp;")}&nbsp;|&nbsp;</span>${
-            lines[err.location.line - 1]
-        }`;
-
-        let line3 = "";
-        if (err.location.line > lines.length)
-            line1 = `<br>&nbsp;<span class="gray">${(err.location.line + 1)
-                .toString()
-                .padStart(3, " ")
-                .replaceAll(" ", "&nbsp;")}&nbsp;|&nbsp;</span>${
-                lines[err.location.line]
-            }`;
-
-        const marker = `${"&nbsp;".repeat(
-            err.location.column + 6
-        )}<span class="red bold">^</span>`;
-
-        return (
-            `<span class="cyan bold">${err.errorType}</span><span class="bold">&nbsp;at&nbsp;${err.location.filename}:${err.location.line}:${err.location.column}</span>` +
-            `<br>${line1}<br>${line2}<br>${marker}${line3}<br><br><span class="red bold">${err.message
-                .replaceAll(" ", "&nbsp;")
-                .replaceAll("\n", "<br>")}</span>`
-        );
-    }
 </script>
 
 <Dialog
@@ -119,29 +77,7 @@
         </div>
         <div class="output mdc-elevation-z1">
             <h6>Output</h6>
-            {#if data.response.output.length > 0}
-                {@html data.response.output
-                    .replaceAll("\n", "<br>")
-                    .replaceAll(" ", "&nbsp;")}
-                <br />
-            {/if}
-            {#if !data.response.success}
-                <br />
-                {#each data.response.error as err}
-                    {@html errToHtml(err, data.code)}
-                {/each}
-                <br />
-                <br />
-            {/if}
-            <span class="text-disabled">
-                {#if data.modeLint}
-                    Homescript stopped with exit code
-                    {data.response.exitCode}
-                {:else}
-                    Lint output: TODO: better
-                    {data.response.exitCode}
-                {/if}
-            </span>
+            <Terminal {data} />
         </div>
     </Content>
     <Actions>
@@ -215,39 +151,15 @@
             }
         }
     }
+
     .output {
         background-color: var(--clr-height-0-1);
         padding: 1rem 1.5rem;
         margin-top: 1rem;
         border-radius: 0.3rem;
-        font-family: "JetBrains Mono", monospace;
-        font-size: 0.9rem;
-        overflow-wrap: break-word;
-
-        span {
-            overflow-wrap: break-word;
-        }
     }
 
     h6 {
         margin: 0;
-    }
-
-    :global {
-        .bold {
-            font-weight: bold;
-        }
-
-        .red {
-            color: #ff616e;
-        }
-
-        .cyan {
-            color: #4cd1e0;
-        }
-
-        .gray {
-            color: #4f5666;
-        }
     }
 </style>
