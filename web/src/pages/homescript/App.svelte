@@ -481,8 +481,6 @@
         background-color: var(--clr-height-0-1);
         border-radius: 0.4rem;
         overflow: hidden;
-        height: 28vh;
-
         height: 100%;
         width: 50%;
 
