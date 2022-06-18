@@ -1,10 +1,26 @@
 <script lang="ts">
     import Terminal from "../../components/Homescript/ExecutionResultPopup/Terminal.svelte";
     import type { homescriptResponseWrapper } from "../../homescript";
+    import { runHomescriptCode } from "../../homescript";
     import HmsEditor from "../../components/Homescript/HmsEditor/HmsEditor.svelte";
     import Button from "@smui/button/src/Button.svelte";
     import { Icon, Label } from "@smui/button";
     import IconButton from "@smui/icon-button";
+
+    let loading: boolean = false;
+
+    async function runCurrentCode() {
+        loading = true;
+        const currentExecResTemp = await runHomescriptCode(code, []);
+        currentExecRes = {
+            code: code,
+            modeLint: false,
+            response: currentExecResTemp
+        };
+        loading = false;
+    }
+
+    let code: string = "";
 
     let currentExecRes: homescriptResponseWrapper = undefined;
 </script>
@@ -20,13 +36,13 @@
 </div>
 <div class="container">
     <div class="container__editor">
-        <HmsEditor />
+        <HmsEditor bind:code/>
     </div>
     <div class="container__terminal">
         <div class="container__terminal__header">
-            <IconButton class="material-icons">play_arrow</IconButton>
+            <IconButton class="material-icons" on:click={runCurrentCode}>play_arrow</IconButton>
             <IconButton class="material-icons">bug_report</IconButton>
-            <IconButton class="material-icons">replay</IconButton>
+            <IconButton class="material-icons" on:click={() => currentExecRes = undefined}>replay</IconButton>
         </div>
         <div class="container__terminal__content">
             {#if currentExecRes === undefined}
@@ -57,6 +73,7 @@
 
         h6 {
             margin: 0.5em 0;
+
             @include mobile {
                 // Hide title on mobile due to space limitations
                 display: none;
@@ -83,7 +100,7 @@
 
             &__content {
                 font-family: "Jetbrains Mono", monospace;
-                padding: 1rem .5rem;
+                padding: 1rem;
             }
         }
     }

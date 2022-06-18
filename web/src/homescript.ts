@@ -131,6 +131,18 @@ export async function runHomescriptById(id: string, args: homescriptArgSubmit[])
     return await (res.json())
 }
 
+// Sends an execution request to the server
+// Returns the Homescript Response
+// Can throw an error if non-Homescript errors occur
+export async function runHomescriptCode(code: string, args: homescriptArgSubmit[]): Promise<homescriptResponse> {
+    const res = await fetch(`/api/homescript/run/live`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, args: args })
+    })
+    if (res.status !== 200 && res.status !== 500) throw Error(await (res.json()))
+    return await (res.json())
+}
 
 // Sends a lint request to the server
 // Returns the Homescript Response
