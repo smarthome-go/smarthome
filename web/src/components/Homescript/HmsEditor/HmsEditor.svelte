@@ -48,7 +48,6 @@
                         if (v.docChanged) {
                             if (timer) clearTimeout(timer);
                             timer = setTimeout(() => {
-                                console.log("dispatched save");
                                 dispatch('update', code)
                             }, 500);
                         }
@@ -56,7 +55,6 @@
                     EditorView.updateListener.of((v) => {
                         // TODO: lint / check code here
                         if (v.docChanged) {
-                            console.log(editor.state.doc.toString());
                             code = editor.state.doc.toString();
                         }
                     }),
