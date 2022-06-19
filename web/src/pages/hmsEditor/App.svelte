@@ -1,69 +1,44 @@
 <script lang="ts">
-    import Terminal from "../../components/Homescript/ExecutionResultPopup/Terminal.svelte";
+    import Page from "../../Page.svelte";
+    import { createSnackbar } from "../../global";
     import {
         homescript,
         homescriptResponseWrapper,
         homescriptWithArgs,
         lintHomescriptCode,
+        runHomescriptCode,
     } from "../../homescript";
-    import { runHomescriptCode } from "../../homescript";
-    import HmsEditor from "../../components/Homescript/HmsEditor/HmsEditor.svelte";
-    import IconButton, { Icon } from "@smui/icon-button";
-    import Progress from "../../components/Progress.svelte";
     import { onMount } from "svelte";
-    import { createSnackbar } from "../../global";
-    import Page from "../../Page.svelte";
+    import IconButton from "@smui/icon-button";
     import Select, { Option } from "@smui/select";
+    import Progress from "../../components/Progress.svelte";
 
+    // Custom HMS components
+    import HmsEditor from "../../components/Homescript/HmsEditor/HmsEditor.svelte";
+    import Terminal from "../../components/Homescript/ExecutionResultPopup/Terminal.svelte";
+
+
+    /*
+       General variables
+       Includes varialbes such as layout-management and loading indicators
+     */
     // Specifies whether the alternate layout (larger terminal) should be active or not
     let layoutAlt: boolean = false;
 
-    // CTRL + S listener and default prevention
-    document.addEventListener("keydown", (e) => {
-        if (e.ctrlKey && e.key === "s") {
-            e.preventDefault();
-            saveCurrent();
-        }
-    });
-
-    // Specifies whether there are unsaved changes or if the code is up-to-date
-    let savedCode: string = "";
-
     // Is set to true when a script is linted or executed
     let requestLoading: boolean = false;
+
     // Is set to true if either the script loads or is saved
     let otherLoading: boolean = false;
 
-    // Saves the last execution / lint result
-    let currentExecRes: homescriptResponseWrapper = undefined;
-
-    // Saves all available Homescripts as a list
+    /*
+       Script management
+       Variables and functions required to save all scripts
+     */
     let homescripts: homescriptWithArgs[] = [];
+    // Is set to true as soon as the scripts are loaded
+    // Required in the dynamic update of the current script (due to the list being empty when loaded=false)
     let homescriptsLoaded: boolean = false;
-
-    $: if (homescriptsLoaded && currentScript) setCurrentScript(currentScript);
-
-    function setCurrentScript(id: string) {
-        currentData = homescripts.find(
-            (h) => h.data.data.id === currentScript
-        ).data;
-        savedCode = currentData.data.code;
-    }
-
-    // Saves the metadata of the current script (specified by URL query)
-    let currentScript: string = "";
-    let currentData: homescript = {
-        owner: "",
-        data: {
-            id: currentScript,
-            name: "",
-            description: "",
-            mdIcon: "",
-            code: "",
-            quickActionsEnabled: false,
-            schedulerEnabled: false,
-        },
-    };
 
     async function loadHomescript() {
         otherLoading = true;
@@ -85,6 +60,53 @@
         otherLoading = false;
     }
 
+    /*
+       Current script management
+       Saves which script is currently being edited
+       Includes a function for changing the currently active script
+     */
+    // Saves the metadata of the current script (specified by URL query)
+    let currentScript: string = "";
+    let currentData: homescript = {
+        owner: "",
+        data: {
+            id: currentScript,
+            name: "",
+            description: "",
+            mdIcon: "",
+            code: "",
+            quickActionsEnabled: false,
+            schedulerEnabled: false,
+        },
+    };
+
+    // Is called every time the `currentScript` variable changes
+    $: if (homescriptsLoaded && currentScript) setCurrentScript(currentScript);
+
+    // Is used to update the currently shown script
+    function setCurrentScript(id: string) {
+        currentData = homescripts.find(
+            (h) => h.data.data.id === currentScript
+        ).data;
+        savedCode = currentData.data.code;
+    }
+
+    /*
+       Code saving
+       Variables and functions responsible for saving the code which is currently being edited
+    */
+    // Specifies whether there are unsaved changes or if the code is up-to-date
+    let savedCode: string = "";
+
+    // CTRL + S listener and default prevention
+    document.addEventListener("keydown", (e) => {
+        if (e.ctrlKey && e.key === "s") {
+            e.preventDefault();
+            saveCurrent();
+        }
+    });
+
+    // Sends a `save` request to the server, also updates the GUI display of unsaved changes to saved.
     async function saveCurrent() {
         if (savedCode === currentData.data.code) return;
         otherLoading = true;
@@ -105,6 +127,14 @@
         otherLoading = false;
     }
 
+    /*
+       Execution and linting
+       Functions and variables responsible for linting and running the code
+     */
+    // Saves the last execution / lint result
+    let currentExecRes: homescriptResponseWrapper = undefined;
+
+    // Normal run functions
     async function runCurrentCode() {
         requestLoading = true;
         try {
@@ -124,7 +154,7 @@
         }
         requestLoading = false;
     }
-
+    // Dry-run function without data modifications
     async function LintCurrentCode() {
         requestLoading = true;
         try {
@@ -144,6 +174,8 @@
         }
         requestLoading = false;
     }
+
+    // Load the Homescript-list at the beginning
     onMount(loadHomescript);
 </script>
 
@@ -340,7 +372,7 @@
                 font-size: 0.9rem;
                 padding: 1rem;
                 height: 100%;
-                overflow: auto
+                overflow: auto;
             }
         }
     }
