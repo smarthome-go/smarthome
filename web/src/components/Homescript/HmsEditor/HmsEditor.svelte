@@ -6,23 +6,36 @@
     } from "@codemirror/basic-setup";
     import { EditorSelection } from "@codemirror/state";
     import CodeMirror from "@codemirror/basic-setup";
-    import { onMount } from "svelte";
+    import { createEventDispatcher, onMount, setContext } from "svelte";
     //    import { tags } from "@lezer/highlight";
     // import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
     // import { completeFromList } from "@codemirror/autocomplete";
 
     // TODO: move local files to separate repository
     import { HomescriptLanguage, Homescript } from "./index.js";
-    import { oneDark} from "./oneDark";
+    import { oneDark } from "./oneDark";
+
+    const dispatch = createEventDispatcher()
 
     // Represents the editor's value
-    export let code: string = ""
+    export let code: string = "";
+    $: setCode(code);
+
+    function setCode(cd: string) {
+        if (editor === undefined || editor.state.doc.toString() === cd) return;
+        editor.dispatch(
+            editor.state.changeByRange((range) => ({
+                changes: [{ from: range.from, insert: cd }],
+                range: EditorSelection.range(range.from + 2, range.to + 2),
+            }))
+        );
+    }
 
     // Will later be bound to the target of the CodeMirror editor
     let editorDiv: HTMLElement;
 
     let editor: EditorView;
-    let timer: NodeJS.Timeout
+    let timer: NodeJS.Timeout;
 
     onMount(() => {
         editor = new EditorView({
@@ -35,13 +48,17 @@
                         // TODO: lint / check code here
                         if (v.docChanged) {
                             if (timer) clearTimeout(timer);
-                            timer = setTimeout(
-                                () =>  {
-                                    console.log(editor.state.doc.toString())
-                                    code = editor.state.doc.toString()
-                                },
-                                500
-                            );
+                            timer = setTimeout(() => {
+                                console.log("dispatched save");
+                                dispatch('update', code)
+                            }, 500);
+                        }
+                    }),
+                    EditorView.updateListener.of((v) => {
+                        // TODO: lint / check code here
+                        if (v.docChanged) {
+                            console.log(editor.state.doc.toString());
+                            code = editor.state.doc.toString();
                         }
                     }),
                 ],
@@ -49,7 +66,6 @@
             }),
             parent: editorDiv,
         });
-
 
         /*
         editor.dispatch(
