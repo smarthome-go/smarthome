@@ -24,10 +24,9 @@
     function setCode(cd: string) {
         if (editor === undefined || editor.state.doc.toString() === cd) return;
         editor.dispatch(
-            editor.state.changeByRange((range) => ({
-                changes: [{ from: range.from, insert: cd }],
-                range: EditorSelection.range(range.from + 2, range.to + 2),
-            }))
+            editor.state.update({
+                changes: {from: 0, to: editor.state.doc.length, insert: cd}
+            })
         );
     }
 
