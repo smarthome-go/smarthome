@@ -16,7 +16,7 @@
     // Custom HMS components
     import HmsEditor from "../../components/Homescript/HmsEditor/HmsEditor.svelte";
     import Terminal from "../../components/Homescript/ExecutionResultPopup/Terminal.svelte";
-
+    import Button, { Icon, Label } from "@smui/button";
 
     /*
        General variables
@@ -30,6 +30,9 @@
 
     // Is set to true if either the script loads or is saved
     let otherLoading: boolean = false;
+
+    // If set to true, a banner (indicating that no script xyz has been found) is shown instead of the editor
+    let err404: boolean = false;
 
     /*
        Script management
@@ -176,78 +179,124 @@
     }
 
     // Load the Homescript-list at the beginning
-    onMount(loadHomescript);
+    onMount(async () => {
+        await loadHomescript();
+        // Used for initially setting the active script via URL query
+        const selectedFromQuery = new URLSearchParams(
+            window.location.search
+        ).get("id");
+        if (
+            homescripts.find((h) => h.data.data.id === selectedFromQuery) ===
+            undefined
+        ) {
+            err404 = true
+            return;
+        }
+        currentScript = selectedFromQuery;
+    });
 </script>
 
 <Page>
-    <div id="header" class="mdc-elevation--z4">
-        <div id="header__left">
-            <h6>Editing {currentData.data.id}</h6>
-            <div
-                id="header__left__save"
-                class:unsaved={savedCode !== currentData.data.code}
-            >
-                <i class="material-icons"
-                    >{savedCode === currentData.data.code
-                        ? "cloud_done"
-                        : "save"}</i
+    {#if err404}
+        <div id="error404">
+            <i class="material-icons" id="no-automations-icon">edit_off</i>
+            <h6 class="text-hint">Not found</h6>
+            <Button on:click={() => (window.location.href = "/homescript")}>
+                <Label>View Homescripts</Label>
+            </Button>
+        </div>
+    {:else}
+        <div id="header" class="mdc-elevation--z4">
+            <div id="header__left">
+                <h6>Editing {currentData.data.id}</h6>
+                <div
+                    id="header__left__save"
+                    class:unsaved={savedCode !== currentData.data.code}
                 >
-                {savedCode === currentData.data.code ? "saved" : "unsaved"}
+                    <i class="material-icons"
+                        >{savedCode === currentData.data.code
+                            ? "cloud_done"
+                            : "save"}</i
+                    >
+                    {savedCode === currentData.data.code ? "saved" : "unsaved"}
+                </div>
             </div>
-        </div>
-        <div id="header__buttons">
-            <Select bind:value={currentScript} label="Active script">
-                {#each homescripts as hms}
-                    <Option value={hms.data.data.id}>{hms.data.data.id}</Option>
-                {/each}
-            </Select>
-            <IconButton
-                class="material-icons"
-                on:click={() => (layoutAlt = !layoutAlt)}
-                >vertical_split</IconButton
-            >
-            <IconButton class="material-icons" on:click={saveCurrent}
-                >save</IconButton
-            >
-            <Progress type="circular" bind:loading={otherLoading} />
-        </div>
-    </div>
-    <div class="container">
-        <div class="container__editor" class:alt={layoutAlt}>
-            <HmsEditor bind:code={currentData.data.code} />
-        </div>
-        <div class="container__terminal" class:alt={layoutAlt}>
-            <div class="container__terminal__header mdc-elevation--z2">
-                <IconButton class="material-icons" on:click={runCurrentCode}
-                    >play_arrow</IconButton
-                >
-                <IconButton class="material-icons" on:click={LintCurrentCode}>
-                    bug_report</IconButton
-                >
+            <div id="header__buttons">
+                <Select bind:value={currentScript} label="Active script">
+                    {#each homescripts as hms}
+                        <Option value={hms.data.data.id}
+                            >{hms.data.data.id}</Option
+                        >
+                    {/each}
+                </Select>
                 <IconButton
                     class="material-icons"
-                    on:click={() => (currentExecRes = undefined)}
-                    >replay</IconButton
+                    on:click={() => (layoutAlt = !layoutAlt)}
+                    >vertical_split</IconButton
                 >
-            </div>
-            <Progress type="linear" bind:loading={requestLoading} />
-            <div class="container__terminal__content">
-                {#if currentExecRes === undefined}
-                    <span class="gray"> This is Homescript v0.1.2 </span>
-                    <br />
-                    <span class="gray">
-                        Homescript output will be displayed here.
-                    </span>
-                {:else}
-                    <Terminal data={currentExecRes} />
-                {/if}
+                <IconButton class="material-icons" on:click={saveCurrent}
+                    >save</IconButton
+                >
+                <Progress type="circular" bind:loading={otherLoading} />
             </div>
         </div>
-    </div>
+        <div class="container">
+            <div class="container__editor" class:alt={layoutAlt}>
+                <HmsEditor bind:code={currentData.data.code} />
+            </div>
+            <div class="container__terminal" class:alt={layoutAlt}>
+                <div class="container__terminal__header mdc-elevation--z2">
+                    <IconButton class="material-icons" on:click={runCurrentCode}
+                        >play_arrow</IconButton
+                    >
+                    <IconButton
+                        class="material-icons"
+                        on:click={LintCurrentCode}
+                    >
+                        bug_report</IconButton
+                    >
+                    <IconButton
+                        class="material-icons"
+                        on:click={() => (currentExecRes = undefined)}
+                        >replay</IconButton
+                    >
+                </div>
+                <Progress type="linear" bind:loading={requestLoading} />
+                <div class="container__terminal__content">
+                    {#if currentExecRes === undefined}
+                        <span class="gray"> This is Homescript v0.1.2 </span>
+                        <br />
+                        <span class="gray">
+                            Homescript output will be displayed here.
+                        </span>
+                    {:else}
+                        <Terminal data={currentExecRes} />
+                    {/if}
+                </div>
+            </div>
+        </div>
+    {/if}
 </Page>
 
 <style lang="scss">
     @use "../../mixins" as *;
+
+    #error404 {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 8.5rem;
+        gap: 1rem;
+
+        i {
+            font-size: 5rem;
+            color: var(--clr-text-disabled);
+        }
+
+        h6 {
+            margin: 0.5rem 0;
+        }
+    }
 
     #header {
         display: flex;
