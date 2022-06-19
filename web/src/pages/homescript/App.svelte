@@ -265,7 +265,7 @@
                 {
                     response: hmsRes,
                     code: selectedData.code,
-                    modeLint: false,
+                    modeRun: false,
                 },
             ];
         } catch (err) {
@@ -284,7 +284,7 @@
                 {
                     response: hmsRes,
                     code: selectedData.code,
-                    modeLint: true,
+                    modeRun: true,
                 },
             ];
         } catch (err) {
@@ -321,13 +321,13 @@
 {/if}
 
 {#if hmsExecutionResults[0] !== undefined}
-    {#if currentExecModeLint || hmsExecutionResults[0].modeLint}
+    {#if currentExecModeLint || hmsExecutionResults[0].modeRun}
         <ExecutionResultPopup
             open={true}
             data={{
                 response: hmsExecutionResults[0].response,
                 code: hmsExecutionResults[0].code,
-                modeLint: true,
+                modeRun: true,
             }}
             on:close={() => {
                 hmsExecutionResults = hmsExecutionResults.slice(1);

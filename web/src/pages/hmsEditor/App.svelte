@@ -1,34 +1,114 @@
 <script lang="ts">
     import Terminal from "../../components/Homescript/ExecutionResultPopup/Terminal.svelte";
-    import type { homescriptResponseWrapper } from "../../homescript";
+    import {
+        homescript,
+        homescriptResponseWrapper,
+        lintHomescriptCode,
+    } from "../../homescript";
     import { runHomescriptCode } from "../../homescript";
     import HmsEditor from "../../components/Homescript/HmsEditor/HmsEditor.svelte";
     import Button from "@smui/button/src/Button.svelte";
     import { Icon, Label } from "@smui/button";
     import IconButton from "@smui/icon-button";
+    import Progress from "../../components/Progress.svelte";
+    import { onMount } from "svelte";
 
-    let loading: boolean = false;
+    // Is set to true when a script is linted or executed
+    let requestLoading: boolean = false;
+    // Is set to true if either the script loads or is saved
+    let otherLoading: boolean = false;
 
-    async function runCurrentCode() {
-        loading = true;
-        const currentExecResTemp = await runHomescriptCode(code, []);
-        currentExecRes = {
-            code: code,
-            modeLint: false,
-            response: currentExecResTemp
-        };
-        loading = false;
+    // Saves the metadata of the current script (specified by URL query)
+    let currentScript: string = "test";
+    let currentData: homescript = {
+        owner: "",
+        data: {
+            id: currentScript,
+            name: "",
+            description: "",
+            mdIcon: "",
+            code: "",
+            quickActionsEnabled: false,
+            schedulerEnabled: false,
+        },
+    };
+
+    async function loadCurrentData() {
+        otherLoading = true;
+        try {
+            const res = await (
+                await fetch(`/api/homescript/get/${currentScript}`)
+            ).json();
+            if (res.success !== undefined && !res.success)
+                throw Error(res.error);
+            currentData = res;
+        } catch (err) {
+            // Handle the error here
+            alert(err);
+        }
+        otherLoading = false;
     }
 
-    let code: string = "";
+    async function saveCurrent() {
+        otherLoading = true;
+        try {
+            const res = await (
+                await fetch(`/api/homescript/modify`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ ...currentData.data }),
+                })
+            ).json();
+            if (res.success !== undefined && !res.success)
+                throw Error(res.error);
+        } catch (err) {
+            // TODO: add error handling
+            alert(err);
+        }
+        otherLoading = false
+    }
+
+    async function runCurrentCode() {
+        requestLoading = true;
+        const currentExecResTemp = await runHomescriptCode(
+            currentData.data.code,
+            []
+        );
+        currentExecRes = {
+            code: currentData.data.code,
+            modeRun: true,
+            response: currentExecResTemp,
+        };
+        if (currentData.data.code === "")
+            currentExecRes.response.output = "Nothing to run.";
+        requestLoading = false;
+    }
+
+    async function LintCurrentCode() {
+        requestLoading = true;
+        const currentExecResTemp = await lintHomescriptCode(
+            currentData.data.code,
+            []
+        );
+        currentExecRes = {
+            code: currentData.data.code,
+            modeRun: false,
+            response: currentExecResTemp,
+        };
+        if (currentData.data.code === "")
+            currentExecRes.response.output = "Nothing to lint.";
+        requestLoading = false;
+    }
 
     let currentExecRes: homescriptResponseWrapper = undefined;
+    onMount(loadCurrentData);
 </script>
 
 <div id="header">
-    <h6>Editing xyz</h6>
+    <h6>Editing {currentData.data.id}</h6>
     <div id="header__buttons">
-        <Button>
+        <Progress type="circular" bind:loading={otherLoading} />
+        <Button on:click={saveCurrent}>
             <Label>Save & Quit</Label>
             <Icon class="material-icons">save</Icon>
         </Button>
@@ -36,17 +116,29 @@
 </div>
 <div class="container">
     <div class="container__editor">
-        <HmsEditor bind:code/>
+        <HmsEditor bind:code={currentData.data.code} />
     </div>
     <div class="container__terminal">
         <div class="container__terminal__header">
-            <IconButton class="material-icons" on:click={runCurrentCode}>play_arrow</IconButton>
-            <IconButton class="material-icons">bug_report</IconButton>
-            <IconButton class="material-icons" on:click={() => currentExecRes = undefined}>replay</IconButton>
+            <IconButton class="material-icons" on:click={runCurrentCode}
+                >play_arrow</IconButton
+            >
+            <IconButton class="material-icons" on:click={LintCurrentCode}>
+                bug_report</IconButton
+            >
+            <IconButton
+                class="material-icons"
+                on:click={() => (currentExecRes = undefined)}>replay</IconButton
+            >
         </div>
+        <Progress type="linear" bind:loading={requestLoading} />
         <div class="container__terminal__content">
             {#if currentExecRes === undefined}
-                START SCRIPT FIRST
+                <span class="gray"> This is Homescript v0.1.2 </span>
+                <br />
+                <span class="gray">
+                    Homescript output will be displayed here.
+                </span>
             {:else}
                 <Terminal data={currentExecRes} />
             {/if}
@@ -69,6 +161,7 @@
         &__buttons {
             display: flex;
             align-items: center;
+            gap: 1rem;
         }
 
         h6 {
@@ -96,10 +189,12 @@
 
             &__header {
                 background-color: var(--clr-height-0-1);
+                padding: 0.5rem;
             }
 
             &__content {
                 font-family: "Jetbrains Mono", monospace;
+                font-size: 0.9rem;
                 padding: 1rem;
             }
         }

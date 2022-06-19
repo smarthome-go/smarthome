@@ -55,20 +55,20 @@
             .replaceAll(" ", "&nbsp;")}
         <br />
     {/if}
-    {#if !data.response.success}
-        <br />
-        {#each data.response.error as err}
-            {@html errToHtml(err, data.code)}
-        {/each}
-        <br />
+    {#if !data.response.success && data.response.output.length > 0}
         <br />
     {/if}
+    {#each data.response.error as err}
+        {@html errToHtml(err, data.code)}
+        <br />
+        <br />
+    {/each}
     <span class="text-disabled">
-        {#if data.modeLint}
+        {#if data.modeRun}
             Homescript stopped with exit code
             {data.response.exitCode}
         {:else}
-            Lint finished with exit code:
+            Lint finished with exit code
             {data.response.exitCode}
         {/if}
     </span>
@@ -95,7 +95,7 @@
         }
 
         .gray {
-            color: #4f5666;
+            color: #7d7e82;
         }
     }
 </style>
