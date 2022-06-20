@@ -92,6 +92,8 @@
 </Dialog>
 
 <style lang="scss">
+    @use "../../../mixins" as *;
+
     .status {
         background-color: var(--clr-height-0-1);
         padding: 1rem 1.5rem;
@@ -102,6 +104,11 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+
+            @include mobile {
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
         }
 
         &__group {
