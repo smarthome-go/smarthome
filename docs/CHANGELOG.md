@@ -1,22 +1,16 @@
-## Changelog for v0.0.44
+## Changelog for v0.0.45
 
 ### Homescript GUI
-- Improved Homescript run result dialog display
-- Fixed frontend Homescript deletion bugs
-- Removed scrollbar from HMS management page
-- Implemented major layout redesign
-- Added placeholder text to HMS selector
-- Added minute & hour value checks to argument prompts
+- Revised the management layout so that the action buttons (delete / pick icon) seem less dominant
+- Improved Homescript run result dialog display for mobile devices
+- Added *Edit code* button to the actions which opens the HMS IDE
 
-### Automations GUI
-- Added has-loaded check before showing `no automations`
-- Fixed button label spacing
-- Added placeholder text to HMS selector
-
-### Other
-- Added icon to create button in rooms GUI
-- Refactored `404` page
-- Decreased size of top segment on the login page on mobile devices
-
-### Backend
-- Fixed delete-all Homescript function (used in user deletion)
+#### Homescript IDE
+- Added an initial version of a web-based Homescript editor / IDE
+- Code can now be edited via the web interface
+- Support for immature syntax highlighting (*currently using an incorrect grammar definition*)
+- Improved `HmsEditor.svelte` component which is used by the IDE
+- Split layout: the layout is separated into the text editor and the terminal / output area
+  - The layout's proportions are `25% | 75%` (can be swapped to `75% | 25%`)
+- Includes a small script selection menu at the top: allows easy switching between scripts
+- The active script is set using `URL params`, for example `http://smarthome.box/homescript/editor?id=test`
