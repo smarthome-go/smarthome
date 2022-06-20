@@ -410,6 +410,14 @@
                     </div>
                     <div class="run__buttons">
                         <Button
+                            on:click={() => window.location.href = `/homescript/editor?id=${encodeURIComponent(selection)}` }
+                            disabled={selectedDataChanged}
+                            variant="outlined"
+                        >
+                            <Label>Edit Code</Label>
+                            <Icon class="material-icons">code</Icon>
+                        </Button>
+                        <Button
                             on:click={initCurrentRun}
                             disabled={selectedDataChanged}
                             variant="outlined"
