@@ -579,7 +579,7 @@
     }
 
     .run {
-        margin-top: auto;
+        margin-top: 2rem;
         background-color: var(--clr-height-1-3);
         border-radius: 0.4rem;
         padding: 0.9rem 1rem;
@@ -602,6 +602,10 @@
             display: flex;
             gap: 0.5rem;
             padding: 0.4rem 0;
+
+            @include mobile {
+                flex-direction: column;
+            }
         }
     }
 </style>
