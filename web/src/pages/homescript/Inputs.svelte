@@ -4,7 +4,7 @@
     import CharacterCounter from "@smui/textfield/character-counter";
     import type { homescriptArgData, homescriptData } from "../../homescript";
     import IconPicker from "../../components/IconPicker/IconPicker.svelte";
-    import Button, { Label } from "@smui/button";
+    import Button, { Icon, Label } from "@smui/button";
     import { homescripts, loading } from "./main";
     import IconButton from "@smui/icon-button";
     import AddArgument from "./dialogs/AddArgument.svelte";
@@ -111,7 +111,6 @@
 <div class="container">
     <!-- Names and Text -->
     <div class="text">
-        <span class="text-hint">Name and Description</span>
         <Textfield
             bind:value={data.name}
             input$maxlength={30}
@@ -131,15 +130,33 @@
             helperLine$style="width: 100%;"
         />
     </div>
-    <div class="toggles">
-        <span class="text-hint">Selection and visibility</span>
-        <div class="toggles__item">
-            <Switch bind:checked={data.schedulerEnabled} />
-            <span class="text-hint">Automations</span>
+    <div class="toggles-actions">
+        <!-- Toggles -->
+        <div class="toggles-actions__toggles">
+            <span class="text-hint">Selection and visibility</span>
+            <div>
+                <Switch bind:checked={data.schedulerEnabled} />
+                <span class="text-hint">Automations</span>
+            </div>
+            <div>
+                <Switch bind:checked={data.quickActionsEnabled} />
+                <span class="text-hint">Quick actions </span>
+            </div>
         </div>
-        <div class="right__toggles__item">
-            <Switch bind:checked={data.quickActionsEnabled} />
-            <span class="text-hint">Quick actions </span>
+        <!-- Action buttons -->
+        <div class="toggles-actions__actions">
+            <span class="text-hint">Actions and theming</span>
+            <Button
+                on:click={() => {
+                    iconPickerOpen = true;
+                }}
+            >
+                Pick Icon
+            </Button>
+            <Button on:click={() => (deleteOpen = true)}>
+                <Label>Delete</Label>
+                <Icon class="material-icons">delete</Icon>
+            </Button>
         </div>
     </div>
     {#if $homescripts.find((h) => h.data.data.id === data.id) !== undefined}
@@ -178,18 +195,6 @@
             </div>
         </div>
     {/if}
-    <div class="actions">
-        <Button
-            on:click={() => {
-                iconPickerOpen = true;
-            }}
-        >
-            Change Icon
-        </Button>
-        <Button on:click={() => (deleteOpen = true)}>
-            <Label>Delete</Label>
-        </Button>
-    </div>
 </div>
 
 <style lang="scss">
@@ -201,20 +206,30 @@
         flex-direction: column;
     }
 
-    .toggles {
+    .toggles-actions {
         background-color: var(--clr-height-1-2);
         padding: 1rem;
         border-radius: 0.3rem;
+        display: flex;
+        justify-content: space-between;
 
         @include widescreen {
             width: 100%;
+            box-sizing: border-box;
         }
 
-        &__item {
-            @include mobile {
-                span {
-                    display: block;
-                }
+        @include mobile {
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        &__actions {
+            display: flex;
+            flex-direction: column;
+            align-items: start;
+
+            span {
+                margin-bottom: 0.4rem;
             }
         }
     }
@@ -229,6 +244,7 @@
 
         @include widescreen {
             width: 100%;
+            box-sizing: border-box;
         }
 
         &__list {
@@ -243,11 +259,6 @@
                 justify-content: space-between;
             }
         }
-    }
-
-    .actions {
-        width: 100%;
-        display: block;
     }
 
     .text {
