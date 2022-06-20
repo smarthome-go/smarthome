@@ -405,7 +405,7 @@
                 <Inputs bind:data={selectedData} bind:deleteOpen />
                 <div class="run">
                     <div class="run__title">
-                        <span class="text-hint">Execution and error checks</span
+                        <span class="text-hint">Code Actions</span
                         >
                     </div>
                     <div class="run__buttons">
