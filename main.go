@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"net/http"
 	"os"
 	"strconv"
@@ -28,10 +29,12 @@ import (
 	"github.com/smarthome-go/smarthome/services/reminder"
 )
 
-var port = 8082 // Default port on which the server listens, can be overwritten by config file or the environment variable
+// Default port on which the server listens,
+// can be overwritten using the config file or an environment variable
+var port uint16 = 8082
 
 func main() {
-	// Do not change manually, use the `make version` command instead
+	// Do not change the version manually, use the `make version` command instead
 	utils.Version = "0.0.45"
 
 	startTime := time.Now()
@@ -83,11 +86,11 @@ func main() {
 	}
 	configStruct := config.GetConfig()
 	if configStruct.Server.Port != 0 {
-		port = int(configStruct.Server.Port)
+		port = configStruct.Server.Port
 	}
 	log.Debug("Successfully loaded configuration file")
 
-	// Process environment variables
+	// Scan environment variables
 	/*
 		`SMARTHOME_ADMIN_PASSWORD`: (String) If set, the admin user that is created on first launch will get this password instead of `admin`
 		`SMARTHOME_ENV_PRODUCTION`: (Bool  ) Whether the server should use production presets
@@ -97,10 +100,12 @@ func main() {
 		`SMARTHOME_DB_PASSWORD`   : (String) Sets the database user's password
 		`SMARTHOME_DB_USER`       : (String) Sets the database user
 	*/
+	// Admin passord
 	newAdminPassword := "admin"
 	if adminPassword, adminPasswordOk := os.LookupEnv("SMARTHOME_ADMIN_PASSWORD"); adminPasswordOk {
 		newAdminPassword = adminPassword
 	}
+	// Operational mode
 	if productionEnvStr, productionEnvStrOk := os.LookupEnv("SMARTHOME_ENV_PRODUCTION"); productionEnvStrOk {
 		switch productionEnvStr {
 		case "TRUE":
@@ -113,6 +118,7 @@ func main() {
 			log.Warn("Could not use `SMARTHOME_ENV_PRODUCTION` as boolean value, using development mode\nValid modes are `TRUE` and `FALSE`")
 		}
 	}
+	// DB variables
 	if dbUsername, dbUsernameOk := os.LookupEnv("SMARTHOME_DB_USER"); dbUsernameOk {
 		log.Debug("Selected SMARTHOME_DB_USER over value from config file")
 		configStruct.Database.Username = dbUsername
@@ -129,60 +135,57 @@ func main() {
 		log.Debug("Selected SMARTHOME_DB_HOSTNAME over value from config file")
 		configStruct.Database.Hostname = dbHostname
 	}
-	if webPort, webPortOk := os.LookupEnv("SMARTHOME_PORT"); webPortOk {
-		webPortInt, err := strconv.Atoi(webPort)
-		if err != nil {
-			log.Warn("Could not parse `SMARTHOME_PORT` to int, using 8082")
-		} else {
-			log.Debug("Selected `SMARTHOME_PORT` over default")
-			port = webPortInt
-		}
-	}
 	if dbPort, dbPortOk := os.LookupEnv("SMARTHOME_DB_PORT"); dbPortOk {
 		portInt, err := strconv.Atoi(dbPort)
-		if err != nil {
-			log.Warn("Could not parse `SMARTHOME_DB_PORT` to int, using value from config.json")
+		if err != nil || portInt > math.MaxUint16 || portInt < 0 {
+			log.Warn("Could not parse `SMARTHOME_DB_PORT` to uint16, using value from config.json")
 		} else {
 			log.Debug("Selected SMARTHOME_DB_PORT over value from config file")
-			configStruct.Database.Port = portInt
+			configStruct.Database.Port = uint16(portInt)
+		}
+	}
+	// Port of the webserver
+	if webPort, webPortOk := os.LookupEnv("SMARTHOME_PORT"); webPortOk {
+		webPortInt, err := strconv.Atoi(webPort)
+		if err != nil || webPortInt > math.MaxUint16 || webPortInt < 0 {
+			log.Warn("Could not parse `SMARTHOME_PORT` to uint16, using 8082")
+		} else {
+			log.Debug("Selected `SMARTHOME_PORT` over default")
+			port = uint16(webPortInt)
 		}
 	}
 
 	// Database connection and initialization
 	const retryInterval = 5 // Time to wait before retrying
-	var dbErr error = nil
+	var dbErr error         // Saves a potential connection error
 
 	// Allows up to 5 failed connections before quitting
 	for i := 0; i <= 5; i++ {
 		dbErr = database.Init(configStruct.Database, newAdminPassword)
 		if dbErr == nil {
-			break
+			break // Successfully connected to database
 		} else {
 			log.Warn(fmt.Sprintf("Failed to connect to database, retrying in %d seconds", retryInterval))
 			time.Sleep(retryInterval * time.Second)
 		}
 	}
 	if dbErr != nil {
-		// Quit if 5 attempts failed
+		// Quit (if 5 attempts failed)
 		log.Fatal(fmt.Sprintf("Failed to connect to database after 5 retries. Please ensure a correct database configuration.\nError: %s", dbErr.Error()))
 	}
 
-	/** Setup file */
+	// Setup file
 	if err := config.RunSetup(); err != nil {
 		log.Fatal("Could not process setup.json file: ", err.Error())
 	}
 
-	/** Logs */
-	if !configStruct.Server.Production { // If the server is in development mode, all logs should be deleted
-		if err := event.FlushAllLogs(); err != nil {
-			log.Error("Failed to flush all logs: ", err.Error())
-		}
-	}
+	// Logs
+	// TODO: setup deletion of old logs with a scheduler
 	if err := event.FlushOldLogs(); err != nil { // Always flush old logs
-		log.Error("Failed to flush logs older that 30 days: ", err.Error()) // TODO: setup deletion of old logs with a scheduler
+		log.Error("Failed to flush logs older that 30 days: ", err.Error())
 	}
 
-	/** Schedulers */
+	// Schedulers
 	if err := automation.Init(); err != nil { // Initializes the automation scheduler
 		log.Error("Failed to activate automation system: ", err.Error())
 	}
@@ -193,16 +196,16 @@ func main() {
 		log.Error("Failed to activate reminder scheduler: ", err.Error())
 	}
 
-	/** Hardware handler */
+	// Hardware handler
 	hardware.Init()
 
-	/** Server, middleware and templates */
+	// Server, middleware and routes
 	r := routes.NewRouter()
 	middleware.Init(configStruct.Server.Production)
 	templates.LoadTemplates("./web/dist/html/*.html")
 	http.Handle("/", r)
 
-	/** Finish startup */
+	// Finish startup and launch web server
 	event.Info("System Started", fmt.Sprintf("The Smarthome server completed startup at %s (%.2f seconds).", time.Now().Format(time.ANSIC), time.Since(startTime).Seconds()))
 	operatingMode := "development"
 	if configStruct.Server.Production {

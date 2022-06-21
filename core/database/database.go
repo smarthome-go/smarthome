@@ -16,7 +16,7 @@ type DatabaseConfig struct {
 	Password string `json:"password"`
 	Hostname string `json:"hostname"`
 	Database string `json:"database"`
-	Port     int    `json:"port"`
+	Port     uint16 `json:"port"`
 }
 
 func InitLogger(logger *logrus.Logger) {
