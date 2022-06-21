@@ -310,7 +310,7 @@
     on:delete={(event) => deleteHomescript(event.detail.id)}
 />
 
-{#if argumentsPromptOpen && $homescripts.find((h) => h.data.data.id === selection) !== undefined && $homescripts.find((h) => h.data.data.id).arguments.length > 0}
+{#if argumentsPromptOpen && $homescripts.find((h) => h.data.data.id === selection) !== undefined && $homescripts.find((h) => h.data.data.id === selection).arguments.length > 0}
     <HmsArgumentPrompts
         on:submit={(event) => runCurrentWithArgs(event.detail)}
         bind:open={argumentsPromptOpen}
@@ -405,12 +405,14 @@
                 <Inputs bind:data={selectedData} bind:deleteOpen />
                 <div class="run">
                     <div class="run__title">
-                        <span class="text-hint">Code Actions</span
-                        >
+                        <span class="text-hint">Code Actions</span>
                     </div>
                     <div class="run__buttons">
                         <Button
-                            on:click={() => window.location.href = `/homescript/editor?id=${encodeURIComponent(selection)}` }
+                            on:click={() =>
+                                (window.location.href = `/homescript/editor?id=${encodeURIComponent(
+                                    selection
+                                )}`)}
                             disabled={selectedDataChanged}
                             variant="outlined"
                         >
