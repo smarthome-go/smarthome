@@ -20,34 +20,32 @@ var setupPath = "./data/config/setup.json"
 // TODO: add some sort of web import / export later
 // Returns the setup struct, a bool that indicates that a setup file has been read and an error
 func readSetupFile() (Setup, bool, error) {
-	log.Trace(fmt.Sprintf("Detecting setup file at `%s`", setupPath))
-	// Read file from <setupPath> on disk
+	log.Trace(fmt.Sprintf("Looking for setup file at `%s`", setupPath))
+	// Read file from `setupPath` on disk
 	content, err := ioutil.ReadFile(setupPath)
 	if err != nil {
 		return Setup{}, false, nil
 	}
-	// Parse setup file to struct <Setup>
+	// Parse setup file to struct `Setup`
 	var setupTemp Setup
 	decoder := json.NewDecoder(bytes.NewReader(content))
 	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&setupTemp)
-	if err != nil {
-		log.Error(fmt.Sprintf("Failed to parse setup file at `%s` into Setup struct: %s", configPath, err.Error()))
+	if err := decoder.Decode(&setupTemp); err != nil {
+		log.Error(fmt.Sprintf("Failed to parse setup file at `%s` into setup struct: %s", configPath, err.Error()))
 		return Setup{}, false, err
 	}
 	return setupTemp, true, nil
 }
 
-// Used for setting up a smarthome server quickly
+// Used for setting up a Smarthome server quickly
 // Reads a setup file at startup and starts functions that initialize those values in the database
-// Used for quick setup of a smarthome instance
 func RunSetup() error {
-	setup, shouldProceed, err := readSetupFile()
+	setup, fileDetected, err := readSetupFile()
 	if err != nil {
 		log.Error("Failed to run setup: ", err.Error())
 		return err
 	}
-	if !shouldProceed {
+	if !fileDetected {
 		log.Debug("No setup file detected: skipping setup")
 		return nil
 	}
