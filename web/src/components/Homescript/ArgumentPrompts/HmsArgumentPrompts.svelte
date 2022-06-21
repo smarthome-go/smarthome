@@ -287,6 +287,7 @@
 <style lang="scss">
     .inputs {
         height: 20rem;
+        overflow: auto;
 
         &.centered {
             display: flex;
