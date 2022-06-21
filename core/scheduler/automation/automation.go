@@ -27,13 +27,16 @@ func ActivateAutomationSystem() error {
 	automations, err := database.GetAutomations()
 	if err != nil {
 		log.Error("Failed to activate automation system: database failure whilst starting saved automations: ", err.Error())
-		return err // This is a critical error which can not be recovered
+		return err // This is a critical error which can not be recovered from
 	}
 	var activatedItems uint = 0
 	for _, automation := range automations {
 		if !IsValidCronExpression(automation.Data.CronExpression) {
 			log.Error(fmt.Sprintf("Could not activate automation '%d': invalid cron expression", automation.Id))
-			if err := user.Notify(automation.Owner, "Automation Activation Failed", fmt.Sprintf("The automation %s could not be activated due to an internall error. Please remove it from the system.", automation.Data.Name), 3); err != nil {
+			if err := user.Notify(
+				automation.Owner,
+				"Automation Activation Failed",
+				fmt.Sprintf("The automation %s could not be activated due to an internall error. Please remove it from the system.", automation.Data.Name), 3); err != nil {
 				log.Error("Failed to notify user about failing automation: ", err.Error())
 			}
 			continue // non-critical error, will only affect this automation
@@ -53,7 +56,7 @@ func ActivateAutomationSystem() error {
 		log.Debug(fmt.Sprintf("Successfully activated automation '%d' of user '%s'", automation.Id, automation.Owner))
 	}
 	if activatedItems > 0 {
-		log.Info(fmt.Sprintf("Successfully activated saved automations: registered %d total automation jobs", activatedItems))
+		log.Info(fmt.Sprintf("Successfully activated saved automations: started %d total automation jobs", activatedItems))
 	}
 	return nil
 }
@@ -74,7 +77,7 @@ func DeactivateAutomationSystem() error {
 			log.Debug(fmt.Sprintf("Successfully deactivated automation '%d' of user '%s'", automation.Id, automation.Owner))
 		}
 	}
-	log.Debug("Successfully disabled automation system")
+	log.Debug("Successfully disabled automation system: all jobs stopped")
 	return nil
 }
 
