@@ -10,10 +10,7 @@
     } from "../../../homescript";
     import { createSnackbar } from "../../../global";
     import Progress from "../../Progress.svelte";
-    import List, {
-        Graphic,
-        Item,
-    } from "@smui/list";
+    import List, { Graphic, Item } from "@smui/list";
     import Radio from "@smui/radio";
     import FormField from "@smui/form-field";
 
@@ -80,12 +77,15 @@
 
     // Conversion functions
     function updateFromNumber() {
-        if (currentArg.display === "number_hour" || currentArg.display === "number_minute" && numberPlaceholder < 0)
-            numberPlaceholder = 0
+        if (
+            currentArg.display === "number_hour" ||
+            (currentArg.display === "number_minute" && numberPlaceholder < 0)
+        )
+            numberPlaceholder = 0;
         if (currentArg.display === "number_hour" && numberPlaceholder > 24)
-            numberPlaceholder = 24
+            numberPlaceholder = 24;
         if (currentArg.display === "number_minute" && numberPlaceholder > 60)
-            numberPlaceholder = 60
+            numberPlaceholder = 60;
         argumentsWithValues[currentArgumentIndex].value =
             numberPlaceholder.toString();
     }
@@ -201,10 +201,15 @@
                                                 value={sw.id}
                                             />
                                         </Graphic>
-                                        <Label
-                                            >{sw.name != ""
+                                        <Label>
+                                            {sw.name != ""
                                                 ? sw.name
                                                 : "No Name"}
+                                            <span
+                                                class="text-disabled"
+                                                style="font-size: .9rem;"
+                                                >({sw.id})</span
+                                            >
                                         </Label>
                                     </Item>
                                 {/each}
