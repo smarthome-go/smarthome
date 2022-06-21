@@ -16,9 +16,14 @@ func InitLogger(logger *logrus.Logger) {
 
 var templates *template.Template
 
-func LoadTemplates(pattern string) {
-	templates = template.Must(template.ParseGlob(pattern))
+func LoadTemplates(pattern string) error {
+	templatesTemp, err := template.ParseGlob(pattern)
+	if err != nil {
+		return err
+	}
+	templates = templatesTemp
 	log.Debug(fmt.Sprintf("Successfully loaded templates using pattern: %s", pattern))
+	return nil
 }
 
 func ExecuteTemplate(responseWriter http.ResponseWriter, templateName string, data interface{}) {

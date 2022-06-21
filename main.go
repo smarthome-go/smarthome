@@ -202,7 +202,9 @@ func main() {
 	// Server, middleware and routes
 	r := routes.NewRouter()
 	middleware.Init(configStruct.Server.Production)
-	templates.LoadTemplates("./web/dist/html/*.html")
+	if err := templates.LoadTemplates("./web/dist/html/*.html"); err != nil {
+		log.Fatal("Failed to load HTML templates: ", err.Error())
+	}
 	http.Handle("/", r)
 
 	// Finish startup and launch web server
