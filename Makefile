@@ -99,8 +99,8 @@ build: setup web all linux clean
 docker-prepare: web
 	CGO_ENABLED=0 GOOS=linux go build -v -installsuffix cgo -ldflags '-s -w' -o smarthome
 	mkdir -p docker/container/cache/web
-	rsync -rv resources docker/container/cache/
-	rsync -rv web/dist docker/container/cache/web/
+	cp -r resources docker/container/cache/
+	cp -r web/dist docker/container/cache/web/
 	cp smarthome docker/container/cache/
 	$(info "docker-prepare: build context has been written to ./docker/cache")
 
