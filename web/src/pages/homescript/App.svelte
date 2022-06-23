@@ -265,7 +265,7 @@
                 {
                     response: hmsRes,
                     code: selectedData.code,
-                    modeRun: false,
+                    modeRun: true,
                 },
             ];
         } catch (err) {
@@ -284,7 +284,7 @@
                 {
                     response: hmsRes,
                     code: selectedData.code,
-                    modeRun: true,
+                    modeRun: false,
                 },
             ];
         } catch (err) {
