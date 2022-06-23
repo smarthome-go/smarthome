@@ -70,10 +70,12 @@ func Run(username string, scriptId string, scriptCode string, callStack []string
 		// Because the code cannot reference itself, the blacklist is left empty
 		CallStack: callStack,
 	}
+	sigTerm := make(chan int)
 	exitCode, hmsErrors := homescript.Run(
 		executor,
 		scriptId,
 		scriptCode,
+		&sigTerm,
 	)
 	if len(hmsErrors) > 0 {
 		log.Debug(fmt.Sprintf("Homescript '%s' ran by user '%s' has terminated: %s", scriptId, username, hmsErrors[0].Message))

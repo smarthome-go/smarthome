@@ -66,6 +66,11 @@ func (self *Executor) GetArg(toGet string) (string, error) {
 	return value, nil
 }
 
+// Pauses the execution of the current script for the amount of the specified seconds
+func (self *Executor) Sleep(seconds float64) {
+	time.Sleep(time.Millisecond * time.Duration(1000*seconds))
+}
+
 // Emulates printing to the console
 // Instead, appends the provided message to the output of the executor
 // Exists in order to return the script's output to the user
