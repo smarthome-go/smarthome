@@ -35,7 +35,7 @@ var port uint16 = 8082
 
 func main() {
 	// Do not change the version manually, use the `make version` command instead
-	utils.Version = "0.0.46"
+	utils.Version = "0.0.47"
 
 	startTime := time.Now()
 

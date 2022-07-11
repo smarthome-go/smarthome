@@ -1,15 +1,9 @@
-## Changelog for v0.0.46
-
+## Changelog for v0.0.47
 
 ### Homescript
-- Fixed argument container overflow in GUI
-- Fixed bug which caused the argument prompts to not open
-- Added the `id` label to the switch selection in argument prompt
-- Fixed bug which caused the *run* and *lint* button to trigger the opposite action
-
-### Miscellaneous
-- Refactored and reviewed portions of the backend code 
-- Removed one possibility for a server *panic* during startup
-- Upgraded the built-in CLI to a current version
-- Increased Makefile compatibility
-- Updated Homescript to the newest version
+- Added a global *manager* to the Homescript module
+- The manager orchestrates the way Homescripts are executed and terminated
+- As of Homescript release `v0.13.0`, sigTerm can be used to terminate a script's execution at any point in time
+- The API routes `/api/homescript/kill/script/{id}` and `/api/homescript/kill/job/{id}` can now be used to terminate Homescript jobs.
+- Added a visual *cancel* button to the Homescript editor GUI which terminates all jobs running the currently selected script
+- Added minor tweaks to the HMS editor GUI which increase stability and overall consistency
