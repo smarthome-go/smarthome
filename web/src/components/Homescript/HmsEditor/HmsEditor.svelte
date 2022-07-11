@@ -5,6 +5,8 @@
         basicSetup,
     } from "@codemirror/basic-setup";
     import { EditorSelection } from "@codemirror/state";
+    import {indentWithTab} from '@codemirror/commands'
+    import {keymap} from '@codemirror/view'
     import CodeMirror from "@codemirror/basic-setup";
     import { createEventDispatcher, onMount, setContext } from "svelte";
     //    import { tags } from "@lezer/highlight";
@@ -41,6 +43,7 @@
             state: EditorState.create({
                 extensions: [
                     basicSetup,
+                    keymap.of([indentWithTab]),
                     Homescript(),
                     oneDark,
                     EditorView.updateListener.of((v) => {
