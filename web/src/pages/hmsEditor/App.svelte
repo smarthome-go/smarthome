@@ -5,8 +5,9 @@
         homescript,
         homescriptResponseWrapper,
         homescriptWithArgs,
+        killAllJobsById,
         lintHomescriptCode,
-        runHomescriptCode,
+        runHomescriptById,
     } from "../../homescript";
     import { onMount } from "svelte";
     import IconButton from "@smui/icon-button";
@@ -16,7 +17,7 @@
     // Custom HMS components
     import HmsEditor from "../../components/Homescript/HmsEditor/HmsEditor.svelte";
     import Terminal from "../../components/Homescript/ExecutionResultPopup/Terminal.svelte";
-    import Button, { Icon, Label } from "@smui/button";
+    import Button, { Label } from "@smui/button";
 
     /*
        General variables
@@ -33,6 +34,15 @@
 
     // If set to true, a banner (indicating that no script xyz has been found) is shown instead of the editor
     let err404: boolean = false;
+
+    // Specifies the amount of jobs executing the current id (fetched initially)
+    let currentExecutionCount = 0;
+    $: console.log(currentExecutionCount);
+
+    // Specifies the amount of jobs which the browser currently waits for
+    // Used to limit the number of concurrent operations to exactly 1
+    let currentExecutionHandles = 0;
+    $: console.log(currentExecutionHandles);
 
     /*
        Script management
@@ -70,6 +80,7 @@
      */
     // Saves the metadata of the current script (specified by URL query)
     let currentScript: string = "";
+
     let currentData: homescript = {
         owner: "",
         data: {
@@ -84,10 +95,10 @@
     };
 
     // Is called every time the `currentScript` variable changes
-    $: if (homescriptsLoaded && currentScript) setCurrentScript(currentScript);
+    $: if (homescriptsLoaded && currentScript) setCurrentScript();
 
     // Is used to update the currently shown script
-    function setCurrentScript(id: string) {
+    function setCurrentScript() {
         currentData = homescripts.find(
             (h) => h.data.data.id === currentScript
         ).data;
@@ -101,11 +112,23 @@
     // Specifies whether there are unsaved changes or if the code is up-to-date
     let savedCode: string = "";
 
-    // CTRL + S listener and default prevention
+    // CTRL + S => Save current script
+    // F8       => Run current script
+    // F9       => Lint current code
+    // F10      => Cancel current job(s)
     document.addEventListener("keydown", (e) => {
         if (e.ctrlKey && e.key === "s") {
             e.preventDefault();
             saveCurrent();
+        } else if (e.key === "F8") {
+            e.preventDefault();
+            runCurrentCode();
+        } else if (e.key === "F9") {
+            e.preventDefault();
+            lintCurrentCode();
+        } else if (e.key === "F10") {
+            e.preventDefault();
+            killAllJobsOfCurrent();
         }
     });
 
@@ -140,9 +163,11 @@
     // Normal run functions
     async function runCurrentCode() {
         requestLoading = true;
+        currentExecutionCount++;
+        currentExecutionHandles++;
         try {
-            const currentExecResTemp = await runHomescriptCode(
-                currentData.data.code,
+            const currentExecResTemp = await runHomescriptById(
+                currentData.data.id,
                 []
             );
             currentExecRes = {
@@ -155,11 +180,15 @@
         } catch (err) {
             $createSnackbar(`Failed to run '${currentScript}': ${err}`);
         }
+        currentExecutionCount--;
+        currentExecutionHandles--;
         requestLoading = false;
     }
     // Dry-run function without data modifications
-    async function LintCurrentCode() {
+    async function lintCurrentCode() {
         requestLoading = true;
+        currentExecutionCount++;
+        currentExecutionHandles++;
         try {
             const currentExecResTemp = await lintHomescriptCode(
                 currentData.data.code,
@@ -172,6 +201,18 @@
             };
             if (currentData.data.code === "")
                 currentExecRes.response.output = "Nothing to lint.";
+        } catch (err) {
+            $createSnackbar(`Failed to lint '${currentScript}': ${err}`);
+        }
+        currentExecutionCount--;
+        currentExecutionHandles--;
+        requestLoading = false;
+    }
+    // Kill all jobs running the current id
+    async function killAllJobsOfCurrent() {
+        requestLoading = true;
+        try {
+            await killAllJobsById(currentData.data.id);
         } catch (err) {
             $createSnackbar(`Failed to lint '${currentScript}': ${err}`);
         }
@@ -189,7 +230,7 @@
             homescripts.find((h) => h.data.data.id === selectedFromQuery) ===
             undefined
         ) {
-            err404 = true
+            err404 = true;
             return;
         }
         currentScript = selectedFromQuery;
@@ -222,7 +263,7 @@
                 </div>
             </div>
             <div id="header__buttons">
-                <Select bind:value={currentScript} label="Active script">
+                <Select bind:value={currentScript} label="Preview script" disabled={currentExecutionHandles!==0}>
                     {#each homescripts as hms}
                         <Option value={hms.data.data.id}
                             >{hms.data.data.id}</Option
@@ -246,18 +287,30 @@
             </div>
             <div class="container__terminal" class:alt={layoutAlt}>
                 <div class="container__terminal__header mdc-elevation--z2">
-                    <IconButton class="material-icons" on:click={runCurrentCode}
-                        >play_arrow</IconButton
+                    <IconButton
+                        class="material-icons"
+                        on:click={runCurrentCode}
+                        disabled={savedCode !== currentData.data.code ||
+                            currentExecutionHandles > 0}>play_arrow</IconButton
                     >
                     <IconButton
                         class="material-icons"
-                        on:click={LintCurrentCode}
+                        on:click={lintCurrentCode}
+                        disabled={currentExecutionHandles > 0}
                     >
                         bug_report</IconButton
                     >
                     <IconButton
                         class="material-icons"
+                        on:click={killAllJobsOfCurrent}
+                        disabled={currentExecutionCount === 0}
+                    >
+                        cancel</IconButton
+                    >
+                    <IconButton
+                        class="material-icons"
                         on:click={() => (currentExecRes = undefined)}
+                        disabled={currentExecutionHandles > 0}
                         >replay</IconButton
                     >
                 </div>

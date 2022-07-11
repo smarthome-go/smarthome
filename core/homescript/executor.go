@@ -20,8 +20,13 @@ import (
 )
 
 type Executor struct {
-	// Is required for error handling, allows pretty-print for these errors
+	// Is required for error handling and recursion prevention
+	// Allows pretty-print for potential errors
 	ScriptName string
+
+	// Specifies the time a script was started
+	// Can be used to keep track of the script's runtime
+	StartTime time.Time
 
 	// The Username is required for functions which rely on permissions-check
 	// or need to access the username for other reasons, e.g. `notify`
@@ -46,6 +51,37 @@ type Executor struct {
 	// Acts like a blacklist which holds the blacklisted Homescript ids
 	// The last item in the CallStack is the script which was called the most recently (from script exit)
 	CallStack []string
+
+	// Pointer to the interpreter's sigTerm channel
+	// Is used here in order to allow the abortion during expensive operations, e.g. the sleep function
+	sigTermInternalPtr *chan int
+
+	// Sigterm receiver which is visible to the outside
+	// Any signal will be forwarded to the internal `sigTermPtr`
+	SigTerm chan int
+}
+
+// Is used to allow the abort of a running script at any point in time
+// => Checks if a sigTerm has been received
+// Is used to break out of expensive operations, for example sleep calls
+// Only a bool static that a code has been received is returned
+// => The real sigTerm hanling is done in the AST execution of the interpreter
+func (self *Executor) checkSigTerm() bool {
+	select {
+	case code := <-self.SigTerm:
+		// Forwards the signal to the interpreter
+		go func() {
+			// This goroutine is required because otherwise,
+			// The sending of the signal would block forever
+			// This is due to the interpeter only handling sigTerms on every AST-node
+			// However, the interpreter will only handle the next node if this function's caller quits
+			// Because of this, not using a goroutine would invoke a deadlock
+			*self.sigTermInternalPtr <- code
+		}()
+		return true
+	default:
+		return false
+	}
 }
 
 // Validates that a given argument has been passed to the Homescript runtime
@@ -68,17 +104,27 @@ func (self *Executor) GetArg(toGet string) (string, error) {
 
 // Pauses the execution of the current script for the amount of the specified seconds
 func (self *Executor) Sleep(seconds float64) {
-	time.Sleep(time.Millisecond * time.Duration(1000*seconds))
+	if self.DryRun {
+		return
+	}
+	for i := 0; i < int(seconds*1000); i += 10 {
+		if self.checkSigTerm() {
+			log.Error("The sleep function was killed")
+			break
+		}
+		time.Sleep(time.Millisecond * 10)
+	}
 }
 
 // Emulates printing to the console
 // Instead, appends the provided message to the output of the executor
 // Exists in order to return the script's output to the user
 func (self *Executor) Print(args ...string) {
-	var output string
+	if self.DryRun {
+		return
+	}
 	for _, arg := range args {
 		self.Output += arg
-		output += arg
 	}
 }
 
@@ -171,23 +217,30 @@ func (self *Executor) Get(requestUrl string) (string, error) {
 }
 
 // Makes a request to an arbitrary URL using a custom method and body in order to return the result
-func (self *Executor) Http(requestUrl string, method string, contentType string, body string) (string, error) {
+func (self *Executor) Http(requestUrl string, method string, body string, headers map[string]string) (string, error) {
 	// Check permissions and request building beforehand
 	hasPermission, err := database.UserHasPermission(self.Username, database.PermissionHomescriptNetwork)
 	if err != nil {
-		return "", fmt.Errorf("Could not send %s request: failed to validate your permissions: %s", method, err.Error())
+		return "", fmt.Errorf("Could not perform %s request: failed to validate your permissions: %s", method, err.Error())
 	}
 	if !hasPermission {
-		return "", fmt.Errorf("Will not send %s request: you lack permission to access the network via homescript. If this is unintentional, contact your administrator", method)
+		return "", fmt.Errorf("Will not perform %s request: you lack permission to access the network via Homescript. If this is unintentional, contact your administrator", method)
 	}
 	req, err := http.NewRequest(method, requestUrl, strings.NewReader(body))
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("Content-Type", contentType)
+
+	// Set the user agent to the Smarthome HMS client
 	req.Header.Set("User-Agent", fmt.Sprintf("Smarthome-homescript/%s", utils.Version))
+
+	// Set the headers included via the function call
+	for headerKey, headerValue := range headers {
+		req.Header.Set(headerKey, headerValue)
+	}
+
 	client := http.Client{
-		Timeout: 30 * time.Second,
+		Timeout: 60 * time.Second,
 	}
 	// If using DryRun, stop here
 	if self.DryRun {
@@ -414,7 +467,8 @@ func (self Executor) Exec(homescriptId string, args map[string]string) (string, 
 	// Analyze call stack
 	for _, call := range self.CallStack {
 		if homescriptId == call {
-			// Would call a script which is located in the CallStack (upstream)
+			// Would call a script which is already located in the CallStack (upstream)
+			// In order to show the problem to the user, the stack is unwinded and transformed into a pretty display
 			callStackVisual := "=== Call Stack ===\n"
 			for callIndex, callVis := range self.CallStack {
 				if callIndex == 0 {
@@ -429,13 +483,15 @@ func (self Executor) Exec(homescriptId string, args map[string]string) (string, 
 	}
 
 	// Execute the target script after the checks
-	output, exitCode, err := RunById(
-		self.Username,
+	output, exitCode, err := HmsManager.RunById(
 		homescriptId,
+		self.Username,
 		// The previous CallStack is passed in order to preserve the history
 		// Because the RunById function implicitly appends its target id the provided call stack, it doesn't need to be added here
 		self.CallStack,
-		self.DryRun, args,
+		self.DryRun,
+		args,
+		InitiatorExec,
 	)
 	if err != nil {
 		self.Print(fmt.Sprintf("Exec failed: called Homescript failed with exit code %d", exitCode))

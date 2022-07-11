@@ -54,13 +54,14 @@ func scheduleRunnerFunc(id uint) {
 		return
 	}
 	log.Debug(fmt.Sprintf("Schedule '%d' is running", id))
-	_, exitCode, hmsErrors := homescript.Run(
+	_, exitCode, hmsErrors := homescript.HmsManager.Run(
 		owner.Username,
 		fmt.Sprintf("%d.hms", id),
 		job.HomescriptCode,
-		make([]string, 0),
 		false,
 		make(map[string]string, 0),
+		make([]string, 0),
+		homescript.InitiatorScheduler,
 	)
 	if len(hmsErrors) > 0 {
 		log.Error("Executing schedule's homescript failed: ", hmsErrors[0].ErrorType)

@@ -133,13 +133,17 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/homescript/add", mdl.ApiAuth(mdl.Perm(api.CreateNewHomescript, database.PermissionHomescript))).Methods("POST")
 	r.HandleFunc("/api/homescript/modify", mdl.ApiAuth(mdl.Perm(api.ModifyHomescript, database.PermissionHomescript))).Methods("PUT")
 	r.HandleFunc("/api/homescript/delete", mdl.ApiAuth(mdl.Perm(api.DeleteHomescriptById, database.PermissionHomescript))).Methods("DELETE")
+	r.HandleFunc("/api/homescript/get/{id}", mdl.ApiAuth(mdl.Perm(api.GetUserHomescriptById, database.PermissionHomescript))).Methods("GET")
+	r.HandleFunc("/api/homescript/list/personal", mdl.ApiAuth(mdl.Perm(api.ListPersonalHomescripts, database.PermissionHomescript))).Methods("GET")
+	r.HandleFunc("/api/homescript/list/personal/complete", mdl.ApiAuth(mdl.Perm(api.ListPersonalHomescriptsWithArgs, database.PermissionHomescript))).Methods("GET")
+
+	// Homescript execution and linting
 	r.HandleFunc("/api/homescript/lint", mdl.ApiAuth(mdl.Perm(api.LintHomescriptId, database.PermissionHomescript))).Methods("POST")
 	r.HandleFunc("/api/homescript/lint/live", mdl.ApiAuth(mdl.Perm(api.LintHomescriptString, database.PermissionHomescript))).Methods("POST")
 	r.HandleFunc("/api/homescript/run", mdl.ApiAuth(mdl.Perm(api.RunHomescriptId, database.PermissionHomescript))).Methods("POST")
 	r.HandleFunc("/api/homescript/run/live", mdl.ApiAuth(mdl.Perm(api.RunHomescriptString, database.PermissionHomescript))).Methods("POST")
-	r.HandleFunc("/api/homescript/get/{id}", mdl.ApiAuth(mdl.Perm(api.GetUserHomescriptById, database.PermissionHomescript))).Methods("GET")
-	r.HandleFunc("/api/homescript/list/personal", mdl.ApiAuth(mdl.Perm(api.ListPersonalHomescripts, database.PermissionHomescript))).Methods("GET")
-	r.HandleFunc("/api/homescript/list/personal/complete", mdl.ApiAuth(mdl.Perm(api.ListPersonalHomescriptsWithArgs, database.PermissionHomescript))).Methods("GET")
+	r.HandleFunc("/api/homescript/kill/job/{id}", mdl.ApiAuth(mdl.Perm(api.KillJobById, database.PermissionHomescript))).Methods("POST")
+	r.HandleFunc("/api/homescript/kill/script/{id}", mdl.ApiAuth(mdl.Perm(api.KillAllHMSIdJobs, database.PermissionHomescript))).Methods("POST")
 
 	// Homescript arguments
 	r.HandleFunc("/api/homescript/arg/add", mdl.ApiAuth(mdl.Perm(api.CreateNewHomescriptArg, database.PermissionHomescript))).Methods("POST")

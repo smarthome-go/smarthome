@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -84,13 +85,14 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Run the Homescript
-	output, exitCode, hmsErrors := homescript.Run(
+	output, exitCode, hmsErrors := homescript.HmsManager.Run(
 		username,
 		request.Id,
 		hmsData.Data.Code,
-		make([]string, 0),
 		false,
 		args,
+		make([]string, 0),
+		homescript.InitiatorAPI,
 	)
 	if len(hmsErrors) > 0 {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -170,13 +172,14 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Lint the Homescript
-	output, exitCode, hmsErrors := homescript.Run(
+	output, exitCode, hmsErrors := homescript.HmsManager.Run(
 		username,
 		request.Id,
 		hmsData.Data.Code,
-		make([]string, 0),
 		true,
 		args,
+		make([]string, 0),
+		homescript.InitiatorAPI,
 	)
 	if len(hmsErrors) > 0 {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -245,13 +248,14 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		args[arg.Key] = arg.Value
 	}
 	// Run the Homescript
-	output, exitCode, hmsErrors := homescript.Run(
+	output, exitCode, hmsErrors := homescript.HmsManager.Run(
 		username,
 		"live",
 		request.Code,
-		make([]string, 0),
 		false,
 		args,
+		make([]string, 0),
+		homescript.InitiatorAPI,
 	)
 	if len(hmsErrors) > 0 {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -317,13 +321,14 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 		args[arg.Key] = arg.Value
 	}
 	// Lint the Homescript
-	output, exitCode, hmsErrors := homescript.Run(
+	output, exitCode, hmsErrors := homescript.HmsManager.Run(
 		username,
 		"lint",
 		request.Code,
-		make([]string, 0),
 		true,
 		args,
+		make([]string, 0),
+		homescript.InitiatorAPI,
 	)
 	if len(hmsErrors) > 0 {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -584,4 +589,64 @@ func GetUserHomescriptById(w http.ResponseWriter, r *http.Request) {
 		log.Error(err.Error())
 		Res(w, Response{Success: false, Message: "failed to list personal Homescript", Error: "could not encode response"})
 	}
+}
+
+// Kills a Homescript job given its id
+func KillJobById(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(w, r)
+	if err != nil {
+		return
+	}
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "failed to kill Homescript job", Error: "no id provided"})
+		return
+	}
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "failed to kill Homescript job", Error: "id must be numeric"})
+		return
+	}
+	job, found := homescript.HmsManager.GetJobById(uint64(idInt))
+	if !found || job.Executor.Username != username {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to kill Homescript job", Error: "invalid id provided"})
+		return
+	}
+	_ = homescript.HmsManager.Kill(uint64(idInt))
+	Res(w, Response{Success: true, Message: "successfully killed Homescript job"})
+}
+
+// Kills all jobs executing an arbitrary Homescript id
+func KillAllHMSIdJobs(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(w, r)
+	if err != nil {
+		return
+	}
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "failed to kill Homescript job", Error: "no id provided"})
+		return
+	}
+	// Validate that the user is allowed to kill the requested script id
+	_, valid, err := database.GetUserHomescriptById(id, username)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "could not retrieve Homescript validation from database", Error: "database failure"})
+		return
+	}
+	if !valid {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "could not kill all Homescript jobs", Error: "invalid Homescript id specified"})
+		return
+	}
+	count, _ := homescript.HmsManager.KillAllId(id)
+	Res(w, Response{Success: true, Message: fmt.Sprintf("successfully killed %d Homescript job(s)", count)})
 }

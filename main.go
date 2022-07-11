@@ -185,6 +185,9 @@ func main() {
 		log.Error("Failed to flush logs older that 30 days: ", err.Error())
 	}
 
+	// Homescript Manager initialization
+	homescript.InitManager()
+
 	// Schedulers
 	if err := automation.Init(); err != nil { // Initializes the automation scheduler
 		log.Error("Failed to activate automation system: ", err.Error())

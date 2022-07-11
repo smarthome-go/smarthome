@@ -5,6 +5,8 @@
 
 /* Homescript data type and container */
 
+import type { GenericResponse } from "./global"
+
 // A Homescript with its arguments
 export interface homescriptWithArgs {
     data: homescript
@@ -165,6 +167,16 @@ export async function lintHomescriptCode(code: string, args: homescriptArgSubmit
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code, args: args })
+    })
+    if (res.status !== 200 && res.status !== 500) throw Error(await (res.json()))
+    return await (res.json())
+}
+
+// Sends a request to kill all running executions of a given script (by id)
+export async function killAllJobsById(id: string): Promise<GenericResponse> {
+    const res = await fetch(`/api/homescript/kill/script/${encodeURIComponent(id)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
     })
     if (res.status !== 200 && res.status !== 500) throw Error(await (res.json()))
     return await (res.json())

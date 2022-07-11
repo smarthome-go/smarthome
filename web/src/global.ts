@@ -3,6 +3,13 @@ import { get, Writable, writable } from 'svelte/store'
 
 export const createSnackbar: Writable<(message: string, actions?: ConfigAction[]) => void> = writable(() => { })
 
+export interface GenericResponse {
+    success: boolean,
+    message: string,
+    error: string,
+    time: string,
+}
+
 export interface Notification {
     id: number
     priority: number

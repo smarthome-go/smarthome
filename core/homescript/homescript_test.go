@@ -20,6 +20,7 @@ func TestMain(m *testing.M) {
 	event.InitLogger(log)
 	hardware.InitLogger(log)
 	hardware.Init()
+	InitManager()
 	if err := initDB(true); err != nil {
 		panic(err.Error())
 	}
@@ -239,7 +240,7 @@ func TestRun(t *testing.T) {
 			},
 		},
 		{
-			Code: "print(exec('test', mkArg('key', 'value')))",
+			Code: "print(exec('test', pair('key', 'value')))",
 			Result: struct {
 				Output     string
 				Code       int
@@ -264,13 +265,14 @@ func TestRun(t *testing.T) {
 		},
 	}
 	for _, test := range table {
-		output, code, errors := Run(
+		output, code, errors := HmsManager.Run(
 			"admin",
 			"testing",
 			test.Code,
-			make([]string, 0),
 			false,
 			make(map[string]string, 0),
+			make([]string, 0),
+			InitiatorInternal,
 		)
 		if len(errors) > 0 {
 			if errors[0].Message != test.Result.FirstError {
@@ -317,12 +319,13 @@ func TestRecursion(t *testing.T) {
 		}
 
 		// Run the actual test
-		output, exitCode, err := RunById(
-			"admin",
+		output, exitCode, err := HmsManager.RunById(
 			"recursive-start",
+			"admin",
 			make([]string, 0),
 			false,
 			make(map[string]string),
+			InitiatorInternal,
 		)
 		assert.EqualError(t, err, "Homescript terminated with exit code 1: Homescript terminated with exit code 1: Exec violation: executing 'recursive-start' could cause infinite recursion.\n=== Call Stack ===\n   0: recursive-start (INITIAL)\n   1: recursive-end\n   2: recursive-start (PREVENTED)\n")
 		assert.Equal(t, 1, exitCode)
@@ -363,12 +366,13 @@ func TestRecursion(t *testing.T) {
 		}
 
 		// Run the actual test
-		output2, exitCode, err := RunById(
-			"admin",
+		output2, exitCode, err := HmsManager.RunById(
 			"normal1",
+			"admin",
 			make([]string, 0),
 			false,
 			make(map[string]string),
+			InitiatorInternal,
 		)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, exitCode)

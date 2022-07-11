@@ -61,7 +61,7 @@ func convertErrors(errorItems ...hmsError.Error) []HomescriptError {
 // The `args` argument represents the arguments passed to the Homescript runtime and
 // can be used from the script via the `CheckArg` and `GetArg` functions
 // The `excludedCalls` argument specifies which Homescripts may not be called by this Homescript in order to prevent recursion
-func Run(username string, scriptId string, scriptCode string, callStack []string, dryRun bool, args map[string]string) (string, int, []HomescriptError) {
+func Old_Run(username string, scriptId string, scriptCode string, callStack []string, dryRun bool, args map[string]string) (string, int, []HomescriptError) {
 	executor := &Executor{
 		Username:   username,
 		ScriptName: scriptId,
@@ -86,15 +86,15 @@ func Run(username string, scriptId string, scriptCode string, callStack []string
 }
 
 // Executes a given Homescript from the database and returns its output, exit-code and possible error
-func RunById(username string, scriptId string, callStack []string, dryRun bool, args map[string]string) (string, int, error) {
+func Old_RunById(username string, scriptId string, callStack []string, dryRun bool, args map[string]string) (string, int, error) {
 	homescriptItem, hasBeenFound, err := database.GetUserHomescriptById(scriptId, username)
 	if err != nil {
-		return "database error", 500, err
+		return "database error", 5, err
 	}
 	if !hasBeenFound {
-		return "not found error", 404, errors.New("Invalid Homescript id: no data associated with id")
+		return "not found error", 4, errors.New("Invalid Homescript id: no data associated with id")
 	}
-	output, exitCode, hmsErrors := Run(
+	output, exitCode, hmsErrors := Old_Run(
 		username,
 		scriptId,
 		homescriptItem.Data.Code,
