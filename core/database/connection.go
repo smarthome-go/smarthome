@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// Returns the Database connection URL
 func databaseConnectionString() string {
 	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true", config.Username, config.Password, config.Hostname, config.Port, config.Database)
 }
@@ -30,11 +31,12 @@ func connection() (*sql.DB, error) {
 }
 
 // Executes a ping to the database in order to check if it is online
+// A nil response means success whereas an error indicates a database failure
 func CheckDatabase() error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelfunc()
 	if err := db.PingContext(ctx); err != nil {
-		log.Error("database health-check using ping failed: ", err.Error())
+		log.Error("Database health-check using ping failed: ", err.Error())
 		return err
 	}
 	return nil
