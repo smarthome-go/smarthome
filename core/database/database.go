@@ -44,7 +44,10 @@ func Shutdown() error {
 	return db.Close()
 }
 
+// Deletes all tables in the active `smarthome` datbase
+// This function is used in testing and could be used in the future to allow for a system reset
 func DeleteTables() error {
+	// The queries are executed after another and represent raw SQL queries
 	queries := []string{
 		// Required in order to dismiss foreign key constraint errors
 		"SET FOREIGN_KEY_CHECKS = 0",
