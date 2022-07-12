@@ -82,8 +82,17 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 	return nil
 }
 
+// Is used on the very first start to create the `smarthome` database
+// If the `smarthome` database already exists, the existent version is used
 func createDatabase() error {
-	dbTemp, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%d)/", config.Username, config.Password, config.Hostname, config.Port))
+	dbTemp, err := sql.Open(
+		"mysql",
+		fmt.Sprintf("%s:%s@tcp(%s:%d)/",
+			config.Username,
+			config.Password,
+			config.Hostname,
+			config.Port,
+		))
 	if err != nil {
 		log.Error("Could not connect to intermediate database: ", err.Error())
 		return err
@@ -91,7 +100,10 @@ func createDatabase() error {
 	defer dbTemp.Close()
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelfunc()
-	res, err := dbTemp.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS "+config.Database)
+	res, err := dbTemp.ExecContext(
+		ctx,
+		fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", config.Database),
+	)
 	if err != nil {
 		log.Error(fmt.Sprintf("Failed to create database `%s`: executing query failed: %s", config.Database, err.Error()))
 		return err
@@ -110,6 +122,7 @@ func createDatabase() error {
 	return nil
 }
 
+// Is used to initialize an `admin` user when creating the database
 func initAdminUser(password string) error {
 	if err := AddUser(FullUser{
 		Username:          "admin",
