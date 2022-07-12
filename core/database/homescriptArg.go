@@ -6,7 +6,7 @@ type HmsArgInputType string
 
 // Datatypes which a Homescript argument can use
 // Type conversion is handled by the target Homescript
-// These types act as a hint for the user and
+// These types act as a hint for the user and are required for the GUI to display an adequate input
 var (
 	String  HmsArgInputType = "string"
 	Number  HmsArgInputType = "number"
@@ -32,14 +32,13 @@ type HomescriptArg struct {
 type HomescriptArgData struct {
 	ArgKey       string          `json:"argKey"`       // The unique key of the argument
 	HomescriptId string          `json:"homescriptId"` // The Homescript to which the argument belongs to
-	Prompt       string          `json:"prompt"`       // What the user will be prompted
+	Prompt       string          `json:"prompt"`       // The prompt the user will see
 	MDIcon       string          `json:"mdIcon"`       // A Google MD icon which will be displayed
-	InputType    HmsArgInputType `json:"inputType"`    // Which data type is expected
-	Display      HmsArgDisplay   `json:"display"`      // How the prompt will look like
+	InputType    HmsArgInputType `json:"inputType"`    // Specifies the expected data type
+	Display      HmsArgDisplay   `json:"display"`      // Specifies the visual display of the prompt (handled by GUI)
 }
 
 // Used for creating the table which contains the arguments of Homescripts
-// The `GUIDisplay` value is just used as a hint for user-interfaces for displaying a better selection of possible predefined values
 func createHomescriptArgTable() error {
 	if _, err := db.Exec(`
 	CREATE TABLE
@@ -74,7 +73,7 @@ func createHomescriptArgTable() error {
 	return nil
 }
 
-// Returns the data matching the id of an argument which is associated of a given user
+// Returns the data matching the id of an argument which is associated with a given user
 func GetUserHomescriptArgById(id uint, username string) (data HomescriptArg, found bool, err error) {
 	query, err := db.Prepare(`
 	SELECT
@@ -208,7 +207,7 @@ func ListArgsOfHomescript(homescriptId string) ([]HomescriptArg, error) {
 	return args, nil
 }
 
-// Adds a new item to a Homescript's argument list
+// Adds a new item to the argument list of a given Homescript
 // Returns the newly created ID of the argument
 func AddHomescriptArg(data HomescriptArgData) (uint, error) {
 	query, err := db.Prepare(`
