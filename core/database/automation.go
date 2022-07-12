@@ -1,30 +1,38 @@
+// Contains the database backend for static automation
 package database
 
 import "database/sql"
 
-// Contains the database backend for static automation
-
+// Represents the timing mode on which the automation operates
 type TimingMode string
 
 const (
-	TimingNormal  TimingMode = "normal"  // Will not change, automation will always execute based on this time
-	TimingSunrise TimingMode = "sunrise" // Uses the local time for sunrise, each run of a set automation will update the actual time and regenerate a cron expression
-	TimingSunset  TimingMode = "sunset"  // Same as above, just for sunset
+	// Will not change, an automation will always execute based on this time
+	TimingNormal TimingMode = "normal"
+	// Uses the time of local sunrise
+	// => Each run of a set automation will update the underlyingk time
+	// => Each run will update and regenerate a cron-expression
+	TimingSunrise TimingMode = "sunrise"
+	// Same as above, just uses the time of local sunset
+	TimingSunset TimingMode = "sunset"
 )
 
 type Automation struct {
+	// The ID is automatically generated
 	Id    uint           `json:"id"`
 	Owner string         `json:"owner"`
 	Data  AutomationData `json:"data"`
 }
 
 type AutomationData struct {
-	Name           string     `json:"name"`
-	Description    string     `json:"description"`
-	CronExpression string     `json:"cronExpression"`
-	HomescriptId   string     `json:"homescriptId"`
-	Enabled        bool       `json:"enabled"`
-	TimingMode     TimingMode `json:"timingMode"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	// Saves the underlying cron-expression to wrap the time and days of execution
+	CronExpression string `json:"cronExpression"`
+	// Specifies which Homescript is to be executed when the automation runs
+	HomescriptId string     `json:"homescriptId"`
+	Enabled      bool       `json:"enabled"`
+	TimingMode   TimingMode `json:"timingMode"`
 }
 
 // Creates a new table containing the automation jobs
@@ -40,7 +48,11 @@ func createAutomationTable() error {
 		HomescriptId VARCHAR(30),
 		Owner VARCHAR(20),
 		Enabled BOOL,
-		TimingMode ENUM('normal', 'sunrise', 'sunset'),
+		TimingMode ENUM(
+			'normal',
+			'sunrise',
+			'sunset',
+		),
 		PRIMARY KEY(Id),
 		FOREIGN KEY (HomescriptId)
 		REFERENCES homescript(Id),
@@ -55,7 +67,7 @@ func createAutomationTable() error {
 	return nil
 }
 
-// Creates a new automation item, does not check the validity of the user or the homescript Id
+// Creates a new automation item using the raw data provided
 func CreateNewAutomation(automation Automation) (uint, error) {
 	query, err := db.Prepare(`
 	INSERT INTO
@@ -98,7 +110,7 @@ func CreateNewAutomation(automation Automation) (uint, error) {
 }
 
 // Returns a Automation struct which matches the given Id
-// If the id does not match a struct, a `false`` is returned
+// If the id does not match a struct, an empty struct and `false` (for found) is returned
 func GetAutomationById(id uint) (Automation, bool, error) {
 	query, err := db.Prepare(`
 	SELECT
@@ -119,7 +131,7 @@ func GetAutomationById(id uint) (Automation, bool, error) {
 	}
 	defer query.Close()
 	var automation Automation
-	err = query.QueryRow(id).Scan(
+	if err := query.QueryRow(id).Scan(
 		&automation.Id,
 		&automation.Data.Name,
 		&automation.Data.Description,
@@ -128,8 +140,7 @@ func GetAutomationById(id uint) (Automation, bool, error) {
 		&automation.Owner,
 		&automation.Data.Enabled,
 		&automation.Data.TimingMode,
-	)
-	if err != nil {
+	); err != nil {
 		if err == sql.ErrNoRows {
 			return Automation{}, false, nil
 		}
@@ -138,8 +149,8 @@ func GetAutomationById(id uint) (Automation, bool, error) {
 	return automation, true, nil
 }
 
-// Returns a list containing automations of a given user
-// Does not check the validity of the user
+// Returns a list containing automations of a given user (must be valid)
+// An invalid user will yield an empty list
 func GetUserAutomations(username string) ([]Automation, error) {
 	query, err := db.Prepare(`
 	SELECT
@@ -186,7 +197,7 @@ func GetUserAutomations(username string) ([]Automation, error) {
 	return automations, nil
 }
 
-// Returns a list with automations of all users
+// Returns a slice with automations of all users
 // Used for activating persistent automations when the server starts
 func GetAutomations() ([]Automation, error) {
 	res, err := db.Query(`
@@ -227,8 +238,9 @@ func GetAutomations() ([]Automation, error) {
 	return automations, nil
 }
 
-// Modifies the metadata of a given automation item
+// Modifies the metadata of a given automation item given its raw id
 // Does not validate the provided metadata
+// If an invalid id is specified, no data will be modified
 func ModifyAutomation(id uint, newItem AutomationData) error {
 	query, err := db.Prepare(`
 	UPDATE automation
@@ -258,13 +270,13 @@ func ModifyAutomation(id uint, newItem AutomationData) error {
 	if err != nil {
 		log.Error("Failed to modify automation: executing query failed: ", err.Error())
 		return err
-
 	}
 	return nil
 }
 
 // Deletes an automation item given its Id
 // Does not validate the validity of the provided Id
+// If an invalid id is specified, nothing will be deleted
 func DeleteAutomationById(id uint) error {
 	query, err := db.Prepare(`
 	DELETE FROM
@@ -284,6 +296,8 @@ func DeleteAutomationById(id uint) error {
 }
 
 // Deletes all automations from a given user
+// Used when deleting a user
+// An invalid username will lead to no deletions
 func DeleteAllAutomationsFromUser(username string) error {
 	query, err := db.Prepare(`
 	DELETE FROM
