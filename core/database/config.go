@@ -7,8 +7,8 @@ import (
 type ServerConfig struct {
 	AutomationEnabled bool    `json:"automationEnabled"` // Sets the global state of the server's automation system
 	LockDownMode      bool    `json:"lockDownMode"`      // If enabled, the server is unable to change power states and will not allow power actions
-	Latitude          float32 `json:"latitude"`          // Used for calculating the sunset / sunrise and for openweathermap
-	Longitude         float32 `json:"longitude"`
+	Latitude          float32 `json:"latitude"`          // Specifies the physical location of the Smarthome server
+	Longitude         float32 `json:"longitude"`         // Latitude and longitude are being used for calculating the sunset / sunrise times and for OpenWeatherMap's weather service
 }
 
 // Creates the table that contains the server configuration
@@ -53,7 +53,7 @@ func createConfigTable() error {
 // Retrieves the servers configuration
 func GetServerConfiguration() (ServerConfig, bool, error) {
 	var config ServerConfig
-	err := db.QueryRow(`
+	if err := db.QueryRow(`
 	SELECT
 		AutomationEnabled,
 		LockDownMode,
@@ -66,8 +66,7 @@ func GetServerConfiguration() (ServerConfig, bool, error) {
 		&config.LockDownMode,
 		&config.Latitude,
 		&config.Longitude,
-	)
-	if err != nil {
+	); err != nil {
 		if err == sql.ErrNoRows {
 			log.Trace("No server configuration present")
 			return ServerConfig{}, false, nil
@@ -93,6 +92,7 @@ func SetServerConfiguration(config ServerConfig) error {
 		log.Error("Failed to update the servers configuration: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err := query.Exec(
 		config.AutomationEnabled,
 		config.LockDownMode,
@@ -117,6 +117,7 @@ func SetAutomationSystemActivation(enabled bool) error {
 		log.Error("Failed to update the activation mode of automations: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err := query.Exec(enabled); err != nil {
 		log.Error("Failed to update the activation mode of automations: executing query failed: ", err.Error())
 		return err
@@ -137,6 +138,7 @@ func UpdateLocation(lat float32, lon float32) error {
 		log.Error("Failed to update the servers location: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err := query.Exec(lat, lon); err != nil {
 		log.Error("Failed to update the servers location: executing query failed: ", err.Error())
 		return err
