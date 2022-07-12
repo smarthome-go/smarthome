@@ -2,7 +2,7 @@ package database
 
 import "database/sql"
 
-// Stores the n:m relation between the user and their camera-permissions
+// Stores the n:m relation between users and their camera-permissions
 func createHasCameraPermissionsTable() error {
 	if _, err := db.Exec(`
 	CREATE TABLE
@@ -22,6 +22,7 @@ func createHasCameraPermissionsTable() error {
 }
 
 // Returns the camera-permissions of an arbitrary user in the form of a slice of strings
+// Each slice element references a camera's id to which the user has access to
 func GetUserCameraPermissions(username string) ([]string, error) {
 	query, err := db.Prepare(`
 	SELECT
@@ -53,7 +54,7 @@ func GetUserCameraPermissions(username string) ([]string, error) {
 	return permissions, nil
 }
 
-// Adds a given cameraId to an arbitrary user
+// Adds a given cameraId to an arbitrary user's camera permissions
 // The existence of the camera and the user should be validated beforehand
 func AddUserCameraPermission(username string, cameraId string) (modified bool, err error) {
 	query, err := db.Prepare(`
@@ -83,6 +84,7 @@ func AddUserCameraPermission(username string, cameraId string) (modified bool, e
 }
 
 // Removes a camera permission of an arbitrary user
+// An invalid user or an invalid camera id will lead to no deletions
 func RemoveUserCameraPermission(username string, cameraId string) (modified bool, err error) {
 	query, err := db.Prepare(`
 	DELETE FROM
@@ -107,7 +109,8 @@ func RemoveUserCameraPermission(username string, cameraId string) (modified bool
 	return rowsAffected == 1, nil
 }
 
-// Deletes all occurrences of a given camera, used if a camera is deleted
+// Deletes all occurrences of a given camera-id in the camera permissions
+// => Used if a camera is deleted
 func RemoveCameraFromPermissions(cameraId string) error {
 	query, err := db.Prepare(`
 	DELETE FROM
@@ -127,6 +130,7 @@ func RemoveCameraFromPermissions(cameraId string) error {
 }
 
 // Removes all camera permissions of a given user, used when deleting a user
+// Providing an invalid user will lead to no deletions
 func RemoveAllCameraPermissionsOfUser(username string) error {
 	query, err := db.Prepare(`
 	DELETE FROM
@@ -145,7 +149,9 @@ func RemoveAllCameraPermissionsOfUser(username string) error {
 	return nil
 }
 
-// Used in userHasCameraPermission
+// Returns a boolean indicating whether the user has access to a given camera or not.
+// This function just regards database occurrences and does not cover special rules for which the `userHasCameraPermission` function accounts
+// => Used in userHasCameraPermission
 func UserHasCameraPermissionQuery(username string, cameraId string) (bool, error) {
 	query, err := db.Prepare(`
 	SELECT
@@ -167,7 +173,9 @@ func UserHasCameraPermissionQuery(username string, cameraId string) (bool, error
 	return true, nil
 }
 
-// Returns a boolean indicating whether a user has a camera permission
+// Returns a boolean indicating whether a user is in possession of a given camera permission
+// Also accounts for the special case that a usaer does not have explicit permission to a camera,
+// but is in possession of the `manageRooms` or `*` permission, which grants the user access
 func UserHasCameraPermission(username string, cameraId string) (bool, error) {
 	hasPermission, err := UserHasCameraPermissionQuery(username, cameraId)
 	if err != nil {
