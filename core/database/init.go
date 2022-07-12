@@ -57,6 +57,9 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 	if err := createCameraTable(); err != nil {
 		return err
 	}
+	if err := createHasCameraPermissionsTable(); err != nil {
+		return err
+	}
 	if err := createHardwareNodeTable(); err != nil {
 		return err
 	}
@@ -73,12 +76,6 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 		return err
 	}
 	if err := createReminderTable(); err != nil {
-		return err
-	}
-	if err := createCameraTable(); err != nil {
-		return err
-	}
-	if err := createHasCameraPermissionsTable(); err != nil {
 		return err
 	}
 	log.Info(fmt.Sprintf("Successfully initialized database `%s`", databaseConfig.Database))
