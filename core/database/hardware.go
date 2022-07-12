@@ -16,7 +16,6 @@ type HardwareNode struct {
 
 // Creates the table (unless it exists) which contains the hardware node
 // If the database fails, this function returns an error
-// The node's primary is its url
 func createHardwareNodeTable() error {
 	query := `
 	CREATE TABLE
@@ -37,7 +36,8 @@ func createHardwareNodeTable() error {
 	return nil
 }
 
-// Adds a new hardware node to the database, if the node already exists (same url), its name will be updated
+// Adds a new hardware node to the database
+// If the node already exists (same url), its name will be updated
 func CreateHardwareNode(node HardwareNode) error {
 	query, err := db.Prepare(`
 	INSERT INTO
@@ -70,11 +70,10 @@ func CreateHardwareNode(node HardwareNode) error {
 	if rowsAffected > 0 {
 		log.Debug(fmt.Sprintf("Added hardware node `%s` with url `%s`", node.Name, node.Url))
 	}
-	defer query.Close()
 	return nil
 }
 
-// Updates the online / offline state of a given node (url)
+// Updates the online / offline state of a given node (using its url)
 func SetNodeOnline(nodeUrl string, online bool) error {
 	query, err := db.Prepare(`
 	UPDATE hardware
@@ -114,7 +113,7 @@ func DeleteHardwareNode(url string) error {
 
 // Returns a list of hardware nodes
 func GetHardwareNodes() ([]HardwareNode, error) {
-	query := `
+	res, err := db.Query(`
 	SELECT
 		Url,
 		Online,
@@ -122,8 +121,7 @@ func GetHardwareNodes() ([]HardwareNode, error) {
 		Name,
 		Token
 	FROM hardware
-	`
-	res, err := db.Query(query)
+	`)
 	if err != nil {
 		log.Error("Failed to list hardware nodes: executing query failed: ", err.Error())
 		return nil, err
@@ -163,6 +161,7 @@ func GetHardwareNodeByUrl(url string) (HardwareNode, bool, error) {
 		log.Error("Failed to get Hardware node by url: preparing query failed: ", err.Error())
 		return HardwareNode{}, false, err
 	}
+	defer query.Close()
 	var node HardwareNode
 	if err := query.QueryRow(url).Scan(
 		&node.Url,
