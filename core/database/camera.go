@@ -9,12 +9,13 @@ type Camera struct {
 	RoomId string `json:"roomId"`
 }
 
+// Is used for listing available cameras without specifying sensitive information
 type RedactedCamera struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
 }
 
-// Creates the table which contains all the cameras
+// Creates the table which contains all cameras
 func createCameraTable() error {
 	_, err := db.Exec(`
 	CREATE TABLE
@@ -36,6 +37,7 @@ func createCameraTable() error {
 
 // Creates a new camera
 // Checks, for example if the camera already exists should be completed beforehand
+// If the camera already exists, some values are updated
 func CreateCamera(data Camera) error {
 	query, err := db.Prepare(`
 	INSERT INTO
@@ -69,6 +71,8 @@ func CreateCamera(data Camera) error {
 	return nil
 }
 
+// Modifies a cameras name annd URL
+// Does not modify other metadata due to it being used immutably
 func ModifyCamera(id string, newName string, newUrl string) error {
 	query, err := db.Prepare(`
   UPDATE camera
@@ -151,9 +155,9 @@ func ListCamerasRedacted() ([]RedactedCamera, error) {
 	return cameras, nil
 }
 
-// Like `ListCameras()` but takes a user string as a filter
+// Like `ListCameras` but takes a user string as a filter
 // Only returns cameras to wich the user has access to
-// Used in `ListUserCameras()`
+// Used in `ListUserCameras`
 func ListUserCamerasQuery(username string) ([]Camera, error) {
 	query, err := db.Prepare(`
 	SELECT
@@ -194,8 +198,8 @@ func ListUserCamerasQuery(username string) ([]Camera, error) {
 	return cameras, nil
 }
 
-// Combines the logic from `ListUserCamerasQuery()`
-// With an exception: if the user has the permission to modify rooms, all cameras are granted
+// Combines the logic from `ListUserCamerasQuery` with other permission logic which cannot be expressed through SQL
+// Manages an exception: if the user has the permission to modify rooms, all cameras are granted
 func ListUserCameras(username string) ([]Camera, error) {
 	hasPermissionToAllCameras, err := UserHasPermission(username, PermissionModifyRooms)
 	if err != nil {
@@ -239,7 +243,7 @@ func GetCameraById(id string) (cam Camera, exists bool, err error) {
 	return camera, true, nil
 }
 
-// Deletes a camera, removes dependencies, such as camera-permission first
+// Deletes a camera and removes dependent camera-permission first
 // Used in deleting all room cameras and deleting one camera
 func DeleteCamera(id string) error {
 	if err := RemoveCameraFromPermissions(id); err != nil {
@@ -263,7 +267,8 @@ func DeleteCamera(id string) error {
 }
 
 // Deletes all cameras in an arbitrary room
-// Uses `DeleteCamera` in order to remove dependencies beforehand
+// Uses `DeleteCamera` in order to remove the camera's dependencies beforehand
+// Used when deleting a room
 func DeleteRoomCameras(roomId string) error {
 	cameras, err := ListCameras()
 	if err != nil {
