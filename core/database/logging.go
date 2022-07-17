@@ -70,7 +70,6 @@ func FlushOldLogs() error {
 		log.Error("Failed to flush old log events: failed to execute query: ", err.Error())
 		return err
 	}
-	defer db.Close()
 	deletedMessages, err := res.RowsAffected()
 	if err != nil {
 		log.Error("Could not evaluate outcome of `FlushOldLogs`: ", err.Error())
