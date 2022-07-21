@@ -14,7 +14,6 @@ type Setup struct {
 	Rooms         []database.Room         `json:"rooms"`
 }
 
-// Is again a variable for testing
 var setupPath = "./data/config/setup.json"
 
 // TODO: add some sort of web import / export later
