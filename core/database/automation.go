@@ -51,7 +51,7 @@ func createAutomationTable() error {
 		TimingMode ENUM(
 			'normal',
 			'sunrise',
-			'sunset',
+			'sunset'
 		),
 		PRIMARY KEY(Id),
 		FOREIGN KEY (HomescriptId)
