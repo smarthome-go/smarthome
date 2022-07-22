@@ -25,7 +25,7 @@ const (
 	PermissionHomescript        PermissionType = "homescript"
 	PermissionHomescriptNetwork PermissionType = "hmsNetwork"
 
-	// Dangerous
+	// Use with caution
 	PermissionWildCard PermissionType = "*"
 )
 
@@ -101,7 +101,7 @@ var (
 			// (Admin) is allowed to change global config parameters
 			Permission:  PermissionModifyServerConfig,
 			Name:        "Manage Server Config",
-			Description: "Change global server configuration values",
+			Description: "Change global server configuration values and export system configuration (includes sensitive data).",
 		},
 		{
 			// WARNING: This allows a user to do everything, should only be allowed to admin users
