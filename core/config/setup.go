@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/scheduler/automation"
 	"github.com/smarthome-go/smarthome/core/user"
 )
 
@@ -64,8 +63,17 @@ func RunSetup() error {
 // Takes the `users` slice and createas according database entries
 func createUsersInDatabase(users []setupUser) error {
 	for _, usr := range users {
+		_, alreadyExists, err := database.GetUserByUsername(usr.User.Username)
+		if err != nil {
+			return err
+		}
+		// It is likely that an `admin` user already exists
+		// In this case, the admin user is re-created using the new metadata
+		if alreadyExists && usr.User.Username != "admin" {
+			return fmt.Errorf("cannot create user: user `%s` already exists", usr.User.Username)
+		}
 		// Create the user itself
-		if err := database.AddUser(database.FullUser{
+		if err := database.InsertUser(database.FullUser{
 			Username:          usr.User.Username,
 			Forename:          usr.User.Forename,
 			Surname:           usr.User.Surname,
@@ -103,7 +111,7 @@ func createUsersInDatabase(users []setupUser) error {
 				return fmt.Errorf("cannot grant invalid switch permission `%s` to user `%s`", swPermission, usr.User.Username)
 			}
 			if _, err := database.AddUserSwitchPermission(
-				config.Database.Username,
+				usr.User.Username,
 				swPermission,
 			); err != nil {
 				return err
@@ -126,6 +134,11 @@ func createUsersInDatabase(users []setupUser) error {
 			}
 		}
 		// Setup the user's Homescripts
+		// Current arguments are being used for checking preexistence of arguments
+		argsDB, err := database.ListAllHomescriptArgsOfUser(usr.User.Username)
+		if err != nil {
+			return err
+		}
 		for _, homescript := range usr.Homescripts {
 			_, found, err := database.GetUserHomescriptById(
 				homescript.Data.Id,
@@ -137,25 +150,50 @@ func createUsersInDatabase(users []setupUser) error {
 			if found {
 				return fmt.Errorf("cannot create Homescript: id `%s` is already taken", homescript.Data.Id)
 			}
-		}
-		// Setup the user's automations
-		for _, aut := range usr.Automations {
-			hour, minute, days, err := automation.GetValuesFromCronExpression(aut.CronExpression)
-			if err != nil {
+			if err := database.CreateNewHomescript(database.Homescript{
+				Owner: usr.User.Username,
+				Data:  homescript.Data,
+			}); err != nil {
 				return err
 			}
-			if _, err := automation.CreateNewAutomation(
-				aut.Name,
-				aut.Description,
-				hour,
-				minute,
-				days,
-				aut.HomescriptId,
-				usr.User.Username,
-				aut.Enabled,
-				aut.TimingMode,
-			); err != nil {
-				return err
+			// Create arguments of Homecript
+			for _, arg := range homescript.Arguments {
+				// Check if the argument to be inserted already exists
+				argAlreadyExists := false
+				for _, argCheck := range argsDB {
+					if argCheck.Data.ArgKey == arg.ArgKey && argCheck.Data.HomescriptId == homescript.Data.Id {
+						argAlreadyExists = true
+					}
+				}
+				if argAlreadyExists {
+					return fmt.Errorf("cannot create HMS arg: key `%s` is already taken for script `%s`", arg.ArgKey, homescript.Data.Id)
+				}
+				if _, err := database.AddHomescriptArg(database.HomescriptArgData{
+					ArgKey:       arg.ArgKey,
+					HomescriptId: homescript.Data.Id,
+					Prompt:       arg.Prompt,
+					MDIcon:       arg.MDIcon,
+					InputType:    arg.InputType,
+					Display:      arg.Display,
+				}); err != nil {
+					return err
+				}
+			}
+			// Create automations using this Homescript
+			for _, autom := range homescript.Automations {
+				if _, err := database.CreateNewAutomation(database.Automation{
+					Owner: usr.User.Username,
+					Data: database.AutomationData{
+						Name:           autom.Name,
+						Description:    autom.Description,
+						CronExpression: autom.CronExpression,
+						HomescriptId:   homescript.Data.Id,
+						Enabled:        autom.Enabled,
+						TimingMode:     autom.TimingMode,
+					},
+				}); err != nil {
+					return err
+				}
 			}
 		}
 		// Setup the user's reminders
@@ -175,22 +213,31 @@ func createUsersInDatabase(users []setupUser) error {
 }
 
 // Takes the specified `rooms` and creates according database entries
-func createRoomsInDatabase(rooms []database.Room) error {
+func createRoomsInDatabase(rooms []setupRoom) error {
 	for _, room := range rooms {
 		if err := database.CreateRoom(room.Data); err != nil {
 			log.Error("Could not create rooms from setup file: ", err.Error())
 			return err
 		}
 		for _, switchItem := range room.Switches {
-			if err := database.CreateSwitch(switchItem.Id, switchItem.Name, room.Data.Id, switchItem.Watts); err != nil {
+			if err := database.CreateSwitch(
+				switchItem.Id,
+				switchItem.Name,
+				room.Data.Id,
+				switchItem.Watts,
+			); err != nil {
 				log.Error("Could not create switches from setup file: ", err.Error())
 				return err
 			}
 		}
 		for _, camera := range room.Cameras {
 			// Override the (possible) empty room-id to match the current room
-			camera.RoomId = room.Data.Id
-			if err := database.CreateCamera(camera); err != nil {
+			if err := database.CreateCamera(database.Camera{
+				Id:     camera.Id,
+				Name:   camera.Name,
+				Url:    camera.Url,
+				RoomId: room.Data.Id,
+			}); err != nil {
 				log.Error("Could not create cameras from setup file: ", err.Error())
 				return err
 			}

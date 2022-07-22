@@ -80,7 +80,8 @@ func initializePermissions() error {
 }
 
 // Adds a permission to a user, if database fails, then an error is returned
-// Does not check for username so additional checks should be completed beforehand
+// Does not check for username or presence of the permission,
+// => additional checks should be completed beforehand
 func AddUserPermission(username string, permission PermissionType) error {
 	query, err := db.Prepare(`
 	INSERT INTO

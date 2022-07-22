@@ -175,6 +175,7 @@ func NewRouter() *mux.Router {
 	/* Server Configuration */
 	r.HandleFunc("/api/automation/state/global", mdl.ApiAuth(mdl.Perm(api.ChangeActivationAutomation, database.PermissionModifyServerConfig))).Methods("PUT")
 	r.HandleFunc("/api/config/location/modify", mdl.ApiAuth(mdl.Perm(api.UpdateLocation, database.PermissionModifyServerConfig))).Methods("PUT")
+	r.HandleFunc("/api/config/export", mdl.ApiAuth(mdl.Perm(api.ExportConfiguration, database.PermissionModifyServerConfig))).Methods("GET")
 
 	/* Static files */
 	assetsFilepath := "./web/dist/assets/"

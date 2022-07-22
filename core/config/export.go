@@ -10,16 +10,34 @@ import (
 
 type SetupStruct struct {
 	Users               []setupUser           `json:"users"`
-	Rooms               []database.Room       `json:"rooms"`
+	Rooms               []setupRoom           `json:"rooms"`
 	HardwareNodes       []setupHardwareNode   `json:"hardwareNodes"`
 	ServerConfiguration database.ServerConfig `json:"serverConfiguration"`
 }
 
+type setupRoom struct {
+	Data     database.RoomData `json:"data"`
+	Switches []setupSwitch     `json:"switches"`
+	Cameras  []setupCamera     `json:"cameras"`
+}
+
+type setupSwitch struct {
+	Id      string `json:"id"`
+	Name    string `json:"name"`
+	PowerOn bool   `json:"powerOn"`
+	Watts   uint16 `json:"watts"`
+}
+
+type setupCamera struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+	Url  string `json:"url"`
+}
+
 type setupUser struct {
-	User        setupUserData             `json:"user"`
-	Homescripts []setupHomescript         `json:"homescripts"`
-	Automations []database.AutomationData `json:"automations"`
-	Reminders   []setupReminder           `json:"reminders"`
+	User        setupUserData     `json:"user"`
+	Homescripts []setupHomescript `json:"homescripts"`
+	Reminders   []setupReminder   `json:"reminders"`
 
 	// Permissions
 	Permissions       []string `json:"permissions"`
@@ -45,8 +63,25 @@ type setupReminder struct {
 }
 
 type setupHomescript struct {
-	Data      database.HomescriptData      `json:"data"`
-	Arguments []database.HomescriptArgData `json:"arguments"`
+	Data        database.HomescriptData `json:"data"`
+	Arguments   []setupHomescriptArg    `json:"arguments"`
+	Automations []setupAutomation       `json:"automations"`
+}
+
+type setupHomescriptArg struct {
+	ArgKey    string                   `json:"argKey"`    // The unique key of the argument
+	Prompt    string                   `json:"prompt"`    // The prompt the user will see
+	MDIcon    string                   `json:"mdIcon"`    // A Google MD icon which will be displayed
+	InputType database.HmsArgInputType `json:"inputType"` // Specifies the expected data type
+	Display   database.HmsArgDisplay   `json:"display"`   // Specifies the visual display of the prompt (handled by GUI)
+}
+
+type setupAutomation struct {
+	Name           string              `json:"name"`
+	Description    string              `json:"description"`
+	CronExpression string              `json:"cronExpression"`
+	Enabled        bool                `json:"enabled"`
+	TimingMode     database.TimingMode `json:"timingMode"`
 }
 
 type setupUserData struct {
@@ -70,10 +105,40 @@ func Export() (SetupStruct, error) {
 		return SetupStruct{}, fmt.Errorf("No configuration could be found")
 	}
 	// Rooms configuration
-	rooms, err := database.ListAllRoomsWithData()
+	roomsDB, err := database.ListAllRoomsWithData()
 	if err != nil {
 		return SetupStruct{}, err
 	}
+	rooms := make([]setupRoom, 0)
+	for _, room := range roomsDB {
+		roomSwitches := make([]setupSwitch, 0)
+		for _, sw := range room.Switches {
+			roomSwitches = append(roomSwitches, setupSwitch{
+				Id:      sw.Id,
+				Name:    sw.Name,
+				PowerOn: sw.PowerOn,
+				Watts:   sw.Watts,
+			})
+		}
+		roomCameras := make([]setupCamera, 0)
+		for _, cam := range room.Cameras {
+			roomCameras = append(roomCameras, setupCamera{
+				Id:   cam.Id,
+				Name: cam.Name,
+				Url:  cam.Url,
+			})
+		}
+		rooms = append(rooms, setupRoom{
+			Data: database.RoomData{
+				Id:          room.Data.Id,
+				Name:        room.Data.Name,
+				Description: room.Data.Description,
+			},
+			Switches: roomSwitches,
+			Cameras:  roomCameras,
+		})
+	}
+
 	hwNodes, err := database.GetHardwareNodes()
 	if err != nil {
 		return SetupStruct{}, err
@@ -87,17 +152,20 @@ func Export() (SetupStruct, error) {
 			Url:     node.Url,
 		})
 	}
-
 	usersTemp, err := database.ListUsers()
 	if err != nil {
 		return SetupStruct{}, nil
 	}
-	// TODO: add users
 	users := make([]setupUser, 0)
-
 	for _, user := range usersTemp {
 		// Password Hash
 		pwHash, err := database.GetUserPasswordHash(user.Username)
+		if err != nil {
+			return SetupStruct{}, err
+		}
+
+		// Automations
+		automationsDB, err := database.GetUserAutomations(user.Username)
 		if err != nil {
 			return SetupStruct{}, err
 		}
@@ -109,24 +177,34 @@ func Export() (SetupStruct, error) {
 		}
 		homescripts := make([]setupHomescript, 0)
 		for _, hms := range homescriptsDB {
-			args := make([]database.HomescriptArgData, 0)
+			args := make([]setupHomescriptArg, 0)
 			for _, arg := range hms.Arguments {
-				args = append(args, arg.Data)
+				args = append(args, setupHomescriptArg{
+					ArgKey:    arg.Data.ArgKey,
+					Prompt:    arg.Data.Prompt,
+					MDIcon:    arg.Data.MDIcon,
+					InputType: arg.Data.InputType,
+					Display:   arg.Data.Display,
+				})
+			}
+			// Filter out automations using this Homescript
+			automationsThis := make([]setupAutomation, 0)
+			for _, aut := range automationsDB {
+				if aut.Data.HomescriptId == hms.Data.Data.Id {
+					automationsThis = append(automationsThis, setupAutomation{
+						Name:           aut.Data.Name,
+						Description:    aut.Data.Description,
+						CronExpression: aut.Data.CronExpression,
+						Enabled:        aut.Data.Enabled,
+						TimingMode:     aut.Data.TimingMode,
+					})
+				}
 			}
 			homescripts = append(homescripts, setupHomescript{
-				Data:      hms.Data.Data,
-				Arguments: args,
+				Data:        hms.Data.Data,
+				Arguments:   args,
+				Automations: automationsThis,
 			})
-		}
-
-		// Automations
-		automationsDB, err := database.GetUserAutomations(user.Username)
-		if err != nil {
-			return SetupStruct{}, err
-		}
-		automations := make([]database.AutomationData, 0)
-		for _, automation := range automationsDB {
-			automations = append(automations, automation.Data)
 		}
 
 		// Reminders
@@ -178,7 +256,6 @@ func Export() (SetupStruct, error) {
 				DarkTheme:         user.DarkTheme,
 			},
 			Homescripts:       homescripts,
-			Automations:       automations,
 			Reminders:         reminders,
 			Permissions:       permissions,
 			SwitchPermissions: swPermissions,

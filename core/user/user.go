@@ -64,7 +64,10 @@ func IsStandaloneUserAdmin(username string) (bool, error) {
 		return false, err
 	}
 	for _, user := range users {
-		hasPermission, err := database.UserHasPermission(user.Username, database.PermissionManageUsers)
+		hasPermission, err := database.UserHasPermission(
+			user.Username,
+			database.PermissionManageUsers,
+		)
 		if err != nil {
 			return false, err
 		}

@@ -245,7 +245,7 @@ func ModifyAutomationById(automationId uint, newAutomation database.AutomationDa
 			finalTime = sunSet
 		}
 		// Extract the days from the cron-expression
-		_, _, days, err := GetValuesFromCronExpression(newAutomation.CronExpression)
+		days, err := getDaysFromCronExpression(newAutomation.CronExpression)
 		if err != nil {
 			log.Error(fmt.Sprintf("Failed to extract days from cron-expression '%s': Error: %s", newAutomation.CronExpression, err))
 			return err

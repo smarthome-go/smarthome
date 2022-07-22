@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/smarthome-go/smarthome/core/config"
 	"github.com/smarthome-go/smarthome/core/database"
 )
 
@@ -12,7 +13,7 @@ type UpdateLocationRequest struct {
 	Longitude float32 `json:"longitude"`
 }
 
-// Admin endpoints for changing the servers global configuration
+// Can be used to update the server's latitude and longitude
 func UpdateLocation(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
@@ -29,4 +30,18 @@ func UpdateLocation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	Res(w, Response{Success: true, Message: "successfully updated location"})
+}
+
+// Is used to request an export of the server's configuration
+func ExportConfiguration(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	export, err := config.Export()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		Res(w, Response{Success: false, Message: "failed to perform configuration export", Error: "internal server error"})
+		return
+	}
+	if err := json.NewEncoder(w).Encode(export); err != nil {
+		Res(w, Response{Success: false, Message: "failed to export server configuration", Error: "could not encode content"})
+	}
 }
