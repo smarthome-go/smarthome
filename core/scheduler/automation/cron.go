@@ -36,30 +36,45 @@ func GenerateCronExpression(hour uint8, minute uint8, days []uint8) (string, err
 	return strings.Join(output[:], " "), nil
 }
 
-// Returns a slice which contains the days on which a given cron-expression will run
+// Returns the execution-hour, execution-minute and a slice which contains the days on which a given cron-expression will run
 // Used for generating a new cron-expression when the timing function is set to either `sunrise` or `sunset`
-func GetDaysFromCronExpression(expr string) ([]uint8, error) {
+func GetValuesFromCronExpression(expr string) (hour uint8, minute uint8, days []uint8, err error) {
+	days = make([]uint8, 0)
 	if !IsValidCronExpression(expr) {
-		return nil, errors.New("cannot get days from cron-expression: invalid cron-expression supplied")
+		return 0, 0, days, errors.New("cannot get values from cron-expression: invalid cron-expression supplied")
 	}
-	days := make([]uint8, 0)
 	exprSlice := strings.Split(expr, " ")
 	if len(exprSlice) != 5 {
-		return nil, errors.New("cannot get days from cron-expression: invalid cron-expression supplied: no definite days")
+		return 0, 0, days, errors.New("cannot get values from cron-expression: invalid cron-expression supplied")
 	}
 	if exprSlice[4] == "*" {
 		// All days are selected for execution
-		return []uint8{0, 1, 2, 3, 4, 5, 6}, nil
-	}
-	daysTemp := strings.Split(exprSlice[4], ",") // The value at index 4 contains the days separated by a comma
-	for _, day := range daysTemp {
-		dayInt, err := strconv.Atoi(day)
-		if err != nil {
-			return nil, errors.New("cannot get days from cron-expression: invalid day in cron-expression: day is not a number")
+		days = []uint8{0, 1, 2, 3, 4, 5, 6}
+	} else {
+		daysTemp := strings.Split(exprSlice[4], ",") // The value at index 4 contains the days separated by a comma
+		for _, day := range daysTemp {
+			dayInt, err := strconv.Atoi(day)
+			if err != nil {
+				return 0, 0, days, errors.New("cannot get values from cron-expression: invalid day in cron-expression: day is not a number")
+			}
+			days = append(days, uint8(dayInt))
 		}
-		days = append(days, uint8(dayInt))
 	}
-	return days, nil
+	hourTemp, err := strconv.Atoi(exprSlice[1])
+	if err != nil {
+		return 0, 0, days, fmt.Errorf("cannot get values from cron-expression: invalid hour: hour is not numeric")
+	}
+	if hourTemp < 0 || hourTemp > 24 {
+		return 0, 0, days, fmt.Errorf("cannot get values from cron-expression: invalid hour: hour must be >= 0 and <= 24")
+	}
+	minuteTemp, err := strconv.Atoi(exprSlice[0])
+	if err != nil {
+		return 0, 0, days, fmt.Errorf("cannot get values from cron-expression: invalid minute: minute is not numeric")
+	}
+	if minuteTemp < 0 || minuteTemp > 60 {
+		return 0, 0, days, fmt.Errorf("cannot get values from cron-expression: invalid minute: minute must be >= 0 and <= 60")
+	}
+	return uint8(hourTemp), uint8(minuteTemp), days, nil
 }
 
 // Generates a human-readable representation for a given (valid) cron-expression

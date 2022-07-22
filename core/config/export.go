@@ -5,10 +5,11 @@ import (
 	"time"
 
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/homescript"
 )
 
 type SetupStruct struct {
-	Users               []database.FullUser   `json:"users"`
+	Users               []setupUser           `json:"users"`
 	Rooms               []database.Room       `json:"rooms"`
 	HardwareNodes       []setupHardwareNode   `json:"hardwareNodes"`
 	ServerConfiguration database.ServerConfig `json:"serverConfiguration"`
@@ -21,9 +22,9 @@ type setupUser struct {
 	Reminders   []setupReminder           `json:"reminders"`
 
 	// Permissions
-	Permissions       []database.PermissionType `json:"permissions"`
-	SwitchPermissions []string                  `json:"switchPermissions"`
-	CameraPermissions []string                  `json:"cameraPermissions"`
+	Permissions       []string `json:"permissions"`
+	SwitchPermissions []string `json:"switchPermissions"`
+	CameraPermissions []string `json:"cameraPermissions"`
 }
 
 type setupHardwareNode struct {
@@ -86,10 +87,109 @@ func Export() (SetupStruct, error) {
 			Url:     node.Url,
 		})
 	}
+
+	usersTemp, err := database.ListUsers()
+	if err != nil {
+		return SetupStruct{}, nil
+	}
 	// TODO: add users
+	users := make([]setupUser, 0)
+
+	for _, user := range usersTemp {
+		// Password Hash
+		pwHash, err := database.GetUserPasswordHash(user.Username)
+		if err != nil {
+			return SetupStruct{}, err
+		}
+
+		// Homescripts
+		homescriptsDB, err := homescript.ListPersonalHomescriptWithArgs(user.Username)
+		if err != nil {
+			return SetupStruct{}, err
+		}
+		homescripts := make([]setupHomescript, 0)
+		for _, hms := range homescriptsDB {
+			args := make([]database.HomescriptArgData, 0)
+			for _, arg := range hms.Arguments {
+				args = append(args, arg.Data)
+			}
+			homescripts = append(homescripts, setupHomescript{
+				Data:      hms.Data.Data,
+				Arguments: args,
+			})
+		}
+
+		// Automations
+		automationsDB, err := database.GetUserAutomations(user.Username)
+		if err != nil {
+			return SetupStruct{}, err
+		}
+		automations := make([]database.AutomationData, 0)
+		for _, automation := range automationsDB {
+			automations = append(automations, automation.Data)
+		}
+
+		// Reminders
+		remindersDB, err := database.GetUserReminders(user.Username)
+		if err != nil {
+			return SetupStruct{}, err
+		}
+		reminders := make([]setupReminder, 0)
+		for _, reminder := range remindersDB {
+			reminders = append(reminders, setupReminder{
+				Name:              reminder.Name,
+				Description:       reminder.Description,
+				Priority:          reminder.Priority,
+				CreatedDate:       reminder.CreatedDate,
+				DueDate:           reminder.DueDate,
+				UserWasNotified:   reminder.UserWasNotified,
+				UserWasNotifiedAt: reminder.UserWasNotifiedAt,
+			})
+		}
+
+		// Permissions
+		permissions, err := database.GetUserPermissions(user.Username)
+		if err != nil {
+			return SetupStruct{}, err
+		}
+
+		// Switch p0ermissionws
+		swPermissions, err := database.GetUserSwitchPermissions(user.Username)
+		if err != nil {
+			return SetupStruct{}, err
+		}
+
+		// Camera permissions
+		camPermissions, err := database.GetUserCameraPermissions(user.Username)
+		if err != nil {
+			return SetupStruct{}, err
+		}
+
+		// Append assembled user
+		users = append(users, setupUser{
+			User: setupUserData{
+				Username:          user.Username,
+				Forename:          user.Forename,
+				Surname:           user.Surname,
+				PrimaryColorDark:  user.PrimaryColorDark,
+				PrimaryColorLight: user.PrimaryColorLight,
+				Password:          pwHash,
+				SchedulerEnabled:  user.SchedulerEnabled,
+				DarkTheme:         user.DarkTheme,
+			},
+			Homescripts:       homescripts,
+			Automations:       automations,
+			Reminders:         reminders,
+			Permissions:       permissions,
+			SwitchPermissions: swPermissions,
+			CameraPermissions: camPermissions,
+		})
+	}
 
 	return SetupStruct{
-		ServerConfiguration: serverConfig,
+		Users:               users,
 		Rooms:               rooms,
+		HardwareNodes:       hwNodesNew,
+		ServerConfiguration: serverConfig,
 	}, nil
 }

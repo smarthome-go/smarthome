@@ -63,16 +63,6 @@ func CreateNewAutomation(
 		return 0, err
 	}
 	if enabled {
-		// TODO: decide whether it is a good idea to notify the user
-		// if err := user.Notify(
-		// 	owner,
-		// 	"Automation Added",
-		// 	fmt.Sprintf("Automation '%s' has been added to the system. It will be executed %s", name, cronDescription),
-		// 	1,
-		// ); err != nil {
-		// 	log.Error("Failed to notify user: ", err.Error())
-		// 	return 0, err
-		// }
 		log.Debug(fmt.Sprintf("Created new automation '%s' for user '%s'. Cron-Expression: `%s`", name, owner, cronExpression))
 	} else {
 		if err := user.Notify(
@@ -255,7 +245,7 @@ func ModifyAutomationById(automationId uint, newAutomation database.AutomationDa
 			finalTime = sunSet
 		}
 		// Extract the days from the cron-expression
-		days, err := GetDaysFromCronExpression(newAutomation.CronExpression)
+		_, _, days, err := GetValuesFromCronExpression(newAutomation.CronExpression)
 		if err != nil {
 			log.Error(fmt.Sprintf("Failed to extract days from cron-expression '%s': Error: %s", newAutomation.CronExpression, err))
 			return err

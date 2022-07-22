@@ -33,7 +33,7 @@ func createHomescriptTable() error {
 		CONSTRAINT HomescriptOwner
 		FOREIGN KEY (Owner)
 		REFERENCES user(Username)
-	) 
+	)
 	`
 	_, err := db.Exec(query)
 	if err != nil {
@@ -48,7 +48,7 @@ func CreateNewHomescript(homescript Homescript) error {
 	query, err := db.Prepare(`
 	INSERT INTO
 	homescript(
-		Id, 
+		Id,
 		Owner,
 		Name,
 		Description,
@@ -85,7 +85,7 @@ func CreateNewHomescript(homescript Homescript) error {
 func ModifyHomescriptById(id string, homescript HomescriptData) error {
 	query, err := db.Prepare(`
 	UPDATE homescript
-	SET 
+	SET
 		Name=?,
 		Description=?,
 		QuickActionsEnabled=?,
