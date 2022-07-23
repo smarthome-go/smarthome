@@ -5,39 +5,13 @@ import (
 	"net/http"
 
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/hardware"
 	"github.com/smarthome-go/smarthome/core/scheduler/scheduler"
 	"github.com/smarthome-go/smarthome/server/middleware"
 )
 
-type NewScheduleRequest struct {
-	Name           string `json:"name"`
-	Hour           uint   `json:"hour"`
-	Minute         uint   `json:"minute"`
-	HomescriptCode string `json:"homescriptCode"` // Will be executed if the scheduler runs the job
-}
-
-type NewPowerScheduleRequest struct {
-	Name      string                  `json:"name"`
-	Hour      uint                    `json:"hour"`
-	Minute    uint                    `json:"minute"`
-	PowerJobs []hardware.PowerRequest `json:"powerJobs"`
-}
-
 type ModifyGenericScheduleRequest struct {
-	Id             uint   `json:"id"`
-	Name           string `json:"name"`
-	Hour           uint   `json:"hour"`
-	Minute         uint   `json:"minute"`
-	HomescriptCode string `json:"homescriptCode"` // Will be executed if the scheduler runs the job
-}
-
-type ModifyPowerScheduleRequest struct {
-	Id        uint                    `json:"id"`
-	Name      string                  `json:"name"`
-	Hour      uint                    `json:"hour"`
-	Minute    uint                    `json:"minute"`
-	PowerJobs []hardware.PowerRequest `json:"powerJobs"` // Will be parsed to HMS code
+	Id   uint                  `json:"id"`
+	Data database.ScheduleData `json:"data"`
 }
 
 type DeleteScheduleRequest struct {
@@ -81,7 +55,7 @@ func CreateNewSchedule(w http.ResponseWriter, r *http.Request) {
 	}
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
-	var request NewScheduleRequest
+	var request database.ScheduleData
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
@@ -92,13 +66,7 @@ func CreateNewSchedule(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to create new schedule", Error: "invalid hour and / or minute"})
 		return
 	}
-	if err := scheduler.CreateNewSchedule(database.Schedule{
-		Name:           request.Name,
-		Owner:          username,
-		Hour:           request.Hour,
-		Minute:         request.Minute,
-		HomescriptCode: request.HomescriptCode,
-	}); err != nil {
+	if err := scheduler.CreateNewSchedule(request, username); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		Res(w, Response{Success: false, Message: "failed to add schedule", Error: "internal server error"})
 		return
@@ -121,7 +89,7 @@ func ModifySchedule(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	if request.Hour > 24 || request.Minute > 60 { // Checks the minute and hour, values below 0 are checked implicitly through `uint`
+	if request.Data.Hour > 24 || request.Data.Minute > 60 { // Checks the minute and hour, values below 0 are checked implicitly through `uint`
 		w.WriteHeader(http.StatusBadRequest)
 		Res(w, Response{Success: false, Message: "failed to modify schedule", Error: "invalid hour and / or minute"})
 		return
@@ -137,14 +105,7 @@ func ModifySchedule(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to modify schedule", Error: "invalid id / not found"})
 		return
 	}
-	if err := scheduler.ModifyScheduleById(request.Id,
-		database.Schedule{
-			Name:           request.Name,
-			Hour:           request.Hour,
-			Minute:         request.Minute,
-			HomescriptCode: request.HomescriptCode,
-		},
-	); err != nil {
+	if err := scheduler.ModifyScheduleById(request.Id, request.Data); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		Res(w, Response{Success: false, Message: "failed to modify schedule", Error: "internal server error"})
 		return

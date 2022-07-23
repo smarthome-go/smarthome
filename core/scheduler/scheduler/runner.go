@@ -16,16 +16,16 @@ import (
 func scheduleRunnerFunc(id uint) {
 	job, jobFound, err := database.GetScheduleById(id)
 	if err != nil {
-		log.Error(fmt.Sprintf("Failed to run schedule '%s': database failure whilst retrieving job information: %s", job.Name, err.Error()))
+		log.Error(fmt.Sprintf("Failed to run schedule '%s': database failure whilst retrieving job information: %s", job.Data.Name, err.Error()))
 		return
 	}
 	if !jobFound {
-		log.Error(fmt.Sprintf("Failed to run schedule '%s': no metadata saved in the database: %s", job.Name, err.Error()))
+		log.Error(fmt.Sprintf("Failed to run schedule '%s': no metadata saved in the database: %s", job.Data.Name, err.Error()))
 		return
 	}
 	owner, found, err := database.GetUserByUsername(job.Owner)
 	if err != nil {
-		log.Error(fmt.Sprintf("Failed to run schedule '%s': database error whilst retrieving user information: %s", job.Name, err.Error()))
+		log.Error(fmt.Sprintf("Failed to run schedule '%s': database error whilst retrieving user information: %s", job.Data.Name, err.Error()))
 		return
 	}
 	if !found {
@@ -37,11 +37,11 @@ func scheduleRunnerFunc(id uint) {
 		return
 	}
 	if !owner.SchedulerEnabled {
-		log.Info(fmt.Sprintf("Not running schedule '%s' because user's schedules are currently disabled", job.Name))
+		log.Info(fmt.Sprintf("Not running schedule '%s' because user's schedules are currently disabled", job.Data.Name))
 		if err := user.Notify(
 			owner.Username,
 			"Schedule Skipped",
-			fmt.Sprintf("Schedule '%s' was discarded because your schedules are disabled", job.Name),
+			fmt.Sprintf("Schedule '%s' was discarded because your schedules are disabled", job.Data.Name),
 			user.NotificationLevelWarn,
 		); err != nil {
 			log.Error("Failed to notify user: ", err.Error())
@@ -49,26 +49,26 @@ func scheduleRunnerFunc(id uint) {
 		}
 		event.Debug(
 			"Schedule Skipped",
-			fmt.Sprintf("Schedule '%s' has been skipped", job.Name),
+			fmt.Sprintf("Schedule '%s' has been skipped", job.Data.Name),
 		)
 		return
 	}
 	log.Debug(fmt.Sprintf("Schedule '%d' is running", id))
-	_, exitCode, hmsErrors := homescript.HmsManager.Run(
+	_, _, hmsErrors := homescript.HmsManager.Run(
 		owner.Username,
 		fmt.Sprintf("%d.hms", id),
-		job.HomescriptCode,
+		job.Data.HomescriptCode,
 		false,
 		make(map[string]string, 0),
 		make([]string, 0),
 		homescript.InitiatorScheduler,
 	)
 	if len(hmsErrors) > 0 {
-		log.Error("Executing schedule's homescript failed: ", hmsErrors[0].ErrorType)
+		log.Error("Executing schedule's Homescript failed: ", hmsErrors[0].ErrorType)
 		if err := user.Notify(
 			owner.Username,
 			"Schedule Failed",
-			fmt.Sprintf("Schedule '%s' failed due to homescript error. Homescript terminated with exit code %d. Error: %s", job.Name, exitCode, hmsErrors[0].Message),
+			fmt.Sprintf("Schedule '%s' failed due to Homescript error: %s", job.Data.Name, hmsErrors[0].Message),
 			user.NotificationLevelError,
 		); err != nil {
 			log.Error("Failed to notify user: ", err.Error())
@@ -83,13 +83,13 @@ func scheduleRunnerFunc(id uint) {
 	if err := user.Notify(
 		job.Owner,
 		"Schedule Executed Successfully",
-		fmt.Sprintf("Schedule '%s' has been executed successfully", job.Name),
+		fmt.Sprintf("Schedule '%s' has been executed successfully", job.Data.Name),
 		1,
 	); err != nil {
 		log.Error("Failed to notify user about failing schedule: ", err.Error())
 		return
 	}
 	event.Info("Schedule Executed Successfully",
-		fmt.Sprintf("Schedule '%s' of user '%s' has been executed successfully", job.Name, job.Owner),
+		fmt.Sprintf("Schedule '%s' of user '%s' has been executed successfully", job.Data.Name, job.Owner),
 	)
 }

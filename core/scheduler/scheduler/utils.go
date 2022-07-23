@@ -17,8 +17,14 @@ type UserSchedule struct {
 }
 
 // Creates and starts a schedule based on the provided input data
-func CreateNewSchedule(schedule database.Schedule) error {
-	newScheduleId, err := database.CreateNewSchedule(schedule)
+func CreateNewSchedule(schedule database.ScheduleData, owner string) error {
+	newScheduleId, err := database.CreateNewSchedule(
+		schedule.Name,
+		uint8(schedule.Hour),
+		uint8(schedule.Minute),
+		schedule.HomescriptCode,
+		owner,
+	)
 	if err != nil {
 		log.Error("Failed to create new schedule: database failure: ", err.Error())
 		return err
@@ -50,8 +56,9 @@ func RemoveScheduleById(id uint) error {
 }
 
 // Modify an already set up schedule
-func ModifyScheduleById(id uint, newSchedule database.Schedule) error {
-	if err := database.ModifySchedule(id, database.ScheduleWithoudIdAndUsername{
+// After the modification was performed, the schedule is restarted
+func ModifyScheduleById(id uint, newSchedule database.ScheduleData) error {
+	if err := database.ModifySchedule(id, database.ScheduleData{
 		Name:           newSchedule.Name,
 		Hour:           newSchedule.Hour,
 		Minute:         newSchedule.Minute,

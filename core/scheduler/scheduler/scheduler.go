@@ -38,7 +38,7 @@ func startSavedSchedules() error {
 	}
 	for _, schedule := range schedules {
 		// Prepare the job for go-cron
-		schedulerJob := scheduler.Every(1).Day().At(fmt.Sprintf("%02d:%02d", schedule.Hour, schedule.Minute))
+		schedulerJob := scheduler.Every(1).Day().At(fmt.Sprintf("%02d:%02d", schedule.Data.Hour, schedule.Data.Minute))
 		schedulerJob.Tag(fmt.Sprintf("%d", schedule.Id))
 		schedulerJob.LimitRunsTo(1)
 		if _, err := schedulerJob.Do(scheduleRunnerFunc, schedule.Id); err != nil {

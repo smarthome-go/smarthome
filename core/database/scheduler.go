@@ -3,15 +3,12 @@ package database
 import "database/sql"
 
 type Schedule struct {
-	Id             uint   `json:"id"`
-	Name           string `json:"name"`
-	Owner          string `json:"owner"`
-	Hour           uint   `json:"hour"`
-	Minute         uint   `json:"minute"`
-	HomescriptCode string `json:"homescriptCode"` // Will be executed if the scheduler runs the job
+	Id    uint         `json:"id"`
+	Owner string       `json:"owner"`
+	Data  ScheduleData `json:"data"`
 }
 
-type ScheduleWithoudIdAndUsername struct {
+type ScheduleData struct {
 	Name           string `json:"name"`
 	Hour           uint   `json:"hour"`
 	Minute         uint   `json:"minute"`
@@ -42,7 +39,13 @@ func createScheduleTable() error {
 }
 
 // Creates a new schedule which represents a job of the scheduler
-func CreateNewSchedule(schedule Schedule) (uint, error) {
+func CreateNewSchedule(
+	name string,
+	hour uint8,
+	minute uint8,
+	homescriptCode string,
+	owner string,
+) (uint, error) {
 	query, err := db.Prepare(`
 	INSERT INTO
 	schedule(
@@ -61,11 +64,11 @@ func CreateNewSchedule(schedule Schedule) (uint, error) {
 	}
 	defer query.Close()
 	res, err := query.Exec(
-		schedule.Name,
-		schedule.Owner,
-		schedule.Hour,
-		schedule.Minute,
-		schedule.HomescriptCode,
+		name,
+		owner,
+		hour,
+		minute,
+		homescriptCode,
 	)
 	if err != nil {
 		log.Error("Failed to create new scheduler: executing query failed: ", err.Error())
@@ -101,11 +104,11 @@ func GetScheduleById(id uint) (Schedule, bool, error) {
 	var schedule Schedule
 	if err := query.QueryRow(id).Scan(
 		&schedule.Id,
-		&schedule.Name,
+		&schedule.Data.Name,
 		&schedule.Owner,
-		&schedule.Hour,
-		&schedule.Minute,
-		&schedule.HomescriptCode,
+		&schedule.Data.Hour,
+		&schedule.Data.Minute,
+		&schedule.Data.HomescriptCode,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return Schedule{}, false, nil
@@ -145,11 +148,11 @@ func GetUserSchedules(username string) ([]Schedule, error) {
 		var schedule Schedule
 		if err := res.Scan(
 			&schedule.Id,
-			&schedule.Name,
+			&schedule.Data.Name,
 			&schedule.Owner,
-			&schedule.Hour,
-			&schedule.Minute,
-			&schedule.HomescriptCode,
+			&schedule.Data.Hour,
+			&schedule.Data.Minute,
+			&schedule.Data.HomescriptCode,
 		); err != nil {
 			log.Error("Failed to list user schedules: scanning results of query failed: ", err.Error())
 			return nil, err
@@ -187,11 +190,11 @@ func GetSchedules() ([]Schedule, error) {
 		var schedule Schedule
 		if err := res.Scan(
 			&schedule.Id,
-			&schedule.Name,
+			&schedule.Data.Name,
 			&schedule.Owner,
-			&schedule.Hour,
-			&schedule.Minute,
-			&schedule.HomescriptCode,
+			&schedule.Data.Hour,
+			&schedule.Data.Minute,
+			&schedule.Data.HomescriptCode,
 		); err != nil {
 			log.Error("Failed to list schedules: scanning results of query failed: ", err.Error())
 			return nil, err
@@ -203,7 +206,7 @@ func GetSchedules() ([]Schedule, error) {
 
 // Modifies the metadata of a given schedule
 // Does not validate the provided metadata
-func ModifySchedule(id uint, newItem ScheduleWithoudIdAndUsername) error {
+func ModifySchedule(id uint, newData ScheduleData) error {
 	query, err := db.Prepare(`
 	UPDATE schedule
 	SET
@@ -219,10 +222,10 @@ func ModifySchedule(id uint, newItem ScheduleWithoudIdAndUsername) error {
 	}
 	defer query.Close()
 	if _, err := query.Exec(
-		newItem.Name,
-		newItem.Hour,
-		newItem.Minute,
-		newItem.HomescriptCode,
+		newData.Name,
+		newData.Hour,
+		newData.Minute,
+		newData.HomescriptCode,
 		id,
 	); err != nil {
 		log.Error("Failed to modify schedule: executing query failed: ", err.Error())
