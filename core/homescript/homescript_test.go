@@ -71,7 +71,7 @@ func TestRun(t *testing.T) {
 		Owner: "admin",
 		Data: database.HomescriptData{
 			Id:   "test",
-			Code: "print('exec works', getArg('key'))",
+			Code: "print(getArg('key'))",
 		},
 	}); err != nil {
 		t.Error(err.Error())
@@ -102,25 +102,25 @@ func TestRun(t *testing.T) {
 				Code       int
 				FirstError string
 			}{
-				Output:     "admin",
+				Output:     "admin\n",
 				Code:       0,
 				FirstError: "",
 			},
 		},
 		{
-			Code: "print('hello world')",
+			Code: "print('Hello World')",
 			Result: struct {
 				Output     string
 				Code       int
 				FirstError string
 			}{
-				Output:     "hello world",
+				Output:     "Hello World\n",
 				Code:       0,
 				FirstError: "",
 			},
 		},
 		{
-			Code: "print('hello world'",
+			Code: "print('Hello World'",
 			Result: struct {
 				Output     string
 				Code       int
@@ -138,7 +138,7 @@ func TestRun(t *testing.T) {
 				Code       int
 				FirstError string
 			}{
-				Output:     "true",
+				Output:     "true\n",
 				Code:       0,
 				FirstError: "",
 			},
@@ -150,7 +150,7 @@ func TestRun(t *testing.T) {
 				Code       int
 				FirstError string
 			}{
-				Output:     "false",
+				Output:     "false\n",
 				Code:       0,
 				FirstError: "",
 			},
@@ -246,7 +246,7 @@ func TestRun(t *testing.T) {
 				Code       int
 				FirstError string
 			}{
-				Output:     "exec worksvalue",
+				Output:     "value\n\n",
 				Code:       0,
 				FirstError: "",
 			},
@@ -376,6 +376,6 @@ func TestRecursion(t *testing.T) {
 		)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, exitCode)
-		assert.Equal(t, "23", output2)
+		assert.Equal(t, "2\n\n3\n\n", output2)
 	})
 }
