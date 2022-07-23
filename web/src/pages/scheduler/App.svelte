@@ -8,6 +8,7 @@
     import Page from "../../Page.svelte";
     import AddSchedule from "./dialogs/AddSchedule.svelte";
     import { loading, schedules } from "./main";
+    import Schedule from "./Schedule.svelte";
 
     let addOpen = false;
 
@@ -18,11 +19,33 @@
             const res = await (
                 await fetch("/api/scheduler/list/personal")
             ).json();
-
             if (res.success !== undefined && !res.success)
                 throw Error(res.error);
+            $schedules = res;
         } catch (err) {
             $createSnackbar(`Could not load schedules: ${err}`);
+        }
+        $loading = false;
+    }
+
+    // Creates a new schedule on the server and the front end
+    async function createSchedule(schedule: AddSchedule) {
+        $loading = true;
+        try {
+            const res = await (
+                await fetch("/api/scheduler/add", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(schedule),
+                })
+            ).json();
+            if (!res.success) throw Error(res.error);
+            // Must refresh here in order to obtain the new id
+            await loadSchedules();
+        } catch (err) {
+            $createSnackbar(`Could not create schedule: ${err}`);
         }
         $loading = false;
     }
@@ -31,12 +54,12 @@
     onMount(loadSchedules);
 </script>
 
-<AddSchedule bind:open={addOpen} />
+<AddSchedule bind:open={addOpen} on:add={(e) => createSchedule(e.detail)} />
 
 <Page>
     <div id="header" class="mdc-elevation--z4">
         <h6>Scheduler</h6>
-        <div>
+        <div id="header__right">
             <IconButton
                 title="Refresh"
                 class="material-icons"
@@ -64,7 +87,7 @@
             </Button>
         {:else}
             {#each $schedules as schedule (schedule.id)}
-                <span>{schedule.id}</span>
+                <Schedule bind:data={schedule} />
             {/each}
         {/if}
     </div>
@@ -88,9 +111,34 @@
                 display: none;
             }
         }
+
+        &__right {
+            display: flex;
+            align-items: center;
+        }
     }
     .schedules {
+        padding: 1.5rem;
+        border-radius: 0.4rem;
         display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        box-sizing: border-box;
+
+        &.empty {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding-top: 5rem;
+            color: var(--clr-text-disabled);
+            gap: 1rem;
+            i {
+                font-size: 5rem;
+            }
+            h6 {
+                margin: 0.5rem 0;
+            }
+        }
         &.empty {
             flex-direction: column;
             align-items: center;

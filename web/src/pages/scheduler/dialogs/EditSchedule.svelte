@@ -8,38 +8,40 @@
         Title,
     } from "@smui/dialog";
     import IconButton from "@smui/icon-button";
-    import { hasPermission } from "../../../global";
     import { createEventDispatcher, onMount } from "svelte";
-    import type { ScheduleData } from "../main";
+    import type {  ScheduleData } from "../main";
     import Inputs from "./Inputs.svelte";
 
     export let open = false;
-    let hasHomescriptPermission = false;
+
+    $: if (open) updatePrevious();
 
     // Event dispatcher
     const dispatch = createEventDispatcher();
 
-    // Bound to the `Inputs.svelte` component
-    let data: ScheduleData = {
-        hour: 0,
-        minute: 0,
-        name: "",
-        homescriptCode: "",
-    };
+    export let data: ScheduleData;
+    let dataBefore: ScheduleData;
 
     function reset() {
         data = {
-            hour: 0,
-            minute: 0,
-            name: "",
-            homescriptCode: "",
+            name: dataBefore.name,
+            hour: dataBefore.hour,
+            minute: dataBefore.minute,
+            homescriptCode: dataBefore.homescriptCode,
         };
         open = false;
     }
 
-    onMount(async () => {
-        hasHomescriptPermission = await hasPermission("homescript");
-    });
+    function updatePrevious() {
+        dataBefore = {
+            name: data.name,
+            hour: data.hour,
+            minute: data.minute,
+            homescriptCode: data.homescriptCode,
+        };
+    }
+
+    onMount(updatePrevious);
 </script>
 
 <Dialog bind:open aria-labelledby="title" aria-describedby="content" fullscreen>
@@ -48,15 +50,7 @@
         <IconButton action="close" class="material-icons">close</IconButton>
     </Header>
     <Content id="content">
-        {#if !hasHomescriptPermission}
-            <p>
-                You are missing the Homescript permission.
-                <br />
-                This permission is required in order to use the scheduler.
-            </p>
-        {:else}
-            <Inputs bind:data />
-        {/if}
+        <Inputs bind:data />
     </Content>
     <Actions>
         <Button on:click={reset}>
