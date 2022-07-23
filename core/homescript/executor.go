@@ -87,6 +87,9 @@ func (self *Executor) checkSigTerm() bool {
 // Validates that a given argument has been passed to the Homescript runtime
 // Returns a boolean indicating whether the argument has been found in the `Args` map
 func (self *Executor) CheckArg(toCheck string) bool {
+	if self.DryRun {
+		return true
+	}
 	_, ok := self.Args[toCheck]
 	return ok
 }
@@ -95,6 +98,9 @@ func (self *Executor) CheckArg(toCheck string) bool {
 // If the value could not be found in the map, it was not provided to the Homescript runtime.
 // This situation will cause the function to return an error, so `CheckArg` should be used beforehand
 func (self *Executor) GetArg(toGet string) (string, error) {
+	if self.DryRun {
+		return "", nil
+	}
 	value, ok := self.Args[toGet]
 	if !ok {
 		return "", fmt.Errorf("Failed to retrieve argument '%s': not provided to the Homescript runtime", toGet)
@@ -103,13 +109,16 @@ func (self *Executor) GetArg(toGet string) (string, error) {
 }
 
 // Pauses the execution of the current script for the amount of the specified seconds
+// Implements special checks to cancel the sleep function during its execution
 func (self *Executor) Sleep(seconds float64) {
 	if self.DryRun {
 		return
 	}
 	for i := 0; i < int(seconds*1000); i += 10 {
 		if self.checkSigTerm() {
-			log.Error("The sleep function was killed")
+			// Sleep function is terminated
+			// Additional wait time is used to dispatch the signal to the interpreter
+			time.Sleep(time.Millisecond * 10)
 			break
 		}
 		time.Sleep(time.Millisecond * 10)
@@ -124,7 +133,7 @@ func (self *Executor) Print(args ...string) {
 		return
 	}
 	for _, arg := range args {
-		self.Output += arg
+		self.Output += arg + "\n"
 	}
 }
 
