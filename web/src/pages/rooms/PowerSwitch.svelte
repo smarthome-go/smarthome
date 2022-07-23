@@ -17,7 +17,7 @@
     let requests = 0
     let loading = false
 
-    // Is binded to the `editSwitch` in order to pass an event to a child
+    // Is bound to the `editSwitch` in order to pass an event to a child
     let showEditSwitch: () => void
 
     // Determines if edit button should be shown

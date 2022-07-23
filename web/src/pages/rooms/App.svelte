@@ -30,7 +30,7 @@
     // Whether the local settings dialog is open
     let localSettingsOpen = false
 
-    // Are binded backwards to pass the `open` event to the children
+    // Are bound backwards to pass the `open` event to the children
     let addRoomShow: () => void
     let addSwitchShow: () => void
     let addCameraShow: () => void
