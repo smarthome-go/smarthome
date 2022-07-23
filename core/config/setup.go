@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/user"
@@ -20,6 +21,17 @@ func readSetupFile() (SetupStruct, bool, error) {
 	content, err := ioutil.ReadFile(setupPath)
 	if err != nil {
 		return SetupStruct{}, false, nil
+	}
+	// Move the file after a successful read
+	if err := ioutil.WriteFile(
+		fmt.Sprintf("%s.old", setupPath),
+		content,
+		0755,
+	); err != nil {
+		return SetupStruct{}, false, err
+	}
+	if err := os.Remove(setupPath); err != nil {
+		return SetupStruct{}, false, err
 	}
 	// Parse setup file to struct `Setup`
 	var setupTemp SetupStruct
@@ -44,6 +56,12 @@ func RunSetup() error {
 		log.Debug("No setup file detected: skipping setup")
 		return nil
 	}
+	log.Debug(fmt.Sprintf("Setup file was detected. Moved setup file to `%s.old`.", setupPath))
+	return RunSetupStruct(setup)
+}
+
+func RunSetupStruct(setup SetupStruct) error {
+	log.Info("Running configuration setup...")
 	if err := createRoomsInDatabase(setup.Rooms); err != nil {
 		log.Error("Aborting setup: could not create rooms in database: ", err.Error())
 		return err
