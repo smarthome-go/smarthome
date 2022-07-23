@@ -254,7 +254,7 @@
                 <FormField>
                     <Switch bind:checked={schedulerEnabled} />
                     <span id="toggles__scheduler__indicator" slot="label">
-                        Scheduler {schedulerEnabled ? 'enabled' : 'disabled'}
+                        Schedules & Automations {schedulerEnabled ? 'enabled' : 'disabled'}
                     </span>
                 </FormField>
             </div>

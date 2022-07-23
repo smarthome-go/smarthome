@@ -17,7 +17,7 @@ type FullUser struct {
 	PrimaryColorLight string `json:"primaryColorLight"`
 	Password          string `json:"password"`
 	AvatarPath        string `json:"avatarPath"`
-	SchedulerEnabled  bool   `json:"schedulerEnabled"`
+	SchedulerEnabled  bool   `json:"schedulerEnabled"` // Specifies whether the user's schedules and automations may be executed
 	DarkTheme         bool   `json:"darkTheme"`
 }
 
