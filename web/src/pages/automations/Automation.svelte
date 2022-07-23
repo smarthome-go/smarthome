@@ -234,6 +234,8 @@
         &__time {
             display: flex;
             justify-content: space-between;
+            font-size: .85rem;
+            margin-bottom: .45rem;
 
             &__mode {
                 display: flex;
@@ -262,12 +264,13 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            margin-bottom: .2rem;
         }
 
         .top {
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            //   gap: 0.5rem;
         }
         .bottom {
             display: flex;
@@ -298,10 +301,9 @@
             align-items: center;
             gap: 0.4rem;
 
-            // Maybe not used?
-            //            i {
-            //                font-size: 1rem;
-            //            }
+            i {
+                font-size: 1rem;
+            }
         }
 
         @include mobile {
