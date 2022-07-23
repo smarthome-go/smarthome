@@ -229,31 +229,34 @@ func getUserFromQuery(r *http.Request) (string, bool, error) {
 	}
 }
 
-// Middleware for checking if a user has permission to access a given route
-// The permission to check is given as a second argument as a string
-// Make sure that the permission to check exists before checking it here
-func Perm(handler http.HandlerFunc, permissionToCheck database.PermissionType) http.HandlerFunc {
+// Middleware for checking if a user has permission to access given ressources
+// The permissions to check is given as second or more arguments
+func Perm(handler http.HandlerFunc, permissionsToCheck ...database.PermissionType) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username, err := GetUserFromCurrentSession(w, r)
-		log.Trace(fmt.Sprintf("Checking permission `%s` for user `%s`", permissionToCheck, username))
+		for _, permission := range permissionsToCheck {
+			log.Trace(fmt.Sprintf("Checking permission `%s` for user `%s`", permission, username))
+		}
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			Res(w, Response{Success: false, Message: "access denied, invalid session", Error: "clear your browser's cookies"})
 			return
 		}
-		hasPermission, err := database.UserHasPermission(username, permissionToCheck)
-		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusServiceUnavailable)
-			Res(w, Response{Success: false, Message: "database error", Error: "failed to check permission to access this ressource"})
-			return
-		}
-		if !hasPermission {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusForbidden)
-			Res(w, Response{Success: false, Message: "permission denied", Error: "missing permission to access this ressource, contact your administrator"})
-			return
+		for _, permission := range permissionsToCheck {
+			hasPermission, err := database.UserHasPermission(username, permission)
+			if err != nil {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusServiceUnavailable)
+				Res(w, Response{Success: false, Message: "database error", Error: "failed to check permission to access this ressource"})
+				return
+			}
+			if !hasPermission {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusForbidden)
+				Res(w, Response{Success: false, Message: "permission denied", Error: "missing permission to access this ressource, contact your administrator"})
+				return
+			}
 		}
 		handler.ServeHTTP(w, r)
 	}
