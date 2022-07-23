@@ -5,8 +5,8 @@
         basicSetup,
     } from "@codemirror/basic-setup";
     import { EditorSelection } from "@codemirror/state";
-    import {indentWithTab} from '@codemirror/commands'
-    import {keymap} from '@codemirror/view'
+    import { indentWithTab } from "@codemirror/commands";
+    import { keymap } from "@codemirror/view";
     import CodeMirror from "@codemirror/basic-setup";
     import { createEventDispatcher, onMount, setContext } from "svelte";
     //    import { tags } from "@lezer/highlight";
@@ -17,7 +17,7 @@
     import { HomescriptLanguage, Homescript } from "./index.js";
     import { oneDark } from "./oneDark";
 
-    const dispatch = createEventDispatcher()
+    const dispatch = createEventDispatcher();
 
     // Represents the editor's value
     export let code: string = "";
@@ -27,7 +27,7 @@
         if (editor === undefined || editor.state.doc.toString() === cd) return;
         editor.dispatch(
             editor.state.update({
-                changes: {from: 0, to: editor.state.doc.length, insert: cd}
+                changes: { from: 0, to: editor.state.doc.length, insert: cd },
             })
         );
     }
@@ -47,11 +47,10 @@
                     Homescript(),
                     oneDark,
                     EditorView.updateListener.of((v) => {
-                        // TODO: lint / check code here
                         if (v.docChanged) {
                             if (timer) clearTimeout(timer);
                             timer = setTimeout(() => {
-                                dispatch('update', code)
+                                dispatch("update", code);
                             }, 500);
                         }
                     }),
