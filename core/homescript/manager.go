@@ -84,7 +84,9 @@ func (m *Manager) Run(
 	callStack []string,
 	initiator HomescriptInitiator,
 ) (string, int, []HomescriptError) {
-	sigTerm := make(chan int, 0)
+	// Is passed to the executor so that it can forward messages from its own `SigTerm` onto the `sigTermInternalPtr`
+	// Is also passed to `homescript.Run` so that the newly spawned interpreter uses the same channel
+	interpreterSigTerm := make(chan int)
 
 	executor := &Executor{
 		Username:   username,
@@ -92,15 +94,14 @@ func (m *Manager) Run(
 		DryRun:     dryRun,
 		Args:       arguments,
 		CallStack:  callStack,
-		// The outside sigterm channel will forward any received data but also acts like a middleman
-		// in order to allow host functions to quit themselves
-		SigTerm: make(chan int, 0),
+		// This channel will receive the initial sigTerm which can quit the currently running callback function
+		// Additionally, the executor forwards the sigTerm to the interpreter which finally prevents any further node-evaluation
+		// => Required for host functions to quit expensive / slow operations (sleep), then invokes an interpreter sigTerm
+		SigTerm: make(chan int),
 		// The sigterm pointer is also passed into the executor
-		// This pointer must ONLY used internally
-		// Required for host functions to quit expensive operations
-		sigTermInternalPtr: &sigTerm,
+		// => This pointer must ONLY be used internally, in this case is invoked from inside the `Executor`
+		sigTermInternalPtr: &interpreterSigTerm,
 		StartTime:          time.Now(),
-		// Can be provided manually to keep track of past lints
 	}
 
 	// Append the executor to the jobs
@@ -117,7 +118,7 @@ func (m *Manager) Run(
 		executor,
 		scriptLabel,
 		scriptCode,
-		&sigTerm,
+		&interpreterSigTerm,
 	)
 
 	// Remove the Job from the jobs list
