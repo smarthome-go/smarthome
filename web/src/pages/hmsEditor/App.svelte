@@ -37,12 +37,10 @@
 
     // Specifies the amount of jobs executing the current id (fetched initially)
     let currentExecutionCount = 0;
-    $: console.log(currentExecutionCount);
 
     // Specifies the amount of jobs which the browser currently waits for
     // Used to limit the number of concurrent operations to exactly 1
     let currentExecutionHandles = 0;
-    $: console.log(currentExecutionHandles);
 
     /*
        Script management
@@ -263,7 +261,11 @@
                 </div>
             </div>
             <div id="header__buttons">
-                <Select bind:value={currentScript} label="Preview script" disabled={currentExecutionHandles!==0}>
+                <Select
+                    bind:value={currentScript}
+                    label="Preview script"
+                    disabled={currentExecutionHandles !== 0}
+                >
                     {#each homescripts as hms}
                         <Option value={hms.data.data.id}
                             >{hms.data.data.id}</Option
@@ -275,7 +277,10 @@
                     on:click={() => (layoutAlt = !layoutAlt)}
                     >vertical_split</IconButton
                 >
-                <IconButton class="material-icons" on:click={saveCurrent}
+                <IconButton
+                    class="material-icons"
+                    on:click={saveCurrent}
+                    disabled={savedCode === currentData.data.code}
                     >save</IconButton
                 >
                 <Progress type="circular" bind:loading={otherLoading} />
@@ -283,7 +288,7 @@
         </div>
         <div class="container">
             <div class="container__editor" class:alt={layoutAlt}>
-                <HmsEditor bind:code={currentData.data.code} />
+                <HmsEditor bind:code={currentData.data.code} on:update={lintCurrentCode} />
             </div>
             <div class="container__terminal" class:alt={layoutAlt}>
                 <div class="container__terminal__header mdc-elevation--z2">
@@ -316,9 +321,11 @@
                 </div>
                 <Progress type="linear" bind:loading={requestLoading} />
                 <div class="container__terminal__content">
-                    {#if currentExecRes === undefined}
-                        <span class="gray"> This is Homescript v0.1.2 </span>
-                        <br />
+                    {#if currentExecutionHandles > 0}
+                        <span class="gray">
+                            Homescript is executing: Waiting for server...
+                        </span>
+                    {:else if currentExecRes === undefined}
                         <span class="gray">
                             Homescript output will be displayed here.
                         </span>
