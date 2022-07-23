@@ -45,3 +45,22 @@ func ExportConfiguration(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to export server configuration", Error: "could not encode content"})
 	}
 }
+
+// Is used to import a configuration using the `setup.json` structure
+func ImportConfiguration(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request config.SetupStruct
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	if err := config.RunSetupStruct(request); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		Res(w, Response{Success: false, Message: "failed to run setup", Error: err.Error()})
+		return
+	}
+	Res(w, Response{Success: true, Message: "successfully ran setup"})
+}
