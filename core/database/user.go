@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -208,6 +209,7 @@ func AddUser(user FullUser) error {
 	if err = AddNotification(user.Username, "Hello!", "Welcome to Smarthome, a self-built home automation system.", 1); err != nil {
 		return err
 	}
+	log.Debug(fmt.Sprintf("Added user %s %s <%s>", user.Forename, user.Surname, user.Username))
 	return nil
 }
 
