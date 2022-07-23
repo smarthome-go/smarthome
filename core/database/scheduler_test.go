@@ -4,6 +4,8 @@ import (
 	"testing"
 )
 
+const scheduleOwner string = "admin"
+
 func TestCreateScheduleTable(t *testing.T) {
 	if err := createScheduleTable(); err != nil {
 		t.Error(err.Error())
@@ -12,30 +14,28 @@ func TestCreateScheduleTable(t *testing.T) {
 }
 
 func TestSchedule(t *testing.T) {
-	table := []Schedule{
+	table := []ScheduleData{
 		{
 			Name:           "test1",
-			Owner:          "admin",
 			Hour:           0,
 			Minute:         0,
 			HomescriptCode: "",
 		},
 		{
 			Name:           "test2",
-			Owner:          "admin",
 			Hour:           1,
 			Minute:         1,
 			HomescriptCode: "print('')",
 		},
 	}
 	for _, item := range table {
-		newId, err := CreateNewSchedule(Schedule{
-			Name:           item.Name,
-			Owner:          item.Owner,
-			Hour:           item.Hour,
-			Minute:         item.Minute,
-			HomescriptCode: item.HomescriptCode,
-		})
+		newId, err := CreateNewSchedule(
+			item.Name,
+			uint8(item.Hour),
+			uint8(item.Minute),
+			item.HomescriptCode,
+			scheduleOwner,
+		)
 		if err != nil {
 			t.Error(err.Error())
 			return
@@ -49,11 +49,11 @@ func TestSchedule(t *testing.T) {
 			t.Errorf("Schedule %d not found after creation", newId)
 			return
 		}
-		if schedule.HomescriptCode != item.HomescriptCode &&
-			schedule.Hour != item.Hour &&
-			schedule.Minute != item.Minute &&
-			schedule.Name != item.Name &&
-			schedule.Owner != item.Owner {
+		if schedule.Data.HomescriptCode != item.HomescriptCode &&
+			schedule.Data.Hour != item.Hour &&
+			schedule.Data.Minute != item.Minute &&
+			schedule.Data.Name != item.Name &&
+			schedule.Owner != scheduleOwner {
 			t.Errorf("Created schedule %d has invalid metadata", schedule.Id)
 			return
 		}
@@ -63,19 +63,19 @@ func TestSchedule(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
-	for _, v := range userSchedules {
+	for _, userSchedule := range userSchedules {
 		found := false
 		for _, tableItem := range table {
-			if tableItem.Name == v.Name &&
-				tableItem.HomescriptCode == v.HomescriptCode &&
-				tableItem.Hour == v.Hour &&
-				tableItem.Minute == v.Minute &&
-				tableItem.Owner == v.Owner {
+			if tableItem.Name == userSchedule.Data.Name &&
+				tableItem.HomescriptCode == userSchedule.Data.HomescriptCode &&
+				tableItem.Hour == userSchedule.Data.Hour &&
+				tableItem.Minute == userSchedule.Data.Minute &&
+				scheduleOwner == userSchedule.Owner {
 				found = true
 			}
 		}
 		if !found {
-			t.Errorf("Schedule with name: %s not found in user schedules", v.Name)
+			t.Errorf("Schedule with name: %s not found in user schedules", userSchedule.Data.Name)
 			return
 		}
 	}
@@ -85,33 +85,38 @@ func TestSchedule(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
-	for _, v := range allSchedules {
+	for _, allScheduleIter := range allSchedules {
 		found := false
 		for _, tableItem := range table {
-			if tableItem.Name == v.Name &&
-				tableItem.HomescriptCode == v.HomescriptCode &&
-				tableItem.Hour == v.Hour &&
-				tableItem.Minute == v.Minute &&
-				tableItem.Owner == v.Owner {
+			if tableItem.Name == allScheduleIter.Data.Name &&
+				tableItem.HomescriptCode == allScheduleIter.Data.HomescriptCode &&
+				tableItem.Hour == allScheduleIter.Data.Hour &&
+				tableItem.Minute == allScheduleIter.Data.Minute &&
+				scheduleOwner == allScheduleIter.Owner {
 				found = true
 			}
 		}
 		if !found {
-			t.Errorf("Schedule with name: %s not found in schedules", v.Name)
+			t.Errorf("Schedule with name: %s not found in schedules", allScheduleIter.Data.Name)
 			return
 		}
 	}
 }
 
 func TestGetExistentScheduleById(t *testing.T) {
-	schedule := Schedule{
+	schedule := ScheduleData{
 		Name:           "test1",
-		Owner:          "admin",
 		Hour:           1,
 		Minute:         1,
 		HomescriptCode: "print('a')",
 	}
-	newId, err := CreateNewSchedule(schedule)
+	newId, err := CreateNewSchedule(
+		schedule.Name,
+		uint8(schedule.Hour),
+		uint8(schedule.Minute),
+		schedule.HomescriptCode,
+		scheduleOwner,
+	)
 	if err != nil {
 		t.Error(err.Error())
 		return
@@ -150,36 +155,32 @@ func TestModifyDeleteSchedule(t *testing.T) {
 		return
 	}
 	table := []struct {
-		Before Schedule
-		After  Schedule
+		Before ScheduleData
+		After  ScheduleData
 	}{
 		{
-			Before: Schedule{
+			Before: ScheduleData{
 				Name:           "before",
-				Owner:          "admin",
 				Hour:           1,
 				Minute:         2,
 				HomescriptCode: "print('before')",
 			},
-			After: Schedule{
+			After: ScheduleData{
 				Name:           "after",
-				Owner:          "admin",
 				Hour:           3,
 				Minute:         4,
 				HomescriptCode: "print('after')",
 			},
 		},
 		{
-			Before: Schedule{
+			Before: ScheduleData{
 				Name:           "before2",
-				Owner:          "modify_schedule_user",
 				Hour:           5,
 				Minute:         6,
 				HomescriptCode: "print('before2')",
 			},
-			After: Schedule{
+			After: ScheduleData{
 				Name:           "after2",
-				Owner:          "modify_schedule_user",
 				Hour:           7,
 				Minute:         8,
 				HomescriptCode: "print('after2')",
@@ -187,13 +188,19 @@ func TestModifyDeleteSchedule(t *testing.T) {
 		},
 	}
 	for _, test := range table {
-		newId, err := CreateNewSchedule(test.Before)
+		newId, err := CreateNewSchedule(
+			test.Before.Name,
+			uint8(test.Before.Hour),
+			uint8(test.Before.Minute),
+			test.Before.HomescriptCode,
+			scheduleOwner,
+		)
 		if err != nil {
 			t.Error(err.Error())
 			return
 		}
 		// Modify the schedule
-		if err := ModifySchedule(newId, ScheduleWithoudIdAndUsername{
+		if err := ModifySchedule(newId, ScheduleData{
 			Name:           test.After.Name,
 			Hour:           test.After.Hour,
 			Minute:         test.After.Minute,
@@ -213,11 +220,11 @@ func TestModifyDeleteSchedule(t *testing.T) {
 			return
 		}
 		if schedule.Id != newId ||
-			schedule.Name != test.After.Name ||
-			schedule.HomescriptCode != test.After.HomescriptCode ||
-			schedule.Hour != test.After.Hour ||
-			schedule.Minute != test.After.Minute ||
-			schedule.Owner != test.After.Owner {
+			schedule.Data.Name != test.After.Name ||
+			schedule.Data.HomescriptCode != test.After.HomescriptCode ||
+			schedule.Data.Hour != test.After.Hour ||
+			schedule.Data.Minute != test.After.Minute ||
+			schedule.Owner != scheduleOwner {
 			t.Errorf("Metadate did not change completely after modification: want: %v got: %v", test.After, schedule)
 		}
 		// Test deletion

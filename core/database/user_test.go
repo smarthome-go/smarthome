@@ -46,7 +46,13 @@ func createUserMockData() error {
 		return err
 	}
 	// Create a schedule
-	if _, err := CreateNewSchedule(Schedule{Owner: "delete_me"}); err != nil {
+	if _, err := CreateNewSchedule(
+		"name",
+		12,
+		42,
+		"print('Hello World!')",
+		"delete_me",
+	); err != nil {
 		return err
 	}
 	// Create notification
