@@ -1,35 +1,44 @@
 <script lang="ts">
-    import Button,{ Label } from '@smui/button'
-    import Dialog,{
-    Actions,
-    Content,
-    Header,
-    InitialFocus,
-    Title
-    } from '@smui/dialog'
-    import IconButton from '@smui/icon-button'
-    import Switch from '@smui/switch'
-    import { createEventDispatcher,onMount } from 'svelte'
+    import Button, { Label } from "@smui/button";
+    import Dialog, {
+        Actions,
+        Content,
+        Header,
+        InitialFocus,
+        Title,
+    } from "@smui/dialog";
+    import IconButton from "@smui/icon-button";
+    import Switch from "@smui/switch";
+    import { createEventDispatcher, onMount } from "svelte";
     import {
-    addAutomation,
-    automation,
-    generateCronExpression,
-    hmsLoaded,
-    homescripts,
-    parseCronExpressionToTime
-    } from '../main'
-    import Inputs from './Inputs.svelte'
+        addAutomation,
+        automation,
+        hmsLoaded,
+        homescripts,
+        parseCronExpressionToTime,
+    } from "../main";
+    import Inputs from "./Inputs.svelte";
 
-    export let open = false
+    const days: string[] = [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+    ];
+
+    export let open = false;
 
     // Event dispatcher
-    const dispatch = createEventDispatcher()
+    const dispatch = createEventDispatcher();
 
     // Sets the previous state when the dialog is opened for the first time
-    let hasUpdatedPrevious = false
+    let hasUpdatedPrevious = false;
     $: if (open && !hasUpdatedPrevious) {
-        updatePrevious()
-        hasUpdatedPrevious = true
+        updatePrevious();
+        hasUpdatedPrevious = true;
     }
 
     /**
@@ -40,17 +49,17 @@
      */
 
     // Bound to the `Inputs.svelte` component
-    let inputData: addAutomation
+    let inputData: addAutomation;
 
     // Stores the input values before a modification
     // Is used for a rollback when using the `cancel` button
-    let inputDataBefore: addAutomation
+    let inputDataBefore: addAutomation;
 
     // Only bound externally in order to use preset values
-    export let data: automation
+    export let data: automation;
 
     onMount(() => {
-        const timeData = parseCronExpressionToTime(data.cronExpression)
+        const timeData = parseCronExpressionToTime(data.cronExpression);
         inputData = {
             days: timeData.days,
             description: data.description,
@@ -60,21 +69,35 @@
             minute: timeData.minutes,
             name: data.name,
             timingMode: data.timingMode,
-        }
-    })
+        };
+    });
 
     // Setting each field individually is required in order to prevent the assignment of references
     function applyCurrentState() {
-        data.name = inputData.name
-        data.description = inputData.description
-        data.enabled = inputData.enabled
-        data.homescriptId = inputData.homescriptId
-        data.cronDescription = generateCronExpression(
-            inputData.hour,
-            inputData.minute,
-            inputData.days
-        )
-        data.timingMode = inputData.timingMode
+        data.name = inputData.name;
+        data.description = inputData.description;
+        data.enabled = inputData.enabled;
+        data.homescriptId = inputData.homescriptId;
+        data.timingMode = inputData.timingMode;
+
+        // Is used to regenerate a cron-description after modification
+        let daysText = `, `;
+        if (inputData.days.length === 1) {
+           daysText = `Only on ${days[inputData.days[0]]}` 
+        }
+        else if (inputData.days.length < 7) {
+            daysText = `Only on ${inputData.days.slice(0, inputData.days.length-1)
+                .map((d) => days[d])
+                .join(", ")}`;
+            daysText += ` and ${days[inputData.days[inputData.days.length - 1]]}`
+        }
+        data.cronDescription =
+            `At ${
+                inputData.hour <= 12 ? inputData.hour : inputData.hour - 12
+            }`.padStart(2, "0") +
+            ":" +
+            `${inputData.minute}`.padStart(2, "0") +
+            ` ${inputData.hour < 12 ? "AM" : "PM"} ${daysText}`;
     }
     function updatePrevious() {
         inputDataBefore = {
@@ -86,8 +109,8 @@
             minute: inputData.minute,
             name: inputData.name,
             timingMode: inputData.timingMode,
-        }
-        inputDataBefore["id"] = data.id
+        };
+        inputDataBefore["id"] = data.id;
     }
     function restorePrevious() {
         inputData = {
@@ -99,11 +122,11 @@
             minute: inputDataBefore.minute,
             name: inputDataBefore.name,
             timingMode: inputDataBefore.timingMode,
-        }
+        };
     }
 
     // Automation deletion
-    let deleteOpen = false
+    let deleteOpen = false;
 </script>
 
 <!-- TODO: fix before value undefined -->
@@ -130,7 +153,7 @@
             <Actions>
                 <Button
                     on:click={() => {
-                        dispatch('delete', null)
+                        dispatch("delete", null);
                     }}
                 >
                     <Label>Delete</Label>
@@ -151,7 +174,7 @@
                 <div class="delete">
                     <Button
                         on:click={() => {
-                            deleteOpen = true
+                            deleteOpen = true;
                         }}
                     >
                         <Label>Delete</Label>
@@ -161,7 +184,7 @@
                 <div class="activation">
                     <Switch bind:checked={inputData.enabled} />
                     <span class="text-hint">
-                        Automation {inputData.enabled ? 'enabled' : 'disabled'}
+                        Automation {inputData.enabled ? "enabled" : "disabled"}
                     </span>
                 </div>
             </div>
@@ -172,15 +195,15 @@
                     <Label>Cancel</Label>
                 </Button>
                 <Button
-                    disabled={data.name == '' ||
+                    disabled={data.name == "" ||
                         inputData.days.length == 0 ||
                         JSON.stringify(inputData) ===
                             JSON.stringify(inputDataBefore)}
                     use={[InitialFocus]}
                     on:click={() => {
-                        dispatch('modify', { data: inputData, id: data.id })
-                        applyCurrentState()
-                        updatePrevious()
+                        dispatch("modify", { data: inputData, id: data.id });
+                        applyCurrentState();
+                        updatePrevious();
                     }}
                 >
                     <Label>Edit</Label>
