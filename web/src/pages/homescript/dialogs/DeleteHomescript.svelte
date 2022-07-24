@@ -25,14 +25,24 @@
 >
     <Title id="confirmation-title">Confirm Deletion of '{data.name}'</Title>
     <Content id="confirmation-content">
-        Deletion can cause unwanted side effects, make shure you can identify them.
-        Automations depending on this Homescript will also be removed.
-        Are you shure you want to proceed?</Content
+        Deletion may cause unintented consequences, these include:
+        <ul class="consequences">
+            <li>
+                Braking Homescripts which use <code>exec('{data.id}')</code>
+            </li>
+            <li>
+                Removing all automations which have '{data.id}' as their
+                target
+            </li>
+        </ul>
+        Please only proceed if you are able to identify all consequences of your
+        action. Are you sure that you want to proceed?
+    </Content
     >
     <Actions>
         <Button
             on:click={() => {
-                dispatch("delete", {id: data.id});
+                dispatch("delete", { id: data.id });
             }}
         >
             <Label>Delete</Label>
@@ -42,3 +52,18 @@
         </Button>
     </Actions>
 </Dialog>
+
+<style lang="scss">
+    .consequences {
+        margin: 0.55rem 0;
+
+        code {
+            border-radius: 0.3rem;
+            padding: 0.05rem 0.2rem;
+            background-color: var(--clr-height-0-2);
+            color: var(--clr-primary);
+            font-size: 0.9rem;
+            font-family: "Jetbrains Mono", monospace;
+        }
+    }
+</style>
