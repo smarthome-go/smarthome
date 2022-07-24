@@ -247,7 +247,10 @@
     {:else}
         <div id="header" class="mdc-elevation--z4">
             <div id="header__left">
-                <h6>Editing {currentData.data.id}</h6>
+                <span
+                    >Editing {currentData.data.name}
+                    </span
+                >
                 <div
                     id="header__left__save"
                     class:unsaved={savedCode !== currentData.data.code}
@@ -255,7 +258,7 @@
                     <i class="material-icons"
                         >{savedCode === currentData.data.code
                             ? "cloud_done"
-                            : "save"}</i
+                            : "backup"}</i
                     >
                     {savedCode === currentData.data.code ? "saved" : "unsaved"}
                 </div>
@@ -288,7 +291,9 @@
         </div>
         <div class="container">
             <div class="container__editor" class:alt={layoutAlt}>
-                <HmsEditor bind:code={currentData.data.code} on:update={lintCurrentCode} />
+                <HmsEditor
+                    bind:code={currentData.data.code}
+                />
             </div>
             <div class="container__terminal" class:alt={layoutAlt}>
                 <div class="container__terminal__header mdc-elevation--z2">
