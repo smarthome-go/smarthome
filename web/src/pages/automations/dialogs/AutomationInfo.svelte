@@ -1,17 +1,22 @@
 <script lang="ts">
-    import Button,{ Label } from '@smui/button'
-    import Dialog,{ Actions,Content,InitialFocus,Title } from '@smui/dialog'
-    import type { automation } from '../main'
+    import Button, { Label } from "@smui/button";
+    import Dialog, {
+        Actions,
+        Content,
+        InitialFocus,
+        Title,
+    } from "@smui/dialog";
+    import type { automation } from "../main";
 
-    export let open = false
+    export let open = false;
 
-    export let data: automation
+    export let data: automation;
 
     const timingModes = {
-        normal: { name: 'Time set manually', icon: 'schedule' },
-        sunrise: { name: 'Local sunrise', icon: 'wb_twilight' },
-        sunset: { name: 'Local sunset', icon: 'nights_stay' },
-    }
+        normal: { name: "Time set manually", icon: "schedule" },
+        sunrise: { name: "Local sunrise", icon: "wb_twilight" },
+        sunset: { name: "Local sunset", icon: "nights_stay" },
+    };
 </script>
 
 <Dialog bind:open aria-labelledby="title" aria-describedby="content">
@@ -43,6 +48,10 @@
                 </div>
 
                 {data.cronDescription}
+                <br />
+                <span class="text-disabled">
+                    Cron-expression: <code>{data.cronExpression}</code>
+                </span>
             </div>
         </div>
     </Content>
@@ -57,10 +66,20 @@
     h6 {
         margin: 0.3rem 0;
     }
+    code {
+        font-family: "Jetbrains Mono", monospace;
+        font-size: 0.9rem;
+    }
     .container {
         display: flex;
         flex-direction: column;
         gap: 1.45rem;
+
+        h6 {
+            font-size: 1rem;
+            text-decoration: underline;
+            margin: 0;
+        }
     }
     .timing-mode {
         display: flex;
