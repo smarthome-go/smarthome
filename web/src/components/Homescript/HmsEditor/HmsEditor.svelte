@@ -23,6 +23,11 @@
 
     const dispatch = createEventDispatcher();
 
+    // Specifies whether the editor should register a CTRL+S catcher
+    // This catcher is intended to prevent the browser's default action
+    // However, the catcher also emits a change event when the key combination is pressed
+    export let registerCtrlSCatcher: boolean = false;
+
     // Represents the editor's value
     export let code: string = "";
     $: setCode(code);
@@ -75,6 +80,13 @@
     });
 
     onMount(() => {
+        if (registerCtrlSCatcher)
+            document.addEventListener("keydown", (e) => {
+                if (e.ctrlKey && e.key === "s") {
+                    e.preventDefault();
+                    dispatch("update", code);
+                }
+            });
         editor = new EditorView({
             state: EditorState.create({
                 extensions: [
@@ -85,6 +97,7 @@
                     // Linting
                     HMSlinter,
                     lintGutter(),
+                    // Emit the `update` event 500 ms after the last keystroke
                     EditorView.updateListener.of((v) => {
                         if (v.docChanged) {
                             if (timer) clearTimeout(timer);
@@ -93,8 +106,8 @@
                             }, 500);
                         }
                     }),
+                    // Update the component code on every change
                     EditorView.updateListener.of((v) => {
-                        // TODO: lint / check code here
                         if (v.docChanged) {
                             code = editor.state.doc.toString();
                         }
