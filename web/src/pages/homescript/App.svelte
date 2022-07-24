@@ -117,7 +117,7 @@
 
             hmsLoaded.set(true); // Signal that the homescripts are loaded
         } catch (err) {
-            $createSnackbar(`Could not load Homescript: ${err}`);
+            $createSnackbar(`Could not load Homescripts: ${err}`);
         }
         $loading = false;
     }
