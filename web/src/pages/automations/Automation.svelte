@@ -15,10 +15,11 @@
         parseCronExpressionToTime,
     } from "./main";
 
+    const days: string[] = ["su", "mo", "tu", "we", "th", "fr", "sa"];
+
     // Event dispatcher
     const dispatch = createEventDispatcher();
 
-    const days: string[] = ["su", "mo", "tu", "we", "th", "fr", "sa"];
     const timingModes = {
         normal: { name: "", icon: "schedule" },
         sunrise: { name: "Sunrise", icon: "wb_twilight" },
@@ -181,9 +182,8 @@
     <div class="bottom">
         <span class="automation__homescript text-hint">
             <span
-                >Script:
-                {homescriptData.data.name}
-                <!-- If Homescript is loaded, display the script's icon for better readability -->
+                >{homescriptData.data.name}
+                <!-- If the Homescripts are loaded, display the script's icon for nicer display -->
             </span>
             {#if hmsLoaded}
                 <i class="material-icons automation__homescript__icon">
@@ -234,8 +234,8 @@
         &__time {
             display: flex;
             justify-content: space-between;
-            font-size: .85rem;
-            margin-bottom: .45rem;
+            font-size: 0.85rem;
+            margin-bottom: 0.45rem;
 
             &__mode {
                 display: flex;
@@ -264,7 +264,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: .2rem;
+            margin-bottom: 0.2rem;
         }
 
         .top {
