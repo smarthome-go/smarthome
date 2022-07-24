@@ -50,6 +50,26 @@
         $loading = false;
     }
 
+    // Cancels and deletes an arbitrary schedule
+    async function deleteSchedule(id: number) {
+        $loading = true;
+        try {
+            const res = await (
+                await fetch("/api/scheduler/delete", {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id }),
+                })
+            ).json();
+            if (!res.success) throw Error(res.error);
+            // Filter out the deleted schedule from the frontend
+            $schedules = $schedules.filter((s) => s.id !== id);
+        } catch (err) {
+            $createSnackbar(`Could not cancel schedule: ${err}`);
+        }
+        $loading = false;
+    }
+
     // Load the schedules as soon as possible
     onMount(loadSchedules);
 </script>
@@ -87,7 +107,10 @@
             </Button>
         {:else}
             {#each $schedules as schedule (schedule.id)}
-                <Schedule bind:data={schedule} />
+                <Schedule
+                    bind:data={schedule}
+                    on:delete={deleteSchedule(schedule.id)}
+                />
             {/each}
         {/if}
     </div>

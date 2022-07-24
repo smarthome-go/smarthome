@@ -8,40 +8,60 @@
         Title,
     } from "@smui/dialog";
     import IconButton from "@smui/icon-button";
-    import { createEventDispatcher, onMount } from "svelte";
-    import type {  ScheduleData } from "../main";
+    import { createSnackbar } from "../../../global";
+    import { onMount } from "svelte";
+    import { loading, Schedule, ScheduleData } from "../main";
     import Inputs from "./Inputs.svelte";
 
     export let open = false;
 
-    $: if (open) updatePrevious();
+    $: if (open) upDatePrevious();
 
-    // Event dispatcher
-    const dispatch = createEventDispatcher();
-
-    export let data: ScheduleData;
+    export let data: Schedule;
     let dataBefore: ScheduleData;
 
     function reset() {
-        data = {
+        data.data = {
             name: dataBefore.name,
             hour: dataBefore.hour,
             minute: dataBefore.minute,
             homescriptCode: dataBefore.homescriptCode,
         };
-        open = false;
     }
 
-    function updatePrevious() {
+    function upDatePrevious() {
         dataBefore = {
-            name: data.name,
-            hour: data.hour,
-            minute: data.minute,
-            homescriptCode: data.homescriptCode,
+            name: data.data.name,
+            hour: data.data.hour,
+            minute: data.data.minute,
+            homescriptCode: data.data.homescriptCode,
         };
     }
 
-    onMount(updatePrevious);
+    // Modifies the data of the current schedule
+    async function modifySchedule() {
+        $loading = true;
+        try {
+            const res = await (
+                await fetch("/api/scheduler/modify", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        id: data.id,
+                        data: data.data,
+                    }),
+                })
+            ).json();
+            if (!res.success) throw Error(res.error);
+            upDatePrevious();
+        } catch (err) {
+            $createSnackbar(`Could not modify schedule: ${err}`);
+            reset();
+        }
+        $loading = false;
+    }
+
+    onMount(upDatePrevious);
 </script>
 
 <Dialog bind:open aria-labelledby="title" aria-describedby="content" fullscreen>
@@ -50,22 +70,19 @@
         <IconButton action="close" class="material-icons">close</IconButton>
     </Header>
     <Content id="content">
-        <Inputs bind:data />
+        <Inputs bind:data={data.data} />
     </Content>
     <Actions>
-        <Button on:click={reset}>
+        <Button on:click={reset} use={[InitialFocus]}>
             <Label>Cancel</Label>
         </Button>
         <Button
-            disabled={data.name == "" || data.homescriptCode.length == 0}
-            use={[InitialFocus]}
-            on:click={() => {
-                dispatch("add", data);
-                // Reset values after creation
-                reset();
-            }}
+            disabled={data.data.name == "" ||
+                data.data.homescriptCode.length == 0 ||
+                JSON.stringify(data.data) === JSON.stringify(dataBefore)}
+            on:click={modifySchedule}
         >
-            <Label>Create</Label>
+            <Label>Update</Label>
         </Button>
     </Actions>
 </Dialog>
