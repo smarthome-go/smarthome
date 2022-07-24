@@ -7,8 +7,8 @@
     import { onMount } from "svelte";
     import TimePicker from "../../../components/TimePicker.svelte";
     import { sleep } from "../../../global";
-    import type { addAutomation } from "../main";
-    import HmsSelector from "./HmsSelector.svelte";
+    import { addAutomation, homescripts } from "../main";
+    import HmsSelector from "../../../components/Homescript/HmsSelector.svelte";
 
     // Static resource for displaying the segmented buttons
     const days: string[] = ["su", "mo", "tu", "we", "th", "fr", "sa"];
@@ -109,7 +109,7 @@
     <div class="right">
         <div class="hms">
             <span class="text-hint">The Homescript to be executed</span>
-            <HmsSelector bind:selection={data.homescriptId} />
+            <HmsSelector bind:selection={data.homescriptId} homescripts={$homescripts} />
         </div>
     </div>
 </div>
