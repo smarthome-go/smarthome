@@ -3,11 +3,11 @@
     import Textfield from "@smui/textfield";
     import CharacterCounter from "@smui/textfield/character-counter";
     import TimePicker from "../../../components/TimePicker.svelte";
-    import type { CreateSchedule } from "../main";
-    import HmsEditor from "../../../components/Homescript/HmsEditor/HmsEditor.svelte"
+    import type { ScheduleData } from "../main";
+    import HmsInputs from "./HMSInputs.svelte";
 
     // Data which is dispatched as soon as the create button is pressed
-    export let data: CreateSchedule;
+    export let data: ScheduleData;
 </script>
 
 <div class="container">
@@ -44,7 +44,7 @@
     </div>
     <!-- Right -->
     <div class="right">
-        <HmsEditor bind:code={data.homescriptCode}/>
+        <HmsInputs bind:code={data.homescriptCode} />
     </div>
 </div>
 
