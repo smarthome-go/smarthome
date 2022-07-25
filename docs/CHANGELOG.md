@@ -52,6 +52,7 @@ Exported settings include:
 
 #### Frontend (GUI)
 - Added a first working version of the scheduler GUI
+- *Note*: The scheduler GUI is not accessible yet.
 
 ##### New functionality
 - View schedules
