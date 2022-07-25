@@ -38,6 +38,7 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/homescript", mdl.Auth(homescriptGetHandler)).Methods("GET")
 	r.HandleFunc("/homescript/editor", mdl.Auth(hmsEditorGetHandler)).Methods("GET")
 	r.HandleFunc("/automations", mdl.Auth(automationsGetHandler)).Methods("GET")
+	r.HandleFunc("/scheduler", mdl.Auth(schedulerGetHandler)).Methods("GET")
 	// Session management
 	r.HandleFunc("/login", loginGetHandler).Methods("GET")
 	r.HandleFunc("/logout", logoutGetHandler).Methods("GET")
