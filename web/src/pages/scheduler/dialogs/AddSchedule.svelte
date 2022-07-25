@@ -24,7 +24,7 @@
         hour: 0,
         minute: 0,
         name: "",
-        homescriptCode: "#active_mode:hms",
+        homescriptCode: "#active_mode:hms\n",
     };
 
     function reset() {
@@ -32,7 +32,7 @@
             hour: 0,
             minute: 0,
             name: "",
-            homescriptCode: "#active_mode:hms",
+            homescriptCode: "#active_mode:hms\n",
         };
         open = false;
     }

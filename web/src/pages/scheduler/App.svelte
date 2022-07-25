@@ -109,7 +109,7 @@
             {#each $schedules as schedule (schedule.id)}
                 <Schedule
                     bind:data={schedule}
-                    on:delete={deleteSchedule(schedule.id)}
+                    on:delete={() => deleteSchedule(schedule.id)}
                 />
             {/each}
         {/if}

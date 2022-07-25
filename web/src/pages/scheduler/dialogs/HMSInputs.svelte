@@ -1,12 +1,16 @@
 <script lang="ts">
     import Tab, { Icon, Label } from "@smui/tab";
     import TabBar from "@smui/tab-bar";
-    import { createSnackbar, sleep } from "../../../global";
+    import { createSnackbar } from "../../../global";
     import HmsEditor from "../../../components/Homescript/HmsEditor/HmsEditor.svelte";
     import HmsInputsReset from "./HMSInputsReset.svelte";
     import type { homescript } from "../../../homescript";
     import HmsSelector from "../../../components/Homescript/HmsSelector.svelte";
     import Progress from "../../../components/Progress.svelte";
+    import IconButton from "@smui/icon-button";
+    import FormField from "@smui/form-field";
+    import Switch from "@smui/switch";
+    import Select, { Option } from "@smui/select";
 
     /*
         //// Tabs (active mode selection) ////
@@ -87,8 +91,10 @@
 
             if (res.success !== undefined && !res.success)
                 throw Error(res.error);
-            // Assign to the HMS list
-            homescripts = res;
+            // Assign to the HMS list using only Homescripts which have the `schedulerEnabled` set to true
+            homescripts = res.filter(
+                (s: homescript) => s.data.schedulerEnabled
+            );
             // Signal that the HMS are loaded
             homescriptsLoaded = true;
             // Update the selected HMS from the code
@@ -112,6 +118,24 @@
     let switches: SwitchResponse[];
     let switchesLoaded: boolean = false;
     let switchesLoading: boolean = false;
+    let switchesSelected: { id: string; powerOn: boolean }[] = [];
+    let switchToBeInserted: string;
+    let switchesAvailable: SwitchResponse[] = [];
+
+    $: if (
+        switchesLoaded &&
+        switches.length > 0 &&
+        switchesSelected !== undefined
+    )
+        updateSwitchesAvailable();
+
+    function updateSwitchesAvailable() {
+        switchesAvailable = switches.filter((s) => {
+            return switchesSelected.filter((v) => v.id === s.id).length === 0;
+        });
+        // Causes an update in the selection element
+        switchToBeInserted = undefined;
+    }
 
     interface SwitchResponse {
         id: string;
@@ -120,24 +144,83 @@
         watts: number;
     }
 
+    // Update the selected Homescript inside the code
+    $: if (
+        active === "switches" &&
+        activeInCode == "switches" &&
+        switchesSelected.length > 0
+    )
+        setSwitchesCode();
+
+    function setSwitchesCode() {
+        if (switchesSelected.length > 0)
+            code =
+                code.split("\n")[0] +
+                `\n${switchesSelected
+                    .map(
+                        (s) => `switch("${s.id}", ${s.powerOn ? "on" : "off"})`
+                    )
+                    .join("\n")}`;
+    }
+
+    function getSwitchesFromCode() {
+        try {
+            const lines = code.split("\n");
+            switchesSelected = lines.slice(1, lines.length).map((s) => {
+                const id = s.split('switch("')[1].split('", ')[0];
+                const powerOnStr = s.split(`switch("${id}", `)[1].split(")")[0];
+                let powerOn = false;
+
+                switch (powerOnStr) {
+                    case "on":
+                        powerOn = true;
+                        break;
+                    case "off":
+                        powerOn = false;
+                        break;
+                    default:
+                        // Invalid power-specifier: invlaid code
+                        throw Error(`invalid power-specifier: ${powerOnStr}`);
+                }
+
+                return Object.create({
+                    id,
+                    powerOn,
+                });
+            });
+        } catch (err) {
+            console.error(err);
+            switchesSelected = [];
+            setSwitchesCode();
+        }
+    }
+
     // Loads the user's personal switches
     async function loadSwitches() {
+        switchesLoading = true;
         try {
             const res = await (await fetch("/api/switch/list/personal")).json();
             if (res.success !== undefined && !res.success)
                 throw Error(res.error);
+
             switches = res;
+            switchesAvailable = res;
             switchesLoaded = true;
+
+            // Update the selected switches from the code
+            if (active === "switches" && activeInCode == "switches")
+                getSwitchesFromCode();
         } catch (err) {
             $createSnackbar(`Could not load switches: ${err}`);
         }
+        switchesLoading = false;
     }
 
     /*
         //// Code + active modes ////
     */
     // Is bound to the HMS editors
-    export let code: string = `#active_mode:${active}`;
+    export let code: string = `#active_mode:${active}\n`;
 
     // Updates the active-code mode every time the underlying code changes
     $: if (code !== undefined) {
@@ -207,9 +290,82 @@
                     on:reset={() => resetCode(active)}
                 />
             {:else if switchesLoaded}
-                {#each switches as sw (sw.id)}
-                    <h6>{sw.name}</h6>
-                {/each}
+                <div class="main__editor__switches__header mdc-elevation--z1">
+                    <Select
+                        bind:value={switchToBeInserted}
+                        label="Select Switch"
+                        disabled={switchesAvailable.length <= 1}
+                    >
+                        {#each switchesAvailable as swOpt}
+                            <Option value={swOpt.id}>{swOpt.name}</Option>
+                        {/each}
+                    </Select>
+                    <IconButton
+                        class="material-icons"
+                        disabled={switchToBeInserted === undefined}
+                        on:click={() => {
+                            if (switchesAvailable.length === 0) {
+                                $createSnackbar(
+                                    "Only one action per switch is allowed."
+                                );
+                                return;
+                            }
+
+                            switchesSelected = [
+                                ...switchesSelected,
+                                {
+                                    id: switchToBeInserted,
+                                    powerOn: false,
+                                },
+                            ];
+                        }}
+                    >
+                        add
+                    </IconButton>
+                </div>
+                <div class="main__editor__switches__wizard">
+                    {#if switchesSelected.length === 0}
+                        <div class="main__editor__switches__no-selection">
+                            <i
+                                class="main__editor__switches__no-selection__icon material-icons"
+                                >power_off</i
+                            >
+                            <div
+                                class="main__editor__switches__no-selection__text"
+                            >
+                                <h6>Empty Procedure</h6>
+                                Your current procedure is empty, use the menu above
+                                in order to create a new switch action.
+                            </div>
+                        </div>
+                    {/if}
+                    {#each switchesSelected as sw (sw.id)}
+                        <div
+                            class="main__editor__switches__wizard__item mdc-elevation--z1"
+                        >
+                            <FormField>
+                                <Switch
+                                    bind:checked={sw.powerOn}
+                                    icons={false}
+                                />
+                                <span slot="label"
+                                    >{switches.find((s) => s.id === sw.id)
+                                        .name}</span
+                                >
+                            </FormField>
+                            <IconButton
+                                class="material-icons"
+                                on:click={() => {
+                                    switchesSelected = switchesSelected.filter(
+                                        (s) => s.id !== sw.id
+                                    );
+                                }}
+                            >
+                                delete
+                            </IconButton>
+                        </div>
+                    {/each}
+                </div>
             {:else}
                 <Progress type="circular" loading={true} />
             {/if}
@@ -234,6 +390,54 @@
             &.hms {
                 height: 100%;
                 min-height: 20rem;
+            }
+
+            &__switches {
+                &__header {
+                    background-color: var(--clr-height-0-1);
+                    padding: 0.5rem;
+                    overflow: visible;
+                }
+
+                &__no-selection {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 1rem;
+                    margin-top: 2rem;
+                    position: absolute;
+
+                    &__icon {
+                        display: block;
+                        color: var(--clr-text-disabled);
+                        font-size: 5rem;
+                    }
+
+                    &__text {
+                        max-width: 60%;
+
+                        h6 {
+                            margin: 0.1rem 0;
+                        }
+                    }
+                }
+
+                &__wizard {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.5rem;
+                    margin-top: 1rem;
+
+                    &__item {
+                        height: 3rem;
+                        border-radius: 0.3rem;
+                        background-color: var(--clr-height-0-1);
+                        padding: 0.5rem;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                    }
+                }
             }
 
             margin-top: 1rem;
