@@ -30,7 +30,7 @@ export default defineConfig({
                         } else if (id.includes("@lezer") || id.includes("@codemirror")) {
                             return "vendor_codemirror"
                         }
-                        return "vendor"; // all other package goes here
+                        return "vendor"; // Remaining chunks end up here
                     }
                 },
             }
