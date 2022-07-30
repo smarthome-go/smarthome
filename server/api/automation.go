@@ -75,7 +75,7 @@ func CreateNewAutomation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Check if the provided HomescriptId is valid
-	_, homescriptValid, err := database.GetUserHomescriptById(request.HomescriptId, username)
+	hmsData, homescriptValid, err := database.GetUserHomescriptById(request.HomescriptId, username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to create new automation", Error: "database failure"})
@@ -84,6 +84,11 @@ func CreateNewAutomation(w http.ResponseWriter, r *http.Request) {
 	if !homescriptValid {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		Res(w, Response{Success: false, Message: "failed to create new automation", Error: "homescript id is invalid or not found"})
+		return
+	}
+	if !hmsData.Data.SchedulerEnabled {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to modify schedule", Error: fmt.Sprintf("Homescript `%s` has disabled scheduler selection", request.HomescriptId)})
 		return
 	}
 	// Check if the provided hour, minute and days are valid
@@ -205,7 +210,7 @@ func ModifyAutomation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Check if the provided HomescriptId is valid
-	_, homescriptValid, err := database.GetUserHomescriptById(request.HomescriptId, username)
+	hmsData, homescriptValid, err := database.GetUserHomescriptById(request.HomescriptId, username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to modify automation", Error: "database failure"})
@@ -214,6 +219,11 @@ func ModifyAutomation(w http.ResponseWriter, r *http.Request) {
 	if !homescriptValid {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		Res(w, Response{Success: false, Message: "failed to modify automation", Error: "homescript id is invalid or not found"})
+		return
+	}
+	if !hmsData.Data.SchedulerEnabled {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to modify schedule", Error: fmt.Sprintf("Homescript `%s` has disabled scheduler selection", request.HomescriptId)})
 		return
 	}
 	// Check if the provided hour, minute and days are valid
