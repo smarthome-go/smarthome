@@ -9,7 +9,7 @@ import (
 type HardwareNode struct {
 	Name    string `json:"name"`
 	Online  bool   `json:"online"`
-	Enabled bool   `json:"enabled"` // Can be used to temporarely deactivate a node in case of maintenance
+	Enabled bool   `json:"enabled"` // Can be used to temporarily deactivate a node in case of maintenance
 	Url     string `json:"url"`
 	Token   string `json:"token"`
 }

@@ -44,7 +44,7 @@ func Shutdown() error {
 	return db.Close()
 }
 
-// Deletes all tables in the active `smarthome` datbase
+// Deletes all tables in the active `smarthome` database
 // This function is used in testing and could be used in the future to allow for a system reset
 func DeleteTables() error {
 	// The queries are executed after another and represent raw SQL queries

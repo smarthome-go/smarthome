@@ -193,7 +193,7 @@ func DoesPermissionExist(permission string) bool {
 func UserHasPermission(username string, permission PermissionType) (bool, error) {
 	existentPermissions, err := GetUserPermissions(username)
 	if err != nil {
-		log.Error("Checking user permissions failed: Could not retrive permissions: ", err.Error())
+		log.Error("Checking user permissions failed: Could not retrieve permissions: ", err.Error())
 		return false, err
 	}
 	for _, permissionItem := range existentPermissions {

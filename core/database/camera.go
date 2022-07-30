@@ -156,7 +156,7 @@ func ListCamerasRedacted() ([]RedactedCamera, error) {
 }
 
 // Like `ListCameras` but takes a user string as a filter
-// Only returns cameras to wich the user has access to
+// Only returns cameras to which the user has access to
 // Used in `ListUserCameras`
 func ListUserCamerasQuery(username string) ([]Camera, error) {
 	query, err := db.Prepare(`

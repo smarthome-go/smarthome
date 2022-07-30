@@ -1,0 +1,2 @@
+[files]
+extend-exclude = ["web/public/assets/icons.json"]

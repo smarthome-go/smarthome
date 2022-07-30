@@ -12,7 +12,7 @@ func databaseConnectionString() string {
 	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true", config.Username, config.Password, config.Hostname, config.Port, config.Database)
 }
 
-// Setups the connection to the datbase, then checks if it was successful via the ping
+// Setups the connection to the database, then checks if it was successful via the ping
 func connection() (*sql.DB, error) {
 	dbTemp, err := sql.Open("mysql", databaseConnectionString())
 	if err != nil {

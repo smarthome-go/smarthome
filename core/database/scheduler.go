@@ -280,7 +280,7 @@ func GetSchedules() ([]Schedule, error) {
 			schedule.Data.SwitchJobs = append(schedule.Data.SwitchJobs, switchJob.Data)
 		}
 
-		// Apppend the row to the results
+		// Append the row to the results
 		schedules = append(schedules, schedule)
 	}
 	return schedules, nil

@@ -36,7 +36,7 @@ func ActivateAutomationSystem() error {
 			if err := user.Notify(
 				automation.Owner,
 				"Automation Activation Failed",
-				fmt.Sprintf("The automation %s could not be activated due to an internall error. Please remove it from the system.", automation.Data.Name), 3); err != nil {
+				fmt.Sprintf("The automation %s could not be activated due to an internal error. Please remove it from the system.", automation.Data.Name), 3); err != nil {
 				log.Error("Failed to notify user about failing automation: ", err.Error())
 			}
 			continue // non-critical error, will only affect this automation

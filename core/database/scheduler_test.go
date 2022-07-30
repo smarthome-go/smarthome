@@ -112,13 +112,8 @@ func TestGetExistentScheduleById(t *testing.T) {
 		HomescriptCode: "print('a')",
 	}
 	newId, err := CreateNewSchedule(
-		schedule.Name,
 		scheduleOwner,
-		uint8(schedule.Hour),
-		uint8(schedule.Minute),
-		schedule.TargetMode,
-		schedule.HomescriptCode,
-		schedule.HomescriptTargetId,
+		schedule,
 	)
 	if err != nil {
 		t.Error(err.Error())

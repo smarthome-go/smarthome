@@ -91,7 +91,8 @@ func sendPowerRequest(node database.HardwareNode, switchName string, powerOn boo
 		return err
 	}
 
-	// Create a client with a timout of 2 seconds
+	// Creates a client with a timeout of 2 seconds
+	// TODO: make timeout editable / decide to use better timeout
 	client := http.Client{Timeout: time.Second * 2}
 
 	// Build a URL using the node parameters

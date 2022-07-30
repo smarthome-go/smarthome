@@ -322,7 +322,7 @@ func TestListUserCameras(t *testing.T) {
 		t.Error(err.Error())
 	}
 	assert.Equal(t, cams, userCamsAfterPerm)
-	// Check the user-cameras of the `room_admin` user, expected are all cameras, inluding the `unlisted` one
+	// Check the user-cameras of the `room_admin` user, expected are all cameras, including the `unlisted` one
 	userCamsAdmin, err := ListUserCameras("room_admin")
 	if err != nil {
 		t.Error(err.Error())

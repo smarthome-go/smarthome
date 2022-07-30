@@ -71,7 +71,7 @@
     // Creates an empty image
     let img = new Image()
 
-    // Appends the suffix of the currenty unix-millis to the image's url in order to force a refresh
+    // Appends the suffix of the currently unix-millis to the image's url in order to force a refresh
     // If the image fails to load, a snackbar is created and the `error` boolean is set to `true`
     async function loadImage() {
         loading = true

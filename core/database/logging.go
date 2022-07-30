@@ -97,7 +97,7 @@ func FlushAllLogs() error {
 	return nil
 }
 
-// Returns all logs currently in the datbase
+// Returns all logs currently in the database
 func GetLogs() ([]LogEvent, error) {
 	res, err := db.Query(`
 	SELECT

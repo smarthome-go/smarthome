@@ -127,7 +127,7 @@ func createDatabase() error {
 
 // Is used to initialize an `admin` user when initializing the database
 func initAdminUser(password string) error {
-	// The admin user is only created if no user with user-management priveleges is present
+	// The admin user is only created if no user with user-management privileges is present
 	userAdminExists := false
 	users, err := ListUsers()
 	if err != nil {
