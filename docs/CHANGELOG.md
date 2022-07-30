@@ -11,3 +11,4 @@
 ### Bugfixes
 - Dangling automations and schedules will now be removed on their next run
 - Added a check if *schedule-selection* is enabled to automation and scheduler API
+- Fixed many typos
