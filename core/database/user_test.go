@@ -48,10 +48,12 @@ func createUserMockData() error {
 	// Create a schedule
 	if _, err := CreateNewSchedule(
 		"name",
+		"delete_me",
 		12,
 		42,
+		ScheduleTargetModeCode,
 		"print('Hello World!')",
-		"delete_me",
+		"",
 	); err != nil {
 		return err
 	}

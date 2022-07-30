@@ -9,11 +9,22 @@ type Schedule struct {
 }
 
 type ScheduleData struct {
-	Name           string `json:"name"`
-	Hour           uint   `json:"hour"`
-	Minute         uint   `json:"minute"`
-	HomescriptCode string `json:"homescriptCode"`
+	Name               string             `json:"name"`
+	Hour               uint               `json:"hour"`
+	Minute             uint               `json:"minute"`
+	TargetMode         ScheduleTargetMode `json:"mode"`               // Specifies which actions are taken when the schedule is executed
+	HomescriptCode     string             `json:"homescriptCode"`     // Is read when using the `code` mode of the schedule
+	HomescriptTargetId string             `json:"homescriptTargetId"` // Is required when using the `hms` mode of the schedule
 }
+
+// Specifies which action will be performed as a target
+type ScheduleTargetMode string
+
+const (
+	ScheduleTargetModeCode     ScheduleTargetMode = "code"     // Will execute Homescript code as a target
+	ScheduleTargetModeSwitches ScheduleTargetMode = "switches" // Will perform a series of power actions as a target
+	ScheduleTargetModeHMS      ScheduleTargetMode = "hms"      // Will execute a Homescript by its id as a target
+)
 
 // Creates a new table containing the schedules for the normal scheduler jobs
 func createScheduleTable() error {
@@ -26,7 +37,13 @@ func createScheduleTable() error {
 		Owner VARCHAR(20),
 		Hour INT,
 		Minute INT,
+		TargetMode ENUM (
+			'switches',
+			'code',
+			'hms'
+		),
 		HomescriptCode TEXT,
+		HomescriptTargetId VARCHAR(30),
 		PRIMARY KEY (Id),
 		FOREIGN KEY (Owner)
 		REFERENCES user(Username)
@@ -41,10 +58,12 @@ func createScheduleTable() error {
 // Creates a new schedule which represents a job of the scheduler
 func CreateNewSchedule(
 	name string,
+	owner string,
 	hour uint8,
 	minute uint8,
+	targetMode ScheduleTargetMode,
 	homescriptCode string,
-	owner string,
+	homescriptTargetId string,
 ) (uint, error) {
 	query, err := db.Prepare(`
 	INSERT INTO
@@ -54,9 +73,11 @@ func CreateNewSchedule(
 		Owner,
 		Hour,
 		Minute,
-		HomescriptCode
+		TargetMode,
+		HomescriptCode,
+		HomescriptTargetId
 	)
-	VALUES(DEFAULT, ?, ?, ?, ?, ?)
+	VALUES(DEFAULT, ?, ?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		log.Error("Failed to create new schedule: preparing query failed: ", err.Error())
@@ -68,15 +89,17 @@ func CreateNewSchedule(
 		owner,
 		hour,
 		minute,
+		targetMode,
 		homescriptCode,
+		homescriptTargetId,
 	)
 	if err != nil {
-		log.Error("Failed to create new scheduler: executing query failed: ", err.Error())
+		log.Error("Failed to create new schedule: executing query failed: ", err.Error())
 		return 0, err
 	}
 	newId, err := res.LastInsertId()
 	if err != nil {
-		log.Error("Failed to create new scheduler: retrieving last inserted id failed: ", err.Error())
+		log.Error("Failed to create new schedule: retrieving last inserted id failed: ", err.Error())
 		return 0, err
 	}
 	return uint(newId), nil
@@ -92,7 +115,9 @@ func GetScheduleById(id uint) (Schedule, bool, error) {
 		Owner,
 		Hour,
 		Minute,
-		HomescriptCode
+		TargetMode,
+		HomescriptCode,
+		HomescriptTargetId,
 	FROM schedule
 	WHERE Id=?
 	`)
@@ -108,7 +133,9 @@ func GetScheduleById(id uint) (Schedule, bool, error) {
 		&schedule.Owner,
 		&schedule.Data.Hour,
 		&schedule.Data.Minute,
+		&schedule.Data.TargetMode,
 		&schedule.Data.HomescriptCode,
+		&schedule.Data.HomescriptTargetId,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return Schedule{}, false, nil
@@ -128,7 +155,9 @@ func GetUserSchedules(username string) ([]Schedule, error) {
 		Owner,
 		Hour,
 		Minute,
-		HomescriptCode
+		TargetMode,
+		HomescriptCode,
+		HomescriptTargetId
 	FROM schedule
 	WHERE Owner=?
 	`)
@@ -152,7 +181,9 @@ func GetUserSchedules(username string) ([]Schedule, error) {
 			&schedule.Owner,
 			&schedule.Data.Hour,
 			&schedule.Data.Minute,
+			&schedule.Data.TargetMode,
 			&schedule.Data.HomescriptCode,
+			&schedule.Data.HomescriptTargetId,
 		); err != nil {
 			log.Error("Failed to list user schedules: scanning results of query failed: ", err.Error())
 			return nil, err
@@ -171,7 +202,9 @@ func GetSchedules() ([]Schedule, error) {
 		Owner,
 		Hour,
 		Minute,
-		HomescriptCode
+		TargetMode,
+		HomescriptCode,
+		HomescriptTargetId,
 	FROM schedule
 	`)
 	if err != nil {
@@ -194,7 +227,9 @@ func GetSchedules() ([]Schedule, error) {
 			&schedule.Owner,
 			&schedule.Data.Hour,
 			&schedule.Data.Minute,
+			&schedule.Data.TargetMode,
 			&schedule.Data.HomescriptCode,
+			&schedule.Data.HomescriptTargetId,
 		); err != nil {
 			log.Error("Failed to list schedules: scanning results of query failed: ", err.Error())
 			return nil, err
@@ -213,7 +248,9 @@ func ModifySchedule(id uint, newData ScheduleData) error {
 		Name=?,
 		Hour=?,
 		Minute=?,
-		HomescriptCode=?
+		TargetMode=?,
+		HomescriptCode=?,
+		HomescriptTargetId=?
 	WHERE Id=?
 	`)
 	if err != nil {
@@ -225,7 +262,9 @@ func ModifySchedule(id uint, newData ScheduleData) error {
 		newData.Name,
 		newData.Hour,
 		newData.Minute,
+		newData.TargetMode,
 		newData.HomescriptCode,
+		newData.HomescriptTargetId,
 		id,
 	); err != nil {
 		log.Error("Failed to modify schedule: executing query failed: ", err.Error())

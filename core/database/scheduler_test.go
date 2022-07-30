@@ -16,25 +16,30 @@ func TestCreateScheduleTable(t *testing.T) {
 func TestSchedule(t *testing.T) {
 	table := []ScheduleData{
 		{
-			Name:           "test1",
-			Hour:           0,
-			Minute:         0,
-			HomescriptCode: "",
+			Name:               "test1",
+			Hour:               0,
+			Minute:             0,
+			TargetMode:         ScheduleTargetModeHMS,
+			HomescriptCode:     "",
+			HomescriptTargetId: "test",
 		},
 		{
 			Name:           "test2",
 			Hour:           1,
 			Minute:         1,
-			HomescriptCode: "print('')",
+			TargetMode:     ScheduleTargetModeCode,
+			HomescriptCode: "print('Hello World!')",
 		},
 	}
 	for _, item := range table {
 		newId, err := CreateNewSchedule(
 			item.Name,
+			scheduleOwner,
 			uint8(item.Hour),
 			uint8(item.Minute),
+			item.TargetMode,
 			item.HomescriptCode,
-			scheduleOwner,
+			item.HomescriptTargetId,
 		)
 		if err != nil {
 			t.Error(err.Error())
@@ -108,14 +113,17 @@ func TestGetExistentScheduleById(t *testing.T) {
 		Name:           "test1",
 		Hour:           1,
 		Minute:         1,
+		TargetMode:     ScheduleTargetModeCode,
 		HomescriptCode: "print('a')",
 	}
 	newId, err := CreateNewSchedule(
 		schedule.Name,
+		scheduleOwner,
 		uint8(schedule.Hour),
 		uint8(schedule.Minute),
+		schedule.TargetMode,
 		schedule.HomescriptCode,
-		scheduleOwner,
+		schedule.HomescriptTargetId,
 	)
 	if err != nil {
 		t.Error(err.Error())
@@ -163,26 +171,30 @@ func TestModifyDeleteSchedule(t *testing.T) {
 				Name:           "before",
 				Hour:           1,
 				Minute:         2,
+				TargetMode:     ScheduleTargetModeCode,
 				HomescriptCode: "print('before')",
 			},
 			After: ScheduleData{
-				Name:           "after",
-				Hour:           3,
-				Minute:         4,
-				HomescriptCode: "print('after')",
+				Name:               "after",
+				Hour:               3,
+				Minute:             4,
+				TargetMode:         ScheduleTargetModeHMS,
+				HomescriptCode:     "print('after')",
+				HomescriptTargetId: "test",
 			},
 		},
 		{
 			Before: ScheduleData{
-				Name:           "before2",
-				Hour:           5,
-				Minute:         6,
-				HomescriptCode: "print('before2')",
+				Name:       "before2",
+				Hour:       5,
+				Minute:     6,
+				TargetMode: ScheduleTargetModeSwitches,
 			},
 			After: ScheduleData{
 				Name:           "after2",
 				Hour:           7,
 				Minute:         8,
+				TargetMode:     ScheduleTargetModeCode,
 				HomescriptCode: "print('after2')",
 			},
 		},
@@ -190,10 +202,12 @@ func TestModifyDeleteSchedule(t *testing.T) {
 	for _, test := range table {
 		newId, err := CreateNewSchedule(
 			test.Before.Name,
+			scheduleOwner,
 			uint8(test.Before.Hour),
 			uint8(test.Before.Minute),
+			test.Before.TargetMode,
 			test.Before.HomescriptCode,
-			scheduleOwner,
+			test.Before.HomescriptTargetId,
 		)
 		if err != nil {
 			t.Error(err.Error())
@@ -201,10 +215,12 @@ func TestModifyDeleteSchedule(t *testing.T) {
 		}
 		// Modify the schedule
 		if err := ModifySchedule(newId, ScheduleData{
-			Name:           test.After.Name,
-			Hour:           test.After.Hour,
-			Minute:         test.After.Minute,
-			HomescriptCode: test.After.HomescriptCode,
+			Name:               test.After.Name,
+			Hour:               test.After.Hour,
+			Minute:             test.After.Minute,
+			TargetMode:         test.After.TargetMode,
+			HomescriptCode:     test.After.HomescriptCode,
+			HomescriptTargetId: test.After.HomescriptTargetId,
 		}); err != nil {
 			t.Error(err.Error())
 			return
@@ -224,6 +240,8 @@ func TestModifyDeleteSchedule(t *testing.T) {
 			schedule.Data.HomescriptCode != test.After.HomescriptCode ||
 			schedule.Data.Hour != test.After.Hour ||
 			schedule.Data.Minute != test.After.Minute ||
+			schedule.Data.TargetMode != test.After.TargetMode ||
+			schedule.Data.HomescriptTargetId != test.After.HomescriptTargetId ||
 			schedule.Owner != scheduleOwner {
 			t.Errorf("Metadate did not change completely after modification: want: %v got: %v", test.After, schedule)
 		}
