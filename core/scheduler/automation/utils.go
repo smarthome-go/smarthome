@@ -294,7 +294,7 @@ func ModifyAutomationById(automationId uint, newAutomation database.AutomationDa
 			log.Trace(fmt.Sprintf("Automation with id %d has been disabled", automationId))
 			if err := user.Notify(
 				automationBefore.Owner,
-				"Automation Temporarely Disabled",
+				"Automation Temporarily Disabled",
 				fmt.Sprintf("Automation '%s' has been disabled", automationBefore.Data.Name),
 				2,
 			); err != nil {

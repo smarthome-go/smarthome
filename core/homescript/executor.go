@@ -47,7 +47,7 @@ type Executor struct {
 
 	// The CallStack saves the history of which script called another
 	// Additionally, it specifies which Homescripts have to be excluded from the `exec` function
-	// Is required in order to prevent recursion until the system's database runs out of ressources
+	// Is required in order to prevent recursion until the system's database runs out of resources
 	// Acts like a blacklist which holds the blacklisted Homescript ids
 	// The last item in the CallStack is the script which was called the most recently (from script exit)
 	CallStack []string
@@ -65,7 +65,7 @@ type Executor struct {
 // => Checks if a sigTerm has been received
 // Is used to break out of expensive operations, for example sleep calls
 // Only a bool static that a code has been received is returned
-// => The real sigTerm hanling is done in the AST execution of the interpreter
+// => The real sigTerm handling is done in the AST execution of the interpreter
 func (self *Executor) checkSigTerm() bool {
 	select {
 	case code := <-self.SigTerm:
@@ -73,7 +73,7 @@ func (self *Executor) checkSigTerm() bool {
 		go func() {
 			// This goroutine is required because otherwise,
 			// The sending of the signal would block forever
-			// This is due to the interpeter only handling sigTerms on every AST-node
+			// This is due to the interpreter only handling sigTerms on every AST-node
 			// However, the interpreter will only handle the next node if this function's caller quits
 			// Because of this, not using a goroutine would invoke a deadlock
 			*self.sigTermInternalPtr <- code

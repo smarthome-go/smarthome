@@ -33,13 +33,8 @@ func TestSchedule(t *testing.T) {
 	}
 	for _, item := range table {
 		newId, err := CreateNewSchedule(
-			item.Name,
 			scheduleOwner,
-			uint8(item.Hour),
-			uint8(item.Minute),
-			item.TargetMode,
-			item.HomescriptCode,
-			item.HomescriptTargetId,
+			item,
 		)
 		if err != nil {
 			t.Error(err.Error())
@@ -201,27 +196,15 @@ func TestModifyDeleteSchedule(t *testing.T) {
 	}
 	for _, test := range table {
 		newId, err := CreateNewSchedule(
-			test.Before.Name,
 			scheduleOwner,
-			uint8(test.Before.Hour),
-			uint8(test.Before.Minute),
-			test.Before.TargetMode,
-			test.Before.HomescriptCode,
-			test.Before.HomescriptTargetId,
+			test.Before,
 		)
 		if err != nil {
 			t.Error(err.Error())
 			return
 		}
 		// Modify the schedule
-		if err := ModifySchedule(newId, ScheduleData{
-			Name:               test.After.Name,
-			Hour:               test.After.Hour,
-			Minute:             test.After.Minute,
-			TargetMode:         test.After.TargetMode,
-			HomescriptCode:     test.After.HomescriptCode,
-			HomescriptTargetId: test.After.HomescriptTargetId,
-		}); err != nil {
+		if err := ModifySchedule(newId, test.After); err != nil {
 			t.Error(err.Error())
 			return
 		}

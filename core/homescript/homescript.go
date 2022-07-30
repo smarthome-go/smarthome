@@ -57,7 +57,7 @@ func convertErrors(errorItems ...hmsError.Error) []HomescriptError {
 
 // Executes arbitrary Homescript-code as a given user, returns the output and a possible error slice
 // The `scriptLabel` argument is used internally to allow for better error-display
-// The `dryRun` argument specifies wheter the script should be linted or executed
+// The `dryRun` argument specifies whether the script should be linted or executed
 // The `args` argument represents the arguments passed to the Homescript runtime and
 // can be used from the script via the `CheckArg` and `GetArg` functions
 // The `excludedCalls` argument specifies which Homescripts may not be called by this Homescript in order to prevent recursion

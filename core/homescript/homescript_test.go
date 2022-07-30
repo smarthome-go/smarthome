@@ -335,7 +335,7 @@ func TestRecursion(t *testing.T) {
 	/* Non-recursive code */
 	t.Run("test_no_false_positives", func(t *testing.T) {
 		// A normal script which calls another one multiple times
-		// Useful for checking if the recursion detector is too agressive and prevents executing scripts twice
+		// Useful for checking if the recursion detector is too aggressive and prevents executing scripts twice
 		// However, the current implementation never detects false positives because of the way of how the call stack is pushed to
 		if err := database.CreateNewHomescript(database.Homescript{
 			Owner: "admin",

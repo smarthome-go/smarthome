@@ -243,7 +243,7 @@ func TestModificationToDifferentScript(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
-	// Wait for approx. a minute in order to dertermine if the modification succeeded
+	// Wait for approx. a minute in order to determine if the modification succeeded
 	valid := false
 	for i := 0; i < 7; i++ {
 		time.Sleep(time.Second * 10)
