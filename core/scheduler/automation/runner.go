@@ -28,6 +28,12 @@ func automationRunnerFunc(id uint) {
 			"Automation Failed",
 			fmt.Sprintf("Automation with id: '%d' could not be executed because it could not be found in the database", id),
 		)
+		// Abort this automation in order to prevent future errors
+		if err := scheduler.RemoveByTag(fmt.Sprintf("%d", id)); err != nil {
+			log.Error("Failed to remove dangling automation: could not stop cron job: ", err.Error())
+			return
+		}
+		log.Info(fmt.Sprintf("Successfully aborted dangling automation: %d", id))
 		return
 	}
 	// Notify and remind the user about the disabled automation

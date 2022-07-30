@@ -21,6 +21,12 @@ func scheduleRunnerFunc(id uint) {
 	}
 	if !jobFound {
 		log.Error(fmt.Sprintf("Failed to run schedule '%s': no metadata saved in the database: %s", job.Data.Name, err.Error()))
+		// Abort this schedule to avoid future errors
+		if err := scheduler.RemoveByTag(fmt.Sprintf("%d", id)); err != nil {
+			log.Error("Failed to remove dangling schedule: could not abort schedule: ", err.Error())
+			return
+		}
+		log.Info(fmt.Sprintf("Successfully aborted dangling schedule: %d", id))
 		return
 	}
 	owner, found, err := database.GetUserByUsername(job.Owner)
