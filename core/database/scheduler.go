@@ -126,7 +126,7 @@ func GetScheduleById(id uint) (Schedule, bool, error) {
 		Minute,
 		TargetMode,
 		HomescriptCode,
-		HomescriptTargetId,
+		HomescriptTargetId
 	FROM schedule
 	WHERE Id=?
 	`)
