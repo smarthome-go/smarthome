@@ -17,20 +17,14 @@ type UserSchedule struct {
 }
 
 // Creates and starts a schedule based on the provided input data
-func CreateNewSchedule(schedule database.ScheduleData, owner string) error {
-	newScheduleId, err := database.CreateNewSchedule(
-		schedule.Name,
-		uint8(schedule.Hour),
-		uint8(schedule.Minute),
-		schedule.HomescriptCode,
-		owner,
-	)
+func CreateNewSchedule(data database.ScheduleData, owner string) error {
+	newScheduleId, err := database.CreateNewSchedule(owner, data)
 	if err != nil {
 		log.Error("Failed to create new schedule: database failure: ", err.Error())
 		return err
 	}
 	// Prepare the job for go-cron
-	schedulerJob := scheduler.Every(1).Day().At(fmt.Sprintf("%02d:%02d", schedule.Hour, schedule.Minute))
+	schedulerJob := scheduler.Every(1).Day().At(fmt.Sprintf("%02d:%02d", data.Hour, data.Minute))
 	schedulerJob.Tag(fmt.Sprintf("%d", newScheduleId))
 	schedulerJob.LimitRunsTo(1)
 	if _, err := schedulerJob.Do(scheduleRunnerFunc, newScheduleId); err != nil {
@@ -58,12 +52,7 @@ func RemoveScheduleById(id uint) error {
 // Modify an already set up schedule
 // After the modification was performed, the schedule is restarted
 func ModifyScheduleById(id uint, newSchedule database.ScheduleData) error {
-	if err := database.ModifySchedule(id, database.ScheduleData{
-		Name:           newSchedule.Name,
-		Hour:           newSchedule.Hour,
-		Minute:         newSchedule.Minute,
-		HomescriptCode: newSchedule.HomescriptCode,
-	}); err != nil {
+	if err := database.ModifySchedule(id, newSchedule); err != nil {
 		log.Error("Failed to modify schedule by id: ", err.Error())
 		return err
 	}

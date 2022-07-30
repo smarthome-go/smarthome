@@ -7,7 +7,7 @@
     import { createSnackbar } from "../../global";
     import Page from "../../Page.svelte";
     import AddSchedule from "./dialogs/AddSchedule.svelte";
-    import { loading, schedules } from "./main";
+    import { loading, ScheduleData, schedules } from "./main";
     import Schedule from "./Schedule.svelte";
 
     let addOpen = false;
@@ -29,7 +29,7 @@
     }
 
     // Creates a new schedule on the server and the front end
-    async function createSchedule(schedule: AddSchedule) {
+    async function createSchedule(schedule: ScheduleData) {
         $loading = true;
         try {
             const res = await (

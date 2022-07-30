@@ -5,6 +5,7 @@ import (
 
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
+	"github.com/smarthome-go/smarthome/core/hardware"
 	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/core/user"
 )
@@ -59,32 +60,106 @@ func scheduleRunnerFunc(id uint) {
 		)
 		return
 	}
-	log.Debug(fmt.Sprintf("Schedule '%d' is running", id))
-	_, _, hmsErrors := homescript.HmsManager.Run(
-		owner.Username,
-		fmt.Sprintf("%d.hms", id),
-		job.Data.HomescriptCode,
-		false,
-		make(map[string]string, 0),
-		make([]string, 0),
-		homescript.InitiatorScheduler,
-	)
-	if len(hmsErrors) > 0 {
-		log.Error("Executing schedule's Homescript failed: ", hmsErrors[0].ErrorType)
-		if err := user.Notify(
+	log.Debug(fmt.Sprintf("Schedule '%d' is executing its target", id))
+	switch job.Data.TargetMode {
+	case database.ScheduleTargetModeCode:
+		_, _, hmsErrors := homescript.HmsManager.Run(
 			owner.Username,
-			"Schedule Failed",
-			fmt.Sprintf("Schedule '%s' failed due to Homescript error: %s", job.Data.Name, hmsErrors[0].Message),
-			user.NotificationLevelError,
-		); err != nil {
-			log.Error("Failed to notify user: ", err.Error())
+			fmt.Sprintf("%d.hms", id),
+			job.Data.HomescriptCode,
+			false,
+			make(map[string]string, 0),
+			make([]string, 0),
+			homescript.InitiatorScheduler,
+		)
+		if len(hmsErrors) > 0 {
+			log.Error("Executing schedule's Homescript failed: ", hmsErrors[0].ErrorType)
+			if err := user.Notify(
+				owner.Username,
+				"Schedule Failed",
+				fmt.Sprintf("Schedule '%s' failed due to Homescript error: %s", job.Data.Name, hmsErrors[0].Message),
+				user.NotificationLevelError,
+			); err != nil {
+				log.Error("Failed to notify user: ", err.Error())
+				return
+			}
+			event.Error(
+				"Schedule Failure",
+				fmt.Sprintf("Schedule '%d' failed. Error: %s", id, hmsErrors[0].Message),
+			)
 			return
 		}
-		event.Error(
-			"Schedule Failure",
-			fmt.Sprintf("Schedule '%d' failed. Error: %s", id, hmsErrors[0].Message),
+	case database.ScheduleTargetModeHMS:
+		_, _, err := homescript.HmsManager.RunById(
+			job.Data.HomescriptTargetId,
+			owner.Username,
+			make([]string, 0),
+			false,
+			make(map[string]string, 0),
+			homescript.InitiatorScheduler,
 		)
-		return
+		if err != nil {
+			log.Error("Executing schedule's Homescript failed: ", err.Error())
+			if err := user.Notify(
+				owner.Username,
+				"Schedule Failed",
+				fmt.Sprintf("Schedule '%s' failed due to Homescript execution error: %s", job.Data.Name, err.Error()),
+				user.NotificationLevelError,
+			); err != nil {
+				log.Error("Failed to notify user: ", err.Error())
+				return
+			}
+			event.Error(
+				"Schedule Failure",
+				fmt.Sprintf("Schedule '%d' failed. Error: %s", id, err.Error()),
+			)
+			return
+		}
+	case database.ScheduleTargetModeSwitches:
+		for _, switchJob := range job.Data.SwitchJobs {
+			// Validate if the user still has permission to perform this power job
+			hasPermission, err := database.UserHasSwitchPermission(job.Owner, switchJob.SwitchId)
+			if err != nil {
+				log.Error("Executing schedule's switch jobs failed: ", err.Error())
+				if err := user.Notify(
+					owner.Username,
+					"Schedule Failed",
+					fmt.Sprintf("Schedule '%s' failed due to switch validation error: %s", job.Data.Name, err.Error()),
+					user.NotificationLevelError,
+				); err != nil {
+					log.Error("Failed to notify user: ", err.Error())
+					return
+				}
+				event.Error(
+					"Schedule Failure",
+					fmt.Sprintf("Schedule '%d' failed. Error: %s", id, err.Error()),
+				)
+			}
+			if !hasPermission {
+				log.Warn("Executing schedule's switch jobs failed: user now lacks permission to use switch")
+				if err := user.Notify(
+					owner.Username,
+					"Schedule Failed",
+					fmt.Sprintf("Schedule '%s' failed due to lacking switch permissions: you now lack permission to use %s", job.Data.Name, switchJob.SwitchId),
+					user.NotificationLevelError,
+				); err != nil {
+					log.Error("Failed to notify user: ", err.Error())
+					return
+				}
+				event.Warn(
+					"Schedule Failure",
+					fmt.Sprintf("Schedule '%d' failed due to changed permissions.", id),
+				)
+			}
+			if err := hardware.SetPower(
+				switchJob.SwitchId,
+				switchJob.PowerOn,
+			); err != nil {
+				return
+			}
+		}
+	default:
+		log.Error("Unimplemented schedule mode")
 	}
 	if err := user.Notify(
 		job.Owner,

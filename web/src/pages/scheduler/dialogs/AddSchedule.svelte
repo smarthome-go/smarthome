@@ -24,7 +24,10 @@
         hour: 0,
         minute: 0,
         name: "",
-        homescriptCode: "#active_mode:hms\n",
+        targetMode: "hms",
+        homescriptCode: "",
+        homescriptTargetId: "",
+        switchJobs: [],
     };
 
     function reset() {
@@ -32,7 +35,10 @@
             hour: 0,
             minute: 0,
             name: "",
-            homescriptCode: "#active_mode:hms\n",
+            targetMode: "hms",
+            homescriptCode: "",
+            homescriptTargetId: "",
+            switchJobs: [],
         };
         open = false;
     }
@@ -63,7 +69,11 @@
             <Label>Cancel</Label>
         </Button>
         <Button
-            disabled={data.name == "" || data.homescriptCode.length == 0}
+            disabled={
+                data.name == "" ||
+                (data.targetMode === 'code' && data.homescriptCode.length === 0) ||
+                (data.targetMode === 'switches' && data.switchJobs.length === 0)
+            }
             use={[InitialFocus]}
             on:click={() => {
                 dispatch("add", data);
@@ -75,6 +85,3 @@
         </Button>
     </Actions>
 </Dialog>
-
-<style lang="scss">
-</style>

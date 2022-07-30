@@ -17,15 +17,39 @@
 
     $: if (open) upDatePrevious();
 
-    export let data: Schedule;
-    let dataBefore: ScheduleData;
+    export let data: Schedule = {
+        id: 0,
+        owner: "",
+        data: {
+            name: "",
+            hour: 0,
+            minute: 0,
+            targetMode: "hms",
+            homescriptCode: "",
+            homescriptTargetId: "",
+            switchJobs: [],
+        },
+    };
+
+    let dataBefore: ScheduleData = {
+        name: "",
+        hour: 0,
+        minute: 0,
+        targetMode: "hms",
+        homescriptCode: "",
+        homescriptTargetId: "",
+        switchJobs: [],
+    };
 
     function reset() {
         data.data = {
             name: dataBefore.name,
             hour: dataBefore.hour,
             minute: dataBefore.minute,
+            targetMode: dataBefore.targetMode,
             homescriptCode: dataBefore.homescriptCode,
+            homescriptTargetId: dataBefore.homescriptTargetId,
+            switchJobs: dataBefore.switchJobs,
         };
     }
 
@@ -34,7 +58,10 @@
             name: data.data.name,
             hour: data.data.hour,
             minute: data.data.minute,
+            targetMode: data.data.targetMode,
             homescriptCode: data.data.homescriptCode,
+            homescriptTargetId: data.data.homescriptTargetId,
+            switchJobs: data.data.switchJobs,
         };
     }
 
@@ -78,7 +105,6 @@
         </Button>
         <Button
             disabled={data.data.name == "" ||
-                data.data.homescriptCode.length == 0 ||
                 JSON.stringify(data.data) === JSON.stringify(dataBefore)}
             on:click={modifySchedule}
         >

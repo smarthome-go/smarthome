@@ -11,17 +11,24 @@
     import FormField from "@smui/form-field";
     import Switch from "@smui/switch";
     import Select, { Option } from "@smui/select";
+    import type { ScheduleData } from "../main";
+
+    export let data: ScheduleData = {
+        name: "",
+        hour: 0,
+        minute: 0,
+        targetMode: "hms",
+        homescriptCode: "",
+        homescriptTargetId: "",
+        switchJobs: [],
+    };
 
     /*
         //// Tabs (active mode selection) ////
     */
 
     // Specifies which mode is currently being used for editing
-    let active: "hms" | "switches" | "code" = "switches";
-
-    // Saves the last mode in the HMS
-    // Uses a header comment which is evaluated and parsed (see below for reference)
-    let activeInCode: "hms" | "switches" | "code" = "hms";
+    let active: "hms" | "switches" | "code" = "hms";
 
     // Saves the tab data for the editor type selection
     const tabs: string[] = ["hms", "switches", "code"];
@@ -55,32 +62,6 @@
     let homescriptsLoaded: boolean = false;
     let homescriptsLoading: boolean = false;
 
-    // Specifies which Homescript should be executed
-    // Homescript code will later be genereated reactively
-    let selectedHMS: string = "";
-
-    // Update the selected Homescript inside the code
-    $: if (active === "hms" && activeInCode == "hms" && selectedHMS != "")
-        setHMSInCode();
-
-    function setHMSInCode() {
-        if (selectedHMS != "")
-            code = code.split("\n")[0] + `\nexec("${selectedHMS}")`;
-    }
-
-    function getHMSFromCode() {
-        try {
-            selectedHMS = code.split('exec("')[1].split('")')[0];
-        } catch (err) {
-            if (homescripts.length > 0) {
-                selectedHMS = homescripts[0].data.id;
-            } else {
-                selectedHMS = "";
-            }
-            setHMSInCode();
-        }
-    }
-
     // Fetches the user's Homescripts for the HMS selectot
     async function loadHomescripts() {
         homescriptsLoading = true;
@@ -97,8 +78,6 @@
             );
             // Signal that the HMS are loaded
             homescriptsLoaded = true;
-            // Update the selected HMS from the code
-            if (active === "hms" && activeInCode == "hms") getHMSFromCode();
         } catch (err) {
             $createSnackbar(`Could not load Homescripts: ${err}`);
         }
@@ -118,23 +97,26 @@
     let switches: SwitchResponse[];
     let switchesLoaded: boolean = false;
     let switchesLoading: boolean = false;
-    let switchesSelected: { id: string; powerOn: boolean }[] = [];
     let switchToBeInserted: string;
     let switchesAvailable: SwitchResponse[] = [];
 
     $: if (
         switchesLoaded &&
         switches.length > 0 &&
-        switchesSelected !== undefined
+        data.switchJobs !== undefined
     )
         updateSwitchesAvailable();
 
     function updateSwitchesAvailable() {
         switchesAvailable = switches.filter((s) => {
-            return switchesSelected.filter((v) => v.id === s.id).length === 0;
+            return (
+                data.switchJobs.filter((v) => v.switchId === s.id).length === 0
+            );
         });
         // Causes an update in the selection element
-        switchToBeInserted = undefined;
+        if (switchesAvailable.length === 1)
+            switchToBeInserted = switchesAvailable[0].id;
+        else switchToBeInserted = undefined;
     }
 
     interface SwitchResponse {
@@ -142,57 +124,6 @@
         name: string;
         powerOn: boolean;
         watts: number;
-    }
-
-    // Update the selected Homescript inside the code
-    $: if (
-        active === "switches" &&
-        activeInCode == "switches" &&
-        switchesSelected.length > 0
-    )
-        setSwitchesCode();
-
-    function setSwitchesCode() {
-        if (switchesSelected.length > 0)
-            code =
-                code.split("\n")[0] +
-                `\n${switchesSelected
-                    .map(
-                        (s) => `switch("${s.id}", ${s.powerOn ? "on" : "off"})`
-                    )
-                    .join("\n")}`;
-    }
-
-    function getSwitchesFromCode() {
-        try {
-            const lines = code.split("\n");
-            switchesSelected = lines.slice(1, lines.length).map((s) => {
-                const id = s.split('switch("')[1].split('", ')[0];
-                const powerOnStr = s.split(`switch("${id}", `)[1].split(")")[0];
-                let powerOn = false;
-
-                switch (powerOnStr) {
-                    case "on":
-                        powerOn = true;
-                        break;
-                    case "off":
-                        powerOn = false;
-                        break;
-                    default:
-                        // Invalid power-specifier: invlaid code
-                        throw Error(`invalid power-specifier: ${powerOnStr}`);
-                }
-
-                return Object.create({
-                    id,
-                    powerOn,
-                });
-            });
-        } catch (err) {
-            console.error(err);
-            switchesSelected = [];
-            setSwitchesCode();
-        }
     }
 
     // Loads the user's personal switches
@@ -206,55 +137,10 @@
             switches = res;
             switchesAvailable = res;
             switchesLoaded = true;
-
-            // Update the selected switches from the code
-            if (active === "switches" && activeInCode == "switches")
-                getSwitchesFromCode();
         } catch (err) {
             $createSnackbar(`Could not load switches: ${err}`);
         }
         switchesLoading = false;
-    }
-
-    /*
-        //// Code + active modes ////
-    */
-    // Is bound to the HMS editors
-    export let code: string = `#active_mode:${active}\n`;
-
-    // Updates the active-code mode every time the underlying code changes
-    $: if (code !== undefined) {
-        activeInCode = getModeFromCode();
-        active = activeInCode;
-    }
-
-    // Parses the code's first line in order to return the active code
-    // If the function fails to do so, it returns the current active mode and displays an error-message to the user (who must have messed up)
-    function getModeFromCode(): "hms" | "switches" | "code" {
-        switch (code.split("\n")[0].split("#active_mode:")[1]) {
-            case "hms":
-                return "hms";
-            case "switches":
-                return "switches";
-            case "code":
-                return "code";
-            default:
-                $createSnackbar("The first line must not be edited");
-                setModeInCode(active);
-                return active;
-        }
-    }
-
-    // Updates the code's header comment to use a given mode
-    function setModeInCode(mode: "hms" | "switches" | "code") {
-        let codeTemp = code.split("\n");
-        codeTemp[0] = `#active_mode:${mode}`;
-        code = codeTemp.join("\n");
-    }
-
-    // Reset the code using a given mode
-    function resetCode(mode: "hms" | "switches" | "code") {
-        code = `#active_mode:${mode}`;
     }
 </script>
 
@@ -271,23 +157,26 @@
     </div>
     <div class="main__editor" class:hms={active === "hms"}>
         {#if active === "hms"}
-            {#if activeInCode !== active}
+            {#if data.targetMode !== active}
                 <HmsInputsReset
                     {active}
-                    {activeInCode}
+                    activeInCode={data.targetMode}
                     icon="auto_fix_off"
-                    on:reset={() => resetCode(active)}
+                    on:reset={() => (data.targetMode = active)}
                 />
             {:else}
-                <HmsSelector {homescripts} bind:selection={selectedHMS} />
+                <HmsSelector
+                    {homescripts}
+                    bind:selection={data.homescriptTargetId}
+                />
             {/if}
         {:else if active === "switches"}
-            {#if activeInCode !== active}
+            {#if data.targetMode !== active}
                 <HmsInputsReset
                     {active}
-                    {activeInCode}
+                    activeInCode={data.targetMode}
                     icon="auto_fix_off"
-                    on:reset={() => resetCode(active)}
+                    on:reset={() => (data.targetMode = active)}
                 />
             {:else if switchesLoaded}
                 <div class="main__editor__switches__header mdc-elevation--z1">
@@ -311,10 +200,10 @@
                                 return;
                             }
 
-                            switchesSelected = [
-                                ...switchesSelected,
+                            data.switchJobs = [
+                                ...data.switchJobs,
                                 {
-                                    id: switchToBeInserted,
+                                    switchId: switchToBeInserted,
                                     powerOn: false,
                                 },
                             ];
@@ -324,7 +213,7 @@
                     </IconButton>
                 </div>
                 <div class="main__editor__switches__wizard">
-                    {#if switchesSelected.length === 0}
+                    {#if data.switchJobs.length === 0}
                         <div class="main__editor__switches__no-selection">
                             <i
                                 class="main__editor__switches__no-selection__icon material-icons"
@@ -333,13 +222,23 @@
                             <div
                                 class="main__editor__switches__no-selection__text"
                             >
-                                <h6>Empty Procedure</h6>
-                                Your current procedure is empty, use the menu above
-                                in order to create a new switch action.
+                                {#if switches.length === 0 && switchesLoaded && !switchesLoading}
+                                    <h6>No switches available</h6>
+                                    You need to have access to at least 1 switch.
+                                    <br />
+                                    <span class="text-disabled">
+                                        If this is unintentional, contact your
+                                        administrator.
+                                    </span>
+                                {:else}
+                                    <h6>Empty Procedure</h6>
+                                    Your current procedure is empty, use the menu
+                                    above in order to create a new switch action.
+                                {/if}
                             </div>
                         </div>
                     {/if}
-                    {#each switchesSelected as sw (sw.id)}
+                    {#each data.switchJobs as sw (sw.switchId)}
                         <div
                             class="main__editor__switches__wizard__item mdc-elevation--z1"
                         >
@@ -349,15 +248,15 @@
                                     icons={false}
                                 />
                                 <span slot="label"
-                                    >{switches.find((s) => s.id === sw.id)
+                                    >{switches.find((s) => s.id === sw.switchId)
                                         .name}</span
                                 >
                             </FormField>
                             <IconButton
                                 class="material-icons"
                                 on:click={() => {
-                                    switchesSelected = switchesSelected.filter(
-                                        (s) => s.id !== sw.id
+                                    data.switchJobs = data.switchJobs.filter(
+                                        (s) => s.switchId !== sw.switchId
                                     );
                                 }}
                             >
@@ -369,20 +268,21 @@
             {:else}
                 <Progress type="circular" loading={true} />
             {/if}
-        {:else if activeInCode !== active}
+        {:else if data.targetMode !== active}
             <HmsInputsReset
                 {active}
-                {activeInCode}
+                activeInCode={data.targetMode}
                 icon="code_off"
-                on:reset={() => resetCode(active)}
+                on:reset={() => (data.targetMode = active)}
             />
         {:else}
-            <HmsEditor registerCtrlSCatcher bind:code />
+            <HmsEditor registerCtrlSCatcher bind:code={data.homescriptCode} />
         {/if}
     </div>
 </div>
 
 <style lang="scss">
+    @use "../../../mixins" as *;
     .main {
         &__editor {
             height: 20rem;
@@ -405,7 +305,6 @@
                     align-items: center;
                     gap: 1rem;
                     margin-top: 2rem;
-                    position: absolute;
 
                     &__icon {
                         display: block;
@@ -414,7 +313,11 @@
                     }
 
                     &__text {
-                        max-width: 60%;
+                        max-width: 50%;
+
+                        @include widescreen {
+                            max-width: 60%;
+                        }
 
                         h6 {
                             margin: 0.1rem 0;

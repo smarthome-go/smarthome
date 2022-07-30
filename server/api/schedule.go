@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/smarthome-go/smarthome/core/database"
@@ -57,6 +58,7 @@ func CreateNewSchedule(w http.ResponseWriter, r *http.Request) {
 	decoder.DisallowUnknownFields()
 	var request database.ScheduleData
 	if err := decoder.Decode(&request); err != nil {
+		log.Error(err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
@@ -64,6 +66,68 @@ func CreateNewSchedule(w http.ResponseWriter, r *http.Request) {
 	if request.Hour > 24 || request.Minute > 60 { // Checks the minute and hour, values below 0 are checked implicitly through `uint`
 		w.WriteHeader(http.StatusBadRequest)
 		Res(w, Response{Success: false, Message: "failed to create new schedule", Error: "invalid hour and / or minute"})
+		return
+	}
+	// Validate target-mode specific data
+	switch request.TargetMode {
+	case database.ScheduleTargetModeHMS:
+		hmsData, HMSfound, err := database.GetUserHomescriptById(
+			request.HomescriptTargetId,
+			username,
+		)
+		if err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			Res(w, Response{Success: false, Message: "failed to validate `homescriptTargetId`", Error: "database failure"})
+			return
+		}
+		if !HMSfound {
+			w.WriteHeader(http.StatusBadRequest)
+			Res(w, Response{Success: false, Message: "failed to create new schedule", Error: "invalid `homescriptTargetId`"})
+			return
+		}
+		if !hmsData.Data.SchedulerEnabled {
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			Res(w, Response{Success: false, Message: "failed to modify schedule", Error: fmt.Sprintf("Homescript `%s` has disabled scheduler selection", request.HomescriptTargetId)})
+			return
+		}
+	case database.ScheduleTargetModeSwitches:
+		// Validate that the switchActions only contain valid switches
+
+		// Only one switch action per switch is allowed
+		// For routines or toggling, Homescript must be used
+		existentSwitches := make([]string, 0)
+
+		for _, switchItem := range request.SwitchJobs {
+			// Validate that the switch is valid and accessible
+			found, err := database.UserHasSwitchPermission(username, switchItem.SwitchId)
+			if err != nil {
+				w.WriteHeader(http.StatusServiceUnavailable)
+				Res(w, Response{Success: false, Message: "failed to validate `switchJobs`", Error: "database failure"})
+				return
+			}
+			if !found {
+				w.WriteHeader(http.StatusBadRequest)
+				Res(w, Response{Success: false, Message: "failed to create new schedule", Error: fmt.Sprintf("invalid switch id:`%s`", switchItem.SwitchId)})
+				return
+			}
+
+			// Check if the switch already exists
+			for _, existentSwitch := range existentSwitches {
+				if existentSwitch == switchItem.SwitchId {
+					w.WriteHeader(http.StatusBadRequest)
+					Res(w, Response{Success: false, Message: "failed to create new schedule", Error: fmt.Sprintf("second occurence of switch `%s`: only one entry per switch-id allowed", switchItem.SwitchId)})
+					return
+				}
+			}
+			// Append to the existent switches
+			existentSwitches = append(existentSwitches, switchItem.SwitchId)
+		}
+	case database.ScheduleTargetModeCode:
+		// Nothing is validated (could validate Homescript via lint but is omitted)
+		break
+	default:
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "failed to create new schedule", Error: fmt.Sprintf("invalid `targetMode`: `%s`", request.TargetMode)})
 		return
 	}
 	if err := scheduler.CreateNewSchedule(request, username); err != nil {
@@ -89,11 +153,7 @@ func ModifySchedule(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	if request.Data.Hour > 24 || request.Data.Minute > 60 { // Checks the minute and hour, values below 0 are checked implicitly through `uint`
-		w.WriteHeader(http.StatusBadRequest)
-		Res(w, Response{Success: false, Message: "failed to modify schedule", Error: "invalid hour and / or minute"})
-		return
-	}
+	// Validate if the schedule exists
 	_, doesExists, err := scheduler.GetUserScheduleById(username, request.Id)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -103,6 +163,74 @@ func ModifySchedule(w http.ResponseWriter, r *http.Request) {
 	if !doesExists {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		Res(w, Response{Success: false, Message: "failed to modify schedule", Error: "invalid id / not found"})
+		return
+	}
+	// Validate hour and minute
+	if request.Data.Hour > 24 || request.Data.Minute > 60 { // Checks the minute and hour, values below 0 are checked implicitly through `uint`
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to modify schedule", Error: "invalid hour and / or minute"})
+		return
+	}
+	// Validate target-mode specific data
+	switch request.Data.TargetMode {
+	case database.ScheduleTargetModeHMS:
+		hmsData, HMSfound, err := database.GetUserHomescriptById(
+			request.Data.HomescriptTargetId,
+			username,
+		)
+		if err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			Res(w, Response{Success: false, Message: "failed to validate `homescriptTargetId`", Error: "database failure"})
+			return
+		}
+		if !HMSfound {
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			Res(w, Response{Success: false, Message: "failed to modify schedule", Error: "invalid `homescriptTargetId`"})
+			return
+		}
+		if !hmsData.Data.SchedulerEnabled {
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			Res(w, Response{Success: false, Message: "failed to modify schedule", Error: fmt.Sprintf("Homescript `%s` has disabled scheduler selection", request.Data.HomescriptTargetId)})
+			return
+		}
+	case database.ScheduleTargetModeSwitches:
+		// Validate that the switchActions only contain valid switches
+
+		// Only one switch action per switch is allowed
+		// For routines or toggling, Homescript must be used
+		existentSwitches := make([]string, 0)
+
+		for _, switchItem := range request.Data.SwitchJobs {
+			// Validate that the switch is valid and accessible
+			found, err := database.UserHasSwitchPermission(username, switchItem.SwitchId)
+			if err != nil {
+				w.WriteHeader(http.StatusServiceUnavailable)
+				Res(w, Response{Success: false, Message: "failed to validate `switchJobs`", Error: "database failure"})
+				return
+			}
+			if !found {
+				w.WriteHeader(http.StatusBadRequest)
+				Res(w, Response{Success: false, Message: "failed to modify schedule", Error: fmt.Sprintf("invalid switch id:`%s`", switchItem.SwitchId)})
+				return
+			}
+
+			// Check if the switch already exists
+			for _, existentSwitch := range existentSwitches {
+				if existentSwitch == switchItem.SwitchId {
+					w.WriteHeader(http.StatusBadRequest)
+					Res(w, Response{Success: false, Message: "failed to modify schedule", Error: fmt.Sprintf("second occurence of switch `%s`: only one entry per switch-id allowed", switchItem.SwitchId)})
+					return
+				}
+			}
+			// Append to the existent switches
+			existentSwitches = append(existentSwitches, switchItem.SwitchId)
+		}
+	case database.ScheduleTargetModeCode:
+		// Nothing is validated (could validate Homescript via lint but is omitted)
+		break
+	default:
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "failed to modify schedule", Error: fmt.Sprintf("invalid `targetMode`: `%s`", request.Data.TargetMode)})
 		return
 	}
 	if err := scheduler.ModifyScheduleById(request.Id, request.Data); err != nil {

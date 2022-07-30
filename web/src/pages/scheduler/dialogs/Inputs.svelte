@@ -44,7 +44,7 @@
     </div>
     <!-- Right -->
     <div class="right">
-        <HmsInputs bind:code={data.homescriptCode} />
+        <HmsInputs bind:data />
     </div>
 </div>
 

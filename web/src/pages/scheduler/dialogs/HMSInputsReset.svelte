@@ -19,19 +19,26 @@
     <div class="warning__text">
         The last edit was made using the
         <span class="warning__text__code-active">{activeInCode}</span>
-        mode. To use the
+        mode.
+        <br />
+        To use the
         <span class="warning__text__code-active">{active}</span>
-        mode, a reset is required. However, a reset will cause you loosing your all
-        your previous changes.
+        mode, a change is required.
+        <br />
+        <span class="text-disabled">
+            This will update the schedule's target mode.
+        </span>
     </div>
     <div class="warning__reset-button">
         <Button on:click={() => dispatch("reset")} variant="outlined"
-            >Reset Code</Button
+            >Change Mode</Button
         >
     </div>
 </div>
 
 <style lang="scss">
+    @use "../../../mixins" as *;
+
     .warning {
         display: flex;
         flex-direction: column;
@@ -47,7 +54,12 @@
         }
 
         &__text {
-            max-width: 60%;
+            max-width: 50%;
+
+            @include widescreen {
+                max-width: 60%;
+            }
+
             &__code-active {
                 color: var(--clr-primary);
             }
