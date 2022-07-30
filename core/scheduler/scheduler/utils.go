@@ -68,7 +68,7 @@ func ModifyScheduleById(id uint, newSchedule database.ScheduleData) error {
 		log.Error("Failed to modify schedule: could not register cronjob after modification: ", err.Error())
 		return err
 	}
-	log.Trace(fmt.Sprintf("Successfully added and setup schedule after modification'%d'", id))
+	log.Trace(fmt.Sprintf("Successfully added and setup schedule after modification: '%d'", id))
 	return nil
 }
 
