@@ -13,17 +13,17 @@ import (
 )
 
 type AddReminderRequest struct {
-	Name        string                        `json:"name"`
-	Description string                        `json:"description"`
-	Priority    database.NotificationPriority `json:"priority"`
-	DueDate     uint                          `json:"dueDate"` // Will be sent as unix millis
+	Name        string                    `json:"name"`
+	Description string                    `json:"description"`
+	Priority    database.ReminderPriority `json:"priority"`
+	DueDate     uint                      `json:"dueDate"` // Will be sent as unix millis
 }
 type ModifyReminderRequest struct {
-	Id          uint                          `json:"id"`
-	Name        string                        `json:"name"`
-	Description string                        `json:"description"`
-	Priority    database.NotificationPriority `json:"priority"`
-	DueDate     uint                          `json:"dueDate"` // Will be sent as unix millis
+	Id          uint                      `json:"id"`
+	Name        string                    `json:"name"`
+	Description string                    `json:"description"`
+	Priority    database.ReminderPriority `json:"priority"`
+	DueDate     uint                      `json:"dueDate"` // Will be sent as unix millis
 }
 
 type AddedReminderResponse struct {

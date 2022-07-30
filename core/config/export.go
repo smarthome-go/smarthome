@@ -53,13 +53,13 @@ type setupHardwareNode struct {
 }
 
 type setupReminder struct {
-	Name              string                        `json:"name"`
-	Description       string                        `json:"description"`
-	Priority          database.NotificationPriority `json:"priority"`
-	CreatedDate       time.Time                     `json:"createdDate"`
-	DueDate           time.Time                     `json:"dueDate"`
-	UserWasNotified   bool                          `json:"userWasNotified"`
-	UserWasNotifiedAt time.Time                     `json:"userWasNotifiedAt"`
+	Name              string                    `json:"name"`
+	Description       string                    `json:"description"`
+	Priority          database.ReminderPriority `json:"priority"`
+	CreatedDate       time.Time                 `json:"createdDate"`
+	DueDate           time.Time                 `json:"dueDate"`
+	UserWasNotified   bool                      `json:"userWasNotified"`
+	UserWasNotifiedAt time.Time                 `json:"userWasNotifiedAt"`
 }
 
 type setupHomescript struct {

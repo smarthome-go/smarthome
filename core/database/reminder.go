@@ -6,10 +6,10 @@ import (
 	"time"
 )
 
-type NotificationPriority uint
+type ReminderPriority uint
 
 const (
-	Low NotificationPriority = iota
+	Low ReminderPriority = iota
 	Normal
 	Medium
 	High
@@ -17,15 +17,15 @@ const (
 )
 
 type Reminder struct {
-	Id                uint                 `json:"id"`
-	Name              string               `json:"name"`
-	Description       string               `json:"description"`
-	Priority          NotificationPriority `json:"priority"`
-	CreatedDate       time.Time            `json:"createdDate"`
-	DueDate           time.Time            `json:"dueDate"`
-	Owner             string               `json:"owner"`
-	UserWasNotified   bool                 `json:"userWasNotified"` // Saves if the ownere has been notified about the current urgency of the task
-	UserWasNotifiedAt time.Time            `json:"userWasNotifiedAt"`
+	Id                uint             `json:"id"`
+	Name              string           `json:"name"`
+	Description       string           `json:"description"`
+	Priority          ReminderPriority `json:"priority"`
+	CreatedDate       time.Time        `json:"createdDate"`
+	DueDate           time.Time        `json:"dueDate"`
+	Owner             string           `json:"owner"`
+	UserWasNotified   bool             `json:"userWasNotified"` // Saves if the owner has been notified about the current urgency of the task
+	UserWasNotifiedAt time.Time        `json:"userWasNotifiedAt"`
 }
 
 // Creates the table which contains reminders
@@ -56,7 +56,7 @@ func createReminderTable() error {
 }
 
 // Creates a new reminder in the database
-func CreateNewReminder(name string, description string, dueDate time.Time, owner string, priority NotificationPriority) (uint, error) {
+func CreateNewReminder(name string, description string, dueDate time.Time, owner string, priority ReminderPriority) (uint, error) {
 	query, err := db.Prepare(`
 	INSERT INTO
 	reminder(
@@ -156,7 +156,7 @@ func GetUserReminders(username string) ([]Reminder, error) {
 }
 
 // Modifies a given reminder to possess the new metadata
-func ModifyReminder(id uint, name string, description string, dueDate time.Time, priority NotificationPriority) error {
+func ModifyReminder(id uint, name string, description string, dueDate time.Time, priority ReminderPriority) error {
 	query, err := db.Prepare(`
 	UPDATE reminder
 	SET

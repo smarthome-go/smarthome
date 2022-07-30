@@ -3,15 +3,15 @@ package reminder
 import "github.com/smarthome-go/smarthome/core/database"
 
 type Reminder struct {
-	Id                uint                          `json:"id"`
-	Name              string                        `json:"name"`
-	Description       string                        `json:"description"`
-	Priority          database.NotificationPriority `json:"priority"`
-	CreatedDate       int64                         `json:"createdDate"` // Dates are represented as unix millis for making access in frontend easier
-	DueDate           int64                         `json:"dueDate"`
-	Owner             string                        `json:"owner"`
-	UserWasNotified   bool                          `json:"userWasNotified"`
-	UserWasNotifiedAt int64                         `json:"userWasNotifiedAt"`
+	Id                uint                      `json:"id"`
+	Name              string                    `json:"name"`
+	Description       string                    `json:"description"`
+	Priority          database.ReminderPriority `json:"priority"`
+	CreatedDate       int64                     `json:"createdDate"` // Dates are represented as unix millis for making access in frontend easier
+	DueDate           int64                     `json:"dueDate"`
+	Owner             string                    `json:"owner"`
+	UserWasNotified   bool                      `json:"userWasNotified"`
+	UserWasNotifiedAt int64                     `json:"userWasNotifiedAt"`
 }
 
 // Returns a users reminders but transforms the underlying date to a unix timestamp
