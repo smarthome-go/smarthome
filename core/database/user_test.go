@@ -47,13 +47,16 @@ func createUserMockData() error {
 	}
 	// Create a schedule
 	if _, err := CreateNewSchedule(
-		"name",
 		"delete_me",
-		12,
-		42,
-		ScheduleTargetModeCode,
-		"print('Hello World!')",
-		"",
+		ScheduleData{
+			Name:               "name",
+			Hour:               12,
+			Minute:             42,
+			TargetMode:         ScheduleTargetModeCode,
+			HomescriptCode:     "print('Hello World!')",
+			HomescriptTargetId: "",
+			SwitchJobs:         make([]ScheduleSwitchJobData, 0),
+		},
 	); err != nil {
 		return err
 	}
