@@ -1,4 +1,4 @@
-name: Check for Typos
+name: Typo Chck
 on:
   push:
     branches: [ main ]
