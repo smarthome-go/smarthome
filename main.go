@@ -92,8 +92,9 @@ func main() {
 
 	// Scan environment variables
 	/*
-		`SMARTHOME_ADMIN_PASSWORD`: (String) If set, the admin user that is created on first launch will get this password instead of `admin`
+		`SMARTHOME_ADMIN_PASSWORD`: (String) If specified, the admin user that is created on first launch will receive this password instead of `admin`
 		`SMARTHOME_ENV_PRODUCTION`: (Bool  ) Whether the server should use production presets
+		`SMARTHOME_SESSION_KEY`   : (String) (Only during production) Specifies a manual key for session encryption (used for larger instances): random key generation is skipped
 		`SMARTHOME_DB_DATABASE`   : (String) Sets the database name
 		`SMARTHOME_DB_HOSTNAME`   : (String) Sets the database hostname
 		`SMARTHOME_DB_PORT`       : (Int   ) Sets the database port
@@ -116,6 +117,19 @@ func main() {
 			log.Debug("Detected `SMARTHOME_ENV_PRODUCTION` (FALSE), server will start in development mode")
 		default:
 			log.Warn("Could not use `SMARTHOME_ENV_PRODUCTION` as boolean value, using development mode\nValid modes are `TRUE` and `FALSE`")
+		}
+	}
+	// Session key
+	if sessionKey, sessionKeyOk := os.LookupEnv("SMARTHOME_SESSION_KEY"); sessionKeyOk {
+		if !configStruct.Server.Production {
+			log.Warn("Using manually specified session encryption key during development mode. This will have no effect unless using production")
+		} else {
+			if configStruct.Server.SessionKey != "" {
+				log.Debug("Selected SMARTHOME_SESSION_KEY over value from config file")
+			} else {
+				log.Info("Using manually specified session encryption key from SMARTHOME_SESSION_KEY")
+			}
+			configStruct.Server.SessionKey = sessionKey
 		}
 	}
 	// DB variables
@@ -204,7 +218,17 @@ func main() {
 
 	// Server, middleware and routes
 	r := routes.NewRouter()
-	middleware.Init(configStruct.Server.Production)
+	if !configStruct.Server.Production {
+		log.Warn("Using default session encryption. This is a security risk and must only be used during development.\nHint: this message should dissapear when using `production` mode")
+		middleware.InitWithManualKey("")
+	} else {
+		if configStruct.Server.SessionKey == "" {
+			log.Debug("Manual session key is empty, generating random key...")
+			middleware.InitWithRandomKey()
+		} else {
+			middleware.InitWithManualKey(configStruct.Server.SessionKey)
+		}
+	}
 	if err := templates.LoadTemplates("./web/dist/html/*.html"); err != nil {
 		log.Fatal("Failed to load HTML templates: ", err.Error())
 	}

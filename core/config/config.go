@@ -12,14 +12,15 @@ import (
 	"github.com/smarthome-go/smarthome/core/database"
 )
 
-type ServerConfig struct {
-	Production bool   `json:"production"`
-	Port       uint16 `json:"port"`
-}
-
 type Config struct {
 	Server   ServerConfig            `json:"server"`
 	Database database.DatabaseConfig `json:"database"`
+}
+
+type ServerConfig struct {
+	Production bool   `json:"production"`
+	SessionKey string `json:"sessionKey"` // Can be used to specify a manual session key
+	Port       uint16 `json:"port"`
 }
 
 var config Config

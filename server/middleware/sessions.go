@@ -7,15 +7,16 @@ import (
 
 var Store *sessions.CookieStore
 
-func Init(useRandomSeed bool) {
-	if useRandomSeed {
-		Store = sessions.NewCookieStore(securecookie.GenerateRandomKey(32))
-	} else {
-		// By using a static sting like "", no login is required when restarting the server in non-production mode
-		// The session encryption key is static, cookies stay valid
-		// If a logout should be enforced during development, enable production mode temporarily
-		log.Warn("\x1b[33mUsing static session encryption. This is a security risk.")
-		Store = sessions.NewCookieStore([]byte(""))
-	}
-	log.Debug("Successfully initialized middleware session store")
+func InitWithManualKey(randomSeed string) {
+	// By using a static string,  no login is required when restarting the server
+	// In this case the session encryption key is static, cookies stay valid
+	// If a logout should be enforced during development, the key must be changed or ommited
+	Store = sessions.NewCookieStore([]byte(randomSeed))
+	log.Debug("Successfully initialized middleware session store using manual seed")
+}
+
+func InitWithRandomKey() {
+	Store = sessions.NewCookieStore(securecookie.GenerateRandomKey(32))
+	Store = sessions.NewCookieStore([]byte(""))
+	log.Debug("Successfully initialized middleware session store using random key")
 }
