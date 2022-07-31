@@ -58,16 +58,17 @@ func (m *Manager) PushJob(
 	return id
 }
 
-func (m *Manager) debugPrint() {
-	output := "=== JOBS: "
-	m.Lock.RLock()
-	for _, job := range m.Jobs {
-		output += fmt.Sprintf("[%d] ", job.Id)
-	}
-	m.Lock.RUnlock()
-	output += " ==="
-	log.Debug(output)
-}
+// DEPRECATED: this function was once used for testing
+//func (m *Manager) debugPrint() {
+//output := "=== JOBS: "
+//m.Lock.RLock()
+//for _, job := range m.Jobs {
+//output += fmt.Sprintf("[%d] ", job.Id)
+//}
+//m.Lock.RUnlock()
+//output += " ==="
+//log.Debug(output)
+//}
 
 // Executes arbitrary Homescript-code as a given user, returns the output and a possible error slice
 // The `scriptLabel` argument is used internally to allow for better error-display
@@ -111,8 +112,6 @@ func (m *Manager) Run(
 		make(chan uint64),
 	)
 
-	m.debugPrint()
-
 	// Run the script
 	exitCode, hmsErrors := homescript.Run(
 		executor,
@@ -123,8 +122,6 @@ func (m *Manager) Run(
 
 	// Remove the Job from the jobs list
 	m.removeJob(id)
-
-	m.debugPrint()
 
 	// Process outcome
 	if len(hmsErrors) > 0 {
@@ -229,4 +226,11 @@ func (m *Manager) KillAllId(hmsId string) (count uint64, success bool) {
 		}
 	}
 	return count, success
+}
+
+// Can be used to access the manager's jobs from the outside in a safe manner
+func (m *Manager) GetJobList() []Job {
+	m.Lock.RLock()
+	defer m.Lock.RUnlock()
+	return m.Jobs
 }

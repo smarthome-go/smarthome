@@ -16,7 +16,6 @@ import (
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/hardware"
 	"github.com/smarthome-go/smarthome/core/user"
-	"github.com/smarthome-go/smarthome/core/utils"
 )
 
 type Executor struct {
@@ -241,7 +240,7 @@ func (self *Executor) Http(requestUrl string, method string, body string, header
 	}
 
 	// Set the user agent to the Smarthome HMS client
-	req.Header.Set("User-Agent", fmt.Sprintf("Smarthome-homescript/%s", utils.Version))
+	req.Header.Set("User-Agent", fmt.Sprintf("Smarthome-homescript"))
 
 	// Set the headers included via the function call
 	for headerKey, headerValue := range headers {

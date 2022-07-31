@@ -5,6 +5,7 @@ import (
 
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/hardware"
+	"github.com/smarthome-go/smarthome/core/homescript"
 )
 
 type DebugInfo struct {
@@ -23,6 +24,7 @@ type DebugInfo struct {
 	HardwareNodesOnline    uint8                   `json:"hardwareNodesOnline"`
 	HardwareNodesEnabled   uint8                   `json:"hardwareNodesEnabled"`
 	Nodes                  []database.HardwareNode `json:"hardwareNodes"`
+	HomescriptJobCount     uint                    `json:"homescriptJobCount"`
 }
 
 func SysInfo() DebugInfo {
@@ -68,5 +70,6 @@ func SysInfo() DebugInfo {
 		HardwareNodesOnline:    uint8(nodesOnline),
 		HardwareNodesEnabled:   uint8(nodesEnabled),
 		Nodes:                  nodes,
+		HomescriptJobCount:     uint(len(homescript.HmsManager.GetJobList())),
 	}
 }
