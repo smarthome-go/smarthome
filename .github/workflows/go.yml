@@ -1,5 +1,5 @@
 
-name: Go
+name: Go Build
 
 on:
   push:
