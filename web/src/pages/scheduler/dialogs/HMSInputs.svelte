@@ -28,7 +28,7 @@
     */
 
     // Specifies which mode is currently being used for editing
-    let active: "hms" | "switches" | "code" = "hms";
+    let active: "hms" | "switches" | "code" = data.targetMode;
 
     // Saves the tab data for the editor type selection
     const tabs: string[] = ["hms", "switches", "code"];
@@ -285,10 +285,10 @@
     @use "../../../mixins" as *;
     .main {
         &__editor {
-            height: 20rem;
+            height: 25rem;
 
-            &.hms {
-                height: 100%;
+            @include mobile {
+                height: auto;
                 min-height: 20rem;
             }
 

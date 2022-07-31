@@ -62,7 +62,7 @@
 <style lang="scss">
     .list {
         width: 100%;
-        height: 100%;
+        //height: 100%;
         overflow: auto;
         border-radius: 0.4rem;
         padding: 1rem 0;

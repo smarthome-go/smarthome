@@ -109,7 +109,10 @@
     <div class="right">
         <div class="hms">
             <span class="text-hint">The Homescript to be executed</span>
-            <HmsSelector bind:selection={data.homescriptId} homescripts={$homescripts} />
+            <HmsSelector
+                bind:selection={data.homescriptId}
+                homescripts={$homescripts}
+            />
         </div>
     </div>
 </div>
@@ -177,6 +180,15 @@
         flex-direction: column;
         gap: 0.3rem;
     }
+
+    .hms {
+        margin: 1rem 0;
+
+        @include widescreen {
+            height: 28rem;
+        }
+    }
+
     .text {
         width: 90%;
     }

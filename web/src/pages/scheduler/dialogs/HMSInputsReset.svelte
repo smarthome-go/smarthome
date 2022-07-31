@@ -45,7 +45,11 @@
         justify-content: flex-start;
         align-items: center;
         gap: 1rem;
-        margin-top: 2rem;
+        margin-top: 4rem;
+
+        @include mobile {
+            margin-top: 2rem;
+        }
 
         &__icon {
             display: block;
@@ -58,6 +62,10 @@
 
             @include widescreen {
                 max-width: 60%;
+            }
+
+            @include mobile {
+                max-width: 100%;
             }
 
             &__code-active {
