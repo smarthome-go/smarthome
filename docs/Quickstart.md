@@ -200,14 +200,4 @@ However, if an easy setup is desired, using the web interface is recommended.
 ### Getting Started Via Docker
 The quickest way to get started with Smarthome is by using Docker.
 
-*Unfortunately, installation via Docker is currently only supported for AMD64 devices. However, support for other architectures, such as ARM is planned.*
-
-#### Instructions
-1. Make sure an up-to-date version of both Docker and docker-compose is installed on the target machine.
-2. Copy the contents of [*docker-compose.yml*](../docker-compose.yml) or [download](../docker-compose.yml) it.
-3. *Optional*: prepare a valid `setup.json` file.
-4. Run `docker-compose up [-d]` in order to start the service.
-
-*Note*: It is recommended to not include the `-d` flag the first time you start the service.
-This allows you to follow the application logs in real-time, thus potential debugging becomes easier.
-
+To get started, continue reading [here](./Docker.md)
