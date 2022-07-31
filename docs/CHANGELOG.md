@@ -1,14 +1,24 @@
-## Changelog for v0.0.49
+## Changelog for v0.0.50
 
 ### Scheduler
-- The scheduler web-page is now accessible under `/scheduler`
-- Added a switch *wizard* to the scheduler's target selector
-- Refactored entire front- and backend to use *structured* data instead of just an HMS code field
+- Improved the Homescript selector UI, this also affects the *automations GUI* positively
+- Made several smaller tweaks to the scheduler UI
+- Added an indicator which displays the time until the schedule's next execution
+- Added a meaningful helper text which also shows the next execution time
+- Added automatic deletion of running schedules
+- When the frontend notices an executing schedule, it is removed from the UI
 
-### Performance
-- Used *Vite's* manual chunking for better performance
+### Automations
+- Improved the Homescript selector UI, this also affects the *scheduler GUI* positively
+- Added a meaningful helper text to the time picker which displays the time until the automation's next execution
 
-### Bugfixes
-- Dangling automations and schedules will now be removed on their next run
-- Added a check if *schedule-selection* is enabled to automation and scheduler API
-- Fixed many typos
+### Backend
+- Added the `SMARTHOME_SESSION_KEY` environment variable
+- For more information about this parameter, read [this documentation](./Docker.md).
+- Added HMS job count to debug info
+
+
+### Bugfixes / Code Quality
+- All known typos in the source code have been fixed
+- Added automatic typo checks via *Github actions*
+- Improved the Docker-specific documentation significantly
