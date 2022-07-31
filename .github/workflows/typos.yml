@@ -1,4 +1,4 @@
-name: Typo Chck
+name: Typo Check
 on:
   push:
     branches: [ main ]
