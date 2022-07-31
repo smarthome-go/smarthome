@@ -14,8 +14,10 @@
     import Inputs from "./Inputs.svelte";
 
     export let open = false;
-
     $: if (open) upDatePrevious();
+
+    // Bound to the `Inputs.svelte` component, states that a schedule's time is invalid because it is now
+    let timeInvalid: boolean = false;
 
     export let data: Schedule = {
         id: 0,
@@ -93,11 +95,11 @@
 
 <Dialog bind:open aria-labelledby="title" aria-describedby="content" fullscreen>
     <Header>
-        <Title id="title">Add Schedule</Title>
+        <Title id="title">Edit Schedule</Title>
         <IconButton action="close" class="material-icons">close</IconButton>
     </Header>
     <Content id="content">
-        <Inputs bind:data={data.data} />
+        <Inputs bind:data={data.data} bind:timeInvalid />
     </Content>
     <Actions>
         <Button on:click={reset} use={[InitialFocus]}>
@@ -105,6 +107,7 @@
         </Button>
         <Button
             disabled={data.data.name == "" ||
+                timeInvalid ||
                 JSON.stringify(data.data) === JSON.stringify(dataBefore)}
             on:click={modifySchedule}
         >

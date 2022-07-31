@@ -1,8 +1,7 @@
-<!-- Contains the Input elements used by `AddAutomation` and `EditAutomation` -->
 <script lang="ts">
     import Textfield from "@smui/textfield";
     import CharacterCounter from "@smui/textfield/character-counter";
-import { onMount } from "svelte";
+    import { onMount } from "svelte";
     import TimePicker from "../../../components/TimePicker.svelte";
     import { ScheduleData, timeUntilExecutionText } from "../main";
     import HmsInputs from "./HMSInputs.svelte";
@@ -10,14 +9,20 @@ import { onMount } from "svelte";
     // Data which is dispatched as soon as the create button is pressed
     export let data: ScheduleData;
 
+    export let timeInvalid: boolean = false;
     let timeUntilString = "";
+
     // Recursive function which updates the `timeUntilString` every 100ms
+    // Also updates the `timeInvalid` boolean
     function updateTimeUntilExecutionText() {
         timeUntilString = timeUntilExecutionText(
             new Date(),
             data.hour,
             data.minute
         );
+        timeInvalid =
+            data.hour === new Date().getHours() &&
+            data.minute === new Date().getMinutes();
         setTimeout(updateTimeUntilExecutionText, 100);
     }
 
@@ -52,8 +57,7 @@ import { onMount } from "svelte";
                     bind:hour={data.hour}
                     bind:minute={data.minute}
                     helperText={timeUntilString}
-                    invalid={data.hour === new Date().getHours() &&
-                        data.minute === new Date().getMinutes()}
+                    invalid={timeInvalid}
                     invalidText={"The schedule can't run now"}
                 />
             </div>

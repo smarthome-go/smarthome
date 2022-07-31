@@ -19,6 +19,9 @@
     // Event dispatcher
     const dispatch = createEventDispatcher();
 
+    // Bound to the `Inputs.svelte` component, states that a schedule's time is invalid because it is now
+    let timeInvalid: boolean = false;
+
     // Bound to the `Inputs.svelte` component
     let data: ScheduleData = {
         hour: 0,
@@ -61,7 +64,7 @@
                 This permission is required in order to use the scheduler.
             </p>
         {:else}
-            <Inputs bind:data />
+            <Inputs bind:data bind:timeInvalid />
         {/if}
     </Content>
     <Actions>
@@ -69,11 +72,12 @@
             <Label>Cancel</Label>
         </Button>
         <Button
-            disabled={
-                data.name == "" ||
-                (data.targetMode === 'code' && data.homescriptCode.length === 0) ||
-                (data.targetMode === 'switches' && data.switchJobs.length === 0)
-            }
+            disabled={data.name == "" ||
+                timeInvalid ||
+                (data.targetMode === "code" &&
+                    data.homescriptCode.length === 0) ||
+                (data.targetMode === "switches" &&
+                    data.switchJobs.length === 0)}
             use={[InitialFocus]}
             on:click={() => {
                 dispatch("add", data);
