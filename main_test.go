@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/smarthome-go/smarthome/core/config"
 	"github.com/smarthome-go/smarthome/core/database"
@@ -26,10 +27,7 @@ import (
 func TestServer(t *testing.T) {
 	// Create logger
 	log, err := utils.NewLogger(logrus.FatalLevel)
-	if err != nil {
-		t.Error(err.Error())
-		return
-	}
+	assert.NoError(t, err)
 
 	// Initialize module loggers
 	config.InitLogger(log)
@@ -45,6 +43,7 @@ func TestServer(t *testing.T) {
 	homescript.InitLogger(log)
 	automation.InitLogger(log)
 	scheduler.InitLogger(log)
+
 	// Simulates a typical server startup
 
 	// Initialize database, try 5 times before giving up
@@ -65,40 +64,25 @@ func TestServer(t *testing.T) {
 		}
 	}
 
-	if dbErr != nil {
-		t.Errorf("Failed to connect to database after 5 retries, exiting now: %s", dbErr.Error())
-	}
+	// If the connection failed after 5 retries, give up
+	assert.NoError(t, dbErr)
 
 	// Run setup file if it exists
-	if err := config.RunSetup(); err != nil {
-		t.Errorf("Could not run setup: %s", err.Error())
-	}
-
-	if err := event.FlushAllLogs(); err != nil {
-		t.Errorf("Failed to flush logs: %s", err.Error())
-	}
+	assert.NoError(t, config.RunSetup())
 
 	// Always flush old logs
-	log.Info("Flushing logs older than 30 days")
-	if err := event.FlushOldLogs(); err != nil {
-		t.Errorf("Failed to flush logs older that 30 days: %s", err.Error())
-	}
+	assert.NoError(t, event.FlushOldLogs())
 
-	if err := database.SetAutomationSystemActivation(true); err != nil {
-		t.Error(err.Error())
-	}
+	assert.NoError(t, database.SetAutomationSystemActivation(true))
 
 	// Initializes the automation scheduler
-	if err := automation.Init(); err != nil {
-		t.Errorf("Failed to activate automation system: %s", err.Error())
-	}
+	assert.NoError(t, automation.Init())
+
 	// Initializes the normal scheduler
-	if err := scheduler.Init(); err != nil {
-		t.Errorf("Failed to activate scheduler system: %s", err.Error())
-	}
+	assert.NoError(t, scheduler.Init())
 
 	r := routes.NewRouter()
-	middleware.Init(true)
-	templates.LoadTemplates("./web/dist/html/*.html")
+	middleware.InitWithRandomKey()
+	assert.NoError(t, templates.LoadTemplates("./web/dist/html/*.html"))
 	http.Handle("/", r)
 }
