@@ -63,11 +63,17 @@
             ).json();
             if (!res.success) throw Error(res.error);
             // Filter out the deleted schedule from the frontend
-            $schedules = $schedules.filter((s) => s.id !== id);
+            deleteScheduleFromGUI(id);
         } catch (err) {
             $createSnackbar(`Could not cancel schedule: ${err}`);
         }
         $loading = false;
+    }
+
+    // Deletes a schedule from the frontend display but not the backend
+    // Used when a schedule is executing
+    function deleteScheduleFromGUI(id: number) {
+        $schedules = $schedules.filter((s) => s.id !== id);
     }
 
     // Load the schedules as soon as possible
@@ -109,6 +115,7 @@
             {#each $schedules as schedule (schedule.id)}
                 <Schedule
                     bind:data={schedule}
+                    on:hide={() => deleteScheduleFromGUI(schedule.id)}
                     on:delete={() => deleteSchedule(schedule.id)}
                 />
             {/each}

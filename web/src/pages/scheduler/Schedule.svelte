@@ -25,6 +25,7 @@
         `${data.data.minute}`.padStart(2, "0") +
         ` ${data.data.hour < 12 ? "AM" : "PM"}`;
 
+    let timeRunning: boolean = false;
     let timeUntilString = "";
     // Recursive function which updates the `timeUntilString` every 100ms
     function updateTimeUntilExecutionText() {
@@ -33,6 +34,15 @@
             data.data.hour,
             data.data.minute
         );
+        timeRunning =
+            data.data.hour === new Date().getHours() &&
+            data.data.minute === new Date().getMinutes();
+
+        // If the schedule is assumed to be executing, hide it after 5 seconds
+        if (timeRunning && !editOpen) {
+            setTimeout(() => dispatch("hide"), 5000);
+        }
+
         setTimeout(updateTimeUntilExecutionText, 1000);
     }
 
@@ -52,7 +62,15 @@
 <div class="schedule">
     <span class="schedule__name">{data.data.name}</span>
     <span class="schedule__time">At {timeString}</span>
-    <span> {timeUntilString}</span>
+    {#if timeRunning}
+        {#if editOpen}
+            Now
+        {:else}
+            Executing
+        {/if}
+    {:else}
+        <span> {timeUntilString}</span>
+    {/if}
     <div class="schedule__buttons">
         <IconButton class="material-icons" on:click={() => (editOpen = true)}
             >edit</IconButton
