@@ -24,14 +24,20 @@
     // Is transformed into the final representation when the event is dispatched
     export let selectedDays: string[] = [];
 
+    let runsNow: boolean = false;
     let timeUntilString = "";
+
     // Recursive function which updates the `timeUntilString` every 100ms
+    // Also updates the `runsNow` boolean
     function updateTimeUntilExecutionText() {
         timeUntilString = timeUntilExecutionText(
             new Date(),
             data.hour,
             data.minute
         );
+        runsNow =
+            data.hour === new Date().getHours() &&
+            data.minute === new Date().getMinutes();
         setTimeout(updateTimeUntilExecutionText, 100);
     }
 
@@ -115,11 +121,8 @@
                 <TimePicker
                     bind:hour={data.hour}
                     bind:minute={data.minute}
-                    helperText={data.hour === new Date().getHours() &&
-                    data.minute === new Date().getMinutes()
-                        ? "Right now"
-                        : timeUntilString}
-                    invalidText={"error"}
+                    helperText={runsNow ? "Right now" : timeUntilString}
+                    invalidText={""}
                 />
             </div>
         </div>
