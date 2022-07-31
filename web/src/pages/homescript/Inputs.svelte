@@ -10,7 +10,6 @@
     import AddArgument from "./dialogs/AddArgument.svelte";
     import { createSnackbar } from "../../global";
     import Argument from "./Argument.svelte";
-    import AddHomescript from "./dialogs/AddHomescript.svelte";
 
     let iconPickerOpen = false;
     let addArgOpen: boolean = false;

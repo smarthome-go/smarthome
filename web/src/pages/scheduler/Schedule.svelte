@@ -1,9 +1,9 @@
 <script lang="ts">
     import IconButton from "@smui/icon-button/src/IconButton.svelte";
-    import { createEventDispatcher } from "svelte";
+    import { createEventDispatcher, onMount } from "svelte";
     import ConfirmDeletion from "./dialogs/ConfirmDeletion.svelte";
     import EditSchedule from "./dialogs/EditSchedule.svelte";
-    import type { Schedule } from "./main";
+    import { Schedule, timeUntilExecutionText } from "./main";
 
     export let data: Schedule;
 
@@ -24,6 +24,20 @@
         ":" +
         `${data.data.minute}`.padStart(2, "0") +
         ` ${data.data.hour < 12 ? "AM" : "PM"}`;
+
+    let timeUntilString = "";
+    // Recursive function which updates the `timeUntilString` every 100ms
+    function updateTimeUntilExecutionText() {
+        timeUntilString = timeUntilExecutionText(
+            new Date(),
+            data.data.hour,
+            data.data.minute
+        );
+        setTimeout(updateTimeUntilExecutionText, 1000);
+    }
+
+    // Start the time updater
+    onMount(updateTimeUntilExecutionText);
 </script>
 
 <EditSchedule bind:data bind:open={editOpen} />
@@ -38,6 +52,7 @@
 <div class="schedule">
     <span class="schedule__name">{data.data.name}</span>
     <span class="schedule__time">At {timeString}</span>
+    <span> {timeUntilString}</span>
     <div class="schedule__buttons">
         <IconButton class="material-icons" on:click={() => (editOpen = true)}
             >edit</IconButton
@@ -50,7 +65,7 @@
 
 <style lang="scss">
     .schedule {
-        height: 5.5rem;
+        height: 10rem;
         width: 17rem;
         border-radius: 0.3rem;
         padding: 1rem;
