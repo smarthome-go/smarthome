@@ -7,7 +7,11 @@
     import { onMount } from "svelte";
     import TimePicker from "../../../components/TimePicker.svelte";
     import { sleep } from "../../../global";
-    import { addAutomation, homescripts } from "../main";
+    import {
+        addAutomation,
+        homescripts,
+        timeUntilExecutionText,
+    } from "../main";
     import HmsSelector from "../../../components/Homescript/HmsSelector.svelte";
 
     // Static resource for displaying the segmented buttons
@@ -20,9 +24,22 @@
     // Is transformed into the final representation when the event is dispatched
     export let selectedDays: string[] = [];
 
+    let timeUntilString = "";
+    // Recursive function which updates the `timeUntilString` every 100ms
+    function updateTimeUntilExecutionText() {
+        timeUntilString = timeUntilExecutionText(
+            new Date(),
+            data.hour,
+            data.minute
+        );
+        setTimeout(updateTimeUntilExecutionText, 100);
+    }
+
     // Allows initially set days
     onMount(() => {
         selectedDays = data.days.map((d) => days[d]);
+        // Start the time until updater
+        updateTimeUntilExecutionText();
     });
 </script>
 
@@ -98,7 +115,10 @@
                 <TimePicker
                     bind:hour={data.hour}
                     bind:minute={data.minute}
-                    helperText={"Time"}
+                    helperText={data.hour === new Date().getHours() &&
+                    data.minute === new Date().getMinutes()
+                        ? "Right now"
+                        : timeUntilString}
                     invalidText={"error"}
                 />
             </div>

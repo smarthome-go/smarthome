@@ -44,22 +44,24 @@ export function timeUntilExecutionText(
                 ? `${hourDifference} hours`
                 : `${hourDifference} hour`;
     } else if (hourDifference < 0) {
+        hourDifference += 24
         outputText +=
-            hourDifference + 24 > 0
-                ? `${hourDifference + 24} hours`
-                : `${hourDifference + 24} hour`;
+            hourDifference > 0
+                ? `${hourDifference} hours`
+                : `${hourDifference} hour`;
     }
 
     if (hourDifference !== 0 && minuteDifference !== 0)
         outputText += " and ";
 
-    if (hourDifference > 0 && minuteDifference > 0) {
+    if (hourDifference === 0 && minuteDifference === 1) {
+        outputText += ` ${60 - now.getSeconds()} seconds`;
+    }
+    else if (minuteDifference > 0) {
         outputText +=
             minuteDifference > 1
                 ? `${minuteDifference} minutes`
                 : `${minuteDifference} minute`;
-    } else if (hourDifference === 0 && minuteDifference === 1) {
-        outputText += ` ${60 - now.getSeconds()} seconds`;
     } else if (minuteDifference < 0) {
         outputText +=
             minuteDifference + 60 > 1

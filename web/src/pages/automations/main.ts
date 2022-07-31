@@ -72,6 +72,55 @@ export function generateCronExpression(hour: number, minute: number, days: numbe
     return outputRep.join(" ")
 }
 
+// Is used to calculate the time until the schedule's execution
+// Returns a user-friendly string
+export function timeUntilExecutionText(
+    now: Date,
+    hourThen: number,
+    minuteThen: number
+): string {
+    now.setTime(now.getTime());
+    const minuteNow = now.getMinutes();
+    const hourNow = now.getHours();
+    let hourDifference = hourThen - hourNow;
+    let minuteDifference = minuteThen - minuteNow;
+    let outputText = "In ";
+
+    if (minuteDifference < 0) hourDifference--;
+
+    if (hourDifference > 0) {
+        outputText +=
+            hourDifference > 1
+                ? `${hourDifference} hours`
+                : `${hourDifference} hour`;
+    } else if (hourDifference < 0) {
+        hourDifference += 24
+        outputText +=
+            hourDifference > 0
+                ? `${hourDifference} hours`
+                : `${hourDifference} hour`;
+    }
+
+    if (hourDifference !== 0 && minuteDifference !== 0)
+        outputText += " and ";
+
+    if (hourDifference === 0 && minuteDifference === 1) {
+        outputText += ` ${60 - now.getSeconds()} seconds`;
+    }
+    else if (minuteDifference > 0) {
+        outputText +=
+            minuteDifference > 1
+                ? `${minuteDifference} minutes`
+                : `${minuteDifference} minute`;
+    } else if (minuteDifference < 0) {
+        outputText +=
+            minuteDifference + 60 > 1
+                ? `${minuteDifference + 60} minutes`
+                : `${minuteDifference + 60} minute`;
+    }
+    return outputText
+}
+
 // States that homescripts have been loaded
 // used when trying to access the data of the automation's homescript
 export const hmsLoaded: Writable<boolean> = writable(false)
