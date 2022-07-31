@@ -1,6 +1,9 @@
 name: Check for Typos
-on: [commit]
-
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 jobs:
   run:
     name: Spell Check with Typos
