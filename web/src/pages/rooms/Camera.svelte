@@ -227,7 +227,6 @@
 
         @include mobile {
             width: 100%;
-            heigt: auto;
         }
     }
     .loader {

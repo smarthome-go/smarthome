@@ -7,7 +7,7 @@
 
     const dispatch = createEventDispatcher();
 
-    // Keeps track of wether the dialog should be open or not
+    // Keeps track of whether the dialog should be open or not
     export let open: boolean = false;
 
     // Data is bound to display the result
@@ -36,7 +36,7 @@
                         <i class="material-icons"
                             >{data.response.success ? "check" : "error"}</i
                         >
-                        {#if data.modeLint}
+                        {#if !data.modeRun}
                             {data.response.success
                                 ? "Check successful"
                                 : "Errors detected"}

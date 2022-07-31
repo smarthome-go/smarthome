@@ -35,7 +35,7 @@
             value !== null &&
             value != undefined
         ) {
-            /** If the date picker is created wih a predefined value, it is set here */
+            /** If the date picker is created with a predefined value, it is set here */
             inputElement.value = `${value.getFullYear()}-${(Number(value.getMonth() + 1))
                 .toString()
                 .padStart(2, '0')}-${value

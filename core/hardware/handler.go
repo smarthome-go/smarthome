@@ -42,7 +42,7 @@ var daemonRunning atomic.Value
 // Contains the queue for all pending jobs
 // var jobQueue []PowerJob = make([]PowerJob, 0)
 
-// temporarely stores the result of each executed job
+// temporarily stores the result of each executed job
 // var jobResults []JobResult = make([]JobResult, 0)
 var jobsWithErrorInHandlerCount atomic.Value
 

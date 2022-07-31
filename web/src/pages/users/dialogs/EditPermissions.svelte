@@ -125,7 +125,7 @@
             if (!res.success) throw Error(res.error)
             permissions = [...permissions, permission]
         } catch (err) {
-            $createSnackbar(`Failed to grant permisssion: ${err}`)
+            $createSnackbar(`Failed to grant permission: ${err}`)
             throw Error()
         }
     }
@@ -161,7 +161,7 @@
             if (!res.success) throw Error(res.error)
             switchPermissions = [...switchPermissions, permission]
         } catch (err) {
-            $createSnackbar(`Failed to grant switch-permisssion: ${err}`)
+            $createSnackbar(`Failed to grant switch-permission: ${err}`)
             throw Error()
         }
     }
@@ -199,7 +199,7 @@
             if (!res.success) throw Error(res.error)
             cameraPermissions = [...cameraPermissions, id]
         } catch (err) {
-            $createSnackbar(`Failed to grant camera-permisssion: ${err}`)
+            $createSnackbar(`Failed to grant camera-permission: ${err}`)
             throw Error()
         }
     }

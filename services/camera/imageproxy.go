@@ -27,7 +27,7 @@ func fetchImageBytes(imgURL string, timeout int) ([]byte, error) {
 		// If no protocol was provided, try prefixing the url with `http`
 		imgURL = "http://" + imgURL
 
-		// Parse the URL again in order to display the (maybe) corrent hostname
+		// Parse the URL again in order to display the (maybe) current hostname
 		imgURLStructTemp, err := url.Parse(imgURL)
 		if err != nil {
 			log.Error(fmt.Sprintf("Failed to fetch image from %s: Could not parse URL: %s", imgURL, err.Error()))
@@ -61,7 +61,7 @@ func fetchImageBytes(imgURL string, timeout int) ([]byte, error) {
 }
 
 // Validates an arbitrary set of bytes to match any of the formats below
-// Supported formates: webp, png or jpeg/jpg
+// Supported formats: webp, png or jpeg/jpg
 // Used to validate result when fetching a camera's video preview
 func ensureValidFormat(data []byte) (valid bool) {
 	supportedTypes := []string{"image/png", "image/webp", "image/jpeg"}
@@ -75,7 +75,7 @@ func ensureValidFormat(data []byte) (valid bool) {
 }
 
 // Converts the fetched bytes (any of the following formats) to PNG bytes, supported media types are `png, jpeg, and webp`
-// [DEPRECATED] this function is temporarely depreacted due to extreme delays (1000t) when converting jpeg to png
+// [DEPRECATED] this function is temporarily deprecated due to extreme delays (initial * 1000) when converting jpeg to png
 /**
 func convertBytesToPng(imageBytes []byte) ([]byte, error) {
 	log.Trace("Converting image to PNG")

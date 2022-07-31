@@ -29,7 +29,7 @@
     let dueDateDirty = false
     let priorityDirty = false
 
-    $: dueDateDirty = inputDueDate != defaultDate // Default used as comparison istead of `new Date`
+    $: dueDateDirty = inputDueDate != defaultDate // Default used as comparison instead of `new Date`
     $: priorityDirty = selectedPriority != 'Normal' // Normal is the default priority
 
     export function clear() {
@@ -110,7 +110,7 @@
         <DatePicker
             invalidText={'Due Date is more than a month in the past'}
             bind:this={datePicker}
-            helperText={'The date on which the task shoud be completed'}
+            helperText={'The date on which the task should be completed'}
             bind:value={inputDueDate}
             bind:invalid={datePickerInvalid}
         />

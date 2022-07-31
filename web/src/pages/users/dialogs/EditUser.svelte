@@ -68,7 +68,7 @@
         surnameInvalid = surname.length === 0
     }
 
-    // Sets the values before modification to the currently visable values
+    // Sets the values before modification to the currently visible values
     onMount(updateBeforeValues) // Saves the values initially
     function updateBeforeValues() {
         forenameBefore = forename

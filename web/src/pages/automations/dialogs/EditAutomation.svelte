@@ -83,7 +83,7 @@
         // Is used to regenerate a cron-description after modification
         let daysText = `, `;
         if (inputData.days.length === 1) {
-           daysText = `Only on ${days[inputData.days[0]]}` 
+           daysText = `Only on ${days[inputData.days[0]]}`
         }
         else if (inputData.days.length < 7) {
             daysText = `Only on ${inputData.days.slice(0, inputData.days.length-1)
@@ -148,7 +148,7 @@
             <Content id="confirmation-content"
                 >You are about to delete the automation '{data.name}'. This
                 action will stop the automation from executing and remove it
-                from the system. Are you shure you want to proceed?</Content
+                from the system. Are you sure you want to proceed?</Content
             >
             <Actions>
                 <Button

@@ -115,7 +115,7 @@ func CreateNewSchedule(w http.ResponseWriter, r *http.Request) {
 			for _, existentSwitch := range existentSwitches {
 				if existentSwitch == switchItem.SwitchId {
 					w.WriteHeader(http.StatusBadRequest)
-					Res(w, Response{Success: false, Message: "failed to create new schedule", Error: fmt.Sprintf("second occurence of switch `%s`: only one entry per switch-id allowed", switchItem.SwitchId)})
+					Res(w, Response{Success: false, Message: "failed to create new schedule", Error: fmt.Sprintf("second occurrence of switch `%s`: only one entry per switch-id allowed", switchItem.SwitchId)})
 					return
 				}
 			}
@@ -218,7 +218,7 @@ func ModifySchedule(w http.ResponseWriter, r *http.Request) {
 			for _, existentSwitch := range existentSwitches {
 				if existentSwitch == switchItem.SwitchId {
 					w.WriteHeader(http.StatusBadRequest)
-					Res(w, Response{Success: false, Message: "failed to modify schedule", Error: fmt.Sprintf("second occurence of switch `%s`: only one entry per switch-id allowed", switchItem.SwitchId)})
+					Res(w, Response{Success: false, Message: "failed to modify schedule", Error: fmt.Sprintf("second occurrence of switch `%s`: only one entry per switch-id allowed", switchItem.SwitchId)})
 					return
 				}
 			}

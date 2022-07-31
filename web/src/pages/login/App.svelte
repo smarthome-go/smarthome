@@ -49,13 +49,12 @@
                 body: JSON.stringify({ username, password })
             })
             if (res.status === 401) throw 'Invalid username and/or password'
-            if (res.status === 403) throw 'Your account is currently suspended'
-            if (res.status === 502) throw 'The server is currently unable to proccess your request'
+            if (res.status === 502) throw 'The server is currently unable to process your request'
             if (res.status !== 204) throw Error()
             window.location.href = '/'
         } catch (e) {
             if (typeof e === 'string') $createSnackbar(e)
-            else $createSnackbar('An unknown error occured. Please try again')
+            else $createSnackbar('An unknown error occurred. Please try again')
         }
         loading = false
     }

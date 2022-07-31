@@ -10,7 +10,7 @@ var Store *sessions.CookieStore
 func InitWithManualKey(randomSeed string) {
 	// By using a static string,  no login is required when restarting the server
 	// In this case the session encryption key is static, cookies stay valid
-	// If a logout should be enforced during development, the key must be changed or ommited
+	// If a logout should be enforced during development, the key must be changed or omitted
 	Store = sessions.NewCookieStore([]byte(randomSeed))
 	log.Debug("Successfully initialized middleware session store using manual seed")
 }

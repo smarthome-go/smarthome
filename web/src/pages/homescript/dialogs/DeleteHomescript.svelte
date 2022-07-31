@@ -25,7 +25,7 @@
 >
     <Title id="confirmation-title">Confirm Deletion of '{data.name}'</Title>
     <Content id="confirmation-content">
-        Deletion may cause unintented consequences, these include:
+        Deletion may cause unintended consequences, these include:
         <ul class="consequences">
             <li>
                 Braking Homescripts which use <code>exec('{data.id}')</code>

@@ -34,7 +34,7 @@ func GetAllSwitches(w http.ResponseWriter, r *http.Request) {
 	switches, err := database.ListSwitches()
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Success: false, Message: "databas", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "database error", Error: "database failure"})
 		return
 	}
 	if err := json.NewEncoder(w).Encode(switches); err != nil {

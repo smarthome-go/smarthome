@@ -229,7 +229,7 @@ func getUserFromQuery(r *http.Request) (string, bool, error) {
 	}
 }
 
-// Middleware for checking if a user has permission to access given ressources
+// Middleware for checking if a user has permission to access given resources
 // The permissions to check is given as second or more arguments
 func Perm(handler http.HandlerFunc, permissionsToCheck ...database.PermissionType) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -248,13 +248,13 @@ func Perm(handler http.HandlerFunc, permissionsToCheck ...database.PermissionTyp
 			if err != nil {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusServiceUnavailable)
-				Res(w, Response{Success: false, Message: "database error", Error: "failed to check permission to access this ressource"})
+				Res(w, Response{Success: false, Message: "database error", Error: "failed to check permission to access this resource"})
 				return
 			}
 			if !hasPermission {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusForbidden)
-				Res(w, Response{Success: false, Message: "permission denied", Error: "missing permission to access this ressource, contact your administrator"})
+				Res(w, Response{Success: false, Message: "permission denied", Error: "missing permission to access this resource, contact your administrator"})
 				return
 			}
 		}

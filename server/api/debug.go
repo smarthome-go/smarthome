@@ -15,7 +15,7 @@ type VersionInfo struct {
 	GoVersion string `json:"goVersion"`
 }
 
-// Runs a healthcheck of most systems on which the appplication relies on, will be used by e.g `Uptime Kuma`, no authentication required
+// Runs a healthcheck of most systems on which the application relies on, will be used by e.g `Uptime Kuma`, no authentication required
 func HealthCheck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := database.CheckDatabase(); err != nil {

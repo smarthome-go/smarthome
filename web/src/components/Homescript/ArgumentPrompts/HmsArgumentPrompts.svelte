@@ -14,7 +14,7 @@
     import Radio from "@smui/radio";
     import FormField from "@smui/form-field";
 
-    // Keeps track of wether the dialog should be open or not
+    // Keeps track of whether the dialog should be open or not
     export let open: boolean = false;
 
     // Event dispatcher

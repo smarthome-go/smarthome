@@ -47,7 +47,7 @@ type setupUser struct {
 
 type setupHardwareNode struct {
 	Name    string `json:"name"`
-	Enabled bool   `json:"enabled"` // Can be used to temporarely deactivate a node in case of maintenance
+	Enabled bool   `json:"enabled"` // Can be used to temporarily deactivate a node in case of maintenance
 	Url     string `json:"url"`
 	Token   string `json:"token"`
 }

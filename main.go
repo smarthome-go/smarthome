@@ -219,7 +219,7 @@ func main() {
 	// Server, middleware and routes
 	r := routes.NewRouter()
 	if !configStruct.Server.Production {
-		log.Warn("Using default session encryption. This is a security risk and must only be used during development.\nHint: this message should dissapear when using `production` mode")
+		log.Warn("Using default session encryption. This is a security risk and must only be used during development.\nHint: this message should disappear when using `production` mode")
 		middleware.InitWithManualKey("")
 	} else {
 		if configStruct.Server.SessionKey == "" {

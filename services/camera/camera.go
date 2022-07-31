@@ -35,7 +35,7 @@ func GetCameraFeed(id string, timeoutSecs int) (data []byte, err error) {
 		log.Error("Failed to fetch camera feed: ", err.Error())
 		return nil, err
 	}
-	// [DEPRECATED] for the same reason the convertBytesToPng function is depreacted
+	// [DEPRECATED] for the same reason the convertBytesToPng function is deprecated
 	/**
 	img, err := convertBytesToPng(byteData)
 	if err != nil {

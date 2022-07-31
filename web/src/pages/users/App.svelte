@@ -3,7 +3,7 @@
     import IconButton from '@smui/icon-button'
     import { onMount } from 'svelte'
     import Progress from '../../components/Progress.svelte'
-    import { createSnackbar } from '../../global'
+    import { createSnackbar, UserData } from '../../global'
     import Page from '../../Page.svelte'
     import AddUser from './dialogs/AddUser.svelte'
     import { allPermissions,loading,users } from './main'
@@ -17,7 +17,7 @@
             const res = await (
                 await fetch('/api/permissions/manage/list')
             ).json()
-            if (res.succes != undefined && !res.success) throw Error(res.error)
+            if (res.success !== undefined && !res.success) throw Error(res.error)
             $allPermissions = res
         } catch (err) {
             $createSnackbar(`Failed to load permissions: ${err}`)
@@ -31,7 +31,7 @@
             const res = await (await fetch('/api/user/manage/list')).json()
             if (res.success !== undefined && !res.success)
                 throw Error(res.error)
-            $users = res.map((u) =>
+            $users = res.map((u: UserData) =>
                 Object.create({
                     user: u,
                     permissions: [],

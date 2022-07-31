@@ -26,7 +26,7 @@
     <Content id="confirmation-content">
         This will abort this schedule's execution.
         <br />
-        Are you shure you want to proceed?
+        Are you sure you want to proceed?
     </Content>
     <Actions>
         <Button on:click={() => dispatch("confirm")}>

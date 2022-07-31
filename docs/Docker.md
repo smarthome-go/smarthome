@@ -22,7 +22,7 @@ Specifies the name of the database Smarthome should connect to.
 
 ##### `SMARTHOME_DB_HOSTNAME`
 Specifies the hostname or *IP* address of the Database server.  
-*Recomended*: In case of your database server is spun up in the same *docker-compose* file, you can use the `container_name` of your database container as an alias for the exact IP.
+*Recommended*: In case of your database server is spun up in the same *docker-compose* file, you can use the `container_name` of your database container as an alias for the exact IP.
 
 ##### `SMARTHOME_DB_PORT`
 Specifies the port which is used to connect to the database server.  

@@ -8,7 +8,7 @@
 
     const dispatch = createEventDispatcher();
 
-    // Keeps track of wether the edit dialog is open
+    // Keeps track of whether the edit dialog is open
     let editOpen: boolean = false;
 
     // Is bound externally
