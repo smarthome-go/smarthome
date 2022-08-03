@@ -8,6 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/user"
 )
 
@@ -32,16 +33,20 @@ func ActivateAutomationSystem() error {
 	var activatedItems uint = 0
 	for _, automation := range automations {
 		if !IsValidCronExpression(automation.Data.CronExpression) {
+			// Log the error
 			log.Error(fmt.Sprintf("Could not activate automation '%d': invalid cron expression", automation.Id))
+			event.Error("Automation Activation Failure", fmt.Sprintf("The automation %s could not be activated due to an internal error. Please remove it from the system.", automation.Data.Name))
+
 			if err := user.Notify(
 				automation.Owner,
-				"Automation Activation Failed",
+				"Automation Activation Failure",
 				fmt.Sprintf("The automation %s could not be activated due to an internal error. Please remove it from the system.", automation.Data.Name), 3); err != nil {
 				log.Error("Failed to notify user about failing automation: ", err.Error())
 			}
 			continue // non-critical error, will only affect this automation
 		}
 		if !automation.Data.Enabled {
+			event.Trace("Disabled Automation Skipped", fmt.Sprintf("Automation `%d` was not started because it is disabled", automation.Id))
 			log.Debug(fmt.Sprintf("Skipping activation of automation '%d': automation is disabled", automation.Id))
 			continue // Skip disabled automations
 		}
@@ -49,13 +54,16 @@ func ActivateAutomationSystem() error {
 		automationJob.Tag(fmt.Sprintf("%d", automation.Id))
 		_, err := automationJob.Do(automationRunnerFunc, automation.Id)
 		if err != nil {
+			event.Error("Automation Activation Failure", fmt.Sprintf("Could not activate automation '%d': failed to register cron job: %s", automation.Id, err.Error()))
 			log.Error(fmt.Sprintf("Could not activate automation '%d': failed to register cron job: %s", automation.Id, err.Error()))
 			return err
 		}
 		activatedItems += 1
+		event.Debug("Automation Activated", fmt.Sprintf("Successfully activated automation '%d' of user '%s'", automation.Id, automation.Owner))
 		log.Debug(fmt.Sprintf("Successfully activated automation '%d' of user '%s'", automation.Id, automation.Owner))
 	}
 	if activatedItems > 0 {
+		event.Info("Automation System Activated", fmt.Sprintf("Successfully activated saved automations: started %d total automation jobs", activatedItems))
 		log.Info(fmt.Sprintf("Successfully activated saved automations: started %d total automation jobs", activatedItems))
 	}
 	return nil
@@ -72,12 +80,15 @@ func DeactivateAutomationSystem() error {
 		if automation.Data.Enabled {
 			if err := scheduler.RemoveByTag(fmt.Sprintf("%d", automation.Id)); err != nil {
 				log.Error(fmt.Sprintf("Failed to deactivate automation '%d': could not stop scheduler: '%s'", automation.Id, err.Error()))
+				log.Error("Automation System Deactivation Failure", fmt.Sprintf("Failed to deactivate automation '%d': could not stop scheduler: '%s'", automation.Id, err.Error()))
 				continue
 			}
+			event.Debug("Deactivated Automation", fmt.Sprintf("Successfully deactivated automation '%d' of user '%s'", automation.Id, automation.Owner))
 			log.Debug(fmt.Sprintf("Successfully deactivated automation '%d' of user '%s'", automation.Id, automation.Owner))
 		}
 	}
-	log.Debug("Successfully disabled automation system: all jobs stopped")
+	log.Info("Successfully disabled automation system: all jobs were stopped")
+	event.Info("Disabled Automation System", "Successfully disabled automation system: all jobs were stopped")
 	return nil
 }
 

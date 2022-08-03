@@ -39,7 +39,7 @@ func createRoomTable() error {
 // Creates a new room given an arbitrary, non-existing id
 func CreateRoom(room RoomData) error {
 	query, err := db.Prepare(`
-	INSERT INTO 
+	INSERT INTO
 	room(
 		Id,
 		Name,
@@ -67,7 +67,7 @@ func CreateRoom(room RoomData) error {
 		return err
 	}
 	if rowsAffected > 0 {
-		log.Debug(fmt.Sprintf("Added room `%s` with name `%s`", room.Id, room.Name))
+		log.Debug(fmt.Sprintf("Added room `%s` (Id: `%s`)", room.Name, room.Id))
 	}
 	return nil
 }
