@@ -96,12 +96,10 @@ func (self *Executor) CheckArg(toCheck string) bool {
 // Returns the value of an expected argument from the `Args` map
 // If the value could not be found in the map, it was not provided to the Homescript runtime.
 // This situation will cause the function to return an error, so `CheckArg` should be used beforehand
+// If `dryRun` is used, the function attempts to use the value if it exists, otherwise an empty string is used as a default
 func (self *Executor) GetArg(toGet string) (string, error) {
-	if self.DryRun {
-		return "", nil
-	}
 	value, ok := self.Args[toGet]
-	if !ok {
+	if !ok && !self.DryRun {
 		return "", fmt.Errorf("Failed to retrieve argument '%s': not provided to the Homescript runtime", toGet)
 	}
 	return value, nil
