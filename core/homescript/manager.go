@@ -84,6 +84,7 @@ func (m *Manager) Run(
 	arguments map[string]string,
 	callStack []string,
 	initiator HomescriptInitiator,
+	sigTerm chan int,
 ) (string, int, []HomescriptError) {
 	// Is passed to the executor so that it can forward messages from its own `SigTerm` onto the `sigTermInternalPtr`
 	// Is also passed to `homescript.Run` so that the newly spawned interpreter uses the same channel
@@ -98,7 +99,7 @@ func (m *Manager) Run(
 		// This channel will receive the initial sigTerm which can quit the currently running callback function
 		// Additionally, the executor forwards the sigTerm to the interpreter which finally prevents any further node-evaluation
 		// => Required for host functions to quit expensive / slow operations (sleep), then invokes an interpreter sigTerm
-		SigTerm: make(chan int),
+		SigTerm: sigTerm,
 		// The sigterm pointer is also passed into the executor
 		// => This pointer must ONLY be used internally, in this case is invoked from inside the `Executor`
 		sigTermInternalPtr: &interpreterSigTerm,
@@ -140,6 +141,7 @@ func (m *Manager) RunById(
 	dryRun bool,
 	arguments map[string]string,
 	initiator HomescriptInitiator,
+	sigTerm chan int,
 ) (string, int, error) {
 	homescriptItem, hasBeenFound, err := database.GetUserHomescriptById(scriptId, username)
 	if err != nil {
@@ -157,6 +159,7 @@ func (m *Manager) RunById(
 		// The script's id is added to the blacklist
 		append(callStack, scriptId),
 		initiator,
+		sigTerm,
 	)
 	if len(hmsErrors) > 0 {
 		return "execution error", exitCode, fmt.Errorf("Homescript terminated with exit code %d: %s", exitCode, hmsErrors[0].Message)

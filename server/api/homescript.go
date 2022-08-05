@@ -93,6 +93,7 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		args,
 		make([]string, 0),
 		homescript.InitiatorAPI,
+		make(chan int),
 	)
 	if len(hmsErrors) > 0 {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -180,6 +181,7 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 		args,
 		make([]string, 0),
 		homescript.InitiatorAPI,
+		make(chan int),
 	)
 	if len(hmsErrors) > 0 {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -256,6 +258,7 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		args,
 		make([]string, 0),
 		homescript.InitiatorAPI,
+		make(chan int),
 	)
 	if len(hmsErrors) > 0 {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -329,6 +332,7 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 		args,
 		make([]string, 0),
 		homescript.InitiatorAPI,
+		make(chan int),
 	)
 	if len(hmsErrors) > 0 {
 		w.WriteHeader(http.StatusInternalServerError)

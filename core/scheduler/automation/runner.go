@@ -113,6 +113,7 @@ func automationRunnerFunc(id uint) {
 		false,
 		make(map[string]string, 0),
 		homescript.InitiatorAutomation,
+		make(chan int),
 	)
 	if err != nil {
 		log.Warn(fmt.Sprintf("Automation '%s' failed during the execution of Homescript: '%s', which terminated abnormally", job.Data.Name, job.Data.HomescriptId))

@@ -71,6 +71,8 @@ func scheduleRunnerFunc(id uint) {
 			make(map[string]string, 0),
 			make([]string, 0),
 			homescript.InitiatorScheduler,
+
+			make(chan int),
 		)
 		if len(hmsErrors) > 0 {
 			log.Error("Executing schedule's Homescript failed: ", hmsErrors[0].ErrorType)
@@ -97,6 +99,7 @@ func scheduleRunnerFunc(id uint) {
 			false,
 			make(map[string]string, 0),
 			homescript.InitiatorScheduler,
+			make(chan int),
 		)
 		if err != nil {
 			log.Error("Executing schedule's Homescript failed: ", err.Error())

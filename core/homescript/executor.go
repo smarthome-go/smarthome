@@ -500,6 +500,7 @@ func (self Executor) Exec(homescriptId string, args map[string]string) (string, 
 		self.DryRun,
 		args,
 		InitiatorExec,
+		self.SigTerm,
 	)
 	if err != nil {
 		self.Print(fmt.Sprintf("Exec failed: called Homescript failed with exit code %d", exitCode))
