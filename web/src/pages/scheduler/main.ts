@@ -47,18 +47,15 @@ export function timeUntilExecutionText(
 
     if (minuteDifference < 0) hourDifference--;
 
+    if (hourDifference < 0)
+        hourDifference += 24
+
     if (hourDifference > 0) {
         outputText +=
             hourDifference > 1
                 ? `${hourDifference} hours`
                 : `${hourDifference} hour`;
-    } else if (hourDifference < 0) {
-        hourDifference += 24
-        outputText +=
-            hourDifference > 0
-                ? `${hourDifference} hours`
-                : `${hourDifference} hour`;
-    }
+    } 
 
     if (hourDifference !== 0 && minuteDifference !== 0)
         outputText += " and ";
