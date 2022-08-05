@@ -119,17 +119,13 @@
         )
             dispatch("modify", null);
     }
-
-    function handleDeleteAutomation(_event) {
-        dispatch("delete", null);
-    }
 </script>
 
 <EditAutomation
     bind:open={editOpen}
     {data}
     on:modify={handleEditAutomation}
-    on:delete={handleDeleteAutomation}
+    on:delete={() => dispatch("delete", null)}
 />
 
 <AutomationInfo bind:data bind:open={infoOpen} />
@@ -208,7 +204,10 @@
     @use "../../mixins" as *;
     .automation {
         height: 9rem;
-        width: 15rem;
+
+        // Was choosen because it looks best on 1080p
+        width: 17.5rem;
+
         border-radius: 0.3rem;
         padding: 1rem;
         display: flex;
@@ -265,6 +264,7 @@
             align-items: center;
             justify-content: space-between;
             margin-bottom: 0.2rem;
+            font-weight: bold;
         }
 
         .top {

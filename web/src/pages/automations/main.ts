@@ -121,14 +121,14 @@ export function timeUntilExecutionText(
     return outputText
 }
 
-// States that homescripts have been loaded
-// used when trying to access the data of the automation's homescript
-export const hmsLoaded: Writable<boolean> = writable(false)
 
 // States that the automations have been loaded, is checked before displaying `no automations`
 export const automationsLoaded: Writable<boolean> = writable(false)
-
 export const automations: Writable<automation[]> = writable([])
+
+// States that homescripts have been loaded
+// used when trying to access the data of the automation's homescript
+export const hmsLoaded: Writable<boolean> = writable(false)
 export const homescripts: Writable<homescript[]> = writable([])
 
 export const loading: Writable<boolean> = writable(false)
