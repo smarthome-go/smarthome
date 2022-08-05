@@ -3,6 +3,7 @@
     import { createSnackbar } from "../../global";
     import {
         homescript,
+        homescriptArgSubmit,
         homescriptResponseWrapper,
         homescriptWithArgs,
         killAllJobsById,
@@ -18,11 +19,15 @@
     import HmsEditor from "../../components/Homescript/HmsEditor/HmsEditor.svelte";
     import Terminal from "../../components/Homescript/ExecutionResultPopup/Terminal.svelte";
     import Button, { Label } from "@smui/button";
+    import HmsArgumentPrompts from "../../components/Homescript/ArgumentPrompts/HmsArgumentPrompts.svelte";
 
     /*
        General variables
        Includes varialbes such as layout-management and loading indicators
      */
+    // Specifies whether the argument prompt dialog should be open or closed
+    let argumentsPromptOpen: boolean = false;
+
     // Specifies whether the alternate layout (larger terminal) should be active or not
     let layoutAlt: boolean = false;
 
@@ -47,6 +52,7 @@
        Variables and functions required to save all scripts
      */
     let homescripts: homescriptWithArgs[] = [];
+
     // Is set to true as soon as the scripts are loaded
     // Required in the dynamic update of the current script (due to the list being empty when loaded=false)
     let homescriptsLoaded: boolean = false;
@@ -110,6 +116,7 @@
     // Specifies whether there are unsaved changes or if the code is up-to-date
     let savedCode: string = "";
 
+    // KEY BINDS
     // CTRL + S => Save current script
     // F8       => Run current script
     // F9       => Lint current code
@@ -120,17 +127,17 @@
             saveCurrent();
         } else if (e.key === "F8") {
             e.preventDefault();
-            runCurrentCode();
+            initCurrentRun();
         } else if (e.key === "F9") {
             e.preventDefault();
-            lintCurrentCode();
+            initCurrentLint();
         } else if (e.key === "F10") {
             e.preventDefault();
             killAllJobsOfCurrent();
         }
     });
 
-    // Sends a `save` request to the server, also updates the GUI display of unsaved changes to saved.
+    // Sends a `save` request to the server, also updates the GUI display of unsaved changes to saved
     async function saveCurrent() {
         if (savedCode === currentData.data.code) return;
         otherLoading = true;
@@ -158,15 +165,34 @@
     // Saves the last execution / lint result
     let currentExecRes: homescriptResponseWrapper = undefined;
 
+    // Keeps track of whether the current HMS request is meant to be `run` or `lint`
+    // Is used in the argument-prompt popup which dispatches the according request to the server
+    let currentExecModeLint: boolean = false;
+
+    // If the current Homescript contains arguments, the function triggers the argument-prompt dialog opening
+    // Ported from `src/pages/homescript/App.svelte`
+    function initCurrentRun() {
+        if (
+            homescripts.find((h) => h.data.data.id === currentScript).arguments
+                .length === 0
+        ) {
+            runCurrentCode([]);
+            return;
+        }
+        // The script is executed via callback: refer to the argument dialog
+        currentExecModeLint = false;
+        argumentsPromptOpen = true;
+    }
+
     // Normal run functions
-    async function runCurrentCode() {
+    async function runCurrentCode(args: homescriptArgSubmit[]) {
         requestLoading = true;
         currentExecutionCount++;
         currentExecutionHandles++;
         try {
             const currentExecResTemp = await runHomescriptById(
                 currentData.data.id,
-                []
+                args
             );
             currentExecRes = {
                 code: currentData.data.code,
@@ -182,15 +208,32 @@
         currentExecutionHandles--;
         requestLoading = false;
     }
-    // Dry-run function without data modifications
-    async function lintCurrentCode() {
+
+    // If the current Homescript contains arguments, the function triggers the argument-prompt dialog opening
+    // Ported from `src/pages/homescript/App.svelte`
+    function initCurrentLint() {
+        if (
+            homescripts.find((h) => h.data.data.id === currentScript).arguments
+                .length === 0
+        ) {
+            lintCurrentCode([]);
+            return;
+        }
+        // The script is linted via callback: refer to the argument dialog
+        currentExecModeLint = true;
+        argumentsPromptOpen = true;
+    }
+
+    // Dry-run function without data modifications or expensive operations
+    // Can be used to validate the correctness of a script without the need for execution
+    async function lintCurrentCode(args: homescriptArgSubmit[]) {
         requestLoading = true;
         currentExecutionCount++;
         currentExecutionHandles++;
         try {
             const currentExecResTemp = await lintHomescriptCode(
                 currentData.data.code,
-                []
+                args
             );
             currentExecRes = {
                 code: currentData.data.code,
@@ -206,7 +249,8 @@
         currentExecutionHandles--;
         requestLoading = false;
     }
-    // Kill all jobs running the current id
+
+    // Kill all HMS jobs which are running the current Homescript-Id
     async function killAllJobsOfCurrent() {
         requestLoading = true;
         try {
@@ -235,6 +279,21 @@
     });
 </script>
 
+{#if argumentsPromptOpen && homescripts.find((h) => h.data.data.id === currentScript).arguments.length > 0}
+    <HmsArgumentPrompts
+        on:submit={(event) => {
+            // Handle the decision between lint and run here
+            if (currentExecModeLint) {
+                lintCurrentCode(event.detail);
+            } else runCurrentCode(event.detail);
+        }}
+        bind:open={argumentsPromptOpen}
+        args={homescripts
+            .find((h) => h.data.data.id === currentScript)
+            .arguments.map((a) => a.data)}
+    />
+{/if}
+
 <Page>
     {#if err404}
         <div id="error404">
@@ -247,10 +306,7 @@
     {:else}
         <div id="header" class="mdc-elevation--z4">
             <div id="header__left">
-                <span
-                    >Editing {currentData.data.name}
-                    </span
-                >
+                <span>Editing {currentData.data.name} </span>
                 <div
                     id="header__left__save"
                     class:unsaved={savedCode !== currentData.data.code}
@@ -291,21 +347,19 @@
         </div>
         <div class="container">
             <div class="container__editor" class:alt={layoutAlt}>
-                <HmsEditor
-                    bind:code={currentData.data.code}
-                />
+                <HmsEditor bind:code={currentData.data.code} />
             </div>
             <div class="container__terminal" class:alt={layoutAlt}>
                 <div class="container__terminal__header mdc-elevation--z2">
                     <IconButton
                         class="material-icons"
-                        on:click={runCurrentCode}
+                        on:click={initCurrentRun}
                         disabled={savedCode !== currentData.data.code ||
                             currentExecutionHandles > 0}>play_arrow</IconButton
                     >
                     <IconButton
                         class="material-icons"
-                        on:click={lintCurrentCode}
+                        on:click={initCurrentLint}
                         disabled={currentExecutionHandles > 0}
                     >
                         bug_report</IconButton
@@ -406,15 +460,6 @@
             display: flex;
             align-items: center;
             gap: 0.2rem;
-        }
-
-        h6 {
-            margin: 0.5em 0;
-
-            @include mobile {
-                // Hide title on mobile due to space limitations
-                display: none;
-            }
         }
     }
 

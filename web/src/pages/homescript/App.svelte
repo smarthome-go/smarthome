@@ -313,7 +313,6 @@
 {#if argumentsPromptOpen && $homescripts.find((h) => h.data.data.id === selection) !== undefined && $homescripts.find((h) => h.data.data.id === selection).arguments.length > 0}
     <HmsArgumentPrompts
         on:submit={(event) => {
-            console.log(currentExecModeLint);
             // Handle the decision between lint and run here
             if (currentExecModeLint) {
                 lintCurrentWithArgs(event.detail);
