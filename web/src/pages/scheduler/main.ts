@@ -1,3 +1,4 @@
+import type { homescript } from '../../homescript'
 import { writable, Writable } from 'svelte/store'
 import App from './App.svelte'
 
@@ -20,6 +21,14 @@ export interface ScheduleData {
 export interface SwitchJob {
     switchId: string,
     powerOn: boolean
+}
+
+
+export interface SwitchResponse {
+    id: string;
+    name: string;
+    powerOn: boolean;
+    watts: number;
 }
 
 // Is used to calculate the time until the schedule's execution
@@ -72,6 +81,15 @@ export function timeUntilExecutionText(
 }
 
 export const schedules: Writable<Schedule[]> = writable([])
+
+// States that homescripts have been loaded
+export const hmsLoaded: Writable<boolean> = writable(false)
+export const homescripts: Writable<homescript[]> = writable([])
+
+// States that switches have been loaded
+export const switchesLoaded: Writable<boolean> = writable(false)
+export const switches: Writable<SwitchResponse[]> = writable([])
+
 export const loading: Writable<boolean> = writable(false)
 
 export default new App({

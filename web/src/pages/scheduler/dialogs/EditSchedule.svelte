@@ -10,8 +10,9 @@
     import IconButton from "@smui/icon-button";
     import { createSnackbar } from "../../../global";
     import { onMount } from "svelte";
-    import { loading, Schedule, ScheduleData } from "../main";
+    import { loading, Schedule, ScheduleData, SwitchJob } from "../main";
     import Inputs from "./Inputs.svelte";
+    import type { SwitchResponse } from "src/pages/rooms/main";
 
     export let open = false;
     $: if (open) upDatePrevious();
@@ -44,6 +45,14 @@
     };
 
     function reset() {
+        // Manually copy the entire array because JS creates implicit pointers here
+        let switchJobsTemp: SwitchJob[] = [];
+        for (let sw of dataBefore.switchJobs)
+            switchJobsTemp.push({
+                switchId: sw.switchId,
+                powerOn: sw.powerOn,
+            });
+
         data.data = {
             name: dataBefore.name,
             hour: dataBefore.hour,
@@ -51,11 +60,19 @@
             targetMode: dataBefore.targetMode,
             homescriptCode: dataBefore.homescriptCode,
             homescriptTargetId: dataBefore.homescriptTargetId,
-            switchJobs: dataBefore.switchJobs,
+            switchJobs: switchJobsTemp,
         };
     }
 
     function upDatePrevious() {
+        // Manually copy the entire array because JS creates implicit pointers here
+        let switchJobsTemp: SwitchJob[] = [];
+        for (let sw of data.data.switchJobs)
+            switchJobsTemp.push({
+                switchId: sw.switchId,
+                powerOn: sw.powerOn,
+            });
+
         dataBefore = {
             name: data.data.name,
             hour: data.data.hour,
@@ -63,12 +80,13 @@
             targetMode: data.data.targetMode,
             homescriptCode: data.data.homescriptCode,
             homescriptTargetId: data.data.homescriptTargetId,
-            switchJobs: data.data.switchJobs,
+            switchJobs: switchJobsTemp,
         };
     }
 
     // Modifies the data of the current schedule
     async function modifySchedule() {
+        console.log(data.data.switchJobs, dataBefore.switchJobs);
         $loading = true;
         try {
             const res = await (
@@ -106,7 +124,7 @@
             <Label>Cancel</Label>
         </Button>
         <Button
-            disabled={data.data.name == "" ||
+            disabled={data.data.name === "" ||
                 timeInvalid ||
                 JSON.stringify(data.data) === JSON.stringify(dataBefore)}
             on:click={modifySchedule}

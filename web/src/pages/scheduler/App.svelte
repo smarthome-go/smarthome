@@ -2,12 +2,21 @@
     import Button, { Icon } from "@smui/button";
     import IconButton from "@smui/icon-button";
     import { Label } from "@smui/list";
+    import type { homescript } from "../../homescript";
     import { onMount } from "svelte";
     import Progress from "../../components/Progress.svelte";
     import { createSnackbar } from "../../global";
     import Page from "../../Page.svelte";
     import AddSchedule from "./dialogs/AddSchedule.svelte";
-    import { loading, ScheduleData, schedules } from "./main";
+    import {
+        hmsLoaded,
+        homescripts,
+        loading,
+        ScheduleData,
+        schedules,
+        switches,
+        switchesLoaded,
+    } from "./main";
     import Schedule from "./Schedule.svelte";
 
     let addOpen = false;
@@ -24,6 +33,42 @@
             $schedules = res;
         } catch (err) {
             $createSnackbar(`Could not load schedules: ${err}`);
+        }
+        $loading = false;
+    }
+
+    // Fetches the available homescripts for the selection and naming
+    async function loadHomescript() {
+        $loading = true;
+        try {
+            let res = await (
+                await fetch("/api/homescript/list/personal")
+            ).json();
+
+            if (res.success !== undefined && !res.success)
+                throw Error(res.error);
+            // Filter out any homescripts which are not meant to be used for automations
+            res = res.filter((a: homescript) => a.data.schedulerEnabled);
+            homescripts.set(res); // Move the fetched homescripts into the store
+            hmsLoaded.set(true); // Signal that the homescripts are loaded
+        } catch (err) {
+            $createSnackbar(`Could not load homescript: ${err}`);
+        }
+        $loading = false;
+    }
+
+    // Loads the user's personal switches
+    async function loadSwitches() {
+        $loading = true;
+        try {
+            const res = await (await fetch("/api/switch/list/personal")).json();
+            if (res.success !== undefined && !res.success)
+                throw Error(res.error);
+
+            $switches = res;
+            $switchesLoaded = true;
+        } catch (err) {
+            $createSnackbar(`Could not load switches: ${err}`);
         }
         $loading = false;
     }
@@ -77,7 +122,11 @@
     }
 
     // Load the schedules as soon as possible
-    onMount(loadSchedules);
+    onMount(async () => {
+        await loadHomescript();
+        await loadSwitches();
+        await loadSchedules();
+    });
 </script>
 
 <AddSchedule bind:open={addOpen} on:add={(e) => createSchedule(e.detail)} />
@@ -90,6 +139,8 @@
                 title="Refresh"
                 class="material-icons"
                 on:click={async () => {
+                    await loadHomescript();
+                    await loadSwitches();
                     await loadSchedules();
                 }}>refresh</IconButton
             >

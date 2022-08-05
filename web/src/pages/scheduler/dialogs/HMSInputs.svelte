@@ -4,14 +4,19 @@
     import { createSnackbar } from "../../../global";
     import HmsEditor from "../../../components/Homescript/HmsEditor/HmsEditor.svelte";
     import HmsInputsReset from "./HMSInputsReset.svelte";
-    import type { homescript } from "../../../homescript";
     import HmsSelector from "../../../components/Homescript/HmsSelector.svelte";
     import Progress from "../../../components/Progress.svelte";
     import IconButton from "@smui/icon-button";
     import FormField from "@smui/form-field";
     import Switch from "@smui/switch";
     import Select, { Option } from "@smui/select";
-    import type { ScheduleData } from "../main";
+    import {
+        ScheduleData,
+        switches,
+        switchesLoaded,
+        SwitchResponse,
+        homescripts,
+    } from "../main";
 
     export let data: ScheduleData = {
         name: "",
@@ -48,67 +53,23 @@
     ];
 
     /*
-        //// Homescripts ////
-        Used for when the active mode is set to `hms`
-    */
-
-    // Load the Homescripts if required
-    $: if (active === "hms" && !homescriptsLoaded && !homescriptsLoading)
-        loadHomescripts();
-
-    // Saves the Homescripts which are available to the current user
-    // Used for displaying the HMS selector
-    let homescripts: homescript[] = [];
-    let homescriptsLoaded: boolean = false;
-    let homescriptsLoading: boolean = false;
-
-    // Fetches the user's Homescripts for the HMS selectot
-    async function loadHomescripts() {
-        homescriptsLoading = true;
-        try {
-            let res = await (
-                await fetch("/api/homescript/list/personal")
-            ).json();
-
-            if (res.success !== undefined && !res.success)
-                throw Error(res.error);
-            // Assign to the HMS list using only Homescripts which have the `schedulerEnabled` set to true
-            homescripts = res.filter(
-                (s: homescript) => s.data.schedulerEnabled
-            );
-            // Signal that the HMS are loaded
-            homescriptsLoaded = true;
-        } catch (err) {
-            $createSnackbar(`Could not load Homescripts: ${err}`);
-        }
-        homescriptsLoading = false;
-    }
-
-    /*
         //// Switches ////
         Used for when the active mode is set to `switches`
     */
-    // Load the switches if required
-    $: if (active === "switches" && !switchesLoaded && !switchesLoading)
-        loadSwitches();
-
     // Saves the switches which are available to the current user
     // Used for displaying the switch selector
-    let switches: SwitchResponse[];
-    let switchesLoaded: boolean = false;
-    let switchesLoading: boolean = false;
     let switchToBeInserted: string;
     let switchesAvailable: SwitchResponse[] = [];
 
     $: if (
-        switchesLoaded &&
-        switches.length > 0 &&
+        $switchesLoaded &&
+        $switches.length > 0 &&
         data.switchJobs !== undefined
     )
         updateSwitchesAvailable();
 
     function updateSwitchesAvailable() {
-        switchesAvailable = switches.filter((s) => {
+        switchesAvailable = $switches.filter((s) => {
             return (
                 data.switchJobs.filter((v) => v.switchId === s.id).length === 0
             );
@@ -117,30 +78,6 @@
         if (switchesAvailable.length === 1)
             switchToBeInserted = switchesAvailable[0].id;
         else switchToBeInserted = undefined;
-    }
-
-    interface SwitchResponse {
-        id: string;
-        name: string;
-        powerOn: boolean;
-        watts: number;
-    }
-
-    // Loads the user's personal switches
-    async function loadSwitches() {
-        switchesLoading = true;
-        try {
-            const res = await (await fetch("/api/switch/list/personal")).json();
-            if (res.success !== undefined && !res.success)
-                throw Error(res.error);
-
-            switches = res;
-            switchesAvailable = res;
-            switchesLoaded = true;
-        } catch (err) {
-            $createSnackbar(`Could not load switches: ${err}`);
-        }
-        switchesLoading = false;
     }
 </script>
 
@@ -166,7 +103,7 @@
                 />
             {:else}
                 <HmsSelector
-                    {homescripts}
+                    homescripts={$homescripts}
                     bind:selection={data.homescriptTargetId}
                 />
             {/if}
@@ -222,7 +159,7 @@
                             <div
                                 class="main__editor__switches__no-selection__text"
                             >
-                                {#if switches.length === 0 && switchesLoaded && !switchesLoading}
+                                {#if $switches.length === 0 && $switchesLoaded}
                                     <h6>No switches available</h6>
                                     You need to have access to at least 1 switch.
                                     <br />
@@ -248,7 +185,7 @@
                                     icons={false}
                                 />
                                 <span slot="label"
-                                    >{switches.find((s) => s.id === sw.switchId)
+                                    >{$switches.find((s) => s.id === sw.switchId)
                                         .name}</span
                                 >
                             </FormField>
