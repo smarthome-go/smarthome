@@ -312,7 +312,13 @@
 
 {#if argumentsPromptOpen && $homescripts.find((h) => h.data.data.id === selection) !== undefined && $homescripts.find((h) => h.data.data.id === selection).arguments.length > 0}
     <HmsArgumentPrompts
-        on:submit={(event) => runCurrentWithArgs(event.detail)}
+        on:submit={(event) => {
+            console.log(currentExecModeLint);
+            // Handle the decision between lint and run here
+            if (currentExecModeLint) {
+                lintCurrentWithArgs(event.detail);
+            } else runCurrentWithArgs(event.detail);
+        }}
         bind:open={argumentsPromptOpen}
         args={$homescripts
             .find((h) => h.data.data.id === selection)
@@ -321,27 +327,12 @@
 {/if}
 
 {#if hmsExecutionResults[0] !== undefined}
-    {#if currentExecModeLint || hmsExecutionResults[0].modeRun}
-        <ExecutionResultPopup
-            open={true}
-            data={{
-                response: hmsExecutionResults[0].response,
-                code: hmsExecutionResults[0].code,
-                modeRun: true,
-            }}
-            on:close={() => {
-                hmsExecutionResults = hmsExecutionResults.slice(1);
-                currentExecModeLint = false;
-            }}
-        />
-    {:else}
         <ExecutionResultPopup
             open={true}
             data={hmsExecutionResults[0]}
             on:close={() =>
                 (hmsExecutionResults = hmsExecutionResults.slice(1))}
         />
-    {/if}
 {/if}
 
 <Page>
