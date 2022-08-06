@@ -23,7 +23,7 @@
         timeInvalid =
             data.hour === new Date().getHours() &&
             data.minute === new Date().getMinutes();
-        setTimeout(updateTimeUntilExecutionText, 100);
+        setTimeout(updateTimeUntilExecutionText, 500);
     }
 
     // Start the time updater

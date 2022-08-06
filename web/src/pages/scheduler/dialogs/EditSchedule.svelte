@@ -86,7 +86,6 @@
 
     // Modifies the data of the current schedule
     async function modifySchedule() {
-        console.log(data.data.switchJobs, dataBefore.switchJobs);
         $loading = true;
         try {
             const res = await (

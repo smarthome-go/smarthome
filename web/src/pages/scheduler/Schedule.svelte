@@ -11,7 +11,6 @@
         homescripts,
     } from "./main";
     import Progress from "../../components/Progress.svelte";
-    import { Icon } from "@smui/button";
 
     export let data: Schedule;
 
@@ -35,6 +34,7 @@
 
     let timeRunning: boolean = false;
     let timeUntilString = "";
+
     // Recursive function which updates the `timeUntilString` every 100ms
     function updateTimeUntilExecutionText() {
         timeUntilString = timeUntilExecutionText(

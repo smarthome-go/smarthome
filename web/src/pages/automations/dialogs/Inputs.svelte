@@ -38,7 +38,7 @@
         runsNow =
             data.hour === new Date().getHours() &&
             data.minute === new Date().getMinutes();
-        setTimeout(updateTimeUntilExecutionText, 100);
+        setTimeout(updateTimeUntilExecutionText, 500);
     }
 
     // Allows initially set days
