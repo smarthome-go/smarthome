@@ -42,7 +42,7 @@ export function timeUntilExecutionText(
     const minuteNow = now.getMinutes();
     const hourNow = now.getHours();
     let hourDifference = hourThen - hourNow;
-    let minuteDifference = minuteThen - minuteNow;
+    const minuteDifference = minuteThen - minuteNow;
     let outputText = "In ";
 
     if (minuteDifference < 0) hourDifference--;

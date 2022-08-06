@@ -5,7 +5,7 @@
     const dispatch = createEventDispatcher();
 
     // Specifies which main icon is displayed
-    export let icon: string = "code";
+    export let icon = "code";
 
     // Bound to the `HMSInputs` active mode
     export let active: "hms" | "switches" | "code" = "hms";

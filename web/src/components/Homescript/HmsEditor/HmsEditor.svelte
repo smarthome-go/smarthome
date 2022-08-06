@@ -26,10 +26,10 @@
     // Specifies whether the editor should register a CTRL+S catcher
     // This catcher is intended to prevent the browser's default action
     // However, the catcher also emits a change event when the key combination is pressed
-    export let registerCtrlSCatcher: boolean = false;
+    export let registerCtrlSCatcher = false;
 
     // Represents the editor's value
-    export let code: string = "";
+    export let code = "";
     $: setCode(code);
 
     function setCode(cd: string) {

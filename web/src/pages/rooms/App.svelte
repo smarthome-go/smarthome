@@ -55,7 +55,7 @@
     })
 
     // Fetches the available rooms
-    async function loadRooms(updateExisting: boolean = false) {
+    async function loadRooms(updateExisting = false) {
         $loading = true
         try {
             const res = await (

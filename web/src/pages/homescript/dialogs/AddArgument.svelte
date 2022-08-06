@@ -11,11 +11,11 @@
     import Textfield from "@smui/textfield";
     import CharacterCounter from "@smui/textfield/character-counter";
 
-    export let open: boolean = false;
+    export let open = false;
 
     // Input data
-    let argKey: string = "";
-    let prompt: string = "";
+    let argKey = "";
+    let prompt = "";
     let inputType: "string" | "number" | "boolean" = "string";
     let display:
         | "type_default"

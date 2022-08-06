@@ -20,7 +20,7 @@
     const dispatch = createEventDispatcher();
 
     // Bound to the `Inputs.svelte` component, states that a schedule's time is invalid because it is now
-    let timeInvalid: boolean = false;
+    let timeInvalid = false;
 
     // Bound to the `Inputs.svelte` component
     let data: ScheduleData = {

@@ -18,7 +18,7 @@
     $: if (open) upDatePrevious();
 
     // Bound to the `Inputs.svelte` component, states that a schedule's time is invalid because it is now
-    let timeInvalid: boolean = false;
+    let timeInvalid = false;
 
     export let data: Schedule = {
         id: 0,

@@ -8,8 +8,8 @@
     export let description: string
     export let permission: string
 
-    export let active: boolean = false // Shows if the user currently has the permission
-    let loading: boolean = false
+    export let active = false // Shows if the user currently has the permission
+    let loading = false
 
     export let grantFunc: (_: string) => Promise<void>
     export let removeFunc: (_: string) => Promise<void>

@@ -54,7 +54,7 @@ export function parseCronExpressionToTime(expr: string): { hours: number, minute
 // // Generates a cron-expression based on the provided data
 // Logic ported from `backend: /core/scheduler/automation/cron.go`
 export function generateCronExpression(hour: number, minute: number, days: number[]): string {
-    let outputRep = ['', '', '*', '*', ''] // Cron-expression representation as list
+    const outputRep = ['', '', '*', '*', ''] // Cron-expression representation as list
     outputRep[0] = `${minute}` // Assign minute
     outputRep[1] = `${hour}` // Assign hour
     // Omit validation of days and time because the function is only used in a pre validated context
@@ -83,7 +83,7 @@ export function timeUntilExecutionText(
     const minuteNow = now.getMinutes();
     const hourNow = now.getHours();
     let hourDifference = hourThen - hourNow;
-    let minuteDifference = minuteThen - minuteNow;
+    const minuteDifference = minuteThen - minuteNow;
     let outputText = "In ";
 
     if (minuteDifference < 0) hourDifference--;

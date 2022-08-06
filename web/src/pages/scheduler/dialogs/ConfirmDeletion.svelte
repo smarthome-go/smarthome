@@ -8,7 +8,7 @@
     } from "@smui/dialog";
     import { createEventDispatcher } from "svelte";
 
-    export let open: boolean = false;
+    export let open = false;
     export let name: string;
 
     // Event dispatcher

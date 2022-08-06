@@ -16,20 +16,20 @@
     import IconPicker from "../../../../components/IconPicker/IconPicker.svelte";
     import ArgumentInputs from "../../ArgumentInputs.svelte";
 
-    export let open: boolean = false;
+    export let open = false;
 
     // This is required as an override for the additional icon popup
     // TODO: reevaluate this choice
     $: document.body.style.overflow = open ? "hidden" : "auto";
 
-    let pickIconOpen: boolean = false;
+    let pickIconOpen = false;
 
     // Event dispatcher
     const dispatch = createEventDispatcher();
 
     // Only bound externally in order to use preset values
     export let data: homescriptArgData;
-    let dataChanged: boolean = false;
+    let dataChanged = false;
 
     // Internal values which keep track of change
     let argKeyBefore: string;

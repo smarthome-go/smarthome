@@ -22,16 +22,16 @@
     /*
         //// Dialog state management ////
      */
-    let addOpen: boolean = false;
-    let deleteOpen: boolean = false;
+    let addOpen = false;
+    let deleteOpen = false;
 
     // Is used when the run button is pressed and the current script has arguments
     let argumentsPromptOpen = false;
     // Specifies whether the current argument prompts are used for linting or running
     let currentExecModeLint = false;
 
-    let selectedDataChanged: boolean = false;
-    let selection: string = "";
+    let selectedDataChanged = false;
+    let selection = "";
     let selectedData: homescriptData = {
         id: "",
         name: "",

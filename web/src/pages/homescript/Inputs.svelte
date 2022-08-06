@@ -12,7 +12,7 @@
     import Argument from "./Argument.svelte";
 
     let iconPickerOpen = false;
-    let addArgOpen: boolean = false;
+    let addArgOpen = false;
     export let deleteOpen = false;
 
     // Can be bound in order to allow data modification

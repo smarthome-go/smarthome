@@ -15,7 +15,7 @@
     import FormField from "@smui/form-field";
 
     // Keeps track of whether the dialog should be open or not
-    export let open: boolean = false;
+    export let open = false;
 
     // Event dispatcher
     const dispatch = createEventDispatcher();
@@ -29,7 +29,7 @@
     export let args: homescriptArgData[];
 
     // Saves the index of the argument which is currently shown as a prompt
-    let currentArgumentIndex: number = 0;
+    let currentArgumentIndex = 0;
 
     // Represents the current argument at the `currentArgumentIndex` position in `args`
     let currentArg: homescriptArgData = {
@@ -71,9 +71,9 @@
         Will be converted to the `real` string representation using change listeners
     */
     // Placeholders for conversion
-    let numberPlaceholder: number = 0;
-    let booleanPlaceholder: boolean = false;
-    let yesNoPlaceholder: string = "";
+    let numberPlaceholder = 0;
+    let booleanPlaceholder = false;
+    let yesNoPlaceholder = "";
 
     // Conversion functions
     function updateFromNumber() {
@@ -124,7 +124,7 @@
     }
 
     // Switch variables
-    let switchesLoaded: boolean = false;
+    let switchesLoaded = false;
     let switches: SwitchResponse[] = [];
 
     // Loads the user's personal switches

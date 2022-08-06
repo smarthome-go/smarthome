@@ -24,7 +24,7 @@
     // Is transformed into the final representation when the event is dispatched
     export let selectedDays: string[] = [];
 
-    let runsNow: boolean = false;
+    let runsNow = false;
     let timeUntilString = "";
 
     // Recursive function which updates the `timeUntilString` every 100ms

@@ -8,7 +8,7 @@
     const dispatch = createEventDispatcher();
 
     // Keeps track of whether the dialog should be open or not
-    export let open: boolean = false;
+    export let open = false;
 
     // Data is bound to display the result
     export let data: homescriptResponseWrapper;

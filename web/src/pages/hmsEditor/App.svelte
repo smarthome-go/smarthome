@@ -26,19 +26,19 @@
        Includes varialbes such as layout-management and loading indicators
      */
     // Specifies whether the argument prompt dialog should be open or closed
-    let argumentsPromptOpen: boolean = false;
+    let argumentsPromptOpen = false;
 
     // Specifies whether the alternate layout (larger terminal) should be active or not
-    let layoutAlt: boolean = false;
+    let layoutAlt = false;
 
     // Is set to true when a script is linted or executed
-    let requestLoading: boolean = false;
+    let requestLoading = false;
 
     // Is set to true if either the script loads or is saved
-    let otherLoading: boolean = false;
+    let otherLoading = false;
 
     // If set to true, a banner (indicating that no script xyz has been found) is shown instead of the editor
-    let err404: boolean = false;
+    let err404 = false;
 
     // Specifies the amount of jobs executing the current id (fetched initially)
     let currentExecutionCount = 0;
@@ -55,7 +55,7 @@
 
     // Is set to true as soon as the scripts are loaded
     // Required in the dynamic update of the current script (due to the list being empty when loaded=false)
-    let homescriptsLoaded: boolean = false;
+    let homescriptsLoaded = false;
 
     async function loadHomescript() {
         otherLoading = true;
@@ -83,7 +83,7 @@
        Includes a function for changing the currently active script
      */
     // Saves the metadata of the current script (specified by URL query)
-    let currentScript: string = "";
+    let currentScript = "";
 
     let currentData: homescript = {
         owner: "",
@@ -114,7 +114,7 @@
        Variables and functions responsible for saving the code which is currently being edited
     */
     // Specifies whether there are unsaved changes or if the code is up-to-date
-    let savedCode: string = "";
+    let savedCode = "";
 
     // KEY BINDS
     // CTRL + S => Save current script
@@ -167,7 +167,7 @@
 
     // Keeps track of whether the current HMS request is meant to be `run` or `lint`
     // Is used in the argument-prompt popup which dispatches the according request to the server
-    let currentExecModeLint: boolean = false;
+    let currentExecModeLint = false;
 
     // If the current Homescript contains arguments, the function triggers the argument-prompt dialog opening
     // Ported from `src/pages/homescript/App.svelte`

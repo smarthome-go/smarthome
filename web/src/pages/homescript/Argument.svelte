@@ -9,7 +9,7 @@
     const dispatch = createEventDispatcher();
 
     // Keeps track of whether the edit dialog is open
-    let editOpen: boolean = false;
+    let editOpen = false;
 
     // Is bound externally
     export let data: homescriptArg;

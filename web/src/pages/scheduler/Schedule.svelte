@@ -15,9 +15,9 @@
     export let data: Schedule;
 
     // Specifies whether the edit dialog should be open or not
-    let editOpen: boolean = false;
+    let editOpen = false;
     // Specifies whether the delete dialog should be open or not
-    let deleteOpen: boolean = false;
+    let deleteOpen = false;
 
     // Event dispatcher
     const dispatch = createEventDispatcher();
@@ -32,7 +32,7 @@
         `${data.data.minute}`.padStart(2, "0") +
         ` ${data.data.hour < 12 ? "AM" : "PM"}`;
 
-    let timeRunning: boolean = false;
+    let timeRunning = false;
     let timeUntilString = "";
 
     // Recursive function which updates the `timeUntilString` every 100ms

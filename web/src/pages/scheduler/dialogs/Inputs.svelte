@@ -9,7 +9,7 @@
     // Data which is dispatched as soon as the create button is pressed
     export let data: ScheduleData;
 
-    export let timeInvalid: boolean = false;
+    export let timeInvalid = false;
     let timeUntilString = "";
 
     // Recursive function which updates the `timeUntilString` every 100ms
