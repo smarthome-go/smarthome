@@ -28,7 +28,7 @@
         Deletion may cause unintended consequences, these include:
         <ul class="consequences">
             <li>
-                Braking Homescripts which use <code>exec('{data.id}')</code>
+                Breaking Homescripts which use <code>exec('{data.id}')</code>
             </li>
             <li>
                 Removing all automations which have '{data.id}' as their
