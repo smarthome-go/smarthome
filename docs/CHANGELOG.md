@@ -1,24 +1,34 @@
-## Changelog for v0.0.50
+## Changelog for v0.0.51
 
-### Scheduler
-- Improved the Homescript selector UI, this also affects the *automations GUI* positively
-- Made several smaller tweaks to the scheduler UI
-- Added an indicator which displays the time until the schedule's next execution
-- Added a meaningful helper text which also shows the next execution time
-- Added automatic deletion of running schedules
-- When the frontend notices an executing schedule, it is removed from the UI
+### Scheduler GUI
+- Improved the scheduler GUI significantly
+- Fixed several bugs (including the real-time execution count-down)
+- Added important information displays to the individual schedule panels
+- ⇒ *Note*: The GUI is now in a working and pretty state
 
-### Automations
-- Improved the Homescript selector UI, this also affects the *scheduler GUI* positively
-- Added a meaningful helper text to the time picker which displays the time until the automation's next execution
+### Automations GUI
+- Improved the automations GUI
+- Modified the width of each individual automation item to align well on `1080p`
+- Made the automation's title appear bold
 
-### Backend
-- Added the `SMARTHOME_SESSION_KEY` environment variable
-- For more information about this parameter, read [this documentation](./Docker.md).
-- Added HMS job count to debug info
+### Homescript GUI
+- Fixed broken execution result popup
+- Fixed broken argument prompts
+- ⇒ *Note*: These bugfixes also affect the *automations GUI* and the *Homescript manager's GUI*
 
+### Homescript Editor
+- Added argument prompts when running or linting using the editor's *"terminal"*
+
+### Homescript Backend
+#### Arguments During Linting
+- Attempt to use provided arguments when using lint
+- If an argument is specified, it is used during linting
+- If it is omitted, a default (*empty string*) is used in order to prevent errors
+
+#### SigTerm Handling
+- If `exec` is used, the executor's `sigTerm` is forwarded to the *exec target*
+- This means that a script termination will work as expected when using `exec` in your code
 
 ### Bugfixes / Code Quality
-- All known typos in the source code have been fixed
-- Added automatic typo checks via *Github actions*
-- Improved the Docker-specific documentation significantly
+- Fixed several typos in the HMS deletion dialog
+- Improved logging in the backend *automation* module
