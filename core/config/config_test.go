@@ -87,11 +87,4 @@ func TestReadConfig(t *testing.T) {
 		t.Error("Expected error but non was returned")
 		return
 	}
-
-	// Test if error handling works when the file does not exists and is not writable
-	configPath = "/does/not/exists"
-	if err := ReadConfigFile(); err == nil {
-		t.Error("Expected error but non was returned")
-		return
-	}
 }
