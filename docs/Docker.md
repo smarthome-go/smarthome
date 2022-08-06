@@ -71,8 +71,14 @@ Valid values are `TRUE` and `FALSE`.
 ##### `SMARTHOME_SESSION_KEY`
 Specifies a manual key which is used for session encryption. For larger installations, setting this value to a randomly generated string is recommended.  
 If set, this will prevent a log-out of all users in case the server is restarted.  
+
 *Note*: This setting is only effective when using `production` mode. During `development` mode, the server will use a static, empty string for encryption.  
 During production, if you specify an empty value, Smarthome will generate a 32-bit random key to maintain security.
+
+*Note*: You can generate a random key using following command on Linux systems.
+```bash
+openssl rand -base64 32
+```
 
 ##### `SMARTHOME_ADMIN_PASSWORD`
 During the first start, a `admin` user is created. It will receive this specified password if set.  
