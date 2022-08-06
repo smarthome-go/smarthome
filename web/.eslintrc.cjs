@@ -3,9 +3,6 @@ module.exports = {
         'browser': true,
         'es2021': true,
     },
-    'extends': [
-        'google',
-    ],
     overrides: [
         {
             files: ['*.svelte'],
@@ -15,16 +12,21 @@ module.exports = {
     'parser': '@typescript-eslint/parser',
     'parserOptions': {
         'ecmaVersion': 'latest',
-        'sourceType': 'module',
+        tsconfigRootDir: __dirname,
+        project: ['./tsconfig.json'],
+        extraFileExtensions: ['.svelte'],
     },
     'plugins': [
         '@typescript-eslint',
         'svelte3',
-        '@typescript-eslint'
     ],
     'rules': {
     },
     settings: {
         'svelte3/typescript': () => require('typescript'),
-    }
+    },
+    extends: [
+        'eslint:recommended',
+        'plugin:@typescript-eslint/recommended',
+    ]
 };

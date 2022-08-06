@@ -19,6 +19,7 @@
   ],
   "type": "module",
   "scripts": {
+    "lint": "eslint src",
     "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
@@ -28,13 +29,9 @@
   },
   "devDependencies": {
     "@smui/dialog": "^6.0.0-beta.16",
-    "@sveltejs/vite-plugin-svelte": "^1.0.0-next.30",
     "@tsconfig/svelte": "^2.0.1",
-    "@typescript-eslint/eslint-plugin": "^5.32.0",
-    "@typescript-eslint/parser": "^5.32.0",
     "autoprefixer": "^10.4.4",
     "eslint": "^8.21.0",
-    "eslint-config-google": "^0.14.0",
     "eslint-plugin-svelte3": "^4.0.0",
     "npm-run-all": "^4.1.5",
     "postcss-preset-env": "^7.4.3",
