@@ -4,8 +4,8 @@
     import Progress from "../../../components/Progress.svelte";
     import { sleep } from "../../../global";
 
-    export let name: string = "";
-    export let id: string = "";
+    export let name = "";
+    export let id = "";
 
     export let active = false; // Shows if the user currently has the permission
     let loading = false;
@@ -14,7 +14,7 @@
     export let removeFunc: (_: string) => Promise<void>;
 
     let loadingStart: number = Date.now();
-    let loadingTime: number = 0;
+    let loadingTime = 0;
 
     // Handle switch updates
     async function toggle(event: CustomEvent<{ selected: boolean }>) {

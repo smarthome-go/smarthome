@@ -4,7 +4,7 @@
     import IconButton from '@smui/icon-button'
     import Inputs from './Inputs.svelte'
 
-    export let modify: Function
+    export let modify: (_name: string, _description: string, _priority: number, _dueDate: Date) => Promise<void>
 
     let open = false
 

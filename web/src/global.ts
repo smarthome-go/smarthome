@@ -1,13 +1,14 @@
 import type { ConfigAction } from '@smui/snackbar/kitchen'
 import { get, Writable, writable } from 'svelte/store'
 
+// eslint-disable-next-line @typescript-eslint/no-empty-function 
 export const createSnackbar: Writable<(message: string, actions?: ConfigAction[]) => void> = writable(() => { })
 
 export interface GenericResponse {
     success: boolean,
     message: string,
     error: string,
-    time: string,
+    time: number,
 }
 
 export interface Notification {

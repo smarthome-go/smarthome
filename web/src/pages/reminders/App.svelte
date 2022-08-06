@@ -25,7 +25,7 @@
     }
 
     // Creates a new reminder
-    async function create(name, description, priority, dueDate) {
+    async function create(name: string, description: string, priority: number, dueDate: Date) {
         $loading = true
         try {
             const res = await (

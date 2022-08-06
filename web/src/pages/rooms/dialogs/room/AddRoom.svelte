@@ -1,36 +1,45 @@
 <script lang="ts">
-    import Button,{ Label } from '@smui/button'
-    import Dialog,{ Actions,Content,InitialFocus,Title } from '@smui/dialog'
-    import Textfield from '@smui/textfield'
-    import CharacterCounter from '@smui/textfield/character-counter'
-    import type { Room } from '../../main'
+    import Button, { Label } from "@smui/button";
+    import Dialog, {
+        Actions,
+        Content,
+        InitialFocus,
+        Title,
+    } from "@smui/dialog";
+    import Textfield from "@smui/textfield";
+    import CharacterCounter from "@smui/textfield/character-counter";
+    import type { Room } from "../../main";
 
-    let open = false
-    export let blacklist: Room[] = []
+    let open = false;
+    export let blacklist: Room[] = [];
 
-    let id = ''
-    let name = ''
-    let description = ''
+    let id = "";
+    let name = "";
+    let description = "";
 
-    let idDirty = false
-    let nameDirty = false
+    let idDirty = false;
+    let nameDirty = false;
 
     export function show() {
-        open = true
-        id = ''
-        name = ''
-        description = ''
-        idDirty = false
-        nameDirty = false
+        open = true;
+        id = "";
+        name = "";
+        description = "";
+        idDirty = false;
+        nameDirty = false;
     }
 
-    export let onAdd = (_id: string, _name: string, _description: string) => {}
+    export let onAdd: (
+        _id: string,
+        _name: string,
+        _description: string
+    ) => Promise<void>;
 
-    let idInvalid = false
+    let idInvalid = false;
     $: idInvalid =
-        (idDirty && id === '') ||
-        id.includes(' ') ||
-        blacklist.find((r) => r.data.id === id) !== undefined
+        (idDirty && id === "") ||
+        id.includes(" ") ||
+        blacklist.find((r) => r.data.id === id) !== undefined;
 </script>
 
 <Dialog bind:open aria-labelledby="title" aria-describedby="content">
@@ -66,10 +75,10 @@
             <Label>Cancel</Label>
         </Button>
         <Button
-            disabled={idInvalid || id === '' || name === ''}
+            disabled={idInvalid || id === "" || name === ""}
             use={[InitialFocus]}
             on:click={() => {
-                onAdd(id, name, description)
+                onAdd(id, name, description);
             }}
         >
             <Label>Create</Label>

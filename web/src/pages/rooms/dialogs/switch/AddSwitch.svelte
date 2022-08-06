@@ -1,36 +1,45 @@
 <script lang="ts">
-    import Button,{ Label } from '@smui/button'
-    import Dialog,{ Actions,Content,InitialFocus,Title } from '@smui/dialog'
-    import Textfield from '@smui/textfield'
-    import CharacterCounter from '@smui/textfield/character-counter'
-    import type { SwitchResponse } from '../../main'
+    import Button, { Label } from "@smui/button";
+    import Dialog, {
+        Actions,
+        Content,
+        InitialFocus,
+        Title,
+    } from "@smui/dialog";
+    import Textfield from "@smui/textfield";
+    import CharacterCounter from "@smui/textfield/character-counter";
+    import type { SwitchResponse } from "../../main";
 
-    let open = false
-    export let switches: SwitchResponse[] = []
+    let open = false;
+    export let switches: SwitchResponse[] = [];
 
-    let id = ''
-    let name = ''
-    let watts = 0
+    let id = "";
+    let name = "";
+    let watts = 0;
 
-    let idDirty = false
-    let nameDirty = false
+    let idDirty = false;
+    let nameDirty = false;
 
     export function show() {
-        open = true
-        id = ''
-        name = ''
-        watts = 0
-        idDirty = false
-        nameDirty = false
+        open = true;
+        id = "";
+        name = "";
+        watts = 0;
+        idDirty = false;
+        nameDirty = false;
     }
 
-    export let onAdd = (_id: string, _name: string, watts: number) => {}
+    export let onAdd: (
+        _id: string,
+        _name: string,
+        _watts: number
+    ) => Promise<void>;
 
-    let idInvalid = false
+    let idInvalid = false;
     $: idInvalid =
-        (idDirty && id === '') ||
-        id.includes(' ') ||
-        switches.find((s) => s.id === id) !== undefined
+        (idDirty && id === "") ||
+        id.includes(" ") ||
+        switches.find((s) => s.id === id) !== undefined;
 </script>
 
 <Dialog bind:open aria-labelledby="title" aria-describedby="content">
@@ -66,10 +75,10 @@
             <Label>Cancel</Label>
         </Button>
         <Button
-            disabled={idInvalid || id === '' || name === ''}
+            disabled={idInvalid || id === "" || name === ""}
             use={[InitialFocus]}
             on:click={() => {
-                onAdd(id, name, watts)
+                onAdd(id, name, watts);
             }}
         >
             <Label>Create</Label>

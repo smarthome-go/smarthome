@@ -20,7 +20,6 @@
 
     let idDirty = false;
     let nameDirty = false;
-    let urlDirty = false;
 
     export function show() {
         open = true;
@@ -29,15 +28,14 @@
         url = "";
         idDirty = false;
         nameDirty = false;
-        urlDirty = false;
     }
 
-    export let onAdd = (
+    export let onAdd: (
         _id: string,
         _name: string,
         _url: string,
         _roomId: string
-    ) => {};
+    ) => Promise<void>;
 
     let idInvalid = false;
     $: idInvalid =

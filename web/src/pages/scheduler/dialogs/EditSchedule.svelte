@@ -12,7 +12,6 @@
     import { onMount } from "svelte";
     import { loading, Schedule, ScheduleData, SwitchJob } from "../main";
     import Inputs from "./Inputs.svelte";
-    import type { SwitchResponse } from "src/pages/rooms/main";
 
     export let open = false;
     $: if (open) upDatePrevious();

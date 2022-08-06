@@ -7,11 +7,8 @@
         InitialFocus,
         Title,
     } from "@smui/dialog";
-    import IconButton from "@smui/icon-button";
     import type { homescriptArgData } from "src/homescript";
     import { createEventDispatcher } from "svelte";
-    import Textfield from "@smui/textfield";
-    import CharacterCounter from "@smui/textfield/character-counter";
     import { onMount } from "svelte";
     import IconPicker from "../../../../components/IconPicker/IconPicker.svelte";
     import ArgumentInputs from "../../ArgumentInputs.svelte";

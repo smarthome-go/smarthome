@@ -6,7 +6,7 @@
     import HelperText from '@smui/textfield/helper-text'
     import DatePicker from '../../components/DatePicker.svelte'
 
-    const priorities = ['Low', 'Normal', 'Medium', 'High', 'Urgent'] // Priorities for translating the current choice to a number
+    const priorities = ['Low', 'Normal', 'Medium', 'High', 'Urgent'] // Priorities for translating the current priority choice to a number
 
     let datePicker: DatePicker // Date picker component
     const defaultDate = new Date() // Used to check if the date is `dirty`
@@ -54,7 +54,7 @@
                 thirtyDaysInMs // The `8.64e+7` is for adding one extra day to the currently selected date
     }
 
-    export let onSubmit: Function // Callback to be executed if the create / submit button is used
+    export let onSubmit: (_name: string, _description: string, _priority: number, _dueDate: Date) => Promise<void> // Callback to be executed if the create / submit button is used
 </script>
 
 <!-- Name -->
