@@ -8,7 +8,7 @@
     document.addEventListener(
         // Used for displaying and hiding the label / helper text
         'click',
-        (event) => {
+        () => {
             active = document.activeElement === inputElement
         },
         true
@@ -19,10 +19,10 @@
     export let minute = 0
 
     export let helperText: string
-    
+
     // Will be displayed instead of the helper text if invalid is set to true
     export let invalidText: string
-    
+
     // If set to true, a warning will be displayed (invalid text is shown)
     export let invalid = false
 

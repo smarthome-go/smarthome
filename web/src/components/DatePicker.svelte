@@ -5,16 +5,17 @@
     /** Usage detection: Approximates if the component is currently in use / active */
     let active = false
     let inputElement: HTMLInputElement // Needed for detecting usage
+
     document.addEventListener(
         // Used for displaying and hiding the label / helper text
         'click',
-        (event) => {
+        () => {
             active = document.activeElement === inputElement
         },
         true
     )
 
-    /** Bindable values */
+    // Bindable values
     export let value = new Date()
     export let helperText: string
     // Will be displayed instead of the helper text if invalid is set to true
@@ -22,7 +23,7 @@
     // If set to true, a warning will be displayed
     export let invalid = false
 
-    /** Clears the input field and resets the value */
+    // Clears the input field and resets the value
     export function clear() {
         value = new Date()
         inputElement.value = ''
@@ -35,7 +36,7 @@
             value !== null &&
             value != undefined
         ) {
-            /** If the date picker is created with a predefined value, it is set here */
+            // If the date picker is created with a predefined value, it is set here
             inputElement.value = `${value.getFullYear()}-${(Number(value.getMonth() + 1))
                 .toString()
                 .padStart(2, '0')}-${value

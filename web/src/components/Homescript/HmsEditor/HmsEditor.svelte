@@ -4,22 +4,19 @@
         EditorView,
         basicSetup,
     } from "@codemirror/basic-setup";
-    import { EditorSelection } from "@codemirror/state";
     import { indentWithTab } from "@codemirror/commands";
-    import { keymap, GutterMarker } from "@codemirror/view";
+    import { keymap } from "@codemirror/view";
     import { linter, lintGutter, type Diagnostic } from "@codemirror/lint";
-    import CodeMirror from "@codemirror/basic-setup";
-    import { createEventDispatcher, onMount, setContext } from "svelte";
+    import { createEventDispatcher, onMount } from "svelte";
     //    import { tags } from "@lezer/highlight";
     // import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
     // import { completeFromList } from "@codemirror/autocomplete";
 
     // TODO: move local files to separate repository
-    import { HomescriptLanguage, Homescript } from "./index.js";
+    import { Homescript } from "./index.js";
     import { oneDark } from "./oneDark";
     import { lintHomescriptCode } from "../../../homescript";
     import { createSnackbar } from "../../../global";
-    import LinearProgress from "@smui/linear-progress/src/LinearProgress.svelte";
 
     const dispatch = createEventDispatcher();
 
@@ -45,6 +42,8 @@
     let editorDiv: HTMLElement;
 
     let editor: EditorView;
+
+    // eslint-disable-next-line no-undef
     let timer: NodeJS.Timeout;
 
     const HMSlinter = linter(async () => {
