@@ -88,7 +88,7 @@
         </div>
     </div>
 
-    <div class="botton">
+    <div class="bottom">
         <span class="schedule__target-indicator">
             {#if data.data.targetMode === "hms"}
                 Target: Homescript
@@ -185,7 +185,7 @@
     .schedule {
         height: 12rem;
 
-        // Was choosen because it looks best on 1080p
+        // Was chosen because it looks best on 1080p
         width: 17.5rem;
 
         border-radius: 0.3rem;

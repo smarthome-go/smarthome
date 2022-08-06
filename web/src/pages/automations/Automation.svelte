@@ -205,7 +205,7 @@
     .automation {
         height: 9rem;
 
-        // Was choosen because it looks best on 1080p
+        // Was chosen because it looks best on 1080p
         width: 17.5rem;
 
         border-radius: 0.3rem;
