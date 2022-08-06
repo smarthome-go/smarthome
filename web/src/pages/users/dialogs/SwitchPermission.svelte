@@ -1,36 +1,36 @@
 <script lang="ts">
-    import FormField from '@smui/form-field/'
-    import Switch from '@smui/switch'
-    import Progress from '../../../components/Progress.svelte'
-    import { sleep } from '../../../global'
+    import FormField from "@smui/form-field/";
+    import Switch from "@smui/switch";
+    import Progress from "../../../components/Progress.svelte";
+    import { sleep } from "../../../global";
 
-    export let name: string
-    export let roomId: string
-    export let id: string
+    export let name: string;
+    export let roomId: string;
+    export let id: string;
 
-    export let active // Shows if the user currently has the permission
-    let loading = false
+    export let active = false; // Shows if the user currently has the permission
+    let loading = false;
 
-    export let grantFunc: (_: string) => {}
-    export let removeFunc: (_: string) => {}
+    export let grantFunc: (_: string) => Promise<void>;
+    export let removeFunc: (_: string) => Promise<void>;
 
-    let loadingStart: number = Date.now()
-    let loadingTime: number
+    let loadingStart: number = Date.now();
+    let loadingTime: number;
 
     // Handle switch updates
     async function toggle(event: CustomEvent<{ selected: boolean }>) {
-        loadingStart = Date.now()
-        loading = true
-        updateLoadingTime()
+        loadingStart = Date.now();
+        loading = true;
+        updateLoadingTime();
         try {
             if (event.detail.selected) {
-                await grantFunc(id)
-            } else await removeFunc(id)
+                await grantFunc(id);
+            } else await removeFunc(id);
         } catch (err) {
-            await sleep(1000)
-            active = !active
+            await sleep(1000);
+            active = !active;
         }
-        loading = false
+        loading = false;
     }
 
     // Calculate the time spent waiting for the serve'rs response
@@ -38,9 +38,9 @@
     // Prevents ugly flickering and stops the user from clicking multiple times causing interference
     async function updateLoadingTime() {
         if (loading) {
-            loadingTime = (loadingStart - Date.now()) * -1
-            await sleep(5)
-            updateLoadingTime()
+            loadingTime = (loadingStart - Date.now()) * -1;
+            await sleep(5);
+            updateLoadingTime();
         }
     }
 </script>
@@ -59,12 +59,12 @@
             checked={active}
             disabled={loading && loadingTime > 50}
         />
-        <span slot="label">Switch {active ? 'granted' : 'denied'}</span>
+        <span slot="label">Switch {active ? "granted" : "denied"}</span>
     </FormField>
 </div>
 
 <style lang="scss">
-    @use '../../../mixins' as *;
+    @use "../../../mixins" as *;
     .permission {
         width: 100%;
         min-height: 6rem;
