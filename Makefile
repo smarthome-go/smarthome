@@ -26,6 +26,7 @@ lint:
 	golangci-lint run
 	go vet
 	typos
+	cd web && npm run lint
 
 
 # Run a normal integration and unit test procedure
