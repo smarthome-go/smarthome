@@ -20,6 +20,14 @@ setup:
 	cd web && npm i
 	cd web && npm run prepare
 
+# Lints most of the source code
+# Used before a release
+lint:
+	golangci-lint run
+	go vet
+	typos
+
+
 # Run a normal integration and unit test procedure
 test:
 	mkdir -p web/dist/html
@@ -48,7 +56,7 @@ version:
 # Prepares everything for a version-release
 # In order to publish the release to official registries
 # run `make gh-release` and `make docker-push`
-release: cleanall test build docker
+release: cleanall lint test build docker
 
 # Publishes the local release to Github releases
 gh-release:
