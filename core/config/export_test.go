@@ -1,7 +1,6 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -170,9 +169,6 @@ func TestExportGeneration(t *testing.T) {
 	///
 	/// Part 2: Export testing
 	///
-	export, err := Export()
+	_, err = Export()
 	assert.NoError(t, err)
-	data, err := json.MarshalIndent(export, "", "\t")
-	assert.NoError(t, err)
-	fmt.Println(string(data))
 }
