@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/sirupsen/logrus"
@@ -38,7 +37,7 @@ func InitLogger(logger *logrus.Logger) {
 func ReadConfigFile() error {
 	// Read file from <configPath> on disk
 	// If this file does not exist, create a new blank one
-	content, err := ioutil.ReadFile(fmt.Sprintf("%s/config.json", configPath))
+	content, err := os.ReadFile(fmt.Sprintf("%s/config.json", configPath))
 	if err != nil {
 		configTemp, errCreate := createNewConfigFile()
 		if errCreate != nil {
@@ -86,7 +85,7 @@ func createNewConfigFile() (Config, error) {
 		log.Error("Failed to create new config file: creating data directory failed: ", err.Error())
 		return Config{}, err
 	}
-	if err = ioutil.WriteFile(fmt.Sprintf("%s/config.json", configPath), fileContent, 0755); err != nil {
+	if err = os.WriteFile(fmt.Sprintf("%s/config.json", configPath), fileContent, 0755); err != nil {
 		log.Error("Failed to write file to disk: ", err.Error())
 		return Config{}, err
 	}

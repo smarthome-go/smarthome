@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/smarthome-go/smarthome/core/database"
@@ -18,12 +17,12 @@ var setupPath = "./data/config/setup.json"
 func readSetupFile() (SetupStruct, bool, error) {
 	log.Trace(fmt.Sprintf("Looking for setup file at `%s`", setupPath))
 	// Read file from `setupPath` on disk
-	content, err := ioutil.ReadFile(setupPath)
+	content, err := os.ReadFile(setupPath)
 	if err != nil {
 		return SetupStruct{}, false, nil
 	}
 	// Move the file after a successful read
-	if err := ioutil.WriteFile(
+	if err := os.WriteFile(
 		fmt.Sprintf("%s.old", setupPath),
 		content,
 		0755,

@@ -3,7 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
@@ -119,7 +119,7 @@ func TestRunSetup(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
-	if err := ioutil.WriteFile(
+	if err := os.WriteFile(
 		setupPath,
 		content,
 		0755,
@@ -182,7 +182,7 @@ func TestRunSetup(t *testing.T) {
 func TestReadBrokenSetupFile(t *testing.T) {
 	// Write the bad contents to another temp directory so it can be read later
 	setupPath = fmt.Sprintf("%s/setup_invalid.json", t.TempDir())
-	if err := ioutil.WriteFile(
+	if err := os.WriteFile(
 		setupPath,
 		[]byte("invalid_content"),
 		0755,

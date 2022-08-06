@@ -1,8 +1,8 @@
 package api
 
 import (
-	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -107,7 +107,7 @@ func GetAvatar(w http.ResponseWriter, r *http.Request) {
 		log.Error("Could not get avatar image: panic serving default image: ", err.Error())
 		filepath = "./web/assets/avatar/default.png"
 	}
-	fileBytes, err := ioutil.ReadFile(filepath)
+	fileBytes, err := os.ReadFile(filepath)
 	w.Header().Set("Content-Type", http.DetectContentType(fileBytes))
 	// Set cache validity of image to 6 hours
 	w.Header().Set("Cache-Control", "max-age=21600")
@@ -152,7 +152,7 @@ func GetForeignUserAvatar(w http.ResponseWriter, r *http.Request) {
 		log.Error("Could not get avatar image: serving default image: ", err.Error())
 		filepath = "./web/assets/avatar/default.png"
 	}
-	fileBytes, err := ioutil.ReadFile(filepath)
+	fileBytes, err := os.ReadFile(filepath)
 	w.Header().Set("Content-Type", http.DetectContentType(fileBytes))
 	// Set cache validity of image to 100 hours for other profile images
 	// w.Header().Set("Cache-Control", "max-age=36000")

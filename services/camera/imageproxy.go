@@ -2,7 +2,7 @@ package camera
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -24,6 +24,7 @@ func fetchImageBytes(imgURL string, timeout int) ([]byte, error) {
 		break
 	case "":
 		log.Warn("Omitting the camera feed's request method is not recommended, using default 'http'")
+
 		// If no protocol was provided, try prefixing the url with `http`
 		imgURL = "http://" + imgURL
 
@@ -47,7 +48,7 @@ func fetchImageBytes(imgURL string, timeout int) ([]byte, error) {
 	if response.StatusCode != 200 {
 		log.Error("Received non 200 response code\n")
 	}
-	imageData, err := ioutil.ReadAll(response.Body)
+	imageData, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, err
 	}

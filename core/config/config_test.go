@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -75,7 +74,7 @@ func TestReadConfig(t *testing.T) {
 	}
 
 	// Write non-json to the file and test if the error is handled
-	if err := ioutil.WriteFile(
+	if err := os.WriteFile(
 		fmt.Sprintf("%s/config.json", configPath),
 		[]byte("not_valid"),
 		0755,

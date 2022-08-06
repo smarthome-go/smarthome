@@ -3,7 +3,7 @@ package homescript
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -215,7 +215,7 @@ func (self *Executor) Get(requestUrl string) (string, error) {
 		return "", err
 	}
 	defer res.Body.Close()
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return "", err
 	}
@@ -238,7 +238,7 @@ func (self *Executor) Http(requestUrl string, method string, body string, header
 	}
 
 	// Set the user agent to the Smarthome HMS client
-	req.Header.Set("User-Agent", fmt.Sprintf("Smarthome-homescript"))
+	req.Header.Set("User-Agent", "Smarthome-homescript")
 
 	// Set the headers included via the function call
 	for headerKey, headerValue := range headers {
@@ -261,7 +261,7 @@ func (self *Executor) Http(requestUrl string, method string, body string, header
 		return "", err
 	}
 	defer res.Body.Close()
-	resBody, err := ioutil.ReadAll(res.Body)
+	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		return "", err
 	}
