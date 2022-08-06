@@ -273,6 +273,7 @@ func TestRun(t *testing.T) {
 			make(map[string]string, 0),
 			make([]string, 0),
 			InitiatorInternal,
+			make(chan int),
 		)
 		if len(errors) > 0 {
 			if errors[0].Message != test.Result.FirstError {
@@ -326,6 +327,7 @@ func TestRecursion(t *testing.T) {
 			false,
 			make(map[string]string),
 			InitiatorInternal,
+			make(chan int),
 		)
 		assert.EqualError(t, err, "Homescript terminated with exit code 1: Homescript terminated with exit code 1: Exec violation: executing 'recursive-start' could cause infinite recursion.\n=== Call Stack ===\n   0: recursive-start (INITIAL)\n   1: recursive-end\n   2: recursive-start (PREVENTED)\n")
 		assert.Equal(t, 1, exitCode)
@@ -373,6 +375,7 @@ func TestRecursion(t *testing.T) {
 			false,
 			make(map[string]string),
 			InitiatorInternal,
+			make(chan int),
 		)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, exitCode)
