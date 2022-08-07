@@ -119,7 +119,7 @@ func main() {
 			log.Warn("Could not use `SMARTHOME_ENV_PRODUCTION` as boolean value, using development mode\nValid modes are `TRUE` and `FALSE`")
 		}
 	}
-	// Session key
+	// Web server session-key
 	if sessionKey, sessionKeyOk := os.LookupEnv("SMARTHOME_SESSION_KEY"); sessionKeyOk {
 		if !configStruct.Server.Production {
 			log.Warn("Using manually specified session encryption key during development mode. This will have no effect unless using production")
