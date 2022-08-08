@@ -306,19 +306,10 @@ func GetAvatarPathByUsername(username string) (string, error) {
 		return "", err
 	}
 	defer query.Close()
-	res, err := query.Query(username)
-	if err != nil {
-		log.Error("Could not get avatar path by username: failed to execute query: ", err.Error())
-		return "", err
-	}
-	// TODO: use query row
 	var avatarPath string
-	for res.Next() {
-		err := res.Scan(&avatarPath)
-		if err != nil {
-			log.Error("Failed to get avatar path by username: failed to scan query: ", err.Error())
-			return "", err
-		}
+	if err := query.QueryRow(username).Scan(&avatarPath); err != nil {
+		log.Error("Could not get avatar path by username: failed to scan query reqults: ", err.Error())
+		return "", err
 	}
 	return avatarPath, nil
 }
