@@ -2,9 +2,14 @@
     import IconButton from "@smui/icon-button";
     import Progress from "../../components/Progress.svelte";
     import Page from "../../Page.svelte";
-import Preview from "./Preview.svelte";
+    import Inputs from "./Inputs.svelte";
+    import Miscellaneous from "./Miscellaneous.svelte";
+    import Permissions from "./dialogs/Permissions.svelte";
+
+    let permissionsOpen = false;
 </script>
 
+<Permissions bind:open={permissionsOpen} />
 <Page>
     <div id="header" class="mdc-elevation--z4">
         <h6>Your Profile</h6>
@@ -12,14 +17,22 @@ import Preview from "./Preview.svelte";
             <IconButton title="Refresh" class="material-icons"
                 >refresh</IconButton
             >
+            <IconButton
+                title="Permissions"
+                class="material-icons"
+                on:click={() => (permissionsOpen = true)}
+                >lock_person</IconButton
+            >
         </div>
     </div>
     <Progress id="loader" loading={false} />
     <div id="content">
-        <div id="preview" class="mdc-elevation--z1">
-            <Preview></Preview>
+        <div id="inputs" class="mdc-elevation--z1">
+            <Inputs />
         </div>
-        <div id="inputs" class="mdc-elevation--z1" />
+        <div id="miscellaneous" class="mdc-elevation--z1">
+            <Miscellaneous />
+        </div>
     </div></Page
 >
 
@@ -52,10 +65,10 @@ import Preview from "./Preview.svelte";
     #content {
         height: calc(100vh - 60px);
         padding: 1rem 1.5rem;
+        box-sizing: border-box;
+        flex-direction: column;
         display: flex;
         gap: 1rem;
-        flex-direction: column;
-        box-sizing: border-box;
 
         @include widescreen {
             flex-direction: row;
@@ -64,16 +77,18 @@ import Preview from "./Preview.svelte";
         @include mobile {
             min-height: calc(100vh - 48px - 3.5rem);
         }
-    }
 
-    #preview,
-    #inputs {
-        background-color: var(--clr-height-0-1);
-        height: 10rem;
+        #inputs,
+        #miscellaneous {
+            background-color: var(--clr-height-0-1);
+            border-radius: 0.4rem;
+            height: 50%;
+            width: 100%;
 
-        @include widescreen {
-            width: 50%;
-            height: 100%;
+            @include widescreen {
+                height: 100%;
+                width: 50%;
+            }
         }
     }
 </style>
