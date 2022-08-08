@@ -1,34 +1,39 @@
-## Changelog for v0.0.51
+## Changelog for v0.0.52
 
-### Scheduler GUI
-- Improved the scheduler GUI significantly
-- Fixed several bugs (including the real-time execution count-down)
-- Added important information displays to the individual schedule panels
-- ⇒ *Note*: The GUI is now in a working and pretty state
+### User Profile GUI
+- Added a first version of the user profile GUI
+#### Features
+- User data visualization
+- User data modification
+- Avatar display
+- Avatar deletion and modification
+- User account deletion
 
-### Automations GUI
-- Improved the automations GUI
-- Modified the width of each individual automation item to align well on `1080p`
-- Made the automation's title appear bold
+### Homescript
+- Bumped the Homescript runtime to `v0.15.2`
+- Therefore fixed a possible server panic when using the builtin `http` function
 
-### Homescript GUI
-- Fixed broken execution result popup
-- Fixed broken argument prompts
-- ⇒ *Note*: These bugfixes also affect the *automations GUI* and the *Homescript manager's GUI*
+#### Networking
+- Homescript can now use the `sigTerm` in order to cancel the builtin `http` and `get` functions during a request
+- Significantly improved `lint` times when using *networking* inside Homescript
+- Implemented a caching-system which caches correctly linted URLs inside a database table
+- Each cache entry expires after `12 hours`, thus keeping each URL up-to-date and reducing database table size
 
-### Homescript Editor
-- Added argument prompts when running or linting using the editor's *"terminal"*
+### Backend Code Quality
+- Refactored a large portion of the backend user avatar logic
+- Refactored user avatar database functions to avoid unfitting code
+- Upgraded all used `Go` modules
 
-### Homescript Backend
-#### Arguments During Linting
-- Attempt to use provided arguments when using lint
-- If an argument is specified, it is used during linting
-- If it is omitted, a default (*empty string*) is used in order to prevent errors
+### Developer Notes
+- Removed useless test in `cpre/config/config_test.go`
+- Bumped dependency `vite` to `^3.0.0` and therefore fixed broken `npm i`
+- Removed annoying test output from `core/config/export_test.go`
 
-#### SigTerm Handling
-- If `exec` is used, the executor's `sigTerm` is forwarded to the *exec target*
-- This means that a script termination will work as expected when using `exec` in your code
+### Documentation
+- Added hint for session keys to `Docker.md`
 
-### Bugfixes / Code Quality
-- Fixed several typos in the HMS deletion dialog
-- Improved logging in the backend *automation* module
+### GUI fixes
+- Eliminated large content shift in NavBar pages
+- Added missing data attributes to the global data store
+- Made permission names and descriptions more concise and readable
+- Fixed scrollable room page on non-widescreen layouts
