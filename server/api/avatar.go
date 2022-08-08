@@ -107,10 +107,8 @@ func GetAvatar(w http.ResponseWriter, r *http.Request) {
 		log.Error("Could not get avatar image: panic serving default image: ", err.Error())
 		filepath = "./web/assets/avatar/default.png"
 	}
+
 	fileBytes, err := os.ReadFile(filepath)
-	w.Header().Set("Content-Type", http.DetectContentType(fileBytes))
-	// Set cache validity of image to 6 hours
-	w.Header().Set("Cache-Control", "max-age=21600")
 	if err != nil {
 		log.Error("Could not display avatar: could not read image", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
@@ -120,6 +118,11 @@ func GetAvatar(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
+	// Set cache validity of image to 6 hours and set the content-type
+	w.Header().Set("Content-Type", http.DetectContentType(fileBytes))
+	w.Header().Set("Cache-Control", "max-age=21600")
+
 	if _, err := w.Write(fileBytes); err != nil {
 		log.Error("Failed to return avatar image: writing response bytes failed: ", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
