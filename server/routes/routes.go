@@ -175,6 +175,8 @@ func NewRouter() *mux.Router {
 
 	/* Server Configuration */
 	r.HandleFunc("/api/automation/state/global", mdl.ApiAuth(mdl.Perm(api.ChangeActivationAutomation, database.PermissionModifyServerConfig))).Methods("PUT")
+	r.HandleFunc("/api/homescript/cache/flush", mdl.ApiAuth(mdl.Perm(api.ClearHomescriptURLCache, database.PermissionModifyServerConfig))).Methods("DELETE")
+	r.HandleFunc("/api/homescript/cache/purge", mdl.ApiAuth(mdl.Perm(api.PurgeHomescriptUrlCache, database.PermissionModifyServerConfig))).Methods("DELETE")
 	r.HandleFunc("/api/config/location/modify", mdl.ApiAuth(mdl.Perm(api.UpdateLocation, database.PermissionModifyServerConfig))).Methods("PUT")
 	r.HandleFunc("/api/config/export", mdl.ApiAuth(mdl.Perm(api.ExportConfiguration, database.PermissionModifyServerConfig))).Methods("GET")
 	r.HandleFunc("/api/config/import", mdl.ApiAuth(mdl.Perm(api.ImportConfiguration, database.PermissionModifyServerConfig))).Methods("POST")

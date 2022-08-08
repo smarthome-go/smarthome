@@ -81,6 +81,9 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 	if err := createReminderTable(); err != nil {
 		return err
 	}
+	if err := createHomescriptUrlCacheTable(); err != nil {
+		return err
+	}
 	log.Info(fmt.Sprintf("Successfully initialized database `%s`", databaseConfig.Database))
 	return nil
 }

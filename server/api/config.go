@@ -64,3 +64,27 @@ func ImportConfiguration(w http.ResponseWriter, r *http.Request) {
 	}
 	Res(w, Response{Success: true, Message: "successfully ran setup"})
 }
+
+// Is used to flush the Homescript URL cache manually
+// Deletes all recors older than 12 hours
+func ClearHomescriptURLCache(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if err := database.FlushHomescriptUrlCache(); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to flush Homescript URL cache", Error: "database failure"})
+		return
+	}
+	Res(w, Response{Success: true, Message: "successfully flushed URL cache"})
+}
+
+// Is used to flush the Homescript URL cache manually
+// Deletes all records, regardless of their age
+func PurgeHomescriptUrlCache(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if err := database.PurgeHomescriptUrlCache(); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to purge Homescript URL cache", Error: "database failure"})
+		return
+	}
+	Res(w, Response{Success: true, Message: "successfully purged URL cache"})
+}

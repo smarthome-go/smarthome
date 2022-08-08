@@ -1,6 +1,7 @@
 package homescript
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"golang.org/x/exp/utf8string"
+	"golang.org/x/net/context"
 
 	"github.com/smarthome-go/homescript/homescript/interpreter"
 	"github.com/smarthome-go/smarthome/core/database"
@@ -202,24 +204,92 @@ func (self *Executor) Get(requestUrl string) (string, error) {
 	if !hasPermission {
 		return "", fmt.Errorf("Will not send GET request: you lack permission to access the network via homescript. If this is unintentional, contact your administrator")
 	}
+
 	// DryRun only checks the URL's validity
 	if self.DryRun {
-		_, err := url.ParseRequestURI(requestUrl)
+		// Check if the URL is already cached
+		cached, err := database.IsHomescriptUrlCached(requestUrl)
+		if err != nil {
+			return "", fmt.Errorf("Internal error: Could not check URL cache: %s", err.Error())
+		}
+		if cached {
+			log.Trace(fmt.Sprintf("Homescript URL `%s` is cached, omitting checks...", requestUrl))
+			return "", nil
+		}
+		log.Trace(fmt.Sprintf("Homescript URL `%s` is not cached, running checks...", requestUrl))
+		url, err := url.ParseRequestURI(requestUrl)
 		if err != nil {
 			return "", fmt.Errorf("Invalid URL provided: could not parse URL: %s", err.Error())
 		}
+		if url.Scheme != "http" && url.Scheme != "https" {
+			return "", fmt.Errorf("Invalid URL provided: Invalid scheme: `%s`.\n=> Valid schemes are `http` and `https`", url.Scheme)
+		}
+		if url.Scheme != "http" && url.Scheme != "https" {
+			return "", fmt.Errorf("Invalid URL provided: Invalid scheme: `%s`.\n=> Valid schemes are `http` and `https`", url.Scheme)
+		}
+		res, err := http.Head(requestUrl)
+		if err != nil {
+			return "", err
+		}
+		if res.StatusCode != http.StatusOK {
+			return "", fmt.Errorf("Checking URL failed: unexpected non-200 status-code: %d (`%s`)", res.StatusCode, res.Status)
+		}
+		// If all checks were successful, insert the URL into the URL cache
+		if err := insertCacheEntry(*url); err != nil {
+			return "", fmt.Errorf("Internal error: Could not update URL cache entry: %s", err.Error())
+		}
+		log.Trace(fmt.Sprintf("Updated URL cache to include `%s`", requestUrl))
 		return "", nil
 	}
-	res, err := http.Get(requestUrl)
+
+	// Create a new request
+	req, err := http.NewRequest(
+		http.MethodGet,
+		requestUrl,
+		nil,
+	)
 	if err != nil {
 		return "", err
 	}
+	// Set the user agent to the Smarthome HMS client
+	req.Header.Set("User-Agent", "Smarthome-homescript")
+
+	// Create a new context for cancellatioon
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	req = req.WithContext(ctx)
+
+	// Start the http request monitor Go routine
+	requestHasFinished := make(chan struct{})
+	go self.httpCancelationMonitor(
+		ctx,
+		cancel,
+		requestHasFinished,
+	)
+
+	// Perform the request
+	// Create a client for the request
+	client := http.Client{
+		// Set the client's timeout to 60 seconds
+		Timeout: 60 * time.Second,
+	}
+
+	res, err := client.Do(req)
+	// Evaluate the request's outcome
+	if err != nil {
+		return "", err
+	}
+
+	// Stop the request monitor Go routine
+	requestHasFinished <- struct{}{}
+
+	// Read request response body
 	defer res.Body.Close()
-	body, err := io.ReadAll(res.Body)
+	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		return "", err
 	}
-	return string(body), nil
+	return string(resBody), nil
 }
 
 // Makes a request to an arbitrary URL using a custom method and body in order to return the result
@@ -232,40 +302,138 @@ func (self *Executor) Http(requestUrl string, method string, body string, header
 	if !hasPermission {
 		return "", fmt.Errorf("Will not perform %s request: you lack permission to access the network via Homescript. If this is unintentional, contact your administrator", method)
 	}
-	req, err := http.NewRequest(method, requestUrl, strings.NewReader(body))
+
+	// If using DryRun, stop here and just validate the request URL
+	// Also check if the request body contains valid JSON if a `Content-Type` header is set to `application/json`
+	// NOTE: JSON formatting is only validated during linting, not execution
+	if self.DryRun {
+		// Check if a `Content-Type` header is set to `application/json`
+		contentType, wasSpecified := headers["Content-Type"]
+		if !wasSpecified {
+			return "", nil
+		}
+		if contentType == "application/json" {
+			// JSON has been detected in the `Content-Type`, try to unmarshal the payload in order to check for errors
+			blackHole := struct{}{} // Using an empty struct in order to accept all valid payloads
+			if err := json.Unmarshal([]byte(body), &blackHole); err != nil {
+				return "", fmt.Errorf("Invalid body provided: detected `Content-Type`: `application/json` whilst using an invalid JSON body\n=> You can remove the Content-Type or fix the body\nJSON Error: %s", err.Error())
+			}
+		}
+
+		// Check if the URL is already cached
+		cached, err := database.IsHomescriptUrlCached(requestUrl)
+		if err != nil {
+			return "", fmt.Errorf("Internal error: Could not check URL cache: %s", err.Error())
+		}
+		if cached {
+			log.Trace(fmt.Sprintf("Homescript URL `%s` is cached, omitting checks...", requestUrl))
+			return "", nil
+		}
+		log.Trace(fmt.Sprintf("Homescript URL `%s` is not cached, running checks...", requestUrl))
+
+		// URL-specific checks
+		url, err := url.ParseRequestURI(requestUrl)
+		if err != nil {
+			return "", fmt.Errorf("Invalid URL provided: could not parse URL: %s", err.Error())
+		}
+		if url.Scheme != "http" && url.Scheme != "https" {
+			return "", fmt.Errorf("Invalid URL provided: Invalid scheme: `%s`.\n=> Valid schemes are `http` and `https`", url.Scheme)
+		}
+		if url.Scheme != "http" && url.Scheme != "https" {
+			return "", fmt.Errorf("Invalid URL provided: Invalid scheme: `%s`.\n=> Valid schemes are `http` and `https`", url.Scheme)
+		}
+		res, err := http.Head(requestUrl)
+		if err != nil {
+			return "", err
+		}
+		if res.StatusCode != http.StatusOK {
+			return "", fmt.Errorf("Checking URL failed: unexpected non-200 status-code: %d (`%s`)", res.StatusCode, res.Status)
+		}
+		// If all checks were successful, insert the URL into the URL cache
+		if err := insertCacheEntry(*url); err != nil {
+			return "", fmt.Errorf("Internal error: Could not update URL cache entry: %s", err.Error())
+		}
+		log.Trace(fmt.Sprintf("Updated URL cache to include `%s`", requestUrl))
+		return "", nil
+	}
+
+	// Create a new request
+	req, err := http.NewRequest(
+		method,
+		requestUrl,
+		strings.NewReader(body),
+	)
 	if err != nil {
 		return "", err
 	}
-
 	// Set the user agent to the Smarthome HMS client
 	req.Header.Set("User-Agent", "Smarthome-homescript")
-
 	// Set the headers included via the function call
 	for headerKey, headerValue := range headers {
 		req.Header.Set(headerKey, headerValue)
 	}
 
+	// Create a new context
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	req = req.WithContext(ctx)
+
+	// Start the http request monitor Go routine
+	requestHasFinished := make(chan struct{})
+	go self.httpCancelationMonitor(
+		ctx,
+		cancel,
+		requestHasFinished,
+	)
+
+	// Perform the request
+	// Create a client for the request
 	client := http.Client{
+		// Set the client's timeout to 60 seconds
 		Timeout: 60 * time.Second,
 	}
-	// If using DryRun, stop here
-	if self.DryRun {
-		_, err := url.ParseRequestURI(requestUrl)
-		if err != nil {
-			return "", fmt.Errorf("Invalid URL provided: could not parse URL: %s", err.Error())
-		}
-		return "", nil
-	}
 	res, err := client.Do(req)
+	// Evaluate the request's outcome
 	if err != nil {
 		return "", err
 	}
+
+	// Stop the request monitor Go routine
+	requestHasFinished <- struct{}{}
+
+	// Read request response body
 	defer res.Body.Close()
 	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		return "", err
 	}
 	return string(resBody), nil
+}
+
+func (self *Executor) httpCancelationMonitor(
+	cnt context.Context,
+	cancelRequest context.CancelFunc,
+	requestHasFinished chan struct{},
+) {
+	log.Trace("Started Homescript http request monitoring")
+	defer log.Trace("Finished Homescript http request monitoring")
+	for {
+		select {
+		// If the request has finished regularely, stop the monitor and to nothing
+		case <-requestHasFinished:
+			log.Trace("Homescript http request finished regularely")
+			return
+		// If the request has not finished, run the check below
+		default:
+			// If a sigTerm is received whilst waiting for the request to be completed, cancel the request and stop the monitor
+			if self.checkSigTerm() {
+				cancelRequest()
+				fmt.Println("Detected sigTerm while waiting for Homescript http request to be completed: canceling request...")
+				return
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+	}
 }
 
 // Sends a notification to the user who issues this command
