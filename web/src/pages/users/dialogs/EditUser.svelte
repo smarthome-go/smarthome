@@ -1,162 +1,162 @@
 <script lang="ts">
-    import Button,{ Label } from '@smui/button'
-    import Dialog,{
-    Actions,
-    Content,
-    Header,
-    InitialFocus,
-    Title
-    } from '@smui/dialog'
-    import FormField from '@smui/form-field'
-    import IconButton from '@smui/icon-button'
-    import Switch from '@smui/switch'
-    import Textfield from '@smui/textfield'
-    import CharacterCounter from '@smui/textfield/character-counter'
-    import { onMount } from 'svelte'
-    import ColorPicker from '../../../components/ColorPicker.svelte'
-    import { createSnackbar,data } from '../../../global'
-    import { loading,users } from './../main'
+    import Button, { Label } from "@smui/button";
+    import Dialog, {
+        Actions,
+        Content,
+        Header,
+        InitialFocus,
+        Title,
+    } from "@smui/dialog";
+    import FormField from "@smui/form-field";
+    import IconButton from "@smui/icon-button";
+    import Switch from "@smui/switch";
+    import Textfield from "@smui/textfield";
+    import CharacterCounter from "@smui/textfield/character-counter";
+    import { onMount } from "svelte";
+    import ColorPicker from "../../../components/ColorPicker.svelte";
+    import { createSnackbar, data } from "../../../global";
+    import { loading, users } from "./../main";
 
     // Dialog open / loading booleans
-    export let open = false
-    let deleteOpen = false
+    export let open = false;
+    let deleteOpen = false;
 
     // Exported user data
-    export let username = ''
-    export let forename = ''
-    export let surname = ''
-    export let primaryColorDark
-    export let primaryColorLight
-    export let darkTheme: boolean
-    export let schedulerEnabled: boolean
+    export let username = "";
+    export let forename = "";
+    export let surname = "";
+    export let primaryColorDark = "";
+    export let primaryColorLight = "";
+    export let darkTheme: boolean;
+    export let schedulerEnabled: boolean;
 
     // Values before modification
-    let forenameBefore: string
-    let surnameBefore: string
-    let primaryColorDarkBefore: string
-    let primaryColorLightBefore: string
-    let schedulerEnabledBefore: boolean
-    let darkThemeBefore: boolean
+    let forenameBefore: string;
+    let surnameBefore: string;
+    let primaryColorDarkBefore: string;
+    let primaryColorLightBefore: string;
+    let schedulerEnabledBefore: boolean;
+    let darkThemeBefore: boolean;
 
-    const isCurrentUser = username == $data.userData.user.username
+    const isCurrentUser = username == $data.userData.user.username;
 
     // If the dialog edits the current user, some values can be changed directly in order to display a preview
     $: if (isCurrentUser) {
-        $data.userData.user.darkTheme = darkTheme
-        $data.userData.user.forename = forename
-        $data.userData.user.surname = surname
-        $data.userData.user.primaryColorDark = primaryColorDark
-        $data.userData.user.primaryColorLight = primaryColorLight
+        $data.userData.user.darkTheme = darkTheme;
+        $data.userData.user.forename = forename;
+        $data.userData.user.surname = surname;
+        $data.userData.user.primaryColorDark = primaryColorDark;
+        $data.userData.user.primaryColorLight = primaryColorLight;
     }
 
     // Variables that keep track of input change and valididy
-    let forenameDirty = false
-    let surnameDirty = false
-    let forenameInvalid = false
-    let surnameInvalid = false
-    let primaryColorDarkDirty = false
-    let primaryColorLightDirty = false
+    let forenameDirty = false;
+    let surnameDirty = false;
+    let forenameInvalid = false;
+    let surnameInvalid = false;
+    let primaryColorDarkDirty = false;
+    let primaryColorLightDirty = false;
     // Update values reactively
     $: {
-        forenameDirty = forename !== forenameBefore
-        surnameDirty = surname !== surnameBefore
+        forenameDirty = forename !== forenameBefore;
+        surnameDirty = surname !== surnameBefore;
 
-        primaryColorDarkDirty = primaryColorDark !== primaryColorDarkBefore
-        primaryColorLightDirty = primaryColorLight !== primaryColorLightBefore
+        primaryColorDarkDirty = primaryColorDark !== primaryColorDarkBefore;
+        primaryColorLightDirty = primaryColorLight !== primaryColorLightBefore;
 
-        forenameInvalid = forename.length == 0
-        surnameInvalid = surname.length === 0
+        forenameInvalid = forename.length == 0;
+        surnameInvalid = surname.length === 0;
     }
 
     // Sets the values before modification to the currently visible values
-    onMount(updateBeforeValues) // Saves the values initially
+    onMount(updateBeforeValues); // Saves the values initially
     function updateBeforeValues() {
-        forenameBefore = forename
-        surnameBefore = surname
-        primaryColorDarkBefore = primaryColorDark
-        primaryColorLightBefore = primaryColorLight
-        schedulerEnabledBefore = schedulerEnabled
-        darkThemeBefore = darkTheme
+        forenameBefore = forename;
+        surnameBefore = surname;
+        primaryColorDarkBefore = primaryColorDark;
+        primaryColorLightBefore = primaryColorLight;
+        schedulerEnabledBefore = schedulerEnabled;
+        darkThemeBefore = darkTheme;
     }
 
     // Rolls back any changes
     function restoreChanges() {
-        forename = forenameBefore
-        surname = surnameBefore
-        primaryColorDark = primaryColorDarkBefore
-        primaryColorLight = primaryColorLightBefore
-        schedulerEnabled = schedulerEnabledBefore
-        darkTheme = darkThemeBefore
+        forename = forenameBefore;
+        surname = surnameBefore;
+        primaryColorDark = primaryColorDarkBefore;
+        primaryColorLight = primaryColorLightBefore;
+        schedulerEnabled = schedulerEnabledBefore;
+        darkTheme = darkThemeBefore;
     }
 
     // Sends a delete request to the server
     async function deleteUser() {
-        $loading = true
+        $loading = true;
         try {
             const res = await (
-                await fetch('/api/user/manage/delete', {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
+                await fetch("/api/user/manage/delete", {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ username }),
                 })
-            ).json()
-            if (!res.success) throw Error(res.error)
-            $createSnackbar(`Deleted user ${username}`)
-            $users = $users.filter((u) => u.user.username !== username)
+            ).json();
+            if (!res.success) throw Error(res.error);
+            $createSnackbar(`Deleted user ${username}`);
+            $users = $users.filter((u) => u.user.username !== username);
         } catch (err) {
-            $createSnackbar(`Could not delete user: ${err}`)
+            $createSnackbar(`Could not delete user: ${err}`);
         }
-        $loading = false
+        $loading = false;
     }
 
     // Toggles the users scheduler
     async function setScheduler() {
-        if (schedulerEnabled == schedulerEnabledBefore) return
+        if (schedulerEnabled == schedulerEnabledBefore) return;
         try {
             const res = await (
-                await fetch('/api/scheduler/state/user', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                await fetch("/api/scheduler/state/user", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         username,
                         enabled: schedulerEnabled,
                     }),
                 })
-            ).json()
-            if (!res.success) throw Error(res.error)
+            ).json();
+            if (!res.success) throw Error(res.error);
         } catch (err) {
-            throw Error(err)
+            throw Error(err);
         }
     }
 
     // Toggles the users theme preference
     async function setTheme() {
-        if (darkTheme == darkThemeBefore) return
+        if (darkTheme == darkThemeBefore) return;
         try {
             const res = await (
-                await fetch('/api/user/settings/theme/user', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                await fetch("/api/user/settings/theme/user", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         username,
                         darkTheme,
                     }),
                 })
-            ).json()
-            if (!res.success) throw Error(res.error)
+            ).json();
+            if (!res.success) throw Error(res.error);
         } catch (err) {
-            throw Error(err)
+            throw Error(err);
         }
     }
 
     // Sends a modification request to the server
     async function modify() {
-        $loading = true
+        $loading = true;
         try {
             const res = await (
-                await fetch('/api/user/manage/data/modify', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                await fetch("/api/user/manage/data/modify", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         username,
                         data: {
@@ -167,17 +167,17 @@
                         },
                     }),
                 })
-            ).json()
-            if (!res.success) throw Error(res.error)
-            await setScheduler()
-            await setTheme()
-            $createSnackbar(`Successfully modified user '${username}'`)
-            updateBeforeValues()
+            ).json();
+            if (!res.success) throw Error(res.error);
+            await setScheduler();
+            await setTheme();
+            $createSnackbar(`Successfully modified user '${username}'`);
+            updateBeforeValues();
         } catch (err) {
-            $createSnackbar(`Failed to modify user data: ${err}`)
-            restoreChanges()
+            $createSnackbar(`Failed to modify user data: ${err}`);
+            restoreChanges();
         }
-        $loading = false
+        $loading = false;
     }
 </script>
 
@@ -254,7 +254,9 @@
                 <FormField>
                     <Switch bind:checked={schedulerEnabled} />
                     <span id="toggles__scheduler__indicator" slot="label">
-                        Schedules & Automations {schedulerEnabled ? 'enabled' : 'disabled'}
+                        Schedules & Automations {schedulerEnabled
+                            ? "enabled"
+                            : "disabled"}
                     </span>
                 </FormField>
             </div>
@@ -264,7 +266,7 @@
                 <FormField>
                     <Switch bind:checked={darkTheme} />
                     <span slot="label"
-                        >Dark Theme {darkTheme ? 'enabled' : 'disabled'}</span
+                        >Dark Theme {darkTheme ? "enabled" : "disabled"}</span
                     >
                 </FormField>
                 <div id="primary-colors">
@@ -304,7 +306,7 @@
                     <Button
                         variant="outlined"
                         on:click={() => {
-                            deleteOpen = true
+                            deleteOpen = true;
                         }}>delete</Button
                     >
                 </div>
@@ -338,7 +340,7 @@
 </Dialog>
 
 <style lang="scss">
-    @use '../../../mixins' as *;
+    @use "../../../mixins" as *;
     #names {
         display: flex;
         gap: 2rem;
