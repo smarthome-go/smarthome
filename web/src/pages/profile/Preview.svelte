@@ -4,16 +4,31 @@
     import ChangeAvatar from "./dialogs/ChangeAvatar.svelte";
 
     let changeAvatarOpen = false;
+
+    let avatarImageDiv: HTMLDivElement = undefined;
+    function reloadProfilePicture(src: string) {
+        avatarImageDiv.style.backgroundImage = `url(${src})`;
+    }
 </script>
 
-<ChangeAvatar bind:open={changeAvatarOpen} />
+<ChangeAvatar
+    bind:open={changeAvatarOpen}
+    on:update={(e) => reloadProfilePicture(e.detail)}
+/>
 
 <div class="preview ">
     <div class="preview__top">
         <div class="preview__top__avatar">
-            <div class="preview__top__avatar__image" />
+            <div
+                class="preview__top__avatar__image"
+                bind:this={avatarImageDiv}
+            />
             <div class="preview__top__avatar__edit">
-                <Fab color="primary" on:click={() => changeAvatarOpen = true} mini>
+                <Fab
+                    color="primary"
+                    on:click={() => (changeAvatarOpen = true)}
+                    mini
+                >
                     <Icon class="material-icons">edit</Icon>
                 </Fab>
             </div>
