@@ -28,7 +28,9 @@
         position: 'top' | 'bottom'
         permission: string // '' means no permission required
     }
-    let pages: Page[] = [
+
+    let pagesFiltered: Page[] = []
+    const pages: Page[] = [
         {
             label: 'Dashboard',
             uri: '/dash',
@@ -116,7 +118,7 @@
     onMount(async () => {
         await fetchData()
         // Filter out any pages to which the user has no access to
-        pages = pages.filter(
+        pagesFiltered = pages.filter(
             (p) =>
                 $data.userData.permissions.includes(p.permission) ||
                 p.permission == '' ||
@@ -164,7 +166,7 @@
     <NotificationDrawer bind:hidden={drawerClosed} />
     <div id="menubar">
         <div id="menubar__top">
-            {#each pages.filter((p) => p.position === 'top') as page}
+            {#each pagesFiltered.filter((p) => p.position === 'top') as page}
                 <NavBarButton
                     {...withoutPosition(page)}
                     active={page.uri === window.location.pathname}
@@ -172,7 +174,7 @@
             {/each}
         </div>
         <div id="menubar__bottom">
-            {#each pages.filter((p) => p.position === 'bottom') as page}
+            {#each pagesFiltered.filter((p) => p.position === 'bottom') as page}
                 <NavBarButton
                     {...withoutPosition(page)}
                     active={page.uri === window.location.pathname}
