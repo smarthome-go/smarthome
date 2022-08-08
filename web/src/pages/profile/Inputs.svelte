@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { data } from "../../global";
+    import { data, createSnackbar } from "../../global";
     import Fab, { Icon } from "@smui/fab";
     import ChangeAvatar from "./dialogs/ChangeAvatar.svelte";
     import Textfield from "@smui/textfield";
@@ -9,6 +9,11 @@
     import ColorPicker from "../../components/ColorPicker.svelte";
     import Button from "@smui/button";
     import DeleteAvatar from "./dialogs/DeleteAvatar.svelte";
+
+    $: if ($data.userData) receiveInitialData();
+
+    // Loading indicator
+    let loading = false;
 
     // Avatar-specific values
     let deleteAvatarOpen = false;
@@ -23,15 +28,106 @@
         avatarImageDiv.style.backgroundImage = `url(/api/user/avatar/personal?time=${new Date().getTime()})`;
     }
 
-    // User data
-    let forename = $data.userData.user.forename;
-    let surname = $data.userData.user.surname;
+    // User data copy
+    let forename = "";
+    let surname = "";
 
-    let schedulerEnabled = $data.userData.user.schedulerEnabled;
-    let darkTheme = $data.userData.user.darkTheme;
+    let schedulerEnabled = false;
+    let darkTheme = false;
 
-    let primaryColorDark = $data.userData.user.primaryColorDark;
-    let primaryColorLight = $data.userData.user.primaryColorLight;
+    let primaryColorDark = "";
+    let primaryColorLight = "";
+
+    async function updateUserData() {
+        loading = true;
+        try {
+            // Update regular data
+            const res = await (
+                await fetch("/api/user/data/update", {
+                    method: "PUT",
+                    headers: { "Content-Type": "appliation/json" },
+                    body: JSON.stringify({
+                        forename,
+                        surname,
+                        primaryColorDark,
+                        primaryColorLight,
+                    }),
+                })
+            ).json();
+            if (!res.success) throw Error(res.error);
+
+            // Update the scheduler state afterwards
+            await setScheduler();
+
+            // Update the theme afterwards
+            await setTheme();
+
+            // If everything until now succeeded, update the values in the global store
+            $data.userData.user.forename = forename;
+            $data.userData.user.surname = surname;
+
+            $data.userData.user.schedulerEnabled = schedulerEnabled;
+            $data.userData.user.darkTheme = darkTheme;
+
+            $data.userData.user.primaryColorDark = primaryColorDark;
+            $data.userData.user.primaryColorLight = primaryColorLight;
+        } catch (err) {
+            $createSnackbar(`Failed to update user data: ${err}`);
+        }
+        loading = false;
+    }
+
+    // Toggles the users scheduler
+    async function setScheduler() {
+        if (schedulerEnabled == $data.userData.user.schedulerEnabled) return;
+        try {
+            const res = await (
+                await fetch("/api/scheduler/state/personal", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        enabled: schedulerEnabled,
+                    }),
+                })
+            ).json();
+            if (!res.success) throw Error(res.error);
+            // Update the value in the global store
+            $data.userData.user.schedulerEnabled = true;
+        } catch (err) {
+            throw Error(err);
+        }
+    }
+
+    // Toggles the users theme preference
+    async function setTheme() {
+        if (darkTheme == $data.userData.user.darkTheme) return;
+        try {
+            const res = await (
+                await fetch("/api/user/settings/theme/personal", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        darkTheme,
+                    }),
+                })
+            ).json();
+            if (!res.success) throw Error(res.error);
+            // Update value in theme
+            $data.userData.user.darkTheme = darkTheme;
+        } catch (err) {
+            throw Error(err);
+        }
+    }
+
+    // Copies the user data from the global store when mounted
+    function receiveInitialData() {
+        forename = $data.userData.user.forename;
+        surname = $data.userData.user.surname;
+        schedulerEnabled = $data.userData.user.schedulerEnabled;
+        darkTheme = $data.userData.user.darkTheme;
+        primaryColorDark = $data.userData.user.primaryColorDark;
+        primaryColorLight = $data.userData.user.primaryColorLight;
+    }
 </script>
 
 <ChangeAvatar
@@ -142,12 +238,6 @@
     </div>
     <h6 style="color: var(--clr-error)">Danger Zone</h6>
     <div class="inputs__danger mdc-elevation--z3">
-        <div class="inputs__danger__reset-avatar">
-            <Button variant="outlined">Reset</Button>
-            <div>
-                <span class="--clr-text-hint">Reset your avatar picture</span>
-            </div>
-        </div>
         <div class="inputs__danger__delete-user">
             <Button variant="outlined">Delete</Button>
             <div>
@@ -158,8 +248,17 @@
         </div>
     </div>
     <div class="inputs__actions">
-        <Button>Cancel</Button>
-        <Button>Apply Changes</Button>
+        <Button on:click={receiveInitialData}>Cancel</Button>
+        <Button
+            on:click={updateUserData}
+            disabled={forename === $data.userData.user.forename &&
+                surname === $data.userData.user.surname &&
+                schedulerEnabled === $data.userData.user.schedulerEnabled &&
+                darkTheme === $data.userData.user.darkTheme &&
+                primaryColorDark === $data.userData.user.primaryColorDark &&
+                primaryColorLight === $data.userData.user.primaryColorLight}
+            >Apply Changes</Button
+        >
     </div>
 </div>
 
@@ -210,7 +309,7 @@
 
         h6 {
             margin-bottom: 0.5rem;
-            margin-top: 2rem;
+            margin-top: 1rem;
         }
 
         &__name {
@@ -222,6 +321,9 @@
             background-color: var(--clr-height-1-3);
             border-radius: 0.3rem;
             padding: 1rem;
+            display: flex;
+            gap: 1rem;
+            flex-direction: column;
         }
 
         &__primary-colors {
