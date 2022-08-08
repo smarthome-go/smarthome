@@ -28,6 +28,8 @@ github.com/sirupsen/logrus v1.9.0 h1:trlNQbNUG3OdDrDil03MCb1H2o9nJ1x4/5LYw7byDE0
 github.com/sirupsen/logrus v1.9.0/go.mod h1:naHLuLoDiP4jHNo9R0sCBMtWGeIprob74mVsIT4qYEQ=
 github.com/smarthome-go/homescript v0.15.1 h1:R9rsERrjOEMMwy4CYb2266zlQxkzaB3F/pTv4qVMimw=
 github.com/smarthome-go/homescript v0.15.1/go.mod h1:QiwJH1vn6X8FG2lI+N4HkkE5La6zTYojV2U6tSoUaZ0=
+github.com/smarthome-go/homescript v0.15.2 h1:cNZsYcVkotK+JNPLl19NISjh3k207zoOpWoTgyL3lTQ=
+github.com/smarthome-go/homescript v0.15.2/go.mod h1:QiwJH1vn6X8FG2lI+N4HkkE5La6zTYojV2U6tSoUaZ0=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSSt89Yw=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
