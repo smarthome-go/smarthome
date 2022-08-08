@@ -40,68 +40,68 @@ var (
 		{
 			// (Admin) is allowed to use and manage the internal logging system
 			Permission:  PermissionLogs,
-			Name:        "Manage Logging",
+			Name:        "Logs",
 			Description: "Use and manage the internal logging system",
 		},
 		{
 			// (Admin) is allowed to read debug information from the server
 			Permission:  PermissionDebug,
 			Name:        "Debug Features",
-			Description: "Obtain debug information about the system",
+			Description: "Obtain debug information about Smarthome",
 		},
 		{
 			// (Admin) is allowed to create new users or delete users and manage their permissions
 			Permission:  PermissionManageUsers,
 			Name:        "Manage Users",
-			Description: "Create / remove and manage users and manage their permissions",
+			Description: "Manage users and their permissions",
 		},
 		{
 			// User is allowed to run, add, delete, and modify Homescript, scheduler homescript excluded
 			Permission:  PermissionHomescript,
 			Name:        "Homescript",
-			Description: "List, add, delete, run, and modify Homescripts",
+			Description: "Use the Homescript scripting language",
 		},
 		{
 			// User is allowed to make network requests from Homescript
 			Permission:  PermissionHomescriptNetwork,
-			Name:        "Homescript Network",
-			Description: "Make network requests inside Homescript, use http functions",
+			Name:        "HMS Network",
+			Description: "Perform network requests from Homescript",
 		},
 		{
 			// User is allowed to set up, modify, delete, and view personal automations
 			Permission:  PermissionAutomation,
 			Name:        "Automations",
-			Description: "List, add, delete, and modify automations",
+			Description: "Use the automation app",
 		},
 		{
 			// User is allowed to set up, modify, delete, and view personal schedules
 			Permission:  PermissionScheduler,
 			Name:        "Scheduler",
-			Description: "List, add, delete, and modify schedules",
+			Description: "Use the scheduler app",
 		},
 		{
 			// User is allowed to set up, modify, delete, and view personal reminders
 			Permission:  PermissionReminder,
 			Name:        "Reminders",
-			Description: "List, add, delete, and modify reminders",
+			Description: "Use the reminder app",
 		},
 		{
 			// (Admin) is allowed to modify rooms, switches and cameras
 			Permission:  PermissionModifyRooms,
 			Name:        "Manage Rooms",
-			Description: "View, add, modify and delete rooms and room like switches and cameras. If enabled, the user also has access to every switch of the system.",
+			Description: "Modify rooms, switches and cameras. Also grants access to every switch",
 		},
 		{
 			// User is allowed to view the video feed of cameras to which he has access
 			Permission:  PermissionViewCameras,
 			Name:        "View Cameras",
-			Description: "View camera video feed. However, which camera can be viewed still depends on the camera permissions.",
+			Description: "View camera image feeds (depends on camera-permissions)",
 		},
 		{
 			// (Admin) is allowed to change global config parameters
 			Permission:  PermissionModifyServerConfig,
-			Name:        "Manage Server Config",
-			Description: "Change global server configuration values and export system configuration (includes sensitive data).",
+			Name:        "Server Config",
+			Description: "Change and export server configuration (includes sensitive data)",
 		},
 		{
 			// WARNING: This allows a user to do everything, should only be allowed to admin users
