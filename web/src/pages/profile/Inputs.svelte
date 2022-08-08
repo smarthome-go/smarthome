@@ -9,15 +9,19 @@
     import ColorPicker from "../../components/ColorPicker.svelte";
     import Button from "@smui/button";
     import DeleteAvatar from "./dialogs/DeleteAvatar.svelte";
+    import DeleteUser from "./dialogs/DeleteUser.svelte";
 
     $: if ($data.userData) receiveInitialData();
+    $: if ($data.userData.user.username) reloadAvatarFromSource();
 
     // Loading indicator
     let loading = false;
 
+    // User deletion dialog
+    let deleteUserOpen = false;
+
     // Avatar-specific values
     let deleteAvatarOpen = false;
-
     let changeAvatarOpen = false;
     let avatarImageDiv: HTMLDivElement = undefined;
 
@@ -25,7 +29,9 @@
         avatarImageDiv.style.backgroundImage = `url(${src})`;
     }
     function reloadAvatarFromSource() {
-        avatarImageDiv.style.backgroundImage = `url(/api/user/avatar/personal?time=${new Date().getTime()})`;
+        avatarImageDiv.style.backgroundImage = `url(/api/user/avatar/personal?urscache=${
+            $data.userData.user.username
+        }&time=${new Date().getTime()})`;
     }
 
     // User data copy
@@ -119,6 +125,23 @@
         }
     }
 
+    // Deletes the current user
+    async function deleteCurrentUser() {
+        try {
+            const res = await (
+                await fetch("/api/user/manage/delete/self", {
+                    method: "DELETE",
+                })
+            ).json();
+            if (!res.success) throw Error(res.error);
+
+            // Redirect to the login page
+            window.location.href = "/login";
+        } catch (err) {
+            $createSnackbar(`Failed to delete user: ${err}`);
+        }
+    }
+
     // Copies the user data from the global store when mounted
     function receiveInitialData() {
         forename = $data.userData.user.forename;
@@ -136,6 +159,7 @@
 />
 
 <DeleteAvatar bind:open={deleteAvatarOpen} on:reset={reloadAvatarFromSource} />
+<DeleteUser bind:open={deleteUserOpen} on:delete={deleteCurrentUser} />
 
 <div class="preview ">
     <div class="preview__avatar">
@@ -239,7 +263,7 @@
     <h6 style="color: var(--clr-error)">Danger Zone</h6>
     <div class="inputs__danger mdc-elevation--z3">
         <div class="inputs__danger__delete-user">
-            <Button variant="outlined">Delete</Button>
+            <Button on:click={() => (deleteUserOpen = true)}>Delete</Button>
             <div>
                 <span class="--clr-text-hint"
                     >Erase all your data and delete this account</span
@@ -248,7 +272,16 @@
         </div>
     </div>
     <div class="inputs__actions">
-        <Button on:click={receiveInitialData}>Cancel</Button>
+        <Button
+            on:click={receiveInitialData}
+            disabled={forename === $data.userData.user.forename &&
+                surname === $data.userData.user.surname &&
+                schedulerEnabled === $data.userData.user.schedulerEnabled &&
+                darkTheme === $data.userData.user.darkTheme &&
+                primaryColorDark === $data.userData.user.primaryColorDark &&
+                primaryColorLight === $data.userData.user.primaryColorLight}
+            >Cancel</Button
+        >
         <Button
             on:click={updateUserData}
             disabled={forename === $data.userData.user.forename &&
@@ -373,6 +406,7 @@
             div {
                 display: flex;
                 justify-content: space-between;
+                align-items: center;
             }
         }
 
