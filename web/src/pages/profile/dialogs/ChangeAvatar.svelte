@@ -66,7 +66,7 @@
                 })
             ).json();
 
-            // Check for posible errors
+            // Check for possible errors
             if (!res.success) throw Error(res.error);
             $createSnackbar("Successfully updated avatar");
             // Dispatch a `update` event to the parent component

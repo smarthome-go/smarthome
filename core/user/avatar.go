@@ -55,7 +55,7 @@ func GetUserAvatar(username string) ([]byte, error) {
 		if err := RemoveAvatar(username); err != nil {
 			return nil, err
 		}
-		log.Info("Succcessfully reset to default avatar")
+		log.Info("Scccessfully reset avatar to use the default file path")
 
 		// Serve the default avatar as a replacement
 		fileBytes, err = os.ReadFile(defaultFilePath)
