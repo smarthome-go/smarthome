@@ -2,7 +2,6 @@ package api
 
 import (
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -101,16 +100,8 @@ func GetAvatar(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	var filepath string
-	filepath, err = database.GetAvatarPathByUsername(username)
+	fileBytes, err := user.GetUserAvatar(username)
 	if err != nil {
-		log.Error("Could not get avatar image: panic serving default image: ", err.Error())
-		filepath = "./web/assets/avatar/default.png"
-	}
-
-	fileBytes, err := os.ReadFile(filepath)
-	if err != nil {
-		log.Error("Could not display avatar: could not read image", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		if _, err := w.Write(make([]byte, 0)); err != nil {
 			log.Error("Failed to return avatar image: writing response bytes failed: ", err.Error())
@@ -119,9 +110,9 @@ func GetAvatar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set cache validity of image to 6 hours and set the content-type
+	// Set cache validity of image to 2 hours and set the Content-Type
 	w.Header().Set("Content-Type", http.DetectContentType(fileBytes))
-	w.Header().Set("Cache-Control", "max-age=21600")
+	w.Header().Set("Cache-Control", "max-age=7200")
 
 	if _, err := w.Write(fileBytes); err != nil {
 		log.Error("Failed to return avatar image: writing response bytes failed: ", err.Error())
@@ -138,29 +129,8 @@ func GetForeignUserAvatar(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "no username provided", Error: "no username provided"})
 		return
 	}
-	_, exists, err := database.GetUserByUsername(username)
+	fileBytes, err := user.GetUserAvatar(username)
 	if err != nil {
-		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Success: false, Message: "failed to serve avatar", Error: "database failure"})
-		return
-	}
-	if !exists {
-		w.WriteHeader(http.StatusNotFound)
-		Res(w, Response{Success: false, Message: "failed to serve avatar", Error: "invalid username"})
-		return
-	}
-	var filepath string
-	filepath, err = database.GetAvatarPathByUsername(username)
-	if err != nil {
-		log.Error("Could not get avatar image: serving default image: ", err.Error())
-		filepath = "./web/assets/avatar/default.png"
-	}
-	fileBytes, err := os.ReadFile(filepath)
-	w.Header().Set("Content-Type", http.DetectContentType(fileBytes))
-	// Set cache validity of image to 100 hours for other profile images
-	// w.Header().Set("Cache-Control", "max-age=36000")
-	if err != nil {
-		log.Error("Could not display avatar: could not read image", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		if _, err := w.Write(make([]byte, 0)); err != nil {
 			log.Error("Failed to return avatar image: writing response bytes failed: ", err.Error())
@@ -168,6 +138,11 @@ func GetForeignUserAvatar(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
+	// Set cache validity of image to 2 hours and set the Content-Type
+	w.Header().Set("Content-Type", http.DetectContentType(fileBytes))
+	w.Header().Set("Cache-Control", "max-age=7200")
+
 	if _, err := w.Write(fileBytes); err != nil {
 		log.Error("Failed to return avatar image: writing response bytes failed: ", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
