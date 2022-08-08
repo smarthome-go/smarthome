@@ -98,7 +98,6 @@ func AddUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // Deletes a user given a valid username
-// This also needs to delete any data that depends on this user in terms of a foreign key
 // Admin auth required
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -113,7 +112,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	_, userDoesExist, err := database.GetUserByUsername(request.Username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Success: false, Message: "failed to remove user", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to delete user", Error: "database failure"})
 		return
 	}
 	if !userDoesExist {
@@ -124,17 +123,44 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	isAlone, err := user.IsStandaloneUserAdmin(request.Username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Success: false, Message: "failed to remove permission", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to delete user", Error: "database failure"})
 		return
 	}
 	if isAlone {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		Res(w, Response{Success: false, Message: "failed to remove permission", Error: "user is the only user with permission to create other users"})
+		Res(w, Response{Success: false, Message: "failed to delete user", Error: "user is the only user with permission to create other users"})
 		return
 	}
 	if err := user.DeleteUser(request.Username); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		Res(w, Response{Success: false, Message: "failed to remove user", Error: "backend failure"})
+		Res(w, Response{Success: false, Message: "failed to delete user", Error: "backend failure"})
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+	Res(w, Response{Success: true, Message: "successfully deleted user"})
+}
+
+// Attempts to delete the current user
+func DeleteCurrentUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(w, r)
+	if err != nil {
+		return
+	}
+	isAlone, err := user.IsStandaloneUserAdmin(username)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to delete current user", Error: "database failure"})
+		return
+	}
+	if isAlone {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to delete current user", Error: "user is the only user with permission to create other users"})
+		return
+	}
+	if err := user.DeleteUser(username); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		Res(w, Response{Success: false, Message: "failed to delete user", Error: "backend failure"})
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
