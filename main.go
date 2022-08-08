@@ -201,7 +201,7 @@ func main() {
 
 	// Homescript Manager initialization
 	homescript.InitManager()
-	// Initialize Homescript URL cache flusing scheduler
+	// Initialize Homescript URL cache flushing scheduler
 	if err := homescript.StartUrlCacheGC(); err != nil {
 		log.Fatal("Failed to start Homescript URL cache GC: ", err.Error())
 	}
