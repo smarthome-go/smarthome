@@ -64,6 +64,7 @@
      */
 
     //  Retrieves the users personal permissions
+    // TODO: remove this??? use store
     async function fetchUserPermissions() {
         try {
             const res = await (
