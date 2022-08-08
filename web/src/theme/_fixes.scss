@@ -37,6 +37,11 @@
     color: var(--clr-text) !important;
 }
 
+//
+.mdc-fab {
+    --mdc-ripple-color: var(--mdc-theme-on-primary);
+}
+
 
 :root {
     // Ripple color
