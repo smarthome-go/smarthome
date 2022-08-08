@@ -8,13 +8,19 @@
     import Switch from "@smui/switch";
     import ColorPicker from "../../components/ColorPicker.svelte";
     import Button from "@smui/button";
+    import DeleteAvatar from "./dialogs/DeleteAvatar.svelte";
 
     // Avatar-specific values
+    let deleteAvatarOpen = false;
+
     let changeAvatarOpen = false;
     let avatarImageDiv: HTMLDivElement = undefined;
 
-    function reloadAvatarAfterUpload(src: string) {
+    function changeAvatarSource(src: string) {
         avatarImageDiv.style.backgroundImage = `url(${src})`;
+    }
+    function reloadAvatarFromSource() {
+        avatarImageDiv.style.backgroundImage = `url(/api/user/avatar/personal?time=${new Date().getTime()})`;
     }
 
     // User data
@@ -30,13 +36,22 @@
 
 <ChangeAvatar
     bind:open={changeAvatarOpen}
-    on:update={(e) => reloadAvatarAfterUpload(e.detail)}
+    on:update={(e) => changeAvatarSource(e.detail)}
 />
+
+<DeleteAvatar bind:open={deleteAvatarOpen} on:reset={reloadAvatarFromSource} />
 
 <div class="preview ">
     <div class="preview__avatar">
         <div class="preview__avatar__image" bind:this={avatarImageDiv} />
         <div class="preview__avatar__edit">
+            <Fab
+                color="primary"
+                on:click={() => (deleteAvatarOpen = true)}
+                mini
+            >
+                <Icon class="material-icons">delete</Icon>
+            </Fab>
             <Fab
                 color="primary"
                 on:click={() => (changeAvatarOpen = true)}
@@ -127,13 +142,19 @@
     </div>
     <h6 style="color: var(--clr-error)">Danger Zone</h6>
     <div class="inputs__danger mdc-elevation--z3">
-        <div class="inputs__danger__delete__user">
+        <div class="inputs__danger__reset-avatar">
+            <Button variant="outlined">Reset</Button>
+            <div>
+                <span class="--clr-text-hint">Reset your avatar picture</span>
+            </div>
+        </div>
+        <div class="inputs__danger__delete-user">
+            <Button variant="outlined">Delete</Button>
             <div>
                 <span class="--clr-text-hint"
-                    >Erase all user data and delete account</span
+                    >Erase all your data and delete this account</span
                 >
             </div>
-            <Button variant="outlined">Delete</Button>
         </div>
     </div>
     <div class="inputs__actions">
@@ -243,6 +264,14 @@
             padding: 1rem;
             border-radius: 0.3rem;
             border: var(--clr-error) solid 0.1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+
+            div {
+                display: flex;
+                justify-content: space-between;
+            }
         }
 
         &__actions {

@@ -3,9 +3,10 @@
     import Progress from "../../components/Progress.svelte";
     import Page from "../../Page.svelte";
     import Inputs from "./Inputs.svelte";
-    import Miscellaneous from "./Miscellaneous.svelte";
+    import Security from "./Security.svelte";
     import Permissions from "./dialogs/Permissions.svelte";
 
+    // Specify whether the permissions dialog should be open or closed
     let permissionsOpen = false;
 </script>
 
@@ -30,8 +31,8 @@
         <div id="inputs" class="mdc-elevation--z1">
             <Inputs />
         </div>
-        <div id="miscellaneous" class="mdc-elevation--z1">
-            <Miscellaneous />
+        <div id="security" class="mdc-elevation--z1">
+            <Security />
         </div>
     </div></Page
 >
@@ -77,17 +78,27 @@
         @include mobile {
             min-height: calc(100vh - 48px - 3.5rem);
         }
-
-        #inputs,
-        #miscellaneous {
+        #inputs {
             background-color: var(--clr-height-0-1);
             border-radius: 0.4rem;
-            height: 50%;
+            height: 75%;
             width: 100%;
 
             @include widescreen {
                 height: 100%;
-                width: 50%;
+                width: 60%;
+            }
+        }
+
+        #security {
+            background-color: var(--clr-height-0-1);
+            border-radius: 0.4rem;
+            height: 25%;
+            width: 100%;
+
+            @include widescreen {
+                height: 100%;
+                width: 40%;
             }
         }
     }
