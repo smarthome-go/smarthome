@@ -40,7 +40,7 @@ var (
 		{
 			// (Admin) is allowed to use and manage the internal logging system
 			Permission:  PermissionLogs,
-			Name:        "Logs",
+			Name:        "Event Logs",
 			Description: "Use and manage the internal logging system",
 		},
 		{
