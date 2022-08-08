@@ -57,6 +57,7 @@ version:
 # Prepares everything for a version-release
 # In order to publish the release to official registries
 # run `make gh-release` and `make docker-push`
+release-slim: cleanall lint build docker
 release: cleanall lint test build docker
 
 # Publishes the local release to Github releases
