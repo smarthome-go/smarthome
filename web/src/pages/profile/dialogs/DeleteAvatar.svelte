@@ -22,7 +22,6 @@
                 })
             ).json();
             if (!res.success) throw Error(res.error);
-            $createSnackbar(`Successfully reset avatar image`)
             dispatch('reset', null)
         } catch (err) {
             $createSnackbar(`Failed to reset avatar image: ${err}`);

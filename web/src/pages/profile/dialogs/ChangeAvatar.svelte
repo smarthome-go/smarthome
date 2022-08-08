@@ -68,7 +68,6 @@
 
             // Check for possible errors
             if (!res.success) throw Error(res.error);
-            $createSnackbar("Successfully updated avatar");
             // Dispatch a `update` event to the parent component
             // The avatar's source is passed as a URL-source string
             dispatch("update", avatarSrc);
