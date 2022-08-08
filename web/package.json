@@ -52,6 +52,7 @@
     "@smui/button": "^6.0.0-beta.15",
     "@smui/checkbox": "^6.0.0-beta.15",
     "@smui/circular-progress": "^6.0.0-beta.15",
+    "@smui/data-table": "^6.0.0",
     "@smui/fab": "^6.0.0",
     "@smui/form-field": "^6.0.0-beta.15",
     "@smui/icon-button": "^6.0.0-beta.15",
