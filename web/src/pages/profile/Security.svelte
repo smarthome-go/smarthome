@@ -84,7 +84,7 @@
             {/if}
         </div>
         <div class="security__tokens__table">
-            {#if tokens.length > 0 && !tokensLoaded}
+            {#if tokens.length > 0 && tokensLoaded}
                 <DataTable class="security__tokens__table__component">
                     <Head>
                         <Row>
@@ -187,6 +187,7 @@
                     flex-direction: column;
                     align-items: center;
                     gap: 1rem;
+
                     h6 {
                         margin: 0;
                     }
