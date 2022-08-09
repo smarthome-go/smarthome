@@ -35,7 +35,7 @@
             if (res.success !== undefined && !res.success)
                 throw Error(res.error);
             tokens = res;
-            tokensLoaded = true
+            tokensLoaded = true;
         } catch (err) {
             $createSnackbar(`Could not load authentication tokens: ${err}`);
         }
@@ -187,6 +187,9 @@
                     flex-direction: column;
                     align-items: center;
                     gap: 1rem;
+                    h6 {
+                        margin: 0;
+                    }
                     i {
                         font-size: 5rem;
                         color: var(--clr-text-disabled);
