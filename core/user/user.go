@@ -1,6 +1,8 @@
 package user
 
 import (
+	"fmt"
+
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 
@@ -54,10 +56,15 @@ func ChangePassword(username string, newPassword string) error {
 		log.Error("Failed to create new user: password hashing failed", err.Error())
 		return err
 	}
-	return database.UpdateUserPasswordHash(
+	err = database.UpdateUserPasswordHash(
 		username,
 		string(hashedPassword),
 	)
+	if err != nil {
+		return err
+	}
+	log.Info(fmt.Sprintf("Password of user `%s` was changed successfully", username))
+	return nil
 }
 
 // Removes a user, also removes everything that depends on the user:
