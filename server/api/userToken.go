@@ -90,6 +90,11 @@ func DeleteUserToken(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to delete token", Error: "invalid token provided"})
 		return
 	}
+	if err := database.DeleteTokenByToken(request.Token); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to delete token", Error: "database failure"})
+		return
+	}
 	Res(w, Response{Success: true, Message: "successfully deleted token"})
 }
 
