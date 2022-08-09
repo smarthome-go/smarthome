@@ -64,7 +64,6 @@
     }
 
     #content {
-        height: calc(100vh - 60px);
         padding: 1rem 1.5rem;
         box-sizing: border-box;
         flex-direction: column;
@@ -72,6 +71,7 @@
         gap: 1rem;
 
         @include widescreen {
+            height: calc(100vh - 60px);
             flex-direction: row;
         }
 

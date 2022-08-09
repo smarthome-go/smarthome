@@ -214,53 +214,55 @@
             </Textfield>
         </div>
     </div>
-    <h6>Toggles</h6>
-    <div class="inputs__toggles mdc-elevation--z3">
-        <div>
-            <FormField>
-                <Switch bind:checked={schedulerEnabled} />
-                <span slot="label">
-                    Schedules & Automations {schedulerEnabled
-                        ? "enabled"
-                        : "disabled"}
-                </span>
-            </FormField>
-        </div>
-        <div>
-            <FormField>
-                <Switch bind:checked={darkTheme} />
-                <span slot="label">
-                    Darkmode {darkTheme ? "enabled" : "disabled"}
-                </span>
-            </FormField>
-        </div>
-    </div>
-    <h6>Primary Colors</h6>
-    <div class="inputs__primary-colors">
-        <div class="color mdc-elevation--z3">
-            <div
-                class="color__indicator"
-                style:background-color={primaryColorDark}
-            />
-            <!-- Primary Color Dark -->
+    <div class="inputs__center__wrap">
+        <h6>Toggles</h6>
+        <div class="inputs__toggles mdc-elevation--z3">
             <div>
-                <ColorPicker bind:value={primaryColorDark} />
-                <span>Dark</span>
+                <FormField>
+                    <Switch bind:checked={schedulerEnabled} />
+                    <span slot="label">
+                        Schedules & Automations {schedulerEnabled
+                            ? "enabled"
+                            : "disabled"}
+                    </span>
+                </FormField>
+            </div>
+            <div>
+                <FormField>
+                    <Switch bind:checked={darkTheme} />
+                    <span slot="label">
+                        Darkmode {darkTheme ? "enabled" : "disabled"}
+                    </span>
+                </FormField>
             </div>
         </div>
-        <div class="color mdc-elevation--z3">
-            <div
-                class="color__indicator"
-                style:background-color={primaryColorLight}
-            />
-            <!-- Primary Color Light -->
-            <div>
-                <ColorPicker bind:value={primaryColorLight} />
-                <span>Light</span>
+        <h6>Primary Colors</h6>
+        <div class="inputs__primary-colors">
+            <div class="color mdc-elevation--z3">
+                <div
+                    class="color__indicator"
+                    style:background-color={primaryColorDark}
+                />
+                <!-- Primary Color Dark -->
+                <div>
+                    <ColorPicker bind:value={primaryColorDark} />
+                    <span>Dark</span>
+                </div>
+            </div>
+            <div class="color mdc-elevation--z3">
+                <div
+                    class="color__indicator"
+                    style:background-color={primaryColorLight}
+                />
+                <!-- Primary Color Light -->
+                <div>
+                    <ColorPicker bind:value={primaryColorLight} />
+                    <span>Light</span>
+                </div>
             </div>
         </div>
     </div>
-    <h6 style="color: var(--clr-error)">Danger Zone</h6>
+    <h6>Danger Zone</h6>
     <div class="inputs__danger mdc-elevation--z3">
         <div class="inputs__danger__delete-user">
             <Button on:click={() => (deleteUserOpen = true)}>Delete</Button>
@@ -396,9 +398,9 @@
 
         &__danger {
             background-color: var(--clr-height-1-3);
-            padding: 1rem;
+            padding: 1.5rem;
             border-radius: 0.3rem;
-            border: var(--clr-error) solid 0.1rem;
+            //border: var(--clr-error) solid 0.1rem;
             display: flex;
             flex-direction: column;
             gap: 1rem;
