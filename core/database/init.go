@@ -27,6 +27,9 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 	if err := createUserTable(); err != nil {
 		return err
 	}
+	if err := createUserTokenTable(); err != nil {
+		return err
+	}
 	if err := createPermissionTable(); err != nil {
 		return err
 	}
