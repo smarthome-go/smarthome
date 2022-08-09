@@ -227,13 +227,13 @@ func (self *Executor) Get(requestUrl string) (string, error) {
 		if url.Scheme != "http" && url.Scheme != "https" {
 			return "", fmt.Errorf("Invalid URL provided: Invalid scheme: `%s`.\n=> Valid schemes are `http` and `https`", url.Scheme)
 		}
-		res, err := http.Head(requestUrl)
+		_, err = http.Head(requestUrl)
 		if err != nil {
 			return "", err
 		}
-		if res.StatusCode != http.StatusOK {
-			return "", fmt.Errorf("Checking URL failed: unexpected non-200 status-code: %d (`%s`)", res.StatusCode, res.Status)
-		}
+		//if res.StatusCode != http.StatusOK {
+		//return "", fmt.Errorf("Checking URL failed: unexpected non-200 status-code: %d (`%s`)", res.StatusCode, res.Status)
+		//}
 		// If all checks were successful, insert the URL into the URL cache
 		if err := insertCacheEntry(*url); err != nil {
 			return "", fmt.Errorf("Internal error: Could not update URL cache entry: %s", err.Error())
@@ -342,13 +342,13 @@ func (self *Executor) Http(requestUrl string, method string, body string, header
 		if url.Scheme != "http" && url.Scheme != "https" {
 			return "", fmt.Errorf("Invalid URL provided: Invalid scheme: `%s`.\n=> Valid schemes are `http` and `https`", url.Scheme)
 		}
-		res, err := http.Head(requestUrl)
+		_, err = http.Head(requestUrl)
 		if err != nil {
 			return "", err
 		}
-		if res.StatusCode != http.StatusOK {
-			return "", fmt.Errorf("Checking URL failed: unexpected non-200 status-code: %d (`%s`)", res.StatusCode, res.Status)
-		}
+		//if res.StatusCode != http.StatusOK {
+		//return "", fmt.Errorf("Checking URL failed: unexpected non-200 status-code: %d (`%s`)", res.StatusCode, res.Status)
+		//}
 		// If all checks were successful, insert the URL into the URL cache
 		if err := insertCacheEntry(*url); err != nil {
 			return "", fmt.Errorf("Internal error: Could not update URL cache entry: %s", err.Error())
