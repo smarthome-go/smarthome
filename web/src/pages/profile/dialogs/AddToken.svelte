@@ -6,9 +6,9 @@
         InitialFocus,
         Title,
     } from "@smui/dialog";
-import Textfield from "@smui/textfield";
-import CharacterCounter from "@smui/textfield/character-counter";
-import HelperText from "@smui/textfield/helper-text";
+    import Textfield from "@smui/textfield";
+    import CharacterCounter from "@smui/textfield/character-counter";
+    import HelperText from "@smui/textfield/helper-text";
     import { createEventDispatcher } from "svelte";
     import { createSnackbar } from "../../../global";
 
@@ -44,7 +44,12 @@ import HelperText from "@smui/textfield/helper-text";
 >
     <Title id="default-focus-title">Generate Authentication Token</Title>
     <Content id="default-focus-content">
-        <Textfield bind:value={label} label="Token Name" input$maxlength={50} style='width: 100%;'>
+        <Textfield
+            bind:value={label}
+            label="Token Name"
+            input$maxlength={50}
+            style="width: 100%;"
+        >
             <svelte:fragment slot="helper">
                 <HelperText>Client name / Description</HelperText>
                 <CharacterCounter>0 / 50</CharacterCounter>
@@ -55,7 +60,12 @@ import HelperText from "@smui/textfield/helper-text";
         <Button>
             <Label>Cancel</Label>
         </Button>
-        <Button defaultAction use={[InitialFocus]} on:click={generateToken} disabled={label === ""}>
+        <Button
+            defaultAction
+            use={[InitialFocus]}
+            on:click={generateToken}
+            disabled={label === ""}
+        >
             <Label>Generate</Label>
         </Button>
     </Actions>
