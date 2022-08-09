@@ -22,6 +22,7 @@
     }
 
     let tokens: UserToken[] = [];
+    let tokensLoaded = false;
     let visibleTokens: string[] = [];
     let tokensForDeletion: string[] = [];
 
@@ -34,6 +35,7 @@
             if (res.success !== undefined && !res.success)
                 throw Error(res.error);
             tokens = res;
+            tokensLoaded = true
         } catch (err) {
             $createSnackbar(`Could not load authentication tokens: ${err}`);
         }
@@ -76,14 +78,13 @@
                     >Allow you to login via Smarthome apps without a password</span
                 >
             </div>
-            {#if tokens.length > 0}
-                <Button
-                    on:click={() => (addTokenOpen = true)}>Add Token</Button
+            {#if tokens.length > 0 && tokensLoaded}
+                <Button on:click={() => (addTokenOpen = true)}>Add Token</Button
                 >
             {/if}
         </div>
         <div class="security__tokens__table">
-            {#if tokens.length > 0}
+            {#if tokens.length > 0 && !tokensLoaded}
                 <DataTable class="security__tokens__table__component">
                     <Head>
                         <Row>
