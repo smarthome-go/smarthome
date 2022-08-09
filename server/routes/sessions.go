@@ -59,7 +59,6 @@ func tokenLoginHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 	log.Debug(fmt.Sprintf("User `%s` logged in successfully", tokenData.User))
 	go event.Info("Successful login", fmt.Sprintf("User `%s` logged in", tokenData.User))
-	return
 }
 
 // Accepts a json request like `{"username": "user", "password":"password"}`
