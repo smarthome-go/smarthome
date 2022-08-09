@@ -17,6 +17,5 @@ func InitWithManualKey(randomSeed string) {
 
 func InitWithRandomKey() {
 	Store = sessions.NewCookieStore(securecookie.GenerateRandomKey(32))
-	Store = sessions.NewCookieStore([]byte(""))
 	log.Debug("Successfully initialized middleware session store using random key")
 }

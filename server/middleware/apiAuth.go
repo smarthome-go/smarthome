@@ -24,8 +24,9 @@ func ApiAuth(handler http.HandlerFunc) http.HandlerFunc {
 		query := r.URL.Query()
 		username := query.Get("username")
 		password := query.Get("password")
+		token := query.Get("token")
 
-		if loginValidOkTemp && loginValidOk && loginValid && username == "" {
+		if loginValidOkTemp && loginValidOk && loginValid && username == "" && token == "" {
 			// The last part (`username == ""`) checks if the user has the intention to authenticate again
 			// This could be the case if another user wants to log in from the same connection
 			if usernameTempOk && usernameSessionOk && usernameSession != "" {
@@ -43,7 +44,7 @@ func ApiAuth(handler http.HandlerFunc) http.HandlerFunc {
 				}
 			}
 		}
-		if username == "" {
+		if username == "" && token == "" {
 			// Session is invalid and no authentication query is present
 			log.Trace("user session invalid, no query present")
 			log.Trace("Invalid Session, not serving", r.URL.Path)
@@ -60,6 +61,18 @@ func ApiAuth(handler http.HandlerFunc) http.HandlerFunc {
 			Res(w, Response{Success: false, Message: "could not authenticate: failed to validate credentials", Error: "database failure"})
 			return
 		}
+		if !validCredentials {
+			data, found, err := database.GetUserTokenByToken(token)
+			if err != nil {
+				w.WriteHeader(http.StatusServiceUnavailable)
+				Res(w, Response{Success: false, Message: "could not validate authentication token", Error: "database failure"})
+				return
+			}
+			if found {
+				validCredentials = true
+				username = data.User
+			}
+		}
 		if validCredentials {
 			// Supplied credentials are valid and the session should be saved
 			session, _ := Store.Get(r, "session")
@@ -73,13 +86,11 @@ func ApiAuth(handler http.HandlerFunc) http.HandlerFunc {
 			log.Trace(fmt.Sprintf("valid query: serving %s", r.URL.Path))
 			handler.ServeHTTP(w, r)
 			return
-		} else {
-			// The database could validate the credentials but they were invalid
-			log.Trace("bad credentials, invalid Session: not serving", r.URL.Path)
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			Res(w, Response{Success: false, Message: "access denied, wrong username or password", Error: "invalid credentials"})
-			return
 		}
+		// The database could validate the credentials but they were invalid
+		log.Trace("bad credentials, invalid Session: not serving", r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		Res(w, Response{Success: false, Message: "access denied, wrong username or password", Error: "invalid credentials"})
 	}
 }

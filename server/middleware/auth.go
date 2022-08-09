@@ -27,10 +27,11 @@ func Auth(handler http.HandlerFunc) http.HandlerFunc {
 		query := r.URL.Query()
 		username := query.Get("username")
 		password := query.Get("password")
+		token := query.Get("token")
 
-		if loginValidOkTemp && loginValidOk && loginValid && username == "" {
-			// Check if user exists
-			// TODO: implement check in Redis or use other caching
+		if loginValidOkTemp && loginValidOk && loginValid && username == "" && token == "" {
+			// Check if the user exists
+			// TODO: maybe implement a check
 			if usernameTempOk && usernameSessionOk && usernameSession != "" {
 				_, exists, err := database.GetUserByUsername(usernameSession)
 				if err != nil {
@@ -38,7 +39,8 @@ func Auth(handler http.HandlerFunc) http.HandlerFunc {
 					Res(w, Response{Success: false, Message: "Could not check user validity", Error: "database failure"})
 					return
 				}
-				if exists { // Do not return an error if the does not exists to allow correction via url queries
+				if exists {
+					// Do not return an error if the does not exists to allow correction via URL queries
 					// The session is valid: allow access
 					handler.ServeHTTP(w, r)
 					return
@@ -46,21 +48,34 @@ func Auth(handler http.HandlerFunc) http.HandlerFunc {
 			}
 		}
 
-		// If the provided url query username is blank, redirect to login
-		if username == "" {
+		// If the provided url query username and token are blank, redirect to login
+		if username == "" && token == "" {
 			log.Trace(fmt.Sprintf("Invalid Session, redirecting %s to /login", r.URL.Path))
 			http.Redirect(w, r, "/login", http.StatusFound)
 			return
 		}
 
-		// Check potential credentials if the session is invalid
-		validCredentials, err := user.ValidateCredentials(username, password)
+		// Check potential credentials or the token if the session is invalid
+		var validCredentials bool
+		validCredentials, err = user.ValidateCredentials(username, password)
 		if err != nil {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			Res(w, Response{Success: false, Message: "could not validate credentials", Error: "database failure"})
 			return
 		}
-
+		// Check the token if everything else fails
+		if !validCredentials {
+			data, found, err := database.GetUserTokenByToken(token)
+			if err != nil {
+				w.WriteHeader(http.StatusServiceUnavailable)
+				Res(w, Response{Success: false, Message: "could not validate authentication token", Error: "database failure"})
+				return
+			}
+			if found {
+				validCredentials = true
+				username = data.User
+			}
+		}
 		if validCredentials {
 			session.Values["valid"] = true
 			session.Values["username"] = username

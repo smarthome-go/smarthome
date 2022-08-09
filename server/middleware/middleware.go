@@ -6,6 +6,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/user"
 )
 
@@ -71,12 +72,21 @@ func getUserFromQuery(r *http.Request) (string, bool, error) {
 	password := query.Get("password")
 	loginValid, err := user.ValidateCredentials(username, password)
 	if err != nil {
-		log.Error("Could not use GetUserFromQuery: failed validate login credentials due to database failure", err.Error())
+		log.Error("Could not use GetUserFromQuery: failed to validate login credentials due to database failure", err.Error())
 		return "", false, err
 	}
 	if loginValid {
 		return username, true, nil
-	} else {
+	}
+	// If the conventional way of authentication failed, check if a authentication token is present
+	token := query.Get("token")
+	data, found, err := database.GetUserTokenByToken(token)
+	if err != nil {
+		log.Error("Could not use GetUserFromQuery: failed to validate authentication token due to database failure", err.Error())
+		return "", false, err
+	}
+	if !found {
 		return "", false, nil
 	}
+	return data.User, false, nil
 }
