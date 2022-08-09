@@ -126,6 +126,7 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/user/manage/delete/self", mdl.ApiAuth(api.DeleteCurrentUser)).Methods("DELETE")
 	// Manage personal tokens
 	r.HandleFunc("/api/user/token/generate", mdl.ApiAuth(api.GenerateUserToken)).Methods("POST")
+	r.HandleFunc("/api/user/token/delete", mdl.ApiAuth(api.DeleteUserToken)).Methods("DELETE")
 	r.HandleFunc("/api/user/token/list/personal", mdl.ApiAuth(api.ListUserTokens)).Methods("GET")
 
 	// Notification-related

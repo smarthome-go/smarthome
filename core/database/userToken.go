@@ -129,3 +129,22 @@ func GetUserTokenByToken(token string) (data UserToken, found bool, err error) {
 	}
 	return data, true, nil
 }
+
+// Deletes an arbitrary user token
+func DeleteTokenByToken(token string) error {
+	query, err := db.Prepare(`
+	DELETE FROM
+	userToken
+	WHERE Token=?
+	`)
+	if err != nil {
+		log.Error("Failed to delete user token by token: preparing query failed: ", err.Error())
+		return err
+	}
+	defer query.Close()
+	if _, err := query.Exec(token); err != nil {
+		log.Error("Failed to delete user token by token: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}

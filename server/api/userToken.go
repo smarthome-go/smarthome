@@ -17,6 +17,10 @@ type TokenResponse struct {
 	Token    string   `json:"token"`
 }
 
+type UserTokenDeletionRequest struct {
+	Token string `json:"token"`
+}
+
 // Generates a new random token for the current user
 func GenerateUserToken(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -46,7 +50,6 @@ func GenerateUserToken(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to add token", Error: "backend failure"})
 		return
 	}
-	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(TokenResponse{
 		Response: Response{
 			Success: true,
@@ -59,6 +62,35 @@ func GenerateUserToken(w http.ResponseWriter, r *http.Request) {
 		log.Error("Could not send response to client: ", err.Error())
 		return
 	}
+}
+
+// Generates a new random token for the current user
+func DeleteUserToken(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(w, r)
+	if err != nil {
+		return
+	}
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request UserTokenDeletionRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	data, found, err := database.GetUserTokenByToken(request.Token)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to delete token", Error: "database failure"})
+		return
+	}
+	if !found || data.User != username {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to delete token", Error: "invalid token provided"})
+		return
+	}
+	Res(w, Response{Success: true, Message: "successfully deleted token"})
 }
 
 // Lists each token which belong to the current user
