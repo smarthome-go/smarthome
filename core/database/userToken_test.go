@@ -14,16 +14,16 @@ func TestCreateUserTokenTable(t *testing.T) {
 
 func TestInsertIntoTokenTable(t *testing.T) {
 	assert.NoError(t, InsertUserToken(
-		"--------------------------------------------------",
+		fmt.Sprint(time.Now().UnixMilli()),
 		"admin",
 		"For Testing",
 	))
 }
 
 func TestGetUserTokenByToken(t *testing.T) {
-	token := time.Now().UnixMilli()
+	token := fmt.Sprint(time.Now().UnixMilli())
 	assert.NoError(t, InsertUserToken(
-		fmt.Sprint(token),
+		token,
 		"admin",
 		"For Testing",
 	))
@@ -34,7 +34,7 @@ func TestGetUserTokenByToken(t *testing.T) {
 		User:  "admin",
 		Token: fmt.Sprint(token),
 		Data: UserTokenData{
-			Label: "For testing",
+			Label: "For Testing",
 		},
 	}, data)
 }
