@@ -28,7 +28,6 @@
     "prepare:dark-theme": "smui-theme compile public/assets/theme-dark.css -i src/theme/dark"
   },
   "devDependencies": {
-    "@smui/dialog": "^6.0.0-beta.16",
     "@sveltejs/vite-plugin-svelte": "^1.0.0-next.30",
     "@tsconfig/svelte": "^2.0.1",
     "@typescript-eslint/eslint-plugin": "^5.32.0",
@@ -47,6 +46,7 @@
     "vite": "^3.0.0"
   },
   "dependencies": {
+    "@smui/dialog": "^6.0.0-beta.16",
     "@codemirror/basic-setup": "^0.20.0",
     "@fontsource/jetbrains-mono": "^4.5.9",
     "@smui/button": "^6.0.0-beta.15",
