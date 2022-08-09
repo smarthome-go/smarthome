@@ -287,6 +287,7 @@
         >
         <Button
             on:click={updateUserData}
+            variant='raised'
             disabled={forename === $data.userData.user.forename &&
                 surname === $data.userData.user.surname &&
                 schedulerEnabled === $data.userData.user.schedulerEnabled &&
@@ -326,7 +327,6 @@
                     background-color: var(--clr-error);
                     transform: translateX(calc(100% + 5px)) scale(95%);
                 }
-
                 &:hover {
                     :global #avatar-reset-button {
                         transform: translateX(0);
