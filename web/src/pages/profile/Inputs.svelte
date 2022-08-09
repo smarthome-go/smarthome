@@ -10,6 +10,7 @@
     import Button from "@smui/button";
     import DeleteAvatar from "./dialogs/DeleteAvatar.svelte";
     import DeleteUser from "./dialogs/DeleteUser.svelte";
+    import ChangePassword from "./dialogs/ChangePassword.svelte";
 
     $: if ($data.userData) receiveInitialData();
     $: if ($data.userData.user.username) reloadAvatarFromSource();
@@ -19,6 +20,9 @@
 
     // User deletion dialog
     let deleteUserOpen = false;
+
+    // Password change dialog
+    let changePasswordOpen = false;
 
     // Avatar-specific values
     let deleteAvatarOpen = false;
@@ -163,6 +167,7 @@
 
 <DeleteAvatar bind:open={deleteAvatarOpen} on:reset={reloadAvatarFromSource} />
 <DeleteUser bind:open={deleteUserOpen} on:delete={deleteCurrentUser} />
+<ChangePassword bind:open={changePasswordOpen} />
 
 <div class="preview ">
     <div class="preview__avatar">
@@ -270,6 +275,13 @@
     </div>
     <h6>Danger Zone</h6>
     <div class="inputs__danger mdc-elevation--z3">
+        <div class="inputs__danger__item">
+            <Button
+                class="inputs__danger__item__button"
+                on:click={() => (changePasswordOpen = true)}>Change</Button
+            >
+            <span class="text-hint">Change your Smarthome login password</span>
+        </div>
         <div class="inputs__danger__item">
             <Button
                 class="inputs__danger__item__button"
@@ -423,7 +435,6 @@
                 background-color: var(--clr-height-1-3);
                 border-radius: 0.3rem;
                 padding: 1rem;
-
 
                 @include not-widescreen {
                     padding: 2rem 1rem;
