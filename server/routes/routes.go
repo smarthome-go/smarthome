@@ -51,7 +51,8 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/version", api.GetVersionInfo).Methods("GET")
 
 	// Login handler
-	r.HandleFunc("/api/login", loginPostHandler).Methods("POST")
+	r.HandleFunc("/api/login", userLoginHandler).Methods("POST")
+	r.HandleFunc("/api/login/token", tokenLoginHandler).Methods("POST")
 
 	// Power
 	r.HandleFunc("/api/power/states", api.GetPowerStates).Methods("GET")
