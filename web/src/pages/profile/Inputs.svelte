@@ -142,6 +142,8 @@
         }
     }
 
+    let dataReceived = false;
+
     // Copies the user data from the global store when mounted
     function receiveInitialData() {
         forename = $data.userData.user.forename;
@@ -150,6 +152,7 @@
         darkTheme = $data.userData.user.darkTheme;
         primaryColorDark = $data.userData.user.primaryColorDark;
         primaryColorLight = $data.userData.user.primaryColorLight;
+        setTimeout(() => (dataReceived = true), 100);
     }
 </script>
 
@@ -277,23 +280,26 @@
     <div class="inputs__actions">
         <Button
             on:click={receiveInitialData}
-            disabled={forename === $data.userData.user.forename &&
-                surname === $data.userData.user.surname &&
-                schedulerEnabled === $data.userData.user.schedulerEnabled &&
-                darkTheme === $data.userData.user.darkTheme &&
-                primaryColorDark === $data.userData.user.primaryColorDark &&
-                primaryColorLight === $data.userData.user.primaryColorLight}
-            >Cancel</Button
+            disabled={!dataReceived ||
+                (forename === $data.userData.user.forename &&
+                    surname === $data.userData.user.surname &&
+                    schedulerEnabled === $data.userData.user.schedulerEnabled &&
+                    darkTheme === $data.userData.user.darkTheme &&
+                    primaryColorDark === $data.userData.user.primaryColorDark &&
+                    primaryColorLight ===
+                        $data.userData.user.primaryColorLight)}>Cancel</Button
         >
         <Button
             on:click={updateUserData}
-            variant='raised'
-            disabled={forename === $data.userData.user.forename &&
-                surname === $data.userData.user.surname &&
-                schedulerEnabled === $data.userData.user.schedulerEnabled &&
-                darkTheme === $data.userData.user.darkTheme &&
-                primaryColorDark === $data.userData.user.primaryColorDark &&
-                primaryColorLight === $data.userData.user.primaryColorLight}
+            variant="raised"
+            disabled={!dataReceived ||
+                (forename === $data.userData.user.forename &&
+                    surname === $data.userData.user.surname &&
+                    schedulerEnabled === $data.userData.user.schedulerEnabled &&
+                    darkTheme === $data.userData.user.darkTheme &&
+                    primaryColorDark === $data.userData.user.primaryColorDark &&
+                    primaryColorLight ===
+                        $data.userData.user.primaryColorLight)}
             >Apply Changes</Button
         >
     </div>
