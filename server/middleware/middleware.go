@@ -88,5 +88,5 @@ func getUserFromQuery(r *http.Request) (string, bool, error) {
 	if !found {
 		return "", false, nil
 	}
-	return data.User, false, nil
+	return data.User, true, nil
 }
