@@ -43,6 +43,23 @@ func ValidateCredentials(username string, password string) (bool, error) {
 	return false, nil
 }
 
+// Changes a users password to a new one
+func ChangePassword(username string, newPassword string) error {
+	// Generates a new password hash based on a provided computational `cost`
+	hashedPassword, err := bcrypt.GenerateFromPassword(
+		[]byte(newPassword),
+		bcrypt.DefaultCost,
+	)
+	if err != nil {
+		log.Error("Failed to create new user: password hashing failed", err.Error())
+		return err
+	}
+	return database.UpdateUserPasswordHash(
+		username,
+		string(hashedPassword),
+	)
+}
+
 // Removes a user, also removes everything that depends on the user:
 // permissions, switchPermissions, cameraPermissions, notifications, reminders, schedulers, automations, homescripts
 func DeleteUser(username string) error {

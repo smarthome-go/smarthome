@@ -374,6 +374,27 @@ func SetUserDarkThemeEnabled(username string, useDarkTheme bool) error {
 	return nil
 }
 
+// Updates a user's password hash
+// The provided data must be validated beforehand
+func UpdateUserPasswordHash(username string, newHash string) error {
+	query, err := db.Prepare(`
+	UPDATE user
+	SET Password=?
+	WHERE Username=?
+	`)
+	if err != nil {
+		log.Error("Failed to update user password hash: preparing query failed: ", err.Error())
+		return err
+	}
+	defer query.Close()
+	_, err = query.Exec(newHash, username)
+	if err != nil {
+		log.Error("Failed to update user password hash: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}
+
 // Sets the users primary colors
 func UpdateUserMetadata(username string, forename string, surname string, primaryColorDark string, primaryColorLight string) error {
 	query, err := db.Prepare(`

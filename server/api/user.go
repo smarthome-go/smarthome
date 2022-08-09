@@ -37,6 +37,10 @@ type ModifyUserMetadataRequest struct {
 	PrimaryColorLight string `json:"primaryColorLight"`
 }
 
+type ModifyPasswordRequest struct {
+	Password string `json:"password"`
+}
+
 type ModifyForeignUserMetadataRequest struct {
 	Username string                    `json:"username"`
 	Data     ModifyUserMetadataRequest `json:"data"`
@@ -289,6 +293,34 @@ func ModifyCurrentUserMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	Res(w, Response{Success: true, Message: "successfully updated user metadata"})
+}
+
+// Modifies the password of the current user
+func ModifyCurrentUserPassword(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(w, r)
+	if err != nil {
+		return
+	}
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request ModifyPasswordRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	if len(request.Password) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "blank passwords are not allowed"})
+		return
+	}
+	if err := user.ChangePassword(username, request.Password); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to modify user password", Error: "backend failure"})
+		return
+	}
+	Res(w, Response{Success: true, Message: "successfully updated user password"})
 }
 
 // Modifies the metadata of a given user

@@ -123,6 +123,7 @@ func NewRouter() *mux.Router {
 	// Manage personal data
 	r.HandleFunc("/api/user/data", mdl.ApiAuth(api.GetUserDetails)).Methods("GET")
 	r.HandleFunc("/api/user/data/update", mdl.ApiAuth(api.ModifyCurrentUserMetadata)).Methods("PUT")
+	r.HandleFunc("/api/user/password/modify", mdl.ApiAuth(api.ModifyCurrentUserPassword)).Methods("PUT")
 	r.HandleFunc("/api/user/manage/delete/self", mdl.ApiAuth(api.DeleteCurrentUser)).Methods("DELETE")
 	// Manage personal tokens
 	r.HandleFunc("/api/user/token/generate", mdl.ApiAuth(api.GenerateUserToken)).Methods("POST")
