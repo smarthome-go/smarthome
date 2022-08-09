@@ -199,6 +199,7 @@
     <div class="inputs__name">
         <div class="inputs__name__forename">
             <Textfield
+                style="width: 100%;"
                 helperLine$style="width: 100%;"
                 label="Forename"
                 input$maxlength={20}
@@ -209,6 +210,7 @@
         </div>
         <div class="inputs__name__surname">
             <Textfield
+                style="width: 100%;"
                 helperLine$style="width: 100%;"
                 label="Surname"
                 input$maxlength={20}
@@ -224,7 +226,7 @@
             <div>
                 <FormField>
                     <Switch bind:checked={schedulerEnabled} />
-                    <span slot="label">
+                    <span slot="label" class="inputs__toggles__description">
                         Schedules & Automations {schedulerEnabled
                             ? "enabled"
                             : "disabled"}
@@ -234,7 +236,7 @@
             <div>
                 <FormField>
                     <Switch bind:checked={darkTheme} />
-                    <span slot="label">
+                    <span slot="label" class="inputs__toggles__description">
                         Darkmode {darkTheme ? "enabled" : "disabled"}
                     </span>
                 </FormField>
@@ -268,13 +270,14 @@
     </div>
     <h6>Danger Zone</h6>
     <div class="inputs__danger mdc-elevation--z3">
-        <div class="inputs__danger__delete-user">
-            <Button on:click={() => (deleteUserOpen = true)}>Delete</Button>
-            <div>
-                <span class="--clr-text-hint"
-                    >Erase all your data and delete this account</span
-                >
-            </div>
+        <div class="inputs__danger__item">
+            <Button
+                class="inputs__danger__item__button"
+                on:click={() => (deleteUserOpen = true)}>Delete</Button
+            >
+            <span class="text-hint"
+                >Erase all your data and delete this account</span
+            >
         </div>
     </div>
     <div class="inputs__actions">
@@ -299,8 +302,7 @@
                     darkTheme === $data.userData.user.darkTheme &&
                     primaryColorDark === $data.userData.user.primaryColorDark &&
                     primaryColorLight ===
-                        $data.userData.user.primaryColorLight)}
-            >Apply Changes</Button
+                        $data.userData.user.primaryColorLight)}>Apply</Button
         >
     </div>
 </div>
@@ -323,15 +325,27 @@
                 aspect-ratio: 1;
                 height: 8rem;
                 background-image: url("/api/user/avatar/personal");
+
+                @include mobile {
+                    height: 5rem;
+                }
             }
             &__edit {
                 position: absolute;
                 right: 0;
                 bottom: 0;
 
+                @include mobile {
+                    position: relative;
+                }
+
                 :global #avatar-reset-button {
                     background-color: var(--clr-error);
                     transform: translateX(calc(100% + 5px)) scale(95%);
+
+                    @include mobile {
+                        transform: none;
+                    }
                 }
                 &:hover {
                     :global #avatar-reset-button {
@@ -360,14 +374,25 @@
     .inputs {
         padding: 1rem 2rem;
 
+        @include mobile {
+            padding: 1.5rem;
+        }
+
         h6 {
             margin-bottom: 0.5rem;
             margin-top: 1rem;
+            font-size: 1.1rem;
+            color: var(--clr-text-hint);
         }
 
         &__name {
             display: flex;
             gap: 2rem;
+
+            @include mobile {
+                flex-direction: column;
+                gap: 0;
+            }
         }
 
         &__toggles {
@@ -377,6 +402,10 @@
             display: flex;
             gap: 1rem;
             flex-direction: column;
+
+            :global &__description {
+                color: var(--clr-text-hint);
+            }
         }
 
         &__primary-colors {
@@ -392,8 +421,19 @@
                 align-items: center;
                 gap: 0.2rem;
                 background-color: var(--clr-height-1-3);
-                padding: 1rem;
                 border-radius: 0.3rem;
+                padding: 1rem;
+
+
+                @include not-widescreen {
+                    padding: 2rem 1rem;
+                    width: 50%;
+                }
+
+                @include mobile {
+                    width: auto;
+                    padding: 1rem;
+                }
 
                 div {
                     display: flex;
@@ -406,7 +446,7 @@
                     height: 2rem;
                     border-radius: 50%;
 
-                    @include not-widescreen {
+                    @include mobile {
                         width: 1.2rem;
                         height: 1.2rem;
                     }
@@ -418,15 +458,28 @@
             background-color: var(--clr-height-1-3);
             padding: 1.5rem;
             border-radius: 0.3rem;
-            //border: var(--clr-error) solid 0.1rem;
             display: flex;
             flex-direction: column;
             gap: 1rem;
 
-            div {
+            @include mobile {
+                padding: 0.8rem 1rem;
+            }
+
+            &__item {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
+
+                @include mobile {
+                    flex-wrap: wrap;
+                    border-left: 0.2rem solid var(--clr-error);
+                    padding-left: 0.5rem;
+                }
+
+                :global &__button {
+                    --mdc-theme-primary: var(--clr-error);
+                }
             }
         }
 

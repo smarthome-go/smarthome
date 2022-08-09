@@ -161,14 +161,24 @@
 </div>
 
 <style lang="scss">
+    @use "../../mixins" as *;
     .security {
         padding: 1rem 1.5rem;
+
+        @include mobile {
+            padding: 0;
+        }
 
         &__tokens {
             &__header {
                 display: flex;
                 align-items: flex-end;
                 justify-content: space-between;
+
+                @include mobile {
+                    flex-wrap: wrap;
+                    padding: 1rem 1.5rem;
+                }
 
                 h6 {
                     margin: 0;

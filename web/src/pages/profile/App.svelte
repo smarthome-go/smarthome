@@ -77,7 +77,9 @@
 
         @include mobile {
             min-height: calc(100vh - 48px - 3.5rem);
+            padding: 1rem;
         }
+
         #inputs {
             background-color: var(--clr-height-0-1);
             border-radius: 0.4rem;
