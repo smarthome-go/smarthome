@@ -1,14 +1,11 @@
 <script lang="ts">
     import Ripple from '@smui/ripple'
-    import { v4 as uuidv4 } from 'uuid'
     export let value = '#ffffff'
-
-    const id = `${new Date().getTime()}-${uuidv4()}`
 </script>
 
 <span>
-    <input bind:value type="color" name="color" id={id.toString()} />
-    <label use:Ripple={{ surface: true }} for={id.toString()}>PICK COLOR</label>
+    <input bind:value type="color" name="color" id='input' />
+    <label use:Ripple={{ surface: true }} for='input'>PICK COLOR</label>
 </span>
 
 <style lang="scss">
