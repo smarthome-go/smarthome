@@ -1,39 +1,25 @@
-## Changelog for v0.0.52
+## Changelog for v0.0.53
 
-### User Profile GUI
-- Added a first version of the user profile GUI
-#### Features
-- User data visualization
-- User data modification
-- Avatar display
-- Avatar deletion and modification
-- User account deletion
+### Profile Page GUI
+- A user can now change their password using the button under the *Danger Zone*
+- This will sign out the user immediately and will therefore force the user to remember their password
+- Significantly improved the layout on different viewports, for example `widescreen` and `mobile`
+- Minimized layout shifts during page load
+- Added `authentication tokens` and their management to the profile page
+- Improved avatar image reset button location using a dynamic popup
+- The profile page is now officially usable and almost completed
+
+### Authentication Tokens
+- As described above, authentication tokens have been added to Smarthome
+- In the future, the `SDK` will add support for tokens in order to increase the security of the Smarthome infrastructure
 
 ### Homescript
-- Bumped the Homescript runtime to `v0.15.2`
-- Therefore fixed a possible server panic when using the builtin `http` function
+- Removed status code checking during linting of `http` functions
 
-#### Networking
-- Homescript can now use the `sigTerm` in order to cancel the builtin `http` and `get` functions during a request
-- Significantly improved `lint` times when using *networking* inside Homescript
-- Implemented a caching-system which caches correctly linted URLs inside a database table
-- Each cache entry expires after `12 hours`, thus keeping each URL up-to-date and reducing database table size
+### User Permissions
+- Renamed the permission `Logs` to `Event Logs`
 
-### Backend Code Quality
-- Refactored a large portion of the backend user avatar logic
-- Refactored user avatar database functions to avoid unfitting code
-- Upgraded all used `Go` modules
+### Code Quality / Bugfixes
+- Removed unneeded `uui` NPM dependency
+- 
 
-### Developer Notes
-- Removed useless test in `cpre/config/config_test.go`
-- Bumped dependency `vite` to `^3.0.0` and therefore fixed broken `npm i`
-- Removed annoying test output from `core/config/export_test.go`
-
-### Documentation
-- Added hint for session keys to `Docker.md`
-
-### GUI fixes
-- Eliminated large content shift in NavBar pages
-- Added missing data attributes to the global data store
-- Made permission names and descriptions more concise and readable
-- Fixed scrollable room page on non-widescreen layouts
