@@ -166,6 +166,7 @@
         <div class="preview__avatar__image" bind:this={avatarImageDiv} />
         <div class="preview__avatar__edit">
             <Fab
+                id="avatar-reset-button"
                 color="primary"
                 on:click={() => (deleteAvatarOpen = true)}
                 mini
@@ -320,6 +321,17 @@
                 position: absolute;
                 right: 0;
                 bottom: 0;
+
+                :global #avatar-reset-button {
+                    background-color: var(--clr-error);
+                    transform: translateX(calc(100% + 5px)) scale(95%);
+                }
+
+                &:hover {
+                    :global #avatar-reset-button {
+                        transform: translateX(0);
+                    }
+                }
             }
         }
 
