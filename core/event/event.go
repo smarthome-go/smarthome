@@ -14,6 +14,34 @@ func InitLogger(logger *logrus.Logger) {
 	log = logger
 }
 
+// Alternate struct which uses unix-millis as the time instead of the time struct
+type LogEvent struct {
+	Id          uint              `json:"id"`
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	Level       database.LogLevel `json:"level"`
+	Time        uint64            `json:"time"` // Time in unixMillis
+}
+
+// Returns all logs from the database but uses unix-millis as the time format
+func GetAllLogsUnixMillis() (logs []LogEvent, err error) {
+	logsDB, err := database.GetLogs()
+	if err != nil {
+		return nil, err
+	}
+	// Transform the logs into the alternate form
+	for _, item := range logsDB {
+		logs = append(logs, LogEvent{
+			Id:          item.Id,
+			Name:        item.Name,
+			Description: item.Description,
+			Level:       item.Level,
+			Time:        uint64(item.Time.UnixMilli()),
+		})
+	}
+	return nil, nil
+}
+
 // Adds a log event to the database and prints it to the console
 // Used by the other functions below
 func logEvent(name string, description string, level database.LogLevel) error {
@@ -67,7 +95,7 @@ func Fatal(name string, description string) {
 }
 
 func FlushOldLogs() error {
-	log.Trace("Flushing logs older than 30 days...")
+	log.Trace("Flushing logs which are older than 30 days...")
 	return database.FlushOldLogs()
 }
 

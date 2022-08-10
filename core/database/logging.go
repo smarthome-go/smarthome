@@ -7,11 +7,11 @@ import (
 )
 
 type LogEvent struct {
-	Id          uint      `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Level       LogLevel  `json:"level"`
-	Date        time.Time `json:"date"`
+	Id          uint
+	Name        string
+	Description string
+	Level       LogLevel
+	Time        time.Time
 }
 
 type LogLevel uint
@@ -142,7 +142,7 @@ func GetLogs() ([]LogEvent, error) {
 			log.Error("Invalid time column when scanning logs")
 			return nil, fmt.Errorf("invalid time column when scanning logs")
 		} else {
-			logItem.Date = logTime.Time
+			logItem.Time = logTime.Time
 			logs = append(logs, logItem)
 		}
 	}

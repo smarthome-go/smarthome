@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
 )
 
@@ -36,7 +35,7 @@ func FlushAllLogs(w http.ResponseWriter, r *http.Request) {
 // Returns a list of logging items in the logging table, admin authentication required
 func ListLogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	logs, err := database.GetLogs()
+	logs, err := event.GetAllLogsUnixMillis()
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "database error", Error: "database failure"})
