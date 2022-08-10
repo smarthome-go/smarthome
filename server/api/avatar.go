@@ -43,7 +43,7 @@ func HandleAvatarUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	// Check if the filename matches allowed formats (png / webp / jpeg / jpg)
 	allowedFileEndings := []string{"png", "webp", "jpeg", "jpg"}
-	fileEnding := strings.Split(handler.Filename, ".")[len(strings.Split(handler.Filename, "."))-1]
+	fileEnding := strings.ToLower(strings.Split(handler.Filename, ".")[len(strings.Split(handler.Filename, "."))-1])
 	var fileEndingValid bool
 	for _, value := range allowedFileEndings {
 		if fileEnding == value {
