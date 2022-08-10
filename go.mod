@@ -10,7 +10,6 @@ require (
 	github.com/gorilla/sessions v1.2.1
 	github.com/lnquy/cron v1.1.1
 	github.com/nathan-osman/go-sunrise v1.0.0
-	github.com/pkg/errors v0.9.1
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/sirupsen/logrus v1.9.0
 	github.com/smarthome-go/homescript v0.15.2

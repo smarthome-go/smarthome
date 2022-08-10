@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"time"
-
-	"github.com/pkg/errors"
 )
 
 // Fetches an image given an url, returns the image data as `[]byte`
@@ -55,7 +53,7 @@ func fetchImageBytes(imgURL string, timeout int) ([]byte, error) {
 	imageMegabytes := len(imageData) / 1024 / 1024
 	if imageMegabytes > int(maxImageSize) {
 		log.Warn("Failed to fetch image with a size greater than allowed limit")
-		return nil, errors.New("failed to fetch image: size to large")
+		return nil, fmt.Errorf("failed to fetch image: size to large (max: %d MB; current %d MB)", maxImageSize, imageMegabytes)
 	}
 	log.Trace(fmt.Sprintf("Finished image fetching. (size: %d MB) in %v", imageMegabytes, time.Since(start)))
 	return imageData, nil
