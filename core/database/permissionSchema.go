@@ -11,22 +11,19 @@ type PermissionType string
 
 // Different types of permissions
 const (
-	PermissionPower              PermissionType = "setPower"
-	PermissionViewCameras        PermissionType = "viewCameras"
-	PermissionLogs               PermissionType = "logs"
-	PermissionManageUsers        PermissionType = "manageUsers"
-	PermissionDebug              PermissionType = "debug"
-	PermissionAutomation         PermissionType = "automation"
-	PermissionScheduler          PermissionType = "scheduler"
-	PermissionReminder           PermissionType = "reminder"
-	PermissionModifyServerConfig PermissionType = "modifyServerConfig"
-	PermissionModifyRooms        PermissionType = "modifyRooms"
-
+	PermissionPower             PermissionType = "setPower"
+	PermissionViewCameras       PermissionType = "viewCameras"
+	PermissionManageUsers       PermissionType = "manageUsers"
+	PermissionDebug             PermissionType = "debug"
+	PermissionLogging           PermissionType = "logging"
+	PermissionAutomation        PermissionType = "automation"
+	PermissionScheduler         PermissionType = "scheduler"
+	PermissionReminder          PermissionType = "reminder"
+	PermissionSystemConfig      PermissionType = "modifyServerConfig"
+	PermissionModifyRooms       PermissionType = "modifyRooms"
 	PermissionHomescript        PermissionType = "homescript"
 	PermissionHomescriptNetwork PermissionType = "hmsNetwork"
-
-	// Use with caution
-	PermissionWildCard PermissionType = "*"
+	PermissionWildCard          PermissionType = "*"
 )
 
 var (
@@ -38,10 +35,10 @@ var (
 			Description: "Interact with switches",
 		},
 		{
-			// (Admin) is allowed to use and manage the internal logging system
-			Permission:  PermissionLogs,
+			// (Admin) is allowed to add logs to the internal logging system
+			Permission:  PermissionLogging,
 			Name:        "Event Logs",
-			Description: "Use and manage the internal logging system",
+			Description: "Add records to the internal logging system",
 		},
 		{
 			// (Admin) is allowed to read debug information from the server
@@ -99,9 +96,9 @@ var (
 		},
 		{
 			// (Admin) is allowed to change global config parameters
-			Permission:  PermissionModifyServerConfig,
-			Name:        "Server Config",
-			Description: "Change and export server configuration (includes sensitive data)",
+			Permission:  PermissionSystemConfig,
+			Name:        "System Config",
+			Description: "Manage and export system configuration (includes sensitive data)",
 		},
 		{
 			// WARNING: This allows a user to do everything, should only be allowed to admin users

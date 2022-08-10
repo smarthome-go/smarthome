@@ -594,12 +594,12 @@ func (self *Executor) Log(
 	description string,
 	level interpreter.LogLevel,
 ) error {
-	hasPermission, err := database.UserHasPermission(self.Username, database.PermissionLogs)
+	hasPermission, err := database.UserHasPermission(self.Username, database.PermissionLogging)
 	if err != nil {
 		return err
 	}
 	if !hasPermission {
-		return fmt.Errorf("Failed to add log event: user '%s' is not allowed to use the internal logging system.", self.Username)
+		return fmt.Errorf("Failed to add log event: you lack permission to add records to the internal logging system.")
 	}
 	// If using DryRun, stop here
 	if self.DryRun {
