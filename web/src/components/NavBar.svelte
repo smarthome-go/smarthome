@@ -89,7 +89,7 @@
         },
         {
             label: 'System',
-            uri: '/settings',
+            uri: '/system',
             icon: 'settings',
             position: 'bottom',
             permission: 'modifyServerConfig',
