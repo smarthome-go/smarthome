@@ -8,17 +8,22 @@ export default defineConfig({
     build: {
         rollupOptions: {
             input: {
+                // Login / logout pages
                 login: resolve(__dirname, 'html/login.html'),
+                404: resolve(__dirname, 'html/404.html'),
+                // User apps
                 dash: resolve(__dirname, 'html/dash.html'),
                 rooms: resolve(__dirname, 'html/rooms.html'),
                 reminders: resolve(__dirname, 'html/reminders.html'),
-                profile: resolve(__dirname, 'html/profile.html'),
-                users: resolve(__dirname, 'html/users.html'),
-                hmsEditor: resolve(__dirname, 'html/hmsEditor.html'),
-                homescript: resolve(__dirname, 'html/homescript.html'),
-                automations: resolve(__dirname, 'html/automations.html'),
                 scheduler: resolve(__dirname, 'html/scheduler.html'),
-                404: resolve(__dirname, 'html/404.html'),
+                automations: resolve(__dirname, 'html/automations.html'),
+                homescript: resolve(__dirname, 'html/homescript.html'),
+                profile: resolve(__dirname, 'html/profile.html'),
+                // Admin apps
+                users: resolve(__dirname, 'html/users.html'),
+                system: resolve(__dirname, 'html/system.html'),
+                // Hidden pages
+                hmsEditor: resolve(__dirname, 'html/hmsEditor.html'),
             },
             output: {
                 manualChunks: (id: any) => {
