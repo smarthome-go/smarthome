@@ -39,7 +39,7 @@ func GetAllLogsUnixMillis() (logs []LogEvent, err error) {
 			Time:        uint64(item.Time.UnixMilli()),
 		})
 	}
-	return nil, nil
+	return logs, nil
 }
 
 // Adds a log event to the database and prints it to the console
