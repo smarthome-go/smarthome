@@ -10,9 +10,20 @@ type LogEvent struct {
 	Id          uint      `json:"id"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
-	Level       int       `json:"level"`
+	Level       LogLevel  `json:"level"`
 	Date        time.Time `json:"date"`
 }
+
+type LogLevel uint
+
+const (
+	LogLevelTrace LogLevel = iota
+	LogLevelDebug
+	LogLevelInfo
+	LogLevelWarn
+	LogLevelError
+	LogLevelFatal
+)
 
 // Creates (unless it exists) the table containing internal logging events
 // For example a user logging in or altering a power states
@@ -35,7 +46,7 @@ func createLoggingEventTable() error {
 }
 
 // Add a logged internal event based on `name`, `description`, and `level`
-func AddLogEvent(name string, description string, level int) error {
+func AddLogEvent(name string, description string, level LogLevel) error {
 	query, err := db.Prepare(`
 	INSERT INTO
 	logs(
