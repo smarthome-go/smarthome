@@ -28,7 +28,7 @@
             ).json();
             if (!res.response.success) throw Error(res.response.error);
 
-            // Dispath the create event to allow the parent to display the change
+            // Dispatch the create event to allow the parent to display the change
             dispatch("create", { label, token: res.token });
 
             // Reset the label on successful submit
