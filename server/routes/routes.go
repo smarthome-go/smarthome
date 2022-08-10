@@ -2,13 +2,14 @@ package routes
 
 import (
 	"net/http"
-	// `mdl`` is shorter than `middleware`
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/server/api"
+
+	// `mdl` is shorter than `middleware`
 	mdl "github.com/smarthome-go/smarthome/server/middleware"
 )
 
@@ -21,12 +22,19 @@ func InitLogger(logger *logrus.Logger) {
 func NewRouter() *mux.Router {
 	log.Trace("Initializing server router...")
 	r := mux.NewRouter()
-	/* Middleware explanation */
-	// Auth: middleware that checks if the user is logged in, will redirect to `/login` if the user is not logged in
-	// ApiAuth: middleware that checks if the user is logged in for API request, will return JSON errors if the user is not logged in
+	/*
+		Middleware explanation
+		Auth: middleware that checks if the user is logged in, will redirect to `/login` if the user is not logged in
+		ApiAuth: middleware that checks if the user is logged in for API request, will return JSON errors if the user is not logged in
+	*/
 
 	// Health check for uptime monitoring
 	r.HandleFunc("/health", api.HealthCheck).Methods("GET")
+
+	/*
+		=== Pages ===
+		All routes below belong to pages or HTML serving
+	*/
 
 	// HTML-serving endpoints
 	r.HandleFunc("/", mdl.Auth(indexGetHandler)).Methods("GET")
@@ -39,12 +47,17 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/homescript/editor", mdl.Auth(hmsEditorGetHandler)).Methods("GET")
 	r.HandleFunc("/automations", mdl.Auth(automationsGetHandler)).Methods("GET")
 	r.HandleFunc("/scheduler", mdl.Auth(schedulerGetHandler)).Methods("GET")
+
 	// Session management
 	r.HandleFunc("/login", loginGetHandler).Methods("GET")
 	r.HandleFunc("/logout", logoutGetHandler).Methods("GET")
 
-	/* API */
-	// Debug information about the system
+	/*
+		=== API ===
+		All routes below belong to the API
+	*/
+
+	// Debug Information
 	r.HandleFunc("/api/debug", mdl.ApiAuth(mdl.Perm(api.DebugInfo, database.PermissionDebug))).Methods("GET")
 
 	// Version information
@@ -121,23 +134,36 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/user/manage/delete", mdl.ApiAuth(mdl.Perm(api.DeleteUser, database.PermissionManageUsers))).Methods("DELETE")
 	r.HandleFunc("/api/user/manage/data/modify", mdl.ApiAuth(mdl.Perm(api.ModifyUserMetadata, database.PermissionManageUsers))).Methods("PUT")
 
-	// Manage personal data
+	// User Data
 	r.HandleFunc("/api/user/data", mdl.ApiAuth(api.GetUserDetails)).Methods("GET")
 	r.HandleFunc("/api/user/data/update", mdl.ApiAuth(api.ModifyCurrentUserMetadata)).Methods("PUT")
 	r.HandleFunc("/api/user/password/modify", mdl.ApiAuth(api.ModifyCurrentUserPassword)).Methods("PUT")
 	r.HandleFunc("/api/user/manage/delete/self", mdl.ApiAuth(api.DeleteCurrentUser)).Methods("DELETE")
-	// Manage personal tokens
+
+	// User Customization
+	r.HandleFunc("/api/user/settings/theme/personal", mdl.ApiAuth(api.SetCurrentUserColorTheme)).Methods("PUT")
+	r.HandleFunc("/api/user/settings/theme/user", mdl.ApiAuth(api.SetUserColorTheme)).Methods("PUT")
+
+	// Customization for the user
+	r.HandleFunc("/api/user/avatar/personal", mdl.ApiAuth(api.GetAvatar)).Methods("GET")
+	r.HandleFunc("/api/user/avatar/user/{username}", mdl.ApiAuth(api.GetForeignUserAvatar)).Methods("GET")
+
+	// Personal avatar manipulation
+	r.HandleFunc("/api/user/avatar/upload", mdl.ApiAuth(api.HandleAvatarUpload)).Methods("POST")
+	r.HandleFunc("/api/user/avatar/delete", mdl.ApiAuth(api.DeleteAvatar)).Methods("DELETE")
+
+	// Authentication Tokens
 	r.HandleFunc("/api/user/token/generate", mdl.ApiAuth(api.GenerateUserToken)).Methods("POST")
 	r.HandleFunc("/api/user/token/delete", mdl.ApiAuth(api.DeleteUserToken)).Methods("DELETE")
 	r.HandleFunc("/api/user/token/list/personal", mdl.ApiAuth(api.ListUserTokens)).Methods("GET")
 
-	// Notification-related
+	// Notifications
 	r.HandleFunc("/api/user/notification/count", mdl.ApiAuth(api.GetNotificationCount)).Methods("GET")
 	r.HandleFunc("/api/user/notification/delete", mdl.ApiAuth(api.DeleteUserNotificationById)).Methods("DELETE")
 	r.HandleFunc("/api/user/notification/delete/all", mdl.ApiAuth(api.DeleteAllUserNotifications)).Methods("DELETE")
 	r.HandleFunc("/api/user/notification/list", mdl.ApiAuth(api.GetNotifications)).Methods("GET")
 
-	// Homescript-related
+	// Homescript
 	r.HandleFunc("/api/homescript/add", mdl.ApiAuth(mdl.Perm(api.CreateNewHomescript, database.PermissionHomescript))).Methods("POST")
 	r.HandleFunc("/api/homescript/modify", mdl.ApiAuth(mdl.Perm(api.ModifyHomescript, database.PermissionHomescript))).Methods("PUT")
 	r.HandleFunc("/api/homescript/delete", mdl.ApiAuth(mdl.Perm(api.DeleteHomescriptById, database.PermissionHomescript))).Methods("DELETE")
@@ -145,7 +171,7 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/homescript/list/personal", mdl.ApiAuth(mdl.Perm(api.ListPersonalHomescripts, database.PermissionHomescript))).Methods("GET")
 	r.HandleFunc("/api/homescript/list/personal/complete", mdl.ApiAuth(mdl.Perm(api.ListPersonalHomescriptsWithArgs, database.PermissionHomescript))).Methods("GET")
 
-	// Homescript execution and linting
+	// Homescript Execution And Linting
 	r.HandleFunc("/api/homescript/lint", mdl.ApiAuth(mdl.Perm(api.LintHomescriptId, database.PermissionHomescript))).Methods("POST")
 	r.HandleFunc("/api/homescript/lint/live", mdl.ApiAuth(mdl.Perm(api.LintHomescriptString, database.PermissionHomescript))).Methods("POST")
 	r.HandleFunc("/api/homescript/run", mdl.ApiAuth(mdl.Perm(api.RunHomescriptId, database.PermissionHomescript))).Methods("POST")
@@ -153,20 +179,20 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/homescript/kill/job/{id}", mdl.ApiAuth(mdl.Perm(api.KillJobById, database.PermissionHomescript))).Methods("POST")
 	r.HandleFunc("/api/homescript/kill/script/{id}", mdl.ApiAuth(mdl.Perm(api.KillAllHMSIdJobs, database.PermissionHomescript))).Methods("POST")
 
-	// Homescript arguments
+	// Homescript Arguments
 	r.HandleFunc("/api/homescript/arg/add", mdl.ApiAuth(mdl.Perm(api.CreateNewHomescriptArg, database.PermissionHomescript))).Methods("POST")
 	r.HandleFunc("/api/homescript/arg/modify", mdl.ApiAuth(mdl.Perm(api.ModifyHomescriptArgument, database.PermissionHomescript))).Methods("PUT")
 	r.HandleFunc("/api/homescript/arg/delete", mdl.ApiAuth(mdl.Perm(api.DeleteHomescriptArgument, database.PermissionHomescript))).Methods("DELETE")
 	r.HandleFunc("/api/homescript/arg/list/personal", mdl.ApiAuth(mdl.Perm(api.ListUserHomescriptArgs, database.PermissionHomescript))).Methods("GET")
 	r.HandleFunc("/api/homescript/arg/list/of/{id}", mdl.ApiAuth(mdl.Perm(api.GetHomescriptArgsByHmsId, database.PermissionHomescript))).Methods("GET")
 
-	// Automations-related
+	// Automations
 	r.HandleFunc("/api/automation/list/personal", mdl.ApiAuth(mdl.Perm(api.GetUserAutomations, database.PermissionAutomation))).Methods("GET")
 	r.HandleFunc("/api/automation/add", mdl.ApiAuth(mdl.Perm(api.CreateNewAutomation, database.PermissionAutomation))).Methods("POST")
 	r.HandleFunc("/api/automation/delete", mdl.ApiAuth(mdl.Perm(api.RemoveAutomation, database.PermissionAutomation))).Methods("DELETE")
 	r.HandleFunc("/api/automation/modify", mdl.ApiAuth(mdl.Perm(api.ModifyAutomation, database.PermissionAutomation))).Methods("PUT")
 
-	// Schedule-related
+	// Scheduler
 	r.HandleFunc("/api/scheduler/list/personal", mdl.ApiAuth(mdl.Perm(api.GetUserSchedules, database.PermissionScheduler))).Methods("GET")
 	r.HandleFunc("/api/scheduler/add", mdl.ApiAuth(mdl.Perm(api.CreateNewSchedule, database.PermissionScheduler))).Methods("POST")
 	r.HandleFunc("/api/scheduler/delete", mdl.ApiAuth(mdl.Perm(api.RemoveSchedule, database.PermissionScheduler))).Methods("DELETE")
@@ -180,20 +206,26 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/reminder/modify", mdl.ApiAuth(mdl.Perm(api.ModifyReminder, database.PermissionReminder))).Methods("PUT")
 	r.HandleFunc("/api/reminder/delete", mdl.ApiAuth(mdl.Perm(api.DeleteReminder, database.PermissionReminder))).Methods("DELETE")
 
-	/* Server Configuration */
-	r.HandleFunc("/api/automation/state/global", mdl.ApiAuth(mdl.Perm(api.ChangeActivationAutomation, database.PermissionModifyServerConfig))).Methods("PUT")
-	r.HandleFunc("/api/homescript/cache/flush", mdl.ApiAuth(mdl.Perm(api.ClearHomescriptURLCache, database.PermissionModifyServerConfig))).Methods("DELETE")
-	r.HandleFunc("/api/homescript/cache/purge", mdl.ApiAuth(mdl.Perm(api.PurgeHomescriptUrlCache, database.PermissionModifyServerConfig))).Methods("DELETE")
-	r.HandleFunc("/api/config/location/modify", mdl.ApiAuth(mdl.Perm(api.UpdateLocation, database.PermissionModifyServerConfig))).Methods("PUT")
-	r.HandleFunc("/api/config/export", mdl.ApiAuth(mdl.Perm(api.ExportConfiguration, database.PermissionModifyServerConfig))).Methods("GET")
-	r.HandleFunc("/api/config/import", mdl.ApiAuth(mdl.Perm(api.ImportConfiguration, database.PermissionModifyServerConfig))).Methods("POST")
+	// System Configuration
+	r.HandleFunc("/api/automation/state/global", mdl.ApiAuth(mdl.Perm(api.ChangeActivationAutomation, database.PermissionSystemConfig))).Methods("PUT")
+	r.HandleFunc("/api/homescript/cache/flush", mdl.ApiAuth(mdl.Perm(api.ClearHomescriptURLCache, database.PermissionSystemConfig))).Methods("DELETE")
+	r.HandleFunc("/api/homescript/cache/purge", mdl.ApiAuth(mdl.Perm(api.PurgeHomescriptUrlCache, database.PermissionSystemConfig))).Methods("DELETE")
+	r.HandleFunc("/api/config/location/modify", mdl.ApiAuth(mdl.Perm(api.UpdateLocation, database.PermissionSystemConfig))).Methods("PUT")
+	r.HandleFunc("/api/config/export", mdl.ApiAuth(mdl.Perm(api.ExportConfiguration, database.PermissionSystemConfig))).Methods("GET")
+	r.HandleFunc("/api/config/import", mdl.ApiAuth(mdl.Perm(api.ImportConfiguration, database.PermissionSystemConfig))).Methods("POST")
 
-	/* Static files */
+	// Logging
+	r.HandleFunc("/api/logs/delete/old", mdl.ApiAuth(mdl.Perm(api.FlushOldLogs, database.PermissionSystemConfig))).Methods("DELETE")
+	r.HandleFunc("/api/logs/delete/all", mdl.ApiAuth(mdl.Perm(api.FlushAllLogs, database.PermissionSystemConfig))).Methods("DELETE")
+	r.HandleFunc("/api/logs", mdl.ApiAuth(mdl.Perm(api.ListLogs, database.PermissionSystemConfig))).Methods("GET")
+
+	// Assets & static files
 	assetsFilepath := "./web/dist/assets/"
 	assetsPathPrefix := "/assets"
 	assetsFileserver := http.FileServer(http.Dir(assetsFilepath))
 	r.PathPrefix(assetsPathPrefix).Handler(http.StripPrefix(assetsPathPrefix, assetsFileserver))
 
+	// Error handlers
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 	r.MethodNotAllowedHandler = http.HandlerFunc(methodNotAllowedHandler)
 
