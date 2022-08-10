@@ -21,6 +21,11 @@ type tokenLoginRequest struct {
 	Token string `json:"token"`
 }
 
+type TokenLoginResponse struct {
+	Username   string `json:"username"`
+	TokenLabel string `json:"tokenLabel"`
+}
+
 // Accepts a json request like `{"token": "foo"}`
 // If the credentials are valid, a new session is created and the user is saved, otherwise a 401 is returned
 func tokenLoginHandler(w http.ResponseWriter, r *http.Request) {
@@ -56,9 +61,16 @@ func tokenLoginHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		api.Res(w, api.Response{Success: false, Message: "failed to authenticate", Error: "could not save session after successful authentication"})
 	}
-	w.WriteHeader(http.StatusNoContent)
-	log.Debug(fmt.Sprintf("User `%s` logged in successfully", tokenData.User))
-	go event.Info("Successful login", fmt.Sprintf("User `%s` logged in", tokenData.User))
+	// Send back the username for clients which rely on this information (SDK)
+	if err := json.NewEncoder(w).Encode(TokenLoginResponse{
+		Username:   tokenData.User,
+		TokenLabel: tokenData.Data.Label,
+	}); err != nil {
+		log.Error("Failed to send response to client: ", err.Error())
+		return
+	}
+	log.Debug(fmt.Sprintf("User `%s` logged in successfully using an access-token", tokenData.User))
+	go event.Info("Successful login", fmt.Sprintf("User `%s` logged in using an access-token", tokenData.User))
 }
 
 // Accepts a json request like `{"username": "user", "password":"password"}`
