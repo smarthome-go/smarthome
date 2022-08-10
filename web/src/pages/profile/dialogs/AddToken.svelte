@@ -13,7 +13,6 @@
     import { createSnackbar } from "../../../global";
 
     export let open;
-
     let label = "";
 
     // Event dispatcher
@@ -28,7 +27,12 @@
                 })
             ).json();
             if (!res.response.success) throw Error(res.response.error);
+
+            // Dispath the create event to allow the parent to display the change
             dispatch("create", { label, token: res.token });
+
+            // Reset the label on successful submit
+            label = ""
         } catch (err) {
             $createSnackbar(
                 `Failed to generate new authentication token: ${err}`
