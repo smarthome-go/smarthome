@@ -59,8 +59,43 @@ func RunSetup() error {
 	return RunSetupStruct(setup)
 }
 
+// In case something went wrong with the setup, a rescue user is created
+// The rescue user has all permissions
+func addRescueUser() error {
+	log.Info("Creating rescue user: (username: `rescue`, password: `rescue`)")
+	if err := database.AddUser(database.FullUser{
+		Username: "rescue",
+		Password: "rescue",
+	}); err != nil {
+		return err
+	}
+	return database.AddUserPermission("rescue", database.PermissionWildCard)
+}
+
+// Is executed if the setup runner fails
+func abortSetup() error {
+	if err := database.DeleteTables(); err != nil {
+		return err
+	}
+	return addRescueUser()
+}
+
 func RunSetupStruct(setup SetupStruct) error {
+	if err := runSetupStruct(setup); err != nil {
+		if err2 := abortSetup(); err2 != nil {
+			log.Fatal(fmt.Sprintf("Aborting setup failed: could not add rescue user: %s", err2.Error()))
+		}
+		return err
+	}
+	return nil
+}
+
+func runSetupStruct(setup SetupStruct) error {
 	log.Info("Running configuration setup...")
+	// Delete database first
+	if err := database.DeleteTables(); err != nil {
+		return err
+	}
 	if err := createRoomsInDatabase(setup.Rooms); err != nil {
 		log.Error("Aborting setup: could not create rooms in database: ", err.Error())
 		return err
