@@ -9,7 +9,7 @@
         Label,
     } from "@smui/data-table";
     import Dialog, { Actions, Content, Header, Title } from "@smui/dialog";
-    import IconButton from "@smui/icon-button/src/IconButton.svelte";
+    import IconButton from "@smui/icon-button";
     import Select, { Option } from "@smui/select";
     import { onMount } from "svelte";
     import Progress from "../../../components/Progress.svelte";
@@ -23,7 +23,7 @@
     let loading = false;
 
     let rowsPerPage = 10;
-    let minLevel = "TRACE";
+    let minLevel = "INFO";
 
     // Pagination
     let start = 0;
@@ -34,7 +34,11 @@
 
     $: start = currentPage * rowsPerPage;
     $: end = Math.min(start + rowsPerPage, $logs.length);
-    $: slice = $logs.slice(start, end);
+    $: slice = $logs
+        .slice(start, end)
+        .filter(
+            (e) => e.level >= levels.findIndex((l) => l.label === minLevel)
+        );
     $: lastPage = Math.max(Math.ceil($logs.length / rowsPerPage) - 1, 0);
 
     $: if (currentPage > lastPage) {
@@ -45,17 +49,55 @@
         loading = true;
         try {
             const res = await (
-                await fetch(`/api/logs/delete/${id}`, {
+                await fetch(`/api/logs/delete/id/${id}`, {
                     method: "DELETE",
                 })
             ).json();
             if (res.success !== undefined && !res.success)
                 throw Error(res.error);
-            $logs = res;
+            // Filter out the deleted entry
+            $logs = $logs.filter((e) => e.id !== id);
         } catch (err) {
             $createSnackbar(`Failed to delete log record: ${err}`);
         }
         loading = false;
+    }
+
+    async function flushAllLogs() {
+        loading = true;
+        try {
+            const res = await (
+                await fetch("/api/logs/delete/all", {
+                    method: "DELETE",
+                })
+            ).json();
+            if (res.success !== undefined && !res.success)
+                throw Error(res.error);
+            // Make logs empty in frontend
+            $logs = [];
+        } catch (err) {
+            $createSnackbar(`Failed to flush all log records: ${err}`);
+        }
+        loading = false;
+    }
+
+    async function flushOldLogs() {
+        loading = true;
+        try {
+            const res = await (
+                await fetch("/api/logs/delete/old", {
+                    method: "DELETE",
+                })
+            ).json();
+            if (res.success !== undefined && !res.success)
+                throw Error(res.error);
+            loading = false;
+            // Must reload logs for changes to take effect
+            await fetchLogs();
+        } catch (err) {
+            loading = false;
+            $createSnackbar(`Failed to flush all log records: ${err}`);
+        }
     }
 
     async function fetchLogs() {
@@ -87,14 +129,26 @@
     </Header>
     <Content id="logs-content">
         <Progress type="linear" bind:loading />
-        <div class="logs">
-            <div class="logs__header">
-                <IconButton class="material-icons">delete</IconButton>
-                <IconButton class="material-icons">delete_forever</IconButton>
-
-                <Select bind:value={minLevel} label="Minimul Level">
+        <div class="controls">
+            <IconButton
+                on:click={fetchLogs}
+                title="Refresh"
+                class="material-icons">refresh</IconButton
+            >
+            <IconButton
+                title="Delete Old"
+                class="material-icons"
+                on:click={flushOldLogs}>delete</IconButton
+            >
+            <IconButton
+                title="Delete All"
+                class="material-icons"
+                on:click={flushAllLogs}>delete_forever</IconButton
+            >
+            <div>
+                <Select bind:value={minLevel} label="Minimul Log Level">
                     {#each levels as level}
-                        <Option value={level}>
+                        <Option value={level.label}>
                             <span style:color={level.color}>
                                 {level.label}
                             </span>
@@ -102,85 +156,93 @@
                     {/each}
                 </Select>
             </div>
-            <div class="logs__list">
-                <DataTable table$aria-label="Event Log Records" style="width: 100%; height: 40rem;">
-                    <Head>
+        </div>
+        <div class="table">
+            <DataTable
+                table$aria-label="Event Log Records"
+                style="width: 100%; height: 40rem;"
+            >
+                <Head>
+                    <Row>
+                        <Cell>Level</Cell>
+                        <Cell>Name</Cell>
+                        <Cell style="width: 100%;">Description</Cell>
+                        <Cell />
+                    </Row>
+                </Head>
+                <Body>
+                    {#each slice as logEvent (logEvent.id)}
                         <Row>
-                            <Cell>Level</Cell>
-                            <Cell>Name</Cell>
-                            <Cell style="width: 100%;">Description</Cell>
-                            <Cell />
-                        </Row>
-                    </Head>
-                    <Body>
-                        {#each slice as logEvent (logEvent.id)}
-                            <Row>
-                                <Cell>{levels[logEvent.level].label}</Cell>
-                                <Cell>{logEvent.name}</Cell>
-                                <Cell>{logEvent.description}</Cell>
-                                <Cell>
-                                    <IconButton
-                                        class="material-icons"
-                                        on:click={() =>
-                                            deleteRecord(logEvent.id)}
-                                        title="Delete Record">close</IconButton
-                                    >
-                                </Cell>
-                            </Row>
-                        {/each}
-                    </Body>
-
-                    <Pagination slot="paginate">
-                        <svelte:fragment slot="rowsPerPage">
-                            <Label>Rows Per Page</Label>
-                            <Select
-                                variant="outlined"
-                                bind:value={rowsPerPage}
-                                noLabel
+                            <Cell
+                                ><span
+                                    style:color={levels[logEvent.level].color}
+                                >
+                                    {levels[logEvent.level].label}
+                                </span></Cell
                             >
-                                <Option value={10}>10</Option>
-                                <Option value={25}>50</Option>
-                                <Option value={100}>100</Option>
-                            </Select>
-                        </svelte:fragment>
-                        <svelte:fragment slot="total">
-                            {start + 1}-{end} of {$logs.length}
-                        </svelte:fragment>
+                            <Cell>{logEvent.name}</Cell>
+                            <Cell>{logEvent.description}</Cell>
+                            <Cell>
+                                <IconButton
+                                    size="button"
+                                    class="material-icons"
+                                    on:click={() => deleteRecord(logEvent.id)}
+                                    title="Delete Record">close</IconButton
+                                >
+                            </Cell>
+                        </Row>
+                    {/each}
+                </Body>
 
-                        <IconButton
-                            class="material-icons"
-                            action="first-page"
-                            title="First page"
-                            on:click={() => (currentPage = 0)}
-                            disabled={currentPage === 0}>first_page</IconButton
+                <Pagination slot="paginate">
+                    <svelte:fragment slot="rowsPerPage">
+                        <Label>Rows Per Page</Label>
+                        <Select
+                            variant="outlined"
+                            bind:value={rowsPerPage}
+                            noLabel
                         >
-                        <IconButton
-                            class="material-icons"
-                            action="prev-page"
-                            title="Prev page"
-                            on:click={() => currentPage--}
-                            disabled={currentPage === 0}
-                            >chevron_left</IconButton
-                        >
-                        <IconButton
-                            class="material-icons"
-                            action="next-page"
-                            title="Next page"
-                            on:click={() => currentPage++}
-                            disabled={currentPage === lastPage}
-                            >chevron_right</IconButton
-                        >
-                        <IconButton
-                            class="material-icons"
-                            action="last-page"
-                            title="Last page"
-                            on:click={() => (currentPage = lastPage)}
-                            disabled={currentPage === lastPage}
-                            >last_page</IconButton
-                        >
-                    </Pagination>
-                </DataTable>
-            </div>
+                            <Option value={10}>10</Option>
+                            <Option value={25}>50</Option>
+                            <Option value={100}>100</Option>
+                        </Select>
+                    </svelte:fragment>
+                    <svelte:fragment slot="total">
+                        {start + 1}-{end} of {$logs.length}
+                    </svelte:fragment>
+
+                    <IconButton
+                        class="material-icons"
+                        action="first-page"
+                        title="First page"
+                        on:click={() => (currentPage = 0)}
+                        disabled={currentPage === 0}>first_page</IconButton
+                    >
+                    <IconButton
+                        class="material-icons"
+                        action="prev-page"
+                        title="Prev page"
+                        on:click={() => currentPage--}
+                        disabled={currentPage === 0}>chevron_left</IconButton
+                    >
+                    <IconButton
+                        class="material-icons"
+                        action="next-page"
+                        title="Next page"
+                        on:click={() => currentPage++}
+                        disabled={currentPage === lastPage}
+                        >chevron_right</IconButton
+                    >
+                    <IconButton
+                        class="material-icons"
+                        action="last-page"
+                        title="Last page"
+                        on:click={() => (currentPage = lastPage)}
+                        disabled={currentPage === lastPage}
+                        >last_page</IconButton
+                    >
+                </Pagination>
+            </DataTable>
         </div>
     </Content>
     <Actions>
@@ -191,9 +253,10 @@
 </Dialog>
 
 <style lang="scss">
-    .logs {
-        &__header {
-            display: flex;
-        }
+    .controls {
+        padding: 1rem;
+    }
+    .controls {
+        padding: 1rem;
     }
 </style>
