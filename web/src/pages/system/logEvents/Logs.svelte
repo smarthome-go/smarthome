@@ -151,11 +151,16 @@
                 </Select>
             </div>
             <div class="header__right">
-                <Button on:click={flushOldLogs} variant="raised">
+                <Button
+                    on:click={flushOldLogs}
+                    variant="raised"
+                    disabled={$logs.length === 0}
+                >
                     <Label>Old</Label>
                     <Icon class="material-icons">delete</Icon>
                 </Button>
                 <Button
+                    disabled={$logs.length === 0}
                     on:click={() => (flushAllOpen = true)}
                     variant="outlined"
                 >
@@ -272,9 +277,8 @@
             <Title id="confirm-title">Confirmation</Title>
         </Header>
         <Content id="confirm-description"
-                 >You are about to delete all logs. Do you want to proceed?
-        </Content
-        >
+            >You are about to delete all logs. Do you want to proceed?
+        </Content>
         <Actions>
             <Button>
                 <Label on:click={flushAllLogs}>Delete</Label>
