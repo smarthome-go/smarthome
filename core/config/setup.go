@@ -79,7 +79,7 @@ func abortSetup() error {
 	if err := database.DeleteTables(); err != nil {
 		return err
 	}
-	// Intialize database (fresh setup)
+	// Initialize database (fresh setup)
 	if err := database.Init(
 		config.Database,
 		"rescue",
@@ -94,7 +94,7 @@ func RunSetupStruct(setup SetupStruct) error {
 	if err := database.DeleteTables(); err != nil {
 		return err
 	}
-	// Intialize database (fresh setup)
+	// Initialize database (fresh setup)
 	if err := database.Init(
 		config.Database,
 		"admin",

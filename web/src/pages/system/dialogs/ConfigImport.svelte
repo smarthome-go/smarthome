@@ -42,7 +42,7 @@
                 redirect();
             }
         } catch (err) {
-            $createSnackbar(`Could not import configuaration: ${err}`);
+            $createSnackbar(`Could not import configuration: ${err}`);
         }
         importRunning = false;
     }
