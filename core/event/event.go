@@ -29,6 +29,8 @@ func GetAllLogsUnixMillis() (logs []LogEvent, err error) {
 	if err != nil {
 		return nil, err
 	}
+	// Create the list
+	logs = make([]LogEvent, 0)
 	// Transform the logs into the alternate form
 	for _, item := range logsDB {
 		logs = append(logs, LogEvent{
