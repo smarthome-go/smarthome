@@ -23,6 +23,14 @@
     color: var(--mdc-theme-primary) !important;
 }
 
+// Checkbox color theme should be primary with on-primary tick color
+.mdc-checkbox {
+    --mdc-theme-secondary: var(--clr-primary);
+    &__checkmark {
+        color: var(--clr-on-primary) !important;
+    }
+}
+
 // Segmented button selected background
 .mdc-segmented-button__segment--selected::after {
     content: '';
