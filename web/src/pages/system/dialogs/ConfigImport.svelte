@@ -21,7 +21,7 @@
     async function redirect() {
         for (remainingSecs = 5; remainingSecs > 0; remainingSecs--)
             await sleep(1000);
-        window.location.href = "/login";
+        window.location.href = "/logout";
     }
 
     async function importConfig() {
