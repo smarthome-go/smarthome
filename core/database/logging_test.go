@@ -74,11 +74,11 @@ func TestLogging(t *testing.T) {
 			return
 		}
 	}
-	if err := FlushOldLogs(); err != nil {
+	if _, err := FlushOldLogs(); err != nil {
 		t.Error(err.Error())
 		return
 	}
-	if err := FlushAllLogs(); err != nil {
+	if _, err := FlushAllLogs(); err != nil {
 		t.Error(err.Error())
 		return
 	}

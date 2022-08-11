@@ -49,14 +49,14 @@ func TestLogEvent(t *testing.T) {
 	table := []struct {
 		Name        string
 		Description string
-		Level       int
+		Level       database.LogLevel
 	}{
-		{Name: "test1", Description: "test1", Level: 0},
-		{Name: "test1", Description: "test1", Level: 1},
-		{Name: "test2", Description: "test2", Level: 2},
-		{Name: "test3", Description: "test3", Level: 3},
-		{Name: "test4", Description: "test4", Level: 4},
-		{Name: "test5", Description: "test5", Level: 5},
+		{Name: "test1", Description: "test1", Level: database.LogLevelTrace},
+		{Name: "test1", Description: "test1", Level: database.LogLevelDebug},
+		{Name: "test2", Description: "test2", Level: database.LogLevelInfo},
+		{Name: "test3", Description: "test3", Level: database.LogLevelWarn},
+		{Name: "test4", Description: "test4", Level: database.LogLevelError},
+		{Name: "test5", Description: "test5", Level: database.LogLevelFatal},
 	}
 	logs, err := database.GetLogs()
 	if err != nil {
