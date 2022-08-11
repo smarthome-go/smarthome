@@ -68,7 +68,7 @@ func GetServerConfiguration() (ServerConfig, bool, error) {
 		&config.Longitude,
 	); err != nil {
 		if err == sql.ErrNoRows {
-			log.Trace("No server configuration present")
+			log.Warn("No server configuration present")
 			return ServerConfig{}, false, nil
 		}
 		log.Error("Failed to retrieve server configuration: ", err.Error())
