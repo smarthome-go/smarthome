@@ -2,7 +2,7 @@ import { writable, Writable } from 'svelte/store'
 import App from './App.svelte'
 import "@fontsource/jetbrains-mono";
 
-export interface LogEvent {
+export interface logEvent {
     id: number,
     name: string,
     description: string,
@@ -12,7 +12,7 @@ export interface LogEvent {
     time: number
 }
 
-export const logs: Writable<LogEvent[]> = writable([])
+export const logs: Writable<logEvent[]> = writable([])
 
 
 

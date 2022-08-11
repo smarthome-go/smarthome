@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Button from "@smui/button";
+    import Button, { Icon } from "@smui/button";
     import DataTable, {
         Head,
         Body,
@@ -8,16 +8,25 @@
         Pagination,
         Label,
     } from "@smui/data-table";
-    import Dialog, { Actions, Content, Header, Title } from "@smui/dialog";
+    import Dialog, {
+        Actions,
+        Content,
+        Header,
+        InitialFocus,
+        Title,
+    } from "@smui/dialog";
     import IconButton from "@smui/icon-button";
     import Select, { Option } from "@smui/select";
     import { onMount } from "svelte";
     import Progress from "../../../components/Progress.svelte";
     import { createSnackbar } from "../../../global";
-    import { levels, LogEvent, logs } from "../main";
+    import { levels, logEvent, logs } from "../main";
 
     // If the dialog should be open or closed
     export let open = false;
+
+    // Whether the delete-all log records confirmation dialog should be open or closed
+    let flushAllOpen = false;
 
     // Specifies whether the loading indicator in the logs list should be active or not
     let loading = false;
@@ -28,7 +37,7 @@
     // Pagination
     let start = 0;
     let end = 0;
-    let slice: LogEvent[] = [];
+    let slice: logEvent[] = [];
     let lastPage = 0;
     let currentPage = 0;
 
@@ -117,40 +126,22 @@
     onMount(fetchLogs);
 </script>
 
-
 <Dialog
-  bind:open
-  fullscreen
-  aria-labelledby="fullscreen-title"
-  aria-describedby="fullscreen-content"
+    bind:open
+    fullscreen
+    aria-labelledby="fullscreen-title"
+    aria-describedby="fullscreen-content"
 >
-  <Header>
-    <Title id="fullscreen-title">Event Logs</Title>
-    <IconButton action="close" class="material-icons">close</IconButton>
-  </Header>
-  <Content id="fullscreen-content">
+    <Header>
+        <Title id="fullscreen-title">Event Logs</Title>
+        <IconButton action="close" class="material-icons">close</IconButton>
+    </Header>
+    <Content id="fullscreen-content">
         <Progress type="linear" bind:loading />
-        <div class="controls">
-            <div class="btns">
-                <IconButton
-                    on:click={fetchLogs}
-                    title="Refresh"
-                    class="material-icons">refresh</IconButton
-                >
-                <IconButton
-                    title="Delete Old"
-                    class="material-icons"
-                    on:click={flushOldLogs}>delete</IconButton
-                >
-                <IconButton
-                    title="Delete All"
-                    class="material-icons"
-                    on:click={flushAllLogs}>delete_forever</IconButton
-                >
-            </div>
-            <div>
+        <div class="header">
+            <div class="header__left">
                 <Select bind:value={minLevel} label="Minimul Log Level">
-                    {#each levels as level}
+                    {#each levels as level (level.label)}
                         <Option value={level.label}>
                             <span style:color={level.color}>
                                 {level.label}
@@ -159,11 +150,30 @@
                     {/each}
                 </Select>
             </div>
+            <div class="header__right">
+                <Button on:click={flushOldLogs} variant="raised">
+                    <Label>Old</Label>
+                    <Icon class="material-icons">delete</Icon>
+                </Button>
+                <Button
+                    on:click={() => (flushAllOpen = true)}
+                    variant="outlined"
+                >
+                    <Label>All</Label>
+                    <Icon class="material-icons">delete_forever</Icon>
+                </Button>
+                <IconButton
+                    on:click={fetchLogs}
+                    title="Refresh"
+                    class="material-icons">refresh</IconButton
+                >
+            </div>
         </div>
         <div class="table">
             <DataTable
                 table$aria-label="Event Log Records"
                 style="width: 100%; height: 32rem;"
+                class="table__component"
             >
                 <Head>
                     <Row>
@@ -178,6 +188,7 @@
                         <Row>
                             <Cell
                                 ><span
+                                    class="table__component__row__level"
                                     style:color={levels[logEvent.level].color}
                                 >
                                     {levels[logEvent.level].label}
@@ -247,13 +258,56 @@
                 </Pagination>
             </DataTable>
         </div>
-  </Content>
-  <Actions>
-    <Button>
-      <Label>Close</Label>
-    </Button>
-  </Actions>
+    </Content>
+    <Actions>
+        <Button defaultAction>Close</Button>
+    </Actions>
+    <Dialog
+        bind:open={flushAllOpen}
+        slot="over"
+        aria-labelledby="confirm-title"
+        aria-describedby="confirm-description"
+    >
+        <Header>
+            <Title id="confirm-title">Confirmation</Title>
+        </Header>
+        <Content id="confirm-description"
+                 >You are about to delete all logs. Do you want to proceed?
+        </Content
+        >
+        <Actions>
+            <Button>
+                <Label on:click={flushAllLogs}>Delete</Label>
+            </Button>
+            <Button defaultAction use={[InitialFocus]}>
+                <Label>Cancel</Label>
+            </Button>
+        </Actions>
+    </Dialog>
 </Dialog>
 
 <style lang="scss">
+    .header {
+        padding-bottom: 1rem;
+        display: flex;
+        justify-content: space-between;
+
+        &__right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+    }
+    .table {
+        :global &__component {
+            background-color: var(--clr-height-0-2);
+
+            &__row {
+                &__level {
+                    font-family: "Jetbrains Mono", monospace;
+                    font-size: 0.75rem;
+                }
+            }
+        }
+    }
 </style>
