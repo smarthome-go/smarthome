@@ -105,6 +105,26 @@ func SetServerConfiguration(config ServerConfig) error {
 	return nil
 }
 
+// Changes the state of the lock-down mode
+func SetLockDownModeEnabled(enabled bool) error {
+	query, err := db.Prepare(`
+	UPDATE configuration
+	SET
+		LockDownMode=?
+	WHERE Id=0
+	`)
+	if err != nil {
+		log.Error("Failed to update lock-down mode: preparing query failed: ", err.Error())
+		return err
+	}
+	defer query.Close()
+	if _, err := query.Exec(enabled); err != nil {
+		log.Error("Failed to update lock-down mode: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}
+
 // Change the state of the automation system
 func SetAutomationSystemActivation(enabled bool) error {
 	query, err := db.Prepare(`

@@ -8,9 +8,32 @@ import (
 	"github.com/smarthome-go/smarthome/core/database"
 )
 
-type UpdateLocationRequest struct {
+type updateLocationRequest struct {
 	Latitude  float32 `json:"latitude"`
 	Longitude float32 `json:"longitude"`
+}
+
+type lockDownModeRequest struct {
+	Enabled bool `json:"enabled"`
+}
+
+// Can be used to enter and leave lockdown mode
+func UpdateLockDownMode(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request lockDownModeRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+	if err := database.SetLockDownModeEnabled(request.Enabled); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to update lock-down mode", Error: "database failure"})
+		return
+	}
+	Res(w, Response{Success: true, Message: "successfully updated lock-down mode"})
 }
 
 // Can be used to update the server's latitude and longitude
@@ -18,7 +41,7 @@ func UpdateLocation(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
-	var request UpdateLocationRequest
+	var request updateLocationRequest
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
