@@ -2,7 +2,7 @@ import { writable, Writable } from 'svelte/store'
 import App from './App.svelte'
 import "@fontsource/jetbrains-mono";
 
-export interface config {
+export interface systemConfig {
     automationEnabled: boolean,
     lockDownMode: boolean,
     latitude: number,

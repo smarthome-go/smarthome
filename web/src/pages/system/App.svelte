@@ -6,7 +6,7 @@
     import Progress from "../../components/Progress.svelte";
     import Button, { Icon, Label } from "@smui/button";
     import Textfield from "@smui/textfield";
-    import type { config } from "./main";
+    import type { systemConfig } from "./main";
     import { onMount } from "svelte";
     import { createSnackbar } from "../../global";
     import HelperText from "@smui/textfield/helper-text";
@@ -26,7 +26,7 @@
     // Specifies whether the geolocation help dialog should be open
     let geoHelpOpen = false;
 
-    let config: config = {
+    let config: systemConfig = {
         automationEnabled: false,
         lockDownMode: false,
         latitude: 0.0,

@@ -59,7 +59,7 @@
         }
         const reader = new FileReader();
         reader.readAsText(importFile);
-        reader.onload = (e) => {
+        reader.onload = () => {
             importedJSONString = reader.result as string;
         };
     }

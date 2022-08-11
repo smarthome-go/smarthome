@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Button, { Icon, Label } from "@smui/button";
+    import Button, { Label } from "@smui/button";
     import Dialog, { Actions, Content, Title } from "@smui/dialog";
 
     export let open = false;
