@@ -134,6 +134,7 @@
                                 </Cell>
                                 <Cell>
                                     <IconButton
+                                        size="button"
                                         class="material-icons"
                                         on:click={() =>
                                             (tokensForDeletion = [
