@@ -103,7 +103,6 @@
                 </Button>
             </div>
         {:else if importStarted}
-            <Progress bind:loading={importRunning} />
             {#if statusMessage !== "" || statusError !== ""}
                 <span id="import-output">
                     {statusMessage}
@@ -112,7 +111,7 @@
                         {statusError}
                     </span>
                 </span>
-            {:else}
+            {:else if !importRunning}
                 <span style="color: var(--clr-success)">
                     <strong>Success: </strong>
                     the new configuration has been successfully imported.
@@ -120,6 +119,9 @@
                 <span class="text-hint">
                     You will be redirected to login in {remainingSecs} second(s)
                 </span>
+            {:else}
+            <Progress bind:loading={importRunning} />
+            Importing data...
             {/if}
         {:else}
             <div id="confirm">
