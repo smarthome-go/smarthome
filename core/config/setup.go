@@ -75,7 +75,15 @@ func addRescueUser() error {
 
 // Is executed if the setup runner fails
 func abortSetup() error {
+	// Delete database (remove junk from failed setup)
 	if err := database.DeleteTables(); err != nil {
+		return err
+	}
+	// Intialize database (fresh setup)
+	if err := database.Init(
+		config.Database,
+		"rescue",
+	); err != nil {
 		return err
 	}
 	return addRescueUser()
@@ -84,6 +92,13 @@ func abortSetup() error {
 func RunSetupStruct(setup SetupStruct) error {
 	// Delete database first
 	if err := database.DeleteTables(); err != nil {
+		return err
+	}
+	// Intialize database (fresh setup)
+	if err := database.Init(
+		config.Database,
+		"admin",
+	); err != nil {
 		return err
 	}
 	// Run the actual setup
