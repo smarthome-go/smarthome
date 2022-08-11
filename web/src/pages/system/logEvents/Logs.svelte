@@ -17,7 +17,7 @@
     import { levels, LogEvent, logs } from "../main";
 
     // If the dialog should be open or closed
-    let open = true;
+    export let open = false;
 
     // Specifies whether the loading indicator in the logs list should be active or not
     let loading = false;
@@ -117,34 +117,37 @@
     onMount(fetchLogs);
 </script>
 
+
 <Dialog
-    bind:open
-    fullscreen
-    aria-labelledby="logs-title"
-    aria-describedby="logs-content"
+  bind:open
+  fullscreen
+  aria-labelledby="fullscreen-title"
+  aria-describedby="fullscreen-content"
 >
-    <Header>
-        <Title id="logs-title">Event Logs</Title>
-        <IconButton action="close" class="material-icons">close</IconButton>
-    </Header>
-    <Content id="logs-content">
+  <Header>
+    <Title id="fullscreen-title">Event Logs</Title>
+    <IconButton action="close" class="material-icons">close</IconButton>
+  </Header>
+  <Content id="fullscreen-content">
         <Progress type="linear" bind:loading />
         <div class="controls">
-            <IconButton
-                on:click={fetchLogs}
-                title="Refresh"
-                class="material-icons">refresh</IconButton
-            >
-            <IconButton
-                title="Delete Old"
-                class="material-icons"
-                on:click={flushOldLogs}>delete</IconButton
-            >
-            <IconButton
-                title="Delete All"
-                class="material-icons"
-                on:click={flushAllLogs}>delete_forever</IconButton
-            >
+            <div class="btns">
+                <IconButton
+                    on:click={fetchLogs}
+                    title="Refresh"
+                    class="material-icons">refresh</IconButton
+                >
+                <IconButton
+                    title="Delete Old"
+                    class="material-icons"
+                    on:click={flushOldLogs}>delete</IconButton
+                >
+                <IconButton
+                    title="Delete All"
+                    class="material-icons"
+                    on:click={flushAllLogs}>delete_forever</IconButton
+                >
+            </div>
             <div>
                 <Select bind:value={minLevel} label="Minimul Log Level">
                     {#each levels as level}
@@ -160,7 +163,7 @@
         <div class="table">
             <DataTable
                 table$aria-label="Event Log Records"
-                style="width: 100%; height: 40rem;"
+                style="width: 100%; height: 32rem;"
             >
                 <Head>
                     <Row>
@@ -244,19 +247,13 @@
                 </Pagination>
             </DataTable>
         </div>
-    </Content>
-    <Actions>
-        <Button defaultAction>
-            <Label>Close</Label>
-        </Button>
-    </Actions>
+  </Content>
+  <Actions>
+    <Button>
+      <Label>Close</Label>
+    </Button>
+  </Actions>
 </Dialog>
 
 <style lang="scss">
-    .controls {
-        padding: 1rem;
-    }
-    .controls {
-        padding: 1rem;
-    }
 </style>

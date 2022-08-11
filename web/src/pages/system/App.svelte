@@ -4,9 +4,15 @@
     import Page from "../../Page.svelte";
     import Logs from "./logEvents/Logs.svelte";
     import Progress from "../../components/Progress.svelte";
+    import Button from "@smui/button";
+
+    // Specifies whether the log event dialog should be visible or not
+    let logsOpen = false;
 </script>
 
 <Logs />
+
+<Logs bind:open={logsOpen} />
 
 <Page>
     <div id="header" class="mdc-elevation--z4">
@@ -15,6 +21,7 @@
             <IconButton title="Refresh" class="material-icons"
                 >refresh</IconButton
             >
+            <Button on:click={() => (logsOpen = true)}>Logs</Button>
         </div>
     </div>
     <Progress id="loader" loading={false} />
