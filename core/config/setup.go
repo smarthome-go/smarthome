@@ -113,6 +113,10 @@ func RunSetupStruct(setup SetupStruct) error {
 
 func runSetupStruct(setup SetupStruct) error {
 	log.Info("Running configuration setup...")
+	if err := createSystemConfigInDatabase(setup.ServerConfiguration); err != nil {
+		log.Error("Aborting setup: could not update system configuration in database: ", err.Error())
+		return err
+	}
 	if err := createRoomsInDatabase(setup.Rooms); err != nil {
 		log.Error("Aborting setup: could not create rooms in database: ", err.Error())
 		return err
@@ -315,7 +319,7 @@ func createRoomsInDatabase(rooms []setupRoom) error {
 	return nil
 }
 
-// Tokes the specified `hardwareNodes` and creates according database entries
+// Takes the specified `hardwareNodes` and creates according database entries
 func createHardwareNodesInDatabase(nodes []setupHardwareNode) error {
 	for _, node := range nodes {
 		if err := database.CreateHardwareNode(
@@ -329,6 +333,15 @@ func createHardwareNodesInDatabase(nodes []setupHardwareNode) error {
 			log.Error("Could not create hardware nodes from setup file: ", err.Error())
 			return err
 		}
+	}
+	return nil
+}
+
+// Takes the specified `systemConfig` and modifies an according database entry
+func createSystemConfigInDatabase(systemConfig database.ServerConfig) error {
+	if err := database.SetServerConfiguration(systemConfig); err != nil {
+		log.Error("Could not create system configuration from setup file: ", err.Error())
+		return err
 	}
 	return nil
 }
