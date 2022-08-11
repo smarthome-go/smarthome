@@ -55,8 +55,9 @@ func RunSetup() error {
 		log.Debug("No setup file detected: skipping setup")
 		return nil
 	}
+
 	log.Debug(fmt.Sprintf("Setup file was detected. Moved setup file to `%s.old`.", setupPath))
-	return RunSetupStruct(setup)
+	return runSetupStruct(setup)
 }
 
 // In case something went wrong with the setup, a rescue user is created
@@ -81,6 +82,11 @@ func abortSetup() error {
 }
 
 func RunSetupStruct(setup SetupStruct) error {
+	// Delete database first
+	if err := database.DeleteTables(); err != nil {
+		return err
+	}
+	// Run the actual setup
 	if err := runSetupStruct(setup); err != nil {
 		if err2 := abortSetup(); err2 != nil {
 			log.Fatal(fmt.Sprintf("Aborting setup failed: could not add rescue user: %s", err2.Error()))
@@ -92,10 +98,6 @@ func RunSetupStruct(setup SetupStruct) error {
 
 func runSetupStruct(setup SetupStruct) error {
 	log.Info("Running configuration setup...")
-	// Delete database first
-	if err := database.DeleteTables(); err != nil {
-		return err
-	}
 	if err := createRoomsInDatabase(setup.Rooms); err != nil {
 		log.Error("Aborting setup: could not create rooms in database: ", err.Error())
 		return err
