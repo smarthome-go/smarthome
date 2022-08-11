@@ -48,7 +48,6 @@ func FlushOldLogs(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to flush logs", Error: "database failure"})
 		return
 	}
-	go event.Info("Flushed Old Logs", "Logs which are older than 30 days were deleted.")
 	Res(w, Response{Success: true, Message: "successfully flushed logs older than 30 days"})
 }
 

@@ -71,7 +71,7 @@ func AddLogEvent(name string, description string, level LogLevel) error {
 
 // Deletes log events older than 30 days in order to free storage space
 // This function will later be used by a scheduler for daily jobs
-func FlushOldLogs() error {
+func FlushOldLogs() (uint, error) {
 	res, err := db.Exec(`
 	DELETE FROM logs
 	WHERE
@@ -79,33 +79,31 @@ func FlushOldLogs() error {
 	`)
 	if err != nil {
 		log.Error("Failed to flush old log events: failed to execute query: ", err.Error())
-		return err
+		return 0, err
 	}
 	deletedMessages, err := res.RowsAffected()
 	if err != nil {
 		log.Error("Could not evaluate outcome of `FlushOldLogs`: ", err.Error())
-		return err
+		return 0, err
 	}
-	log.Debug(fmt.Sprintf("Successfully flushed old log messages: deleted %d messages", deletedMessages))
-	return nil
+	return uint(deletedMessages), nil
 }
 
 // Deletes all logs which are currently stored in the database
-func FlushAllLogs() error {
+func FlushAllLogs() (uint, error) {
 	res, err := db.Exec(`
 	DELETE FROM logs
 	`)
 	if err != nil {
 		log.Error("Failed to flush all log events: failed to execute query: ", err.Error())
-		return err
+		return 0, err
 	}
 	deletedMessages, err := res.RowsAffected()
 	if err != nil {
 		log.Error("Could not evaluate outcome of `FlushAllLogs`: ", err.Error())
-		return err
+		return 0, err
 	}
-	log.Debug(fmt.Sprintf("Successfully flushed all log messages: deleted %d items.", deletedMessages))
-	return nil
+	return uint(deletedMessages), nil
 }
 
 // Deletes a log record matching the provided id

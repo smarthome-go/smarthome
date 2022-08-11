@@ -98,10 +98,20 @@ func Fatal(name string, description string) {
 
 func FlushOldLogs() error {
 	log.Trace("Flushing logs which are older than 30 days...")
-	return database.FlushOldLogs()
+	count, err := database.FlushOldLogs()
+	if err != nil && count > 0 {
+		Info("Deleted Old Logs", fmt.Sprintf("Successfully deleted old logs: %d records have been removed", count))
+		log.Info(fmt.Sprintf("Successfully deleted old logs: %d records have been removed", count))
+	}
+	return err
 }
 
 func FlushAllLogs() error {
 	log.Trace("Flushing all logs...")
-	return database.FlushAllLogs()
+	count, err := database.FlushAllLogs()
+	if err != nil && count > 0 {
+		Info("Deleted All Logs", fmt.Sprintf("Successfully deleted old logs: %d records have been removed", count))
+		log.Info(fmt.Sprintf("Successfully deleted old logs: %d records have been removed", count))
+	}
+	return err
 }
