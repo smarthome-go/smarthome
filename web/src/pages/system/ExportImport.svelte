@@ -3,9 +3,9 @@
     import Button from "@smui/button/src/Button.svelte";
     import Progress from "../../components/Progress.svelte";
     import { createSnackbar } from "../../global";
-import ConfigImport from "./dialogs/ConfigImport.svelte";
+    import ConfigImport from "./dialogs/ConfigImport.svelte";
 
-    let importConfigOpen = false
+    let importConfigOpen = false;
 
     let loading = false;
 
@@ -40,7 +40,7 @@ import ConfigImport from "./dialogs/ConfigImport.svelte";
     }
 </script>
 
-<ConfigImport bind:open={importConfigOpen}></ConfigImport>
+<ConfigImport bind:open={importConfigOpen} />
 
 <Progress bind:loading />
 
@@ -51,8 +51,8 @@ import ConfigImport from "./dialogs/ConfigImport.svelte";
             Will export nearly all configured settings of this server.
             <br />
             <strong style="color: var(--clr-error);">Warning!</strong>
-            It is strongly recommended to store the export in a safe location,
-            it contains hashed passwords and other sensitive information.
+            It is strongly recommended to store the export in a safe location, it
+            contains hashed passwords and other sensitive information.
         </span>
     </div>
 
@@ -61,7 +61,7 @@ import ConfigImport from "./dialogs/ConfigImport.svelte";
         <Label>Export</Label>
         <Icon class="material-icons">save</Icon>
     </Button>
-    <Button on:click={() => importConfigOpen=true} variant="outlined">
+    <Button on:click={() => (importConfigOpen = true)} variant="outlined">
         <Label>Import</Label>
         <Icon class="material-icons">save</Icon>
     </Button>
@@ -70,12 +70,14 @@ import ConfigImport from "./dialogs/ConfigImport.svelte";
 <style lang="scss">
     .container {
         h6 {
-            margin: 0.5rem 0;
+            margin-bottom: 0.5rem;
+            margin-top: 1rem;
+            font-size: 1.1rem;
             color: var(--clr-text-hint);
         }
 
         &__description {
-            font-size: .9rem;
+            font-size: 0.9rem;
         }
     }
 </style>

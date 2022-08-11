@@ -155,8 +155,12 @@
                     </IconButton>
                     <Button
                         on:click={updateGeolocation}
-                        disabled={latitudeInput === config.latitude &&
-                            longitudeInput === config.longitude}
+                        disabled={(latitudeInput === config.latitude &&
+                            longitudeInput === config.longitude) ||
+                            latitudeInput < -90 ||
+                            latitudeInput > 90 ||
+                            longitudeInput < -180 ||
+                            longitudeInput > 180}
                     >
                         <Label>Save</Label>
                         <Icon class="material-icons">save</Icon>
@@ -195,6 +199,7 @@
                 <h6>Automation</h6>
                 <FormField>
                     <Switch
+                        disabled={automationEnabledLoading}
                         checked={config.automationEnabled}
                         on:SMUISwitch:change={(e) =>
                             setAutomationsEnabled(e.detail.selected)}
@@ -216,6 +221,7 @@
                 <h6>Lockdown Mode</h6>
                 <FormField>
                     <Switch
+                        disabled={lockDownModeEnabledLoading}
                         checked={config.lockDownMode}
                         on:SMUISwitch:change={(e) =>
                             setLockDownModeEnabled(e.detail.selected)}
@@ -291,14 +297,20 @@
             padding: 1rem 1.5rem;
 
             h6 {
+                margin-bottom: 0.5rem;
+                margin-top: 1rem;
+                font-size: 1.1rem;
                 color: var(--clr-text-hint);
-                margin: 0.5rem 0;
             }
 
             .geo {
                 &__title {
                     display: flex;
                     align-items: center;
+
+                    h6 {
+                        margin: 0;
+                    }
 
                     :global &__help {
                         color: var(--clr-text-disabled);
