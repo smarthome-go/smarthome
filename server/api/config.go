@@ -17,6 +17,20 @@ type lockDownModeRequest struct {
 	Enabled bool `json:"enabled"`
 }
 
+func GetSystemConfig(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	data, found, err := database.GetServerConfiguration()
+	if err != nil || !found {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to get server configuration", Error: "database failure"})
+		return
+	}
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		log.Error(err.Error())
+		Res(w, Response{Success: false, Message: "could not get server configuration", Error: "failed to encode response"})
+	}
+}
+
 // Can be used to enter and leave lockdown mode
 func UpdateLockDownMode(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
