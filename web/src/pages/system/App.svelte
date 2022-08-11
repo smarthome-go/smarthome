@@ -2,7 +2,7 @@
     import IconButton from "@smui/icon-button";
 
     import Page from "../../Page.svelte";
-    import Logs from "./logEvents/Logs.svelte";
+    import Logs from "./Logs.svelte";
     import Progress from "../../components/Progress.svelte";
     import Button from "@smui/button";
 

@@ -18,9 +18,9 @@
     import IconButton from "@smui/icon-button";
     import Select, { Option } from "@smui/select";
     import { onMount } from "svelte";
-    import Progress from "../../../components/Progress.svelte";
-    import { createSnackbar } from "../../../global";
-    import { levels, logEvent, logs } from "../main";
+    import Progress from "../../components/Progress.svelte";
+    import { createSnackbar } from "../../global";
+    import { levels, logEvent, logs } from "./main";
 
     // If the dialog should be open or closed
     export let open = false;
