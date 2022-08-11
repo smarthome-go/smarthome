@@ -3,9 +3,41 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
+	"github.com/gorilla/mux"
+	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
 )
+
+// Triggers deletion of an arbitrary log event (as long as it exists), admin authentication required
+func DeleteLogById(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "failed to delete log record", Error: "no id provided"})
+		return
+	}
+	idInt, err := strconv.Atoi(id)
+	if err != nil || idInt < 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "failed to delete log record", Error: "id is not numeric or < 0"})
+		return
+	}
+	success, err := database.DeleteLogById(uint(idInt))
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to delete log record", Error: "database failure"})
+		return
+	}
+	if !success {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to delete log record", Error: "invalid id provided"})
+		return
+	}
+	Res(w, Response{Success: true, Message: "successfully deleted log record"})
+}
 
 // Triggers deletion of internal server logs which are older than 30 days, admin authentication required
 // Request: empty | Response: Response

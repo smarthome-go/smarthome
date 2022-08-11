@@ -108,6 +108,31 @@ func FlushAllLogs() error {
 	return nil
 }
 
+// Deletes a log record matching the provided id
+// Also returns a boolean indicating whether an entry has been deleted or not
+func DeleteLogById(id uint) (bool, error) {
+	query, err := db.Prepare(`
+	DELETE FROM logs
+	WHERE Id=?
+	`)
+	if err != nil {
+		log.Error("Failed to delete log record: failed to prepare query: ", err.Error())
+		return false, err
+	}
+	defer query.Close()
+	res, err := query.Exec(id)
+	if err != nil {
+		log.Error("Failed to delete log record: failed to prepare query: ", err.Error())
+		return false, err
+	}
+	rowAffected, err := res.RowsAffected()
+	if err != nil {
+		log.Error("Failed to delete log record: failed to get affected rows: ", err.Error())
+		return false, err
+	}
+	return rowAffected > 0, nil
+}
+
 // Returns all logs currently in the database
 func GetLogs() ([]LogEvent, error) {
 	res, err := db.Query(`

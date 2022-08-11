@@ -201,6 +201,7 @@ func NewRouter() *mux.Router {
 	// Logging
 	r.HandleFunc("/api/logs/delete/old", mdl.ApiAuth(mdl.Perm(api.FlushOldLogs, database.PermissionSystemConfig))).Methods("DELETE")
 	r.HandleFunc("/api/logs/delete/all", mdl.ApiAuth(mdl.Perm(api.FlushAllLogs, database.PermissionSystemConfig))).Methods("DELETE")
+	r.HandleFunc("/api/logs/delete/id/{id}", mdl.ApiAuth(mdl.Perm(api.DeleteLogById, database.PermissionSystemConfig))).Methods("DELETE")
 	r.HandleFunc("/api/logs/list/all", mdl.ApiAuth(mdl.Perm(api.ListLogs, database.PermissionSystemConfig))).Methods("GET")
 
 	// Assets & static files
