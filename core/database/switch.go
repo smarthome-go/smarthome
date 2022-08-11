@@ -35,7 +35,7 @@ func createSwitchTable() error {
 		Watts INT,
 		FOREIGN KEY (RoomId)
 		REFERENCES room(Id)
-	) 
+	)
 	`
 	_, err := db.Exec(query)
 	if err != nil {
@@ -273,7 +273,7 @@ func SetPowerState(switchId string, isPoweredOn bool) (bool, error) {
 	query, err := db.Prepare(`
 	UPDATE switch
 	SET Power=?
-	WHERE Id=? 
+	WHERE Id=?
 	`)
 	if err != nil {
 		log.Error("Could not alter power state: preparing query failed: ", err.Error())
@@ -300,7 +300,7 @@ func SetPowerState(switchId string, isPoweredOn bool) (bool, error) {
 // Can return a database error
 func GetPowerStates() ([]PowerState, error) {
 	res, err := db.Query(`
-	SELECT 
+	SELECT
 	Id, Power
 	FROM switch
 	`)
