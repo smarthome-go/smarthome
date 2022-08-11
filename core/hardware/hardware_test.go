@@ -19,10 +19,6 @@ func TestMain(m *testing.M) {
 	if err := initDB(true); err != nil {
 		panic(err.Error())
 	}
-	// Create a room for some tests
-	if err := database.CreateRoom(database.RoomData{Id: "testing", Name: "testing", Description: "testing"}); err != nil {
-		panic(err.Error())
-	}
 	Init() // For initializing atomic slice
 	code := m.Run()
 	os.Exit(code)
@@ -51,6 +47,11 @@ func initDB(args ...bool) error {
 }
 
 func TestPower(t *testing.T) {
+	// Create a test room
+	if err := database.CreateRoom(database.RoomData{Id: "testing", Name: "testing", Description: "testing"}); err != nil {
+		t.Error("Failed to create room:", err.Error())
+		return
+	}
 	table := []struct {
 		Switch string
 		Power  bool
