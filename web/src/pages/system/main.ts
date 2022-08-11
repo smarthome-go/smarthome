@@ -2,6 +2,13 @@ import { writable, Writable } from 'svelte/store'
 import App from './App.svelte'
 import "@fontsource/jetbrains-mono";
 
+export interface config {
+    automationEnabled: boolean,
+    lockDownMode: boolean,
+    latitude: number,
+    longitude: number
+}
+
 export interface logEvent {
     id: number,
     name: string,
@@ -13,8 +20,6 @@ export interface logEvent {
 }
 
 export const logs: Writable<logEvent[]> = writable([])
-
-
 
 export const levels = [
     { label: "TRACE", color: "var(--clr-priority-low)" },
