@@ -13,7 +13,7 @@
         However, specifying a geolocation will allow following services to work correctly.
         <ul>
             <li>
-                Automation using your local <span
+                Automations using your local <span
                     style="color: var(--clr-primary);">sunrise</span
                 >
                 and <span style="color: var(--clr-primary);">sunset</span> time
