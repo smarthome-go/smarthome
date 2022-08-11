@@ -34,6 +34,11 @@ func usersGetHandler(w http.ResponseWriter, _ *http.Request) {
 	templates.ExecuteTemplate(w, "users.html", http.StatusOK)
 }
 
+// Serves HTML for user management
+func systemGetHandler(w http.ResponseWriter, _ *http.Request) {
+	templates.ExecuteTemplate(w, "system.html", http.StatusOK)
+}
+
 // Serves HTML for the Homesscript page
 func homescriptGetHandler(w http.ResponseWriter, _ *http.Request) {
 	templates.ExecuteTemplate(w, "homescript.html", http.StatusOK)

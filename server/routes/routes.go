@@ -41,12 +41,14 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/dash", mdl.Auth(dashGetHandler)).Methods("GET")
 	r.HandleFunc("/rooms", mdl.Auth(roomsGetHandler)).Methods("GET")
 	r.HandleFunc("/reminders", mdl.Auth(reminderGetHandler)).Methods("GET")
-	r.HandleFunc("/profile", mdl.Auth(userProfileGetHandler)).Methods("GET")
-	r.HandleFunc("/users", mdl.Auth(usersGetHandler)).Methods("GET")
+	r.HandleFunc("/scheduler", mdl.Auth(schedulerGetHandler)).Methods("GET")
+	r.HandleFunc("/automations", mdl.Auth(automationsGetHandler)).Methods("GET")
 	r.HandleFunc("/homescript", mdl.Auth(homescriptGetHandler)).Methods("GET")
 	r.HandleFunc("/homescript/editor", mdl.Auth(hmsEditorGetHandler)).Methods("GET")
-	r.HandleFunc("/automations", mdl.Auth(automationsGetHandler)).Methods("GET")
-	r.HandleFunc("/scheduler", mdl.Auth(schedulerGetHandler)).Methods("GET")
+	r.HandleFunc("/profile", mdl.Auth(userProfileGetHandler)).Methods("GET")
+
+	r.HandleFunc("/users", mdl.Auth(usersGetHandler)).Methods("GET")
+	r.HandleFunc("/system", mdl.Auth(systemGetHandler)).Methods("GET")
 
 	// Session management
 	r.HandleFunc("/login", loginGetHandler).Methods("GET")
