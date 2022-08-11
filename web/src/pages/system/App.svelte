@@ -6,6 +6,8 @@
     import Progress from "../../components/Progress.svelte";
 </script>
 
+<Logs />
+
 <Page>
     <div id="header" class="mdc-elevation--z4">
         <h6>System Configuration</h6>
