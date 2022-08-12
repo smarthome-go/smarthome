@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { data, createSnackbar } from "../../global";
+    import { data, createSnackbar, sleep } from "../../global";
     import Fab, { Icon } from "@smui/fab";
     import ChangeAvatar from "./dialogs/ChangeAvatar.svelte";
     import Textfield from "@smui/textfield";
@@ -81,10 +81,13 @@
             $data.userData.user.surname = surname;
 
             $data.userData.user.schedulerEnabled = schedulerEnabled;
-            $data.userData.user.darkTheme = darkTheme;
 
             $data.userData.user.primaryColorDark = primaryColorDark;
             $data.userData.user.primaryColorLight = primaryColorLight;
+
+            // Is required to avoid color bug when switching theme live
+            await sleep(100);
+            $data.userData.user.darkTheme = darkTheme;
         } catch (err) {
             $createSnackbar(`Failed to update user data: ${err}`);
         }
