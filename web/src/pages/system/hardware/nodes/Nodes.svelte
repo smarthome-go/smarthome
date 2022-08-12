@@ -6,5 +6,9 @@
 </script>
 
 {#each hardwareNodes as n (n.url)}
-    <HWNode bind:data={n} />
+    <HWNode
+        on:delete={() =>
+            (hardwareNodes = hardwareNodes.filter((h) => h.url !== n.url))}
+        bind:data={n}
+    />
 {/each}

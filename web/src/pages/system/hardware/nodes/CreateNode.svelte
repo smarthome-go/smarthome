@@ -34,6 +34,17 @@
     <Title id="create-node-title">Create Hardware Node</Title>
     <Content id="create-node-content">
         <Textfield
+            bind:value={name}
+            label="Name"
+            input$maxlength={30}
+            style="width: 100%;"
+        >
+            <svelte:fragment slot="helper">
+                <HelperText>A short and fitting name</HelperText>
+                <CharacterCounter>0 / 30</CharacterCounter>
+            </svelte:fragment>
+        </Textfield>
+        <Textfield
             bind:value={url}
             label="Url"
             type='url'
@@ -43,17 +54,6 @@
             <svelte:fragment slot="helper">
                 <HelperText>The node's URL</HelperText>
                 <CharacterCounter>0 / 50</CharacterCounter>
-            </svelte:fragment>
-        </Textfield>
-        <Textfield
-            bind:value={name}
-            label="Name"
-            input$maxlength={30}
-            style="width: 100%;"
-        >
-            <svelte:fragment slot="helper">
-                <HelperText>A short and fitting name</HelperText>
-                <CharacterCounter>0 / 30</CharacterCounter>
             </svelte:fragment>
         </Textfield>
         <Textfield
@@ -80,13 +80,18 @@
         <Button
             defaultAction
             use={[InitialFocus]}
-            on:click={() =>
+            on:click={() => {
                 dispatch("create", {
                     url,
                     name,
                     token,
                     enabled,
-                })}
+            })
+            url = ""
+            name = ""
+            token = ""
+            enabled = true
+            }}
             disabled={name === "" || url === ""}
         >
             <Label>Create</Label>

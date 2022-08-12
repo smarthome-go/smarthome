@@ -7,6 +7,7 @@
     import { Icon } from "@smui/button";
     import Fab from "@smui/fab";
     import CreateNode from "./nodes/CreateNode.svelte";
+    import IconButton from "@smui/icon-button";
 
     // Specifies whether the loading indicator should be shown or hidden
     let loading = true;
@@ -21,6 +22,7 @@
 
     // Contains all hardware nodes
     let hardwareNodes: hardwareNode[] = [];
+    let hardwareNodesLoaded = false;
 
     //   If the healthcheck should be used, this request will take significantly more time to complete (recommended for manual reloading)
     async function fetchHardwareNodes(withHealthCheck: boolean) {
@@ -36,6 +38,7 @@
             if (res.success !== undefined && !res.success)
                 throw Error(res.error);
             hardwareNodes = res;
+            hardwareNodesLoaded = true;
         } catch (err) {
             $createSnackbar(`Failed to load hardware nodes: ${err}`);
         }
@@ -63,7 +66,6 @@
             ).json();
             if (res.success !== undefined && !res.success)
                 throw Error(res.error);
-            // If the request was successful, add the node to the nodes
             hardwareNodes = [
                 ...hardwareNodes,
                 {
@@ -74,6 +76,10 @@
                     online: false,
                 },
             ];
+            // Reload the nodes in order to obtain the new power state
+            setTimeout(() => {
+                fetchHardwareNodes(true);
+            }, 10);
         } catch (err) {
             $createSnackbar(`Failed to create hardware node: ${err}`);
         }
@@ -112,19 +118,39 @@
                 >Nodes
             </a>
             <i class="hardware__type__label__icon material-icons">memory</i>
-            <Fab
-                class="hardware__type__label__fab"
-                color="primary"
-                mini
-                on:click={() => (createHardwareNodeOpen = true)}
-            >
-                <Icon class="material-icons">add</Icon>
-            </Fab>
+            <div class="hardware__type__label__right">
+                <IconButton
+                    disabled={loading}
+                    class="material-icons"
+                    on:click={() => fetchHardwareNodes(false)}
+                    title="Refresh">refresh</IconButton
+                >
+                <IconButton
+                    disabled={loading ||
+                        (hardwareNodes.length === 0) && hardwareNodesLoaded}
+                    class="material-icons"
+                    on:click={() => fetchHardwareNodes(true)}
+                    title="Run Healthcheck">monitor_heart</IconButton
+                >
+                <Fab
+                    color="primary"
+                    mini
+                    title="Add Node"
+                    on:click={() => (createHardwareNodeOpen = true)}
+                >
+                    <Icon class="material-icons">add</Icon>
+                </Fab>
+            </div>
         </div>
 
         <!-->vendor starts here</-->
         <div class="hardware__nodes">
-            <Nodes bind:hardwareNodes />
+            {#if hardwareNodes.length === 0 && hardwareNodesLoaded}
+                <i class="material-icons text-disabled">dns</i>
+                <span class="text-hint"> No hardware nodes </span>
+            {:else}
+                <Nodes bind:hardwareNodes />
+            {/if}
         </div>
     </div>
 
@@ -158,10 +184,13 @@
                 // `i-tag` which contains a MD icon
                 &__icon {
                     color: var(--clr-text-hint);
-                    font-size: 1.25rem;
+                    font-size: 1.5rem;
                 }
-                :global &__fab {
+                &__right {
                     margin-left: auto;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
                 }
             }
         }

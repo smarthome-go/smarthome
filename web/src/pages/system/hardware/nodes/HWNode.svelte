@@ -1,10 +1,11 @@
 <script lang="ts">
-    import IconButton from "@smui/icon-button";
+    import IconButton, { Icon } from "@smui/icon-button";
     import Progress from "../../../../components/Progress.svelte";
     import type { hardwareNode } from "../types";
     import { createSnackbar } from "../../../../global";
     import { createEventDispatcher } from "svelte";
     import EditNode from "./EditNode.svelte";
+    import DeleteNode from "./DeleteNode.svelte";
 
     // Event dispatcher
     const dispatch = createEventDispatcher();
@@ -91,17 +92,38 @@
         editHardwareNode(e.detail.name, e.detail.token, e.detail.enabled)}
 />
 
-<div class="node mdc-elevation--z3">
+<DeleteNode bind:open={deleteOpen} on:delete={deleteHardwareNode}>jk</DeleteNode
+>
+
+<div class="node mdc-elevation--z3" class:disabled={!data.enabled}>
     <div class="node__header">
-        <span class="node__header__name">{data.name}</span>
+        <div class="node__header__top">
+            <span class="node__header__top__name">{data.name}</span>
+            <i
+                class="material-icons node__header__top__online"
+                class:offline={!data.online}
+                >{data.online ? "lan" : "perm_scan_wifi"}</i
+            >
+        </div>
         <span class="node__header__url text-hint">{data.url}</span>
     </div>
+    {#if !data.online}
+        <span class="node__offline">OFFLINE</span>
+    {:else}
+        <span class="node__online">ONLINE</span>
+    {/if}
     <div class="node__footer">
         <Progress bind:loading type="circular" />
-        <IconButton class="material-icons" on:click={() => (editOpen = true)}
-            >edit</IconButton
+        <IconButton
+            class="material-icons"
+            on:click={() => (editOpen = true)}
+            title="Edit">edit</IconButton
         >
-        <IconButton class="material-icons">delete</IconButton>
+        <IconButton
+            class="material-icons"
+            on:click={() => (deleteOpen = true)}
+            title="Delete">delete</IconButton
+        >
     </div>
 </div>
 
@@ -116,15 +138,51 @@
         height: 6rem;
         width: 14rem;
 
+        &.disabled {
+            opacity: 65%;
+        }
+
         @include widescreen {
-            width: 16rem;
+            // Adjusted so it fits on 1080p perfectly
+            width: 16.125rem;
         }
 
         &__header {
-            &__name {
-                display: block;
+            &__top {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+
+                &__name {
+                    display: block;
+                    font-weight: bold;
+                }
+
+                &__online {
+                    font-size: 1.25rem;
+                    color: var(--clr-success);
+
+                    &.offline {
+                        color: var(--clr-error);
+                    }
+                }
+            }
+            &__url {
+                font-size: 0.85rem;
             }
         }
+
+        &__offline {
+            font-size: 0.75rem;
+            color: var(--clr-error);
+            font-weight: bold;
+        }
+        &__online {
+            font-size: 0.75rem;
+            color: var(--clr-success);
+            font-weight: bold;
+        }
+
         &__footer {
             position: absolute;
             right: 10px;
