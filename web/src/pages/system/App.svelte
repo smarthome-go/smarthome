@@ -280,6 +280,7 @@
         flex-direction: column;
         display: flex;
         gap: 1rem;
+        height: calc(100vh - 63px);
 
         @include widescreen {
             height: calc(100vh - 60px);
@@ -287,23 +288,28 @@
         }
 
         @include mobile {
-            min-height: calc(100vh - 48px - 3.5rem);
+            height: calc(100vh - 48px - 3.5rem);
             padding: 1rem;
         }
 
         #left {
             background-color: var(--clr-height-0-1);
             border-radius: 0.4rem;
-            height: 75%;
+            height: 65%;
             width: 100%;
             box-sizing: border-box;
             padding: 1rem 1.5rem;
 
             h6 {
-                margin-bottom: 0.5rem;
-                margin-top: 1rem;
-                font-size: 1.1rem;
+                margin: 0;
                 color: var(--clr-text-hint);
+                font-size: 1rem;
+
+                @include widescreen {
+                    margin-bottom: 0.5rem;
+                    margin-top: 1rem;
+                    font-size: 1.1rem;
+                }
             }
 
             .geo {
@@ -345,17 +351,25 @@
                 height: 100%;
                 width: 60%;
             }
+
+            @include mobile {
+                height: 100%;
+            }
         }
 
         #hardware {
             background-color: var(--clr-height-0-1);
             border-radius: 0.4rem;
-            height: 25%;
+            height: 35%;
             width: 100%;
 
             @include widescreen {
                 height: 100%;
                 width: 40%;
+            }
+
+            @include mobile {
+                height: auto;
             }
         }
     }

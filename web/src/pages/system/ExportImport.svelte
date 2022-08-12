@@ -44,40 +44,90 @@
 
 <Progress bind:loading />
 
+<h6>Export / Import</h6>
 <div class="container">
-    <h6>Export / Import</h6>
-    <div class="container__description">
-        <span class="text-hint">
-            Will export nearly all configured settings of this server.
-            <br />
-            <strong style="color: var(--clr-error);">Warning!</strong>
-            It is strongly recommended to store the export in a safe location, it
-            contains hashed passwords and other sensitive information.
-        </span>
+    <div class="container__export">
+        <div class="container__export__description">
+            <span class="text-hint">
+                Will export nearly all configured settings of this server.
+                <br />
+                <strong style="color: var(--clr-warn);">Warning!</strong>
+                Store this file securely. It contains passwords and sensitive information.
+            </span>
+        </div>
+        <Button on:click={exportConfig} variant="raised">
+            <Label>Export</Label>
+            <Icon class="material-icons">file_download</Icon>
+        </Button>
     </div>
-
-    <br />
-    <Button on:click={exportConfig} variant="raised">
-        <Label>Export</Label>
-        <Icon class="material-icons">file_download</Icon>
-    </Button>
-    <Button on:click={() => (importConfigOpen = true)} variant="outlined">
-        <Label>Import</Label>
-        <Icon class="material-icons">file_upload</Icon>
-    </Button>
+    <div class="container__import">
+        <div class="container__import__description">
+            <span class="text-hint">
+                Will import settings of another server.
+                <br />
+                <strong style="color: var(--clr-warn);">Warning!</strong>
+                Only useful for fresh instances: will erase all data.
+            </span>
+        </div>
+        <Button on:click={() => (importConfigOpen = true)} variant="outlined">
+            <Label>Import</Label>
+            <Icon class="material-icons">file_upload</Icon>
+        </Button>
+    </div>
 </div>
 
 <style lang="scss">
-    .container {
-        h6 {
+    @use "../../mixins" as *;
+
+    h6 {
+        margin: 0;
+        color: var(--clr-text-hint);
+        font-size: 1rem;
+
+        @include widescreen {
             margin-bottom: 0.5rem;
             margin-top: 1rem;
             font-size: 1.1rem;
-            color: var(--clr-text-hint);
+        }
+    }
+
+    .container {
+        display: flex;
+        align-items: flex-start;
+        gap: 1.5rem;
+        align-items: stretch;
+
+        @include mobile {
+            flex-direction: column;
         }
 
-        &__description {
-            font-size: 0.9rem;
+        &__export {
+            background-color: var(--clr-height-1-3);
+            padding: 1rem 1.5rem;
+            border-radius: 0.2rem;
+
+            &__description {
+                margin-bottom: 1rem;
+                font-size: 0.8rem;
+
+                @include widescreen {
+                    font-size: 0.9rem;
+                }
+            }
+        }
+        &__import {
+            background-color: var(--clr-height-1-3);
+            padding: 1rem 1.5rem;
+            border-radius: 0.2rem;
+
+            &__description {
+                margin-bottom: 1rem;
+                font-size: 0.8rem;
+
+                @include widescreen {
+                    font-size: 0.9rem;
+                }
+            }
         }
     }
 </style>
