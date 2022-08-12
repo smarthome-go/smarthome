@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
+	"unicode/utf8"
 
 	"golang.org/x/exp/utf8string"
 
@@ -81,7 +82,7 @@ func CreateSwitch(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "id should only include ASCII characters and must not have whitespaces"})
 		return
 	}
-	if len(request.Id) > 20 || len(request.Name) > 30 {
+	if utf8.RuneCountInString(request.Id) > 20 || utf8.RuneCountInString(r.RequestURI) > 30 {
 		w.WriteHeader(http.StatusBadRequest)
 		Res(w, Response{Success: false, Message: "bad request", Error: "maximum lengths for id and name are 20 and 30"})
 		return
