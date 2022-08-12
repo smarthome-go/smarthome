@@ -182,7 +182,12 @@ func GetHardwareNodeByUrl(url string) (HardwareNode, bool, error) {
 // Changes the metadata of a given node
 // Does not affect the online boolean
 // For changing the online status, use `SetNodeOnline`
-func ModifyHardwareNode(url string, node HardwareNode) error {
+func ModifyHardwareNode(
+	url string,
+	newEnabled bool,
+	newName string,
+	newToken string,
+) error {
 	query, err := db.Prepare(`
 	UPDATE hardware
 	SET
@@ -197,9 +202,9 @@ func ModifyHardwareNode(url string, node HardwareNode) error {
 	}
 	defer query.Close()
 	if _, err := query.Exec(
-		node.Enabled,
-		node.Name,
-		node.Token,
+		newEnabled,
+		newName,
+		newToken,
 		url,
 	); err != nil {
 		log.Error("Failed to modify Hardware node: executing query failed: ", err.Error())
