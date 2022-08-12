@@ -215,6 +215,7 @@ func setPowerOnAllNodes(switchName string, powerOn bool) error {
 // Runs a health-check on all nodes of the system
 // Used in system-level healthcheck
 func RunNodeCheck() error {
+	log.Debug("Running hardware node health check...")
 	nodes, err := database.GetHardwareNodes()
 	if err != nil {
 		log.Error("Failed to check all hardware nodes: ", err.Error())
@@ -225,5 +226,6 @@ func RunNodeCheck() error {
 			return nil
 		}
 	}
+	log.Debug("Hardware node healtheck finished")
 	return nil
 }
