@@ -42,8 +42,8 @@ func checkNodeOnlineRequest(node database.HardwareNode) error {
 		return err
 	}
 	if res.StatusCode != 200 {
-		log.Error("Hardware node checking request failed: non 200 status code")
-		return errors.New("checking node failed: non 200 status code")
+		log.Error(fmt.Sprintf("Hardware node checking request failed: received status code %d (%s)", res.StatusCode, res.Status))
+		return fmt.Errorf("Hardware node checking request failed: received status code %d (%s)", res.StatusCode, res.Status)
 	}
 	return nil
 }
