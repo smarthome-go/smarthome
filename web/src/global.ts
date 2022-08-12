@@ -1,7 +1,7 @@
 import type { ConfigAction } from '@smui/snackbar/kitchen'
 import { get, Writable, writable } from 'svelte/store'
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function 
+// eslint-disable-next-line @typescript-eslint/no-empty-function
 export const createSnackbar: Writable<(message: string, actions?: ConfigAction[]) => void> = writable(() => { })
 
 export interface GenericResponse {
@@ -91,6 +91,7 @@ export const data: Writable<Data> = writable({
             surname: '',
             username: '',
             darkTheme: cachedTheme,
+            schedulerEnabled: false,
         },
         permissions: [],
     },
