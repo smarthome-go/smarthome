@@ -5,7 +5,7 @@
     import { onMount } from "svelte";
     import Progress from "../../../components/Progress.svelte";
     import { Icon } from "@smui/button";
-import Fab from "@smui/fab";
+    import Fab from "@smui/fab";
 
     // Specifies whether the loading indicator should be shown or hidden
     let loading = true;
@@ -38,6 +38,26 @@ import Fab from "@smui/fab";
         loading = false;
     }
 
+    // Creates a new hardware node
+    async function createHardwareNode(
+    name: string
+    ) {
+        loading = true;
+        try {
+            const res = await (await fetch("/api/system/hardware/add/", {
+                method :"POST",
+                headers: {"Content-Type": "application/json"}
+                body: {data}
+            })).json();
+            if (res.success !== undefined && !res.success)
+                throw Error(res.error);
+            hardwareNodes = res;
+        } catch (err) {
+            $createSnackbar(`Failed to load hardware nodes: ${err}`);
+        }
+        loading = false;
+    }
+
     // As soon as the component is mounted, fetch the hardware nodes (without the healthcheck turned on)
     // TODO: allow the user to change this setting per-device (room settings for reference)
     onMount(() => fetchHardwareNodes(false));
@@ -59,7 +79,7 @@ import Fab from "@smui/fab";
                 >Nodes
             </a>
             <i class="hardware__type__label__icon material-icons">memory</i>
-            <Fab class='hardware__type__label__fab' color='primary' mini>
+            <Fab class="hardware__type__label__fab" color="primary" mini>
                 <Icon class="material-icons">add</Icon>
             </Fab>
         </div>
