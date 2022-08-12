@@ -143,8 +143,8 @@
         }
 
         @include widescreen {
-            // Adjusted so it fits on 1080p perfectly
-            width: 16.125rem;
+            // Adjusted so it fits on 1080p and 3440p widescreens
+            width: 16rem;
         }
 
         &__header {
