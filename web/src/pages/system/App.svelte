@@ -14,6 +14,7 @@
     import FormField from "@smui/form-field";
     import Switch from "@smui/switch";
     import ExportImport from "./ExportImport.svelte";
+    import Hardware from "./hardware/Hardware.svelte";
 
     let loading = false;
 
@@ -241,7 +242,9 @@
             </div>
             <ExportImport />
         </div>
-        <div id="logs" class="mdc-elevation--z1" />
+        <div id="hardware" class="mdc-elevation--z1">
+            <Hardware />
+        </div>
     </div></Page
 >
 
@@ -340,11 +343,11 @@
 
             @include widescreen {
                 height: 100%;
-                width: 80%;
+                width: 60%;
             }
         }
 
-        #logs {
+        #hardware {
             background-color: var(--clr-height-0-1);
             border-radius: 0.4rem;
             height: 25%;
@@ -352,7 +355,7 @@
 
             @include widescreen {
                 height: 100%;
-                width: 20%;
+                width: 40%;
             }
         }
     }
