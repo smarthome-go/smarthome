@@ -8,7 +8,7 @@
     import Textfield from "@smui/textfield";
     import type { systemConfig } from "./main";
     import { onMount } from "svelte";
-    import { createSnackbar, sleep } from "../../global";
+    import { createSnackbar } from "../../global";
     import HelperText from "@smui/textfield/helper-text";
     import GeoHelp from "./dialogs/GeoHelp.svelte";
     import FormField from "@smui/form-field";
@@ -156,6 +156,18 @@
                     >
                         <Icon class="material-icons">help</Icon>
                     </IconButton>
+                    <IconButton
+                        class='material-icons'
+                        title="Reset"
+                        size='button'
+                        on:click={() => {
+                            latitudeInput = config.latitude;
+                            longitudeInput = config.longitude;
+                        }}
+                        disabled={latitudeInput === config.latitude &&
+                            longitudeInput === config.longitude}
+                        >undo</IconButton
+                    >
                     <Button
                         on:click={updateGeolocation}
                         disabled={(latitudeInput === config.latitude &&
