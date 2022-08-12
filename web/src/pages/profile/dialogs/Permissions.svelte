@@ -10,6 +10,9 @@
 
     export let open = false;
 
+    export let forceLoadPermissions = false
+    $: if (forceLoadPermissions) fetchAllPermissions().then(() => forceLoadPermissions = false)
+
     interface Permission {
         permission: string;
         name: string;

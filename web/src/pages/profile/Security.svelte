@@ -10,6 +10,9 @@
 
     let loading = false;
 
+    export let forceLoad = false;
+    $: if (forceLoad) fetchUserTokens().then(() => (forceLoad = false));
+
     let addTokenOpen = false;
 
     // User tokens

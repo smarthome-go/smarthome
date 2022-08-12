@@ -18,6 +18,10 @@
     // Loading indicator
     let loading = false;
 
+    // If forceload is > 0, then load everything againg
+    export let forceLoad = true;
+    $: if (forceLoad) fetch;
+
     // User deletion dialog
     let deleteUserOpen = false;
 

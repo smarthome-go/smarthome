@@ -5,18 +5,40 @@
     import Inputs from "./Inputs.svelte";
     import Security from "./Security.svelte";
     import Permissions from "./dialogs/Permissions.svelte";
+    import { createSnackbar, data } from "../../global";
 
     // Specify whether the permissions dialog should be open or closed
     let permissionsOpen = false;
+
+    let forceLoadTokens = false;
+    let forceLoadPermissions = false;
+
+    async function fetchUserData() {
+        try {
+            const res = await (await fetch("/api/user/data")).json();
+            if (res.success !== undefined && !res.success)
+                throw Error(res.error);
+            $data.userData = res;
+        } catch (err) {
+            $createSnackbar(`Could not fetch user data: ${err}`);
+        }
+    }
 </script>
 
-<Permissions bind:open={permissionsOpen} />
+<Permissions bind:open={permissionsOpen} bind:forceLoadPermissions />
+
 <Page>
     <div id="header" class="mdc-elevation--z4">
         <h6>Your Profile</h6>
         <div id="header__buttons">
-            <IconButton title="Refresh" class="material-icons"
-                >refresh</IconButton
+            <IconButton
+                title="Refresh"
+                class="material-icons"
+                disabled={forceLoadPermissions || forceLoadTokens}
+                on:click={() => {
+                    fetchUserData();
+                    forceLoadTokens = true;
+                }}>refresh</IconButton
             >
             <IconButton
                 title="Permissions"
@@ -32,7 +54,7 @@
             <Inputs />
         </div>
         <div id="security" class="mdc-elevation--z1">
-            <Security />
+            <Security bind:forceLoad={forceLoadTokens} />
         </div>
     </div></Page
 >
