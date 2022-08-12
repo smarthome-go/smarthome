@@ -129,6 +129,12 @@ func CreateHardwareNode(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to create hardware node", Error: "database failure"})
 		return
 	}
+	// Run a hardware health-check afterwards
+	if err := hardware.RunNodeCheck(); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		Res(w, Response{Success: false, Message: "could not add hardware node", Error: "healthcheck failed: backend failure"})
+		return
+	}
 	Res(w, Response{Success: true, Message: "successfully created hardware node"})
 }
 
