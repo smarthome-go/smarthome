@@ -101,10 +101,18 @@
             flex-direction: column;
         }
 
+        @include widescreen {
+            flex-direction: column;
+        }
+
         &__export {
             background-color: var(--clr-height-1-3);
             padding: 1rem 1.5rem;
             border-radius: 0.2rem;
+
+            @include widescreen {
+                min-height: 8rem;
+            }
 
             &__description {
                 margin-bottom: 1rem;
@@ -119,6 +127,10 @@
             background-color: var(--clr-height-1-3);
             padding: 1rem 1.5rem;
             border-radius: 0.2rem;
+
+            @include widescreen {
+                min-height: 8rem;
+            }
 
             &__description {
                 margin-bottom: 1rem;
