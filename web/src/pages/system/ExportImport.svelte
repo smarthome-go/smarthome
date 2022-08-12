@@ -59,11 +59,11 @@
     <br />
     <Button on:click={exportConfig} variant="raised">
         <Label>Export</Label>
-        <Icon class="material-icons">save</Icon>
+        <Icon class="material-icons">file_download</Icon>
     </Button>
     <Button on:click={() => (importConfigOpen = true)} variant="outlined">
         <Label>Import</Label>
-        <Icon class="material-icons">save</Icon>
+        <Icon class="material-icons">file_upload</Icon>
     </Button>
 </div>
 
