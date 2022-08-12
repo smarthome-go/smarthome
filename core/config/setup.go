@@ -339,6 +339,12 @@ func createHardwareNodesInDatabase(nodes []setupHardwareNode) error {
 
 // Takes the specified `systemConfig` and modifies an according database entry
 func createSystemConfigInDatabase(systemConfig database.ServerConfig) error {
+	if systemConfig.Latitude < -90 || systemConfig.Latitude > 90 {
+		return fmt.Errorf("invalid latitude: must be (> -90 and < 90)")
+	}
+	if systemConfig.Longitude < -180 || systemConfig.Longitude > 180 {
+		return fmt.Errorf("invalid longitude: must be (> -180 and < 180)")
+	}
 	if err := database.SetServerConfiguration(systemConfig); err != nil {
 		log.Error("Could not create system configuration from setup file: ", err.Error())
 		return err

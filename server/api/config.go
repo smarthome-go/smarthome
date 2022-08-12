@@ -61,6 +61,17 @@ func UpdateLocation(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
+	// Validate if the gelocation is valid
+	if request.Latitude < -90 || request.Latitude > 90 {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid latitude range: must be (> -90 and < 90)"})
+		return
+	}
+	if request.Longitude < -180 || request.Longitude > 180 {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid longitude range: must be (> -180 and < 180)"})
+		return
+	}
 	if err := database.UpdateLocation(request.Latitude, request.Longitude); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to update location", Error: "database failure"})
