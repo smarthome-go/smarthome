@@ -9,7 +9,7 @@ import (
 	"github.com/smarthome-go/smarthome/core/hardware"
 )
 
-// Cotains all endpoints for managing hardware
+// Contains all endpoints for managing hardware
 
 /*
 Section for default node hardware
@@ -48,7 +48,7 @@ func ListHardwareNodes(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(nodes); err != nil {
 		log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
-		Res(w, Response{Success: false, Message: "could not list hardare nodes", Error: "could not encode content"})
+		Res(w, Response{Success: false, Message: "could not list hardware nodes", Error: "could not encode content"})
 		return
 	}
 }
@@ -71,7 +71,7 @@ func ListHardwareNodesWithCheck(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(nodes); err != nil {
 		log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
-		Res(w, Response{Success: false, Message: "could not list hardare nodes", Error: "could not encode content"})
+		Res(w, Response{Success: false, Message: "could not list hardware nodes", Error: "could not encode content"})
 		return
 	}
 }
