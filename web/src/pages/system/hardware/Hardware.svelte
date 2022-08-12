@@ -4,6 +4,8 @@
     import { createSnackbar } from "../../../global";
     import { onMount } from "svelte";
     import Progress from "../../../components/Progress.svelte";
+    import { Icon } from "@smui/button";
+import Fab from "@smui/fab";
 
     // Specifies whether the loading indicator should be shown or hidden
     let loading = true;
@@ -57,6 +59,9 @@
                 >Nodes
             </a>
             <i class="hardware__type__label__icon material-icons">memory</i>
+            <Fab class='hardware__type__label__fab' color='primary' mini>
+                <Icon class="material-icons">add</Icon>
+            </Fab>
         </div>
 
         <!-->vendor starts here</-->
@@ -96,6 +101,9 @@
                 &__icon {
                     color: var(--clr-text-hint);
                     font-size: 1.25rem;
+                }
+                :global &__fab {
+                    margin-left: auto;
                 }
             }
         }

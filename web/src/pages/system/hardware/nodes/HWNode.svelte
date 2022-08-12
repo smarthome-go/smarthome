@@ -31,7 +31,7 @@
         border-radius: 0.3rem;
         padding: 1rem;
         height: 6rem;
-        width: 10rem;
+        width: 14rem;
 
         @include widescreen {
             width: 16rem;
