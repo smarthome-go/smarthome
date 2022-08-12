@@ -100,7 +100,7 @@
                     token === data.token &&
                     enabled === data.enabled)}
         >
-            <Label>Create</Label>
+            <Label>Edit</Label>
         </Button>
     </Actions>
 </Dialog>
