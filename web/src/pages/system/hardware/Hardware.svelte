@@ -127,7 +127,7 @@
                 >
                 <IconButton
                     disabled={loading ||
-                        (hardwareNodes.length === 0) && hardwareNodesLoaded}
+                        (hardwareNodes.length === 0 && hardwareNodesLoaded)}
                     class="material-icons"
                     on:click={() => fetchHardwareNodes(true)}
                     title="Run Healthcheck">monitor_heart</IconButton

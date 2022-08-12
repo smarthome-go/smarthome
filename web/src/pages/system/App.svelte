@@ -8,7 +8,7 @@
     import Textfield from "@smui/textfield";
     import type { systemConfig } from "./main";
     import { onMount } from "svelte";
-    import { createSnackbar } from "../../global";
+    import { createSnackbar, sleep } from "../../global";
     import HelperText from "@smui/textfield/helper-text";
     import GeoHelp from "./dialogs/GeoHelp.svelte";
     import FormField from "@smui/form-field";
@@ -135,13 +135,15 @@
     <div id="header" class="mdc-elevation--z4">
         <h6>System Configuration</h6>
         <div id="header__buttons">
-            <IconButton title="Refresh" class="material-icons"
-                >refresh</IconButton
+            <IconButton
+                title="Refresh"
+                class="material-icons"
+                on:click={fetchConfig}>refresh</IconButton
             >
             <Button on:click={() => (logsOpen = true)}>Logs</Button>
         </div>
     </div>
-    <Progress id="loader" loading={false} />
+    <Progress bind:loading />
     <div id="content">
         <div id="left" class="mdc-elevation--z1">
             <div class="geo">
@@ -362,6 +364,7 @@
             border-radius: 0.4rem;
             height: 35%;
             width: 100%;
+            overflow-y: auto;
 
             @include widescreen {
                 height: 100%;
