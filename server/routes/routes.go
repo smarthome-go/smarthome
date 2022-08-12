@@ -206,9 +206,10 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/system/config/import", mdl.ApiAuth(mdl.Perm(api.ImportConfiguration, database.PermissionSystemConfig))).Methods("POST")
 
 	r.HandleFunc("/api/system/hardware/node/list", mdl.ApiAuth(mdl.Perm(api.ListHardwareNodes, database.PermissionSystemConfig))).Methods("GET")
-	r.HandleFunc("/api/system/hardware/node/add", mdl.ApiAuth(mdl.Perm(api.ListHardwareNodes, database.PermissionSystemConfig))).Methods("GET")
-	r.HandleFunc("/api/system/hardware/node/modify", mdl.ApiAuth(mdl.Perm(api.ListHardwareNodes, database.PermissionSystemConfig))).Methods("GET")
-	r.HandleFunc("/api/system/hardware/node/delete", mdl.ApiAuth(mdl.Perm(api.ListHardwareNodes, database.PermissionSystemConfig))).Methods("GET")
+	r.HandleFunc("/api/system/hardware/node/check", mdl.ApiAuth(mdl.Perm(api.ListHardwareNodesWithCheck, database.PermissionSystemConfig))).Methods("GET")
+	r.HandleFunc("/api/system/hardware/node/add", mdl.ApiAuth(mdl.Perm(api.CreateHardwareNode, database.PermissionSystemConfig))).Methods("POST")
+	r.HandleFunc("/api/system/hardware/node/modify", mdl.ApiAuth(mdl.Perm(api.ModifyHardwareNode, database.PermissionSystemConfig))).Methods("PUT")
+	r.HandleFunc("/api/system/hardware/node/delete", mdl.ApiAuth(mdl.Perm(api.DeleteHardwareNode, database.PermissionSystemConfig))).Methods("DELETE")
 
 	// Logging
 	r.HandleFunc("/api/logs/delete/old", mdl.ApiAuth(mdl.Perm(api.FlushOldLogs, database.PermissionSystemConfig))).Methods("DELETE")

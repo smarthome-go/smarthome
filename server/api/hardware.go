@@ -2,12 +2,11 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"net/url"
 	"unicode/utf8"
 
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/hardware"
 )
 
 // Cotains all endpoints for managing hardware
@@ -54,6 +53,29 @@ func ListHardwareNodes(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func ListHardwareNodesWithCheck(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	// Run the healcheck first (will update the database entries if node states change)
+	if err := hardware.RunNodeCheck(); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		Res(w, Response{Success: false, Message: "could not list hardware nodes", Error: "healthcheck failed: backend failure"})
+		return
+	}
+	// Return the hardware nodes from the database
+	nodes, err := database.GetHardwareNodes()
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "could not list hardware nodes", Error: "database failure"})
+		return
+	}
+	if err := json.NewEncoder(w).Encode(nodes); err != nil {
+		log.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		Res(w, Response{Success: false, Message: "could not list hardare nodes", Error: "could not encode content"})
+		return
+	}
+}
+
 // Creates a hardware node
 func CreateHardwareNode(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -83,13 +105,6 @@ func CreateHardwareNode(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "the token may not exceed 100 characters"})
 		return
 	}
-	// Try to parse the specified URL and check it for errors
-	_, err := url.Parse(request.Url)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		Res(w, Response{Success: false, Message: "bad request", Error: fmt.Sprintf("invalid URL encoding: %s", err.Error())})
-		return
-	}
 	// Validate that no conflicts are present
 	_, alreadyExists, err := database.GetHardwareNodeByUrl(request.Url)
 	if err != nil {
@@ -99,7 +114,7 @@ func CreateHardwareNode(w http.ResponseWriter, r *http.Request) {
 	}
 	if alreadyExists {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		Res(w, Response{Success: false, Message: "failed to create hardware node", Error: "a noded with the same URL already exists"})
+		Res(w, Response{Success: false, Message: "failed to create hardware node", Error: "a node with the same URL already exists"})
 		return
 	}
 	// Create the node in the database
@@ -140,16 +155,16 @@ func ModifyHardwareNode(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "the token may not exceed 100 characters"})
 		return
 	}
-	// Validate that the hardware node exists conflicts are present
-	_, alreadyExists, err := database.GetHardwareNodeByUrl(request.Url)
+	// Validate that the hardware node exists
+	_, exists, err := database.GetHardwareNodeByUrl(request.Url)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to modify hardware node", Error: "database failure"})
 		return
 	}
-	if alreadyExists {
+	if !exists {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		Res(w, Response{Success: false, Message: "failed to modify hardware node", Error: "a noded with the same URL already exists"})
+		Res(w, Response{Success: false, Message: "failed to modify hardware node", Error: "no such node exists"})
 		return
 	}
 	// Modify the node in the database
@@ -168,7 +183,6 @@ func ModifyHardwareNode(w http.ResponseWriter, r *http.Request) {
 
 // Deletes a hardware node
 func DeleteHardwareNode(w http.ResponseWriter, r *http.Request) {
-
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
