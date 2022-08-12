@@ -697,7 +697,8 @@ func (self *Executor) GetTemperature() (int, error) {
 }
 
 // Returns the current time variables
-func (self *Executor) GetDate() (int, int, int, int, int, int) {
+func (self *Executor) GetDate() (int, int, int, int, int, int, int) {
 	now := time.Now()
-	return now.Year(), int(now.Month()), now.Day(), now.Hour(), now.Minute(), now.Second()
+	_, week := now.ISOWeek()
+	return now.Year(), int(now.Month()), week, now.Day(), now.Hour(), now.Minute(), now.Second()
 }
