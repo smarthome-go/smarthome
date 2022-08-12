@@ -5,13 +5,15 @@
     import Dialog, { Actions, Content, Header, Title } from "@smui/dialog";
     import IconButton from "@smui/icon-button";
     import LinearProgress from "@smui/linear-progress";
-    import { onMount } from "svelte";
     import { data, createSnackbar } from "../../../global";
 
     export let open = false;
 
     export let forceLoadPermissions = false
     $: if (forceLoadPermissions) fetchAllPermissions().then(() => forceLoadPermissions = false)
+    
+    // Load permissions as soon as user data is loaded
+    $: if ($data.loaded) fetchAllPermissions()
 
     interface Permission {
         permission: string;
@@ -34,8 +36,6 @@
             $createSnackbar(`Could not load system permissions: ${err}`);
         }
     }
-
-    onMount(fetchAllPermissions);
 </script>
 
 <Dialog
