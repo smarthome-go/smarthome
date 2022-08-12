@@ -46,8 +46,8 @@
 
 <h6>Export / Import</h6>
 <div class="container">
-    <div class="container__export">
-        <div class="container__export__description">
+    <div class="container__export mdc-elevation--z3">
+        <div class="container__export__description ">
             <span class="text-hint">
                 Will export nearly all configured settings of this server.
                 <br />
@@ -60,7 +60,7 @@
             <Icon class="material-icons">file_download</Icon>
         </Button>
     </div>
-    <div class="container__import">
+    <div class="container__import mdc-elevation--z3">
         <div class="container__import__description">
             <span class="text-hint">
                 Will import settings of another server.
