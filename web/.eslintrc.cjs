@@ -21,6 +21,7 @@ module.exports = {
         'svelte3',
     ],
     'rules': {
+        '@typescript-eslint/ban-ts-comment': 'off',
     },
     settings: {
         'svelte3/typescript': () => require('typescript'),
