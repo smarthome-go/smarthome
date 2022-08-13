@@ -14,11 +14,13 @@ type Switch struct {
 	Watts   uint16 `json:"watts"`
 }
 
-//Contains the switch id and a matching boolean
+// Contains the switch id and a matching boolean which indicates whether the switch is on or off
+// Additionally, the power draw is also included (mainly used for taking periodic snapshots of the power statistics)
 // Used when requesting global power states
 type PowerState struct {
 	Switch  string `json:"switch"`
 	PowerOn bool   `json:"powerOn"`
+	Watts   uint16 `json:"watts"`
 }
 
 // Creates the table containing switches
@@ -301,7 +303,9 @@ func SetPowerState(switchId string, isPoweredOn bool) (bool, error) {
 func GetPowerStates() ([]PowerState, error) {
 	res, err := db.Query(`
 	SELECT
-	Id, Power
+		Id,
+		Power,
+		Watts
 	FROM switch
 	`)
 	if err != nil {
@@ -312,7 +316,11 @@ func GetPowerStates() ([]PowerState, error) {
 	powerStates := make([]PowerState, 0)
 	for res.Next() {
 		var powerState PowerState
-		err := res.Scan(&powerState.Switch, &powerState.PowerOn)
+		err := res.Scan(
+			&powerState.Switch,
+			&powerState.PowerOn,
+			&powerState.Watts,
+		)
 		if err != nil {
 			log.Error("Failed to list powerstates: failed to scan query: ", err.Error())
 			return nil, err
