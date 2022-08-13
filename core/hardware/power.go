@@ -53,6 +53,12 @@ func generateSnapshot() (database.PowerDrawData, database.PowerDrawData, error) 
 		// Regardless of the power state, increment the total watt count
 		totalWatts += sw.Watts
 	}
+
+	// NOTE: If the total watts are equal to 0, stop here and do not calculate the percent (it will lead to errors)
+	if totalWatts == 0 {
+		return onData, offData, nil
+	}
+
 	// After the on + off data has been calculated, leverage the grand total watt count in order to calculate the individual percent numbers
 	onData.Percent = float64(onData.Watts) / float64(totalWatts) * 100
 	offData.Percent = float64(offData.Watts) / float64(totalWatts) * 100
