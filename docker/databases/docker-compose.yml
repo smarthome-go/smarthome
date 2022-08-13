@@ -17,6 +17,7 @@ services:
     ports:
       - 3313:3306
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - smarthome-data:/var/lib/mysql
 
   # Testing database for ci/cd
