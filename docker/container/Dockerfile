@@ -23,7 +23,7 @@ COPY motd /etc/motd
 COPY .bashrc /app/.bashrc
 ENV ENV=/app/.bashrc
 
-RUN curl -L https://github.com/smarthome-go/cli/releases/download/v2.9.0/homescript_linux_amd64.tar.gz -o /tmp/homescript.tar.gz
+RUN curl -L https://github.com/smarthome-go/cli/releases/download/v2.14.2/homescript_linux_amd64.tar.gz -o /tmp/homescript.tar.gz
 WORKDIR /bin
 RUN tar -xvf /tmp/homescript.tar.gz && chmod +x /bin/homescript && rm -rf /tmp/homescript.tar.gz
 RUN ln -s /bin/homescript /bin/shome
@@ -36,8 +36,6 @@ HEALTHCHECK --interval=300s --timeout=5s --start-period=5s CMD curl --fail http:
 EXPOSE 80/tcp
 
 USER smarthome:smarthome
-
-RUN homescript config set -n admin -t admin -a http://localhost
 
 ENV SMARTHOME_LOG_LEVEL=INFO
 ENV SMARTHOME_ENV_PRODUCTION=TRUE
