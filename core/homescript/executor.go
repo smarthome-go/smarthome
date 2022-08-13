@@ -13,6 +13,7 @@ import (
 	"golang.org/x/exp/utf8string"
 	"golang.org/x/net/context"
 
+	"github.com/go-ping/ping"
 	"github.com/smarthome-go/homescript/homescript/interpreter"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
@@ -192,6 +193,28 @@ func (self *Executor) testSwitch(switchId string, powerOn bool) error {
 		return fmt.Errorf("Failed to set power: user is not allowed to interact with switch '%s'", switchId)
 	}
 	return nil
+}
+
+// Performs a ICMP ping and returns a boolean which states whether the target host is online or offline
+func (self *Executor) Ping(ip string, timeoutSecs float64) (bool, error) {
+	// Is still executed because the function tries to resolve the specified IP (allows some checking)
+	pinger, err := ping.NewPinger(ip)
+	if err != nil {
+		return false, err
+	}
+	// If DryRun is being used, stop here
+	if self.DryRun {
+		return false, nil
+	}
+	// Perform the ping
+	pinger.Count = 1
+	pinger.Timeout = time.Millisecond * time.Duration(timeoutSecs*1000)
+	err = pinger.Run() // Blocks until the ping is finished or timed-out
+	if err != nil {
+		return false, err
+	}
+	stats := pinger.Statistics()
+	return stats.PacketsRecv > 0, nil // If at least 1 packet was received back, the host is considered online
 }
 
 // Makes a GET request to an arbitrary URL and returns the result
