@@ -6,11 +6,12 @@ import (
 	"time"
 )
 
+// For an API-friendly version of this struct, visit the hardware module
 type PowerDataPoint struct {
-	Id   uint          `json:"id"`
-	Time time.Time     `json:"time"`
-	On   PowerDrawData `json:"on"`
-	Off  PowerDrawData `json:"off"`
+	Id   uint
+	Time time.Time
+	On   PowerDrawData
+	Off  PowerDrawData
 }
 
 type PowerDrawData struct {
