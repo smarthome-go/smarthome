@@ -69,6 +69,8 @@
     "@smui/tab-bar": "^6.0.0-beta.15",
     "@smui/textfield": "^6.0.0-beta.15",
     "@smui/tooltip": "^6.0.0-beta.16",
+    "chart.js": "^3.9.1",
+    "chartjs-adapter-date-fns": "^2.0.0",
     "material-icons": "^1.10.8",
     "prism": "^1.0.0",
     "prismjs": "^1.28.0",
