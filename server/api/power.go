@@ -75,3 +75,18 @@ func GetPowerStates(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to get power states", Error: "could not encode content"})
 	}
 }
+
+// Returns the power draw points from the last 24 hours
+func GetPowerDrawFrom24Hours(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	powerUsageData, err := database.GetPowerUsageRecords(24)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "could not get power usage data from the last 24 hours", Error: "database error"})
+		return
+	}
+	if err := json.NewEncoder(w).Encode(powerUsageData); err != nil {
+		log.Error(err.Error())
+		Res(w, Response{Success: false, Message: "failed to get power usage data from the last 24 hours", Error: "could not encode content"})
+	}
+}
