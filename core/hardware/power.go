@@ -9,17 +9,22 @@ import (
 
 // This file's functions are being used for calculating new power usage summaries (which is triggered on every switch power change)
 
-type PowerDrawDataPoint struct {
-	OnData  database.PowerDrawData
-	OffData database.PowerDrawData
+// Just like the equivalent in the database module
+// except the time is represented using Unix-millis
+type PowerDrawDataPointUnixMillis struct {
+	Id   uint                   `json:"id"`
+	Time uint                   `json:"time"` // Is represented as Unix-millis
+	On   database.PowerDrawData `json:"on"`
+	Off  database.PowerDrawData `json:"off"`
 }
 
 // Takes a snapshot of the current power states and transforms them into a power data point
-func generateSnapshot() (PowerDrawDataPoint, error) {
+// Returns `onData`, `offData` and an `error`
+func generateSnapshot() (database.PowerDrawData, database.PowerDrawData, error) {
 	// Get the current power states
 	powerStates, err := database.GetPowerStates()
 	if err != nil {
-		return PowerDrawDataPoint{}, err
+		return database.PowerDrawData{}, database.PowerDrawData{}, err
 	}
 	// Will hold the sum off the power draw of all switches, regardless of whether they are active or disabled
 	var totalWatts uint16 = 0
@@ -52,25 +57,20 @@ func generateSnapshot() (PowerDrawDataPoint, error) {
 	onData.Percent = float64(onData.Watts) / float64(totalWatts) * 100
 	offData.Percent = float64(offData.Watts) / float64(totalWatts) * 100
 
-	// Create a data point from the individual data structs
-	dataPoint := PowerDrawDataPoint{
-		OnData:  onData,
-		OffData: offData,
-	}
-	return dataPoint, nil
+	return onData, offData, nil
 }
 
 // Takes a snapshot of the current power draw and inserts it into the database
 func SaveCurrentPowerUsage() error {
 	// Generate a snapshot
-	data, err := generateSnapshot()
+	onData, offData, err := generateSnapshot()
 	if err != nil {
 		return err
 	}
 	// Insert the snapshot data into the database
 	_, err = database.AddPowerUsagePoint(
-		data.OnData,
-		data.OffData,
+		onData,
+		offData,
 	)
 	return err
 }
@@ -86,4 +86,23 @@ func SaveCurrentPowerUsageWithLogs() {
 	}
 	event.Debug("Power Draw Snapshot Saved", "A snapshot of the current power draw has been generated and saved in the database")
 	log.Debug("A snapshot of the current power draw has been generated and saved in the database")
+}
+
+// Acts like a wrapper for the `database.GetPowerUsageRecords`
+// The main difference is that dates are transformed into unix-millis (which are easier to parse for any API client)
+func GetPowerUsageRecordsUnixMillis(maxAgeHours uint) ([]PowerDrawDataPointUnixMillis, error) {
+	dbData, err := database.GetPowerUsageRecords(maxAgeHours)
+	if err != nil {
+		return nil, err
+	}
+	returnValue := make([]PowerDrawDataPointUnixMillis, 0)
+	for _, record := range dbData {
+		returnValue = append(returnValue, PowerDrawDataPointUnixMillis{
+			Id:   record.Id,
+			Time: uint(record.Time.UnixMilli()),
+			On:   record.On,
+			Off:  record.Off,
+		})
+	}
+	return returnValue, err
 }
