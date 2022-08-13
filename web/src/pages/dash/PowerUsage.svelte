@@ -122,7 +122,7 @@
         gradient.addColorStop(0.7, "rgb(0, 0, 100, 0.125)");
         gradient.addColorStop(1, "rgb(0,  0, 100, 0.03)");
 
-        // Dataset configuation
+        // Dataset configuration
         let data = {
             datasets: [
                 {
@@ -146,7 +146,7 @@
                     pointBorderWidth: 1,
                     // Sets the point's default width
                     pointRadius: 4,
-                    // Threshhold on which `hover` is triggered
+                    // Threshold on which `hover` is triggered
                     pointHitRadius: 15,
                     // Widen the point on hover
                     pointHoverRadius: 7,

@@ -5,7 +5,7 @@
 - Added the first component: a power-usage graph
 
 ### System Configuration Page
-- Fixed edit-button label in the hardare-node edit dialog
+- Fixed edit-button label in the hardware-node edit dialog
 
 ### Homescript
 - Upgraded [Homescript](https://github.com/smarthome-go/homescript/releases/tag/v0.16.0) to `v0.16.0`
