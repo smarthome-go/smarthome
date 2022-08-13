@@ -1,0 +1,181 @@
+package database
+
+import (
+	"database/sql"
+	"fmt"
+	"time"
+)
+
+type PowerDataPoint struct {
+	Id   uint          `json:"id"`
+	Time time.Time     `json:"time"`
+	On   PowerDrawData `json:"on"`
+	Off  PowerDrawData `json:"off"`
+}
+
+type PowerDrawData struct {
+	SwitchCount uint    `json:"switchCount"` // How many switches are involved in this state (how many are active / disabled)
+	Watts       uint    `json:"watts"`       // The power-draw sum of these switches
+	Percent     float64 `json:"percent"`     // How much percent of the total power draw this is equal to
+}
+
+func createPowerUsageTable() error {
+	if _, err := db.Exec(`
+	CREATE TABLE
+	IF NOT EXISTS
+	powerUsage(
+		Id					INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+		Time				DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+		OnSwitchCount		INT UNSIGNED,
+		OnWatts				INT UNSIGNED,
+		OnPercent			FLOAT(24) UNSIGNED,
+
+		OffSwitchCount	INT UNSIGNED,
+		OffWatts			INT UNSIGNED,
+		OffPercent			FLOAT(24) UNSIGNED
+	)
+	`); err != nil {
+		log.Error("Failed to create power usage table: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}
+
+// Inserts a new data point into the power usage time record table
+func AddPowerUsagePoint(onData PowerDrawData, offData PowerDrawData) (uint, error) {
+	query, err := db.Prepare(`
+	INSERT INTO
+	powerUsage(
+		Id,
+		Time,
+
+		OnSwitchCount,
+		OnWatts,
+		OnPercent,
+
+		OffSwitchCount,
+		OffWatts,
+		OffPercent
+	)
+	VALUES(
+		DEFAULT, DEFAULT,
+		?, ?, ?,
+		?, ?, ?
+	)
+	`)
+	if err != nil {
+		log.Error("Failed to add power usage point: preparing query failed: ", err.Error())
+		return 0, err
+	}
+	defer query.Close()
+	res, err := query.Exec(
+		// On data
+		onData.SwitchCount,
+		onData.Watts,
+		onData.Percent,
+		// Off data
+		offData.SwitchCount,
+		offData.Watts,
+		offData.Percent,
+	)
+	if err != nil {
+		log.Error("Failed to add power usage point: executing query failed: ", err.Error())
+		return 0, err
+	}
+	newId, err := res.LastInsertId()
+	if err != nil {
+		log.Error("Failed to add power usage point: obtaining id failed: ", err.Error())
+		return 0, err
+	}
+	return uint(newId), nil
+}
+
+// Returns records from the power usage records
+// Only returns records which are younger than x hours
+func GetPowerUsageRecords(maxAgeHours uint) ([]PowerDataPoint, error) {
+	query, err := db.Prepare(`
+	SELECT
+		Id,
+		Time,
+
+		OnSwitchCount,
+		OnWatts,
+		OnPercent,
+
+		OffSwitchCount,
+		OffWatts,
+		OffPercent
+	FROM powerUsage
+	WHERE
+		Time > NOW() - INTERVAL ? HOUR
+	`)
+	if err != nil {
+		log.Error("Failed to get power usage records: preparing query failed: ", err.Error())
+		return nil, err
+	}
+	defer query.Close()
+	res, err := query.Query(maxAgeHours)
+	if err != nil {
+		log.Error("Failed to get power usage records: executing query failed: ", err.Error())
+		return nil, err
+	}
+	// Append the results to the output slice
+	records := make([]PowerDataPoint, 0)
+	for res.Next() {
+		var row PowerDataPoint
+		var rowTime sql.NullTime
+		// Scan the results into the current row
+		if err := res.Scan(
+			// Time + id data
+			&row.Id,
+			&rowTime,
+			// On data
+			&row.On.SwitchCount,
+			&row.On.Watts,
+			&row.On.Percent,
+			// Off data
+			&row.Off.SwitchCount,
+			&row.Off.Watts,
+			&row.Off.Percent,
+		); err != nil {
+			log.Error("Failed to get power usage records: scanning query results failed: ", err.Error())
+			return nil, err
+		}
+		// Validate that the scanned time is valid
+		if !rowTime.Valid {
+			log.Error("Failed to get power usage records: time value is invalid")
+			return nil, fmt.Errorf("Failed to get power usage records: time value is invalid")
+		}
+		// If the time is valid, set it in the actual row
+		row.Time = rowTime.Time
+		// Append the row to the output
+		records = append(records, row)
+	}
+	return records, err
+}
+
+// Deletes power statistics which are older than x hours
+// Also returns the amount of records which have been deleted by this query
+func FlushPowerUsageRecords(olderThanHours uint) (uint, error) {
+	query, err := db.Prepare(`
+	DELETE FROM powerUsage
+	WHERE Time < NOW() - INTERVAL ? HOUR
+	`)
+	if err != nil {
+		log.Error("Failed to flush old power usage records: preparing query failed: ", err.Error())
+		return 0, err
+	}
+	defer query.Close()
+	res, err := query.Exec(olderThanHours)
+	if err != nil {
+		log.Error("Failed to flush old power usage records: executing query failed: ", err.Error())
+		return 0, err
+	}
+	deletedRecords, err := res.RowsAffected()
+	if err != nil {
+		log.Error("Failed to flush old power usage records: obtaining affected rows failed: ", err.Error())
+		return 0, err
+	}
+	return uint(deletedRecords), nil
+}

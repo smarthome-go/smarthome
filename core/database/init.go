@@ -45,6 +45,9 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 	if err := createSwitchTable(); err != nil {
 		return err
 	}
+	if err := createPowerUsageTable(); err != nil {
+		return err
+	}
 	if err := createHasSwitchPermissionTable(); err != nil {
 		return err
 	}
