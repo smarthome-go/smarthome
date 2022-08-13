@@ -1,0 +1,45 @@
+<script lang="ts">
+    import Progress from "../../components/Progress.svelte";
+
+    // Whether the internal progress indicator should be active
+    export let loading = false;
+</script>
+
+<div class="box mdc-elevation--z1">
+    <div class="box__header">
+        <div class="box__header__left">
+            <slot name="header" />
+        </div>
+        <Progress bind:loading type="circular" />
+    </div>
+    <div class="box__content">
+        <slot name="content" />
+    </div>
+</div>
+
+<style lang="scss">
+    .box {
+        width: 30rem;
+        height: 20rem;
+        background-color: var(--clr-height-0-1);
+        border-radius: 0.3rem;
+        overflow: hidden;
+
+        &__header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: var(--clr-height-1-3);
+            padding: 0.7rem 1rem;
+
+            &__left {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+        }
+        &__content {
+            padding: .75rem 1.25rem;
+        }
+    }
+</style>
