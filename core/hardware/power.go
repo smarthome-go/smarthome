@@ -1,6 +1,11 @@
 package hardware
 
-import "github.com/smarthome-go/smarthome/core/database"
+import (
+	"fmt"
+
+	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/event"
+)
 
 // This file's functions are being used for calculating new power usage summaries (which is triggered on every switch power change)
 
@@ -10,7 +15,7 @@ type PowerDrawDataPoint struct {
 }
 
 // Takes a snapshot of the current power states and transforms them into a power data point
-func takeSnapshot() (PowerDrawDataPoint, error) {
+func generateSnapshot() (PowerDrawDataPoint, error) {
 	// Get the current power states
 	powerStates, err := database.GetPowerStates()
 	if err != nil {
@@ -44,8 +49,8 @@ func takeSnapshot() (PowerDrawDataPoint, error) {
 		totalWatts += sw.Watts
 	}
 	// After the on + off data has been calculated, leverage the grand total watt count in order to calculate the individual percent numbers
-	onData.Percent = float64(onData.Watts) / float64(totalWatts)
-	offData.Percent = float64(offData.Watts) / float64(totalWatts)
+	onData.Percent = float64(onData.Watts) / float64(totalWatts) * 100
+	offData.Percent = float64(offData.Watts) / float64(totalWatts) * 100
 
 	// Create a data point from the individual data structs
 	dataPoint := PowerDrawDataPoint{
@@ -53,4 +58,32 @@ func takeSnapshot() (PowerDrawDataPoint, error) {
 		OffData: offData,
 	}
 	return dataPoint, nil
+}
+
+// Takes a snapshot of the current power draw and inserts it into the database
+func SaveCurrentPowerUsage() error {
+	// Generate a snapshot
+	data, err := generateSnapshot()
+	if err != nil {
+		return err
+	}
+	// Insert the snapshot data into the database
+	_, err = database.AddPowerUsagePoint(
+		data.OnData,
+		data.OffData,
+	)
+	return err
+}
+
+// Wrapper around `saveCurrentPowerUsage` which handles errors through logging
+// Is also more verbose than the original function
+func SaveCurrentPowerUsageWithLogs() {
+	log.Trace("Saving snapshot of current power draw...")
+	if err := SaveCurrentPowerUsage(); err != nil {
+		log.Error("Could not save snapshot of current power draw: ", err.Error())
+		event.Error("Power Draw Snapshot Error", fmt.Sprintf("Could not save snapshot of the current power draw: %s", err.Error()))
+		return
+	}
+	event.Debug("Power Draw Snapshot Saved", "A snapshot of the current power draw has been generated and saved in the database")
+	log.Debug("A snapshot of the current power draw has been generated and saved in the database")
 }

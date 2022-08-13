@@ -40,10 +40,9 @@ func GetPowerState(switchId string) (bool, error) {
 	return switchItem.PowerOn, nil
 }
 
-// As setPower, just with additional logs
+// As setPower, just with additional logs and account for taking a snapshot of the power states
 func SetPower(switchId string, powerOn bool) error {
-	err := setPower(switchId, powerOn)
-	if err != nil {
+	if err := setPower(switchId, powerOn); err != nil {
 		go event.Warn(
 			"Hardware Error",
 			fmt.Sprintf("The hardware failed while a user tried to interact with switch '%s': Error: %s",
@@ -53,6 +52,9 @@ func SetPower(switchId string, powerOn bool) error {
 		)
 		return err
 	}
+	// Take a snapshot which includes the power states after the switch has been modified
+	go SaveCurrentPowerUsageWithLogs()
+	// Add event logs that inform about the switch power change
 	if powerOn {
 		go event.Info("Switch Activated", fmt.Sprintf("Switch '%s' was activated", switchId))
 	} else {
