@@ -6,6 +6,7 @@ import { defineConfig } from 'vite'
 export default defineConfig({
     plugins: [svelte()],
     build: {
+        chunkSizeWarningLimit: 515,
         rollupOptions: {
             input: {
                 // Login / logout pages
@@ -28,12 +29,12 @@ export default defineConfig({
             output: {
                 manualChunks: (id: any) => {
                     if (id.includes("node_modules")) {
-                        if (id.includes("@smui")) {
-                            return "vendor_smui";
-                        } else if (id.includes("@material")) {
-                            return "vendor_mui"
+                        if (id.includes("@smui") || id.includes('@material')) {
+                            return "vendor_mui";
                         } else if (id.includes("@lezer") || id.includes("@codemirror")) {
                             return "vendor_codemirror"
+                        } else if (id.includes("chart.js") || id.includes("chartjs-adapter-date-fns") || id.includes("date-fns")) {
+                            return "vendor_chartjs"
                         }
                         return "vendor"; // Remaining chunks end up here
                     }
