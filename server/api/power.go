@@ -79,7 +79,8 @@ func GetPowerStates(w http.ResponseWriter, r *http.Request) {
 // Returns the power draw points from the last 24 hours
 func GetPowerDrawFrom24Hours(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	powerUsageData, err := database.GetPowerUsageRecords(24)
+
+	powerUsageData, err := hardware.GetPowerUsageRecordsUnixMillis(24)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "could not get power usage data from the last 24 hours", Error: "database error"})
