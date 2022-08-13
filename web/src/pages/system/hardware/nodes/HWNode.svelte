@@ -1,5 +1,5 @@
 <script lang="ts">
-    import IconButton, { Icon } from "@smui/icon-button";
+    import IconButton from "@smui/icon-button";
     import Progress from "../../../../components/Progress.svelte";
     import type { hardwareNode } from "../types";
     import { createSnackbar } from "../../../../global";
