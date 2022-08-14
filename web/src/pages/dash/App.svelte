@@ -21,9 +21,5 @@
         justify-content: center;
         flex-wrap: wrap;
         align-content: flex-start;
-
-        height: 100vh;
-        overflow-y: auto;
-        box-sizing: border-box;
     }
 </style>
