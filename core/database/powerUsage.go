@@ -180,3 +180,21 @@ func FlushPowerUsageRecords(olderThanHours uint) (uint, error) {
 	}
 	return uint(deletedRecords), nil
 }
+
+// Deletes a power usage data point given its id
+func DeletePowerUsagePointById(id uint) error {
+	query, err := db.Prepare(`
+	DELETE FROM powerUsage
+	WHERE Id=?
+	`)
+	if err != nil {
+		log.Error("Failed to delete power usage record by id: preparing query failed: ", err.Error())
+		return err
+	}
+	defer query.Close()
+	if _, err := query.Exec(id); err != nil {
+		log.Error("Failed to delete power usage record by id: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}

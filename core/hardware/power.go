@@ -20,6 +20,33 @@ type PowerDrawDataPointUnixMillis struct {
 	Off  database.PowerDrawData `json:"off"`
 }
 
+// Takes a slice of power data points as an input and outputs it whilst filtering the data for semantic and visual imperfections, such as redundant measurements
+func filterPowerData(input []database.PowerDataPoint) (newData []database.PowerDataPoint, iDsToBeDeleted []uint) {
+	// Step 1: filter out redundant measurements
+	// Calculate the length once (for performance)
+	dataPoints := len(input)
+	// Contains the final, filtered data
+	newData = make([]database.PowerDataPoint, 0)
+	// Specifies which ids can be safely deleted from the data set (the filtered out data)
+	iDsToBeDeleted = make([]uint, 0)
+	// Filter out the data
+	for pointIndex, point := range input {
+		// Check if one lookback and one lookahead is possible
+		if /* Lookback is not possible*/ pointIndex-1 < 0 || /* Lookahead is not possible */ pointIndex+1 > dataPoints-1 {
+			newData = append(newData, point)
+			continue
+		}
+		lookback := input[pointIndex-1]
+		lookahead := input[pointIndex+1]
+		if lookback.On.Watts == point.On.Watts && point.On.Watts == lookahead.On.Watts {
+			iDsToBeDeleted = append(iDsToBeDeleted, point.Id)
+			continue
+		}
+		newData = append(newData, point)
+	}
+	return newData, iDsToBeDeleted
+}
+
 // Takes a snapshot of the current power states and transforms them into a power data point
 // Returns `onData`, `offData` and an `error`
 func generateSnapshot() (database.PowerDrawData, database.PowerDrawData, error) {
@@ -76,10 +103,25 @@ func SaveCurrentPowerUsage() error {
 		return err
 	}
 	// Insert the snapshot data into the database
-	_, err = database.AddPowerUsagePoint(
+	if _, err = database.AddPowerUsagePoint(
 		onData,
 		offData,
-	)
+	); err != nil {
+		return err
+	}
+	// Filter the data after the insertion and delete redundant data records
+	powerUsageData, err := database.GetPowerUsageRecords(24)
+	if err != nil {
+		return err
+	}
+	// Delete the redundant records one by one
+	_, toBeDeleted := filterPowerData(powerUsageData)
+	for _, record := range toBeDeleted {
+		if err := database.DeletePowerUsagePointById(record); err != nil {
+			return err
+		}
+		log.Debug(fmt.Sprintf("Deleted redundant power usage data point from dataset. (ID: %d)", record))
+	}
 	return err
 }
 
@@ -103,6 +145,7 @@ func GetPowerUsageRecordsUnixMillis(maxAgeHours uint) ([]PowerDrawDataPointUnixM
 	if err != nil {
 		return nil, err
 	}
+	// Transform the data into a slice which uses the new struct
 	returnValue := make([]PowerDrawDataPointUnixMillis, 0)
 	for _, record := range dbData {
 		returnValue = append(returnValue, PowerDrawDataPointUnixMillis{
