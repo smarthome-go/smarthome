@@ -11,10 +11,10 @@ import (
 // Sets up a scheduler which triggers the flushing of the HMS URL cache every 12 hours
 func StartUrlCacheGC() error {
 	scheduler := gocron.NewScheduler(time.Local)
-	_, err := scheduler.Every(12).Hours().Do(flushUrlCacheScheduleRunner)
-	if err != nil {
+	if _, err := scheduler.Every(12).Hours().Do(flushUrlCacheScheduleRunner); err != nil {
 		return err
 	}
+	scheduler.StartAsync()
 	log.Debug("Successfully started Homescript URL cache GC")
 	return nil
 }
