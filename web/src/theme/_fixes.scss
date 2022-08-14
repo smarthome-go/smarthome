@@ -45,7 +45,7 @@
     color: var(--clr-text) !important;
 }
 
-//
+// Make the FAB's ripple use the primary color
 .mdc-fab {
     --mdc-ripple-color: var(--mdc-theme-on-primary);
 }
@@ -53,7 +53,8 @@
 
 :root {
     // Ripple color
-    --mdc-ripple-color: var(--mdc-theme-primary);
+    // TODO: if this creates problems in the future: they are here
+    //--mdc-ripple-color: var(--mdc-theme-primary);
     .mdc-icon-button { --mdc-ripple-color: var(--clr-text); }
 
     // Segmented button colors
