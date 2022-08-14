@@ -61,6 +61,11 @@ type Executor struct {
 	// Sigterm receiver which is visible to the outside
 	// Any signal will be forwarded to the internal `sigTermPtr`
 	SigTerm chan int
+
+	// Is set to true as soon as a sigTerm is received
+	// Is required and read by the manager's run functions and by HMS `exec` calls
+	// Used in order to determine whether a script has been terminated using a sigTerm or if it exited conventionally
+	WasTerminated bool
 }
 
 // Is used to allow the abort of a running script at any point in time
@@ -80,6 +85,11 @@ func (self *Executor) checkSigTerm() bool {
 			// Because of this, not using a goroutine would invoke a deadlock
 			*self.sigTermInternalPtr <- code
 		}()
+
+		// Set the `WasTerminated` boolean to true
+		// Is required so that the manager's run functions are informed about this script's death cause
+		self.WasTerminated = true
+
 		return true
 	default:
 		return false
@@ -451,7 +461,7 @@ func (self *Executor) httpCancelationMonitor(
 			// If a sigTerm is received whilst waiting for the request to be completed, cancel the request and stop the monitor
 			if self.checkSigTerm() {
 				cancelRequest()
-				fmt.Println("Detected sigTerm while waiting for Homescript http request to be completed: canceling request...")
+				log.Debug("Detected sigTerm while waiting for Homescript http request to be completed: canceling request...")
 				return
 			}
 			time.Sleep(10 * time.Millisecond)
@@ -680,7 +690,7 @@ func (self Executor) Exec(homescriptId string, args map[string]string) (string, 
 	}
 
 	// Execute the target script after the checks
-	output, exitCode, err := HmsManager.RunById(
+	output, exitCode, wasTerminated, err := HmsManager.RunById(
 		homescriptId,
 		self.Username,
 		// The previous CallStack is passed in order to preserve the history
@@ -691,6 +701,11 @@ func (self Executor) Exec(homescriptId string, args map[string]string) (string, 
 		InitiatorExec,
 		self.SigTerm,
 	)
+	// Check if the script was killed using a sigTerm
+	if wasTerminated {
+		self.WasTerminated = true
+		return output, fmt.Errorf("Exec received sigTerm whilst processing Homescript `%s`", homescriptId)
+	}
 	if err != nil {
 		self.Print(fmt.Sprintf("Exec failed: called Homescript failed with exit code %d", exitCode))
 		return output, err

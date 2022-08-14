@@ -85,7 +85,7 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Run the Homescript
-	output, exitCode, hmsErrors := homescript.HmsManager.Run(
+	output, exitCode, _, hmsErrors := homescript.HmsManager.Run(
 		username,
 		request.Id,
 		hmsData.Data.Code,
@@ -173,7 +173,7 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Lint the Homescript
-	output, exitCode, hmsErrors := homescript.HmsManager.Run(
+	output, exitCode, _, hmsErrors := homescript.HmsManager.Run(
 		username,
 		request.Id,
 		hmsData.Data.Code,
@@ -250,7 +250,7 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		args[arg.Key] = arg.Value
 	}
 	// Run the Homescript
-	output, exitCode, hmsErrors := homescript.HmsManager.Run(
+	output, exitCode, _, hmsErrors := homescript.HmsManager.Run(
 		username,
 		"live",
 		request.Code,
@@ -324,7 +324,7 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 		args[arg.Key] = arg.Value
 	}
 	// Lint the Homescript
-	output, exitCode, hmsErrors := homescript.HmsManager.Run(
+	output, exitCode, _, hmsErrors := homescript.HmsManager.Run(
 		username,
 		"lint",
 		request.Code,

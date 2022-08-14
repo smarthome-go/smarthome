@@ -85,7 +85,7 @@ func (m *Manager) Run(
 	callStack []string,
 	initiator HomescriptInitiator,
 	sigTerm chan int,
-) (string, int, []HomescriptError) {
+) (output string, exitCode int, wasTerminated bool, err []HomescriptError) {
 	// Is passed to the executor so that it can forward messages from its own `SigTerm` onto the `sigTermInternalPtr`
 	// Is also passed to `homescript.Run` so that the newly spawned interpreter uses the same channel
 	interpreterSigTerm := make(chan int)
@@ -121,16 +121,18 @@ func (m *Manager) Run(
 		&interpreterSigTerm,
 	)
 
-	// Remove the Job from the jobs list
+	wasTerminated = executor.WasTerminated
+
+	// Remove the Job from the jobs list when this function ends
 	m.removeJob(id)
 
 	// Process outcome
 	if len(hmsErrors) > 0 {
 		log.Debug(fmt.Sprintf("Homescript '%s' ran by user '%s' has terminated: %s", scriptLabel, username, hmsErrors[0].Message))
-		return executor.Output, 1, convertErrors(hmsErrors...)
+		return executor.Output, 1, wasTerminated, convertErrors(hmsErrors...)
 	}
 	log.Debug(fmt.Sprintf("Homescript '%s' ran by user '%s' was executed successfully", scriptLabel, username))
-	return executor.Output, exitCode, make([]HomescriptError, 0)
+	return executor.Output, exitCode, wasTerminated, make([]HomescriptError, 0)
 }
 
 // Executes a given Homescript from the database and returns its output, exit-code and possible error
@@ -142,29 +144,29 @@ func (m *Manager) RunById(
 	arguments map[string]string,
 	initiator HomescriptInitiator,
 	sigTerm chan int,
-) (string, int, error) {
+) (output string, exitCode int, wasTerminated bool, err error) {
 	homescriptItem, hasBeenFound, err := database.GetUserHomescriptById(scriptId, username)
 	if err != nil {
-		return "database error", 500, err
+		return "database error", 500, false, err
 	}
 	if !hasBeenFound {
-		return "not found error", 404, errors.New("Invalid Homescript id: no data associated with id")
+		return "not found error", 404, false, errors.New("Invalid Homescript id: no data associated with id")
 	}
-	output, exitCode, hmsErrors := m.Run(
+	output, exitCode, wasTerminated, hmsErrors := m.Run(
 		username,
 		scriptId,
 		homescriptItem.Data.Code,
 		dryRun,
 		arguments,
-		// The script's id is added to the blacklist
+		// The script's id is added to the callStack (exec blacklist)
 		append(callStack, scriptId),
 		initiator,
 		sigTerm,
 	)
 	if len(hmsErrors) > 0 {
-		return "execution error", exitCode, fmt.Errorf("Homescript terminated with exit code %d: %s", exitCode, hmsErrors[0].Message)
+		return "execution error", exitCode, wasTerminated, fmt.Errorf("Homescript terminated with exit code %d: %s", exitCode, hmsErrors[0].Message)
 	}
-	return output, exitCode, nil
+	return output, exitCode, wasTerminated, nil
 
 }
 

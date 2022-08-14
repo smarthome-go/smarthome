@@ -63,7 +63,7 @@ func scheduleRunnerFunc(id uint) {
 	log.Debug(fmt.Sprintf("Schedule '%d' is executing its target", id))
 	switch job.Data.TargetMode {
 	case database.ScheduleTargetModeCode:
-		_, _, hmsErrors := homescript.HmsManager.Run(
+		_, _, _, hmsErrors := homescript.HmsManager.Run(
 			owner.Username,
 			fmt.Sprintf("%d.hms", id),
 			job.Data.HomescriptCode,
@@ -92,7 +92,7 @@ func scheduleRunnerFunc(id uint) {
 			return
 		}
 	case database.ScheduleTargetModeHMS:
-		_, _, err := homescript.HmsManager.RunById(
+		_, _, _, err := homescript.HmsManager.RunById(
 			job.Data.HomescriptTargetId,
 			owner.Username,
 			make([]string, 0),

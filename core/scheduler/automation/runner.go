@@ -106,7 +106,7 @@ func automationRunnerFunc(id uint) {
 		}
 		return
 	}
-	output, exitCode, err := homescript.HmsManager.RunById(
+	output, exitCode, _, err := homescript.HmsManager.RunById(
 		job.Data.HomescriptId,
 		job.Owner,
 		make([]string, 0),
