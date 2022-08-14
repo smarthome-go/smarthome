@@ -1,6 +1,7 @@
 <script lang="ts">
     import Page from "../../Page.svelte";
     import PowerUsage from "./PowerUsage.svelte";
+    import QuickActions from "./QuickActions/QuickActions.svelte";
     import Weather from "./Weather.svelte";
 </script>
 
@@ -8,7 +9,7 @@
     <div class="dash">
         <PowerUsage />
         <Weather />
-        <Weather />
+        <QuickActions />
     </div>
 </Page>
 

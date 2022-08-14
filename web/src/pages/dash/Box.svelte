@@ -6,7 +6,7 @@
 </script>
 
 <div class="box mdc-elevation--z1">
-    <div class="box__header">
+    <div class="box__header mdc-elevation--z2">
         <div class="box__header__left">
             <slot name="header" />
         </div>
@@ -31,7 +31,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background-color: var(--clr-height-1-3);
+            background-color: var(--clr-height-1-2);
             padding: 0.7rem 1rem;
 
             &__left {
