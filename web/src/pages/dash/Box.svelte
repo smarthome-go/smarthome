@@ -21,6 +21,8 @@
     .box {
         width: 30rem;
         height: 20rem;
+        flex-grow: 1;
+
         background-color: var(--clr-height-0-1);
         border-radius: 0.3rem;
         overflow: hidden;
@@ -39,7 +41,7 @@
             }
         }
         &__content {
-            padding: .75rem 1.25rem;
+            padding: 0.75rem 1.25rem;
         }
     }
 </style>
