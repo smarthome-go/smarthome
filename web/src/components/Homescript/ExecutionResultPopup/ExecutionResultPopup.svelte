@@ -48,7 +48,7 @@
                     </div>
                 </div>
                 <div class="status__group">
-                    {#if !data.response.success}
+                    {#if !data.response.success && data.response.error.length > 0}
                         <div class="status__error">
                             <i class="material-icons">
                                 {#if data.response.error[0].errorType === "SyntaxError"}

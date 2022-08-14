@@ -3,6 +3,7 @@
         homescriptArgSubmit,
         homescriptResponseWrapper,
         homescriptWithArgs,
+        killAllJobsById,
         runHomescriptById,
     } from "../../../homescript";
     import { createSnackbar } from "../../../global";
@@ -10,6 +11,7 @@
     import ExecutionResultPopup from "../../../components/Homescript/ExecutionResultPopup/ExecutionResultPopup.svelte";
     import { createEventDispatcher } from "svelte";
     import Progress from "../../../components/Progress.svelte";
+    import IconButton from "@smui/icon-button";
 
     // Used for dispatching events
     const dispatch = createEventDispatcher();
@@ -55,6 +57,8 @@
                 failure = false;
             }, 1000);
 
+            console.log(hmsRes)
+
             hmsExecutionResults = [
                 ...hmsExecutionResults,
                 {
@@ -97,8 +101,22 @@
     class:success
     class:failure
 >
-    <div class="action__loader">
-        <Progress bind:loading={running} type="circular" />
+    <div class="action__overlay">
+        <div class="action__overlay__cancel" class:hidden={!running}>
+            <IconButton
+                class="material-icons"
+                on:click={(e) => {
+                    e.stopPropagation();
+                    killAllJobsById(data.data.data.id);
+                }}
+                size="button"
+            >
+                cancel
+            </IconButton>
+        </div>
+        <div class="action__overlay__spinner">
+            <Progress bind:loading={running} type="circular" />
+        </div>
     </div>
     <i class="action__icon material-icons">{data.data.data.mdIcon}</i>
     <span class="action__name">
@@ -118,7 +136,7 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: space-evenly;
+        justify-content: center;
         cursor: pointer;
         border: 0.1rem solid transparent;
         position: relative;
@@ -137,11 +155,27 @@
             border-color: var(--clr-error);
         }
 
-        &__loader {
+        &__overlay {
+            width: 100%;
             position: absolute;
-            right: 0;
             top: 0;
-            padding: 0.3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.2rem;
+            box-sizing: border-box;
+
+            &__cancel {
+                color: var(--clr-error);
+                &.hidden {
+                    opacity: 0;
+                    display: none;
+                }
+            }
+
+            :global &__spinner {
+                transform: scale(65%);
+            }
         }
 
         &__icon {
