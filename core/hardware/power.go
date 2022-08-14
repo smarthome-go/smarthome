@@ -2,7 +2,9 @@ package hardware
 
 import (
 	"fmt"
+	"time"
 
+	"github.com/go-co-op/gocron"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
 )
@@ -111,4 +113,15 @@ func GetPowerUsageRecordsUnixMillis(maxAgeHours uint) ([]PowerDrawDataPointUnixM
 		})
 	}
 	return returnValue, err
+}
+
+// Sets up a scheduler which triggers the flushing of old power usage records
+func StartPowerUsageSnapshotScheduler() error {
+	scheduler := gocron.NewScheduler(time.Local)
+	if _, err := scheduler.Every(1).Hours().Do(SaveCurrentPowerUsageWithLogs); err != nil {
+		return err
+	}
+	scheduler.StartAsync()
+	log.Debug("Successfully started power usage snapshot scheduler")
+	return nil
 }

@@ -219,6 +219,9 @@ func main() {
 
 	// Hardware handler
 	hardware.Init()
+	if err := hardware.StartPowerUsageSnapshotScheduler(); err != nil {
+		log.Error("Failed to start periodic power usage snapshot scheduler: ", err.Error())
+	}
 
 	// Server, middleware and routes
 	r := routes.NewRouter()
