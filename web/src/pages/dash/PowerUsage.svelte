@@ -140,7 +140,7 @@
                     // Use the gradient as the background color
                     backgroundColor: gradient,
                     // TODO: tweak this value to make it look the best
-                    lineTension: 0.3,
+                    lineTension: 0.0,
                     // Make the graph's line appear in the user's primary color
                     borderColor: $userData.userData.user.darkTheme
                         ? $userData.userData.user.primaryColorDark
