@@ -153,7 +153,7 @@
 
             .action__icon,
             .action__name {
-                transform: translateY(1rem);
+                transform: translateY(.5rem);
             }
         }
 
