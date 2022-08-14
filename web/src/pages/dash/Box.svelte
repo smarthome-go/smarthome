@@ -10,7 +10,10 @@
         <div class="box__header__left">
             <slot name="header" />
         </div>
-        <Progress bind:loading type="circular" />
+        <div class="box__header__right">
+            <slot name="header-right" />
+            <Progress bind:loading type="circular" />
+        </div>
     </div>
     <div class="box__content">
         <slot name="content" />
@@ -35,6 +38,12 @@
             padding: 0.7rem 1rem;
 
             &__left {
+                // Typography
+                color: var(--clr-text-hint);
+                font-weight: bold;
+            }
+
+            &__right {
                 display: flex;
                 align-items: center;
                 justify-content: space-between;

@@ -38,12 +38,14 @@
 </script>
 
 <Box bind:loading>
-    <div class="header" slot="header">
-        <span class="header__title">Quick Actions</span>
-        <span class="header__count"
-            >{running} Job{running !== 1 ? "s" : ""} running</span
-        >
-    </div>
+    <a href="/homescript" slot="header" class="title">Quick Actions</a>
+    <span slot="header-right" class="job-count">
+        {#if running === 0}
+            Idle
+        {:else}
+            {running} Job{running !== 1 ? "s" : ""} running
+        {/if}
+    </span>
     <div class="actions" slot="content">
         {#if homescriptLoaded && actions.length === 0}
             No Actions create button here
@@ -60,6 +62,15 @@
 </Box>
 
 <style lang="scss">
+    .title {
+        color: var(--clr-primary-hint);
+        font-weight: bold;
+        text-decoration: none;
+    }
+    .job-count {
+        color: var(--clr-text-hint);
+        font-size: 0.8rem;
+    }
     .actions {
         display: flex;
         gap: 0.5rem;

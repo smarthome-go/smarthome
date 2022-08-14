@@ -101,7 +101,7 @@
     class:failure
     use:Ripple={{ surface: !running }}
     on:click={running
-        ? () => $createSnackbar(`Already running`)
+        ? () => $createSnackbar("This action is already running")
         : initCurrentRun}
 >
     <div class="action__overlay">
@@ -130,10 +130,10 @@
 <style lang="scss">
     .action {
         aspect-ratio: 1;
-        height: 5rem;
+        height: 4.55rem;
         width: auto;
         flex-shrink: 1;
-        border-radius: 0.25rem;
+        border-radius: 0.125rem;
         padding: 0.5rem;
         background-color: var(--clr-height-1-3);
         display: flex;
@@ -150,10 +150,11 @@
 
         &.running {
             opacity: 60%;
+            cursor: default;
 
             .action__icon,
             .action__name {
-                transform: translateY(.5rem);
+                transform: translateY(0.6rem);
             }
         }
 
