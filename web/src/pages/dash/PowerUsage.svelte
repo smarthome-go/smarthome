@@ -154,11 +154,11 @@
                     // How wide the point's border should be
                     pointBorderWidth: 1,
                     // Sets the point's default width
-                    pointRadius: 4,
+                    pointRadius: 3.14159265,
                     // Threshold on which `hover` is triggered
                     pointHitRadius: 15,
                     // Widen the point on hover
-                    pointHoverRadius: 7,
+                    pointHoverRadius: 6,
                     // Darken the point's inner color on hover
                     pointHoverBackgroundColor: "#222",
                     // Increment the point's border width on hover
