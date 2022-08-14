@@ -87,6 +87,7 @@
 
     const options: ChartConfiguration = {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
             // @ts-ignore
             legend: {
@@ -127,9 +128,12 @@
 
         // Specify the gradient which is used to fill the area below the graph
         let gradient = ctx.createLinearGradient(0, 0, 0, 400);
-        gradient.addColorStop(0.2, `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.5)`);
-        gradient.addColorStop(0.7, "rgb(0, 0, 100, 0.125)");
-        gradient.addColorStop(1, "rgb(0,  0, 100, 0.03)");
+        gradient.addColorStop(
+            0.125,
+            `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.3)`
+        );
+        gradient.addColorStop(0.65, "rgb(0, 0, 100, 0.125)");
+        //gradient.addColorStop(0.7, "rgb(0,  0, 100, 0.03)");
 
         // Dataset configuration
         let data = {
@@ -207,7 +211,7 @@
 
 <Box bind:loading>
     <span slot="header">Power Usage</span>
-    <div slot="content">
+    <div class="content" slot="content">
         <canvas
             bind:this={chartCanvas}
             class="chart"
@@ -217,9 +221,14 @@
 </Box>
 
 <style lang="scss">
+    .content {
+        // The height is fixed to this value to make it appear nice on most screens
+        height: 15rem;
+    }
     // Chart styling
     .chart {
         background-color: transparent;
+
         &.darkMode {
             background-color: transparent;
         }
