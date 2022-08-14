@@ -21,14 +21,18 @@
 </div>
 
 <style lang="scss">
+    @use "../../_mixins.scss" as *;
+
     .box {
-        width: 30rem;
+        width: 20rem;
+        max-width: 43rem;
         height: 20rem;
         flex-grow: 1;
 
         background-color: var(--clr-height-0-1);
         border-radius: 0.3rem;
-        overflow: hidden;
+        overflow-x: hidden;
+        overflow-y: auto;
 
         &__header {
             display: flex;
@@ -51,6 +55,10 @@
         }
         &__content {
             padding: 0.75rem 1.25rem;
+
+            @include mobile {
+                padding: 0.9rem .9rem;
+            }
         }
     }
 </style>
