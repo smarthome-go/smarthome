@@ -1,40 +1,29 @@
-## Changelog for v0.0.57
+## Changelog for v0.0.58
 
 ### Dashboard
-- Started work on the dashboard
-- Added the first component: a power-usage graph
+- Added *Quick Actions* as a dashboard component
+- Improved the dashboard's reactivity
 
-### System Configuration Page
-- Fixed edit-button label in the hardware-node edit dialog
+#### Power Usage Monitor
+- Added the unit `Watts` to the tooltip label
+- Removed line tension which leads to *more sharp edges*
+- Optimized graph scaling on non-widescreen devices
+- Decreased measurement data point radii
+- Improved the graph's fill gradient to be less dominant
 
-### Homescript
-- Upgraded [Homescript](https://github.com/smarthome-go/homescript/releases/tag/v0.16.0) to `v0.17.0`
-- Then to [`v0.16.0`](https://github.com/smarthome-go/homescript/releases/tag/v0.16.0)
-- Added the `currentWeek` variable the `even` function and the `ping` function
-##### Getting the Current Week
-- Returns the ISO 8601 week number of the current year
-- Ranges from 1 to 53
+### Power Usage Data Collection
+- Added a safety check which prevents errors from happening during the calculation of the power usage
+- This bug could occur if you only had switches which each 'used' `0` Watts
+- Added a scheduler which performs a periodic power usage snapshot (*every hour*)
+- This should help make the graph more accurate and should avoid the generation of misleading slopes
+- Added data filtering and automated improvement of the power usage data points
+- Redundant measurements are now automatically removed from the records
+- This will improve the chart's visuals and will make it more organized (*Easier to spot real changes*)
 
-```python
-print(currentWeek)
-```
+### Server Improvements
+- Fixed non-running HMS URL cache flushing scheduler
+- Fixed a bug in the Homescript runtime environment
+    - When using an `exec` call, termination of the Homescript would not work properly
+    - Only the *inner* Homescript, the `exec` target would get terminated
+    - This issue is now resolved, however `exec` will return an error if terminated
 
-##### Checking if a Number is Even
-- Takes an integer as its input (*floats will be implicitly converted to int*)
-- Checks if the parameter is even and returns an according boolean value
-
-```python
-print(even(1))
-```
-
-##### Performing an ICMP Ping
-- Requires a hostname and a timeout (*in seconds*)
-- Returns a boolean indicating whether the requested host is online or offline
-
-```python
-print(ping('localhost', 0.5))
-```
-
-### Server Backend
-- Added all necessary functions to support the collection of power usage data
-- On every switch's power change, a snapshot of the current power usage is taken and saved into the database
