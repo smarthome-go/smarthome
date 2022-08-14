@@ -76,7 +76,7 @@ func GetValidHomescriptUrlCacheEntries() ([]string, error) {
 	return results, nil
 }
 
-// Returns a boolean indicating whether a spcified entry exists and is still valid
+// Returns a boolean indicating whether a specified entry exists and if it is still valid
 func IsHomescriptUrlCached(urlToGet string) (bool, error) {
 	query, err := db.Prepare(`
 	SELECT 1
