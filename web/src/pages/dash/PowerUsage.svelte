@@ -3,6 +3,7 @@
     import { onMount } from "svelte";
     import { createSnackbar, data as userData } from "../../global";
     import "chartjs-adapter-date-fns";
+
     import {
         Chart,
         Title,
@@ -90,6 +91,14 @@
             // @ts-ignore
             legend: {
                 display: false,
+            },
+            tooltip: {
+                callbacks: {
+                    label: (item: any) =>
+                        `${item.parsed.y} Watt${
+                            item.parsed.y === 1 ? "" : "s"
+                        }`,
+                },
             },
         },
         scales: {
