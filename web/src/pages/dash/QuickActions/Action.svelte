@@ -12,6 +12,7 @@
     import { createEventDispatcher } from "svelte";
     import Progress from "../../../components/Progress.svelte";
     import IconButton from "@smui/icon-button";
+    import Ripple from "@smui/ripple";
 
     // Used for dispatching events
     const dispatch = createEventDispatcher();
@@ -55,9 +56,9 @@
             setTimeout(() => {
                 success = false;
                 failure = false;
-            }, 1000);
+            }, 2000);
 
-            console.log(hmsRes)
+            console.log(hmsRes);
 
             hmsExecutionResults = [
                 ...hmsExecutionResults,
@@ -95,11 +96,13 @@
 
 <div
     class="action mdc-elevation--z3"
-    class:mdc-elevation--z6={running}
-    on:click={initCurrentRun}
     class:running
     class:success
     class:failure
+    use:Ripple={{ surface: !running }}
+    on:click={running
+        ? () => $createSnackbar(`Already running`)
+        : initCurrentRun}
 >
     <div class="action__overlay">
         <div class="action__overlay__cancel" class:hidden={!running}>
@@ -138,21 +141,28 @@
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        border: 0.1rem solid transparent;
         position: relative;
-        transition-property: border-color;
-        transition-duration: 0.5s;
+        user-select: none;
+
+        // Account for the success / failure color transition
+        transition-property: color;
+        transition-duration: 1s;
 
         &.running {
-            background-color: var(--clr-height-1-6);
+            opacity: 60%;
+
+            .action__icon,
+            .action__name {
+                transform: translateY(1rem);
+            }
         }
 
         &.success {
-            border-color: var(--clr-success);
+            color: var(--clr-success);
         }
 
         &.failure {
-            border-color: var(--clr-error);
+            color: var(--clr-error);
         }
 
         &__overlay {
@@ -167,8 +177,9 @@
 
             &__cancel {
                 color: var(--clr-error);
+                z-index: 100;
+
                 &.hidden {
-                    opacity: 0;
                     display: none;
                 }
             }
@@ -179,7 +190,10 @@
         }
 
         &__icon {
-            font-size: 2rem;
+            font-size: 1.7rem;
+            color: var(--clr-text-hint);
+            transition-property: transform;
+            transition-duration: 0.1s;
         }
 
         &__name {
@@ -189,6 +203,8 @@
             text-overflow: ellipsis;
             max-width: calc(100% - 0.5rem);
             overflow: hidden;
+            transition-property: transform;
+            transition-duration: 0.1s;
         }
     }
 </style>
