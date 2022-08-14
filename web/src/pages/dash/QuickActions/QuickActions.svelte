@@ -62,6 +62,8 @@
 </Box>
 
 <style lang="scss">
+    @use "../.././../mixins" as *;
+
     .title {
         color: var(--clr-primary-hint);
         font-weight: bold;
@@ -78,5 +80,12 @@
         align-content: flex-start;
         height: 100%;
         padding: 0.4rem 0.125rem;
+        overflow-y: auto;
+        max-height: 15rem;
+        box-sizing: border-box;
+
+        @include mobile {
+            justify-content: center;
+        }
     }
 </style>

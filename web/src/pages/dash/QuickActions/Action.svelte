@@ -128,10 +128,13 @@
 </div>
 
 <style lang="scss">
+    @use "../../../_mixins.scss" as *;
+
     .action {
         aspect-ratio: 1;
-        height: 4.55rem;
-        width: auto;
+        height: auto;
+        width: 4.58rem;
+        max-width: 5rem;
         flex-shrink: 1;
         border-radius: 0.125rem;
         padding: 0.5rem;
@@ -147,6 +150,10 @@
         // Account for the success / failure color transition
         transition-property: color;
         transition-duration: 1s;
+
+        @include mobile {
+            width: 4.2rem;
+        }
 
         &.running {
             opacity: 60%;
