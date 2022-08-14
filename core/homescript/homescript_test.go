@@ -265,7 +265,7 @@ func TestRun(t *testing.T) {
 		},
 	}
 	for _, test := range table {
-		output, code, errors := HmsManager.Run(
+		output, code, _, errors := HmsManager.Run(
 			"admin",
 			"testing",
 			test.Code,
@@ -320,7 +320,7 @@ func TestRecursion(t *testing.T) {
 		}
 
 		// Run the actual test
-		output, exitCode, err := HmsManager.RunById(
+		output, exitCode, _, err := HmsManager.RunById(
 			"recursive-start",
 			"admin",
 			make([]string, 0),
@@ -368,7 +368,7 @@ func TestRecursion(t *testing.T) {
 		}
 
 		// Run the actual test
-		output2, exitCode, err := HmsManager.RunById(
+		output2, exitCode, _, err := HmsManager.RunById(
 			"normal1",
 			"admin",
 			make([]string, 0),
