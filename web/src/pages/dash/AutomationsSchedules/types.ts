@@ -1,3 +1,9 @@
+export interface automationWrapper {
+    data: automation;
+    hours: number;
+    minutes: number;
+    days: number[];
+}
 
 export interface automation {
     id: number;

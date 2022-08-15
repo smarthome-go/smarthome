@@ -41,8 +41,8 @@
         if (hourDifference > 0) {
             outputText +=
                 hourDifference > 1
-                    ? `${hourDifference} hours`
-                    : `${hourDifference} hour`;
+                    ? `${hourDifference} h`
+                    : `${hourDifference} h`;
         }
 
         if (hourDifference !== 0 && minuteDifference !== 0)
@@ -53,13 +53,13 @@
         } else if (minuteDifference > 0) {
             outputText +=
                 minuteDifference > 1
-                    ? `${minuteDifference} minutes`
-                    : `${minuteDifference} minute`;
+                    ? `${minuteDifference} min`
+                    : `${minuteDifference} min`;
         } else if (minuteDifference < 0) {
             outputText +=
                 minuteDifference + 60 > 1
-                    ? `${minuteDifference + 60} minutes`
-                    : `${minuteDifference + 60} minute`;
+                    ? `${minuteDifference + 60} min`
+                    : `${minuteDifference + 60} min`;
         }
         return outputText;
     }
@@ -105,13 +105,17 @@
 
         &__name {
             font-weight: bold;
+            font-size: 0.9rem;
         }
 
         &__time {
-            font-size: 0.9rem;
+            font-size: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            color: var(--clr-text-hint);
 
             &__until {
-                color: var(--clr-text-hint);
+                font-size: 0.7rem;
             }
         }
     }
