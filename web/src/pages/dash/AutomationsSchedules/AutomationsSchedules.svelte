@@ -2,12 +2,12 @@
     import Box from "../Box.svelte";
     import { createSnackbar } from "../../../global";
     import { onMount } from "svelte";
+    import type { automation, Schedule } from "./types";
 
     let loading = false;
 
     let automations: automation[] = [];
     let automationsLoaded = false;
-
 
     // Fetches the current automations from the server
     async function loadAutomations() {
@@ -40,7 +40,7 @@
             if (res.success !== undefined && !res.success)
                 throw Error(res.error);
             schedules = res;
-            schedulesLoaded = true
+            schedulesLoaded = true;
         } catch (err) {
             $createSnackbar(`Could not load schedules: ${err}`);
         }
@@ -59,8 +59,8 @@
         {automations.length} automations registered.
         <br />
         Disabled {automations.filter((a) => !a.enabled).length}
-        <br>
-        <br>
+        <br />
+        <br />
         {schedules.length} schedules registered.
         <br />
     </div>
