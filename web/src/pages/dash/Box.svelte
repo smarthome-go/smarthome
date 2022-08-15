@@ -55,6 +55,9 @@
         &__content {
             padding: 0.75rem 1.25rem;
 
+            height: 15rem;
+            overflow-y: auto;
+
             @include mobile {
                 padding: 0.9rem 0.9rem;
             }
