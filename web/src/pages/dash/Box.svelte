@@ -24,7 +24,7 @@
     @use "../../_mixins.scss" as *;
 
     .box {
-        width: 20rem;
+        width: 30rem;
         max-width: 43rem;
         height: 20rem;
         flex-grow: 1;
