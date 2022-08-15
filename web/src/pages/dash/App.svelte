@@ -10,11 +10,9 @@
 <Page>
     <div class="dash">
         <PowerUsage />
-        <Weather />
         <QuickActions />
+        <Weather />
         <AutomationsSchedules />
-        <Reminders />
-        <Reminders />
         <Reminders />
         <div class="placeholder" />
         <div class="placeholder" />
