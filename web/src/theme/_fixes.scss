@@ -50,6 +50,7 @@
     --mdc-ripple-color: var(--mdc-theme-on-primary);
 }
 
+// Segmented button ripple color
 .mdc-segmented-button__ripple {
     --mdc-ripple-color: var(--mdc-theme-primary);
 }
@@ -57,8 +58,6 @@
 
 :root {
     // Ripple color
-    // TODO: if this creates problems in the future: they are here
-    //--mdc-ripple-color: var(--mdc-theme-primary);
     .mdc-icon-button { --mdc-ripple-color: var(--clr-text); }
 
     // Segmented button colors
