@@ -5,17 +5,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/event"
 )
 
 func TestSetPower(t *testing.T) {
-	log := logrus.New()
-	log.Level = logrus.FatalLevel
-	InitLogger(log)
-	event.InitLogger(log)
 	if err := initDB(true); err != nil {
 		t.Error(err.Error())
 		return
@@ -127,10 +120,6 @@ func TestSetPower(t *testing.T) {
 }
 
 func TestSetPowerAsync(t *testing.T) {
-	log := logrus.New()
-	log.Level = logrus.FatalLevel
-	InitLogger(log)
-	// event.InitLogger(log)
 	if err := initDB(true); err != nil {
 		t.Error(err.Error())
 		return
