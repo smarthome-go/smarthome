@@ -5,8 +5,8 @@
     export let loading = false;
 </script>
 
-<div class="box mdc-elevation--z1">
-    <div class="box__header mdc-elevation--z2">
+<div class="box mdc-elevation--z2">
+    <div class="box__header mdc-elevation--z3">
         <div class="box__header__left">
             <slot name="header" />
         </div>
@@ -29,7 +29,7 @@
         height: 20rem;
         flex-grow: 1;
 
-        background-color: var(--clr-height-0-1);
+        background-color: var(--clr-height-0-2);
         border-radius: 0.3rem;
         overflow-x: hidden;
         overflow-y: auto;
@@ -38,7 +38,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background-color: var(--clr-height-1-2);
+            background-color: var(--clr-height-2-3);
             padding: 0.7rem 1rem;
 
             &__left {

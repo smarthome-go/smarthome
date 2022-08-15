@@ -95,7 +95,7 @@
 {/if}
 
 <div
-    class="action mdc-elevation--z3"
+    class="action mdc-elevation--z4"
     class:running
     class:success
     class:failure
@@ -138,7 +138,7 @@
         flex-shrink: 1;
         border-radius: 0.125rem;
         padding: 0.5rem;
-        background-color: var(--clr-height-1-3);
+        background-color: var(--clr-height-3-4);
         display: flex;
         flex-direction: column;
         align-items: center;
