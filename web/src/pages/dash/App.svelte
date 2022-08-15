@@ -14,15 +14,22 @@
         <QuickActions />
         <AutomationsSchedules />
         <Reminders />
+        <Reminders />
+        <Reminders />
+        <div class="placeholder" />
+        <div class="placeholder" />
     </div>
 </Page>
 
 <style lang="scss">
+    .placeholder {
+        flex-grow: 1;
+        width: 30rem;
+    }
     .dash {
         padding: 1.5rem 2rem;
         display: flex;
-        gap: 1.5rem;
         flex-wrap: wrap;
-        align-content: flex-start;
+        gap: 1.5rem;
     }
 </style>

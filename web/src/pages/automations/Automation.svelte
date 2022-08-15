@@ -1,5 +1,5 @@
 <script lang="ts">
-    import IconButton from "@smui/icon-button/src/IconButton.svelte";
+    import IconButton from "@smui/icon-button";
     import { createEventDispatcher, onMount } from "svelte";
     import { createSnackbar, sleep } from "../../global";
     import AutomationInfo from "./dialogs/AutomationInfo.svelte";

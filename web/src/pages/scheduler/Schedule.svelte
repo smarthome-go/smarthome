@@ -35,7 +35,7 @@
     let timeRunning = false;
     let timeUntilString = "";
 
-    // Recursive function which updates the `timeUntilString` every 100ms
+    // Recursive function which updates the `timeUntilString` every 1000ms
     function updateTimeUntilExecutionText() {
         timeUntilString = timeUntilExecutionText(
             new Date(),

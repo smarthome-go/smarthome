@@ -25,7 +25,6 @@
 
     .box {
         width: 30rem;
-        max-width: 43rem;
         height: 20rem;
         flex-grow: 1;
 
@@ -57,7 +56,7 @@
             padding: 0.75rem 1.25rem;
 
             @include mobile {
-                padding: 0.9rem .9rem;
+                padding: 0.9rem 0.9rem;
             }
         }
     }
