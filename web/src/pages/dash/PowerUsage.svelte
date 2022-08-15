@@ -18,8 +18,9 @@
         BarController,
         BarElement,
         Filler,
-        ChartConfiguration,
     } from "chart.js";
+
+    import type {ChartConfiguration} from 'chart.js'
 
     // Register all chart modules
     Chart.register(

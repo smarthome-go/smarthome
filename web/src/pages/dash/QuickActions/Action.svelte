@@ -1,10 +1,9 @@
 <script lang="ts">
-    import {
+    import { killAllJobsById, runHomescriptById } from "../../../homescript";
+    import type {
         homescriptArgSubmit,
         homescriptResponseWrapper,
         homescriptWithArgs,
-        killAllJobsById,
-        runHomescriptById,
     } from "../../../homescript";
     import { createSnackbar } from "../../../global";
     import HmsArgumentPrompts from "../../../components/Homescript/ArgumentPrompts/HmsArgumentPrompts.svelte";

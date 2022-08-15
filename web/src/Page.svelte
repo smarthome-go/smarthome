@@ -1,44 +1,45 @@
 <script lang="ts">
-    import type { KitchenComponentDev } from '@smui/snackbar/kitchen'
-    import Kitchen,{ ConfigAction } from '@smui/snackbar/kitchen'
-    import NavBar from './components/NavBar.svelte'
-    import { contrast,createSnackbar,data } from './global'
+    import type { KitchenComponentDev } from "@smui/snackbar/kitchen";
+    import Kitchen from "@smui/snackbar/kitchen";
+    import type { ConfigAction } from "@smui/snackbar/kitchen";
+    import NavBar from "./components/NavBar.svelte";
+    import { contrast, createSnackbar, data } from "./global";
 
     $: document.documentElement.classList.toggle(
-        'light-theme',
+        "light-theme",
         !$data.userData.user.darkTheme
-    )
+    );
     $: if ($data.loaded) {
         document.documentElement.style.setProperty(
-            '--clr-primary-dark',
+            "--clr-primary-dark",
             $data.userData.user.primaryColorDark
-        )
+        );
         document.documentElement.style.setProperty(
-            '--clr-primary-light',
+            "--clr-primary-light",
             $data.userData.user.primaryColorLight
-        )
+        );
         document.documentElement.style.setProperty(
-            '--clr-on-primary-dark',
-            contrast($data.userData.user.primaryColorDark) === 'black'
-                ? '#121212'
-                : '#ffffff'
-        )
+            "--clr-on-primary-dark",
+            contrast($data.userData.user.primaryColorDark) === "black"
+                ? "#121212"
+                : "#ffffff"
+        );
         document.documentElement.style.setProperty(
-            '--clr-on-primary-light',
-            contrast($data.userData.user.primaryColorLight) === 'black'
-                ? '#121212'
-                : '#ffffff'
-        )
+            "--clr-on-primary-light",
+            contrast($data.userData.user.primaryColorLight) === "black"
+                ? "#121212"
+                : "#ffffff"
+        );
     }
 
-    let kitchen: KitchenComponentDev
+    let kitchen: KitchenComponentDev;
     $createSnackbar = (message: string, actions?: ConfigAction[]) => {
         kitchen.push({
             label: message,
             dismissButton: true,
             actions,
-        })
-    }
+        });
+    };
 </script>
 
 <svelte:head>
@@ -53,7 +54,7 @@
 <Kitchen bind:this={kitchen} dismiss$class="material-icons" />
 
 <style lang="scss">
-    @use './mixins' as *;
+    @use "./mixins" as *;
 
     main {
         margin-left: 5.125rem;

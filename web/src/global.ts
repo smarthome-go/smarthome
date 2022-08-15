@@ -1,5 +1,6 @@
 import type { ConfigAction } from '@smui/snackbar/kitchen'
-import { get, Writable, writable } from 'svelte/store'
+import { get, writable } from 'svelte/store'
+import type {Writable} from 'svelte/store'
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 export const createSnackbar: Writable<(message: string, actions?: ConfigAction[]) => void> = writable(() => { })
