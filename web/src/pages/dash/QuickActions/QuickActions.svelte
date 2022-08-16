@@ -4,6 +4,8 @@
     import type { homescriptWithArgs } from "../../../homescript";
     import { onMount } from "svelte";
     import Action from "./Action.svelte";
+    import Button from "@smui/button/src/Button.svelte";
+    import { Label } from "@smui/button";
 
     let loading = false;
 
@@ -48,7 +50,15 @@
     </span>
     <div class="actions" slot="content">
         {#if homescriptLoaded && actions.length === 0}
-            No Actions create button here
+            <div class="actions__empty">
+                <span class="actions__empty__title">No Quick Actions</span>
+                <span class="text-hint">
+                    There are currently no Homescript quick-actions.
+                </span>
+                <Button variant="outlined">
+                    <Label>Create</Label>
+                </Button>
+            </div>
         {:else}
             {#each actions as data}
                 <Action
@@ -63,7 +73,6 @@
 
 <style lang="scss">
     @use "../.././../mixins" as *;
-
     .title {
         color: var(--clr-primary-hint);
         font-weight: bold;
@@ -86,6 +95,17 @@
 
         @include mobile {
             justify-content: center;
+        }
+
+        &__empty {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+
+            &__title {
+                font-weight: bold;
+            }
         }
     }
 </style>
