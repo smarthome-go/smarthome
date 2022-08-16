@@ -50,7 +50,7 @@ func fetchWeather() (owm.CurrentWeatherData, error) {
 		return owm.CurrentWeatherData{}, err
 	}
 	// Check if the weather list contains at least 1 item
-	if len(*&w.Weather) == 0 {
+	if len(w.Weather) == 0 {
 		return owm.CurrentWeatherData{}, ErrLenWeather0
 	}
 	return *w, nil
@@ -73,7 +73,7 @@ func GetCurrentWeather() (WeatherMeasurement, error) {
 		return WeatherMeasurement{}, err
 	}
 	newLabel := freshData.Weather[0].Main
-	newDescription := freshData.Weather[0].Main
+	newDescription := freshData.Weather[0].Description
 	// Insert the new record into the datbase
 	id, err := database.AddWeatherDataRecord(
 		newLabel,
