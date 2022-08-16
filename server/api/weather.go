@@ -15,7 +15,7 @@ type newApiKeyRequest struct {
 
 func GetWeather(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	res, err := weather.GetWeather()
+	res, err := weather.GetCurrentWeather()
 	if err != nil {
 		if err.Error() == "invalid api key" {
 			w.WriteHeader(http.StatusPaymentRequired)
