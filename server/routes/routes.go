@@ -193,6 +193,11 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/reminder/modify", mdl.ApiAuth(mdl.Perm(api.ModifyReminder, database.PermissionReminder))).Methods("PUT")
 	r.HandleFunc("/api/reminder/delete", mdl.ApiAuth(mdl.Perm(api.DeleteReminder, database.PermissionReminder))).Methods("DELETE")
 
+	// Weather
+	r.HandleFunc("/api/weather/key/test", mdl.ApiAuth(mdl.Perm(api.TestOpenWeatherMapApiKey, database.PermissionSystemConfig))).Methods("PUT")
+	r.HandleFunc("/api/weather/key/modify", mdl.ApiAuth(mdl.Perm(api.UpdateOpenWeatherMapApiKey, database.PermissionSystemConfig))).Methods("PUT")
+	r.HandleFunc("/api/weather", mdl.ApiAuth(mdl.Perm(api.GetWeather, database.PermissionSystemConfig))).Methods("GET")
+
 	// System Configuration
 	r.HandleFunc("/api/automation/state/global", mdl.ApiAuth(mdl.Perm(api.ChangeActivationAutomation, database.PermissionSystemConfig))).Methods("PUT")
 	r.HandleFunc("/api/homescript/cache/flush", mdl.ApiAuth(mdl.Perm(api.ClearHomescriptURLCache, database.PermissionSystemConfig))).Methods("DELETE")
