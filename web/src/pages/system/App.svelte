@@ -30,12 +30,14 @@
     let config: systemConfig = {
         automationEnabled: false,
         lockDownMode: false,
+        openWeatherMapApiKey: "",
         latitude: 0.0,
         longitude: 0.0,
     };
 
     let latitudeInput = 0.0;
     let longitudeInput = 0.0;
+    let owmInput = "";
 
     async function fetchConfig() {
         loading = true;
@@ -44,10 +46,32 @@
             if (res.success !== undefined && !res.success)
                 throw Error(res.error);
             config = res;
+            owmInput = res.openWeatherMapApiKey;
             latitudeInput = res.latitude;
             longitudeInput = res.longitude;
         } catch (err) {
             $createSnackbar(`Failed to load system configuration: ${err}`);
+        }
+        loading = false;
+    }
+
+    async function updateOWMKey() {
+        loading = true;
+        try {
+            const res = await (
+                await fetch("/api/weather/key/modify", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        key: owmInput,
+                    }),
+                })
+            ).json();
+            if (res.success !== undefined && !res.success)
+                throw Error(res.error);
+            config.openWeatherMapApiKey = owmInput;
+        } catch (err) {
+            $createSnackbar(`Failed to update OpenWeatherMap API key: ${err}`);
         }
         loading = false;
     }
@@ -157,9 +181,9 @@
                         <Icon class="material-icons">help</Icon>
                     </IconButton>
                     <IconButton
-                        class='material-icons'
+                        class="material-icons"
                         title="Reset"
-                        size='button'
+                        size="button"
                         on:click={() => {
                             latitudeInput = config.latitude;
                             longitudeInput = config.longitude;
@@ -209,6 +233,27 @@
                         </Textfield>
                     </div>
                 </div>
+            </div>
+            <div class="owm">
+                <div class="owm__title">
+                    <h6>Open Weather Map</h6>
+                    <Button
+                        on:click={updateOWMKey}
+                        disabled={config.openWeatherMapApiKey === owmInput}
+                    >
+                        <Label>Save</Label>
+                        <Icon class="material-icons">save</Icon>
+                    </Button>
+                </div>
+                <Textfield
+                    bind:value={owmInput}
+                    label="API Key"
+                    type="password"
+                >
+                    <HelperText slot="helper"
+                        >Your OWM API Key for weather data</HelperText
+                    >
+                </Textfield>
             </div>
             <div class="automation">
                 <h6>Automation</h6>
@@ -294,7 +339,6 @@
         flex-direction: column;
         display: flex;
         gap: 1rem;
-        height: calc(100vh - 63px);
 
         @include widescreen {
             height: calc(100vh - 60px);
@@ -302,7 +346,6 @@
         }
 
         @include mobile {
-            height: calc(100vh - 48px - 3.5rem);
             padding: 1rem;
         }
 
@@ -345,6 +388,21 @@
                 }
             }
 
+            .owm {
+                &__title {
+                    display: flex;
+                    align-items: center;
+
+                    h6 {
+                        margin: 0;
+                    }
+
+                    :global &__help {
+                        color: var(--clr-text-disabled);
+                    }
+                }
+            }
+
             .automation {
                 &__label {
                     display: flex;
@@ -374,13 +432,14 @@
         #hardware {
             background-color: var(--clr-height-0-1);
             border-radius: 0.4rem;
-            height: 35%;
             width: 100%;
             overflow-y: auto;
+            padding-bottom: 1rem;
 
             @include widescreen {
                 height: 100%;
                 width: 40%;
+                padding-bottom: 0;
             }
 
             @include mobile {
