@@ -35,7 +35,7 @@ func createWeatherTable() error {
 	return nil
 }
 
-func GetWeatherDataRecords(maxAgeHours uint) ([]WeatherMeasurement, error) {
+func GetWeatherDataRecords(maxAgeMinutes uint) ([]WeatherMeasurement, error) {
 	query, err := db.Prepare(`
 	SELECT
 		Id,
@@ -47,14 +47,14 @@ func GetWeatherDataRecords(maxAgeHours uint) ([]WeatherMeasurement, error) {
 		Humidity
 	From weather
 	WHERE
-		Time > NOW() - INTERVAL ? HOUR
+		Time > NOW() - INTERVAL ? MINUTE
 	`)
 	if err != nil {
 		log.Error("Failed to get weather data records: preparing query failed: ", err.Error())
 		return nil, err
 	}
 	defer query.Close()
-	res, err := query.Query(maxAgeHours)
+	res, err := query.Query(maxAgeMinutes)
 	if err != nil {
 		log.Error("Failed to get weather data records: executing failed: ", err.Error())
 		return nil, err
