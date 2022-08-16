@@ -9,6 +9,7 @@
     } from "./types";
     import Schedule from "./Schedule.svelte";
     import Automation from "./Automation.svelte";
+    import Button, { Label } from "@smui/button";
 
     let loading = false;
 
@@ -109,29 +110,54 @@
     <span slot="header">Schedules and Automations</span>
     <div class="content" slot="content">
         <div class="content__automations">
-            <span class="content__automations__title">
-                {automationsToday.length} Automation{automationsToday.length !==
-                1
-                    ? "s"
-                    : ""}
-                (Upcoming)
-            </span>
-            <div class="content__automations__list">
-                {#each automationsToday as data}
-                    <Automation bind:data />
-                {/each}
-            </div>
+            {#if automationsLoaded && automations.length === 0}
+                <div class="content__automations__empty">
+                    <span class="content__automations__empty__title">
+                        No Automations
+                    </span>
+                    <span class="text-hint"> No automations running Today </span>
+                    <Button variant="outlined" href='/automations'>
+                        <Label>Create</Label>
+                    </Button>
+                </div>
+            {:else}
+                <span class="content__automations__title">
+                    {automationsToday.length} Automation{automationsToday.length !==
+                    1
+                        ? "s"
+                        : ""}
+                    (Upcoming)
+                </span>
+                <div class="content__automations__list">
+                    {#each automationsToday as data}
+                        <Automation bind:data />
+                    {/each}
+                </div>
+            {/if}
         </div>
         <div class="content__schedules">
-            <span class="content__schedules__title">
-                {schedules.length} Schedule{schedules.length !== 1 ? "s" : ""} (Planned)
-            </span>
-
-            <div class="content__schedules__list">
-                {#each schedules as data}
-                    <Schedule bind:data />
-                {/each}
-            </div>
+            {#if schedulesLoaded && schedules.length === 0}
+                <div class="content__schedules__empty">
+                    <span class="content__schedules__empty__title">
+                        No Schedules
+                    </span>
+                    <span class="text-hint">Nothing planned soon</span>
+                    <Button variant="outlined" href='/scheduler'>
+                        <Label>Plan</Label>
+                    </Button>
+                </div>
+            {:else}
+                <span class="content__schedules__title">
+                    {schedules.length} Schedule{schedules.length !== 1
+                        ? "s"
+                        : ""} (Planned)
+                </span>
+                <div class="content__schedules__list">
+                    {#each schedules as data}
+                        <Schedule bind:data />
+                    {/each}
+                </div>
+            {/if}
         </div>
     </div>
 </Box>
@@ -143,6 +169,22 @@
 
         &__automations {
             width: 50%;
+
+            &__empty {
+                margin-top: 0.8rem;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+
+                &__title {
+                    font-weight: bold;
+                }
+
+                .text-hint {
+                    font-size: 0.9rem;
+                    margin-bottom: 0.8rem;
+                }
+            }
 
             &__title {
                 color: var(--clr-text-hint);
@@ -160,6 +202,22 @@
 
         &__schedules {
             width: 50%;
+
+            &__empty {
+                margin-top: 0.8rem;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+
+                &__title {
+                    font-weight: bold;
+                }
+
+                .text-hint {
+                    font-size: 0.9rem;
+                    margin-bottom: 0.8rem;
+                }
+            }
 
             &__title {
                 color: var(--clr-text-hint);
