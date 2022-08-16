@@ -107,11 +107,11 @@
 
         &__export {
             background-color: var(--clr-height-1-3);
-            padding: 1rem 1.5rem;
+            padding: .9rem 1.5rem;
             border-radius: 0.2rem;
 
             @include widescreen {
-                min-height: 8rem;
+                min-height: 7rem;
             }
 
             &__description {
@@ -125,11 +125,11 @@
         }
         &__import {
             background-color: var(--clr-height-1-3);
-            padding: 1rem 1.5rem;
+            padding: .9rem 1.5rem;
             border-radius: 0.2rem;
 
             @include widescreen {
-                min-height: 8rem;
+                min-height: 7rem;
             }
 
             &__description {
