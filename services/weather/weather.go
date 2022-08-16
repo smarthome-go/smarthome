@@ -73,7 +73,7 @@ func GetCurrentWeather() (WeatherMeasurement, error) {
 	}
 	newLabel := freshData.Weather[0].Main
 	newDescription := freshData.Weather[0].Description
-	// Insert the new record into the datbase
+	// Insert the new record into the database
 	id, err := database.AddWeatherDataRecord(
 		newLabel,
 		newDescription,
