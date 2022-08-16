@@ -10,7 +10,7 @@ import (
 )
 
 type newApiKeyRequest struct {
-	Key string `json:"string"`
+	Key string `json:"key"`
 }
 
 func GetWeather(w http.ResponseWriter, r *http.Request) {
