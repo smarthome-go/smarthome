@@ -7,27 +7,26 @@ import (
 	"github.com/smarthome-go/smarthome/core/database"
 )
 
-func GetWeather() error {
+func GetWeather() (owm.CurrentWeatherData, error) {
 	// Retrieve the server configuration
 	config, found, err := database.GetServerConfiguration()
 	if err != nil {
-		return err
+		return owm.CurrentWeatherData{}, err
 	}
 	if !found {
-		return fmt.Errorf("server configuration not found")
+		return owm.CurrentWeatherData{}, fmt.Errorf("server configuration not found")
 	}
+	fmt.Println(config.OpenWeatherMapApiKey)
 	// Get the current weather
-	w, err := owm.NewCurrent("C", "en", "")
+	w, err := owm.NewCurrent("C", "en", config.OpenWeatherMapApiKey)
 	if err != nil {
-		fmt.Println(err.Error())
-		return err
+		return owm.CurrentWeatherData{}, err
 	}
-	w.CurrentByCoordinates(&owm.Coordinates{
+	if err := w.CurrentByCoordinates(&owm.Coordinates{
 		Longitude: float64(config.Longitude),
 		Latitude:  float64(config.Latitude),
-	})
-
-	fmt.Println(w)
-
-	return nil
+	}); err != nil {
+		return owm.CurrentWeatherData{}, err
+	}
+	return *w, nil
 }

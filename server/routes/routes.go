@@ -196,7 +196,7 @@ func NewRouter() *mux.Router {
 	// Weather
 	r.HandleFunc("/api/weather/key/test", mdl.ApiAuth(mdl.Perm(api.TestOpenWeatherMapApiKey, database.PermissionSystemConfig))).Methods("PUT")
 	r.HandleFunc("/api/weather/key/modify", mdl.ApiAuth(mdl.Perm(api.UpdateOpenWeatherMapApiKey, database.PermissionSystemConfig))).Methods("PUT")
-	r.HandleFunc("/api/weather", mdl.ApiAuth(mdl.Perm(api.GetWeather, database.PermissionSystemConfig))).Methods("GET")
+	r.HandleFunc("/api/weather", mdl.ApiAuth(api.GetWeather)).Methods("GET")
 
 	// System Configuration
 	r.HandleFunc("/api/automation/state/global", mdl.ApiAuth(mdl.Perm(api.ChangeActivationAutomation, database.PermissionSystemConfig))).Methods("PUT")
