@@ -64,7 +64,6 @@ func GetCurrentWeather() (WeatherMeasurement, error) {
 	}
 	// If there is already a cached version available, return the latest one
 	if len(cached) > 0 {
-		fmt.Println(cached[0].Id)
 		return transformWeatherStruct(cached[0]), nil
 	}
 	// Otherwise, new data must be fetched and inserted into the database
