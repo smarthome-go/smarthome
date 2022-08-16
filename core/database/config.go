@@ -21,7 +21,7 @@ func createConfigTable() error {
 		Id						INT PRIMARY KEY,
 		AutomationEnabled		BOOLEAN DEFAULT TRUE,
 		LockDownMode BOOLEAN	DEFAULT FALSE,
-		OpenWeatherMapApiKey	TEXT DEFAULT "",
+		OpenWeatherMapApiKey	VARCHAR(64) DEFAULT "",
 		Latitude FLOAT(32)		DEFAULT 0.0,
 		Longitude FLOAT(32)		DEFAULT 0.0
 	)`)
