@@ -1,10 +1,12 @@
-import { writable, Writable } from 'svelte/store'
+import { writable } from 'svelte/store'
+import type { Writable } from 'svelte/store'
 import App from './App.svelte'
 import "@fontsource/jetbrains-mono";
 
 export interface systemConfig {
     automationEnabled: boolean,
     lockDownMode: boolean,
+    openWeatherMapApiKey: string,
     latitude: number,
     longitude: number
 }
