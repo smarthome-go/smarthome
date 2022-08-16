@@ -55,7 +55,7 @@
                 <span class="text-hint">
                     There are currently no Homescript quick-actions.
                 </span>
-                <Button variant="outlined">
+                <Button variant="outlined" href='/homescript'>
                     <Label>Create</Label>
                 </Button>
             </div>
