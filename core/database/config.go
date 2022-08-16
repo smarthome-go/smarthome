@@ -5,10 +5,11 @@ import (
 )
 
 type ServerConfig struct {
-	AutomationEnabled bool    `json:"automationEnabled"` // Sets the global state of the server's automation system
-	LockDownMode      bool    `json:"lockDownMode"`      // If enabled, the server is unable to change power states and will not allow power actions
-	Latitude          float32 `json:"latitude"`          // Specifies the physical location of the Smarthome server
-	Longitude         float32 `json:"longitude"`         // Latitude and longitude are being used for calculating the sunset / sunrise times and for OpenWeatherMap's weather service
+	AutomationEnabled    bool    `json:"automationEnabled"`    // Sets the global state of the server's automation system
+	LockDownMode         bool    `json:"lockDownMode"`         // If enabled, the server is unable to change power states and will not allow power actions
+	OpenWeatherMapApiKey string  `json:"openWeatherMapApiKey"` // Specifies the OpenWeatherMap API key
+	Latitude             float32 `json:"latitude"`             // Specifies the physical location of the Smarthome server
+	Longitude            float32 `json:"longitude"`            // Latitude and longitude are being used for calculating the sunset / sunrise times and for OpenWeatherMap's weather service
 }
 
 // Creates the table that contains the server configuration
@@ -17,11 +18,12 @@ func createConfigTable() error {
 	CREATE TABLE
 	IF NOT EXISTS
 	configuration(
-		Id INT PRIMARY KEY,
-		AutomationEnabled BOOLEAN DEFAULT TRUE,
-		LockDownMode BOOLEAN DEFAULT FALSE,
-		Latitude FLOAT(32) DEFAULT 0.0,
-		Longitude FLOAT(32) DeFAULT 0.0
+		Id						INT PRIMARY KEY,
+		AutomationEnabled		BOOLEAN DEFAULT TRUE,
+		LockDownMode BOOLEAN	DEFAULT FALSE,
+		OpenWeatherMapApiKey	TEXT DEFAULT "",
+		Latitude FLOAT(32)		DEFAULT 0.0,
+		Longitude FLOAT(32)		DEFAULT 0.0
 	)`)
 	if err != nil {
 		log.Error("Failed to create server configuration table: executing query failed: ", err.Error())
@@ -57,6 +59,7 @@ func GetServerConfiguration() (ServerConfig, bool, error) {
 	SELECT
 		AutomationEnabled,
 		LockDownMode,
+		OpenWeatherMapApiKey,
 		Latitude,
 		Longitude
 	FROM configuration
@@ -64,6 +67,7 @@ func GetServerConfiguration() (ServerConfig, bool, error) {
 	`).Scan(
 		&config.AutomationEnabled,
 		&config.LockDownMode,
+		&config.OpenWeatherMapApiKey,
 		&config.Latitude,
 		&config.Longitude,
 	); err != nil {
@@ -84,6 +88,7 @@ func SetServerConfiguration(config ServerConfig) error {
 	SET
 		AutomationEnabled=?,
 		LockDownMode=?,
+		OpenWeatherMapApiKey=?,
 		Latitude=?,
 		Longitude=?
 	WHERE Id=0
@@ -96,6 +101,7 @@ func SetServerConfiguration(config ServerConfig) error {
 	if _, err := query.Exec(
 		config.AutomationEnabled,
 		config.LockDownMode,
+		config.OpenWeatherMapApiKey,
 		config.Latitude,
 		config.Longitude,
 	); err != nil {
@@ -161,6 +167,26 @@ func UpdateLocation(lat float32, lon float32) error {
 	defer query.Close()
 	if _, err := query.Exec(lat, lon); err != nil {
 		log.Error("Failed to update the servers location: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}
+
+// Changes the server's Open Weather Map API Key
+func UpdateOpenWeatherMapApiKey(newKey string) error {
+	query, err := db.Prepare(`
+	UPDATE configuration
+	SET
+		OpenWeatherMapApiKey=?
+	WHERE Id=0
+	`)
+	if err != nil {
+		log.Error("Failed to update the servers OpenWeatherMap API Key: preparing query failed: ", err.Error())
+		return err
+	}
+	defer query.Close()
+	if _, err := query.Exec(newKey); err != nil {
+		log.Error("Failed to update the servers OpenWeatherMap API Key: executing query failed: ", err.Error())
 		return err
 	}
 	return nil
