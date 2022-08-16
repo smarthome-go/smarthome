@@ -3,16 +3,18 @@
     import { createSnackbar } from "../../global";
     import { onMount } from "svelte";
 
-    const iconMap = {
-        "clear sky": ["clear_day", "clear_night"],
+    const mainIcons = {
+        Clear: ["cleary_day", "clear_night"],
+        Rain: ["rain", "rain"],
+        Clouds: ["cloud", "cloud"],
+        Snow: ["ac_unit", "ac_unit"],
+        Thunderstorm: ["thunderstorm", "thunderstorm"],
+        Drizzle: ["cloudy_snowing", "cloudy_snowing"],
+    };
+
+    const descriptionIcons = {
         "few clouds": ["partly_cloudy_day", "partly_cloudy_night"],
         "scattered clouds": ["cloud", "cloud"],
-        "broken clouds": ["filter_drama", "filter_drama"],
-        "shower rain": ["cloudy_snowing", "cloudy_snowing"],
-        rain: ["rain", "rain"],
-        thunderstorm: ["thunderstorm", "thunderstorm"],
-        snow: ["ac_unit", "ac_unit"],
-        unknown: ["pending", "pending"],
     };
 
     let loading = false;
@@ -61,9 +63,13 @@
     <span slot="header">Weather</span>
     <div class="weather" slot="content">
         <div class="weather__top">
-            <i class="material-icons weather__top__icon"
-                >{iconMap[data.weatherDescription][0]}</i
-            >
+            {#if loaded}
+                <i class="material-icons weather__top__icon">
+                    {descriptionIcons[data.weatherDescription] !== undefined
+                        ? descriptionIcons[data.weatherDescription][0]
+                        : mainIcons[data.weatherTitle][0]}
+                </i>
+            {/if}
             <div class="weather__top__labels">
                 <div class="weather__top__labels__title">
                     {data.weatherTitle}
@@ -74,14 +80,23 @@
             </div>
         </div>
         <div class="weather__measurements">
-            <div class="weather__measurements__temperature">
-                {data.temperature} °C
+            <div class="weather__measurements__measurement">
+                <div class="weather__measurements__temperature">
+                    {Math.round(data.temperature)}°C
+                </div>
+                <span class="text-hint">Temperature</span>
             </div>
-            <div class="weather__measurements__feels-like">
-                {data.feelsLike} °C
+            <div class="weather__measurements__measurement">
+                <div class="weather__measurements__feels-like">
+                    {Math.round(data.feelsLike)}°C
+                </div>
+                <span class="text-hint">Feels Like</span>
             </div>
-            <div class="weather__measurements__humidity">
-                {data.humidity}
+            <div class="weather__measurements__measurement">
+                <div class="weather__measurements__humidity">
+                    {data.humidity}%
+                </div>
+                <span class="text-hint">Humidity</span>
             </div>
         </div>
     </div>
@@ -92,7 +107,7 @@
         &__top {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 1.5rem;
 
             &__icon {
                 font-size: 4rem;
@@ -110,7 +125,17 @@
             }
         }
         &__measurements {
+            margin-top: 1rem;
             display: flex;
+            gap: 2rem;
+
+            &__measurement {
+                font-size: 1.1rem;
+
+                .text-hint {
+                    font-size: 0.8rem;
+                }
+            }
         }
     }
 </style>
