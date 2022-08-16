@@ -108,6 +108,7 @@
             display: flex;
             align-items: center;
             gap: 1.5rem;
+            height: 4rem;
 
             &__icon {
                 font-size: 4rem;
