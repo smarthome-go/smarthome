@@ -3,6 +3,7 @@ module github.com/smarthome-go/smarthome
 go 1.18
 
 require (
+	github.com/briandowns/openweathermap v0.18.0
 	github.com/go-co-op/gocron v1.16.2
 	github.com/go-ping/ping v1.1.0
 	github.com/go-sql-driver/mysql v1.6.0
@@ -21,7 +22,6 @@ require (
 )
 
 require (
-	github.com/briandowns/openweathermap v0.18.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
