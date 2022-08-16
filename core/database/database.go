@@ -72,6 +72,7 @@ func DeleteTables() error {
 		"DROP TABLE IF EXISTS switch",
 		"DROP TABLE IF EXISTS user",
 		"DROP TABLE IF EXISTS userToken",
+		"DROP TABLE IF EXISTS weather",
 		"SET FOREIGN_KEY_CHECKS = 1",
 	}
 	for _, query := range queries {
