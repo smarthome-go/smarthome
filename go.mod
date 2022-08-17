@@ -3,7 +3,7 @@ module github.com/smarthome-go/smarthome
 go 1.18
 
 require (
-	github.com/briandowns/openweathermap v0.18.0
+	github.com/briandowns/openweathermap v0.19.0
 	github.com/go-co-op/gocron v1.16.2
 	github.com/go-ping/ping v1.1.0
 	github.com/go-sql-driver/mysql v1.6.0
@@ -30,5 +30,3 @@ require (
 	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/briandowns/openweathermap => ../openweathermap/
