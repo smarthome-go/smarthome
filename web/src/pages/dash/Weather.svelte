@@ -4,7 +4,7 @@
     import { onMount } from "svelte";
 
     const mainIcons = {
-        Clear: ["cleary_day", "clear_night"],
+        Clear: ["clear_day", "clear_night"],
         Rain: ["rain", "rain"],
         Clouds: ["cloud", "cloud"],
         Snow: ["ac_unit", "ac_unit"],
@@ -64,7 +64,7 @@
     <div class="weather" slot="content">
         <div class="weather__top">
             {#if loaded}
-                <i class="material-icons weather__top__icon">
+                <i class="material-symbols-rounded weather__top__icon">
                     {descriptionIcons[data.weatherDescription] !== undefined
                         ? descriptionIcons[data.weatherDescription][0]
                         : mainIcons[data.weatherTitle][0]}
