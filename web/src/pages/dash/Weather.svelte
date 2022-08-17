@@ -19,6 +19,7 @@
 
     let loading = false;
     let loaded = false;
+    let cachedOnly = false;
 
     let data: weatherData = {
         id: 0,
@@ -40,15 +41,34 @@
         humidity: number;
     }
 
+    // Is used in case the normal weather data is not fetchable due to broken network conditions
+    // Requests a max. 30 minute old snapshot of the weather data from the server
+    async function loadCachedWeatherData(): Promise<weatherData> {
+        let res = await (await fetch("/api/weather/cached")).json();
+        if (res.success !== undefined && !res.success) throw Error(res.error);
+        return res;
+    }
+
     // Fetches a current (max. 5 minutes old) weather from the server
     async function loadWeatherData() {
         loading = true;
         try {
-            let res = await (await fetch("/api/weather")).json();
-            if (res.success !== undefined && !res.success)
-                throw Error(res.error);
+            let res = await fetch("/api/weather");
+
+            // If the request fails due to the server failing unexpectedly, try using the cached data instead
+            if (res.status === 500) {
+                data = await loadCachedWeatherData();
+                cachedOnly = true;
+                $createSnackbar(`Warning: Using fallback weather data from cache due to server error`)
+                return
+            }
+
+            const resTemp = await res.json();
+            if (resTemp.success !== undefined && !resTemp.success)
+                throw Error(resTemp.error);
+
             // Signal that the weather has been loaded successfully
-            data = res;
+            data = resTemp;
             loaded = true;
         } catch (err) {
             $createSnackbar(`Could not load weather: ${err}`);

@@ -32,6 +32,27 @@ func GetWeather(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Used as a fallback when the normal weather fails (due to network conditions)
+func GetCachedWeather(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	res, err := database.GetWeatherDataRecords(30)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		Res(w, Response{Success: false, Message: "could not get cached weather data", Error: "internal server error"})
+		return
+	}
+	// Select the youngest entry of them all
+	if len(res) == 0 {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "could not get cached weather data", Error: "no cached data available"})
+		return
+	}
+	if err := json.NewEncoder(w).Encode(res[0]); err != nil {
+		log.Error(err.Error())
+		Res(w, Response{Success: false, Message: "could not get cached weather data", Error: "could not encode content"})
+	}
+}
+
 func UpdateOpenWeatherMapApiKey(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
