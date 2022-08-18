@@ -125,7 +125,7 @@ func AddWeatherDataRecord(
 }
 
 func PurgeWeatherData() error {
-	if _, err := db.Prepare(`
+	if _, err := db.Exec(`
 	DELETE FROM
 	weather
 	`); err != nil {
