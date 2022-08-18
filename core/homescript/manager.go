@@ -223,7 +223,8 @@ func (m *Manager) KillAllId(hmsId string) (count uint64, success bool) {
 	m.Lock.Lock()
 	defer m.Lock.Unlock()
 	for _, job := range m.Jobs {
-		if job.Executor.ScriptName == hmsId {
+		// Only standalone scripts may be terminated (callstack validation)
+		if job.Executor.ScriptName == hmsId && len(job.Executor.CallStack) == 0 {
 			// Exit code 10 means `killed via sigterm`
 			job.Executor.SigTerm <- 10
 			success = true
