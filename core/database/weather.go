@@ -123,3 +123,14 @@ func AddWeatherDataRecord(
 	}
 	return uint(newId), nil
 }
+
+func PurgeWeatherData() error {
+	if _, err := db.Prepare(`
+	DELETE FROM
+	weather
+	`); err != nil {
+		log.Error("Failed to purge weather cache: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}

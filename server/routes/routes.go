@@ -194,24 +194,26 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/reminder/delete", mdl.ApiAuth(mdl.Perm(api.DeleteReminder, database.PermissionReminder))).Methods("DELETE")
 
 	// Weather
-	r.HandleFunc("/api/weather/key/test", mdl.ApiAuth(mdl.Perm(api.TestOpenWeatherMapApiKey, database.PermissionSystemConfig))).Methods("PUT")
 	r.HandleFunc("/api/weather/key/modify", mdl.ApiAuth(mdl.Perm(api.UpdateOpenWeatherMapApiKey, database.PermissionSystemConfig))).Methods("PUT")
 	r.HandleFunc("/api/weather", mdl.ApiAuth(api.GetWeather)).Methods("GET")
 	r.HandleFunc("/api/weather/cached", mdl.ApiAuth(api.GetCachedWeather)).Methods("GET")
+
+	// Cache Purging
+	r.HandleFunc("/api/homescript/cache", mdl.ApiAuth(mdl.Perm(api.PurgeHomescriptUrlCache, database.PermissionSystemConfig))).Methods("DELETE")
+	r.HandleFunc("/api/weather/cache", mdl.ApiAuth(mdl.Perm(api.PurgeWeatherCache, database.PermissionSystemConfig))).Methods("DELETE")
+	r.HandleFunc("/api/power/cache", mdl.ApiAuth(mdl.Perm(api.GetPowerDrawFrom24Hours, database.PermissionSystemConfig))).Methods("DELETE")
 
 	// System Configuration
 	r.HandleFunc("/api/automation/state/global", mdl.ApiAuth(mdl.Perm(api.ChangeActivationAutomation, database.PermissionSystemConfig))).Methods("PUT")
 	r.HandleFunc("/api/homescript/cache/flush", mdl.ApiAuth(mdl.Perm(api.ClearHomescriptURLCache, database.PermissionSystemConfig))).Methods("DELETE")
 
-	r.HandleFunc("/api/homescript/cache/purge", mdl.ApiAuth(mdl.Perm(api.PurgeHomescriptUrlCache, database.PermissionSystemConfig))).Methods("DELETE")
-
 	r.HandleFunc("/api/system/config", mdl.ApiAuth(api.GetSystemConfig)).Methods("GET")
 	r.HandleFunc("/api/system/location/modify", mdl.ApiAuth(mdl.Perm(api.UpdateLocation, database.PermissionSystemConfig))).Methods("PUT")
 	r.HandleFunc("/api/system/lockdown/modify", mdl.ApiAuth(mdl.Perm(api.UpdateLockDownMode, database.PermissionSystemConfig))).Methods("PUT")
-
 	r.HandleFunc("/api/system/config/export", mdl.ApiAuth(mdl.Perm(api.ExportConfiguration, database.PermissionSystemConfig))).Methods("GET")
 	r.HandleFunc("/api/system/config/import", mdl.ApiAuth(mdl.Perm(api.ImportConfiguration, database.PermissionSystemConfig))).Methods("POST")
 
+	// Hardware node management
 	r.HandleFunc("/api/system/hardware/node/list", mdl.ApiAuth(mdl.Perm(api.ListHardwareNodes, database.PermissionSystemConfig))).Methods("GET")
 	r.HandleFunc("/api/system/hardware/node/check", mdl.ApiAuth(mdl.Perm(api.ListHardwareNodesWithCheck, database.PermissionSystemConfig))).Methods("GET")
 	r.HandleFunc("/api/system/hardware/node/add", mdl.ApiAuth(mdl.Perm(api.CreateHardwareNode, database.PermissionSystemConfig))).Methods("POST")

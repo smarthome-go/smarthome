@@ -91,3 +91,15 @@ func GetPowerDrawFrom24Hours(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to get power usage data from the last 24 hours", Error: "could not encode content"})
 	}
 }
+
+// Is used to flush the power usage records manually
+// Deletes all records, regardless of their age
+func PurgePowerRecords(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := database.FlushPowerUsageRecords(0); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to purge power usage data", Error: "database failure"})
+		return
+	}
+	Res(w, Response{Success: true, Message: "successfully purged power usage data"})
+}

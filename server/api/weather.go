@@ -81,3 +81,15 @@ func TestOpenWeatherMapApiKey(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNotImplemented)
 }
+
+// Is used to flush the weather cache manually
+// Deletes all records, regardless of their age
+func PurgeWeatherCache(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if err := database.PurgeWeatherData(); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to purge weather cache", Error: "database failure"})
+		return
+	}
+	Res(w, Response{Success: true, Message: "successfully purged weather cache"})
+}
