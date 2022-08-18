@@ -41,10 +41,13 @@
                     },
                 ];
             });
-
             automationsToday = automations.filter((a) => {
+                // Filter out any disabled automations
+                if (!a.data.enabled) return false
+
                 // Filter out any automations from not today
                 if (!a.days.includes(now.getDay())) return false;
+
                 // Only display the automations which are still coming
                 return (
                     a.hours > now.getHours() ||
@@ -92,7 +95,7 @@
             ).json();
             if (res.success !== undefined && !res.success)
                 throw Error(res.error);
-            schedules = res;
+            schedules = res
             schedulesLoaded = true;
         } catch (err) {
             $createSnackbar(`Could not load schedules: ${err}`);
