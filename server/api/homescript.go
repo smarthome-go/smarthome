@@ -662,10 +662,7 @@ func GetHMSJobs(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-
 	jobs := homescript.HmsManager.GetUserDirectJobs(username)
-	fmt.Println(jobs)
-
 	if err := json.NewEncoder(w).Encode(jobs); err != nil {
 		log.Error(err.Error())
 		Res(w, Response{Success: false, Message: "failed to list Homescript jobs", Error: "could not encode response"})

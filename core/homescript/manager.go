@@ -132,8 +132,6 @@ func (m *Manager) Run(
 	// Remove the Job from the jobs list when this function ends
 	m.removeJob(id)
 
-	fmt.Println(executor.CallStack)
-
 	// Process outcome
 	if len(hmsErrors) > 0 {
 		log.Debug(fmt.Sprintf("Homescript '%s' ran by user '%s' has terminated: %s", scriptLabel, username, hmsErrors[0].Message))
