@@ -1,29 +1,24 @@
-## Changelog for v0.0.58
+## Changelog for v0.0.59
+
+### Web UI
+- The installable version of the web-ui now allows every possible rotation
+- Upgraded all third-party `NPM` web dependencies
+- Added an option to the system configuration page which sets the `OWM` (*OpenWeatherMap*) Api key
+- Added the `material-symbols` dependency for more icon support
+- Added system cache deletion button to the system settings page
 
 ### Dashboard
-- Added *Quick Actions* as a dashboard component
-- Improved the dashboard's reactivity
+- Incremented visual elevation for a better design
+- Added automations & schedules as a dashboard component
+- Improved dashboard component layout
+- Added the current weather as a dashboard component
+- Improved display for empty quick actions
 
-#### Power Usage Monitor
-- Added the unit `Watts` to the tooltip label
-- Removed line tension which leads to *more sharp edges*
-- Optimized graph scaling on non-widescreen devices
-- Decreased measurement data point radii
-- Improved the graph's fill gradient to be less dominant
-
-### Power Usage Data Collection
-- Added a safety check which prevents errors from happening during the calculation of the power usage
-- This bug could occur if you only had switches which each 'used' `0` Watts
-- Added a scheduler which performs a periodic power usage snapshot (*every hour*)
-- This should help make the graph more accurate and should avoid the generation of misleading slopes
-- Added data filtering and automated improvement of the power usage data points
-- Redundant measurements are now automatically removed from the records
-- This will improve the chart's visuals and will make it more organized (*Easier to spot real changes*)
-
-### Server Improvements
-- Fixed non-running HMS URL cache flushing scheduler
-- Fixed a bug in the Homescript runtime environment
-    - When using an `exec` call, termination of the Homescript would not work properly
-    - Only the *inner* Homescript, the `exec` target would get terminated
-    - This issue is now resolved, however `exec` will return an error if terminated
-
+### Server
+- Removed data races from Go backend tests
+- Added efficient weather caching
+- Fixed HMS sigTerm termination bug which caused all scripts of a certain ID to be terminated
+- Implemented call-stack analysis before dispatching a termination signal
+- Fixed security vulnerability which affects the system configuration
+- Authentication tokens can now be imported and exported regularly
+- Added a `API` route for listing the currently active Homescript jobs
