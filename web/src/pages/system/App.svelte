@@ -15,11 +15,16 @@
     import Switch from "@smui/switch";
     import ExportImport from "./ExportImport.svelte";
     import Hardware from "./hardware/Hardware.svelte";
+import PurgeCache from "./dialogs/PurgeCache.svelte";
 
     let loading = false;
 
     let automationEnabledLoading = false;
     let lockDownModeEnabledLoading = false;
+
+
+    // Specifies whether the dialog for flushing cached data should be open or closed
+    let purgeCacheOpen = false;
 
     // Specifies whether the log event dialog should be visible or not
     let logsOpen = false;
@@ -147,7 +152,9 @@
     onMount(fetchConfig);
 </script>
 
-<Logs />
+
+<!-->Purge cache dialog</-->
+<PurgeCache bind:open={purgeCacheOpen} />
 
 <!-->Log record dialog</-->
 <Logs bind:open={logsOpen} />
@@ -159,6 +166,11 @@
     <div id="header" class="mdc-elevation--z4">
         <h6>System Configuration</h6>
         <div id="header__buttons">
+            <IconButton
+                title="Purge Cache"
+                class="material-icons"
+                on:click={() => purgeCacheOpen = true}>cleaning_services</IconButton
+            >
             <IconButton
                 title="Refresh"
                 class="material-icons"
