@@ -42,6 +42,12 @@ type Job struct {
 	Executor  *Executor           `json:"executor"`
 }
 
+type ApiJob struct {
+	Id           uint64              `json:"id"`
+	Initiator    HomescriptInitiator `json:"initiator"`
+	HomescriptId string              `json:"homescriptId"`
+}
+
 func (m *Manager) PushJob(
 	executor *Executor,
 	initiator HomescriptInitiator,
@@ -125,6 +131,8 @@ func (m *Manager) Run(
 
 	// Remove the Job from the jobs list when this function ends
 	m.removeJob(id)
+
+	fmt.Println(executor.CallStack)
 
 	// Process outcome
 	if len(hmsErrors) > 0 {
@@ -239,4 +247,28 @@ func (m *Manager) GetJobList() []Job {
 	m.Lock.RLock()
 	defer m.Lock.RUnlock()
 	return m.Jobs
+}
+
+// Returns just the jobs which are executed by the specified user
+// Filter out any indirect runtimes which are managed by this manager
+func (m *Manager) GetUserDirectJobs(username string) []ApiJob {
+	allJobs := m.GetJobList()
+	jobs := make([]ApiJob, 0)
+
+	for _, job := range allJobs {
+		// Skip any jobs which are not executed by the specified user
+		if job.Executor.Username != username {
+			continue
+		}
+		// Skip any indirect jobs
+		if len(job.Executor.CallStack) != 0 {
+			continue
+		}
+		jobs = append(jobs, ApiJob{
+			Id:           job.Id,
+			Initiator:    job.Initiator,
+			HomescriptId: job.Executor.ScriptName,
+		})
+	}
+	return jobs
 }

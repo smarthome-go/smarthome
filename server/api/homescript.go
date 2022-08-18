@@ -654,3 +654,20 @@ func KillAllHMSIdJobs(w http.ResponseWriter, r *http.Request) {
 	count, _ := homescript.HmsManager.KillAllId(id)
 	Res(w, Response{Success: true, Message: fmt.Sprintf("successfully killed %d Homescript job(s)", count)})
 }
+
+// Returns a list of currently running HMS jobs
+func GetHMSJobs(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(w, r)
+	if err != nil {
+		return
+	}
+
+	jobs := homescript.HmsManager.GetUserDirectJobs(username)
+	fmt.Println(jobs)
+
+	if err := json.NewEncoder(w).Encode(jobs); err != nil {
+		log.Error(err.Error())
+		Res(w, Response{Success: false, Message: "failed to list Homescript jobs", Error: "could not encode response"})
+	}
+}
