@@ -156,6 +156,12 @@ func createUsersInDatabase(users []setupUser) error {
 		}); err != nil {
 			return err
 		}
+		// Setup the user's authentication tokens
+		for _, token := range usr.Tokens {
+			if err := database.InsertUserToken(token.Token, usr.User.Username, token.Label); err != nil {
+				return err
+			}
+		}
 		// Setup the user's permissions
 		for _, permission := range usr.Permissions {
 			valid := false

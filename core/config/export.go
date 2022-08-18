@@ -36,6 +36,7 @@ type setupCamera struct {
 
 type setupUser struct {
 	User        setupUserData     `json:"user"`
+	Tokens      []setupAuthToken  `json:"tokens"`
 	Homescripts []setupHomescript `json:"homescripts"`
 	Reminders   []setupReminder   `json:"reminders"`
 
@@ -50,6 +51,11 @@ type setupHardwareNode struct {
 	Enabled bool   `json:"enabled"` // Can be used to temporarily deactivate a node in case of maintenance
 	Url     string `json:"url"`
 	Token   string `json:"token"`
+}
+
+type setupAuthToken struct {
+	Token string `json:"token"`
+	Label string `json:"label"`
 }
 
 type setupReminder struct {
@@ -164,6 +170,21 @@ func Export() (SetupStruct, error) {
 			return SetupStruct{}, err
 		}
 
+		// Authentication tokens
+		tokensDB, err := database.GetUserTokensOfUser(user.Username)
+		if err != nil {
+			return SetupStruct{}, err
+		}
+
+		// Transform the tokens into a setup-compatible version
+		tokens := make([]setupAuthToken, 0)
+		for _, t := range tokensDB {
+			tokens = append(tokens, setupAuthToken{
+				Token: t.Token,
+				Label: t.Data.Label,
+			})
+		}
+
 		// Automations
 		automationsDB, err := database.GetUserAutomations(user.Username)
 		if err != nil {
@@ -255,6 +276,7 @@ func Export() (SetupStruct, error) {
 				SchedulerEnabled:  user.SchedulerEnabled,
 				DarkTheme:         user.DarkTheme,
 			},
+			Tokens:            tokens,
 			Homescripts:       homescripts,
 			Reminders:         reminders,
 			Permissions:       permissions,
