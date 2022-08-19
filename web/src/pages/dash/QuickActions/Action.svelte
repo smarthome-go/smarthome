@@ -61,8 +61,6 @@
                 failure = false;
             }, 2000);
 
-            console.log(hmsRes);
-
             hmsExecutionResults = [
                 ...hmsExecutionResults,
                 {
@@ -115,7 +113,6 @@
                     e.stopPropagation();
                     killAllJobsById(data.data.data.id);
                     if (isAlreadyRunning) {
-                        console.log("already running");
                         running = false;
                         dispatch("finish", null);
                     }
