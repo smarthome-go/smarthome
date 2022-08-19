@@ -25,20 +25,20 @@
 
     .box {
         width: 30rem;
-        height: 20rem;
+        height: 22rem;
         flex-grow: 1;
 
         background-color: var(--clr-height-0-2);
         border-radius: 0.3rem;
         overflow-x: hidden;
-        overflow-y: auto;
 
         &__header {
             display: flex;
             align-items: center;
             justify-content: space-between;
             background-color: var(--clr-height-2-3);
-            padding: 0.7rem 1rem;
+            height: 3rem;
+            padding: 0 1rem;
 
             &__left {
                 // Typography
@@ -54,8 +54,8 @@
         }
         &__content {
             padding: 0.75rem 1.25rem;
-
-            height: 15rem;
+            height: calc(100% - 3rem);
+            box-sizing: border-box;
             overflow-y: auto;
 
             @include mobile {
