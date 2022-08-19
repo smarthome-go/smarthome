@@ -3,7 +3,7 @@
     import AutomationsSchedules from "./AutomationsSchedules/AutomationsSchedules.svelte";
     import PowerUsage from "./PowerUsage.svelte";
     import QuickActions from "./QuickActions/QuickActions.svelte";
-    import Reminders from "./Reminders.svelte";
+    import Reminders from "./Reminders/Reminders.svelte";
     import Weather from "./Weather.svelte";
 </script>
 
