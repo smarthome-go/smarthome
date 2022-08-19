@@ -113,7 +113,7 @@
     <span slot="header">Schedules and Automations</span>
     <div class="content" slot="content">
         <div class="content__automations">
-            {#if automationsLoaded && automations.length === 0}
+            {#if automationsLoaded && automationsToday.length === 0}
                 <div class="content__automations__empty">
                     <span class="content__automations__empty__title">
                         No Automations
