@@ -12,7 +12,6 @@
     import { Label } from "@smui/button";
 
     let loading = false;
-    $: console.log(loading)
 
     let actions: homescriptWithArgs[] = [];
     let homescriptLoaded = false;
