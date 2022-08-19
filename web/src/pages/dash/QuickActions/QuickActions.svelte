@@ -1,7 +1,11 @@
 <script lang="ts">
     import Box from "../Box.svelte";
     import { createSnackbar } from "../../../global";
-    import type { homescriptWithArgs } from "../../../homescript";
+    import {
+        getRunningJobs,
+        type homescriptJob,
+        type homescriptWithArgs,
+    } from "../../../homescript";
     import { onMount } from "svelte";
     import Action from "./Action.svelte";
     import Button from "@smui/button/src/Button.svelte";
@@ -11,6 +15,9 @@
 
     let actions: homescriptWithArgs[] = [];
     let homescriptLoaded = false;
+
+    let jobs: homescriptJob[] = [];
+    let jobsLoaded = false;
 
     let running = 0;
 
@@ -36,7 +43,21 @@
         loading = false;
     }
 
-    onMount(loadHomescripts);
+    // Fetches the current Homescript jobs from the server
+    async function loadJobs() {
+        loading = true;
+        try {
+            jobs = await getRunningJobs();
+            running = jobs.length;
+        } catch (err) {
+            $createSnackbar(`Failed to load current Homescript jobs: ${err}`);
+        }
+        loading = false;
+    }
+
+    onMount(() => {
+        loadHomescripts().then(loadJobs);
+    });
 </script>
 
 <Box bind:loading>
@@ -55,7 +76,7 @@
                 <span class="text-hint">
                     There are currently no Homescript quick-actions.
                 </span>
-                <Button variant="outlined" href='/homescript'>
+                <Button variant="outlined" href="/homescript">
                     <Label>Create</Label>
                 </Button>
             </div>
@@ -63,8 +84,11 @@
             {#each actions as data}
                 <Action
                     bind:data
+                    isAlreadyRunning={jobs.filter(
+                        (j) => j.homescriptId === data.data.data.id
+                    ).length > 0}
                     on:run={() => running++}
-                    on:finish={() => running--}
+                    on:finish={() =>running--}
                 />
             {/each}
         {/if}

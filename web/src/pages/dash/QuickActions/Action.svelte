@@ -8,7 +8,7 @@
     import { createSnackbar } from "../../../global";
     import HmsArgumentPrompts from "../../../components/Homescript/ArgumentPrompts/HmsArgumentPrompts.svelte";
     import ExecutionResultPopup from "../../../components/Homescript/ExecutionResultPopup/ExecutionResultPopup.svelte";
-    import { createEventDispatcher } from "svelte";
+    import { createEventDispatcher, onMount } from "svelte";
     import Progress from "../../../components/Progress.svelte";
     import IconButton from "@smui/icon-button";
     import Ripple from "@smui/ripple";
@@ -20,6 +20,9 @@
 
     // Specifies whether the current script is running
     export let running = false;
+    $: if (isAlreadyRunning) running = true;
+
+    export let isAlreadyRunning = false;
 
     let success = false;
     let failure = false;
@@ -34,6 +37,7 @@
 
     // If the current Homescript contains arguments, the function triggers the argument-prompt dialog opening
     function initCurrentRun() {
+        isAlreadyRunning = false
         if (data.arguments.length === 0) {
             runCurrentWithArgs([]);
             return;
@@ -110,6 +114,11 @@
                 on:click={(e) => {
                     e.stopPropagation();
                     killAllJobsById(data.data.data.id);
+                    if (isAlreadyRunning) {
+                        console.log("already running");
+                        running = false;
+                        dispatch("finish", null);
+                    }
                 }}
                 size="button"
             >
