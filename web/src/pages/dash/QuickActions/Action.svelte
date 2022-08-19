@@ -138,7 +138,7 @@
     .action {
         aspect-ratio: 1;
         height: auto;
-        width: 4.58rem;
+        width: 4.5rem;
         max-width: 5rem;
         flex-shrink: 1;
         border-radius: 0.125rem;
@@ -157,7 +157,7 @@
         transition-duration: 1s;
 
         @include mobile {
-            width: 3.8rem;
+            width: 3.9rem;
         }
 
         &.running {

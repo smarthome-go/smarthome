@@ -12,6 +12,7 @@
     import { Label } from "@smui/button";
 
     let loading = false;
+    $: console.log(loading)
 
     let actions: homescriptWithArgs[] = [];
     let homescriptLoaded = false;
@@ -92,6 +93,9 @@
                 />
             {/each}
             <div class="placeholder" />
+            <div class="placeholder" />
+            <div class="placeholder" />
+            <div class="placeholder" />
         {/if}
     </div>
 </Box>
@@ -133,8 +137,8 @@
 
         .placeholder {
             @include mobile {
-                width: 3.8rem;
-                padding: 0.5rem;
+                width: 4.9rem;
+                height: 0;
             }
         }
     }
