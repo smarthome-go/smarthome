@@ -60,6 +60,7 @@
 
             @include mobile {
                 padding: 0.9rem 0.9rem;
+                overflow: visible;
             }
         }
     }

@@ -157,7 +157,7 @@
         transition-duration: 1s;
 
         @include mobile {
-            width: 4.2rem;
+            width: 3.8rem;
         }
 
         &.running {

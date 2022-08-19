@@ -88,9 +88,10 @@
                         (j) => j.homescriptId === data.data.data.id
                     ).length > 0}
                     on:run={() => running++}
-                    on:finish={() =>running--}
+                    on:finish={() => running--}
                 />
             {/each}
+            <div class="placeholder" />
         {/if}
     </div>
 </Box>
@@ -113,8 +114,6 @@
         align-content: flex-start;
         height: 100%;
         padding: 0.4rem 0.125rem;
-        overflow-y: auto;
-        max-height: 15rem;
         box-sizing: border-box;
 
         @include mobile {
@@ -129,6 +128,13 @@
 
             &__title {
                 font-weight: bold;
+            }
+        }
+
+        .placeholder {
+            @include mobile {
+                width: 3.8rem;
+                padding: 0.5rem;
             }
         }
     }
