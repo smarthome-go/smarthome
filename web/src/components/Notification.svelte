@@ -9,7 +9,7 @@
     export let priority = 0
     export let name = ''
     export let description = ''
-    export let date = ''
+    export let date = 0
 
     let loading = false
     let deleted = false
@@ -19,6 +19,12 @@
         'var(--clr-warn)',
         'var(--clr-error)',
     ]
+
+
+    function millisToDate(millis: number): string {
+        const d = new Date(millis)
+        return d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear()
+    }
 
     $: if (deleted) {
         container.style.setProperty('--height', container.getBoundingClientRect().height + 'px')
@@ -72,7 +78,7 @@
         >
         <h6>{name}</h6>
         <p>{description}</p>
-        <p class="date text-hint">{date}</p>
+        <p class="date text-hint">{new Date(date).toLocaleString()}</p>
     {/if}
 </div>
 
@@ -97,7 +103,7 @@
         h6 {
             margin: 0;
         }
-        
+
         .date {
             font-size: 0.7rem;
         }
@@ -178,7 +184,7 @@
         cursor: pointer;
         z-index: 10;
     }
-    
+
     .root > :global .spinner {
         position: absolute;
         top: 1rem;
