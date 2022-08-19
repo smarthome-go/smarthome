@@ -7,6 +7,12 @@
 
 import type { GenericResponse } from "./global"
 
+export interface homescriptJob {
+    id: number,
+    initiator: string,
+    homescriptId: string
+}
+
 // A Homescript with its arguments
 export interface homescriptWithArgs {
     data: homescript
@@ -170,6 +176,13 @@ export async function lintHomescriptCode(code: string, args: homescriptArgSubmit
     })
     if (res.status !== 200 && res.status !== 500) throw Error(await (res.json()))
     return await (res.json())
+}
+
+// Returns all currently active Homescript jobs
+export async function getRunningJobs(): Promise<homescriptJob[]> {
+    const res = await (await fetch('/api/homescript/jobs')).json()
+    if (res.success != undefined && !res.success) throw Error(res.error)
+    return res
 }
 
 // Sends a request to kill all running executions of a given script (by id)

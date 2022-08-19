@@ -8,14 +8,19 @@
     import Inputs from "./Inputs.svelte";
     import AddHomescript from "./dialogs/AddHomescript.svelte";
     import HmsSelector from "./dialogs/HmsSelector.svelte";
-    import { hmsLoaded, homescripts, loading } from "./main";
+    import { hmsLoaded, homescripts, jobs, loading } from "./main";
     import DeleteHomescript from "./dialogs/DeleteHomescript.svelte";
-    import type {
-        homescriptArgSubmit,
-        homescriptData,
-        homescriptResponseWrapper,
+    import {
+        killAllJobsById,
+        type homescriptArgSubmit,
+        type homescriptData,
+        type homescriptResponseWrapper,
     } from "../../homescript";
-    import { runHomescriptById, lintHomescriptById } from "../../homescript";
+    import {
+        runHomescriptById,
+        lintHomescriptById,
+        getRunningJobs,
+    } from "../../homescript";
     import HmsArgumentPrompts from "../../components/Homescript/ArgumentPrompts/HmsArgumentPrompts.svelte";
     import ExecutionResultPopup from "../../components/Homescript/ExecutionResultPopup/ExecutionResultPopup.svelte";
 
@@ -234,6 +239,9 @@
                 .length === 0
         ) {
             runCurrentWithArgs([]);
+            setTimeout(async () => {
+                $jobs = await getRunningJobs();
+            }, 100);
             return;
         }
         // The script is executed via callback: refer to the argument dialog
@@ -257,7 +265,6 @@
 
     // Used when the run button is pressed, error handling is accomplished here
     async function runCurrentWithArgs(args: homescriptArgSubmit[]) {
-        $loading = true;
         try {
             const hmsRes = await runHomescriptById(selection, args);
             hmsExecutionResults = [
@@ -268,10 +275,10 @@
                     modeRun: true,
                 },
             ];
+            $jobs = await getRunningJobs()
         } catch (err) {
             $createSnackbar(`Could not execute ${selection}: ${err}`);
         }
-        $loading = false;
     }
 
     // Used when the check button is pressed, error handling is accomplished here
@@ -293,9 +300,11 @@
         $loading = false;
     }
 
-    onMount(() => {
-        loadHomescripts();
-    }); // Load Homescripts as soon as the component is mounted
+    onMount(async () => {
+        // Load Homescripts as soon as the component is mounted
+        await loadHomescripts();
+        $jobs = await getRunningJobs();
+    });
 </script>
 
 <AddHomescript
@@ -326,12 +335,11 @@
 {/if}
 
 {#if hmsExecutionResults[0] !== undefined}
-        <ExecutionResultPopup
-            open={true}
-            data={hmsExecutionResults[0]}
-            on:close={() =>
-                (hmsExecutionResults = hmsExecutionResults.slice(1))}
-        />
+    <ExecutionResultPopup
+        open={true}
+        data={hmsExecutionResults[0]}
+        on:close={() => (hmsExecutionResults = hmsExecutionResults.slice(1))}
+    />
 {/if}
 
 <Page>
@@ -343,6 +351,7 @@
                 class="material-icons"
                 on:click={async () => {
                     await loadHomescripts();
+                    $jobs = await getRunningJobs();
                 }}>refresh</IconButton
             >
             {#if $homescripts.length > 0}
@@ -406,17 +415,31 @@
                             disabled={selectedDataChanged}
                             variant="outlined"
                         >
-                            <Label>Edit Code</Label>
+                            <Label>Code</Label>
                             <Icon class="material-icons">code</Icon>
                         </Button>
-                        <Button
-                            on:click={initCurrentRun}
-                            disabled={selectedDataChanged}
-                            variant="outlined"
-                        >
-                            <Label>Run</Label>
-                            <Icon class="material-icons">play_arrow</Icon>
-                        </Button>
+                        {#if $jobs.filter((j) => j.homescriptId === selection).length > 0}
+                            <Button
+                                on:click={async function () {
+                                    await killAllJobsById(selection);
+                                    await sleep(100);
+                                    $jobs = await getRunningJobs();
+                                }}
+                                variant="outlined"
+                            >
+                                <Label>Kill</Label>
+                                <Icon class="material-icons">cancel</Icon>
+                            </Button>
+                        {:else}
+                            <Button
+                                on:click={initCurrentRun}
+                                disabled={selectedDataChanged}
+                                variant="outlined"
+                            >
+                                <Label>Run</Label>
+                                <Icon class="material-icons">play_arrow</Icon>
+                            </Button>
+                        {/if}
                         <Button
                             on:click={initCurrentLint}
                             disabled={selectedDataChanged}

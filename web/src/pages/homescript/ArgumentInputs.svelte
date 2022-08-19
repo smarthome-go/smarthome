@@ -2,7 +2,8 @@
     import Textfield from "@smui/textfield";
     import CharacterCounter from "@smui/textfield/character-counter";
     import Select, { Option } from "@smui/select";
-    import { displayOpts, homescriptArgData } from "../../homescript";
+    import type { homescriptArgData } from "../../homescript";
+    import { displayOpts } from "../../homescript";
     import { inputTypeOpts } from "../../homescript";
 
     // Is bound externally in order to allow editing
