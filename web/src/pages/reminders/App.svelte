@@ -1,46 +1,52 @@
 <script lang="ts">
-    import IconButton from '@smui/icon-button'
-    import { onMount } from 'svelte'
-    import Progress from '../../components/Progress.svelte'
-    import { createSnackbar,data } from '../../global'
-    import Page from '../../Page.svelte'
-    import Inputs from './Inputs.svelte'
-    import { loading,reminder,reminders } from './main'
-    import Reminder from './Reminder.svelte'
+    import IconButton from "@smui/icon-button";
+    import { onMount } from "svelte";
+    import Progress from "../../components/Progress.svelte";
+    import { createSnackbar, data } from "../../global";
+    import Page from "../../Page.svelte";
+    import Inputs from "./Inputs.svelte";
+    import { loading, reminders } from "./main";
+    import type { reminder } from "./main";
+    import Reminder from "./Reminder.svelte";
 
-    $loading = false
+    $loading = false;
 
     // Fetches the current reminders from the server
     async function loadReminders() {
-        $loading = true
+        $loading = true;
         try {
             const res = (await (
-                await fetch('/api/reminder/list')
-            ).json()) as reminder[]
-            reminders.set(res)
+                await fetch("/api/reminder/list")
+            ).json()) as reminder[];
+            reminders.set(res);
         } catch (err) {
-            $createSnackbar('Could not load reminders')
+            $createSnackbar("Could not load reminders");
         }
-        $loading = false
+        $loading = false;
     }
 
     // Creates a new reminder
-    async function create(name: string, description: string, priority: number, dueDate: Date) {
-        $loading = true
+    async function create(
+        name: string,
+        description: string,
+        priority: number,
+        dueDate: Date
+    ) {
+        $loading = true;
         try {
             const res = await (
-                await fetch('/api/reminder/add', {
-                    headers: { 'Content-Type': 'application/json' },
+                await fetch("/api/reminder/add", {
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         name,
                         description,
                         priority,
                         dueDate: dueDate.getTime(),
                     }),
-                    method: 'POST',
+                    method: "POST",
                 })
-            ).json()
-            if (!res.success) throw Error(`request error: ${res.error}`)
+            ).json();
+            if (!res.success) throw Error(`request error: ${res.error}`);
             $reminders = [
                 ...$reminders,
                 {
@@ -54,14 +60,14 @@
                     userWasNotified: false,
                     userWasNotifiedAt: 0,
                 },
-            ]
+            ];
         } catch (err) {
-            $createSnackbar(`Could not create reminder ${err}`)
+            $createSnackbar(`Could not create reminder ${err}`);
         }
-        $loading = false
+        $loading = false;
     }
 
-    onMount(() => loadReminders()) // Load reminders as soon as the component is mounted
+    onMount(() => loadReminders()); // Load reminders as soon as the component is mounted
 </script>
 
 <Page>
@@ -98,7 +104,7 @@
 </Page>
 
 <style lang="scss">
-    @use '../../mixins' as *;
+    @use "../../mixins" as *;
     #content {
         display: flex;
         flex-direction: column;
@@ -131,7 +137,7 @@
         }
     }
     .reminders {
-        padding: 1rem 0;    
+        padding: 1rem 0;
         display: flex;
         flex-direction: column;
         overflow-x: hidden;
@@ -156,11 +162,10 @@
         align-items: center;
         text-align: center;
 
-        
         h6 {
             color: var(--clr-text-hint);
             margin: 1rem 0;
-            
+
             @include mobile {
                 font-size: 1.2rem;
             }
