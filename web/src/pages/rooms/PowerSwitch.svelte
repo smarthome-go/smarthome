@@ -42,12 +42,12 @@
                     }),
                 })
             ).json()
-            if (!res.success) throw Error()
-        } catch {
+            if (!res.success) throw Error(res.error)
+        } catch (err) {
             $createSnackbar(
                 `Failed to set switch '${name}' to ${
                     event.detail.selected ? 'on' : 'off'
-                }`
+                }: ${err}`
             )
         }
         await sleep(500)

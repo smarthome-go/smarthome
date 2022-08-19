@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/smarthome-go/smarthome/core/database"
@@ -53,6 +54,11 @@ func PowerPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := hardware.SetPower(request.Switch, request.PowerOn); err != nil {
+		if errors.Is(err, hardware.ErrorLockDownMode) {
+			w.WriteHeader(http.StatusForbidden)
+			Res(w, Response{Success: false, Message: "lock down mode is ebabled", Error: "lockdown mode is currently enabled"})
+			return
+		}
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "hardware error", Error: "failed to communicate with hardware"})
 		return

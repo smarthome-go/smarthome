@@ -27,6 +27,8 @@ func InitLogger(logger *logrus.Logger) {
 	log = logger
 }
 
+var ErrorLockDownMode = errors.New("cannot set power: lockdown mode is enabled")
+
 // Returns the power state of a given switch
 // Checks if the switch exists beforehand
 func GetPowerState(switchId string) (bool, error) {
@@ -42,6 +44,15 @@ func GetPowerState(switchId string) (bool, error) {
 
 // As setPower, just with additional logs and account for taking a snapshot of the power states
 func SetPower(switchId string, powerOn bool) error {
+	// Check if lockdown mode is enabled
+	config, _, err := database.GetServerConfiguration()
+	if err != nil {
+		return err
+	}
+	if config.LockDownMode {
+		log.Warn("Cannot set power: lockdown mode is enabled")
+		return ErrorLockDownMode
+	}
 	if err := setPower(switchId, powerOn); err != nil {
 		go event.Warn(
 			"Hardware Error",
