@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/user"
 	"github.com/smarthome-go/smarthome/server/middleware"
 )
 
@@ -26,12 +27,12 @@ func GetNotificationCount(w http.ResponseWriter, r *http.Request) {
 	notificationCount, err := database.GetUserNotificationCount(username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Success: false, Message: "failed get notification count", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to get notification count", Error: "database failure"})
 		return
 	}
 	if err := json.NewEncoder(w).Encode(NotificationCountResponse{NotificationCount: notificationCount}); err != nil {
 		log.Error(err.Error())
-		Res(w, Response{Success: false, Message: "failed get notification count", Error: "could not encode response"})
+		Res(w, Response{Success: false, Message: "failed to get notification count", Error: "could not encode response"})
 	}
 }
 
@@ -42,15 +43,15 @@ func GetNotifications(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	notifications, err := database.GetUserNotifications(username)
+	notifications, err := user.GetNotifications(username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Success: false, Message: "failed get notifications", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to get notifications", Error: "database failure"})
 		return
 	}
 	if err := json.NewEncoder(w).Encode(notifications); err != nil {
 		log.Error(err.Error())
-		Res(w, Response{Success: false, Message: "failed get notifications", Error: "could not encode response"})
+		Res(w, Response{Success: false, Message: "failed to get notifications", Error: "could not encode response"})
 	}
 }
 
