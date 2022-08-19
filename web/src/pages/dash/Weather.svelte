@@ -59,8 +59,10 @@
             if (res.status === 500) {
                 data = await loadCachedWeatherData();
                 cachedOnly = true;
-                $createSnackbar(`Warning: Using fallback weather data from cache due to server error`)
-                return
+                $createSnackbar(
+                    `Warning: Using fallback weather data from cache due to server error`
+                );
+                return;
             }
 
             const resTemp = await res.json();
@@ -124,6 +126,8 @@
 
 <style lang="scss">
     .weather {
+        padding: .5rem .75rem;
+
         &__top {
             display: flex;
             align-items: center;
