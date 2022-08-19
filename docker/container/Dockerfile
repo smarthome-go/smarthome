@@ -23,11 +23,6 @@ COPY motd /etc/motd
 COPY .bashrc /app/.bashrc
 ENV ENV=/app/.bashrc
 
-RUN curl -L https://github.com/smarthome-go/cli/releases/download/v2.14.2/homescript_linux_amd64.tar.gz -o /tmp/homescript.tar.gz
-WORKDIR /bin
-RUN tar -xvf /tmp/homescript.tar.gz && chmod +x /bin/homescript && rm -rf /tmp/homescript.tar.gz
-RUN ln -s /bin/homescript /bin/shome
-
 RUN chown -R smarthome:smarthome /app
 WORKDIR /app/
 
