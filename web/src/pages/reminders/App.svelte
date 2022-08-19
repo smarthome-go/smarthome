@@ -18,7 +18,7 @@
             const res = (await (
                 await fetch("/api/reminder/list")
             ).json()) as reminder[];
-            reminders.set(res);
+            reminders.set(res.sort((a, b) => b.priority - a.priority));
         } catch (err) {
             $createSnackbar("Could not load reminders");
         }
