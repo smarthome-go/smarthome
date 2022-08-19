@@ -20,7 +20,7 @@
         Filler,
     } from "chart.js";
 
-    import type {ChartConfiguration} from 'chart.js'
+    import type { ChartConfiguration } from "chart.js";
 
     // Register all chart modules
     Chart.register(
@@ -133,7 +133,7 @@
             0.125,
             `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.3)`
         );
-        gradient.addColorStop(0.65, "rgb(0, 0, 100, 0.125)");
+        gradient.addColorStop(0.75, "rgb(0, 0, 100, 0.125)");
         //gradient.addColorStop(0.7, "rgb(0,  0, 100, 0.03)");
 
         // Dataset configuration
@@ -224,7 +224,8 @@
 <style lang="scss">
     .content {
         // The height is fixed to this value to make it appear nice on most screens
-        height: 15rem;
+        overflow: hidden;
+        height: 100%;
     }
     // Chart styling
     .chart {
