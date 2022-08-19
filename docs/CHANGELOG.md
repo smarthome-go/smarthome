@@ -1,4 +1,4 @@
-## Changelog for v0.0.59
+## Changelog for v0.0.60
 
 ### Web UI
 - The installable version of the web-ui now allows every possible rotation
