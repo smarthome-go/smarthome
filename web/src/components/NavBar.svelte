@@ -1,130 +1,130 @@
 <script lang="ts">
-    import { onMount } from 'svelte'
-    import { data,fetchData } from '../global'
-    import NavBarButton from './NavBarButton.svelte'
-    import NotificationDrawer from './NotificationDrawer.svelte'
+    import { onMount } from "svelte";
+    import { data, fetchData } from "../global";
+    import NavBarButton from "./NavBarButton.svelte";
+    import NotificationDrawer from "./NotificationDrawer.svelte";
 
-    export let closed = true
-    const toggleClosed = () => (closed = !closed)
+    export let closed = true;
+    const toggleClosed = () => (closed = !closed);
 
-    let drawerClosed = true
+    let drawerClosed = true;
 
-    let nav: HTMLElement
+    let nav: HTMLElement;
     document.addEventListener(
-        'click',
+        "click",
         (event) => {
             if (!nav.contains(event.target as Node)) {
-                closed = true
-                drawerClosed = true
+                closed = true;
+                drawerClosed = true;
             }
         },
         true
-    )
+    );
 
     interface Page {
-        label: string
-        uri: string
-        icon: string
-        position: 'top' | 'bottom'
-        permission: string // '' means no permission required
+        label: string;
+        uri: string;
+        icon: string;
+        position: "top" | "bottom";
+        permission: string; // '' means no permission required
     }
 
-    let pagesFiltered: Page[] = []
+    let pagesFiltered: Page[] = [];
     const pages: Page[] = [
         {
-            label: 'Dashboard',
-            uri: '/dash',
-            icon: 'home',
-            position: 'top',
-            permission: '',
+            label: "Dashboard",
+            uri: "/dash",
+            icon: "home",
+            position: "top",
+            permission: "",
         },
         {
-            label: 'Rooms',
-            uri: '/rooms',
-            icon: 'view_quilt',
-            position: 'top',
-            permission: 'setPower',
+            label: "Rooms",
+            uri: "/rooms",
+            icon: "view_quilt",
+            position: "top",
+            permission: "setPower",
         },
         {
-            label: 'Reminders',
-            uri: '/reminders',
-            icon: 'task_alt',
-            position: 'top',
-            permission: 'reminder',
+            label: "Reminders",
+            uri: "/reminders",
+            icon: "task_alt",
+            position: "top",
+            permission: "reminder",
         },
         {
-            label: 'Scheduler',
-            uri: '/scheduler',
-            icon: 'schedule',
-            position: 'top',
-            permission: 'scheduler',
+            label: "Scheduler",
+            uri: "/scheduler",
+            icon: "schedule",
+            position: "top",
+            permission: "scheduler",
         },
         {
-            label: 'Automation',
-            uri: '/automations',
-            icon: 'event_repeat',
-            position: 'top',
-            permission: 'automation',
+            label: "Automation",
+            uri: "/automations",
+            icon: "event_repeat",
+            position: "top",
+            permission: "automation",
         },
         {
-            label: 'Homescript',
-            uri: '/homescript',
-            icon: 'terminal',
-            position: 'top',
-            permission: 'homescript',
+            label: "Homescript",
+            uri: "/homescript",
+            icon: "terminal",
+            position: "top",
+            permission: "homescript",
         },
         {
-            label: 'Profile',
-            uri: '/profile',
-            icon: 'manage_accounts',
-            position: 'top',
-            permission: '',
+            label: "Profile",
+            uri: "/profile",
+            icon: "manage_accounts",
+            position: "top",
+            permission: "",
         },
         {
-            label: 'Users',
-            uri: '/users',
-            icon: 'admin_panel_settings',
-            position: 'bottom',
-            permission: 'manageUsers',
+            label: "Users",
+            uri: "/users",
+            icon: "admin_panel_settings",
+            position: "bottom",
+            permission: "manageUsers",
         },
         {
-            label: 'System',
-            uri: '/system',
-            icon: 'settings',
-            position: 'bottom',
-            permission: 'modifyServerConfig',
+            label: "System",
+            uri: "/system",
+            icon: "settings",
+            position: "bottom",
+            permission: "modifyServerConfig",
         },
         {
-            label: 'Logout',
-            uri: '/logout',
-            icon: 'logout',
-            position: 'bottom',
-            permission: '',
+            label: "Logout",
+            uri: "/logout",
+            icon: "logout",
+            position: "bottom",
+            permission: "",
         },
-    ]
+    ];
 
     function withoutPosition(page: Page): {
-        label: string
-        uri: string
-        icon: string
+        label: string;
+        uri: string;
+        icon: string;
     } {
         return {
             label: page.label,
             uri: page.uri,
             icon: page.icon,
-        }
+        };
     }
 
     onMount(async () => {
-        await fetchData()
+        await fetchData();
         // Filter out any pages to which the user has no access to
         pagesFiltered = pages.filter(
             (p) =>
                 $data.userData.permissions.includes(p.permission) ||
-                p.permission == '' ||
-                $data.userData.permissions.includes('*')
-        )
-    })
+                p.permission == "" ||
+                $data.userData.permissions.includes("*")
+        );
+    });
 </script>
 
 <nav bind:this={nav} class:closed>
@@ -151,8 +151,8 @@
             <div id="bell__icon__inner">
                 <i class="material-icons"
                     >{$data.notificationCount === 0
-                        ? 'notifications'
-                        : 'notifications_active'}</i
+                        ? "notifications"
+                        : "notifications_active"}</i
                 >
                 <div class:hidden={$data.notificationCount === 0}>
                     <span>{$data.notificationCount}</span>
@@ -160,13 +160,13 @@
             </div>
         </div>
         <span id="bell__text"
-            >{'Notification' + ($data.notificationCount !== 1 ? 's' : '')}</span
+            >{"Notification" + ($data.notificationCount !== 1 ? "s" : "")}</span
         >
     </div>
     <NotificationDrawer bind:hidden={drawerClosed} />
     <div id="menubar">
         <div id="menubar__top">
-            {#each pagesFiltered.filter((p) => p.position === 'top') as page}
+            {#each pagesFiltered.filter((p) => p.position === "top") as page}
                 <NavBarButton
                     {...withoutPosition(page)}
                     active={page.uri === window.location.pathname}
@@ -174,7 +174,7 @@
             {/each}
         </div>
         <div id="menubar__bottom">
-            {#each pagesFiltered.filter((p) => p.position === 'bottom') as page}
+            {#each pagesFiltered.filter((p) => p.position === "bottom") as page}
                 <NavBarButton
                     {...withoutPosition(page)}
                     active={page.uri === window.location.pathname}
@@ -185,7 +185,7 @@
 </nav>
 
 <style lang="scss">
-    @use '../mixins' as *;
+    @use "../mixins" as *;
 
     nav {
         position: fixed;
@@ -206,6 +206,15 @@
         transition-duration: 0.3s;
         z-index: 100;
 
+        // Hide visible overflow when closed
+        &.closed {
+            #menubar {
+                @include mobile {
+                    overflow: hidden;
+                }
+            }
+        }
+
         @include mobile {
             bottom: auto;
             width: auto;
@@ -213,6 +222,7 @@
             padding-top: 0;
             height: 100%;
         }
+
         @include not-widescreen {
             &.closed {
                 width: 5.125rem;
@@ -294,7 +304,7 @@
             border-radius: 50%;
             aspect-ratio: 1;
             height: 2.5rem;
-            background-image: url('/api/user/avatar/personal');
+            background-image: url("/api/user/avatar/personal");
         }
         &__texts {
             display: flex;
@@ -405,7 +415,7 @@
 
         @include mobile {
             flex-shrink: 1;
-            overflow-y: hidden;
+            //overflow-y: hidden;
 
             &__top {
                 @include landscape {
