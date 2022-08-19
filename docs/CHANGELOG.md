@@ -1,24 +1,27 @@
 ## Changelog for v0.0.60
 
-### Web UI
-- The installable version of the web-ui now allows every possible rotation
-- Upgraded all third-party `NPM` web dependencies
-- Added an option to the system configuration page which sets the `OWM` (*OpenWeatherMap*) Api key
-- Added the `material-symbols` dependency for more icon support
-- Added system cache deletion button to the system settings page
+### Homescript Web-UI
+- Added a visual indicator for running scripts to the HMS list selector
 
-### Dashboard
-- Incremented visual elevation for a better design
-- Added automations & schedules as a dashboard component
-- Improved dashboard component layout
-- Added the current weather as a dashboard component
-- Improved display for empty quick actions
+### Dashboard Web-UI
+- Allowed the possibility to terminate scripts which are already running from the *Quick Actions* component on the dashboard
+- Optimized the *Quick Actions* display for mobile devices
+- Finalized the *Quick Actions* alignment trough invisible dummies
+- Tweaked the general reactivity of the dashboard, for example the *power usage chart*'s scaling
+- Added a *reminder* dashboard component for viewing and removing reminders
+- Added some visual padding to the dashboard's weather component's contents
+- Fixed failing no-automations detection in dashboard *automations / schedules* component
+
+### Reminder Web-UI
+- Fixed the misleading edit-button behavior which was occurring when modifying a reminder
+- The reminders on the reminder page are now sorted by-priority (*in descending order*)
+
+### General Web-UI
+- Added a much more human-friendly way of displaying a notification's time
+- Made the *nav bar* much more mobile-friendly (*especially on landscape orientation*)
 
 ### Server
-- Removed data races from Go backend tests
-- Added efficient weather caching
-- Fixed HMS sigTerm termination bug which caused all scripts of a certain ID to be terminated
-- Implemented call-stack analysis before dispatching a termination signal
-- Fixed security vulnerability which affects the system configuration
-- Authentication tokens can now be imported and exported regularly
-- Added a `API` route for listing the currently active Homescript jobs
+- Removed undesired debug print statements from backend code
+- Removed unneeded *Smarthome-CLI* from the server's docker-image
+- This decreased the docker-image size by `20.7%` in comparison to `v0.0.59`
+- Added functionality to the *lockdown mode*, which will now block any form of switch-request
