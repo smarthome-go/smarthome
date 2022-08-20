@@ -444,11 +444,18 @@
         @include mobile {
             // Hides bottom line
             height: 3.4rem;
+            justify-content: flex-start;
         }
 
         &__left {
             display: flex;
             gap: 1rem;
+
+            span {
+                @include mobile {
+                    display: none;
+                }
+            }
 
             &__save {
                 color: var(--clr-text-disabled);
