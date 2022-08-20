@@ -13,6 +13,7 @@ type HomescriptData struct {
 	SchedulerEnabled    bool   `json:"schedulerEnabled"`
 	Code                string `json:"code"`
 	MDIcon              string `json:"mdIcon"`
+	Workspace           string `json:"workspace"`
 }
 
 // Creates the table containing Homescript code and metadata
@@ -22,14 +23,16 @@ func createHomescriptTable() error {
 	CREATE TABLE
 	IF NOT EXISTS
 	homescript(
-		Id VARCHAR(30) PRIMARY KEY,
-		Owner VARCHAR(20),
-		Name VARCHAR(30),
-		Description TEXT,
+		Id					VARCHAR(30) PRIMARY KEY,
+		Owner				VARCHAR(20),
+		Name				VARCHAR(30),
+		Description			TEXT,
 		QuickActionsEnabled BOOLEAN,
-		SchedulerEnabled BOOLEAN,
-		Code TEXT,
-		MDIcon VARCHAR(100),
+		SchedulerEnabled	BOOLEAN,
+		Code				TEXT,
+		MDIcon				VARCHAR(100),
+		Workspace			VARCHAR(50),
+
 		CONSTRAINT HomescriptOwner
 		FOREIGN KEY (Owner)
 		REFERENCES user(Username)
@@ -55,15 +58,21 @@ func CreateNewHomescript(homescript Homescript) error {
 		QuickActionsEnabled,
 		SchedulerEnabled,
 		Code,
-		MDIcon
+		MDIcon,
+		Workspace
 	)
-	VALUES(?, ?, ?, ?, ?, ?, ?, ?)
+	VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		log.Error("Failed to create new Homescript: preparing query failed: ", err.Error())
 		return err
 	}
 	defer query.Close()
+	// If the workspace is unset, set it to `default`
+	if homescript.Data.Workspace == "" {
+		homescript.Data.Workspace = "default"
+	}
+	// Create the Homescript
 	if _, err = query.Exec(
 		homescript.Data.Id,
 		homescript.Owner,
@@ -73,6 +82,7 @@ func CreateNewHomescript(homescript Homescript) error {
 		homescript.Data.SchedulerEnabled,
 		homescript.Data.Code,
 		homescript.Data.MDIcon,
+		homescript.Data.Workspace,
 	); err != nil {
 		log.Error("Failed to create new Homescript: executing query failed: ", err.Error())
 		return err
@@ -91,7 +101,8 @@ func ModifyHomescriptById(id string, homescript HomescriptData) error {
 		QuickActionsEnabled=?,
 		SchedulerEnabled=?,
 		Code=?,
-		MDIcon=?
+		MDIcon=?,
+		Workspace=?,
 	WHERE Id=?
 	`)
 	if err != nil {
@@ -106,6 +117,7 @@ func ModifyHomescriptById(id string, homescript HomescriptData) error {
 		homescript.SchedulerEnabled,
 		homescript.Code,
 		homescript.MDIcon,
+		homescript.Workspace,
 		id,
 	)
 	if err != nil {
@@ -126,7 +138,8 @@ func ListHomescriptOfUser(username string) ([]Homescript, error) {
 		QuickActionsEnabled,
 		SchedulerEnabled,
 		Code,
-		MDIcon
+		MDIcon,
+		Workspace
 	FROM homescript
 	WHERE Owner=?
 	`)
@@ -153,6 +166,7 @@ func ListHomescriptOfUser(username string) ([]Homescript, error) {
 			&homescript.Data.SchedulerEnabled,
 			&homescript.Data.Code,
 			&homescript.Data.MDIcon,
+			&homescript.Data.Workspace,
 		)
 		if err != nil {
 			log.Error("Failed to list Homescript of user: scanning results failed: ", err.Error())
@@ -174,7 +188,8 @@ func ListHomescriptFiles() ([]Homescript, error) {
 		QuickActionsEnabled,
 		SchedulerEnabled,
 		Code,
-		MDIcon
+		MDIcon,
+		Workspace
 	FROM homescript
 	`)
 	if err != nil {
@@ -200,6 +215,7 @@ func ListHomescriptFiles() ([]Homescript, error) {
 			&homescript.Data.SchedulerEnabled,
 			&homescript.Data.Code,
 			&homescript.Data.MDIcon,
+			&homescript.Data.Workspace,
 		)
 		if err != nil {
 			log.Error("Failed to list Homescript: scanning results failed: ", err.Error())

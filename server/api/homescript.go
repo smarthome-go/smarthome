@@ -32,6 +32,7 @@ type CreateHomescriptRequest struct {
 	SchedulerEnabled    bool   `json:"schedulerEnabled"`
 	Code                string `json:"code"`
 	MDIcon              string `json:"mdIcon"`
+	Workspace           string `json:"workspace"`
 }
 
 type HomescriptArg struct {
@@ -447,6 +448,11 @@ func CreateNewHomescript(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to add Homescript", Error: fmt.Sprintf("the id: '%s' must not exceed 30 characters and must not include any whitespaces", request.Id)})
 		return
 	}
+	if utf8.RuneCountInString(request.Workspace) > 50 {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to add Homescript", Error: fmt.Sprintf("the workspace: '%s' must not exceed 50 characters", request.Workspace)})
+		return
+	}
 	if utf8.RuneCountInString(request.MDIcon) > 100 {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		Res(w, Response{Success: false, Message: "failed to add Homescript", Error: fmt.Sprintf("the mdIcon: '%s' must not exceed 100 characters", request.MDIcon)})
@@ -467,6 +473,7 @@ func CreateNewHomescript(w http.ResponseWriter, r *http.Request) {
 			SchedulerEnabled:    request.SchedulerEnabled,
 			Code:                request.Code,
 			MDIcon:              request.MDIcon,
+			Workspace:           request.Workspace,
 		},
 	}
 	if err := database.CreateNewHomescript(homescriptToAdd); err != nil {
