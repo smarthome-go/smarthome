@@ -1,27 +1,19 @@
-## Changelog for v0.0.60
+## Changelog for v0.1.0
 
-### Homescript Web-UI
-- Added a visual indicator for running scripts to the HMS list selector
+*Note*: This is a significant release because it marks the official end of active, breaking development.  
+Changes from here will follow the `SemVer` guidelines and will try to reduce breaking changes as much as possible.
 
-### Dashboard Web-UI
-- Allowed the possibility to terminate scripts which are already running from the *Quick Actions* component on the dashboard
-- Optimized the *Quick Actions* display for mobile devices
-- Finalized the *Quick Actions* alignment trough invisible dummies
-- Tweaked the general reactivity of the dashboard, for example the *power usage chart*'s scaling
-- Added a *reminder* dashboard component for viewing and removing reminders
-- Added some visual padding to the dashboard's weather component's contents
-- Fixed failing no-automations detection in dashboard *automations / schedules* component
+### Web-UI
+- Removed debug-logs from the web-UI
+- Removed the `material-symbols` dependency due to irrational network-loads
+- Automatically detect nighttime and use weather icon accordingly
+- Cleaned the Web-UI code and removed unneeded parts
 
-### Reminder Web-UI
-- Fixed the misleading edit-button behavior which was occurring when modifying a reminder
-- The reminders on the reminder page are now sorted by-priority (*in descending order*)
-
-### General Web-UI
-- Added a much more human-friendly way of displaying a notification's time
-- Made the *nav bar* much more mobile-friendly (*especially on landscape orientation*)
+### Homescript
+- Add workspaces which allow visual groups of coherent scripts
+- The URL of the HMS-editor is now changed reactively which allows sharing the URL
+- The HMS-execution via the `F-X` keys is now prevented when a script is already running
+- Improved the HMS editor's mobile layout
 
 ### Server
-- Removed undesired debug print statements from backend code
-- Removed unneeded *Smarthome-CLI* from the server's docker-image
-- This decreased the docker-image size by `20.7%` in comparison to `v0.0.59`
-- Added functionality to the *lockdown mode*, which will now block any form of switch-request
+- The sunrise & sunset time is now included in every weather response
