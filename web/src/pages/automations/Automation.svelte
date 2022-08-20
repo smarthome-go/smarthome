@@ -5,15 +5,13 @@
     import AutomationInfo from "./dialogs/AutomationInfo.svelte";
     import EditAutomation from "./dialogs/EditAutomation.svelte";
     import {
-        addAutomation,
-        automation,
         generateCronExpression,
         hmsLoaded,
-        homescript,
         homescripts,
         loading,
         parseCronExpressionToTime,
     } from "./main";
+    import type { addAutomation, automation, homescript } from "./main";
 
     const days: string[] = ["su", "mo", "tu", "we", "th", "fr", "sa"];
 

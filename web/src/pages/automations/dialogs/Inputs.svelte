@@ -8,10 +8,10 @@
     import TimePicker from "../../../components/TimePicker.svelte";
     import { sleep } from "../../../global";
     import {
-        addAutomation,
         homescripts,
         timeUntilExecutionText,
     } from "../main";
+    import type {addAutomation} from '../main'
     import HmsSelector from "../../../components/Homescript/HmsSelector.svelte";
 
     // Static resource for displaying the segmented buttons

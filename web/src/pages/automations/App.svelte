@@ -10,14 +10,13 @@
     import AddAutomation from "./dialogs/AddAutomation.svelte";
     import Overview from "./dialogs/Overview.svelte";
     import {
-        addAutomation,
-        automation,
         automations,
         automationsLoaded,
         hmsLoaded,
         homescripts,
         loading,
     } from "./main";
+    import type { addAutomation, automation } from "./main";
 
     let addOpen = false;
     let overviewOpen = false;
@@ -125,8 +124,7 @@
     }
 
     onMount(() => {
-        loadAutomations();
-        loadHomescript();
+        loadAutomations().then(loadHomescript);
     }); // Load automations as soon as the component is mounted
 </script>
 

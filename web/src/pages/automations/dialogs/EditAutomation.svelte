@@ -10,13 +10,8 @@
     import IconButton from "@smui/icon-button";
     import Switch from "@smui/switch";
     import { createEventDispatcher, onMount } from "svelte";
-    import {
-        addAutomation,
-        automation,
-        hmsLoaded,
-        homescripts,
-        parseCronExpressionToTime,
-    } from "../main";
+    import { hmsLoaded, homescripts, parseCronExpressionToTime } from "../main";
+    import type { addAutomation, automation } from "../main";
     import Inputs from "./Inputs.svelte";
 
     const days: string[] = [
@@ -83,13 +78,15 @@
         // Is used to regenerate a cron-description after modification
         let daysText = `, `;
         if (inputData.days.length === 1) {
-           daysText = `Only on ${days[inputData.days[0]]}`
-        }
-        else if (inputData.days.length < 7) {
-            daysText = `Only on ${inputData.days.slice(0, inputData.days.length-1)
+            daysText = `Only on ${days[inputData.days[0]]}`;
+        } else if (inputData.days.length < 7) {
+            daysText = `Only on ${inputData.days
+                .slice(0, inputData.days.length - 1)
                 .map((d) => days[d])
                 .join(", ")}`;
-            daysText += ` and ${days[inputData.days[inputData.days.length - 1]]}`
+            daysText += ` and ${
+                days[inputData.days[inputData.days.length - 1]]
+            }`;
         }
         data.cronDescription =
             `At ${
