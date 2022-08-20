@@ -26,6 +26,8 @@
         temperature: 0,
         feelsLike: 0,
         humidity: 0,
+        sunrise: 0,
+        sunset: 0,
     };
 
     interface weatherData {
@@ -36,6 +38,8 @@
         temperature: number;
         feelsLike: number;
         humidity: number;
+        sunrise: number;
+        sunset: number;
     }
 
     // Is used in case the normal weather data is not fetchable due to broken network conditions
@@ -68,6 +72,14 @@
 
             // Signal that the weather has been loaded successfully
             data = resTemp;
+
+            // Detect if the night icon should be used
+            const sunrise = new Date(data.sunrise)
+            const sunset = new Date(data.sunset)
+            const now = new Date()
+
+            // Actual detection
+            isNight = now.getHours() >= sunset.getHours() || now.getHours() < sunrise.getHours()
 
             loaded = true;
         } catch (err) {
