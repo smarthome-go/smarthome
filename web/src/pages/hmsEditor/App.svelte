@@ -2,13 +2,15 @@
     import Page from "../../Page.svelte";
     import { createSnackbar } from "../../global";
     import {
+        killAllJobsById,
+        lintHomescriptCode,
+        runHomescriptById,
+    } from "../../homescript";
+    import type {
         homescript,
         homescriptArgSubmit,
         homescriptResponseWrapper,
         homescriptWithArgs,
-        killAllJobsById,
-        lintHomescriptCode,
-        runHomescriptById,
     } from "../../homescript";
     import { onMount } from "svelte";
     import IconButton from "@smui/icon-button";
@@ -95,6 +97,7 @@
             code: "",
             quickActionsEnabled: false,
             schedulerEnabled: false,
+            workspace: "default",
         },
     };
 
