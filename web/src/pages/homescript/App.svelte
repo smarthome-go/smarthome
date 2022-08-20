@@ -220,8 +220,12 @@
             const homescriptsTemp = $homescripts.filter(
                 (h) => h.data.data.id !== selection
             );
+
             const wsToBeDeleted = $homescripts.find(h => h.data.data.id === id).data.data.workspace
             if (workspaces.filter(w => w === wsToBeDeleted).length === 1) workspaces = workspaces.filter(w => w !== wsToBeDeleted)
+
+            await tick()
+            if (workspaces.length > 0) workspace = workspaces[0]
 
             // If no Homescript exist besides this one, only make changes persistent
             if (homescriptsTemp.length == 0) {
