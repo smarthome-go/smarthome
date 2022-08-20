@@ -9,16 +9,23 @@
     } from "@smui/list";
     import { homescripts, jobs } from "../main";
     import Progress from "../../../components/Progress.svelte";
+    import type { homescriptWithArgs } from "src/homescript";
 
     export let selection: string;
+    export let workspace = "default";
+
+    let wsScripts: homescriptWithArgs[] = [];
+    $: wsScripts = $homescripts.filter(
+        (h) => h.data.data.workspace === workspace
+    );
 
     // Checks if the selection is empty for handling preset values as well as no preset values
     $: if (
-        $homescripts !== undefined &&
-        $homescripts.length > 0 &&
+        wsScripts !== undefined &&
+        wsScripts.length > 0 &&
         selection === ""
     )
-        selection = $homescripts[0].data.data.id;
+        selection = wsScripts[0].data.data.id;
 
     let selectionIndex: number | undefined = undefined;
 </script>
@@ -30,7 +37,7 @@
         singleSelection
         bind:selectedIndex={selectionIndex}
     >
-        {#each $homescripts as item}
+        {#each wsScripts as item}
             <Item
                 on:SMUI:action={() => (selection = item.data.data.id)}
                 selected={selection === item.data.data.id}
@@ -40,7 +47,7 @@
                         <Progress type="circular" loading />
                     {:else}
                         <Icon class="material-icons">
-                            {$homescripts.find(
+                            {wsScripts.find(
                                 (h) => h.data.data.id === item.data.data.id
                             ).data.data.mdIcon}
                         </Icon>

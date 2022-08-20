@@ -1,7 +1,7 @@
 <script lang="ts">
-    import Button, { Label, Icon } from "@smui/button";
+    import Button, { Icon, Label } from "@smui/button";
     import IconButton from "@smui/icon-button";
-    import { onMount } from "svelte";
+    import { onMount, tick } from "svelte";
     import Progress from "../../components/Progress.svelte";
     import { createSnackbar, data as userData, sleep } from "../../global";
     import Page from "../../Page.svelte";
@@ -23,12 +23,17 @@
     } from "../../homescript";
     import HmsArgumentPrompts from "../../components/Homescript/ArgumentPrompts/HmsArgumentPrompts.svelte";
     import ExecutionResultPopup from "../../components/Homescript/ExecutionResultPopup/ExecutionResultPopup.svelte";
+    import TabBar from "@smui/tab-bar";
+    import Tab from "@smui/tab";
 
     /*
         //// Dialog state management ////
      */
     let addOpen = false;
     let deleteOpen = false;
+
+    let workspaces: string[] = [];
+    let workspace = "default";
 
     // Is used when the run button is pressed and the current script has arguments
     let argumentsPromptOpen = false;
@@ -79,6 +84,7 @@
         const selectedDataTemp = $homescripts.find(
             (h) => h.data.data.id === selection
         ).data.data;
+
         // Static, contextual data
         selectedData.id = selectedDataTemp.id; // Is required in order to send the request
         selectedData.code = selectedDataTemp.code; // Required to preserve code
@@ -106,8 +112,7 @@
             selectedData.quickActionsEnabled;
         $homescripts[replaceIndex].data.data.schedulerEnabled =
             selectedData.schedulerEnabled;
-        $homescripts[replaceIndex].data.data.workspace =
-            selectedData.workspace;
+        $homescripts[replaceIndex].data.data.workspace = selectedData.workspace;
         updateSelectedData();
     }
 
@@ -180,6 +185,13 @@
             ];
             // The wait is required in order to delay the selection
             await sleep(50);
+            // Create a new workspace if it does not exist already
+            if (!workspaces.includes(data.workspace)) workspaces = [...workspaces, data.workspace]
+
+            await tick()
+            // Slect the newly created workspace first
+            workspace = data.workspace
+
             // Select the newly created Homescript for editing
             selection = data.id;
             // Show the newly selected Homescript in the Inputs
@@ -208,6 +220,8 @@
             const homescriptsTemp = $homescripts.filter(
                 (h) => h.data.data.id !== selection
             );
+            const wsToBeDeleted = $homescripts.find(h => h.data.data.id === id).data.data.workspace
+            if (workspaces.filter(w => w === wsToBeDeleted).length === 1) workspaces = workspaces.filter(w => w !== wsToBeDeleted)
 
             // If no Homescript exist besides this one, only make changes persistent
             if (homescriptsTemp.length == 0) {
@@ -309,7 +323,21 @@
     onMount(async () => {
         // Load Homescripts as soon as the component is mounted
         await loadHomescripts();
-        updateSelectedData()
+
+        // Do some workspace-specific logic
+        if ($homescripts.length > 0) {
+            workspaces = [
+                ...new Set($homescripts.map((h) => h.data.data.workspace)),
+            ];
+            workspace = workspaces[0];
+            selection = $homescripts.find(h => h.data.data.workspace === workspace).data.data.id
+
+            await tick()
+
+            updateSelectedData();
+        }
+
+        // Load the currently running jobs
         $jobs = await getRunningJobs();
     });
 </script>
@@ -351,7 +379,13 @@
 
 <Page>
     <div id="header" class="mdc-elevation--z4">
-        <h6>Homescript</h6>
+        {#if workspaces.length > 0}
+            <TabBar tabs={workspaces} bind:active={workspace} let:tab>
+                <Tab {tab} minWidth>
+                    <Label>{tab}</Label>
+                </Tab>
+            </TabBar>
+        {/if}
         <div id="header__buttons">
             <IconButton
                 title="Refresh"
@@ -393,7 +427,7 @@
                         <Icon class="material-icons">add</Icon>
                     </Button>
                 {:else}
-                    <HmsSelector bind:selection />
+                    <HmsSelector {workspace} bind:selection />
                 {/if}
             </div>
         </div>
@@ -483,7 +517,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0.1rem 1.3rem;
+        padding-right: 0.3rem;
         box-sizing: border-box;
         background-color: var(--clr-height-1-4);
         min-height: 3.5rem;
@@ -491,14 +525,6 @@
         &__buttons {
             display: flex;
             align-items: center;
-        }
-
-        h6 {
-            margin: 0.5em 0;
-            @include mobile {
-                // Hide title on mobile due to space limitations
-                display: none;
-            }
         }
     }
 
