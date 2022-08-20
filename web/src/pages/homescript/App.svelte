@@ -63,13 +63,15 @@
     function updateSelectedDataChanged() {
         const data = $homescripts.find((h) => h.data.data.id === selection).data
             .data;
+
         selectedDataChanged =
             data.name !== selectedData.name ||
             data.description !== selectedData.description ||
             data.mdIcon !== selectedData.mdIcon ||
             data.code !== selectedData.code ||
             data.schedulerEnabled !== selectedData.schedulerEnabled ||
-            data.quickActionsEnabled !== selectedData.quickActionsEnabled;
+            data.quickActionsEnabled !== selectedData.quickActionsEnabled ||
+            data.workspace !== selectedData.workspace;
     }
 
     // Is used as soon as the active script is changed and is not empty
@@ -87,6 +89,7 @@
         selectedData.mdIcon = selectedDataTemp.mdIcon;
         selectedData.quickActionsEnabled = selectedDataTemp.quickActionsEnabled;
         selectedData.schedulerEnabled = selectedDataTemp.schedulerEnabled;
+        selectedData.workspace = selectedDataTemp.workspace;
     }
 
     // Is called when the changes have been successfully submitted and applied
@@ -103,6 +106,8 @@
             selectedData.quickActionsEnabled;
         $homescripts[replaceIndex].data.data.schedulerEnabled =
             selectedData.schedulerEnabled;
+        $homescripts[replaceIndex].data.data.workspace =
+            selectedData.workspace;
         updateSelectedData();
     }
 
@@ -304,6 +309,7 @@
     onMount(async () => {
         // Load Homescripts as soon as the component is mounted
         await loadHomescripts();
+        updateSelectedData()
         $jobs = await getRunningJobs();
     });
 </script>

@@ -10,6 +10,9 @@
     import AddArgument from "./dialogs/AddArgument.svelte";
     import { createSnackbar } from "../../global";
     import Argument from "./Argument.svelte";
+    import Autocomplete from "@smui-extra/autocomplete";
+    import { Text } from "@smui/list";
+    import Dialog, { Actions, Content, Title } from "@smui/dialog";
 
     let iconPickerOpen = false;
     let addArgOpen = false;
@@ -17,6 +20,18 @@
 
     // Can be bound in order to allow data modification
     export let data: homescriptData;
+
+    let workspaceInputText = "";
+    let newWorkspaceInputText = "";
+    let newWorkspaceOpen = false;
+
+    let workspaces: string[] = [];
+    $: workspaces = [
+        ...new Set([
+            ...$homescripts.map((h) => h.data.data.workspace),
+            "default",
+        ]),
+    ];
 
     async function createHomescriptArg(
         key: string,
@@ -107,6 +122,30 @@
     bind:open={addArgOpen}
 />
 
+<Dialog
+    bind:open={newWorkspaceOpen}
+    aria-labelledby="workspace-dialog-title"
+    aria-describedby="workspace-dialog-content"
+>
+    <Title id="workspace-dialog-title">New Item</Title>
+    <Content id="workspace-dialog-content">
+        <Textfield bind:value={newWorkspaceInputText} label="New Workspace" />
+    </Content>
+    <Actions>
+        <Button>
+            <Label>Cancel</Label>
+        </Button>
+        <Button
+            on:click={() => {
+                workspaces = [...workspaces, newWorkspaceInputText];
+                data.workspace = newWorkspaceInputText;
+            }}
+        >
+            <Label>Add</Label>
+        </Button>
+    </Actions>
+</Dialog>
+
 <div class="container">
     <!-- Names and Text -->
     <div class="text">
@@ -128,6 +167,24 @@
             style="width: 100%;"
             helperLine$style="width: 100%;"
         />
+        <br>
+        <br>
+        <Autocomplete
+            style="width: 100%"
+            label="Select Workspace"
+            options={workspaces}
+            bind:value={data.workspace}
+            noMatchesActionDisabled={false}
+            bind:text={workspaceInputText}
+            on:SMUIAutocomplete:noMatchesAction={() => {
+                newWorkspaceInputText = workspaceInputText;
+                newWorkspaceOpen = true;
+            }}
+        >
+            <div slot="no-matches">
+                <Text>Add Workspace</Text>
+            </div>
+        </Autocomplete>
     </div>
     <div class="toggles-actions">
         <!-- Toggles -->

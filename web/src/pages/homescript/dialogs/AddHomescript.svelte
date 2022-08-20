@@ -48,7 +48,6 @@
     }
 
     onMount(() => {
-        console.log(workspaces);
         workspace = "default";
     });
 </script>
@@ -60,7 +59,7 @@
     <Content id="content">
         <div class="text">
             <Autocomplete
-                style="width: 100%"
+                style="width: 100%; margin-bottom: .5rem;"
                 label="Select Workspace"
                 options={workspaces}
                 bind:value={workspace}
