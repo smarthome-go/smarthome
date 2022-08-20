@@ -20,12 +20,6 @@
         'var(--clr-error)',
     ]
 
-
-    function millisToDate(millis: number): string {
-        const d = new Date(millis)
-        return d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear()
-    }
-
     $: if (deleted) {
         container.style.setProperty('--height', container.getBoundingClientRect().height + 'px')
         container.getBoundingClientRect()

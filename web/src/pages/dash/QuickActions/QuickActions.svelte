@@ -17,7 +17,7 @@
     let homescriptLoaded = false;
 
     let jobs: homescriptJob[] = [];
-    let jobsLoaded = false;
+    //let jobsLoaded = false;
 
     let running = 0;
 

@@ -8,7 +8,7 @@
     import { createSnackbar } from "../../../global";
     import HmsArgumentPrompts from "../../../components/Homescript/ArgumentPrompts/HmsArgumentPrompts.svelte";
     import ExecutionResultPopup from "../../../components/Homescript/ExecutionResultPopup/ExecutionResultPopup.svelte";
-    import { createEventDispatcher, onMount } from "svelte";
+    import { createEventDispatcher } from "svelte";
     import Progress from "../../../components/Progress.svelte";
     import IconButton from "@smui/icon-button";
     import Ripple from "@smui/ripple";
