@@ -86,16 +86,6 @@
      */
     // Saves the metadata of the current script (specified by URL query)
     let currentScript = "";
-    $: if (currentScript) updateURLQuery();
-
-    // Updates the URL query `id` in order to make the URL reactive if the active state changes
-    function updateURLQuery() {
-        var searchParams = new URLSearchParams(window.location.search);
-        searchParams.set("id", currentScript);
-        var newRelativePathQuery =
-            window.location.pathname + "?" + searchParams.toString();
-        history.pushState(null, "", newRelativePathQuery);
-    }
 
     let currentData: homescript = {
         owner: "",
