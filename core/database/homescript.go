@@ -93,6 +93,10 @@ func CreateNewHomescript(homescript Homescript) error {
 // Modifies the metadata of a given homescript
 // Does not check the validity of the homescript's id
 func ModifyHomescriptById(id string, homescript HomescriptData) error {
+	// Check if the workspace is the default
+	if homescript.Workspace == "" {
+		homescript.Workspace = "default"
+	}
 	query, err := db.Prepare(`
 	UPDATE homescript
 	SET
@@ -102,7 +106,7 @@ func ModifyHomescriptById(id string, homescript HomescriptData) error {
 		SchedulerEnabled=?,
 		Code=?,
 		MDIcon=?,
-		Workspace=?,
+		Workspace=?
 	WHERE Id=?
 	`)
 	if err != nil {
