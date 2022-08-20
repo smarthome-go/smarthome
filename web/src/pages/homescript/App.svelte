@@ -189,7 +189,7 @@
             if (!workspaces.includes(data.workspace)) workspaces = [...workspaces, data.workspace]
 
             await tick()
-            // Slect the newly created workspace first
+            // Select the newly created workspace first
             workspace = data.workspace
 
             // Select the newly created Homescript for editing
