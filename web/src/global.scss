@@ -6,9 +6,6 @@
 @use '@material/elevation/styles';
 @use 'material-icons/iconfont/filled.css';
 
-$material-symbols-font-path: 'material-symbols/';
-@import 'material-symbols/rounded.scss';
-
 $elevations: (
     0: 0%,
     1: 5%,

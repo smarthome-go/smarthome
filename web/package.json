@@ -73,7 +73,6 @@
     "chartjs-adapter-date-fns": "^2.0.0",
     "date-fns": "^2.29.1",
     "material-icons": "^1.10.8",
-    "material-symbols": "^0.2.8",
     "prism": "^4.1.2 ",
     "prismjs": "^1.28.0",
     "uuid": "^8.3.2"

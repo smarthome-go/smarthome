@@ -4,22 +4,19 @@
     import { onMount } from "svelte";
 
     const mainIcons = {
-        Clear: ["clear_day", "clear_night"],
-        Rain: ["rain", "rain"],
-        Clouds: ["cloud", "cloud"],
+        Clear: ["light_mode", "nightlight"],
+        Rain: ["cloudy_snowing", "cloudy_snowing"],
+        Clouds: ["cloud", "nights_stay"],
         Snow: ["ac_unit", "ac_unit"],
         Thunderstorm: ["thunderstorm", "thunderstorm"],
-        Drizzle: ["cloudy_snowing", "cloudy_snowing"],
-    };
-
-    const descriptionIcons = {
-        "few clouds": ["partly_cloudy_day", "partly_cloudy_night"],
-        "scattered clouds": ["cloud", "cloud"],
+        Drizzle: ["grain", "grain"],
     };
 
     let loading = false;
     let loaded = false;
     let cachedOnly = false;
+
+    let isNight = true;
 
     let data: weatherData = {
         id: 0,
@@ -71,6 +68,7 @@
 
             // Signal that the weather has been loaded successfully
             data = resTemp;
+
             loaded = true;
         } catch (err) {
             $createSnackbar(`Could not load weather: ${err}`);
@@ -86,9 +84,9 @@
     <div class="weather" slot="content">
         <div class="weather__top">
             {#if loaded}
-                <i class="material-symbols-rounded weather__top__icon">
-                    {descriptionIcons[data.weatherDescription] !== undefined
-                        ? descriptionIcons[data.weatherDescription][0]
+                <i class="material-icons weather__top__icon">
+                    {isNight
+                        ? mainIcons[data.weatherTitle][1]
                         : mainIcons[data.weatherTitle][0]}
                 </i>
             {/if}
@@ -126,7 +124,7 @@
 
 <style lang="scss">
     .weather {
-        padding: .5rem .75rem;
+        padding: 0.5rem 0.75rem;
 
         &__top {
             display: flex;
