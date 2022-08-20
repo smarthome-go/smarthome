@@ -193,12 +193,6 @@ func main() {
 		log.Fatal("Could not process setup.json file: ", err.Error())
 	}
 
-	// Logs
-	// TODO: setup deletion of old logs with a scheduler
-	if err := event.FlushOldLogs(); err != nil { // Always flush old logs
-		log.Error("Failed to flush logs older that 30 days: ", err.Error())
-	}
-
 	// Homescript Manager initialization
 	homescript.InitManager()
 	// Initialize Homescript URL cache flushing scheduler
