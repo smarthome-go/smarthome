@@ -150,6 +150,17 @@
                 })
             ).json();
             if (!res.success) throw Error(res.error);
+
+            // Create a new workspace if it does not exist already
+            if (!workspaces.includes(selectedData.workspace)) workspaces = [...workspaces, selectedData.workspace]
+
+            const oldWorkspace = $homescripts.find(h => h.data.data.id === selectedData.id).data.data.workspace
+            if ($homescripts.filter(h => h.data.data.workspace === oldWorkspace).length === 1) workspaces = workspaces.filter(w => w !== oldWorkspace)
+
+            await tick()
+
+            workspace = selectedData.workspace
+
             updateSourceFromSelectedData();
         } catch (err) {
             $createSnackbar(`Could not modify Homescript: ${err}`);
@@ -185,10 +196,12 @@
             ];
             // The wait is required in order to delay the selection
             await sleep(50);
+
             // Create a new workspace if it does not exist already
             if (!workspaces.includes(data.workspace)) workspaces = [...workspaces, data.workspace]
 
             await tick()
+
             // Select the newly created workspace first
             workspace = data.workspace
 
@@ -222,7 +235,7 @@
             );
 
             const wsToBeDeleted = $homescripts.find(h => h.data.data.id === id).data.data.workspace
-            if (workspaces.filter(w => w === wsToBeDeleted).length === 1) workspaces = workspaces.filter(w => w !== wsToBeDeleted)
+            if ($homescripts.filter(h => h.data.data.workspace === wsToBeDeleted).length === 1) workspaces = workspaces.filter(w => w !== wsToBeDeleted)
 
             await tick()
             if (workspaces.length > 0) workspace = workspaces[0]
