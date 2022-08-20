@@ -139,9 +139,11 @@
             e.preventDefault();
             saveCurrent();
         } else if (e.key === "F8") {
+            if (currentExecutionHandles > 0) return;
             e.preventDefault();
             initCurrentRun();
         } else if (e.key === "F9") {
+            if (currentExecutionHandles > 0) return;
             e.preventDefault();
             initCurrentLint();
         } else if (e.key === "F10") {
