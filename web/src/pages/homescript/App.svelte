@@ -45,6 +45,7 @@
         code: "",
         quickActionsEnabled: false,
         schedulerEnabled: false,
+        workspace: "default",
     };
 
     // Using a copied `buffer` for the active script
@@ -275,7 +276,7 @@
                     modeRun: true,
                 },
             ];
-            $jobs = await getRunningJobs()
+            $jobs = await getRunningJobs();
         } catch (err) {
             $createSnackbar(`Could not execute ${selection}: ${err}`);
         }

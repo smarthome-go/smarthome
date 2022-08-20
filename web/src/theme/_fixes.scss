@@ -55,6 +55,10 @@
     --mdc-ripple-color: var(--mdc-theme-primary);
 }
 
+// Allow autocomplete inputs to grow in size
+.smui-autocomplete > div > .mdc-text-field {
+    width: 100%;
+}
 
 :root {
     // Ripple color

@@ -34,6 +34,7 @@ export interface homescriptData {
     code: string
     quickActionsEnabled: boolean
     schedulerEnabled: boolean
+    workspace: string
 }
 
 /* Homescript run request response */
