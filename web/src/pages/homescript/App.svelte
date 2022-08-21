@@ -414,7 +414,7 @@
             >
             {#if $homescripts.length > 0}
                 <Button on:click={() => (addOpen = true)}>
-                    <Label>Create New</Label>
+                    <Label>Script</Label>
                     <Icon class="material-icons">add</Icon>
                 </Button>
             {/if}
