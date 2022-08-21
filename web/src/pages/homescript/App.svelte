@@ -538,6 +538,7 @@
         box-sizing: border-box;
         background-color: var(--clr-height-1-4);
         min-height: 3.5rem;
+        overflow-x: auto;
 
         &__buttons {
             display: flex;
