@@ -15,10 +15,14 @@ tar = mkdir -p build && cd ../ && tar -cvzf ./$(appname)_$(1)_$(2).tar.gz $(work
 all:	linux
 
 # Setup dependencies for Go and NPM
-setup:
+setup: deps
+	cd web && npm i && npm run prepare
+
+deps:
 	go mod tidy
-	cd web && npm i
-	cd web && npm run prepare
+	go get -u -v
+	cd web && npm outdated && npm update && npm run prepare
+
 
 # Lints most of the source code
 # Used before a release
