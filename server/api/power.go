@@ -98,6 +98,21 @@ func GetPowerDrawFrom24Hours(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Returns all power draw data points
+func GetPowerDrawAll(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	powerUsageData, err := hardware.GetPowerUsageRecordsUnixMillis(-1)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "could not get complete power usage data", Error: "database error"})
+		return
+	}
+	if err := json.NewEncoder(w).Encode(powerUsageData); err != nil {
+		log.Error(err.Error())
+		Res(w, Response{Success: false, Message: "failed to get complete power usage data", Error: "could not encode content"})
+	}
+}
+
 // Is used to flush the power usage records manually
 // Deletes all records, regardless of their age
 func PurgePowerRecords(w http.ResponseWriter, r *http.Request) {

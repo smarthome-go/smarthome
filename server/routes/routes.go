@@ -72,6 +72,7 @@ func NewRouter() *mux.Router {
 	// Power
 	r.HandleFunc("/api/power/states", api.GetPowerStates).Methods("GET")
 	r.HandleFunc("/api/power/usage/day", api.GetPowerDrawFrom24Hours).Methods("GET")
+	r.HandleFunc("/api/power/usage/all", api.GetPowerDrawAll).Methods("GET")
 	r.HandleFunc("/api/power/set", mdl.ApiAuth(mdl.Perm(api.PowerPostHandler, database.PermissionPower))).Methods("POST")
 
 	// Rooms

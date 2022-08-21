@@ -94,8 +94,9 @@ func AddPowerUsagePoint(onData PowerDrawData, offData PowerDrawData) (uint, erro
 
 // Returns records from the power usage records
 // Only returns records which are younger than x hours
-func GetPowerUsageRecords(maxAgeHours uint) ([]PowerDataPoint, error) {
-	query, err := db.Prepare(`
+// If the max-age is set to < 0, all records are returned
+func GetPowerUsageRecords(maxAgeHours int) ([]PowerDataPoint, error) {
+	raw_query := `
 	SELECT
 		Id,
 		Time,
@@ -108,15 +109,30 @@ func GetPowerUsageRecords(maxAgeHours uint) ([]PowerDataPoint, error) {
 		OffWatts,
 		OffPercent
 	FROM powerUsage
-	WHERE
-		Time > NOW() - INTERVAL ? HOUR
-	`)
+	`
+
+	if maxAgeHours >= 0 {
+		raw_query += `
+		WHERE
+			Time > NOW() - INTERVAL ? HOUR
+		`
+	}
+
+	query, err := db.Prepare(raw_query)
 	if err != nil {
 		log.Error("Failed to get power usage records: preparing query failed: ", err.Error())
 		return nil, err
 	}
 	defer query.Close()
-	res, err := query.Query(maxAgeHours)
+
+	// Decide if the argument (max-age) should be passed
+	var res *sql.Rows
+	if maxAgeHours >= 0 {
+		res, err = query.Query(maxAgeHours)
+	} else {
+		res, err = query.Query()
+	}
+
 	if err != nil {
 		log.Error("Failed to get power usage records: executing query failed: ", err.Error())
 		return nil, err

@@ -140,7 +140,7 @@ func SaveCurrentPowerUsageWithLogs() {
 
 // Acts like a wrapper for the `database.GetPowerUsageRecords`
 // The main difference is that dates are transformed into unix-millis (which are easier to parse for any API client)
-func GetPowerUsageRecordsUnixMillis(maxAgeHours uint) ([]PowerDrawDataPointUnixMillis, error) {
+func GetPowerUsageRecordsUnixMillis(maxAgeHours int) ([]PowerDrawDataPointUnixMillis, error) {
 	dbData, err := database.GetPowerUsageRecords(maxAgeHours)
 	if err != nil {
 		return nil, err
