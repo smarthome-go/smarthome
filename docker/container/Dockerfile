@@ -1,7 +1,7 @@
 FROM alpine:3
 
 LABEL author="MikMuellerDev"
-LABEL version="0.1.1"
+LABEL version="0.2.0"
 
 COPY ./cache /app
 
