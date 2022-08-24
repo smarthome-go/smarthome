@@ -10,7 +10,8 @@
     import IconButton from "@smui/icon-button";
     import { createSnackbar } from "../../../global";
     import { onMount } from "svelte";
-    import { loading, Schedule, ScheduleData, SwitchJob } from "../main";
+    import { loading } from "../main";
+    import type { Schedule, ScheduleData, SwitchJob } from "../main";
     import Inputs from "./Inputs.svelte";
 
     export let open = false;

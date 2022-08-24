@@ -10,13 +10,8 @@
     import FormField from "@smui/form-field";
     import Switch from "@smui/switch";
     import Select, { Option } from "@smui/select";
-    import {
-        ScheduleData,
-        switches,
-        switchesLoaded,
-        SwitchResponse,
-        homescripts,
-    } from "../main";
+    import { switches, switchesLoaded, homescripts } from "../main";
+    import type { ScheduleData, SwitchResponse } from "../main";
 
     export let data: ScheduleData = {
         name: "",
@@ -185,8 +180,9 @@
                                     icons={false}
                                 />
                                 <span slot="label"
-                                    >{$switches.find((s) => s.id === sw.switchId)
-                                        .name}</span
+                                    >{$switches.find(
+                                        (s) => s.id === sw.switchId
+                                    ).name}</span
                                 >
                             </FormField>
                             <IconButton
