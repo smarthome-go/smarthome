@@ -1,5 +1,6 @@
 import type { homescript } from '../../homescript'
-import { writable, Writable } from 'svelte/store'
+import { writable } from 'svelte/store'
+import type { Writable } from 'svelte/store'
 import App from './App.svelte'
 
 export interface Schedule {
@@ -55,7 +56,7 @@ export function timeUntilExecutionText(
             hourDifference > 1
                 ? `${hourDifference} hours`
                 : `${hourDifference} hour`;
-    } 
+    }
 
     if (hourDifference !== 0 && minuteDifference !== 0)
         outputText += " and ";
