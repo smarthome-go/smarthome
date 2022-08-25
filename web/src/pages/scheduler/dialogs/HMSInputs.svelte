@@ -278,6 +278,10 @@
 
             margin-top: 1rem;
             overflow: auto;
+
+            @include not-widescreen {
+                overflow: visible;
+            }
         }
     }
 </style>
