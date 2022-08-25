@@ -80,7 +80,7 @@ func DeactivateAutomationSystem() error {
 		if automation.Data.Enabled {
 			if err := scheduler.RemoveByTag(fmt.Sprintf("%d", automation.Id)); err != nil {
 				log.Error(fmt.Sprintf("Failed to deactivate automation '%d': could not stop scheduler: '%s'", automation.Id, err.Error()))
-				log.Error("Automation System Deactivation Failure", fmt.Sprintf("Failed to deactivate automation '%d': could not stop scheduler: '%s'", automation.Id, err.Error()))
+				log.Error("Automation System Deactivation Failure: ", fmt.Sprintf("Failed to deactivate automation '%d': could not stop scheduler: '%s'", automation.Id, err.Error()))
 				continue
 			}
 			event.Debug("Deactivated Automation", fmt.Sprintf("Successfully deactivated automation '%d' of user '%s'", automation.Id, automation.Owner))
