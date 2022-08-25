@@ -72,7 +72,7 @@
         >
         <h6>{name}</h6>
         <p>{description}</p>
-        <p class="date text-hint">{new Date(date - 2 * 60 * 60 * 1000 /* Substract two hours off the time */).toLocaleString()}</p>
+        <p class="date text-hint">{new Date(date - 2 * 60 * 60 * 1000 /* Subtract two hours off the time */).toLocaleString()}</p>
     {/if}
 </div>
 
