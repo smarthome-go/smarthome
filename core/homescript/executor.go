@@ -19,6 +19,7 @@ import (
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/hardware"
 	"github.com/smarthome-go/smarthome/core/user"
+	"github.com/smarthome-go/smarthome/services/weather"
 )
 
 type Executor struct {
@@ -723,7 +724,11 @@ func (self *Executor) GetWeather() (string, error) {
 	if self.DryRun {
 		return "", nil
 	}
-	return "rainy", nil
+	currentWeather, err := weather.GetCurrentWeather()
+	if err != nil {
+		return "", fmt.Errorf("Could not fetch weather: %s", err.Error())
+	}
+	return strings.ToLower(currentWeather.WeatherTitle), nil
 }
 
 // TODO: Will later be implemented, should return the temperature in Celsius
@@ -731,7 +736,11 @@ func (self *Executor) GetTemperature() (int, error) {
 	if self.DryRun {
 		return 0, nil
 	}
-	return 42, nil
+	currentWeather, err := weather.GetCurrentWeather()
+	if err != nil {
+		return 0, fmt.Errorf("Could not fetch temperature: %s", err.Error())
+	}
+	return int(currentWeather.Temperature), nil
 }
 
 // Returns the current time variables
