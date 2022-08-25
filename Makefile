@@ -15,7 +15,7 @@ tar = mkdir -p build && cd ../ && tar -cvzf ./$(appname)_$(1)_$(2).tar.gz $(work
 all:	linux
 
 # Setup dependencies for Go and NPM
-setup: deps
+setup:
 	cd web && npm i && npm run prepare
 
 deps:

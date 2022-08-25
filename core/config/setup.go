@@ -96,7 +96,7 @@ func RunSetupStruct(setup SetupStruct) error {
 	}
 	// Initialize database (fresh setup)
 	if err := database.Init(
-		config.Database,
+		GetConfig().Database,
 		"admin",
 	); err != nil {
 		return err

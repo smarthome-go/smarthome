@@ -92,6 +92,6 @@ func createNewConfigFile() (Config, error) {
 	return config, nil
 }
 
-func GetConfig() Config {
-	return config
+func GetConfig() *Config {
+	return &config
 }
