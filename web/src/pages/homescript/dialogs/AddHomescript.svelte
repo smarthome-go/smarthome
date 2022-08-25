@@ -20,7 +20,7 @@
     let id = "";
     let name = "";
     let description = "";
-    let workspace = "default";
+    export let workspace = "default";
 
     let newWorkspace = "";
     let workspaceText = "";

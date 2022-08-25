@@ -360,6 +360,7 @@
 </script>
 
 <AddHomescript
+    {workspace}
     on:add={(event) => {
         createHomescript(event.detail);
     }}
