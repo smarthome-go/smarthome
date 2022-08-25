@@ -12,11 +12,11 @@
         hmsLoaded,
         homescripts,
         loading,
-        ScheduleData,
         schedules,
         switches,
         switchesLoaded,
     } from "./main";
+    import type { ScheduleData } from "./main";
     import Schedule from "./Schedule.svelte";
 
     let addOpen = false;
