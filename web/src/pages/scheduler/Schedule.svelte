@@ -4,12 +4,8 @@
     import { createEventDispatcher, onMount } from "svelte";
     import ConfirmDeletion from "./dialogs/ConfirmDeletion.svelte";
     import EditSchedule from "./dialogs/EditSchedule.svelte";
-    import {
-        Schedule,
-        timeUntilExecutionText,
-        switches,
-        homescripts,
-    } from "./main";
+    import { timeUntilExecutionText, switches, homescripts } from "./main";
+    import type { Schedule } from "./main";
     import Progress from "../../components/Progress.svelte";
 
     export let data: Schedule;

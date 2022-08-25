@@ -3,7 +3,8 @@
     import CharacterCounter from "@smui/textfield/character-counter";
     import { onMount } from "svelte";
     import TimePicker from "../../../components/TimePicker.svelte";
-    import { ScheduleData, timeUntilExecutionText } from "../main";
+    import { timeUntilExecutionText } from "../main";
+    import type { ScheduleData } from "../main";
     import HmsInputs from "./HMSInputs.svelte";
 
     // Data which is dispatched as soon as the create button is pressed
