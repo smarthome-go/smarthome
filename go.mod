@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/briandowns/openweathermap v0.19.0
-	github.com/go-co-op/gocron v1.16.2
+	github.com/go-co-op/gocron v1.17.0
 	github.com/go-ping/ping v1.1.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gorilla/mux v1.8.0
@@ -16,9 +16,9 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/smarthome-go/homescript v0.17.0
 	github.com/stretchr/testify v1.8.0
-	golang.org/x/crypto v0.0.0-20220817201139-bc19a97f63c8
-	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e
-	golang.org/x/net v0.0.0-20220812174116-3211cb980234
+	golang.org/x/crypto v0.0.0-20220824171710-5757bc0c5503
+	golang.org/x/exp v0.0.0-20220823124025-807a23277127
+	golang.org/x/net v0.0.0-20220822230855-b0a4917ee28c
 )
 
 require (
@@ -27,6 +27,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde // indirect
-	golang.org/x/sys v0.0.0-20220818161305-2296e01440c6 // indirect
+	golang.org/x/sys v0.0.0-20220823224334-20c2bfdbfe24 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
