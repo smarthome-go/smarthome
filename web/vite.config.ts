@@ -6,7 +6,7 @@ import { defineConfig } from 'vite'
 export default defineConfig({
     plugins: [svelte()],
     build: {
-        chunkSizeWarningLimit: 515,
+        chunkSizeWarningLimit: 580,
         rollupOptions: {
             input: {
                 // Login / logout pages

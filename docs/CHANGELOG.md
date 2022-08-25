@@ -1,7 +1,5 @@
-## Changelog for v0.2.1
+## Changelog for v0.2.2
 
 ### Bugfixes
-- Added missing left margin to dashboard quick actions loading indicator
-- Fixed hidden schedule switch selection on some mobile / smaller devices
-- Select active workspace as default when creating a new Homescript
-- Added missing `weather` and `temperature` implementation in Homescript
+- Fixed major bug in internal configuration handling
+- Fixed broken setup when using a database which was set by environment variables
