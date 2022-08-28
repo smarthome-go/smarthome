@@ -21,7 +21,7 @@ setup:
 deps:
 	go mod tidy
 	go get -u -v
-	cd web && npm outdated && npm update && npm run prepare
+	cd web && npm outdated; npm update && npm run prepare
 
 
 # Lints most of the source code
