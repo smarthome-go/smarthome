@@ -279,6 +279,16 @@
             gap: 2rem;
         }
 
+        &__toggles {
+            div {
+                span {
+                    @include mobile {
+                        font-size: 0.9rem;
+                    }
+                }
+            }
+        }
+
         &__actions {
             display: flex;
             flex-direction: column;
