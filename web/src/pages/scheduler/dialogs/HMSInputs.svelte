@@ -12,6 +12,7 @@
     import Select, { Option } from "@smui/select";
     import { switches, switchesLoaded, homescripts } from "../main";
     import type { ScheduleData, SwitchResponse } from "../main";
+    import Button from "@smui/button/src/Button.svelte";
 
     export let data: ScheduleData = {
         name: "",
@@ -91,16 +92,41 @@
         {#if active === "hms"}
             {#if data.targetMode !== active}
                 <HmsInputsReset
-                    {active}
                     activeInCode={data.targetMode}
                     icon="auto_fix_off"
                     on:reset={() => (data.targetMode = active)}
                 />
             {:else}
-                <HmsSelector
-                    homescripts={$homescripts}
-                    bind:selection={data.homescriptTargetId}
-                />
+                <div class="main__editor__homescript">
+                    {#if $homescripts.length > 0}
+                        <HmsSelector
+                            homescripts={$homescripts}
+                            bind:selection={data.homescriptTargetId}
+                        />
+                    {:else}
+                        <div class="main__editor__homescript__empty">
+                            <i class="material-icons">code_off</i>
+                            <div class="main__editor__homescript__empty__text">
+                                <h6>No Homescripts available</h6>
+                                <span class="text-hint"
+                                    >Make sure the <span
+                                        style="color: var(--clr-primary)"
+                                        >'Show Selection'</span
+                                    > setting is enabled for Homescripts which should
+                                    appear up here.</span
+                                >
+                                <br>
+                                <span class="text-disabled"
+                                    >You can find this setting under 'Selection
+                                    and visibility'</span
+                                >
+                            </div>
+                            <Button href="/homescript" variant="outlined"
+                                >To Homescript</Button
+                            >
+                        </div>
+                    {/if}
+                </div>
             {/if}
         {:else if active === "switches"}
             {#if data.targetMode !== active}
@@ -223,6 +249,45 @@
             @include mobile {
                 height: auto;
                 min-height: 20rem;
+            }
+
+            &__homescript {
+                &__empty {
+                    margin-top: 4rem;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 1rem;
+
+                    @include mobile {
+                        margin-top: 2rem;
+                    }
+
+                    i {
+                        font-size: 5rem;
+                        color: var(--clr-text-disabled);
+                    }
+
+                    &__text {
+                        max-width: 50%;
+
+                        @include widescreen {
+                            max-width: 60%;
+                        }
+
+                        @include mobile {
+                            max-width: 100%;
+                        }
+
+                        h6 {
+                            margin: 0.5rem 0;
+                        }
+
+                        span {
+                            // Placeholder
+                        }
+                    }
+                }
             }
 
             &__switches {
