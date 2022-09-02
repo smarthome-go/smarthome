@@ -172,7 +172,6 @@
                 class="material-icons"
                 on:click={() => (editOpen = true)}>edit</IconButton
             >
-            <IconButton class="material-icons">info</IconButton>
         </div>
     </div>
 </div>
