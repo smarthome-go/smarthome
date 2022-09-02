@@ -167,8 +167,8 @@
             style="width: 100%;"
             helperLine$style="width: 100%;"
         />
-        <br>
-        <br>
+        <br />
+        <br />
         <Autocomplete
             style="width: 100%"
             label="Select Workspace"
@@ -192,7 +192,7 @@
             <span class="text-hint">Selection and visibility</span>
             <div>
                 <Switch bind:checked={data.schedulerEnabled} />
-                <span class="text-hint">Automations</span>
+                <span class="text-hint">Show Selection</span>
             </div>
             <div>
                 <Switch bind:checked={data.quickActionsEnabled} />
