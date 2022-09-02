@@ -213,13 +213,16 @@
             padding-top: 5rem;
             color: var(--clr-text-disabled);
             gap: 1rem;
+
             i {
                 font-size: 5rem;
             }
+
             h6 {
                 margin: 0.5rem 0;
             }
         }
+
         &.empty {
             flex-direction: column;
             align-items: center;
@@ -227,9 +230,11 @@
             padding-top: 5rem;
             color: var(--clr-text-disabled);
             gap: 1rem;
+
             i {
                 font-size: 5rem;
             }
+
             h6 {
                 margin: 0.5rem 0;
             }
