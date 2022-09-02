@@ -167,12 +167,16 @@
         class:empty={$automationsLoaded && $automations.length == 0}
     >
         {#if $automationsLoaded && $automations.length == 0}
-            <i class="material-icons" id="no-automations-icon">event_repeat</i>
-            <h6 class="text-hint">No automations</h6>
-            <Button on:click={() => (addOpen = true)} variant="outlined">
-                <Label>Create New</Label>
-                <Icon class="material-icons">add</Icon>
-            </Button>
+            <div class="automations__empty">
+                <i class="material-icons" id="no-automations-icon"
+                    >event_repeat</i
+                >
+                <h6 class="text-hint">No automations</h6>
+                <Button on:click={() => (addOpen = true)} variant="outlined">
+                    <Label>Create New</Label>
+                    <Icon class="material-icons">add</Icon>
+                </Button>
+            </div>
         {:else}
             {#each $automations as automation (automation.id)}
                 <Automation
@@ -205,9 +209,21 @@
         box-sizing: border-box;
 
         &.empty {
-            padding-top: 5rem;
             justify-content: center;
+        }
+
+        &__empty {
+            justify-content: center;
+            color: var(--clr-text-disabled);
+            padding-top: 5rem;
+            display: flex;
             flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+
+            i {
+                font-size: 5rem;
+            }
 
             h6 {
                 margin: 0.5rem 0;
@@ -235,18 +251,6 @@
                 // Hide title on mobile due to space limitations
                 display: none;
             }
-        }
-    }
-
-    div {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-
-        @include mobile {
-            flex-direction: row-reverse;
-            justify-content: space-between;
-            width: 100%;
         }
     }
 
