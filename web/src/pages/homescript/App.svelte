@@ -152,14 +152,22 @@
             if (!res.success) throw Error(res.error);
 
             // Create a new workspace if it does not exist already
-            if (!workspaces.includes(selectedData.workspace)) workspaces = [...workspaces, selectedData.workspace]
+            if (!workspaces.includes(selectedData.workspace))
+                workspaces = [...workspaces, selectedData.workspace];
 
-            const oldWorkspace = $homescripts.find(h => h.data.data.id === selectedData.id).data.data.workspace
-            if ($homescripts.filter(h => h.data.data.workspace === oldWorkspace).length === 1) workspaces = workspaces.filter(w => w !== oldWorkspace)
+            const oldWorkspace = $homescripts.find(
+                (h) => h.data.data.id === selectedData.id
+            ).data.data.workspace;
+            if (
+                $homescripts.filter(
+                    (h) => h.data.data.workspace === oldWorkspace
+                ).length === 1
+            )
+                workspaces = workspaces.filter((w) => w !== oldWorkspace);
 
-            await tick()
+            await tick();
 
-            workspace = selectedData.workspace
+            workspace = selectedData.workspace;
 
             updateSourceFromSelectedData();
         } catch (err) {
@@ -198,12 +206,13 @@
             await sleep(50);
 
             // Create a new workspace if it does not exist already
-            if (!workspaces.includes(data.workspace)) workspaces = [...workspaces, data.workspace]
+            if (!workspaces.includes(data.workspace))
+                workspaces = [...workspaces, data.workspace];
 
-            await tick()
+            await tick();
 
             // Select the newly created workspace first
-            workspace = data.workspace
+            workspace = data.workspace;
 
             // Select the newly created Homescript for editing
             selection = data.id;
@@ -234,11 +243,18 @@
                 (h) => h.data.data.id !== selection
             );
 
-            const wsToBeDeleted = $homescripts.find(h => h.data.data.id === id).data.data.workspace
-            if ($homescripts.filter(h => h.data.data.workspace === wsToBeDeleted).length === 1) workspaces = workspaces.filter(w => w !== wsToBeDeleted)
+            const wsToBeDeleted = $homescripts.find(
+                (h) => h.data.data.id === id
+            ).data.data.workspace;
+            if (
+                $homescripts.filter(
+                    (h) => h.data.data.workspace === wsToBeDeleted
+                ).length === 1
+            )
+                workspaces = workspaces.filter((w) => w !== wsToBeDeleted);
 
-            await tick()
-            if (workspaces.length > 0) workspace = workspaces[0]
+            await tick();
+            if (workspaces.length > 0) workspace = workspaces[0];
 
             // If no Homescript exist besides this one, only make changes persistent
             if (homescriptsTemp.length == 0) {
@@ -347,9 +363,11 @@
                 ...new Set($homescripts.map((h) => h.data.data.workspace)),
             ];
             workspace = workspaces[0];
-            selection = $homescripts.find(h => h.data.data.workspace === workspace).data.data.id
+            selection = $homescripts.find(
+                (h) => h.data.data.workspace === workspace
+            ).data.data.id;
 
-            await tick()
+            await tick();
 
             updateSelectedData();
         }
@@ -403,6 +421,8 @@
                     <Label>{tab}</Label>
                 </Tab>
             </TabBar>
+        {:else}
+            <h6>Homescript</h6>
         {/if}
         <div id="header__buttons">
             <IconButton
@@ -540,6 +560,15 @@
         background-color: var(--clr-height-1-4);
         min-height: 3.5rem;
         overflow-x: auto;
+
+        h6 {
+            margin: 0.5rem 0;
+            margin-left: 1rem;
+            @include mobile {
+                // Hide title on mobile due to space limitations
+                display: none;
+            }
+        }
 
         &__buttons {
             display: flex;
