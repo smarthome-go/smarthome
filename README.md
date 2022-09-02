@@ -12,7 +12,7 @@ The system focuses on functionality and simplicity in order to guarantee a stabl
 
 ### Concepts
 - Completely self-hostable on your own infrastructure
-- Simple setup: the entire configuraation can be managed via the web interface
+- Simple setup: the entire configuration can be managed via the web interface
 - Is able to operate without internet connection (except for the weather which relies on an API service)
 - Privacy focused: Your data will stay on your system because Smarthome is not relying on cloud infrastructure
 - An up-to-date docker-image is built and published to Docker-Hub on every release → *Official Docker support*
