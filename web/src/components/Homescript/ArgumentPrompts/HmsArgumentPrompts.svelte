@@ -61,7 +61,14 @@
             open = false;
             return;
         }
+
         argumentsWithValues[currentArgumentIndex].key = currentArg.argKey;
+
+        // Reset all placeholders to their default value
+        booleanPlaceholder = false;
+        numberPlaceholder = 0;
+        yesNoPlaceholder = "";
+
         currentArgumentIndex++;
     }
 
@@ -78,14 +85,16 @@
     // Conversion functions
     function updateFromNumber() {
         if (
-            currentArg.display === "number_hour" ||
-            (currentArg.display === "number_minute" && numberPlaceholder < 0)
+            (currentArg.display === "number_hour" ||
+                currentArg.display === "number_minute") &&
+            numberPlaceholder < 0
         )
             numberPlaceholder = 0;
         if (currentArg.display === "number_hour" && numberPlaceholder > 24)
             numberPlaceholder = 24;
         if (currentArg.display === "number_minute" && numberPlaceholder > 60)
             numberPlaceholder = 60;
+
         argumentsWithValues[currentArgumentIndex].value =
             numberPlaceholder.toString();
     }
@@ -100,16 +109,35 @@
     }
 
     // Change listeners to trigger conversion
-    $: if (currentArg.inputType == "number" && numberPlaceholder)
-        updateFromNumber();
     $: if (
-        currentArg.inputType == "boolean" &&
-        currentArg.display !== "boolean_yes_no" &&
-        // Used in order to trick svelte into running this every time the booleanPlaceholder changes
-        (booleanPlaceholder == false || booleanPlaceholder == true)
+        currentArg.inputType == "number" &&
+        argumentsWithValues.length > 0 &&
+        numberPlaceholder !== undefined
+    )
+        updateFromNumber();
+
+    $: if (
+        currentArg.inputType === "boolean" &&
+        currentArg.display === "type_default" &&
+        argumentsWithValues.length > 0 &&
+        booleanPlaceholder !== undefined
     )
         updateFromBoolean();
-    $: if (currentArg.display === "boolean_yes_no" && yesNoPlaceholder !== "")
+
+    $: if (
+        currentArg.inputType === "boolean" &&
+        currentArg.display === "boolean_on_off" &&
+        argumentsWithValues.length > 0 &&
+        booleanPlaceholder !== undefined
+    )
+        updateFromBoolean();
+
+    $: if (
+        currentArg.inputType === "boolean" &&
+        currentArg.display === "boolean_yes_no" &&
+        yesNoPlaceholder !== "" &&
+        argumentsWithValues.length > 0
+    )
         updateFromYesNo();
 
     /*
@@ -150,6 +178,11 @@
     function createArgsWithValue() {
         for (let arg of args)
             argumentsWithValues.push({ key: arg.argKey, value: "" });
+        if (
+            args[0].inputType === "boolean" &&
+            args[0].display === "type_default"
+        )
+            updateFromBoolean();
     }
 </script>
 
@@ -157,9 +190,11 @@
     bind:open
     aria-labelledby="title"
     aria-describedby="content"
-    selection={currentArg.display === "string_switches" &&
+    selection={(currentArg.display === "string_switches" &&
         switchesLoaded &&
-        switches.length > 0}
+        switches.length > 0) ||
+        (currentArg.inputType === "boolean" &&
+            currentArg.display === "type_default")}
 >
     <Header>
         <Title id="title">{currentArg.prompt}</Title>
@@ -226,6 +261,7 @@
                         />
                     {:else if currentArg.display === "number_hour"}
                         <Textfield
+                            style="width: 100%;"
                             bind:value={numberPlaceholder}
                             label={currentArg.argKey}
                             type="number"
@@ -234,6 +270,7 @@
                         />
                     {:else if currentArg.display === "number_minute"}
                         <Textfield
+                            style="width: 100%;"
                             bind:value={numberPlaceholder}
                             label={currentArg.argKey}
                             type="number"
@@ -243,13 +280,14 @@
                     {/if}
                 {:else if currentArg.inputType === "boolean"}
                     {#if currentArg.display === "boolean_on_off"}
+                        <br />
                         <FormField>
                             <Switch bind:checked={booleanPlaceholder} />
                             <span slot="label"
                                 >{booleanPlaceholder ? "On" : "Off"}</span
                             >
                         </FormField>
-                    {:else}
+                    {:else if currentArg.display === "boolean_yes_no"}
                         {#each ["yes", "no"] as option}
                             <FormField>
                                 <Radio
@@ -263,15 +301,33 @@
                                 >
                             </FormField>
                         {/each}
+                    {:else}
+                        <List radioList style="width: 100%;">
+                            {#each [true, false] as opt (opt)}
+                                <Item>
+                                    <Graphic>
+                                        <Radio
+                                            bind:group={booleanPlaceholder}
+                                            value={opt}
+                                        />
+                                    </Graphic>
+                                    <Label>
+                                        {opt ? "True" : "False"}
+                                    </Label>
+                                </Item>
+                            {/each}
+                        </List>
                     {/if}
                 {/if}
             </div>
         {/if}
         <div
             class="actions"
-            class:selection={currentArg.display === "string_switches" &&
+            class:selection={(currentArg.display === "string_switches" &&
                 switchesLoaded &&
-                switches.length > 0}
+                switches.length > 0) ||
+                (currentArg.inputType === "boolean" &&
+                    currentArg.display === "type_default")}
         >
             <Button
                 on:click={() => {
