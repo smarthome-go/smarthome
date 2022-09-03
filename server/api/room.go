@@ -22,7 +22,7 @@ type DeleteRoomRequest struct {
 }
 
 // Returns list of rooms which contain switches that the user is allowed to use
-func ListUserRoomsWithSwitches(w http.ResponseWriter, r *http.Request) {
+func ListUserRoomsWithData(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
