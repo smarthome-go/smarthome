@@ -11,5 +11,5 @@
 
 #### Server & Backend
 - Modified the Homescript `print` function
-- Previously, every argument to the function was seperated using a newline
+- Previously, every argument to the function was separated using a newline
 - Now, the arguments are separated using whitespaces and the print function adds one newline at the end of all joined arguments
