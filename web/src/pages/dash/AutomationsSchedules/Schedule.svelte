@@ -1,7 +1,8 @@
 <script lang="ts">
     import { createEventDispatcher, onMount } from "svelte";
 
-    import type { Schedule } from "./types";
+    import type { Schedule } from "./shared";
+    import { timeUntilExecutionText } from "./shared";
 
     const dispatch = createEventDispatcher();
 
@@ -20,65 +21,25 @@
     let timeRunning = false;
     let timeUntilString = "";
 
-    // Is used to calculate the time until the schedule's execution
-    // Returns a user-friendly string
-    export function timeUntilExecutionText(
-        now: Date,
-        hourThen: number,
-        minuteThen: number
-    ): string {
-        now.setTime(now.getTime());
-        const minuteNow = now.getMinutes();
-        const hourNow = now.getHours();
-        let hourDifference = hourThen - hourNow;
-        const minuteDifference = minuteThen - minuteNow;
-        let outputText = "In ";
-
-        if (minuteDifference < 0) hourDifference--;
-
-        if (hourDifference < 0) hourDifference += 24;
-
-        if (hourDifference > 0) {
-            outputText +=
-                hourDifference > 1
-                    ? `${hourDifference} h`
-                    : `${hourDifference} h`;
-        }
-
-        if (hourDifference !== 0 && minuteDifference !== 0)
-            outputText += " and ";
-
-        if (hourDifference === 0 && minuteDifference === 1) {
-            outputText += ` ${60 - now.getSeconds()} seconds`;
-        } else if (minuteDifference > 0) {
-            outputText +=
-                minuteDifference > 1
-                    ? `${minuteDifference} min`
-                    : `${minuteDifference} min`;
-        } else if (minuteDifference < 0) {
-            outputText +=
-                minuteDifference + 60 > 1
-                    ? `${minuteDifference + 60} min`
-                    : `${minuteDifference + 60} min`;
-        }
-        return outputText;
-    }
-
     // Recursive function which updates the `timeUntilString` every 2000ms
     function updateTimeUntilExecutionText() {
+        let now = new Date();
         timeUntilString = timeUntilExecutionText(
-            new Date(),
+            now,
             data.data.hour,
             data.data.minute
         );
         timeRunning =
-            data.data.hour === new Date().getHours() &&
-            data.data.minute === new Date().getMinutes();
+            data.data.hour === now.getHours() &&
+            data.data.minute === now.getMinutes();
 
-        // If the schedule is assumed to be executing, hide it after 5 seconds
-        setTimeout(() => dispatch("hide"), 5000);
+        if (timeRunning) {
+            // If the schedule is assumed to be executing, hide it after 5 seconds
+            setTimeout(() => dispatch("hide"), 5000);
+            return;
+        }
 
-        setTimeout(updateTimeUntilExecutionText, 2000);
+        setTimeout(updateTimeUntilExecutionText, 1000);
     }
 
     // Start the time updater
@@ -91,7 +52,9 @@
     </span>
     <div class="schedule__time">
         <span>{timeString}</span>
-        <span class="schedule__time__until">{timeUntilString}</span>
+        <span class="schedule__time__until"
+            >{timeRunning ? "Executing" : timeUntilString}</span
+        >
     </div>
 </div>
 

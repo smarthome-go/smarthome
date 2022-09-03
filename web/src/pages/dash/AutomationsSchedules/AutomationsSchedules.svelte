@@ -6,7 +6,7 @@
         automation,
         automationWrapper,
         Schedule as ScheduleType,
-    } from "./types";
+    } from "./shared";
     import Schedule from "./Schedule.svelte";
     import Automation from "./Automation.svelte";
     import Button, { Label } from "@smui/button";
@@ -41,20 +41,33 @@
                     },
                 ];
             });
-            automationsToday = automations.filter((a) => {
-                // Filter out any disabled automations
-                if (!a.data.enabled) return false
+            automationsToday = automations
+                .filter((a) => {
+                    // Filter out any disabled automations
+                    if (!a.data.enabled) return false;
 
-                // Filter out any automations from not today
-                if (!a.days.includes(now.getDay())) return false;
+                    // Filter out any automations from not today
+                    if (!a.days.includes(now.getDay())) return false;
 
-                // Only display the automations which are still coming
-                return (
-                    a.hours > now.getHours() ||
-                    (a.hours === now.getHours() &&
-                        a.minutes >= now.getMinutes())
-                );
-            });
+                    // Only display the automations which are still coming
+                    return (
+                        a.hours > now.getHours() ||
+                        (a.hours === now.getHours() &&
+                            a.minutes >= now.getMinutes())
+                    );
+                })
+                .sort((a, b) => {
+                    let aDate = new Date();
+                    aDate.setHours(a.hours);
+                    aDate.setMinutes(a.minutes);
+
+                    let bDate = new Date();
+                    bDate.setHours(b.hours);
+                    bDate.setMinutes(b.minutes);
+
+                    return aDate.getTime() - bDate.getTime();
+                });
+
             automationsLoaded = true;
         } catch (err) {
             $createSnackbar(`Could not load automations: ${err}`);
@@ -95,7 +108,17 @@
             ).json();
             if (res.success !== undefined && !res.success)
                 throw Error(res.error);
-            schedules = res
+            schedules = res.sort((a: ScheduleType, b: ScheduleType) => {
+                let aDate = new Date();
+                aDate.setHours(a.data.hour);
+                aDate.setMinutes(a.data.minute);
+
+                let bDate = new Date();
+                bDate.setHours(b.data.hour);
+                bDate.setMinutes(b.data.minute);
+
+                return aDate.getTime() - bDate.getTime();
+            });
             schedulesLoaded = true;
         } catch (err) {
             $createSnackbar(`Could not load schedules: ${err}`);
@@ -118,8 +141,10 @@
                     <span class="content__automations__empty__title">
                         No Automations
                     </span>
-                    <span class="text-hint"> No automations running Today </span>
-                    <Button variant="outlined" href='/automations'>
+                    <span class="text-hint">
+                        No automations running Today
+                    </span>
+                    <Button variant="outlined" href="/automations">
                         <Label>Create</Label>
                     </Button>
                 </div>
@@ -132,8 +157,16 @@
                     (Upcoming)
                 </span>
                 <div class="content__automations__list">
-                    {#each automationsToday as data}
-                        <Automation bind:data />
+                    {#each automationsToday as data (data.data.id)}
+                        <Automation
+                            bind:data
+                            on:hide={() => {
+                                console.log("automation hidden");
+                                automationsToday = automationsToday.filter(
+                                    (a) => a.data.id !== data.data.id
+                                );
+                            }}
+                        />
                     {/each}
                 </div>
             {/if}
@@ -145,7 +178,7 @@
                         No Schedules
                     </span>
                     <span class="text-hint">Nothing planned soon</span>
-                    <Button variant="outlined" href='/scheduler'>
+                    <Button variant="outlined" href="/scheduler">
                         <Label>Plan</Label>
                     </Button>
                 </div>
@@ -156,8 +189,16 @@
                         : ""} (Planned)
                 </span>
                 <div class="content__schedules__list">
-                    {#each schedules as data}
-                        <Schedule bind:data />
+                    {#each schedules as data (data.id)}
+                        <Schedule
+                            bind:data
+                            on:hide={() => {
+                                console.log("schedule hidden");
+                                schedules = schedules.filter(
+                                    (schedule) => schedule.id !== data.id
+                                );
+                            }}
+                        />
                     {/each}
                 </div>
             {/if}

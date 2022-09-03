@@ -1,17 +1,43 @@
 <script lang="ts">
-    import type { automationWrapper } from "./types";
+    import { createEventDispatcher, onMount } from "svelte";
+
+    import type { automationWrapper } from "./shared";
+    import { timeUntilExecutionText } from "./shared";
+
+    const dispatch = createEventDispatcher();
 
     export let data: automationWrapper;
 
     // Generates a 12h string from 24h time data
     let timeString = "";
     $: timeString =
-        `${
-            data.hours <= 12 ? data.hours : data.hours - 12
-        }`.padStart(2, "0") +
+        `${data.hours <= 12 ? data.hours : data.hours - 12}`.padStart(2, "0") +
         ":" +
         `${data.minutes}`.padStart(2, "0") +
         ` ${data.hours < 12 ? "AM" : "PM"}`;
+
+    let timeRunning = false;
+    let timeUntilString = "";
+
+    // Recursive function which updates the `timeUntilString` every 2000ms
+    function updateTimeUntilExecutionText() {
+        let now = new Date();
+        timeUntilString = timeUntilExecutionText(now, data.hours, data.minutes);
+
+        timeRunning =
+            data.hours === now.getHours() && data.minutes === now.getMinutes();
+
+        if (timeRunning) {
+            // If the schedule is assumed to be executing, hide it after 5 seconds
+            setTimeout(() => dispatch("hide"), 5000);
+            return
+        }
+
+        setTimeout(updateTimeUntilExecutionText, 1000);
+    }
+
+    // Start the time updater
+    onMount(updateTimeUntilExecutionText);
 </script>
 
 <div class="automation mdc-elevation--z3">
@@ -20,6 +46,9 @@
     </span>
     <span class="automation__time">
         {timeString}
+        <span class="automation__time__until"
+            >{timeRunning ? "Executing" : timeUntilString}</span
+        >
     </span>
 </div>
 
@@ -40,8 +69,14 @@
         }
 
         &__time {
-            color: var(--clr-text-hint);
             font-size: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            color: var(--clr-text-hint);
+
+            &__until {
+                font-size: 0.7rem;
+            }
         }
     }
 </style>
