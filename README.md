@@ -1,5 +1,5 @@
 # Smarthome
-**Version**: `0.2.3`
+**Version**: `0.2.4`
 
 A completely self-built Smarthome-system written in Go.
 
