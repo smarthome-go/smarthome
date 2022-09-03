@@ -143,9 +143,7 @@ func (self *Executor) Print(args ...string) {
 	if self.DryRun {
 		return
 	}
-	for _, arg := range args {
-		self.Output += arg + "\n"
-	}
+	self.Output += strings.Join(args, " ") + "\n"
 }
 
 // Returns a boolean if the requested switch is on or off
