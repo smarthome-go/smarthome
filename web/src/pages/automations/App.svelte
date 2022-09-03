@@ -136,7 +136,7 @@
 <Page>
     <div id="header" class="mdc-elevation--z4">
         <h6>Automations</h6>
-        <div>
+        <div id="header__content">
             <IconButton
                 title="Refresh"
                 class="material-icons"
@@ -243,6 +243,11 @@
         box-sizing: border-box;
         background-color: var(--clr-height-1-4);
         min-height: 3.5rem;
+
+        &__content {
+            display: flex;
+            align-items: center;
+        }
 
         h6 {
             margin: 0.5rem 0;
