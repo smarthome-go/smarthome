@@ -30,7 +30,7 @@
         if (timeRunning) {
             // If the schedule is assumed to be executing, hide it after 5 seconds
             setTimeout(() => dispatch("hide"), 5000);
-            return
+            return;
         }
 
         setTimeout(updateTimeUntilExecutionText, 1000);
@@ -53,6 +53,7 @@
 </div>
 
 <style lang="scss">
+    @use "../../../mixins" as *;
     .automation {
         background-color: var(--clr-height-2-3);
         border-radius: 0.25rem;
@@ -73,6 +74,10 @@
             display: flex;
             justify-content: space-between;
             color: var(--clr-text-hint);
+
+            @include mobile {
+                flex-direction: column;
+            }
 
             &__until {
                 font-size: 0.7rem;

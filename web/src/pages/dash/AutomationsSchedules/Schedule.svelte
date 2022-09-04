@@ -59,6 +59,7 @@
 </div>
 
 <style lang="scss">
+    @use "../../../mixins" as *;
     .schedule {
         background-color: var(--clr-height-2-3);
         border-radius: 0.25rem;
@@ -76,6 +77,10 @@
             display: flex;
             justify-content: space-between;
             color: var(--clr-text-hint);
+
+            @include mobile {
+                flex-direction: column;
+            }
 
             &__until {
                 font-size: 0.7rem;
