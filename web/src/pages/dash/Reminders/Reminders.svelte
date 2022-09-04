@@ -28,7 +28,7 @@
 </script>
 
 <Box bind:loading>
-    <span slot="header">Reminders</span>
+    <a href="/reminders" slot="header" class="title">Reminders</a>
     <div
         class="reminders"
         class:empty={remindersLoaded && reminders.length === 0}
@@ -52,6 +52,11 @@
 </Box>
 
 <style lang="scss">
+    .title {
+        color: var(--clr-primary-hint);
+        font-weight: bold;
+        text-decoration: none;
+    }
     .reminders {
         display: flex;
         flex-direction: column;
