@@ -75,7 +75,7 @@ func DeleteUser(username string) error {
 		return err
 	}
 	if err := database.DeleteUser(username); err != nil {
-		log.Error("Failed to delete user: fatabase error: ", err.Error())
+		log.Error("Failed to delete user: database error: ", err.Error())
 		return err
 	}
 	return nil

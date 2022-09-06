@@ -156,6 +156,9 @@ func DeleteUser(username string) error {
 	if err := DeleteAllNotificationsFromUser(username); err != nil {
 		return err
 	}
+	if err := DeleteAllRemindersFromUser(username); err != nil {
+		return err
+	}
 	if err := DeleteAllAutomationsFromUser(username); err != nil {
 		return err
 	}
