@@ -28,6 +28,6 @@ However, support for additional hardware, for example Zigbee devices is planned 
 A guide for getting started can be found [here](./docs/Quickstart.md).
 
 ## Showcase
-A comprehensive list of screenshots can be found [here](./server/screenshots/README.md)  
+A comprehensive list of screenshots can be found [here](https://github.com/smarthome-go/docs/blob/main/server/screenshots/README.md)  
 *Screenshot of the Dashboard in version 0.2.4*
 ![](https://raw.githubusercontent.com/smarthome-go/docs/main/server/screenshots/dashboard.png)
