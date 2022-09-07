@@ -51,6 +51,7 @@
 </div>
 
 <style lang="scss">
+    @use "../../../mixins" as *;
     .reminder {
         background-color: var(--clr-height-2-3);
         border-radius: 0.2rem;
@@ -60,12 +61,16 @@
         justify-content: space-between;
         border-left: solid var(--clr-border) 0.3rem;
 
+        @include widescreen {
+            height: 2.8rem;
+        }
+
         &__left {
             width: calc(100% - 4rem);
 
             &__title {
                 font-weight: bold;
-                font-size: .9rem;
+                font-size: 0.9rem;
             }
 
             &__description {
