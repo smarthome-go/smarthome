@@ -1,6 +1,8 @@
 package database
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
 type UserToken struct {
 	User  string        `json:"user"`
@@ -144,6 +146,25 @@ func DeleteTokenByToken(token string) error {
 	defer query.Close()
 	if _, err := query.Exec(token); err != nil {
 		log.Error("Failed to delete user token by token: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}
+
+// Deletes all authentication tokens of an arbitrary user
+func RemoveAllTokensOfUser(username string) error {
+	query, err := db.Prepare(`
+	DELETE FROM
+	userToken
+	WHERE User=?
+	`)
+	if err != nil {
+		log.Error("Failed to delete all authentication tokens of user: preparing query failed: ", err.Error())
+		return err
+	}
+	defer query.Close()
+	if _, err := query.Exec(username); err != nil {
+		log.Error("Failed to delete all authentication tokens of user: executing query failed: ", err.Error())
 		return err
 	}
 	return nil
