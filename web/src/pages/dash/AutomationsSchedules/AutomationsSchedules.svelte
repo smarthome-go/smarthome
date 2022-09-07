@@ -207,12 +207,21 @@
 </Box>
 
 <style lang="scss">
+    @use "../../../mixins" as *;
     .content {
         display: flex;
         gap: 1rem;
 
+        @include mobile {
+            flex-direction: column;
+        }
+
         &__automations {
             width: 50%;
+
+            @include mobile {
+                width: auto;
+            }
 
             &__empty {
                 margin-top: 0.8rem;
@@ -240,12 +249,16 @@
                 display: flex;
                 flex-direction: column;
                 gap: 0.5rem;
-                height: 2rem;
             }
         }
 
         &__schedules {
             width: 50%;
+
+            @include mobile {
+                width: auto;
+                margin-bottom: 1rem;
+            }
 
             &__empty {
                 margin-top: 0.8rem;
