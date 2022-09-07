@@ -16,9 +16,9 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/smarthome-go/homescript v0.17.0
 	github.com/stretchr/testify v1.8.0
-	golang.org/x/crypto v0.0.0-20220826181053-bd7e27e6170d
-	golang.org/x/exp v0.0.0-20220827204233-334a2380cb91
-	golang.org/x/net v0.0.0-20220826154423-83b083e8dc8b
+	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90
+	golang.org/x/exp v0.0.0-20220907003533-145caa8ea1d0
+	golang.org/x/net v0.0.0-20220906165146-f3363e06e74c
 )
 
 require (
@@ -27,6 +27,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde // indirect
-	golang.org/x/sys v0.0.0-20220825204002-c680a09ffe64 // indirect
+	golang.org/x/sys v0.0.0-20220907062415-87db552b00fd // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
