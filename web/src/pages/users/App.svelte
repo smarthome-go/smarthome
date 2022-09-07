@@ -1,83 +1,85 @@
 <script lang="ts">
-    import Button,{ Icon,Label } from '@smui/button'
-    import IconButton from '@smui/icon-button'
-    import { onMount } from 'svelte'
-    import Progress from '../../components/Progress.svelte'
-    import { createSnackbar, UserData } from '../../global'
-    import Page from '../../Page.svelte'
-    import AddUser from './dialogs/AddUser.svelte'
-    import { allPermissions,loading,users } from './main'
-    import User from './User.svelte'
+    import Button, { Icon, Label } from "@smui/button";
+    import IconButton from "@smui/icon-button";
+    import { onMount } from "svelte";
+    import Progress from "../../components/Progress.svelte";
+    import { createSnackbar } from "../../global";
+    import type { UserData } from "../../global";
+    import Page from "../../Page.svelte";
+    import AddUser from "./dialogs/AddUser.svelte";
+    import { allPermissions, loading, users } from "./main";
+    import User from "./User.svelte";
 
-    let addUserShow: () => void
+    let addUserShow: () => void;
 
     export async function loadPermissions() {
-        $loading = true
+        $loading = true;
         try {
             const res = await (
-                await fetch('/api/permissions/manage/list')
-            ).json()
-            if (res.success !== undefined && !res.success) throw Error(res.error)
-            $allPermissions = res
+                await fetch("/api/permissions/manage/list")
+            ).json();
+            if (res.success !== undefined && !res.success)
+                throw Error(res.error);
+            $allPermissions = res;
         } catch (err) {
-            $createSnackbar(`Failed to load permissions: ${err}`)
+            $createSnackbar(`Failed to load permissions: ${err}`);
         }
-        $loading = false
+        $loading = false;
     }
 
     async function loadUsers() {
-        $loading = true
+        $loading = true;
         try {
-            const res = await (await fetch('/api/user/manage/list')).json()
+            const res = await (await fetch("/api/user/manage/list")).json();
             if (res.success !== undefined && !res.success)
-                throw Error(res.error)
+                throw Error(res.error);
             $users = res.map((u: UserData) =>
                 Object.create({
                     user: u,
                     permissions: [],
                     switchPermissions: [],
                 })
-            )
+            );
         } catch (err) {
-            $createSnackbar(`Could not load users: ${err}`)
+            $createSnackbar(`Could not load users: ${err}`);
         }
-        $loading = false
+        $loading = false;
     }
 
     async function addUser(username: string, password: string) {
-        $loading = true
+        $loading = true;
         try {
             const res = await (
-                await fetch('/api/user/manage/add', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                await fetch("/api/user/manage/add", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ username, password }),
                 })
-            ).json()
-            if (!res.success) throw Error(res.error)
+            ).json();
+            if (!res.success) throw Error(res.error);
             $users = [
                 ...$users,
                 {
                     user: {
                         darkTheme: true,
-                        primaryColorDark: '#88FF70',
-                        primaryColorLight: '#2E7D32',
+                        primaryColorDark: "#88FF70",
+                        primaryColorLight: "#2E7D32",
                         schedulerEnabled: true,
-                        forename: 'Forename',
-                        surname: 'Surname',
+                        forename: "Forename",
+                        surname: "Surname",
                         username: username,
                     },
                     permissions: [],
                     switchPermissions: [],
                 },
-            ]
+            ];
         } catch (err) {
-            $createSnackbar(`Could not create user: ${err}`)
+            $createSnackbar(`Could not create user: ${err}`);
         }
-        $loading = false
+        $loading = false;
     }
 
-    onMount(() => loadUsers())
+    onMount(() => loadUsers());
 </script>
 
 <AddUser
@@ -116,7 +118,7 @@
 </Page>
 
 <style lang="scss">
-    @use '../../mixins' as *;
+    @use "../../mixins" as *;
     #header {
         display: flex;
         align-items: center;
