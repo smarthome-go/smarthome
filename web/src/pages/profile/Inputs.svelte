@@ -108,8 +108,6 @@
                 })
             ).json();
             if (!res.success) throw Error(res.error);
-            // Update the value in the global store
-            $data.userData.user.schedulerEnabled = true;
         } catch (err) {
             throw Error(err);
         }
