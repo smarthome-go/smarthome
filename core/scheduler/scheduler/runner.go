@@ -33,18 +33,18 @@ func scheduleRunnerFunc(id uint) {
 	// Check if the user has blocked their automations & schedules
 	owner, found, err := database.GetUserByUsername(job.Owner)
 	if err != nil {
-		log.Error("Automation failed because owner user could not be determined")
+		log.Error("Schedule failed because owner user could not be determined")
 		return
 	}
 	if !found {
-		log.Warn("Automation failed because owner user does not exist anymore, deleting schedule...")
+		log.Warn("Schedule failed because owner user does not exist anymore, deleting schedule...")
 		if err := database.DeleteScheduleById(id); err != nil {
 			log.Error("Cleaning up dangling schedule failed: could not remove schedule from database: ", err.Error())
 			return
 		}
 	}
 	if !owner.SchedulerEnabled {
-		log.Debug(fmt.Sprintf("Automation '%s' was not executed because its owner has disabled their schedules & automations", job.Data.Name))
+		log.Debug(fmt.Sprintf("Schedule '%s' was not executed because its owner has disabled their schedules & automations", job.Data.Name))
 		return
 	}
 	if !owner.SchedulerEnabled {
