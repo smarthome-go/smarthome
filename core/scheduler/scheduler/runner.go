@@ -30,21 +30,25 @@ func scheduleRunnerFunc(id uint) {
 		log.Info(fmt.Sprintf("Successfully aborted dangling schedule: %d", id))
 		return
 	}
+	// Check if the user has blocked their automations & schedules
 	owner, found, err := database.GetUserByUsername(job.Owner)
 	if err != nil {
-		log.Error(fmt.Sprintf("Failed to run schedule '%s': database error whilst retrieving user information: %s", job.Data.Name, err.Error()))
+		log.Error("Automation failed because owner user could not be determined")
 		return
 	}
 	if !found {
-		log.Error(fmt.Sprintf("Owner %s of schedule %d does not exist", job.Owner, job.Id))
-		return
+		log.Warn("Automation failed because owner user does not exist anymore, deleting schedule...")
+		if err := database.DeleteScheduleById(id); err != nil {
+			log.Error("Cleaning up dangling schedule failed: could not remove schedule from database: ", err.Error())
+			return
+		}
 	}
-	if err := database.DeleteScheduleById(id); err != nil {
-		log.Error("Executing schedule failed: could not remove schedule from database: ", err.Error())
+	if !owner.SchedulerEnabled {
+		log.Debug(fmt.Sprintf("Automation '%s' was not executed because its owner has disabled their schedules & automations", job.Data.Name))
 		return
 	}
 	if !owner.SchedulerEnabled {
-		log.Info(fmt.Sprintf("Not running schedule '%s' because user's schedules are currently disabled", job.Data.Name))
+		log.Debug(fmt.Sprintf("Not running schedule '%s' because user's schedules are currently disabled", job.Data.Name))
 		if err := user.Notify(
 			owner.Username,
 			"Schedule Skipped",

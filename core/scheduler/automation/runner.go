@@ -36,6 +36,27 @@ func automationRunnerFunc(id uint) {
 		log.Info(fmt.Sprintf("Successfully aborted dangling automation: %d", id))
 		return
 	}
+	// Check if the user has blocked their automations & schedules
+	userData, found, err := database.GetUserByUsername(job.Owner)
+	if err != nil {
+		log.Error("Automation failed because owner user could not be determined")
+		return
+	}
+	if !found {
+		log.Warn("Automation failed because owner user does not exist anymore, deleting automation...")
+		if err := database.DeleteAutomationById(id); err != nil {
+			log.Error("Cleaning up dangling automation failed: could not remove automation from database: ", err.Error())
+		}
+		return
+	}
+	if !userData.SchedulerEnabled {
+		log.Debug(fmt.Sprintf("Automation '%s' was not executed because its owner has disabled their schedules & automations", job.Data.Name))
+		event.Debug(
+			"Automation Skipped",
+			fmt.Sprintf("Automation '%s' has been skipped", job.Data.Name),
+		)
+		return
+	}
 	// Notify and remind the user about the disabled automation
 	if !job.Data.Enabled {
 		log.Info(fmt.Sprintf("Automation '%s' was not executed because it is deactivated", job.Data.Name))
