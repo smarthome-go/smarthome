@@ -127,10 +127,14 @@
             display: flex;
             flex-direction: column;
             align-items: flex-start;
-            gap: 1rem;
 
             &__title {
                 font-weight: bold;
+            }
+
+            .text-hint {
+                font-size: 0.9rem;
+                margin-bottom: 0.8rem;
             }
         }
 
