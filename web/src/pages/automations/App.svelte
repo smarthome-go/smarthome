@@ -145,7 +145,7 @@
                     await loadHomescript();
                 }}>refresh</IconButton
             >
-            {#if $automations.length > 0}
+            {#if $automations.length > 0 && $userData.userData.user.schedulerEnabled}
                 <IconButton
                     title="Week View"
                     class="material-icons"
@@ -164,9 +164,18 @@
 
     <div
         class="automations"
-        class:empty={$automationsLoaded && $automations.length == 0}
+        class:empty={($automationsLoaded && $automations.length == 0) ||
+            !$userData.userData.user.schedulerEnabled}
     >
-        {#if $automationsLoaded && $automations.length == 0}
+        {#if !$userData.userData.user.schedulerEnabled}
+            <div class="automations__disabled">
+                <i class="material-icons" id="no-automations-icon">sync_disabled</i>
+                <h6 class="text-hint">Automations Disabled</h6>
+                <Button href="/profile" variant="outlined">
+                    <Label>Enable</Label>
+                </Button>
+            </div>
+        {:else if $automationsLoaded && $automations.length == 0}
             <div class="automations__empty">
                 <i class="material-icons" id="no-automations-icon"
                     >event_repeat</i
@@ -212,7 +221,8 @@
             justify-content: center;
         }
 
-        &__empty {
+        &__empty,
+        &__disabled {
             justify-content: center;
             color: var(--clr-text-disabled);
             padding-top: 5rem;
