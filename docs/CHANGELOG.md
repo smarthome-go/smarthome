@@ -1,10 +1,12 @@
-## Changelog for v0.2.5
+## Changelog for v0.2.6
 
 ### Bugfixes
 #### Web-GUI
-- Add link to the reminder page to the dashboard reminder component
-- Fixed dashboard schedule & automations container layout on mobile devices
-- Removed redundant dashboard reminder scroll on widescreen
+- Made the *no quick-actions* text spacing fit to the other dashboard styles
+- Added custom behaviour to the automations page when automations are disabled
+- Added custom behaviour to the schedules page when schedules are disabled
+- Fixed a bug on the profile page which affected the schedules & automations toggle
 
 #### Server & Backend
-- Fixed user deletion failure which could occur if a user has an authentication token or reminders set up
+- When a user's schedules & automations are disabled, schedules and automations will no longer execute
+- Any potentially running schedule or automation will be discarded as soon as it would run
