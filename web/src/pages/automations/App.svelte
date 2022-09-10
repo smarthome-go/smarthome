@@ -4,7 +4,7 @@
     import type { homescript } from "../../homescript";
     import { onMount } from "svelte";
     import Progress from "../../components/Progress.svelte";
-    import { createSnackbar, data as userData } from "../../global";
+    import { createSnackbar, data as userData, hasFetched } from "../../global";
     import Page from "../../Page.svelte";
     import Automation from "./Automation.svelte";
     import AddAutomation from "./dialogs/AddAutomation.svelte";
@@ -137,26 +137,28 @@
     <div id="header" class="mdc-elevation--z4">
         <h6>Automations</h6>
         <div id="header__content">
-            <IconButton
-                title="Refresh"
-                class="material-icons"
-                on:click={async () => {
-                    await loadAutomations();
-                    await loadHomescript();
-                }}>refresh</IconButton
-            >
-            {#if $automations.length > 0 && $userData.userData.user.schedulerEnabled}
+            {#if $userData.userData.user.schedulerEnabled}
                 <IconButton
-                    title="Week View"
+                    title="Refresh"
                     class="material-icons"
-                    on:click={() => (overviewOpen = true)}
+                    on:click={async () => {
+                        await loadAutomations();
+                        await loadHomescript();
+                    }}>refresh</IconButton
                 >
-                    view_list
-                </IconButton>
-                <Button on:click={() => (addOpen = true)}>
-                    <Label>Create New</Label>
-                    <Icon class="material-icons">add</Icon>
-                </Button>
+                {#if $automations.length > 0}
+                    <IconButton
+                        title="Week View"
+                        class="material-icons"
+                        on:click={() => (overviewOpen = true)}
+                    >
+                        view_list
+                    </IconButton>
+                    <Button on:click={() => (addOpen = true)}>
+                        <Label>Create New</Label>
+                        <Icon class="material-icons">add</Icon>
+                    </Button>
+                {/if}
             {/if}
         </div>
     </div>
@@ -167,15 +169,17 @@
         class:empty={($automationsLoaded && $automations.length == 0) ||
             !$userData.userData.user.schedulerEnabled}
     >
-        {#if !$userData.userData.user.schedulerEnabled}
+        {#if !$userData.userData.user.schedulerEnabled && hasFetched}
             <div class="automations__disabled">
-                <i class="material-icons" id="no-automations-icon">sync_disabled</i>
+                <i class="material-icons" id="no-automations-icon"
+                    >sync_disabled</i
+                >
                 <h6 class="text-hint">Automations Disabled</h6>
                 <Button href="/profile" variant="outlined">
                     <Label>Enable</Label>
                 </Button>
             </div>
-        {:else if $automationsLoaded && $automations.length == 0}
+        {:else if $automations.length == 0 && $automationsLoaded}
             <div class="automations__empty">
                 <i class="material-icons" id="no-automations-icon"
                     >event_repeat</i
@@ -186,7 +190,7 @@
                     <Icon class="material-icons">add</Icon>
                 </Button>
             </div>
-        {:else}
+        {:else if hasFetched && $userData.userData.user.schedulerEnabled}
             {#each $automations as automation (automation.id)}
                 <Automation
                     bind:data={automation}
