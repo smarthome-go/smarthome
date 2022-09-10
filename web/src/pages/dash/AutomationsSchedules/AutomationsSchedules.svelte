@@ -1,6 +1,6 @@
 <script lang="ts">
     import Box from "../Box.svelte";
-    import { createSnackbar } from "../../../global";
+    import { createSnackbar, data as userData } from "../../../global";
     import { onMount } from "svelte";
     import type {
         automation,
@@ -135,74 +135,88 @@
 <Box bind:loading>
     <span slot="header">Schedules and Automations</span>
     <div class="content" slot="content">
-        <div class="content__automations">
-            {#if automationsLoaded && automationsToday.length === 0}
-                <div class="content__automations__empty">
-                    <span class="content__automations__empty__title">
-                        No Automations
+        {#if $userData.userData.user.schedulerEnabled}
+            <div class="content__automations">
+                {#if automationsLoaded && automationsToday.length === 0}
+                    <div class="content__automations__empty">
+                        <span class="content__automations__empty__title">
+                            No Automations
+                        </span>
+                        <span class="text-hint">
+                            No automations running Today
+                        </span>
+                        <Button variant="outlined" href="/automations">
+                            <Label>Create</Label>
+                        </Button>
+                    </div>
+                {:else}
+                    <span class="content__automations__title">
+                        {automationsToday.length} Automation{automationsToday.length !==
+                        1
+                            ? "s"
+                            : ""}
+                        (Upcoming)
                     </span>
-                    <span class="text-hint">
-                        No automations running Today
+                    <div class="content__automations__list">
+                        {#each automationsToday as data (data.data.id)}
+                            <Automation
+                                bind:data
+                                on:hide={() => {
+                                    console.log("automation hidden");
+                                    automationsToday = automationsToday.filter(
+                                        (a) => a.data.id !== data.data.id
+                                    );
+                                }}
+                            />
+                        {/each}
+                    </div>
+                {/if}
+            </div>
+            <div class="content__schedules">
+                {#if schedulesLoaded && schedules.length === 0}
+                    <div class="content__schedules__empty">
+                        <span class="content__schedules__empty__title">
+                            No Schedules
+                        </span>
+                        <span class="text-hint">Nothing planned soon</span>
+                        <Button variant="outlined" href="/scheduler">
+                            <Label>Plan</Label>
+                        </Button>
+                    </div>
+                {:else}
+                    <span class="content__schedules__title">
+                        {schedules.length} Schedule{schedules.length !== 1
+                            ? "s"
+                            : ""} (Planned)
                     </span>
-                    <Button variant="outlined" href="/automations">
-                        <Label>Create</Label>
-                    </Button>
-                </div>
-            {:else}
-                <span class="content__automations__title">
-                    {automationsToday.length} Automation{automationsToday.length !==
-                    1
-                        ? "s"
-                        : ""}
-                    (Upcoming)
+                    <div class="content__schedules__list">
+                        {#each schedules as data (data.id)}
+                            <Schedule
+                                bind:data
+                                on:hide={() => {
+                                    console.log("schedule hidden");
+                                    schedules = schedules.filter(
+                                        (schedule) => schedule.id !== data.id
+                                    );
+                                }}
+                            />
+                        {/each}
+                    </div>
+                {/if}
+            </div>
+        {:else}
+            <div class="content__disabled">
+                <span class="content__disabled__title">
+                    Scheduler Disabled
                 </span>
-                <div class="content__automations__list">
-                    {#each automationsToday as data (data.data.id)}
-                        <Automation
-                            bind:data
-                            on:hide={() => {
-                                console.log("automation hidden");
-                                automationsToday = automationsToday.filter(
-                                    (a) => a.data.id !== data.data.id
-                                );
-                            }}
-                        />
-                    {/each}
-                </div>
-            {/if}
-        </div>
-        <div class="content__schedules">
-            {#if schedulesLoaded && schedules.length === 0}
-                <div class="content__schedules__empty">
-                    <span class="content__schedules__empty__title">
-                        No Schedules
-                    </span>
-                    <span class="text-hint">Nothing planned soon</span>
-                    <Button variant="outlined" href="/scheduler">
-                        <Label>Plan</Label>
-                    </Button>
-                </div>
-            {:else}
-                <span class="content__schedules__title">
-                    {schedules.length} Schedule{schedules.length !== 1
-                        ? "s"
-                        : ""} (Planned)
-                </span>
-                <div class="content__schedules__list">
-                    {#each schedules as data (data.id)}
-                        <Schedule
-                            bind:data
-                            on:hide={() => {
-                                console.log("schedule hidden");
-                                schedules = schedules.filter(
-                                    (schedule) => schedule.id !== data.id
-                                );
-                            }}
-                        />
-                    {/each}
-                </div>
-            {/if}
-        </div>
+                <span class="text-hint"
+                    >Automations and Schedules are disabled for your user</span
+                >
+                <Button variant="outlined" href="/profile">
+                    <Label>Enable</Label>
+                </Button>
+            </div>
+        {/if}
     </div>
 </Box>
 
@@ -214,6 +228,22 @@
 
         @include mobile {
             flex-direction: column;
+        }
+
+        &__disabled {
+            margin-top: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+
+            &__title {
+                font-weight: bold;
+            }
+
+            .text-hint {
+                font-size: 0.9rem;
+                margin-bottom: 0.8rem;
+            }
         }
 
         &__automations {
