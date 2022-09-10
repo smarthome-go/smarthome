@@ -79,6 +79,7 @@ export function timeUntilExecutionText(
 }
 
 export const schedules: Writable<Schedule[]> = writable([])
+export const schedulesLoaded: Writable<boolean> = writable(false);
 
 // States that homescripts have been loaded
 export const hmsLoaded: Writable<boolean> = writable(false)

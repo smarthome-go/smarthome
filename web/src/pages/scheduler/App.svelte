@@ -5,7 +5,7 @@
     import type { homescript } from "../../homescript";
     import { onMount } from "svelte";
     import Progress from "../../components/Progress.svelte";
-    import { createSnackbar } from "../../global";
+    import { createSnackbar, data as userData, hasFetched } from "../../global";
     import Page from "../../Page.svelte";
     import AddSchedule from "./dialogs/AddSchedule.svelte";
     import {
@@ -13,6 +13,7 @@
         homescripts,
         loading,
         schedules,
+        schedulesLoaded,
         switches,
         switchesLoaded,
     } from "./main";
@@ -31,6 +32,7 @@
             if (res.success !== undefined && !res.success)
                 throw Error(res.error);
             $schedules = res;
+            $schedulesLoaded = true
         } catch (err) {
             $createSnackbar(`Could not load schedules: ${err}`);
         }
@@ -135,27 +137,39 @@
     <div id="header" class="mdc-elevation--z4">
         <h6>Scheduler</h6>
         <div id="header__right">
-            <IconButton
-                title="Refresh"
-                class="material-icons"
-                on:click={async () => {
-                    await loadHomescript();
-                    await loadSwitches();
-                    await loadSchedules();
-                }}>refresh</IconButton
-            >
-            {#if $schedules.length > 0}
-                <Button on:click={() => (addOpen = true)}>
-                    <Label>Create New</Label>
-                    <Icon class="material-icons">add</Icon>
-                </Button>
+            {#if $userData.userData.user.schedulerEnabled}
+                <IconButton
+                    title="Refresh"
+                    class="material-icons"
+                    on:click={async () => {
+                        await loadHomescript();
+                        await loadSwitches();
+                        await loadSchedules();
+                    }}>refresh</IconButton
+                >
+                {#if $schedules.length > 0}
+                    <Button on:click={() => (addOpen = true)}>
+                        <Label>Create New</Label>
+                        <Icon class="material-icons">add</Icon>
+                    </Button>
+                {/if}
             {/if}
         </div>
     </div>
     <Progress id="loader" bind:loading={$loading} />
 
-    <div class="schedules" class:empty={$schedules.length == 0}>
-        {#if $schedules.length == 0}
+    <div
+        class="schedules"
+        class:empty={$schedules.length == 0 ||
+            !$userData.userData.user.schedulerEnabled}
+    >
+        {#if !$userData.userData.user.schedulerEnabled && hasFetched}
+            <i class="material-icons">alarm_off</i>
+            <h6 class="text-hint">Schedules Disabled</h6>
+            <Button href="profile" variant="outlined">
+                <Label>Enable</Label>
+            </Button>
+        {:else if $schedules.length == 0 && $schedulesLoaded}
             <i class="material-icons">event_repeat</i>
             <h6 class="text-hint">No schedules</h6>
             <Button on:click={() => (addOpen = true)} variant="outlined">

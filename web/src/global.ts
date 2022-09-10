@@ -102,7 +102,7 @@ export const data: Writable<Data> = writable({
 })
 
 let isFetching = false
-let hasFetched = false // Indicates that the user data has been fetched, used for primary color caching
+export let hasFetched = false // Indicates that the user data has been fetched, used for primary color caching
 
 export async function fetchData() {
     if (hasFetched) return
