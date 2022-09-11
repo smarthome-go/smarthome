@@ -30,6 +30,11 @@ func scheduleRunnerFunc(id uint) {
 		log.Info(fmt.Sprintf("Successfully aborted dangling schedule: %d", id))
 		return
 	}
+	// Delete the schedule from the database
+	if err := database.DeleteScheduleById(id); err != nil {
+		log.Error("Removing schedule failed: could not remove schedule from database: ", err.Error())
+		return
+	}
 	// Check if the user has blocked their automations & schedules
 	owner, found, err := database.GetUserByUsername(job.Owner)
 	if err != nil {
