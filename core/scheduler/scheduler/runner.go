@@ -42,11 +42,8 @@ func scheduleRunnerFunc(id uint) {
 		return
 	}
 	if !found {
-		log.Warn("Schedule failed because owner user does not exist anymore, deleting schedule...")
-		if err := database.DeleteScheduleById(id); err != nil {
-			log.Error("Cleaning up dangling schedule failed: could not remove schedule from database: ", err.Error())
-			return
-		}
+		log.Warn("Schedule failed because owner user does not exist anymore, skipping execution...")
+		return
 	}
 	if !owner.SchedulerEnabled {
 		log.Debug(fmt.Sprintf("Schedule '%s' was not executed because its owner has disabled their schedules & automations", job.Data.Name))
@@ -69,7 +66,7 @@ func scheduleRunnerFunc(id uint) {
 		)
 		return
 	}
-	log.Debug(fmt.Sprintf("Schedule '%d' is executing its target", id))
+	log.Debug(fmt.Sprintf("Schedule '%s' (%d) is executing...", job.Data.Name, id))
 	switch job.Data.TargetMode {
 	case database.ScheduleTargetModeCode:
 		_, _, _, hmsErrors := homescript.HmsManager.Run(
