@@ -426,6 +426,52 @@ func TestTimingModes(t *testing.T) {
 	}
 }
 
+func TestUserDisabled(t *testing.T) {
+	now := time.Now()
+	then := now.Add(time.Minute)
+	if err := Init(); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	// Set the switch to off
+	assert.NoError(t, hardware.SetPower("test_switch", false))
+	// Set the user's schedules and automations to off
+	assert.NoError(t, database.SetUserSchedulerEnabled("admin", false))
+	// Normal automation
+	if _, err := CreateNewAutomation(
+		"name_pers",
+		"description_pers",
+		uint8(then.Hour()),
+		uint8(then.Minute()),
+		[]uint8{0, 1, 2, 3, 4, 5, 6},
+		"test",
+		"admin",
+		true,
+		database.TimingNormal,
+	); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	valid := false
+	for i := 0; i < 7; i++ {
+		time.Sleep(time.Second * 10)
+		switchItem, found, err := database.GetSwitchById("test_switch")
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+		assert.True(t, found, "Switch not found")
+		if switchItem.PowerOn {
+			valid = true
+			break
+		}
+	}
+	if valid {
+		t.Error("Power of `test_switch` changed but should not")
+		return
+	}
+}
+
 // Tests if the automation system can be initialized
 func TestInit(t *testing.T) {
 	if err := Init(); err != nil {
