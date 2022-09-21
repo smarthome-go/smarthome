@@ -134,7 +134,7 @@ func SaveCurrentPowerUsageWithLogs() {
 		event.Error("Power Draw Snapshot Error", fmt.Sprintf("Could not save snapshot of the current power draw: %s", err.Error()))
 		return
 	}
-	event.Debug("Power Draw Snapshot Saved", "A snapshot of the current power draw has been generated and saved in the database")
+	event.Trace("Power Draw Snapshot Saved", "A snapshot of the current power draw has been generated and saved in the database")
 	log.Debug("A snapshot of the current power draw has been generated and saved in the database")
 }
 

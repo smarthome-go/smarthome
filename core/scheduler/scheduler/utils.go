@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/event"
 )
 
 // Used for listing personal schedules
@@ -31,6 +32,7 @@ func CreateNewSchedule(data database.ScheduleData, owner string) error {
 		log.Error("Failed to create new schedule: could not register cron job: ", err.Error())
 		return err
 	}
+	event.Debug("Schedule Created", fmt.Sprintf("%s created Schedule `%s` (ID: %d)", owner, data.Name, newScheduleId))
 	log.Trace(fmt.Sprintf("Successfully added and setup schedule '%d'", newScheduleId))
 	return nil
 }
@@ -46,6 +48,7 @@ func RemoveScheduleById(id uint) error {
 		return err
 	}
 	log.Trace(fmt.Sprintf("Successfully removed and aborted schedule '%d'", id))
+	event.Debug("Schedule Removed", fmt.Sprintf("Schedule %d was removed from the system", id))
 	return nil
 }
 
@@ -69,6 +72,7 @@ func ModifyScheduleById(id uint, newSchedule database.ScheduleData) error {
 		return err
 	}
 	log.Trace(fmt.Sprintf("Successfully added and setup schedule after modification: '%d'", id))
+	event.Debug("Schedule Modified", fmt.Sprintf("Schedule %d was modified: new time: %d:%d ", newSchedule.Hour, newSchedule.Minute, id))
 	return nil
 }
 

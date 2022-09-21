@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/user"
 )
 
@@ -104,6 +105,7 @@ func CreateNewAutomation(
 		log.Error("Failed to register cron job: ", err.Error())
 		return 0, err
 	}
+	event.Debug("Automation Created", fmt.Sprintf("%s created a new automation (Name: %s, At %d:%d)", owner, name, hour, minute))
 	return newAutomationId, nil
 }
 
@@ -145,6 +147,7 @@ func RemoveAutomation(automationId uint) error {
 		log.Error("Failed to notify user: ", err.Error())
 		return err
 	}
+	event.Debug("Automation Removed", fmt.Sprintf("Automation %d was removed from the system", automationId))
 	return nil
 }
 
@@ -304,5 +307,6 @@ func ModifyAutomationById(automationId uint, newAutomation database.AutomationDa
 		}
 		log.Debug(fmt.Sprintf("Automation %d has been modified and disabled", automationId))
 	}
+	event.Debug("Automation Modified", fmt.Sprintf("Automation %d was modified", automationBefore.Id))
 	return nil
 }

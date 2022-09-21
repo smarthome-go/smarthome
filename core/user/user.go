@@ -7,6 +7,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/event"
 )
 
 var log *logrus.Logger
@@ -64,6 +65,7 @@ func ChangePassword(username string, newPassword string) error {
 		return err
 	}
 	log.Info(fmt.Sprintf("Password of user `%s` was changed successfully", username))
+	event.Info("Password Changed", fmt.Sprintf("%s changed their password", username))
 	return nil
 }
 
@@ -78,6 +80,7 @@ func DeleteUser(username string) error {
 		log.Error("Failed to delete user: database error: ", err.Error())
 		return err
 	}
+	event.Info("User Deleted", fmt.Sprintf("User %s was deleted", username))
 	return nil
 }
 
