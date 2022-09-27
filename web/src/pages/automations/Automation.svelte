@@ -128,7 +128,7 @@
 
 <AutomationInfo bind:data bind:open={infoOpen} />
 
-<div class="automation mdc-elevation--z3" class:disabled={!data.enabled}>
+<div class="automation mdc-elevation--z3" class:disabled={!data.enabled || data.disableOnce}>
     <!-- Top -->
     <div class="top">
         <span class="automation__name">
@@ -136,11 +136,14 @@
             <i
                 class="material-icons automation__indicator"
                 class:disabled={!data.enabled}
+                class:disabled-once={data.disableOnce && data.enabled}
             >
-                {#if data.enabled}
-                    published_with_changes
-                {:else}
+                {#if !data.enabled}
                     sync_disabled
+                {:else if data.disableOnce}
+                    sync_problem
+                {:else}
+                    published_with_changes
                 {/if}
             </i>
         </span>
@@ -249,6 +252,12 @@
             font-size: 1.3rem;
             color: var(--clr-success);
             opacity: 85%;
+
+            &.disabled-once {
+                color: var(--clr-warn);
+                opacity: 100%;
+                filter: brightness(110%);
+            }
 
             &.disabled {
                 color: var(--clr-error);

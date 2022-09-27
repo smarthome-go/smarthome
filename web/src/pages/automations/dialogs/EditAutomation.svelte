@@ -10,9 +10,16 @@
     import IconButton from "@smui/icon-button";
     import Switch from "@smui/switch";
     import { createEventDispatcher, onMount } from "svelte";
-    import { hmsLoaded, homescripts, parseCronExpressionToTime } from "../main";
-    import type { addAutomation, automation } from "../main";
+    import {
+        hmsLoaded,
+        homescripts,
+        parseCronExpressionToTime,
+        type editAutomation,
+    } from "../main";
+    import type { automation, editAutomation } from "../main";
     import Inputs from "./Inputs.svelte";
+    import FormField from "@smui/form-field";
+    import Checkbox from "@smui/checkbox";
 
     const days: string[] = [
         "Sunday",
@@ -44,11 +51,11 @@
      */
 
     // Bound to the `Inputs.svelte` component
-    let inputData: addAutomation;
+    let inputData: editAutomation;
 
     // Stores the input values before a modification
     // Is used for a rollback when using the `cancel` button
-    let inputDataBefore: addAutomation;
+    let inputDataBefore: editAutomation;
 
     // Only bound externally in order to use preset values
     export let data: automation;
@@ -64,6 +71,7 @@
             minute: timeData.minutes,
             name: data.name,
             timingMode: data.timingMode,
+            disableOnce: data.disableOnce,
         };
     });
 
@@ -106,6 +114,7 @@
             minute: inputData.minute,
             name: inputData.name,
             timingMode: inputData.timingMode,
+            disableOnce: inputData.disableOnce,
         };
         inputDataBefore["id"] = data.id;
     }
@@ -119,6 +128,7 @@
             minute: inputDataBefore.minute,
             name: inputDataBefore.name,
             timingMode: inputDataBefore.timingMode,
+            disableOnce: inputDataBefore.disableOnce,
         };
     }
 
@@ -179,10 +189,22 @@
                     <span class="text-hint"> Delete Automation </span>
                 </div>
                 <div class="activation">
-                    <Switch bind:checked={inputData.enabled} />
-                    <span class="text-hint">
-                        Automation {inputData.enabled ? "enabled" : "disabled"}
-                    </span>
+                    <div class="activation__element">
+                        <FormField>
+                            <Checkbox bind:checked={inputData.disableOnce} />
+                            <span class="text-hint">Disable Once</span>
+                        </FormField>
+                    </div>
+                    <div class="activation__element">
+                        <FormField>
+                            <Switch bind:checked={inputData.enabled} />
+                            <span class="text-hint">
+                                Automation {inputData.enabled
+                                    ? "enabled"
+                                    : "disabled"}
+                            </span>
+                        </FormField>
+                    </div>
                 </div>
             </div>
         </Content>
@@ -215,6 +237,7 @@
 {/if}
 
 <style lang="scss">
+    @use "../../../mixins" as *;
     .actions {
         display: flex;
         gap: 2rem;
@@ -225,6 +248,28 @@
 
         div {
             width: 50%;
+        }
+
+        @include mobile {
+            flex-direction: column;
+
+            div {
+                width: 100%;
+            }
+        }
+    }
+
+    .activation {
+        display: flex;
+
+        @include mobile {
+            display: block;
+        }
+
+        &__element {
+            @include mobile {
+                padding: 0.5rem 0;
+            }
         }
     }
 </style>
