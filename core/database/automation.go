@@ -30,9 +30,11 @@ type AutomationData struct {
 	// Saves the underlying cron-expression to wrap the time and days of execution
 	CronExpression string `json:"cronExpression"`
 	// Specifies which Homescript is to be executed when the automation runs
-	HomescriptId string     `json:"homescriptId"`
-	Enabled      bool       `json:"enabled"`
-	TimingMode   TimingMode `json:"timingMode"`
+	HomescriptId string `json:"homescriptId"`
+	Enabled      bool   `json:"enabled"`
+	// Wont run the automation the next time it would
+	DisableOnce bool       `json:"disableOnce"`
+	TimingMode  TimingMode `json:"timingMode"`
 }
 
 // Creates a new table containing the automation jobs
@@ -48,6 +50,7 @@ func createAutomationTable() error {
 		HomescriptId VARCHAR(30),
 		Owner VARCHAR(20),
 		Enabled BOOL,
+		DisableOnce BOOL,
 		TimingMode ENUM(
 			'normal',
 			'sunrise',
@@ -79,9 +82,10 @@ func CreateNewAutomation(automation Automation) (uint, error) {
 		HomescriptId,
 		Owner,
 		Enabled,
+		DisableOnce,
 		TimingMode
 	)	
-	VALUES(DEFAULT, ?, ?, ?, ?, ?, ?, ?)
+	VALUES(DEFAULT, ?, ?, ?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		log.Error("Failed to create new automation: preparing query failed: ", err.Error())
@@ -95,6 +99,7 @@ func CreateNewAutomation(automation Automation) (uint, error) {
 		automation.Data.HomescriptId,
 		automation.Owner,
 		automation.Data.Enabled,
+		automation.Data.DisableOnce,
 		automation.Data.TimingMode,
 	)
 	if err != nil {
@@ -121,6 +126,7 @@ func GetAutomationById(id uint) (Automation, bool, error) {
 		HomescriptId,
 		Owner,
 		Enabled,
+		DisableOnce,
 		TimingMode
 	FROM automation
 	WHERE Id=?
@@ -139,6 +145,7 @@ func GetAutomationById(id uint) (Automation, bool, error) {
 		&automation.Data.HomescriptId,
 		&automation.Owner,
 		&automation.Data.Enabled,
+		&automation.Data.DisableOnce,
 		&automation.Data.TimingMode,
 	); err != nil {
 		if err == sql.ErrNoRows {
@@ -161,6 +168,7 @@ func GetUserAutomations(username string) ([]Automation, error) {
 		HomescriptId,
 		Owner,
 		Enabled,
+		DisableOnce,
 		TimingMode
 	FROM automation
 	WHERE Owner=?
@@ -187,6 +195,7 @@ func GetUserAutomations(username string) ([]Automation, error) {
 			&automation.Data.HomescriptId,
 			&automation.Owner,
 			&automation.Data.Enabled,
+			&automation.Data.DisableOnce,
 			&automation.Data.TimingMode,
 		); err != nil {
 			log.Error("Failed to list user automations: scanning for results failed: ", err.Error())
@@ -209,6 +218,7 @@ func GetAutomations() ([]Automation, error) {
 		HomescriptId,
 		Owner,
 		Enabled,
+		DisableOnce,
 		TimingMode
 	FROM automation
 	`)
@@ -228,6 +238,7 @@ func GetAutomations() ([]Automation, error) {
 			&automation.Data.HomescriptId,
 			&automation.Owner,
 			&automation.Data.Enabled,
+			&automation.Data.DisableOnce,
 			&automation.Data.TimingMode,
 		); err != nil {
 			log.Error("Failed to list all automations: scanning for results failed: ", err.Error())
@@ -250,6 +261,7 @@ func ModifyAutomation(id uint, newItem AutomationData) error {
 		CronExpression=?,
 		HomescriptId=?,
 		Enabled=?,
+		DisableOnce=?,
 		TimingMode=?
 	WHERE Id=?
 	`)
@@ -264,6 +276,7 @@ func ModifyAutomation(id uint, newItem AutomationData) error {
 		newItem.CronExpression,
 		newItem.HomescriptId,
 		newItem.Enabled,
+		newItem.DisableOnce,
 		newItem.TimingMode,
 		id,
 	)

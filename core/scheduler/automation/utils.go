@@ -18,6 +18,7 @@ type Automation struct {
 	HomescriptId    string              `json:"homescriptId"`
 	Owner           string              `json:"owner"`
 	Enabled         bool                `json:"enabled"`
+	DisableOnce     bool                `json:"disableOnce"`
 	TimingMode      database.TimingMode `json:"timingMode"`
 }
 
@@ -55,6 +56,7 @@ func CreateNewAutomation(
 				CronExpression: cronExpression,
 				HomescriptId:   homescriptId,
 				Enabled:        enabled,
+				DisableOnce:    false,
 				TimingMode:     timingMode,
 			},
 		},
@@ -176,6 +178,7 @@ func GetUserAutomations(username string) ([]Automation, error) {
 				HomescriptId:    automation.Data.HomescriptId,
 				Owner:           automation.Owner,
 				Enabled:         automation.Data.Enabled,
+				DisableOnce:     automation.Data.DisableOnce,
 				TimingMode:      automation.Data.TimingMode,
 			},
 		)
@@ -208,13 +211,14 @@ func GetUserAutomationById(username string, automationId uint) (Automation, bool
 			HomescriptId:    automation.Data.HomescriptId,
 			Owner:           automation.Owner,
 			Enabled:         automation.Data.Enabled,
+			DisableOnce:     automation.Data.DisableOnce,
 			TimingMode:      automation.Data.TimingMode,
 		}, true, nil
 	}
 	return Automation{}, false, nil
 }
 
-// Changes the metadata of a given automation, then restarts it so it uses the updated values such as execution time
+// Changes the metadata of a given automation, then restarts it so that it uses the updated values such as execution time
 // Is also used after an automation with non-normal timing has been added
 func ModifyAutomationById(automationId uint, newAutomation database.AutomationData) error {
 	if !IsValidCronExpression(newAutomation.CronExpression) {

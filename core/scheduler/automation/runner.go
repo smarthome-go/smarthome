@@ -57,14 +57,28 @@ func automationRunnerFunc(id uint) {
 		)
 		return
 	}
-	// Notify and remind the user about the disabled automation
-	if !job.Data.Enabled {
-		log.Info(fmt.Sprintf("Automation '%s' was not executed because it is deactivated", job.Data.Name))
+	// Check if the automation's next run (this run) is disalbed
+	if job.Data.DisableOnce {
+		// Re-enable the automation again
+		if err := ModifyAutomationById(job.Id, database.AutomationData{
+			Name:           job.Data.Name,
+			Description:    job.Data.Description,
+			CronExpression: job.Data.CronExpression,
+			HomescriptId:   job.Data.HomescriptId,
+			Enabled:        job.Data.Enabled,
+			DisableOnce:    false,
+			TimingMode:     job.Data.TimingMode,
+		}); err != nil {
+			event.Error("Could not re-enable automation", fmt.Sprintf("Could not re-enable automation `%s`: %s", job.Data.Name, err.Error()))
+			return
+		}
+		// Notify the user
+		log.Info(fmt.Sprintf("Automation '%s' was skipped once", job.Data.Name))
 		if err := user.Notify(
 			job.Owner,
-			"Automation Skipped",
-			fmt.Sprintf("Automation '%s' was not executed because it is currently disabled. If you want to disable this automation completely, delete it. If the automation should be executed next time, enable it.", job.Data.Name),
-			user.NotificationLevelWarn,
+			"Automation Skipped Once",
+			fmt.Sprintf("Automation '%s' was skipped once. It will run regularely the next time.", job.Data.Name),
+			user.NotificationLevelInfo,
 		); err != nil {
 			log.Error("Failed to notify user: ", err.Error())
 			return
