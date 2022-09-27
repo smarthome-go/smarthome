@@ -57,7 +57,7 @@ func automationRunnerFunc(id uint) {
 		)
 		return
 	}
-	// Check if the automation's next run (this run) is disalbed
+	// Check if the automation's next run (this run) is disabled
 	if job.Data.DisableOnce {
 		// Re-enable the automation again
 		if err := ModifyAutomationById(job.Id, database.AutomationData{

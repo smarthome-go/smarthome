@@ -1,6 +1,7 @@
 package automation
 
 import (
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -553,6 +554,7 @@ func TestDisableOnce(t *testing.T) {
 	}
 	// Create a manual cron expression
 	cronExpr, err = GenerateCronExpression(uint8(then.Hour()), uint8(then.Minute()), []uint8{0, 1, 2, 3, 4, 5, 6})
+	fmt.Println(cronExpr)
 	assert.NoError(t, err)
 	// Update the next run-time
 	assert.NoError(t, ModifyAutomationById(id, database.AutomationData{
