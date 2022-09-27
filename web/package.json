@@ -61,7 +61,7 @@
     "@smui/list": "^6.0.0-beta.16",
     "@smui/paper": "^6.0.0-beta.16",
     "@smui/radio": "^6.0.0-beta.16",
-    "@smui/segmented-button": "^6.0.0",
+    "@smui/segmented-button": "v6.1.0",
     "@smui/select": "^6.0.0-beta.16",
     "@smui/slider": "^6.0.0-beta.16",
     "@smui/snackbar": "^6.0.0-beta.15",
