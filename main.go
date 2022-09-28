@@ -191,6 +191,7 @@ func main() {
 	// Setup file
 	if err := config.RunSetup(); err != nil {
 		log.Fatal("Could not process setup.json file: ", err.Error())
+		os.Exit(1)
 	}
 
 	// Homescript Manager initialization
@@ -198,25 +199,28 @@ func main() {
 	// Initialize Homescript URL cache flushing scheduler
 	if err := homescript.StartUrlCacheGC(); err != nil {
 		log.Fatal("Failed to start Homescript URL cache GC: ", err.Error())
+		os.Exit(1)
 	}
 
 	// Schedulers
 	if err := automation.Init(); err != nil { // Initializes the automation scheduler
 		log.Error("Failed to activate automation system: ", err.Error())
+		os.Exit(1)
 	}
 	if err := scheduler.Init(); err != nil { // Initializes the normal scheduler
 		log.Error("Failed to activate scheduler system: ", err.Error())
+		os.Exit(1)
 	}
 	if err := reminder.InitSchedule(); err != nil { // Initialize notification scheduler for reminders
 		log.Error("Failed to activate reminder scheduler: ", err.Error())
+		os.Exit(1)
 	}
-
 	// Hardware handler
 	hardware.Init()
 	if err := hardware.StartPowerUsageSnapshotScheduler(); err != nil {
 		log.Error("Failed to start periodic power usage snapshot scheduler: ", err.Error())
+		os.Exit(1)
 	}
-
 	// Server, middleware and routes
 	r := routes.NewRouter()
 	if !configStruct.Server.Production {
