@@ -14,9 +14,9 @@
         hmsLoaded,
         homescripts,
         parseCronExpressionToTime,
+        type automation,
         type editAutomation,
     } from "../main";
-    import type { automation, editAutomation } from "../main";
     import Inputs from "./Inputs.svelte";
     import FormField from "@smui/form-field";
     import Checkbox from "@smui/checkbox";
