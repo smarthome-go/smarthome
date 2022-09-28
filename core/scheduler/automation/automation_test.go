@@ -238,6 +238,7 @@ func TestModificationToDifferentScript(t *testing.T) {
 			CronExpression: cronExpression,
 			HomescriptId:   "test_modify",
 			Enabled:        true,
+			DisableOnce:    false,
 			TimingMode:     database.TimingNormal,
 		}); err != nil {
 		t.Error(err.Error())
@@ -468,6 +469,118 @@ func TestUserDisabled(t *testing.T) {
 	}
 	if valid {
 		t.Error("Power of `test_switch` changed but should not")
+		return
+	}
+}
+
+func TestDisableOnce(t *testing.T) {
+	now := time.Now()
+	then := now.Add(time.Minute)
+	if err := Init(); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	// Set the switch to off
+	assert.NoError(t, hardware.SetPower("test_switch", false))
+	// Normal automation
+	id, err := CreateNewAutomation(
+		"name_once",
+		"description_once",
+		uint8(then.Hour()),
+		uint8(then.Minute()),
+		[]uint8{0, 1, 2, 3, 4, 5, 6},
+		"test",
+		"admin",
+		true,
+		database.TimingNormal,
+	)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	// Create a manual cron expression
+	cronExpr, err := GenerateCronExpression(uint8(then.Hour()), uint8(then.Minute()), []uint8{0, 1, 2, 3, 4, 5, 6})
+	assert.NoError(t, err)
+
+	// Disable the automation once
+	assert.NoError(t, ModifyAutomationById(id, database.AutomationData{
+		Name:           "name_once",
+		Description:    "description_once",
+		CronExpression: cronExpr,
+		HomescriptId:   "test",
+		Enabled:        true,
+		DisableOnce:    true,
+		TimingMode:     database.TimingNormal,
+	}))
+
+	// Check if the `DisableOnce` boolean has been set to `true`
+	automation, found, err := GetUserAutomationById("admin", id)
+	assert.NoError(t, err)
+	assert.True(t, found)
+	assert.True(t, automation.DisableOnce)
+
+	invalid := false
+	for i := 0; i < 7; i++ {
+		time.Sleep(time.Second * 10)
+		switchItem, found, err := database.GetSwitchById("test_switch")
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+		assert.True(t, found, "Switch not found")
+		if switchItem.PowerOn {
+			invalid = true
+			break
+		}
+	}
+	if invalid {
+		t.Error("Power of `test_switch` changed but should have not")
+		return
+	}
+
+	// Check if the `DisableOnce` boolean has reset to `false`
+	automation, found, err = GetUserAutomationById("admin", id)
+	assert.NoError(t, err)
+	assert.True(t, found)
+	assert.False(t, automation.DisableOnce)
+
+	// Check if the automation runs the second time
+	now = time.Now()
+	then = now.Add(time.Minute)
+	if err := Init(); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	// Create a manual cron expression
+	cronExpr, err = GenerateCronExpression(uint8(then.Hour()), uint8(then.Minute()), []uint8{0, 1, 2, 3, 4, 5, 6})
+	assert.NoError(t, err)
+	// Update the next run-time
+	assert.NoError(t, ModifyAutomationById(id, database.AutomationData{
+		Name:           "name_once",
+		Description:    "description_once",
+		CronExpression: cronExpr,
+		HomescriptId:   "test",
+		Enabled:        true,
+		DisableOnce:    false,
+		TimingMode:     database.TimingNormal,
+	}))
+
+	valid := false
+	for i := 0; i < 7; i++ {
+		time.Sleep(time.Second * 10)
+		switchItem, found, err := database.GetSwitchById("test_switch")
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+		assert.True(t, found, "Switch not found")
+		if switchItem.PowerOn {
+			valid = true
+			break
+		}
+	}
+	if !valid {
+		t.Error("Power of `test_switch` did not change but should have")
 		return
 	}
 }

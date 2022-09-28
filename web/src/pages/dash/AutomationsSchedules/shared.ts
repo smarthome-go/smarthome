@@ -14,6 +14,7 @@ export interface automation {
     homescriptId: string;
     owner: string;
     enabled: boolean;
+    disableOnce: boolean,
     timingMode: "normal" | "sunrise" | "sunset";
 }
 

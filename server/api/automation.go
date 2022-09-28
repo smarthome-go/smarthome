@@ -30,6 +30,7 @@ type ModifyAutomationRequest struct {
 	Days         []uint8             `json:"days"`
 	HomescriptId string              `json:"homescriptId"`
 	Enabled      bool                `json:"enabled"`
+	DisableOnce  bool                `json:"disableOnce"`
 	TimingMode   database.TimingMode `json:"timingMode"`
 }
 
@@ -274,6 +275,7 @@ func ModifyAutomation(w http.ResponseWriter, r *http.Request) {
 		CronExpression: cronExpr,
 		HomescriptId:   request.HomescriptId,
 		Enabled:        request.Enabled,
+		DisableOnce:    request.DisableOnce,
 		TimingMode:     request.TimingMode,
 	}
 	if err := automation.ModifyAutomationById(request.Id, newAutomation); err != nil {

@@ -11,6 +11,19 @@ export interface automation {
     homescriptId: string
     owner: string
     enabled: boolean
+    disableOnce: boolean,
+    timingMode: 'normal' | 'sunrise' | 'sunset'
+}
+
+export interface editAutomation {
+    name: string
+    description: string
+    hour: number
+    minute: number
+    days: number[]
+    homescriptId: string
+    enabled: boolean
+    disableOnce: boolean
     timingMode: 'normal' | 'sunrise' | 'sunset'
 }
 

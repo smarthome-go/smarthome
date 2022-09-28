@@ -4,7 +4,7 @@ workingdir := smarthome
 sources := $(wildcard *.go)
 # Do not edit manually, use the `version` target to change the
 # version programmatically in all places
-version := 0.2.8
+version := 0.3.0
 
 build = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -ldflags "-s -w" -v -o $(appname) $(4)
 # TODO: eliminate usage of workingdir

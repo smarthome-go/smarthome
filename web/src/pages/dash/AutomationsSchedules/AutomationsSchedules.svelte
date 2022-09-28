@@ -44,7 +44,7 @@
             automationsToday = automations
                 .filter((a) => {
                     // Filter out any disabled automations
-                    if (!a.data.enabled) return false;
+                    if (!a.data.enabled || a.data.disableOnce) return false;
 
                     // Filter out any automations from not today
                     if (!a.days.includes(now.getDay())) return false;
