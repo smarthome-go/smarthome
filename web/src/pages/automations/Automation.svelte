@@ -12,7 +12,6 @@
         parseCronExpressionToTime,
     } from "./main";
     import type { automation, editAutomation, homescript } from "./main";
-    import DataTable from "@smui/data-table/src/DataTable.svelte";
 
     const days: string[] = ["su", "mo", "tu", "we", "th", "fr", "sa"];
 
