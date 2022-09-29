@@ -1,5 +1,5 @@
 # Smarthome
-**Version**: `0.3.1`
+**Version**: `0.3.2`
 
 A completely self-built Smarthome-system written in Go.
 
@@ -29,5 +29,5 @@ A guide for getting started can be found [here](./docs/Quickstart.md).
 
 ## Showcase
 A comprehensive list of screenshots can be found [here](https://github.com/smarthome-go/docs/blob/main/server/screenshots/README.md)  
-*Screenshot of the Dashboard in version 0.3.1*
+*Screenshot of the Dashboard in version 0.3.2*
 ![](https://raw.githubusercontent.com/smarthome-go/docs/main/server/screenshots/dashboard.png)
