@@ -162,7 +162,6 @@
                             <Automation
                                 bind:data
                                 on:hide={() => {
-                                    console.log("automation hidden");
                                     automationsToday = automationsToday.filter(
                                         (a) => a.data.id !== data.data.id
                                     );
@@ -194,7 +193,6 @@
                             <Schedule
                                 bind:data
                                 on:hide={() => {
-                                    console.log("schedule hidden");
                                     schedules = schedules.filter(
                                         (schedule) => schedule.id !== data.id
                                     );
