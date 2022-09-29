@@ -1,4 +1,4 @@
-import { writable, Writable } from 'svelte/store'
+import { writable, type Writable } from 'svelte/store'
 import App from './App.svelte'
 
 export interface Room {

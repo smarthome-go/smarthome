@@ -13,7 +13,7 @@
     import EditRoom from "./dialogs/room/EditRoom.svelte";
     import LocalSettings from "./dialogs/room/LocalSettings.svelte";
     import AddSwitch from "./dialogs/switch/AddSwitch.svelte";
-    import { loading, powerCamReloadEnabled, Room } from "./main";
+    import { loading, powerCamReloadEnabled, type Room } from "./main";
     import PowerSwitch from "./PowerSwitch.svelte";
 
     // If set to true, a camera-reload is triggered
