@@ -67,7 +67,6 @@
         // Reset all placeholders to their default value
         booleanPlaceholder = false;
         numberPlaceholder = 0;
-        yesNoPlaceholder = "";
 
         currentArgumentIndex++;
     }
@@ -80,7 +79,6 @@
     // Placeholders for conversion
     let numberPlaceholder = 0;
     let booleanPlaceholder = false;
-    let yesNoPlaceholder = "";
 
     // Conversion functions
     function updateFromNumber() {
@@ -98,14 +96,10 @@
         argumentsWithValues[currentArgumentIndex].value =
             numberPlaceholder.toString();
     }
+
     function updateFromBoolean() {
         argumentsWithValues[currentArgumentIndex].value =
             booleanPlaceholder.toString();
-    }
-    function updateFromYesNo() {
-        argumentsWithValues[currentArgumentIndex].value = (
-            yesNoPlaceholder === "yes"
-        ).toString();
     }
 
     // Change listeners to trigger conversion
@@ -118,7 +112,8 @@
 
     $: if (
         currentArg.inputType === "boolean" &&
-        currentArg.display === "type_default" &&
+        (currentArg.display === "type_default" ||
+            currentArg.display === "boolean_yes_no") &&
         argumentsWithValues.length > 0 &&
         booleanPlaceholder !== undefined
     )
@@ -131,14 +126,6 @@
         booleanPlaceholder !== undefined
     )
         updateFromBoolean();
-
-    $: if (
-        currentArg.inputType === "boolean" &&
-        currentArg.display === "boolean_yes_no" &&
-        yesNoPlaceholder !== "" &&
-        argumentsWithValues.length > 0
-    )
-        updateFromYesNo();
 
     /*
         //// Switches ////
@@ -178,11 +165,9 @@
     function createArgsWithValue() {
         for (let arg of args)
             argumentsWithValues.push({ key: arg.argKey, value: "" });
-        if (
-            args[0].inputType === "boolean" &&
-            args[0].display === "type_default"
-        )
+        if (args[0].inputType === "boolean") {
             updateFromBoolean();
+        }
     }
 </script>
 
@@ -194,7 +179,8 @@
         switchesLoaded &&
         switches.length > 0) ||
         (currentArg.inputType === "boolean" &&
-            currentArg.display === "type_default")}
+            (currentArg.display === "type_default" ||
+                currentArg.display === "boolean_yes_no"))}
 >
     <Header>
         <Title id="title">{currentArg.prompt}</Title>
@@ -287,20 +273,6 @@
                                 >{booleanPlaceholder ? "On" : "Off"}</span
                             >
                         </FormField>
-                    {:else if currentArg.display === "boolean_yes_no"}
-                        {#each ["yes", "no"] as option}
-                            <FormField>
-                                <Radio
-                                    bind:group={yesNoPlaceholder}
-                                    value={option}
-                                />
-                                <span slot="label"
-                                    >{`${option[0].toUpperCase()}${option.slice(
-                                        1
-                                    )}`}</span
-                                >
-                            </FormField>
-                        {/each}
                     {:else}
                         <List radioList style="width: 100%;">
                             {#each [true, false] as opt (opt)}
@@ -312,7 +284,11 @@
                                         />
                                     </Graphic>
                                     <Label>
-                                        {opt ? "True" : "False"}
+                                        {#if currentArg.display === "boolean_yes_no"}
+                                            {opt ? "Yes" : "No"}
+                                        {:else}
+                                            {opt ? "True" : "False"}
+                                        {/if}
                                     </Label>
                                 </Item>
                             {/each}
