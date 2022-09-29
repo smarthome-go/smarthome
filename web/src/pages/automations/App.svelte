@@ -197,12 +197,15 @@
                     bind:data={automation}
                     on:delete={() => deleteAutomation(automation.id)}
                     on:modify={() => {
-                        // If there is an automation with non-normal timing-mode, update it
-                        // Fetching data from the server is required because the client does not possess information about the long / latidute of the server
-                        for (let automationItem of $automations) {
-                            if (automationItem.timingMode !== "normal") {
-                                loadAutomations();
-                            }
+                        // If there is at least one automation with a non-normal timing-mode, update it
+                        // Fetching data from the server is required because the client does not possess information about the longitude nor the latidute of the server
+                        if (
+                            $automations.filter(
+                                (automation) =>
+                                    automation.timingMode !== "normal"
+                            ).length > 0
+                        ) {
+                            loadAutomations();
                         }
                     }}
                 />
