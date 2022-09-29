@@ -90,6 +90,7 @@
                     name: data.name,
                     owner: $userData.userData.user.username,
                     timingMode: data.timingMode,
+                    disableOnce: false,
                 },
             ];
             loadAutomations();

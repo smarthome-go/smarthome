@@ -11,7 +11,8 @@
         loading,
         parseCronExpressionToTime,
     } from "./main";
-    import type { addAutomation, automation, homescript } from "./main";
+    import type { automation, editAutomation, homescript } from "./main";
+    import DataTable from "@smui/data-table/src/DataTable.svelte";
 
     const days: string[] = ["su", "mo", "tu", "we", "th", "fr", "sa"];
 
@@ -51,7 +52,7 @@
         days: [],
     };
 
-    async function modifyAutomation(id: number, payload: addAutomation) {
+    async function modifyAutomation(id: number, payload: editAutomation) {
         $loading = true;
         try {
             payload["id"] = id;
@@ -68,6 +69,7 @@
                 payload.minute,
                 payload.days
             );
+            // Updates the Homescriptdata of the automation
             const homescriptDataTemp = $homescripts.find(
                 (s) => s.data.id === data.homescriptId
             );
@@ -110,12 +112,15 @@
         const enabledStatusBefore = data.enabled;
         const dataTempTimingMode = dataTemp.data.timingMode;
         const timingModeBefore = data.timingMode;
+        // Modify the automation
         await modifyAutomation(dataTemp.id, dataTemp.data);
+        data.disableOnce = dataTemp.data.disableOnce;
         if (
             dataTempEnabled !== enabledStatusBefore ||
             dataTempTimingMode !== timingModeBefore
-        )
+        ) {
             dispatch("modify", null);
+        }
     }
 </script>
 
@@ -128,7 +133,10 @@
 
 <AutomationInfo bind:data bind:open={infoOpen} />
 
-<div class="automation mdc-elevation--z3" class:disabled={!data.enabled || data.disableOnce}>
+<div
+    class="automation mdc-elevation--z3"
+    class:disabled={!data.enabled || data.disableOnce}
+>
     <!-- Top -->
     <div class="top">
         <span class="automation__name">
