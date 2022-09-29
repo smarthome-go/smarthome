@@ -116,6 +116,8 @@
             disabled={!dataChanged}
             use={[InitialFocus]}
             on:click={() => {
+                updateBeforeData()
+                updateDataChanged()
                 dispatch("modify", { data });
             }}
         >
