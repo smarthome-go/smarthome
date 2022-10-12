@@ -282,6 +282,7 @@ func ListAllRoomsWithData() ([]Room, error) {
 		}
 		// Add all cameras of the current room
 		for _, camera := range cameras {
+			camera.Url = "redacted"
 			if camera.RoomId == room.Id {
 				camerasTemp = append(camerasTemp, camera)
 			}

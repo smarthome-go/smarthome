@@ -46,7 +46,6 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/homescript", mdl.Auth(homescriptGetHandler)).Methods("GET")
 	r.HandleFunc("/homescript/editor", mdl.Auth(hmsEditorGetHandler)).Methods("GET")
 	r.HandleFunc("/profile", mdl.Auth(userProfileGetHandler)).Methods("GET")
-
 	r.HandleFunc("/users", mdl.Auth(usersGetHandler)).Methods("GET")
 	r.HandleFunc("/system", mdl.Auth(systemGetHandler)).Methods("GET")
 
