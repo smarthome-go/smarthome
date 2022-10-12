@@ -75,7 +75,7 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/power/set", mdl.ApiAuth(mdl.Perm(api.PowerPostHandler, database.PermissionPower))).Methods("POST")
 
 	// Rooms
-	r.HandleFunc("/api/room/list/all", api.ListAllRoomsWithSwitches).Methods("GET")
+	r.HandleFunc("/api/room/list/all", mdl.ApiAuth(api.ListAllRoomsWithSwitches)).Methods("GET")
 	r.HandleFunc("/api/room/list/personal", mdl.ApiAuth(api.ListUserRoomsWithData)).Methods("GET")
 	r.HandleFunc("/api/room/add", mdl.ApiAuth(mdl.Perm(api.AddRoom, database.PermissionModifyRooms))).Methods("POST")
 	r.HandleFunc("/api/room/modify", mdl.ApiAuth(mdl.Perm(api.ModifyRoomData, database.PermissionModifyRooms))).Methods("PUT")
