@@ -520,7 +520,7 @@ func TestDisableOnce(t *testing.T) {
 	assert.True(t, automation.DisableOnce)
 
 	invalid := false
-	for i := 0; i < 7; i++ {
+	for i := 0; i < 9; i++ {
 		time.Sleep(time.Second * 10)
 		switchItem, found, err := database.GetSwitchById("test_switch")
 		if err != nil {
