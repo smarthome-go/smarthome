@@ -1,91 +1,78 @@
 <script lang="ts">
-    import {
-        EditorState,
-        EditorView,
-        basicSetup,
-    } from "@codemirror/basic-setup";
-    import { indentWithTab } from "@codemirror/commands";
-    import { keymap } from "@codemirror/view";
-    import { linter, lintGutter, type Diagnostic } from "@codemirror/lint";
-    import { createEventDispatcher, onMount } from "svelte";
-    //    import { tags } from "@lezer/highlight";
-    // import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
-    // import { completeFromList } from "@codemirror/autocomplete";
+    import { EditorState, EditorView, basicSetup } from '@codemirror/basic-setup'
+    import { indentWithTab } from '@codemirror/commands'
+    import { keymap } from '@codemirror/view'
+    import { linter, lintGutter, type Diagnostic } from '@codemirror/lint'
+    import { createEventDispatcher, onMount } from 'svelte'
+    import { Homescript } from './index.js'
+    import { oneDark } from './oneDark'
+    import { lintHomescriptCode } from '../../../homescript'
+    import { createSnackbar } from '../../../global'
 
-    // TODO: move local files to separate repository
-    import { Homescript } from "./index.js";
-    import { oneDark } from "./oneDark";
-    import { lintHomescriptCode } from "../../../homescript";
-    import { createSnackbar } from "../../../global";
-
-    const dispatch = createEventDispatcher();
+    const dispatch = createEventDispatcher()
 
     // Specifies whether the editor should register a CTRL+S catcher
     // This catcher is intended to prevent the browser's default action
     // However, the catcher also emits a change event when the key combination is pressed
-    export let registerCtrlSCatcher = false;
+    export let registerCtrlSCatcher = false
 
     // Represents the editor's value
-    export let code = "";
-    $: setCode(code);
+    export let code = ''
+    $: setCode(code)
 
     function setCode(cd: string) {
-        if (editor === undefined || editor.state.doc.toString() === cd) return;
+        if (editor === undefined || editor.state.doc.toString() === cd) return
         editor.dispatch(
             editor.state.update({
                 changes: { from: 0, to: editor.state.doc.length, insert: cd },
-            })
-        );
+            }),
+        )
     }
 
     // Will later be bound to the target of the CodeMirror editor
-    let editorDiv: HTMLElement;
+    let editorDiv: HTMLElement
 
-    let editor: EditorView;
+    let editor: EditorView
 
     // eslint-disable-next-line no-undef
-    let timer: NodeJS.Timeout;
+    let timer: NodeJS.Timeout
 
     const HMSlinter = linter(async () => {
-        let diagnostics: Diagnostic[] = [];
+        let diagnostics: Diagnostic[] = []
 
         try {
-            const result = await lintHomescriptCode(code, []);
-            diagnostics = result.error.map((e) => {
-                const lines = code.split("\n");
+            const result = await lintHomescriptCode(code, [])
+            diagnostics = result.error.map(e => {
+                const lines = code.split('\n')
 
-                let startPos: number = e.location.column - 1; // Starts at -1 because the last line does not end with '\n'
-                for (
-                    let lineIndex = 0;
-                    lineIndex < e.location.line - 1;
-                    lineIndex++
-                ) {
-                    startPos += lines[lineIndex].length + 1;
+                let startPos: number = e.location.column - 1 // Starts at -1 because the last line does not end with '\n'
+                for (let lineIndex = 0; lineIndex < e.location.line - 1; lineIndex++) {
+                    startPos += lines[lineIndex].length + 1
                 }
 
                 return Object.create({
                     from: startPos,
                     to: startPos,
-                    severity: e.errorType === "Panic" ? "warning" : "error",
+                    severity: e.errorType === 'Panic' ? 'warning' : 'error',
                     message: `${e.errorType}: ${e.message}`,
-                    source: "HMS",
-                });
-            });
+                    source: 'HMS',
+                })
+            })
         } catch (err) {
-            $createSnackbar(`Failed to lint: ${err}`);
+            $createSnackbar(`Failed to lint: ${err}`)
         }
 
-        return diagnostics;
-    });
+        return diagnostics
+    })
 
     onMount(() => {
         if (registerCtrlSCatcher)
-            document.addEventListener("keydown", (e) => {
-                if (e.ctrlKey && e.key === "s") {
-                    e.preventDefault();
-                    dispatch("update", code);
+            document.addEventListener('keydown', e => {
+                if (e.ctrlKey && e.key === 's') {
+                    e.preventDefault()
+                    dispatch('update', code)
                 }
-            });
+            })
         editor = new EditorView({
             state: EditorState.create({
                 extensions: [
@@ -97,25 +84,25 @@
                     HMSlinter,
                     lintGutter(),
                     // Emit the `update` event 500 ms after the last keystroke
-                    EditorView.updateListener.of((v) => {
+                    EditorView.updateListener.of(v => {
                         if (v.docChanged) {
-                            if (timer) clearTimeout(timer);
+                            if (timer) clearTimeout(timer)
                             timer = setTimeout(() => {
-                                dispatch("update", code);
-                            }, 500);
+                                dispatch('update', code)
+                            }, 500)
                         }
                     }),
                     // Update the component code on every change
-                    EditorView.updateListener.of((v) => {
+                    EditorView.updateListener.of(v => {
                         if (v.docChanged) {
-                            code = editor.state.doc.toString();
+                            code = editor.state.doc.toString()
                         }
                     }),
                 ],
                 doc: code,
             }),
             parent: editorDiv,
-        });
+        })
 
         /*
         editor.dispatch(
@@ -125,7 +112,7 @@
             }))
         );
          */
-    });
+    })
 </script>
 
 <div class="hms-editor" bind:this={editorDiv} />
