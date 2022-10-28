@@ -109,21 +109,15 @@ func (m *Manager) Analyze(
 	scriptCode string,
 	callStack []string,
 	initiator HomescriptInitiator,
-) HmsExecRes {
-	analyzerSigTerm := make(chan int)
-
-	executor := &Executor{
-		ScriptName:         scriptLabel,
-		DryRun:             false,
-		CallStack:          callStack,
-		SigTerm:            make(chan int),
-		sigTermInternalPtr: &analyzerSigTerm,
-		StartTime:          time.Now(),
+	username string,
+) []HmsError {
+	executor := &AnalyzerExecutor{
+		Username: username,
 	}
 
 	// Append the executor to the jobs
 	id := m.PushJob(
-		executor,
+		&Executor{SigTerm: make(chan int)},
 		initiator,
 		make(chan uint64),
 	)
@@ -147,14 +141,7 @@ func (m *Manager) Analyze(
 		})
 	}
 
-	// Process outcome
-	return HmsExecRes{
-		Output:      executor.Output,
-		ReturnValue: homescript.ValueNull{},
-		RootScope:   make(map[string]*homescript.Value),
-		ExitCode:    0,
-		Errors:      diagnosticsErr,
-	}
+	return diagnosticsErr
 }
 
 func (m *Manager) AnalyzeById(
@@ -162,19 +149,20 @@ func (m *Manager) AnalyzeById(
 	username string,
 	callStack []string,
 	initiator HomescriptInitiator,
-) (HmsExecRes, error) {
+) ([]HmsError, error) {
 	homescriptItem, hasBeenFound, err := database.GetUserHomescriptById(scriptId, username)
 	if err != nil {
-		return HmsExecRes{}, err
+		return nil, err
 	}
 	if !hasBeenFound {
-		return HmsExecRes{}, errors.New("invalid Homescript id: no data associated with id")
+		return nil, errors.New("invalid Homescript id: no data associated with id")
 	}
 	return m.Analyze(
 		scriptId,
 		homescriptItem.Data.Code,
 		append(callStack, scriptId),
 		initiator,
+		username,
 	), nil
 }
 

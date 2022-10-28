@@ -139,19 +139,25 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Lint the Homescript
-	res := homescript.HmsManager.Analyze(
+	diagnostics := homescript.HmsManager.Analyze(
 		request.Id,
 		hmsData.Data.Code,
 		make([]string, 0),
 		homescript.InitiatorAPI,
+		username,
 	)
+	isSuccess := true
+	for _, diagnostic := range diagnostics {
+		if diagnostic.Kind != "Warning" && diagnostic.Kind != "Info" {
+			isSuccess = false
+			break
+		}
+	}
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
-			Success:  true,
-			Id:       request.Id,
-			Output:   res.Output,
-			Exitcode: res.ExitCode,
-			Errors:   res.Errors,
+			Success: isSuccess,
+			Id:      request.Id,
+			Errors:  diagnostics,
 		}); err != nil {
 		log.Error(err.Error())
 		Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
@@ -161,6 +167,10 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 // Runs any given Homescript as a string
 func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(w, r)
+	if err != nil {
+		return
+	}
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	var request HomescriptLiveRunRequest
@@ -175,11 +185,14 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		args[arg.Key] = arg.Value
 	}
 	// Run the Homescript
-	res := homescript.HmsManager.Analyze(
+	res := homescript.HmsManager.Run(
+		username,
 		"live",
 		request.Code,
+		make(map[string]string),
 		make([]string, 0),
 		homescript.InitiatorAPI,
+		make(chan int),
 	)
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
@@ -196,7 +209,7 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 // Lints a given Homescript string and checks it for errors
 func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	_, err := middleware.GetUserFromCurrentSession(w, r)
+	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
 		return
 	}
@@ -214,18 +227,24 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 		args[arg.Key] = arg.Value
 	}
 	// Lint the Homescript
-	res := homescript.HmsManager.Analyze(
+	diagnostics := homescript.HmsManager.Analyze(
 		"lint",
 		request.Code,
 		make([]string, 0),
 		homescript.InitiatorAPI,
+		username,
 	)
+	isSuccess := true
+	for _, diagnostic := range diagnostics {
+		if diagnostic.Kind != "Warning" && diagnostic.Kind != "Info" {
+			isSuccess = false
+			break
+		}
+	}
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
-			Success:  true,
-			Output:   res.Output,
-			Exitcode: res.ExitCode,
-			Errors:   res.Errors,
+			Success: isSuccess,
+			Errors:  diagnostics,
 		}); err != nil {
 		log.Error(err.Error())
 		Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
