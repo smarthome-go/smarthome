@@ -49,6 +49,15 @@ type ApiJob struct {
 	HomescriptId string              `json:"homescriptId"`
 }
 
+type HmsExecRes struct {
+	Output        string
+	ReturnValue   homescript.Value
+	RootScope     map[string]*homescript.Value
+	ExitCode      int
+	WasTerminated bool
+	Errors        []hmsErrors.Error
+}
+
 func (m *Manager) PushJob(
 	executor *Executor,
 	initiator HomescriptInitiator,
@@ -92,7 +101,7 @@ func (m *Manager) Run(
 	callStack []string,
 	initiator HomescriptInitiator,
 	sigTerm chan int,
-) (output string, exitCode int, wasTerminated bool, errs []hmsErrors.Error) {
+) HmsExecRes {
 	// Is passed to the executor so that it can forward messages from its own `SigTerm` onto the `sigTermInternalPtr`
 	// Is also passed to `homescript.Run` so that the newly spawned interpreter uses the same channel
 	interpreterSigTerm := make(chan int)
@@ -121,7 +130,7 @@ func (m *Manager) Run(
 	)
 
 	// Run the script
-	_, exitCode, _, hmsErrors := homescript.Run(
+	returnValue, exitCode, rootScope, hmsErrors := homescript.Run(
 		executor,
 		&interpreterSigTerm,
 		scriptCode,
@@ -133,18 +142,27 @@ func (m *Manager) Run(
 		"",
 	)
 
-	wasTerminated = executor.WasTerminated
+	wasTerminated := executor.WasTerminated
 
 	// Remove the Job from the jobs list when this function ends
 	m.removeJob(id)
 
-	// Process outcome
 	if len(hmsErrors) > 0 {
 		log.Debug(fmt.Sprintf("Homescript '%s' ran by user '%s' has terminated: %s", scriptLabel, username, hmsErrors[0].Message))
-		return executor.Output, 1, wasTerminated, convertErrors(hmsErrors...)
+	} else {
+		log.Debug(fmt.Sprintf("Homescript '%s' ran by user '%s' was executed successfully", scriptLabel, username))
 	}
-	log.Debug(fmt.Sprintf("Homescript '%s' ran by user '%s' was executed successfully", scriptLabel, username))
-	return executor.Output, exitCode, wasTerminated, make([]HomescriptError, 0)
+
+	// Process outcome
+	return HmsExecRes{
+		Output:        executor.Output,
+		ReturnValue:   returnValue,
+		RootScope:     rootScope,
+		ExitCode:      exitCode,
+		WasTerminated: wasTerminated,
+		Errors:        hmsErrors,
+	}
+
 }
 
 // Executes a given Homescript from the database and returns its output, exit-code and possible error
@@ -156,15 +174,15 @@ func (m *Manager) RunById(
 	arguments map[string]string,
 	initiator HomescriptInitiator,
 	sigTerm chan int,
-) (output string, exitCode int, wasTerminated bool, err error) {
+) (HmsExecRes, error) {
 	homescriptItem, hasBeenFound, err := database.GetUserHomescriptById(scriptId, username)
 	if err != nil {
-		return "database error", 500, false, err
+		return HmsExecRes{}, err
 	}
 	if !hasBeenFound {
-		return "not found error", 404, false, errors.New("Invalid Homescript id: no data associated with id")
+		return HmsExecRes{}, errors.New("invalid Homescript id: no data associated with id")
 	}
-	output, exitCode, wasTerminated, hmsErrors := m.Run(
+	return m.Run(
 		username,
 		scriptId,
 		homescriptItem.Data.Code,
@@ -174,12 +192,7 @@ func (m *Manager) RunById(
 		append(callStack, scriptId),
 		initiator,
 		sigTerm,
-	)
-	if len(hmsErrors) > 0 {
-		return "execution error", exitCode, wasTerminated, fmt.Errorf("Homescript terminated with exit code %d: %s", exitCode, hmsErrors[0].Message)
-	}
-	return output, exitCode, wasTerminated, nil
-
+	), nil
 }
 
 // Removes an arbitrary job from the job list

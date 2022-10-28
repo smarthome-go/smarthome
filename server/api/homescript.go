@@ -10,18 +10,18 @@ import (
 
 	"github.com/gorilla/mux"
 
+	hmsErrors "github.com/smarthome-go/homescript/homescript/errors"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/server/middleware"
 )
 
 type HomescriptResponse struct {
-	Success  bool                         `json:"success"`
-	Id       string                       `json:"id"`
-	Exitcode int                          `json:"exitCode"`
-	Message  string                       `json:"message"`
-	Output   string                       `json:"output"`
-	Errors   []homescript.HomescriptError `json:"error"`
+	Id       string            `json:"id"`
+	Success  bool              `json:"success"`
+	Exitcode int               `json:"exitCode"`
+	Output   string            `json:"output"`
+	Errors   []hmsErrors.Error `json:"errors"`
 }
 
 type CreateHomescriptRequest struct {
@@ -86,7 +86,7 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Run the Homescript
-	output, exitCode, _, hmsErrors := homescript.HmsManager.Run(
+	res := homescript.HmsManager.Run(
 		username,
 		request.Id,
 		hmsData.Data.Code,
@@ -96,46 +96,13 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		homescript.InitiatorAPI,
 		make(chan int),
 	)
-	if len(hmsErrors) > 0 {
-		w.WriteHeader(http.StatusInternalServerError)
-		if err := json.NewEncoder(w).Encode(
-			HomescriptResponse{
-				Success:  false,
-				Id:       request.Id,
-				Exitcode: exitCode,
-				Message:  "Homescript terminated abnormally",
-				Output:   output,
-				Errors:   hmsErrors,
-			}); err != nil {
-			log.Error(err.Error())
-			Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
-		}
-		return
-	}
-	if exitCode != 0 {
-		w.WriteHeader(http.StatusInternalServerError)
-		if err := json.NewEncoder(w).Encode(
-			HomescriptResponse{
-				Success:  false,
-				Id:       request.Id,
-				Exitcode: exitCode,
-				Message:  "Homescript exited with a non-0 status code",
-				Output:   output,
-				Errors:   hmsErrors,
-			}); err != nil {
-			log.Error(err.Error())
-			Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
-		}
-		return
-	}
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
 			Success:  true,
 			Id:       request.Id,
-			Message:  "Homescript ran successfully",
-			Output:   output,
-			Exitcode: exitCode,
-			Errors:   hmsErrors,
+			Output:   res.Output,
+			Exitcode: res.ExitCode,
+			Errors:   res.Errors,
 		}); err != nil {
 		log.Error(err.Error())
 		Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
@@ -174,7 +141,7 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Lint the Homescript
-	output, exitCode, _, hmsErrors := homescript.HmsManager.Run(
+	res := homescript.HmsManager.Run(
 		username,
 		request.Id,
 		hmsData.Data.Code,
@@ -184,46 +151,13 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 		homescript.InitiatorAPI,
 		make(chan int),
 	)
-	if len(hmsErrors) > 0 {
-		w.WriteHeader(http.StatusInternalServerError)
-		if err := json.NewEncoder(w).Encode(
-			HomescriptResponse{
-				Success:  false,
-				Id:       request.Id,
-				Exitcode: exitCode,
-				Message:  "Linting discovered errors",
-				Output:   output,
-				Errors:   hmsErrors,
-			}); err != nil {
-			log.Error(err.Error())
-			Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
-		}
-		return
-	}
-	if exitCode != 0 {
-		w.WriteHeader(http.StatusInternalServerError)
-		if err := json.NewEncoder(w).Encode(
-			HomescriptResponse{
-				Success:  false,
-				Id:       request.Id,
-				Exitcode: exitCode,
-				Message:  "Linting exited with non-0 status code but ran successfully",
-				Output:   output,
-				Errors:   hmsErrors,
-			}); err != nil {
-			log.Error(err.Error())
-			Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
-		}
-		return
-	}
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
 			Success:  true,
 			Id:       request.Id,
-			Message:  "Linting discovered no errors",
-			Output:   output,
-			Exitcode: exitCode,
-			Errors:   hmsErrors,
+			Output:   res.Output,
+			Exitcode: res.ExitCode,
+			Errors:   res.Errors,
 		}); err != nil {
 		log.Error(err.Error())
 		Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
@@ -251,7 +185,7 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		args[arg.Key] = arg.Value
 	}
 	// Run the Homescript
-	output, exitCode, _, hmsErrors := homescript.HmsManager.Run(
+	res := homescript.HmsManager.Run(
 		username,
 		"live",
 		request.Code,
@@ -261,43 +195,12 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		homescript.InitiatorAPI,
 		make(chan int),
 	)
-	if len(hmsErrors) > 0 {
-		w.WriteHeader(http.StatusInternalServerError)
-		if err := json.NewEncoder(w).Encode(
-			HomescriptResponse{
-				Success:  false,
-				Exitcode: exitCode,
-				Message:  "Homescript terminated abnormally",
-				Output:   output,
-				Errors:   hmsErrors,
-			}); err != nil {
-			log.Error(err.Error())
-			Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
-		}
-		return
-	}
-	if exitCode != 0 {
-		w.WriteHeader(http.StatusInternalServerError)
-		if err := json.NewEncoder(w).Encode(
-			HomescriptResponse{
-				Success:  false,
-				Exitcode: exitCode,
-				Message:  "Homescript exited with a non-0 status code",
-				Output:   output,
-				Errors:   hmsErrors,
-			}); err != nil {
-			log.Error(err.Error())
-			Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
-		}
-		return
-	}
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
 			Success:  true,
-			Message:  "Homescript ran successfully",
-			Output:   output,
-			Exitcode: exitCode,
-			Errors:   hmsErrors,
+			Output:   res.Output,
+			Exitcode: res.ExitCode,
+			Errors:   res.Errors,
 		}); err != nil {
 		log.Error(err.Error())
 		Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
@@ -325,7 +228,7 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 		args[arg.Key] = arg.Value
 	}
 	// Lint the Homescript
-	output, exitCode, _, hmsErrors := homescript.HmsManager.Run(
+	res := homescript.HmsManager.Run(
 		username,
 		"lint",
 		request.Code,
@@ -335,43 +238,12 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 		homescript.InitiatorAPI,
 		make(chan int),
 	)
-	if len(hmsErrors) > 0 {
-		w.WriteHeader(http.StatusInternalServerError)
-		if err := json.NewEncoder(w).Encode(
-			HomescriptResponse{
-				Success:  false,
-				Exitcode: exitCode,
-				Message:  "Linting discovered errors",
-				Output:   output,
-				Errors:   hmsErrors,
-			}); err != nil {
-			log.Error(err.Error())
-			Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
-		}
-		return
-	}
-	if exitCode != 0 {
-		w.WriteHeader(http.StatusInternalServerError)
-		if err := json.NewEncoder(w).Encode(
-			HomescriptResponse{
-				Success:  false,
-				Exitcode: exitCode,
-				Message:  "Linting exited with non-0 status code but ran successfully",
-				Output:   output,
-				Errors:   hmsErrors,
-			}); err != nil {
-			log.Error(err.Error())
-			Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
-		}
-		return
-	}
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
 			Success:  true,
-			Message:  "Linting discovered no errors",
-			Output:   output,
-			Exitcode: exitCode,
-			Errors:   hmsErrors,
+			Output:   res.Output,
+			Exitcode: res.ExitCode,
+			Errors:   res.Errors,
 		}); err != nil {
 		log.Error(err.Error())
 		Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})

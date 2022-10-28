@@ -141,7 +141,7 @@ func automationRunnerFunc(id uint) {
 		}
 		return
 	}
-	output, exitCode, _, err := homescript.HmsManager.RunById(
+	res, err := homescript.HmsManager.RunById(
 		job.Data.HomescriptId,
 		job.Owner,
 		make([]string, 0),
@@ -167,8 +167,25 @@ func automationRunnerFunc(id uint) {
 		}
 		return
 	}
+	if len(res.Errors) > 0 {
+		log.Warn(fmt.Sprintf("Automation '%s' failed during the execution of Homescript: '%s', which terminated abnormally", job.Data.Name, job.Data.HomescriptId))
+		event.Error(
+			"Automation Failed",
+			fmt.Sprintf("Automation '%s' failed during execution of Homescript '%s'. Error: %s", job.Data.Name, job.Data.HomescriptId, res.Errors[0].Message),
+		)
+		if err := user.Notify(
+			job.Owner,
+			"Automation Failed",
+			fmt.Sprintf("Automation '%s' failed during execution of Homescript '%s'. Error: %s", job.Data.Name, job.Data.HomescriptId, res.Errors[0].Message),
+			user.NotificationLevelError,
+		); err != nil {
+			log.Error("Failed to notify user: ", err.Error())
+			return
+		}
+		return
+	}
 	event.Debug(
 		"Automation Executed Successfully",
-		fmt.Sprintf("Automation '%d' of user '%s' has executed successfully. HMS-Exit code: %d, HMS-Output: '%s'", id, job.Owner, exitCode, output),
+		fmt.Sprintf("Automation '%d' of user '%s' has executed successfully. HMS-Exit code: %d", id, job.Owner, res.ExitCode),
 	)
 }

@@ -17,7 +17,7 @@ require (
 	github.com/smarthome-go/homescript v0.17.0
 	github.com/stretchr/testify v1.8.0
 	golang.org/x/crypto v0.1.0
-	golang.org/x/exp v0.0.0-20221019170559-20944726eadf
+	golang.org/x/exp v0.0.0-20221026153819-32f3d567a233
 	golang.org/x/net v0.1.0
 )
 

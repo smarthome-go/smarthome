@@ -69,7 +69,7 @@ func scheduleRunnerFunc(id uint) {
 	log.Debug(fmt.Sprintf("Schedule '%s' (%d) is executing...", job.Data.Name, id))
 	switch job.Data.TargetMode {
 	case database.ScheduleTargetModeCode:
-		_, _, _, hmsErrors := homescript.HmsManager.Run(
+		res := homescript.HmsManager.Run(
 			owner.Username,
 			fmt.Sprintf("%d.hms", id),
 			job.Data.HomescriptCode,
@@ -80,12 +80,12 @@ func scheduleRunnerFunc(id uint) {
 
 			make(chan int),
 		)
-		if len(hmsErrors) > 0 {
-			log.Error("Executing schedule's Homescript failed: ", hmsErrors[0].ErrorType)
+		if len(res.Errors) > 0 {
+			log.Error("Executing schedule's Homescript failed: ", res.Errors[0].Message)
 			if err := user.Notify(
 				owner.Username,
 				"Schedule Failed",
-				fmt.Sprintf("Schedule '%s' failed due to Homescript error: %s", job.Data.Name, hmsErrors[0].Message),
+				fmt.Sprintf("Schedule '%s' failed due to Homescript error: %s", job.Data.Name, res.Errors[0].Message),
 				user.NotificationLevelError,
 			); err != nil {
 				log.Error("Failed to notify user: ", err.Error())
@@ -93,12 +93,12 @@ func scheduleRunnerFunc(id uint) {
 			}
 			event.Error(
 				"Schedule Failure",
-				fmt.Sprintf("Schedule '%d' failed. Error: %s", id, hmsErrors[0].Message),
+				fmt.Sprintf("Schedule '%d' failed. Error: %s", id, res.Errors[0].Message),
 			)
 			return
 		}
 	case database.ScheduleTargetModeHMS:
-		_, _, _, err := homescript.HmsManager.RunById(
+		res, err := homescript.HmsManager.RunById(
 			job.Data.HomescriptTargetId,
 			owner.Username,
 			make([]string, 0),
@@ -112,7 +112,7 @@ func scheduleRunnerFunc(id uint) {
 			if err := user.Notify(
 				owner.Username,
 				"Schedule Failed",
-				fmt.Sprintf("Schedule '%s' failed due to Homescript execution error: %s", job.Data.Name, err.Error()),
+				fmt.Sprintf("Schedule '%s' failed due to Homescript system error: %s", job.Data.Name, err.Error()),
 				user.NotificationLevelError,
 			); err != nil {
 				log.Error("Failed to notify user: ", err.Error())
@@ -121,6 +121,23 @@ func scheduleRunnerFunc(id uint) {
 			event.Error(
 				"Schedule Failure",
 				fmt.Sprintf("Schedule '%d' failed. Error: %s", id, err.Error()),
+			)
+			return
+		}
+		if len(res.Errors) > 0 {
+			log.Error("Executing schedule's Homescript failed: ", res.Errors[0].Message)
+			if err := user.Notify(
+				owner.Username,
+				"Schedule Failed",
+				fmt.Sprintf("Schedule '%s' failed due to Homescript execution error: %s", job.Data.Name, res.Errors[0].Message),
+				user.NotificationLevelError,
+			); err != nil {
+				log.Error("Failed to notify user: ", err.Error())
+				return
+			}
+			event.Error(
+				"Schedule Failure",
+				fmt.Sprintf("Schedule '%d' failed. Error: %s", id, res.Errors[0].Message),
 			)
 			return
 		}

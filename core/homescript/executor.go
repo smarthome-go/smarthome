@@ -14,7 +14,6 @@ import (
 
 	"github.com/go-ping/ping"
 	"github.com/smarthome-go/homescript/homescript"
-	"github.com/smarthome-go/homescript/homescript/interpreter"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/hardware"
@@ -95,6 +94,15 @@ func (self *Executor) checkSigTerm() bool {
 	default:
 		return false
 	}
+}
+
+// Resolves a Homescript module
+func (self *Executor) ResolveModule(id string) (string, bool, error) {
+	script, found, err := database.GetUserHomescriptById(id, self.Username)
+	if !found || err != nil {
+		return "", found, err
+	}
+	return script.Data.Code, true, nil
 }
 
 // Pauses the execution of the current script for the amount of the specified seconds
@@ -456,7 +464,7 @@ func (self *Executor) httpCancelationMonitor(
 func (self *Executor) Notify(
 	title string,
 	description string,
-	level interpreter.LogLevel,
+	level homescript.NotificationLevel,
 ) error {
 	// If using DryRun, stop here
 	if self.DryRun {
@@ -608,7 +616,7 @@ func (self *Executor) DelPerm(username string, permission string) error {
 func (self *Executor) Log(
 	title string,
 	description string,
-	level interpreter.LogLevel,
+	level homescript.LogLevel,
 ) error {
 	hasPermission, err := database.UserHasPermission(self.Username, database.PermissionLogging)
 	if err != nil {
@@ -644,7 +652,7 @@ func (self *Executor) Log(
 }
 
 // Executes another Homescript based on its Id
-func (self Executor) Exec(homescriptId string, args map[string]string) (string, error) {
+func (self Executor) Exec(homescriptId string, args map[string]string) (homescript.ExecResponse, error) {
 	// The dryRun value is passed to the executed script
 	// Before the target script can begin execution, the call stack is analyzed in order to prevent recursion
 
@@ -668,12 +676,12 @@ func (self Executor) Exec(homescriptId string, args map[string]string) (string, 
 				}
 			}
 			callStackVisual += fmt.Sprintf("  %2d: %-10s (PREVENTED)\n", len(self.CallStack), homescriptId)
-			return self.Output, fmt.Errorf("Exec violation: executing '%s' could cause infinite recursion.\n%s", homescriptId, callStackVisual)
+			return homescript.ExecResponse{}, fmt.Errorf("Exec violation: executing '%s' could cause infinite recursion.\n%s", homescriptId, callStackVisual)
 		}
 	}
-
 	// Execute the target script after the checks
-	output, exitCode, wasTerminated, err := HmsManager.RunById(
+	start := time.Now()
+	res, err := HmsManager.RunById(
 		homescriptId,
 		self.Username,
 		// The previous CallStack is passed in order to preserve the history
@@ -685,15 +693,19 @@ func (self Executor) Exec(homescriptId string, args map[string]string) (string, 
 		self.SigTerm,
 	)
 	// Check if the script was killed using a sigTerm
-	if wasTerminated {
+	if res.WasTerminated {
 		self.WasTerminated = true
-		return output, fmt.Errorf("Exec received sigTerm whilst processing Homescript `%s`", homescriptId)
+		return homescript.ExecResponse{}, fmt.Errorf("Exec received sigTerm whilst processing Homescript `%s`", homescriptId)
 	}
 	if err != nil {
-		self.Print(fmt.Sprintf("Exec failed: called Homescript failed with exit code %d", exitCode))
-		return output, err
+		return homescript.ExecResponse{}, err
 	}
-	return output, nil
+	return homescript.ExecResponse{
+		Output:      res.Output,
+		RuntimeSecs: float64(time.Since(start).Seconds()),
+		ReturnValue: res.ReturnValue,
+		RootScope:   res.RootScope,
+	}, nil
 }
 
 // Returns the name of the user who is currently running the script
@@ -701,33 +713,19 @@ func (self *Executor) GetUser() string {
 	return self.Username
 }
 
-// TODO: Will later be implemented, should return the weather as a human-readable string
-func (self *Executor) GetWeather() (string, error) {
+func (self *Executor) GetWeather() (homescript.Weather, error) {
 	if self.DryRun {
-		return "", nil
+		return homescript.Weather{}, nil
 	}
-	currentWeather, err := weather.GetCurrentWeather()
+	wthr, err := weather.GetCurrentWeather()
 	if err != nil {
-		return "", fmt.Errorf("Could not fetch weather: %s", err.Error())
+		return homescript.Weather{}, fmt.Errorf("could not fetch weather: %s", err.Error())
 	}
-	return strings.ToLower(currentWeather.WeatherTitle), nil
-}
-
-// TODO: Will later be implemented, should return the temperature in Celsius
-func (self *Executor) GetTemperature() (int, error) {
-	if self.DryRun {
-		return 0, nil
-	}
-	currentWeather, err := weather.GetCurrentWeather()
-	if err != nil {
-		return 0, fmt.Errorf("Could not fetch temperature: %s", err.Error())
-	}
-	return int(currentWeather.Temperature), nil
-}
-
-// Returns the current time variables
-func (self *Executor) GetDate() (int, int, int, int, int, int, int) {
-	now := time.Now()
-	_, week := now.ISOWeek()
-	return now.Year(), int(now.Month()), week, now.Day(), now.Hour(), now.Minute(), now.Second()
+	return homescript.Weather{
+		WeatherTitle:       wthr.WeatherTitle,
+		WeatherDescription: wthr.WeatherDescription,
+		Temperature:        float64(wthr.Temperature),
+		FeelsLike:          float64(wthr.FeelsLike),
+		Humidity:           wthr.Humidity,
+	}, nil
 }
