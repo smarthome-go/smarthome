@@ -261,7 +261,7 @@
         try {
             await killAllJobsById(currentData.data.id);
         } catch (err) {
-            $createSnackbar(`Failed to lint '${currentScript}': ${err}`);
+            $createSnackbar(`Failed to kill jobs'${currentScript}': ${err}`);
         }
         requestLoading = false;
     }

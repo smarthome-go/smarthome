@@ -42,24 +42,24 @@
 
         try {
             const result = await lintHomescriptCode(code, [])
-            diagnostics = result.error.map(e => {
-                const lines = code.split('\n')
-
-                let startPos: number = e.location.column - 1 // Starts at -1 because the last line does not end with '\n'
-                for (let lineIndex = 0; lineIndex < e.location.line - 1; lineIndex++) {
-                    startPos += lines[lineIndex].length + 1
+            diagnostics = result.errors.map(e => {
+                let severity = 'error'
+                if (e.kind === 'Warning') {
+                    severity = 'warning'
+                } else if (e.kind === 'Info') {
+                    severity = 'info'
                 }
-
                 return Object.create({
-                    from: startPos,
-                    to: startPos,
-                    severity: e.errorType === 'Panic' ? 'warning' : 'error',
-                    message: `${e.errorType}: ${e.message}`,
-                    source: 'HMS',
+                    from: e.span.start.index,
+                    to: e.span.end.index+1,
+                    severity: severity,
+                    message: `${e.kind}: ${e.message}`,
+                    source: 'Homescript analyzer',
                 })
             })
         } catch (err) {
             $createSnackbar(`Failed to lint: ${err}`)
+            console.error(err)
         }
 
         return diagnostics

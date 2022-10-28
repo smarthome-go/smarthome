@@ -5,11 +5,11 @@
 
 /* Homescript data type and container */
 
-import type { GenericResponse } from "./global"
+import type { GenericResponse } from './global'
 
 export interface homescriptJob {
-    id: number,
-    initiator: string,
+    id: number
+    initiator: string
     homescriptId: string
 }
 
@@ -40,7 +40,7 @@ export interface homescriptData {
 /* Homescript run request response */
 // Is returned as a response to a Homescript run request
 export interface homescriptResponseWrapper {
-    response: homescriptResponse,
+    response: homescriptResponse
     code: string
     modeRun: boolean
 }
@@ -51,17 +51,21 @@ export interface homescriptResponse {
     exitCode: number
     message: string
     output: string
-    error: homescriptError[]
+    errors: homescriptError[]
 }
 
 export interface homescriptError {
-    errorType: string
-    location: location
+    kind: string
     message: string
+    span: span
+}
+
+export interface span {
+    start: location
+    end: location
 }
 
 export interface location {
-    filename: string
     line: number
     column: number
     index: number
@@ -86,55 +90,61 @@ export interface homescriptArgData {
     homescriptId: string
     prompt: string
     mdIcon: string
-    inputType: "string" | "number" | "boolean"
-    display: "type_default" | "string_switches" | "boolean_yes_no" | "boolean_on_off" | "number_hour" | "number_minute"
+    inputType: 'string' | 'number' | 'boolean'
+    display: 'type_default' | 'string_switches' | 'boolean_yes_no' | 'boolean_on_off' | 'number_hour' | 'number_minute'
 }
 
 // Is used for visual applications which require labels and a logical connection between type and display
 export interface DisplayOpt {
-    identifier: "type_default" | "string_switches" | "boolean_yes_no" | "boolean_on_off" | "number_hour" | "number_minute"
-    label: string,
-    type: "string" | "number" | "boolean"
+    identifier:
+        | 'type_default'
+        | 'string_switches'
+        | 'boolean_yes_no'
+        | 'boolean_on_off'
+        | 'number_hour'
+        | 'number_minute'
+    label: string
+    type: 'string' | 'number' | 'boolean'
 }
 
 // Used for displaying the options for `inputType` and `display`
-export const inputTypeOpts = ["string", "number", "boolean"];
+export const inputTypeOpts = ['string', 'number', 'boolean']
 export const displayOpts: DisplayOpt[] = [
     // Default display
-    { identifier: "type_default", label: "Type default", type: "string" },
-    { identifier: "type_default", label: "Type default", type: "number" },
-    { identifier: "type_default", label: "Type default", type: "boolean" },
+    { identifier: 'type_default', label: 'Type default', type: 'string' },
+    { identifier: 'type_default', label: 'Type default', type: 'number' },
+    { identifier: 'type_default', label: 'Type default', type: 'boolean' },
     // Switch listing as string
     {
-        identifier: "string_switches",
-        label: "Select switch",
-        type: "string",
+        identifier: 'string_switches',
+        label: 'Select switch',
+        type: 'string',
     },
     // Yes / No prompt as boolean
     {
-        identifier: "boolean_yes_no",
-        label: "Yes / No (bool)",
-        type: "boolean",
+        identifier: 'boolean_yes_no',
+        label: 'Yes / No (bool)',
+        type: 'boolean',
     },
     // On / Off prompt as boolean
     {
-        identifier: "boolean_on_off",
-        label: "On / Off (bool)",
-        type: "boolean",
+        identifier: 'boolean_on_off',
+        label: 'On / Off (bool)',
+        type: 'boolean',
     },
     // Time prompts as either hour or minute
-    { identifier: "number_hour", label: "Hour", type: "number" },
-    { identifier: "number_minute", label: "Minute", type: "number" },
-];
+    { identifier: 'number_hour', label: 'Hour', type: 'number' },
+    { identifier: 'number_minute', label: 'Minute', type: 'number' },
+]
 
 // Sends an execution request to the server
 // Returns the Homescript Response
 // Can throw an error if non-Homescript errors occur
 export async function runHomescriptById(id: string, args: homescriptArgSubmit[]): Promise<homescriptResponse> {
     const res = await fetch(`/api/homescript/run`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, args: args })
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, args: args }),
     })
     if (res.status !== 200 && res.status !== 500) throw Error(await (res.json()))
     return await (res.json())
@@ -145,9 +155,9 @@ export async function runHomescriptById(id: string, args: homescriptArgSubmit[])
 // Can throw an error if non-Homescript errors occur
 export async function runHomescriptCode(code: string, args: homescriptArgSubmit[]): Promise<homescriptResponse> {
     const res = await fetch(`/api/homescript/run/live`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, args: args })
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, args: args }),
     })
     if (res.status !== 200 && res.status !== 500) throw Error(await (res.json()))
     return await (res.json())
@@ -158,9 +168,9 @@ export async function runHomescriptCode(code: string, args: homescriptArgSubmit[
 // Can throw an error if non-Homescript errors occur
 export async function lintHomescriptById(id: string, args: homescriptArgSubmit[]): Promise<homescriptResponse> {
     const res = await fetch(`/api/homescript/lint`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, args: args })
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, args: args }),
     })
     if (res.status !== 200 && res.status !== 500) throw Error(await (res.json()))
     return await (res.json())
@@ -171,9 +181,9 @@ export async function lintHomescriptById(id: string, args: homescriptArgSubmit[]
 // Can throw an error if non-Homescript errors occur
 export async function lintHomescriptCode(code: string, args: homescriptArgSubmit[]): Promise<homescriptResponse> {
     const res = await fetch(`/api/homescript/lint/live`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, args: args })
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, args: args }),
     })
     if (res.status !== 200 && res.status !== 500) throw Error(await (res.json()))
     return await (res.json())
@@ -189,8 +199,8 @@ export async function getRunningJobs(): Promise<homescriptJob[]> {
 // Sends a request to kill all running executions of a given script (by id)
 export async function killAllJobsById(id: string): Promise<GenericResponse> {
     const res = await fetch(`/api/homescript/kill/script/${encodeURIComponent(id)}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
     })
     if (res.status !== 200 && res.status !== 500) throw Error(await (res.json()))
     return await (res.json())
