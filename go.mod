@@ -14,10 +14,10 @@ require (
 	github.com/nathan-osman/go-sunrise v1.1.0
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/sirupsen/logrus v1.9.0
-	github.com/smarthome-go/homescript v0.17.0
+	github.com/smarthome-go/homescript/v2 v2.0.1
 	github.com/stretchr/testify v1.8.0
 	golang.org/x/crypto v0.1.0
-	golang.org/x/exp v0.0.0-20221026153819-32f3d567a233
+	golang.org/x/exp v0.0.0-20221028150844-83b7d23a625f
 	golang.org/x/net v0.1.0
 )
 
@@ -30,5 +30,3 @@ require (
 	golang.org/x/sys v0.1.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/smarthome-go/homescript => ../homescript/

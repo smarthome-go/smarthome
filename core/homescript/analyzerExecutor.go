@@ -7,7 +7,7 @@ import (
 	"net/url"
 
 	"github.com/go-ping/ping"
-	"github.com/smarthome-go/homescript/homescript"
+	"github.com/smarthome-go/homescript/v2/homescript"
 	"github.com/smarthome-go/smarthome/core/database"
 )
 

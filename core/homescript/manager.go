@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/smarthome-go/homescript/homescript"
-	hmsErrors "github.com/smarthome-go/homescript/homescript/errors"
+	"github.com/smarthome-go/homescript/v2/homescript"
+	hmsErrors "github.com/smarthome-go/homescript/v2/homescript/errors"
 	"github.com/smarthome-go/smarthome/core/database"
 )
 

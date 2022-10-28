@@ -12,7 +12,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/go-ping/ping"
-	"github.com/smarthome-go/homescript/homescript"
+	"github.com/smarthome-go/homescript/v2/homescript"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/hardware"
