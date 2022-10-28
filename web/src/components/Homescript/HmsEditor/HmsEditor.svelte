@@ -51,7 +51,10 @@
                 }
                 return Object.create({
                     from: e.span.start.index,
-                    to: e.span.end.index+1,
+                    to:
+                        e.span.end.index + 1 <= code.length
+                            ? e.span.end.index + 1
+                            : e.span.end.index,
                     severity: severity,
                     message: `${e.kind}: ${e.message}`,
                     source: 'Homescript analyzer',
