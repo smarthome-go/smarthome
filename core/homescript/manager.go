@@ -55,7 +55,25 @@ type HmsExecRes struct {
 	RootScope     map[string]*homescript.Value
 	ExitCode      int
 	WasTerminated bool
-	Errors        []hmsErrors.Error
+	Errors        []HmsError
+}
+
+type HmsError struct {
+	Kind    string         `json:"kind"`
+	Message string         `json:"message"`
+	Span    hmsErrors.Span `json:"span"`
+}
+
+func convertErrors(input []hmsErrors.Error) []HmsError {
+	output := make([]HmsError, 0)
+	for _, err := range input {
+		output = append(output, HmsError{
+			Kind:    err.Kind.String(),
+			Message: err.Message,
+			Span:    err.Span,
+		})
+	}
+	return output
 }
 
 func (m *Manager) PushJob(
@@ -160,7 +178,7 @@ func (m *Manager) Run(
 		RootScope:     rootScope,
 		ExitCode:      exitCode,
 		WasTerminated: wasTerminated,
-		Errors:        hmsErrors,
+		Errors:        convertErrors(hmsErrors),
 	}
 
 }

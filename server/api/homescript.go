@@ -10,18 +10,17 @@ import (
 
 	"github.com/gorilla/mux"
 
-	hmsErrors "github.com/smarthome-go/homescript/homescript/errors"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/server/middleware"
 )
 
 type HomescriptResponse struct {
-	Id       string            `json:"id"`
-	Success  bool              `json:"success"`
-	Exitcode int               `json:"exitCode"`
-	Output   string            `json:"output"`
-	Errors   []hmsErrors.Error `json:"errors"`
+	Id       string                `json:"id"`
+	Success  bool                  `json:"success"`
+	Exitcode int                   `json:"exitCode"`
+	Output   string                `json:"output"`
+	Errors   []homescript.HmsError `json:"errors"`
 }
 
 type CreateHomescriptRequest struct {
