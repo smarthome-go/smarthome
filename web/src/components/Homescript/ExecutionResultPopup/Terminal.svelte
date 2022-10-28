@@ -26,6 +26,14 @@
                 .padStart(3, ' ')
                 .replaceAll(' ', '&nbsp;')}&nbsp;|&nbsp;</span>${lines[err.span.start.line]}`
 
+        let color = 'red'
+        if (err.kind == 'Warning') {
+            color = 'yellow'
+        }
+        if (err.kind == 'Info') {
+            color = 'cyan'
+        }
+
         let rawMarker = '^'
         if (err.kind === 'Warning' || err.kind === 'Info') {
             rawMarker = '~'
@@ -36,15 +44,15 @@
 
         const marker = `${'&nbsp;'.repeat(
             err.span.start.column + 6,
-        )}<span class="red bold">${rawMarker}</span>`
+        )}<span class="${color} bold">${rawMarker}</span>`
 
         return (
-            `<span class="cyan bold">${
+            `<span class="${color} bold">${
                 err.kind
             }</span><span class="bold">&nbsp;at&nbsp;${'SOME-FILE'}:${err.span.start.line}:${
                 err.span.start.column
             }</span>` +
-            `<br>${line1}<br>${line2}<br>${marker}${line3}<br><br><span class="red bold">${err.message
+            `<br>${line1}<br>${line2}<br>${marker}${line3}<br><br><span class="${color} bold">${err.message
                 .replaceAll(' ', '&nbsp;')
                 .replaceAll('\n', '<br>')}</span>`
         )
