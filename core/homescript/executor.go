@@ -1,7 +1,6 @@
 package homescript
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -14,6 +13,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/go-ping/ping"
+	"github.com/smarthome-go/homescript/homescript"
 	"github.com/smarthome-go/homescript/homescript/interpreter"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
@@ -97,28 +97,6 @@ func (self *Executor) checkSigTerm() bool {
 	}
 }
 
-// Validates that a given argument has been passed to the Homescript runtime
-// Returns a boolean indicating whether the argument has been found in the `Args` map
-func (self *Executor) CheckArg(toCheck string) bool {
-	if self.DryRun {
-		return true
-	}
-	_, ok := self.Args[toCheck]
-	return ok
-}
-
-// Returns the value of an expected argument from the `Args` map
-// If the value could not be found in the map, it was not provided to the Homescript runtime.
-// This situation will cause the function to return an error, so `CheckArg` should be used beforehand
-// If `dryRun` is used, the function attempts to use the value if it exists, otherwise an empty string is used as a default
-func (self *Executor) GetArg(toGet string) (string, error) {
-	value, ok := self.Args[toGet]
-	if !ok && !self.DryRun {
-		return "", fmt.Errorf("Failed to retrieve argument '%s': not provided to the Homescript runtime", toGet)
-	}
-	return value, nil
-}
-
 // Pauses the execution of the current script for the amount of the specified seconds
 // Implements special checks to cancel the sleep function during its execution
 func (self *Executor) Sleep(seconds float64) {
@@ -143,17 +121,36 @@ func (self *Executor) Print(args ...string) {
 	if self.DryRun {
 		return
 	}
+	self.Output += strings.Join(args, " ")
+}
+
+// Emulates printing to the console
+// Instead, appends the provided message to the output of the executor
+// Exists in order to return the script's output to the user
+// Just like `Print` but appends a newline to the end
+func (self *Executor) Println(args ...string) {
+	if self.DryRun {
+		return
+	}
 	self.Output += strings.Join(args, " ") + "\n"
 }
 
-// Returns a boolean if the requested switch is on or off
+// Returns an object with contains data about the requested switch
 // Returns an error if the provided switch does not exist
-func (self *Executor) SwitchOn(switchId string) (bool, error) {
-	powerState, err := hardware.GetPowerState(switchId)
+func (self *Executor) GetSwitch(switchId string) (homescript.SwitchResponse, error) {
+	switchData, found, err := database.GetSwitchById(switchId)
+	if !found {
+		return homescript.SwitchResponse{}, fmt.Errorf("switch '%s' was not found", switchId)
+	}
 	if err != nil {
 		log.Debug(fmt.Sprintf("[Homescript] ERROR: script: '%s' user: '%s': failed to read power state: %s", self.ScriptName, self.Username, err.Error()))
+		return homescript.SwitchResponse{}, err
 	}
-	return powerState, err
+	return homescript.SwitchResponse{
+		Name:  switchData.Name,
+		Power: switchData.PowerOn,
+		Watts: uint(switchData.Watts),
+	}, nil
 }
 
 // Changes the power state of an arbitrary switch
@@ -227,14 +224,14 @@ func (self *Executor) Ping(ip string, timeoutSecs float64) (bool, error) {
 }
 
 // Makes a GET request to an arbitrary URL and returns the result
-func (self *Executor) Get(requestUrl string) (string, error) {
+func (self *Executor) Get(requestUrl string) (homescript.HttpResponse, error) {
 	// The permissions can be validated beforehand
 	hasPermission, err := database.UserHasPermission(self.Username, database.PermissionHomescriptNetwork)
 	if err != nil {
-		return "", fmt.Errorf("Could not send GET request: failed to validate your permissions: %s", err.Error())
+		return homescript.HttpResponse{}, fmt.Errorf("could not send GET request: failed to validate your permissions: %s", err.Error())
 	}
 	if !hasPermission {
-		return "", fmt.Errorf("Will not send GET request: you lack permission to access the network via homescript. If this is unintentional, contact your administrator")
+		return homescript.HttpResponse{}, fmt.Errorf("will not send GET request: you lack permission to access the network via homescript. If this is unintentional, contact your administrator")
 	}
 
 	// DryRun only checks the URL's validity
@@ -242,36 +239,33 @@ func (self *Executor) Get(requestUrl string) (string, error) {
 		// Check if the URL is already cached
 		cached, err := database.IsHomescriptUrlCached(requestUrl)
 		if err != nil {
-			return "", fmt.Errorf("Internal error: Could not check URL cache: %s", err.Error())
+			return homescript.HttpResponse{}, fmt.Errorf("internal error: Could not check URL cache: %s", err.Error())
 		}
 		if cached {
 			log.Trace(fmt.Sprintf("Homescript URL `%s` is cached, omitting checks...", requestUrl))
-			return "", nil
+			return homescript.HttpResponse{}, nil
 		}
 		log.Trace(fmt.Sprintf("Homescript URL `%s` is not cached, running checks...", requestUrl))
 		url, err := url.ParseRequestURI(requestUrl)
 		if err != nil {
-			return "", fmt.Errorf("Invalid URL provided: could not parse URL: %s", err.Error())
+			return homescript.HttpResponse{}, fmt.Errorf("invalid URL provided: could not parse URL: %s", err.Error())
 		}
 		if url.Scheme != "http" && url.Scheme != "https" {
-			return "", fmt.Errorf("Invalid URL provided: Invalid scheme: `%s`.\n=> Valid schemes are `http` and `https`", url.Scheme)
+			return homescript.HttpResponse{}, fmt.Errorf("invalid URL provided: Invalid scheme: `%s`.\n=> Valid schemes are `http` and `https`", url.Scheme)
 		}
 		if url.Scheme != "http" && url.Scheme != "https" {
-			return "", fmt.Errorf("Invalid URL provided: Invalid scheme: `%s`.\n=> Valid schemes are `http` and `https`", url.Scheme)
+			return homescript.HttpResponse{}, fmt.Errorf("invalid URL provided: Invalid scheme: `%s`.\n=> Valid schemes are `http` and `https`", url.Scheme)
 		}
 		_, err = http.Head(requestUrl)
 		if err != nil {
-			return "", err
+			return homescript.HttpResponse{}, err
 		}
-		//if res.StatusCode != http.StatusOK {
-		//return "", fmt.Errorf("Checking URL failed: unexpected non-200 status-code: %d (`%s`)", res.StatusCode, res.Status)
-		//}
 		// If all checks were successful, insert the URL into the URL cache
 		if err := insertCacheEntry(*url); err != nil {
-			return "", fmt.Errorf("Internal error: Could not update URL cache entry: %s", err.Error())
+			return homescript.HttpResponse{}, fmt.Errorf("internal error: Could not update URL cache entry: %s", err.Error())
 		}
 		log.Trace(fmt.Sprintf("Updated URL cache to include `%s`", requestUrl))
-		return "", nil
+		return homescript.HttpResponse{}, nil
 	}
 
 	// Create a new request
@@ -281,7 +275,7 @@ func (self *Executor) Get(requestUrl string) (string, error) {
 		nil,
 	)
 	if err != nil {
-		return "", err
+		return homescript.HttpResponse{}, err
 	}
 	// Set the user agent to the Smarthome HMS client
 	req.Header.Set("User-Agent", "Smarthome-homescript")
@@ -309,7 +303,7 @@ func (self *Executor) Get(requestUrl string) (string, error) {
 	res, err := client.Do(req)
 	// Evaluate the request's outcome
 	if err != nil {
-		return "", err
+		return homescript.HttpResponse{}, err
 	}
 
 	// Stop the request monitor Go routine
@@ -319,74 +313,60 @@ func (self *Executor) Get(requestUrl string) (string, error) {
 	defer res.Body.Close()
 	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
-		return "", err
+		return homescript.HttpResponse{}, err
 	}
-	return string(resBody), nil
+	return homescript.HttpResponse{
+		Status:     res.Status,
+		StatusCode: uint16(res.StatusCode),
+		Body:       string(resBody),
+	}, nil
 }
 
 // Makes a request to an arbitrary URL using a custom method and body in order to return the result
-func (self *Executor) Http(requestUrl string, method string, body string, headers map[string]string) (string, error) {
+func (self *Executor) Http(requestUrl string, method string, body string, headers map[string]string) (homescript.HttpResponse, error) {
 	// Check permissions and request building beforehand
 	hasPermission, err := database.UserHasPermission(self.Username, database.PermissionHomescriptNetwork)
 	if err != nil {
-		return "", fmt.Errorf("Could not perform %s request: failed to validate your permissions: %s", method, err.Error())
+		return homescript.HttpResponse{}, fmt.Errorf("could not perform %s request: failed to validate your permissions: %s", method, err.Error())
 	}
 	if !hasPermission {
-		return "", fmt.Errorf("Will not perform %s request: you lack permission to access the network via Homescript. If this is unintentional, contact your administrator", method)
+		return homescript.HttpResponse{}, fmt.Errorf("will not perform %s request: you lack permission to access the network via Homescript. If this is unintentional, contact your administrator", method)
 	}
 
 	// If using DryRun, stop here and just validate the request URL
-	// Also check if the request body contains valid JSON if a `Content-Type` header is set to `application/json`
-	// NOTE: JSON formatting is only validated during linting, not execution
 	if self.DryRun {
-		// Check if a `Content-Type` header is set to `application/json`
-		contentType, wasSpecified := headers["Content-Type"]
-		if !wasSpecified {
-			return "", nil
-		}
-		if contentType == "application/json" {
-			// JSON has been detected in the `Content-Type`, try to unmarshal the payload in order to check for errors
-			blackHole := struct{}{} // Using an empty struct in order to accept all valid payloads
-			if err := json.Unmarshal([]byte(body), &blackHole); err != nil {
-				return "", fmt.Errorf("Invalid body provided: detected `Content-Type`: `application/json` whilst using an invalid JSON body\n=> You can remove the Content-Type or fix the body\nJSON Error: %s", err.Error())
-			}
-		}
-
 		// Check if the URL is already cached
 		cached, err := database.IsHomescriptUrlCached(requestUrl)
 		if err != nil {
-			return "", fmt.Errorf("Internal error: Could not check URL cache: %s", err.Error())
+			return homescript.HttpResponse{}, fmt.Errorf("Internal error: Could not check URL cache: %s", err.Error())
 		}
 		if cached {
 			log.Trace(fmt.Sprintf("Homescript URL `%s` is cached, omitting checks...", requestUrl))
-			return "", nil
+			return homescript.HttpResponse{}, nil
 		}
 		log.Trace(fmt.Sprintf("Homescript URL `%s` is not cached, running checks...", requestUrl))
 
 		// URL-specific checks
 		url, err := url.ParseRequestURI(requestUrl)
 		if err != nil {
-			return "", fmt.Errorf("Invalid URL provided: could not parse URL: %s", err.Error())
+			return homescript.HttpResponse{}, fmt.Errorf("invalid URL provided: could not parse URL: %s", err.Error())
 		}
 		if url.Scheme != "http" && url.Scheme != "https" {
-			return "", fmt.Errorf("Invalid URL provided: Invalid scheme: `%s`.\n=> Valid schemes are `http` and `https`", url.Scheme)
+			return homescript.HttpResponse{}, fmt.Errorf("invalid URL provided: Invalid scheme: `%s`.\n=> Valid schemes are `http` and `https`", url.Scheme)
 		}
 		if url.Scheme != "http" && url.Scheme != "https" {
-			return "", fmt.Errorf("Invalid URL provided: Invalid scheme: `%s`.\n=> Valid schemes are `http` and `https`", url.Scheme)
+			return homescript.HttpResponse{}, fmt.Errorf("invalid URL provided: Invalid scheme: `%s`.\n=> Valid schemes are `http` and `https`", url.Scheme)
 		}
 		_, err = http.Head(requestUrl)
 		if err != nil {
-			return "", err
+			return homescript.HttpResponse{}, err
 		}
-		//if res.StatusCode != http.StatusOK {
-		//return "", fmt.Errorf("Checking URL failed: unexpected non-200 status-code: %d (`%s`)", res.StatusCode, res.Status)
-		//}
 		// If all checks were successful, insert the URL into the URL cache
 		if err := insertCacheEntry(*url); err != nil {
-			return "", fmt.Errorf("Internal error: Could not update URL cache entry: %s", err.Error())
+			return homescript.HttpResponse{}, fmt.Errorf("internal error: Could not update URL cache entry: %s", err.Error())
 		}
-		log.Trace(fmt.Sprintf("Updated URL cache to include `%s`", requestUrl))
-		return "", nil
+		log.Trace(fmt.Sprintf("updated URL cache to include `%s`", requestUrl))
+		return homescript.HttpResponse{}, nil
 	}
 
 	// Create a new request
@@ -396,7 +376,7 @@ func (self *Executor) Http(requestUrl string, method string, body string, header
 		strings.NewReader(body),
 	)
 	if err != nil {
-		return "", err
+		return homescript.HttpResponse{}, err
 	}
 	// Set the user agent to the Smarthome HMS client
 	req.Header.Set("User-Agent", "Smarthome-homescript")
@@ -427,7 +407,7 @@ func (self *Executor) Http(requestUrl string, method string, body string, header
 	res, err := client.Do(req)
 	// Evaluate the request's outcome
 	if err != nil {
-		return "", err
+		return homescript.HttpResponse{}, err
 	}
 
 	// Stop the request monitor Go routine
@@ -437,9 +417,13 @@ func (self *Executor) Http(requestUrl string, method string, body string, header
 	defer res.Body.Close()
 	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
-		return "", err
+		return homescript.HttpResponse{}, err
 	}
-	return string(resBody), nil
+	return homescript.HttpResponse{
+		Status:     res.Status,
+		StatusCode: uint16(res.StatusCode),
+		Body:       string(resBody),
+	}, nil
 }
 
 func (self *Executor) httpCancelationMonitor(

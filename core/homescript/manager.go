@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/smarthome-go/homescript/homescript"
+	hmsErrors "github.com/smarthome-go/homescript/homescript/errors"
 	"github.com/smarthome-go/smarthome/core/database"
 )
 
@@ -91,7 +92,7 @@ func (m *Manager) Run(
 	callStack []string,
 	initiator HomescriptInitiator,
 	sigTerm chan int,
-) (output string, exitCode int, wasTerminated bool, err []HomescriptError) {
+) (output string, exitCode int, wasTerminated bool, errs []hmsErrors.Error) {
 	// Is passed to the executor so that it can forward messages from its own `SigTerm` onto the `sigTermInternalPtr`
 	// Is also passed to `homescript.Run` so that the newly spawned interpreter uses the same channel
 	interpreterSigTerm := make(chan int)
@@ -120,11 +121,16 @@ func (m *Manager) Run(
 	)
 
 	// Run the script
-	exitCode, hmsErrors := homescript.Run(
+	_, exitCode, _, hmsErrors := homescript.Run(
 		executor,
-		scriptLabel,
-		scriptCode,
 		&interpreterSigTerm,
+		scriptCode,
+		make(map[string]homescript.Value),
+		make(map[string]homescript.Value),
+		false,
+		10000,
+		make([]string, 0),
+		"",
 	)
 
 	wasTerminated = executor.WasTerminated
