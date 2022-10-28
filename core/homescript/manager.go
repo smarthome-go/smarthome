@@ -104,17 +104,87 @@ func (m *Manager) PushJob(
 //log.Debug(output)
 //}
 
+func (m *Manager) Analyze(
+	scriptLabel string,
+	scriptCode string,
+	callStack []string,
+	initiator HomescriptInitiator,
+) HmsExecRes {
+	analyzerSigTerm := make(chan int)
+
+	executor := &Executor{
+		ScriptName:         scriptLabel,
+		DryRun:             false,
+		CallStack:          callStack,
+		SigTerm:            make(chan int),
+		sigTermInternalPtr: &analyzerSigTerm,
+		StartTime:          time.Now(),
+	}
+
+	// Append the executor to the jobs
+	id := m.PushJob(
+		executor,
+		initiator,
+		make(chan uint64),
+	)
+
+	// Run the script
+	diagnostics, _ := homescript.Analyze(
+		executor,
+		scriptCode,
+		make(map[string]homescript.Value),
+	)
+
+	// Remove the Job from the jobs list when this function ends
+	m.removeJob(id)
+
+	diagnosticsErr := make([]HmsError, 0)
+	for _, diagnostic := range diagnostics {
+		diagnosticsErr = append(diagnosticsErr, HmsError{
+			Kind:    diagnostic.Kind.String(),
+			Message: diagnostic.Message,
+			Span:    diagnostic.Span,
+		})
+	}
+
+	// Process outcome
+	return HmsExecRes{
+		Output:      executor.Output,
+		ReturnValue: homescript.ValueNull{},
+		RootScope:   make(map[string]*homescript.Value),
+		ExitCode:    0,
+		Errors:      diagnosticsErr,
+	}
+}
+
+func (m *Manager) AnalyzeById(
+	scriptId string,
+	username string,
+	callStack []string,
+	initiator HomescriptInitiator,
+) (HmsExecRes, error) {
+	homescriptItem, hasBeenFound, err := database.GetUserHomescriptById(scriptId, username)
+	if err != nil {
+		return HmsExecRes{}, err
+	}
+	if !hasBeenFound {
+		return HmsExecRes{}, errors.New("invalid Homescript id: no data associated with id")
+	}
+	return m.Analyze(
+		scriptId,
+		homescriptItem.Data.Code,
+		append(callStack, scriptId),
+		initiator,
+	), nil
+}
+
 // Executes arbitrary Homescript-code as a given user, returns the output and a possible error slice
 // The `scriptLabel` argument is used internally to allow for better error-display
-// The `dryRun` argument specifies whether the script should be linted or executed
-// The `args` argument represents the arguments passed to the Homescript runtime and
-// can be used from the script via the `CheckArg` and `GetArg` functions
 // The `excludedCalls` argument specifies which Homescripts may not be called by this Homescript in order to prevent recursion
 func (m *Manager) Run(
 	username string,
 	scriptLabel string,
 	scriptCode string,
-	dryRun bool,
 	arguments map[string]string,
 	callStack []string,
 	initiator HomescriptInitiator,
@@ -127,7 +197,7 @@ func (m *Manager) Run(
 	executor := &Executor{
 		Username:   username,
 		ScriptName: scriptLabel,
-		DryRun:     dryRun,
+		DryRun:     false,
 		Args:       arguments,
 		CallStack:  callStack,
 		// This channel will receive the initial sigTerm which can quit the currently running callback function
@@ -204,7 +274,6 @@ func (m *Manager) RunById(
 		username,
 		scriptId,
 		homescriptItem.Data.Code,
-		dryRun,
 		arguments,
 		// The script's id is added to the callStack (exec blacklist)
 		append(callStack, scriptId),
