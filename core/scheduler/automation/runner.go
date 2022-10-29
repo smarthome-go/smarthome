@@ -145,7 +145,6 @@ func automationRunnerFunc(id uint) {
 		job.Data.HomescriptId,
 		job.Owner,
 		make([]string, 0),
-		false,
 		make(map[string]string, 0),
 		homescript.InitiatorAutomation,
 		make(chan int),

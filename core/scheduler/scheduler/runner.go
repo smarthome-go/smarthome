@@ -101,7 +101,6 @@ func scheduleRunnerFunc(id uint) {
 			job.Data.HomescriptTargetId,
 			owner.Username,
 			make([]string, 0),
-			false,
 			make(map[string]string, 0),
 			homescript.InitiatorScheduler,
 			make(chan int),

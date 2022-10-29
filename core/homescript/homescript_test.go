@@ -2,6 +2,7 @@ package homescript
 
 import (
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -265,31 +266,30 @@ func TestRun(t *testing.T) {
 		},
 	}
 	for _, test := range table {
-		output, code, _, errors := HmsManager.Run(
+		res := HmsManager.Run(
 			"admin",
 			"testing",
 			test.Code,
-			false,
 			make(map[string]string, 0),
 			make([]string, 0),
 			InitiatorInternal,
 			make(chan int),
 		)
-		if len(errors) > 0 {
-			if errors[0].Message != test.Result.FirstError {
-				t.Errorf("Unmatched error. want: %s got: %s", test.Result.FirstError, errors[0].Message)
+		if len(res.Errors) > 0 {
+			if res.Errors[0].Message != test.Result.FirstError {
+				t.Errorf("Unmatched error. want: %s got: %s", test.Result.FirstError, res.Errors[0].Message)
 				return
 			}
 		} else if test.Result.FirstError != "" {
 			t.Errorf("Expected abundant error: expected: %s, got none", test.Result.FirstError)
 			return
 		}
-		if code != test.Result.Code {
-			t.Errorf("Unexpected exit code. want: `%d` got: `%d`", test.Result.Code, code)
+		if res.ExitCode != test.Result.Code {
+			t.Errorf("Unexpected exit code. want: `%d` got: `%d`", test.Result.Code, res.ExitCode)
 			return
 		}
-		if output != test.Result.Output {
-			t.Errorf("Unexpected output: want: `%s` got: `%s`", test.Result.Output, output)
+		if res.Output != test.Result.Output {
+			t.Errorf("Unexpected output: want: `%s` got: `%s`", test.Result.Output, res.Output)
 			return
 		}
 	}
@@ -320,18 +320,20 @@ func TestRecursion(t *testing.T) {
 		}
 
 		// Run the actual test
-		output, exitCode, _, err := HmsManager.RunById(
+		res, err := HmsManager.RunById(
 			"recursive-start",
 			"admin",
 			make([]string, 0),
-			false,
 			make(map[string]string),
 			InitiatorInternal,
 			make(chan int),
 		)
-		assert.EqualError(t, err, "Homescript terminated with exit code 1: Homescript terminated with exit code 1: Exec violation: executing 'recursive-start' could cause infinite recursion.\n=== Call Stack ===\n   0: recursive-start (INITIAL)\n   1: recursive-end\n   2: recursive-start (PREVENTED)\n")
-		assert.Equal(t, 1, exitCode)
-		assert.Equal(t, "execution error", output)
+		assert.NoError(t, err)
+		if !strings.Contains(res.Errors[0].Message, "exec violation") {
+			t.Errorf("Expected exec violation error, got: %s", res.Errors[0].Message)
+
+		}
+		assert.Equal(t, 1, res.ExitCode)
 	})
 
 	/* Non-recursive code */
@@ -368,17 +370,17 @@ func TestRecursion(t *testing.T) {
 		}
 
 		// Run the actual test
-		output2, exitCode, _, err := HmsManager.RunById(
+		res, err := HmsManager.RunById(
 			"normal1",
 			"admin",
 			make([]string, 0),
-			false,
 			make(map[string]string),
 			InitiatorInternal,
 			make(chan int),
 		)
 		assert.NoError(t, err)
-		assert.Equal(t, 0, exitCode)
-		assert.Equal(t, "2\n\n3\n\n", output2)
+		assert.Empty(t, res.Errors)
+		assert.Equal(t, 0, res.ExitCode)
+		assert.Equal(t, "2\n\n3\n\n", res.Output)
 	})
 }

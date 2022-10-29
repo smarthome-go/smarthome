@@ -521,7 +521,7 @@ func (self *Executor) Log(
 }
 
 // Executes another Homescript based on its Id
-func (self Executor) Exec(homescriptId string, args map[string]string) (homescript.ExecResponse, error) {
+func (self *Executor) Exec(homescriptId string, args map[string]string) (homescript.ExecResponse, error) {
 	// The dryRun value is passed to the executed script
 	// Before the target script can begin execution, the call stack is analyzed in order to prevent recursion
 
@@ -556,7 +556,6 @@ func (self Executor) Exec(homescriptId string, args map[string]string) (homescri
 		// The previous CallStack is passed in order to preserve the history
 		// Because the RunById function implicitly appends its target id the provided call stack, it doesn't need to be added here
 		self.CallStack,
-		self.DryRun,
 		args,
 		InitiatorExec,
 		self.SigTerm,

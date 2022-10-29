@@ -246,7 +246,6 @@ func (m *Manager) RunById(
 	scriptId string,
 	username string,
 	callStack []string,
-	dryRun bool,
 	arguments map[string]string,
 	initiator HomescriptInitiator,
 	sigTerm chan int,
