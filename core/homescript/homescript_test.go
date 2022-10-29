@@ -1,6 +1,7 @@
 package homescript
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -304,7 +305,7 @@ func TestRecursion(t *testing.T) {
 			Owner: "admin",
 			Data: database.HomescriptData{
 				Id:   "recursive-start",
-				Code: "exec('recursive-end')",
+				Code: "exec('recursive-end');",
 			},
 		}); err != nil {
 			t.Error(err.Error())
@@ -313,7 +314,7 @@ func TestRecursion(t *testing.T) {
 			Owner: "admin",
 			Data: database.HomescriptData{
 				Id:   "recursive-end",
-				Code: "exec('recursive-start')",
+				Code: "exec('recursive-start');",
 			},
 		}); err != nil {
 			t.Error(err.Error())
@@ -329,9 +330,12 @@ func TestRecursion(t *testing.T) {
 			make(chan int),
 		)
 		assert.NoError(t, err)
-		if !strings.Contains(res.Errors[0].Message, "exec violation") {
-			t.Errorf("Expected exec violation error, got: %s", res.Errors[0].Message)
-
+		if len(res.Errors) == 0 {
+			t.Errorf("Expected error, received none")
+			return
+		}
+		if !strings.Contains(res.Errors[0].Message, "Exec violation") {
+			t.Errorf("Expected exec violation error, got: %s: %s (%d:%d)", res.Errors[0].Kind, res.Errors[0].Message, res.Errors[0].Span.Start.Line, res.Errors[0].Span.Start.Column)
 		}
 		assert.Equal(t, 1, res.ExitCode)
 	})
@@ -345,7 +349,7 @@ func TestRecursion(t *testing.T) {
 			Owner: "admin",
 			Data: database.HomescriptData{
 				Id:   "normal1",
-				Code: "print(exec('normal2')); exec('normal2'); print(exec('normal3')); exec('normal3')",
+				Code: "println(exec('normal2').output); exec('normal2'); println(exec('normal3').output); exec('normal3');",
 			},
 		}); err != nil {
 			t.Error(err.Error())
@@ -354,7 +358,7 @@ func TestRecursion(t *testing.T) {
 			Owner: "admin",
 			Data: database.HomescriptData{
 				Id:   "normal2",
-				Code: "print(2)",
+				Code: "println(2);",
 			},
 		}); err != nil {
 			t.Error(err.Error())
@@ -363,7 +367,7 @@ func TestRecursion(t *testing.T) {
 			Owner: "admin",
 			Data: database.HomescriptData{
 				Id:   "normal3",
-				Code: "print(3)",
+				Code: "println(3);",
 			},
 		}); err != nil {
 			t.Error(err.Error())
@@ -379,7 +383,9 @@ func TestRecursion(t *testing.T) {
 			make(chan int),
 		)
 		assert.NoError(t, err)
-		assert.Empty(t, res.Errors)
+		if len(res.Errors) != 0 {
+			fmt.Printf("%s: %s (%d:%d)", res.Errors[0].Kind, res.Errors[0].Message, res.Errors[0].Span.Start.Line, res.Errors[0].Span.Start.Column)
+		}
 		assert.Equal(t, 0, res.ExitCode)
 		assert.Equal(t, "2\n\n3\n\n", res.Output)
 	})
