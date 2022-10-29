@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -85,6 +86,7 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Run the Homescript
+	var outputBuffer bytes.Buffer
 	res := homescript.HmsManager.Run(
 		username,
 		request.Id,
@@ -93,12 +95,13 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		make([]string, 0),
 		homescript.InitiatorAPI,
 		make(chan int),
+		&outputBuffer,
 	)
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
 			Success:  true,
 			Id:       request.Id,
-			Output:   res.Output,
+			Output:   outputBuffer.String(),
 			Exitcode: res.ExitCode,
 			Errors:   res.Errors,
 		}); err != nil {
@@ -185,6 +188,7 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		args[arg.Key] = arg.Value
 	}
 	// Run the Homescript
+	var outputBuffer bytes.Buffer
 	res := homescript.HmsManager.Run(
 		username,
 		"live",
@@ -193,11 +197,12 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		make([]string, 0),
 		homescript.InitiatorAPI,
 		make(chan int),
+		&outputBuffer,
 	)
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
 			Success:  true,
-			Output:   res.Output,
+			Output:   outputBuffer.String(),
 			Exitcode: res.ExitCode,
 			Errors:   res.Errors,
 		}); err != nil {

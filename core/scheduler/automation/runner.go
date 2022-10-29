@@ -1,6 +1,7 @@
 package automation
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/smarthome-go/smarthome/core/database"
@@ -148,6 +149,7 @@ func automationRunnerFunc(id uint) {
 		make(map[string]string, 0),
 		homescript.InitiatorAutomation,
 		make(chan int),
+		&bytes.Buffer{},
 	)
 	if err != nil {
 		log.Warn(fmt.Sprintf("Automation '%s' failed during the execution of Homescript: '%s', which terminated abnormally", job.Data.Name, job.Data.HomescriptId))

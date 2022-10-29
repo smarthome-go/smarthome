@@ -1,6 +1,7 @@
 package homescript
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -34,9 +35,14 @@ type Executor struct {
 	// or need to access the username for other reasons, e.g. `notify`
 	Username string
 
+	// TODO: remove this
 	// Will be appended to when the print function is used
 	// Is required in order to return the complete output of a Homescript
-	Output string
+	//Output string
+	// TODO: end
+
+	// Output writer for asyncronous Homescript output (for example via the Web-UI)
+	OutputWriter io.Writer
 
 	// If set to true, a script will only check its correctness
 	// Does not actually modify or wait for any data
@@ -142,22 +148,28 @@ func (self *Executor) Sleep(seconds float64) {
 // Emulates printing to the console
 // Instead, appends the provided message to the output of the executor
 // Exists in order to return the script's output to the user
-func (self *Executor) Print(args ...string) {
+func (self *Executor) Print(args ...string) error {
 	if self.DryRun {
-		return
+		return nil
 	}
-	self.Output += strings.Join(args, " ")
+	if _, err := self.OutputWriter.Write([]byte(strings.Join(args, " "))); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Emulates printing to the console
 // Instead, appends the provided message to the output of the executor
 // Exists in order to return the script's output to the user
 // Just like `Print` but appends a newline to the end
-func (self *Executor) Println(args ...string) {
+func (self *Executor) Println(args ...string) error {
 	if self.DryRun {
-		return
+		return nil
 	}
-	self.Output += strings.Join(args, " ") + "\n"
+	if _, err := self.OutputWriter.Write([]byte(strings.Join(args, " ") + "\n")); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Returns an object with contains data about the requested switch
@@ -584,6 +596,7 @@ func (self *Executor) Exec(homescriptId string, args map[string]string) (homescr
 	}
 	// Execute the target script after the checks
 	start := time.Now()
+	var outputBuffer bytes.Buffer
 	res, err := HmsManager.RunById(
 		homescriptId,
 		self.Username,
@@ -593,6 +606,7 @@ func (self *Executor) Exec(homescriptId string, args map[string]string) (homescr
 		args,
 		InitiatorExec,
 		self.SigTerm,
+		&outputBuffer,
 	)
 	// Check if the script was killed using a sigTerm
 	if res.WasTerminated {
@@ -606,7 +620,7 @@ func (self *Executor) Exec(homescriptId string, args map[string]string) (homescr
 		return homescript.ExecResponse{}, fmt.Errorf("%s: %s (%d:%d)", res.Errors[0].Kind, res.Errors[0].Message, res.Errors[0].Span.Start.Line, res.Errors[0].Span.Start.Column)
 	}
 	return homescript.ExecResponse{
-		Output:      res.Output,
+		Output:      outputBuffer.String(),
 		RuntimeSecs: float64(time.Since(start).Seconds()),
 		ReturnValue: res.ReturnValue,
 		RootScope:   res.RootScope,

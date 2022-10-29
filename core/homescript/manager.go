@@ -3,6 +3,7 @@ package homescript
 import (
 	"errors"
 	"fmt"
+	"io"
 	"sync"
 	"time"
 
@@ -50,7 +51,6 @@ type ApiJob struct {
 }
 
 type HmsExecRes struct {
-	Output        string
 	ReturnValue   homescript.Value
 	RootScope     map[string]*homescript.Value
 	ExitCode      int
@@ -177,6 +177,7 @@ func (m *Manager) Run(
 	callStack []string,
 	initiator HomescriptInitiator,
 	sigTerm chan int,
+	outputWriter io.Writer,
 ) HmsExecRes {
 	// Is passed to the executor so that it can forward messages from its own `SigTerm` onto the `sigTermInternalPtr`
 	// Is also passed to `homescript.Run` so that the newly spawned interpreter uses the same channel
@@ -196,6 +197,7 @@ func (m *Manager) Run(
 		// => This pointer must ONLY be used internally, in this case is invoked from inside the `Executor`
 		sigTermInternalPtr: &interpreterSigTerm,
 		StartTime:          time.Now(),
+		OutputWriter:       outputWriter,
 	}
 
 	// Append the executor to the jobs
@@ -235,7 +237,6 @@ func (m *Manager) Run(
 
 	// Process outcome
 	return HmsExecRes{
-		Output:        executor.Output,
 		ReturnValue:   returnValue,
 		RootScope:     rootScope,
 		ExitCode:      exitCode,
@@ -253,6 +254,7 @@ func (m *Manager) RunById(
 	arguments map[string]string,
 	initiator HomescriptInitiator,
 	sigTerm chan int,
+	outputWriter io.Writer,
 ) (HmsExecRes, error) {
 	homescriptItem, hasBeenFound, err := database.GetUserHomescriptById(scriptId, username)
 	if err != nil {
@@ -270,6 +272,7 @@ func (m *Manager) RunById(
 		append(callStack, scriptId),
 		initiator,
 		sigTerm,
+		outputWriter,
 	), nil
 }
 

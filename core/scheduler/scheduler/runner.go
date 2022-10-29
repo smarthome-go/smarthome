@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/smarthome-go/smarthome/core/database"
@@ -76,8 +77,8 @@ func scheduleRunnerFunc(id uint) {
 			make(map[string]string, 0),
 			make([]string, 0),
 			homescript.InitiatorScheduler,
-
 			make(chan int),
+			&bytes.Buffer{},
 		)
 		if len(res.Errors) > 0 {
 			log.Error("Executing schedule's Homescript failed: ", res.Errors[0].Message)
@@ -104,6 +105,7 @@ func scheduleRunnerFunc(id uint) {
 			make(map[string]string, 0),
 			homescript.InitiatorScheduler,
 			make(chan int),
+			&bytes.Buffer{},
 		)
 		if err != nil {
 			log.Error("Executing schedule's Homescript failed: ", err.Error())

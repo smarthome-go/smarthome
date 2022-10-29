@@ -1,8 +1,13 @@
 <script lang="ts">
-    import type { homescriptError, homescriptResponseWrapper } from '../../../homescript'
+    import type { hmsResWrapper } from 'src/pages/hmsEditor/websocket'
+
+    import type { homescriptError } from '../../../homescript'
 
     // Data is bound to display the result
-    export let data: homescriptResponseWrapper
+    export let data: hmsResWrapper
+
+    // Terminal output
+    export let output: string
 
     function errToHtml(err: homescriptError, programCode: string): string {
         const lines = programCode.split('\n')
@@ -60,14 +65,14 @@
 </script>
 
 <div class="terminal">
-    {#if data.response.output.length > 0}
-        {@html data.response.output.replaceAll('\n', '<br>').replaceAll(' ', '&nbsp;')}
+    {#if output.length > 0}
+        {@html output.replaceAll('\n', '<br>').replaceAll(' ', '&nbsp;')}
         <br />
     {/if}
-    {#if !data.response.success && data.response.output.length > 0}
+    {#if data.exitCode !== 0 && output.length > 0}
         <br />
     {/if}
-    {#each data.response.errors as err}
+    {#each data.errors as err}
         {@html errToHtml(err, data.code)}
         <br />
         <br />
@@ -75,10 +80,10 @@
     <span class="text-disabled">
         {#if data.modeRun}
             Homescript stopped with exit code
-            {data.response.exitCode}
+            {data.exitCode}
         {:else}
             Lint finished with exit code
-            {data.response.exitCode}
+            {data.exitCode}
         {/if}
     </span>
 </div>

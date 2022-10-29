@@ -27,10 +27,12 @@ func (self *AnalyzerExecutor) ResolveModule(id string) (string, bool, error) {
 func (self *AnalyzerExecutor) Sleep(seconds float64) {
 }
 
-func (self *AnalyzerExecutor) Print(args ...string) {
+func (self *AnalyzerExecutor) Print(args ...string) error {
+	return nil
 }
 
-func (self *AnalyzerExecutor) Println(args ...string) {
+func (self *AnalyzerExecutor) Println(args ...string) error {
+	return nil
 }
 
 func (self *AnalyzerExecutor) GetSwitch(switchId string) (homescript.SwitchResponse, error) {
