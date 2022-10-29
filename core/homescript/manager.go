@@ -229,6 +229,10 @@ func (m *Manager) Run(
 		log.Debug(fmt.Sprintf("Homescript '%s' ran by user '%s' was executed successfully", scriptLabel, username))
 	}
 
+	if returnValue == nil {
+		returnValue = homescript.ValueNull{}
+	}
+
 	// Process outcome
 	return HmsExecRes{
 		Output:        executor.Output,

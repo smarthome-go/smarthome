@@ -568,6 +568,9 @@ func (self *Executor) Exec(homescriptId string, args map[string]string) (homescr
 	if err != nil {
 		return homescript.ExecResponse{}, err
 	}
+	if len(res.Errors) > 0 {
+		return homescript.ExecResponse{}, fmt.Errorf("%s: %s (%d:%d)", res.Errors[0].Kind, res.Errors[0].Message, res.Errors[0].Span.Start.Line, res.Errors[0].Span.Start.Column)
+	}
 	return homescript.ExecResponse{
 		Output:      res.Output,
 		RuntimeSecs: float64(time.Since(start).Seconds()),
