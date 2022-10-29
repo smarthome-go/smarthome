@@ -400,7 +400,7 @@
                 </div>
                 <Progress type="linear" bind:loading={requestLoading} />
                 <div class="container__terminal__content" bind:this={terminal}>
-                    {#if output === ''}
+                    {#if output.length === 0 && currentExecRes === undefined}
                         <span class="gray"> Homescript output will be displayed here. </span>
                     {:else}
                         <Terminal data={currentExecRes} {output} />
