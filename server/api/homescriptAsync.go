@@ -86,6 +86,7 @@ func RunHomescriptStringAsync(w http.ResponseWriter, r *http.Request) {
 			make(chan int),
 			writer,
 		)
+		outWriter.Close()
 		*results <- res
 	}(outWriter, &res)
 
@@ -98,22 +99,16 @@ func RunHomescriptStringAsync(w http.ResponseWriter, r *http.Request) {
 			out := scanner.Bytes()
 			fmt.Println(string(out))
 
-			select {
-			case <-kill:
-				return
-			default:
-				time.Sleep(time.Millisecond)
-			}
-
 			ws.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			ws.WriteJSON(HMSMessageOut{
 				Kind:    MessageKindStdOut,
 				Payload: string(out),
 			})
-			if scanner.Err() != nil {
-				log.Error("Scanner failed: ", err.Error())
-			}
 		}
+		if scanner.Err() != nil {
+			log.Error("Scanner failed: ", err.Error())
+		}
+		<-kill
 	}(killPipe)
 
 outer:

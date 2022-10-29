@@ -69,23 +69,27 @@
         {@html output.replaceAll('\n', '<br>').replaceAll(' ', '&nbsp;')}
         <br />
     {/if}
-    {#if data.exitCode !== 0 && output.length > 0}
+    {#if data !== undefined}
+        {#if data.exitCode !== 0 && output.length > 0}
+            <br />
+        {/if}
+        {#each data.errors as err}
+            {@html errToHtml(err, data.code)}
+            <br />
+            <br />
+        {/each}
+        <span class="text-disabled">
+            {#if data.modeRun}
+                Homescript stopped with exit code
+                {data.exitCode}
+            {:else}
+                Lint finished with exit code
+                {data.exitCode}
+            {/if}
+        </span>
+    {:else}
         <br />
     {/if}
-    {#each data.errors as err}
-        {@html errToHtml(err, data.code)}
-        <br />
-        <br />
-    {/each}
-    <span class="text-disabled">
-        {#if data.modeRun}
-            Homescript stopped with exit code
-            {data.exitCode}
-        {:else}
-            Lint finished with exit code
-            {data.exitCode}
-        {/if}
-    </span>
 </div>
 
 <style lang="scss">

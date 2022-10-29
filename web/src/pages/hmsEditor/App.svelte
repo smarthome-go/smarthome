@@ -23,8 +23,7 @@
     import Terminal from '../../components/Homescript/ExecutionResultPopup/Terminal.svelte'
     import Button, { Label } from '@smui/button'
     import HmsArgumentPrompts from '../../components/Homescript/ArgumentPrompts/HmsArgumentPrompts.svelte'
-    import type { hmsRes, hmsResWrapper, message } from './websocket'
-    import HmsInputsReset from '../scheduler/dialogs/HMSInputsReset.svelte'
+    import type { hmsResWrapper } from './websocket'
 
     /*
        General variables
@@ -165,6 +164,11 @@
     let currentExecRes: hmsResWrapper = undefined
 
     let output = ''
+    $: if ((output || currentExecRes) && terminal) {
+        terminal.scrollTop = terminal.scrollHeight
+    }
+
+    let terminal: HTMLDivElement
 
     // Keeps track of whether the current HMS request is meant to be `run` or `lint`
     // Is used in the argument-prompt popup which dispatches the according request to the server
@@ -184,11 +188,9 @@
 
     // Normal run functions
     async function runCurrentCode(args: homescriptArgSubmit[]) {
-        requestLoading = true
-        currentExecutionCount++
-        currentExecutionHandles++
         try {
             output = ''
+            currentExecRes = undefined
             /*
             const currentExecResTemp = await runHomescriptById(currentData.data.id, args)
             currentExecRes = {
@@ -202,9 +204,6 @@
         } catch (err) {
             $createSnackbar(`Failed to run '${currentScript}': ${err}`)
         }
-        currentExecutionCount--
-        currentExecutionHandles--
-        requestLoading = false
     }
 
     // If the current Homescript contains arguments, the function triggers the argument-prompt dialog opening
@@ -255,6 +254,10 @@
     }
 
     function runCodeWS(code: string, args: homescriptArg[]) {
+        requestLoading = true
+        currentExecutionCount++
+        currentExecutionHandles++
+
         let url = 'ws://' + location.host + '/api/homescript/run/live/ws'
         let conn = new WebSocket(url)
 
@@ -264,12 +267,14 @@
 
         conn.onclose = () => {
             console.log('websocket was closed')
+            requestLoading = false
+            currentExecutionCount--
+            currentExecutionHandles--
         }
 
         conn.onmessage = evt => {
             try {
                 let message = JSON.parse(evt.data)
-                console.log(message)
                 if (message.kind !== undefined && message.kind === 'out')
                     output += message.payload + '\n'
                 else if (message.kind !== undefined && message.kind === 'res') {
@@ -386,15 +391,16 @@
                     >
                     <IconButton
                         class="material-icons"
-                        on:click={() => (currentExecRes = undefined)}
+                        on:click={() => {
+                            currentExecRes = undefined
+                            output = ''
+                        }}
                         disabled={currentExecutionHandles > 0}>replay</IconButton
                     >
                 </div>
                 <Progress type="linear" bind:loading={requestLoading} />
-                <div class="container__terminal__content">
-                    {#if currentExecutionHandles > 0}
-                        <span class="gray"> Homescript is executing: Waiting for server... </span>
-                    {:else if currentExecRes === undefined}
+                <div class="container__terminal__content" bind:this={terminal}>
+                    {#if output === ''}
                         <span class="gray"> Homescript output will be displayed here. </span>
                     {:else}
                         <Terminal data={currentExecRes} {output} />
@@ -517,6 +523,8 @@
 
         &__terminal {
             height: 25%;
+            display: flex;
+            flex-direction: column;
 
             // Used when the expand-terminal button is selected
             transition-property: width, height;
@@ -544,9 +552,9 @@
             &__content {
                 font-family: 'Jetbrains Mono', monospace;
                 font-size: 0.9rem;
-                padding: 1rem;
+                padding: 1rem 1.3rem;
                 height: 100%;
-                overflow: auto;
+                overflow-y: auto;
             }
         }
     }
