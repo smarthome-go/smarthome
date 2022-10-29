@@ -329,7 +329,19 @@ func (m *Manager) KillAllId(hmsId string) (count uint64, success bool) {
 		// Only standalone scripts may be terminated (callstack validation)
 		if job.Executor.ScriptName == hmsId && len(job.Executor.CallStack) == 0 {
 			// Exit code 10 means `killed via sigterm`
-			job.Executor.SigTerm <- 10
+			job.Executor.InExpensiveBuiltin.Mutex.Lock()
+			if job.Executor.InExpensiveBuiltin.Value {
+				// If the executor is currently handling an expensive builtin function, terminate it
+				log.Trace("Dispatching sigTerm to executor channel")
+				job.Executor.SigTerm <- 10
+				log.Trace("Successfully dispatched sigTerm to executor channel")
+			} else {
+				// Otherwise, terminate the interpreter directly
+				log.Trace("Dispatching sigTerm to HMS interpreter channel")
+				*job.Executor.sigTermInternalPtr <- 10
+				log.Trace("Successfully dispatched sigTerm to HMS interpreter channel")
+			}
+			job.Executor.InExpensiveBuiltin.Mutex.Unlock()
 			success = true
 			count++
 		}

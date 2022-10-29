@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/net/context"
@@ -65,6 +66,13 @@ type Executor struct {
 	// Is required and read by the manager's run functions and by HMS `exec` calls
 	// Used in order to determine whether a script has been terminated using a sigTerm or if it exited conventionally
 	WasTerminated bool
+
+	// Specifies if the executor is currently inside a builtin function
+	// Is required in the manager to dispatch the sigTerm to the correct channel
+	InExpensiveBuiltin struct {
+		Mutex sync.Mutex
+		Value bool
+	}
 }
 
 // Is used to allow the abort of a running script at any point in time
@@ -82,7 +90,9 @@ func (self *Executor) checkSigTerm() bool {
 			// This is due to the interpreter only handling sigTerms on every AST-node
 			// However, the interpreter will only handle the next node if this function's caller quits
 			// Because of this, not using a goroutine would invoke a deadlock
+			fmt.Println("JRE")
 			*self.sigTermInternalPtr <- code
+			fmt.Println("KEKE")
 		}()
 
 		// Set the `WasTerminated` boolean to true
@@ -110,6 +120,14 @@ func (self *Executor) Sleep(seconds float64) {
 	if self.DryRun {
 		return
 	}
+	self.InExpensiveBuiltin.Mutex.Lock()
+	self.InExpensiveBuiltin.Value = true
+	self.InExpensiveBuiltin.Mutex.Unlock()
+	defer func() {
+		self.InExpensiveBuiltin.Mutex.Lock()
+		self.InExpensiveBuiltin.Value = false
+		self.InExpensiveBuiltin.Mutex.Unlock()
+	}()
 	for i := 0; i < int(seconds*1000); i += 10 {
 		if self.checkSigTerm() {
 			// Sleep function is terminated
@@ -232,6 +250,14 @@ func (self *Executor) Ping(ip string, timeoutSecs float64) (bool, error) {
 
 // Makes a GET request to an arbitrary URL and returns the result
 func (self *Executor) Get(requestUrl string) (homescript.HttpResponse, error) {
+	self.InExpensiveBuiltin.Mutex.Lock()
+	self.InExpensiveBuiltin.Value = true
+	self.InExpensiveBuiltin.Mutex.Unlock()
+	defer func() {
+		self.InExpensiveBuiltin.Mutex.Lock()
+		self.InExpensiveBuiltin.Value = false
+		self.InExpensiveBuiltin.Mutex.Unlock()
+	}()
 	// The permissions can be validated beforehand
 	hasPermission, err := database.UserHasPermission(self.Username, database.PermissionHomescriptNetwork)
 	if err != nil {
@@ -331,6 +357,14 @@ func (self *Executor) Get(requestUrl string) (homescript.HttpResponse, error) {
 
 // Makes a request to an arbitrary URL using a custom method and body in order to return the result
 func (self *Executor) Http(requestUrl string, method string, body string, headers map[string]string) (homescript.HttpResponse, error) {
+	self.InExpensiveBuiltin.Mutex.Lock()
+	self.InExpensiveBuiltin.Value = true
+	self.InExpensiveBuiltin.Mutex.Unlock()
+	defer func() {
+		self.InExpensiveBuiltin.Mutex.Lock()
+		self.InExpensiveBuiltin.Value = false
+		self.InExpensiveBuiltin.Mutex.Unlock()
+	}()
 	// Check permissions and request building beforehand
 	hasPermission, err := database.UserHasPermission(self.Username, database.PermissionHomescriptNetwork)
 	if err != nil {
