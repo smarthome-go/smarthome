@@ -129,6 +129,6 @@ outer:
 	}
 	ws.SetWriteDeadline(time.Now().Add(10 * time.Second))
 	ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
-	time.Sleep(10 * time.Second)
+	time.Sleep(time.Second)
 	ws.Close()
 }
