@@ -96,9 +96,7 @@ func (self *Executor) checkSigTerm() bool {
 			// This is due to the interpreter only handling sigTerms on every AST-node
 			// However, the interpreter will only handle the next node if this function's caller quits
 			// Because of this, not using a goroutine would invoke a deadlock
-			fmt.Println("JRE")
 			*self.sigTermInternalPtr <- code
-			fmt.Println("KEKE")
 		}()
 
 		// Set the `WasTerminated` boolean to true
