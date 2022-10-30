@@ -1,18 +1,8 @@
 <script lang="ts">
     import Page from '../../Page.svelte'
     import { createSnackbar } from '../../global'
-    import {
-        killAllJobsById,
-        lintHomescriptCode,
-        runHomescriptById,
-        type homescriptArg,
-    } from '../../homescript'
-    import type {
-        homescript,
-        homescriptArgSubmit,
-        homescriptResponseWrapper,
-        homescriptWithArgs,
-    } from '../../homescript'
+    import { lintHomescriptCode } from '../../homescript'
+    import type { homescript, homescriptArgSubmit, homescriptWithArgs } from '../../homescript'
     import { onMount } from 'svelte'
     import IconButton from '@smui/icon-button'
     import Select, { Option } from '@smui/select'
@@ -24,7 +14,6 @@
     import Button, { Label } from '@smui/button'
     import HmsArgumentPrompts from '../../components/Homescript/ArgumentPrompts/HmsArgumentPrompts.svelte'
     import type { hmsResWrapper } from './websocket'
-    import CreateNode from '../system/hardware/nodes/CreateNode.svelte'
 
     /*
        General variables
@@ -125,6 +114,10 @@
             saveCurrent()
         } else if (e.key === 'F8') {
             if (currentExecutionHandles > 0) return
+            if (savedCode === currentData.data.code) {
+                $createSnackbar('This document contains unsaved changes')
+                return
+            }
             e.preventDefault()
             initCurrentRun()
         } else if (e.key === 'F9') {
@@ -253,7 +246,7 @@
 
     let conn: WebSocket = undefined
     function runCodeWS(code: string, args: homescriptArgSubmit[]) {
-        let url = 'ws://' + location.host + '/api/homescript/run/live/ws'
+        let url = 'ws://' + location.host + '/api/homescript/run/ws'
 
         conn = new WebSocket(url)
 
@@ -262,7 +255,7 @@
             currentExecutionCount++
             currentExecutionHandles++
             // Send the code to execute
-            conn.send(JSON.stringify({ kind: 'init', code, args }))
+            conn.send(JSON.stringify({ kind: 'init', payload: currentData.data.id, args }))
         }
 
         conn.onclose = () => {
@@ -292,6 +285,9 @@
                     requestLoading = false
                 } else if (message.kind === 'err') {
                     $createSnackbar(`Websocket error: ${message.message}`)
+                    output = message.message
+                    requestLoading = false
+                    currentExecutionCount--
                 } else {
                     console.log(message)
                     $createSnackbar(`Websocket error: unknown message kind: ${message.kind}`)
@@ -403,7 +399,8 @@
                             currentExecRes = undefined
                             output = ''
                         }}
-                        disabled={requestLoading || currentExecRes == undefined || output == ''}>replay</IconButton
+                        disabled={requestLoading || currentExecRes == undefined || output == ''}
+                        >replay</IconButton
                     >
                 </div>
                 <Progress type="linear" bind:loading={requestLoading} />
