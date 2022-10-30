@@ -166,6 +166,87 @@ func (m *Manager) AnalyzeById(
 	), nil
 }
 
+// Executes arbitrary Homescript in an asyncronous manner
+// Instantly returns a job-id and a channel which will eventually receive the output of the execution
+func (m *Manager) RunAsync(
+	username string,
+	scriptLabel string,
+	scriptCode string,
+	arguments map[string]string,
+	callStack []string,
+	initiator HomescriptInitiator,
+	outputWriter io.Writer,
+	resChannel *chan HmsExecRes,
+	idChannel *chan uint64,
+) {
+	// Is passed to the executor so that it can forward messages from its own `SigTerm` onto the `sigTermInternalPtr`
+	// Is also passed to `homescript.Run` so that the newly spawned interpreter uses the same channel
+	interpreterSigTerm := make(chan int)
+
+	executor := &Executor{
+		Username:   username,
+		ScriptName: scriptLabel,
+		DryRun:     false,
+		Args:       arguments,
+		CallStack:  callStack,
+		// This channel will receive the initial sigTerm which can quit the currently running callback function
+		// Additionally, the executor forwards the sigTerm to the interpreter which finally prevents any further node-evaluation
+		// => Required for host functions to quit expensive / slow operations (sleep), then invokes an interpreter sigTerm
+		SigTerm: make(chan int),
+		// The sigterm pointer is also passed into the executor
+		// => This pointer must ONLY be used internally, in this case is invoked from inside the `Executor`
+		sigTermInternalPtr: &interpreterSigTerm,
+		StartTime:          time.Now(),
+		OutputWriter:       outputWriter,
+	}
+
+	// Append the executor to the jobs
+	id := m.PushJob(
+		executor,
+		initiator,
+		make(chan uint64),
+	)
+
+	*idChannel <- id
+
+	// Run the script
+	returnValue, exitCode, rootScope, hmsErrors := homescript.Run(
+		executor,
+		&interpreterSigTerm,
+		scriptCode,
+		make(map[string]homescript.Value),
+		make(map[string]homescript.Value),
+		false,
+		10000,
+		make([]string, 0),
+		"",
+	)
+
+	wasTerminated := executor.WasTerminated
+
+	// Remove the Job from the jobs list when this function ends
+	m.removeJob(id)
+
+	if len(hmsErrors) > 0 {
+		log.Debug(fmt.Sprintf("Homescript '%s' ran by user '%s' has terminated: %s", scriptLabel, username, hmsErrors[0].Message))
+	} else {
+		log.Debug(fmt.Sprintf("Homescript '%s' ran by user '%s' was executed successfully", scriptLabel, username))
+	}
+
+	if returnValue == nil {
+		returnValue = homescript.ValueNull{}
+	}
+
+	// Process outcome
+	*resChannel <- HmsExecRes{
+		ReturnValue:   returnValue,
+		RootScope:     rootScope,
+		ExitCode:      exitCode,
+		WasTerminated: wasTerminated,
+		Errors:        convertErrors(hmsErrors),
+	}
+}
+
 // Executes arbitrary Homescript-code as a given user, returns the output and a possible error slice
 // The `scriptLabel` argument is used internally to allow for better error-display
 // The `excludedCalls` argument specifies which Homescripts may not be called by this Homescript in order to prevent recursion
@@ -243,7 +324,6 @@ func (m *Manager) Run(
 		WasTerminated: wasTerminated,
 		Errors:        convertErrors(hmsErrors),
 	}
-
 }
 
 // Executes a given Homescript from the database and returns its output, exit-code and possible error

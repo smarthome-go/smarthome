@@ -231,8 +231,10 @@
                 currentExecRes = {
                     code: currentData.data.code,
                     modeRun: false,
-                    response: currentExecResTemp,
+                    exitCode: currentExecResTemp.exitCode,
+                    errors: currentExecResTemp.errors,
                 }
+                output = currentExecResTemp.output
             }
         } catch (err) {
             $createSnackbar(`Failed to lint '${currentScript}': ${err}`)
@@ -242,34 +244,37 @@
         requestLoading = false
     }
 
-    // Kill all HMS jobs which are running the current Homescript-Id
-    async function killAllJobsOfCurrent() {
+    async function killCurrentRun() {
         requestLoading = true
         try {
-            await killAllJobsById(currentData.data.id)
+            conn.send(JSON.stringify({ kind: 'kill' }))
         } catch (err) {
-            $createSnackbar(`Failed to kill jobs'${currentScript}': ${err}`)
+            $createSnackbar(`Failed to terminate current run'${currentScript}': ${err}`)
         }
         requestLoading = false
     }
 
+    let conn: WebSocket = undefined
     function runCodeWS(code: string, args: homescriptArg[]) {
+        let url = 'ws://' + location.host + '/api/homescript/run/live/ws'
+        conn = new WebSocket(url)
+
         requestLoading = true
         currentExecutionCount++
         currentExecutionHandles++
 
-        let url = 'ws://' + location.host + '/api/homescript/run/live/ws'
-        let conn = new WebSocket(url)
-
         conn.onopen = () => {
-            conn.send(JSON.stringify({ code, args }))
+            // Send the code to execute
+            conn.send(JSON.stringify({ kind: 'init', code, args }))
         }
 
         conn.onclose = () => {
-            console.log('websocket was closed')
-            requestLoading = false
-            currentExecutionCount--
-            currentExecutionHandles--
+            if (requestLoading) {
+                requestLoading = false
+                currentExecutionCount--
+                currentExecutionHandles--
+            }
+            conn = undefined
         }
 
         conn.onmessage = evt => {
@@ -284,14 +289,19 @@
                         exitCode: message.exitCode,
                         errors: message.errors,
                     }
+                    requestLoading = false
+                    currentExecutionCount--
+                    currentExecutionHandles--
+                } else if (message.kind === 'err') {
+                    $createSnackbar(`Websocket error: ${message.message}`)
                 } else {
                     console.log(message)
-                    $createSnackbar(`Websocket error invalid message: ${message}`)
+                    $createSnackbar(`Websocket error: unknown message kind: ${message.kind}`)
                 }
             } catch (err) {
-                //console.log(evt.data)
+                console.log(evt.data)
                 console.error(err)
-                //$createSnackbar(`Websocket error: ${err}`)
+                $createSnackbar(`Websocket error: ${err}`)
             }
         }
     }
@@ -384,7 +394,7 @@
                     >
                     <IconButton
                         class="material-icons"
-                        on:click={killAllJobsOfCurrent}
+                        on:click={killCurrentRun}
                         disabled={currentExecutionCount === 0}
                     >
                         cancel</IconButton

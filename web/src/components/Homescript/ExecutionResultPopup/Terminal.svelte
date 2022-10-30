@@ -11,25 +11,31 @@
 
     function errToHtml(err: homescriptError, programCode: string): string {
         const lines = programCode.split('\n')
-        let line1 = ''
 
+        let line1 = ''
         if (err.span.start.line > 1)
             line1 = `<br>&nbsp;<span class="gray">${(err.span.start.line - 1)
                 .toString()
                 .padStart(3, ' ')
-                .replaceAll(' ', '&nbsp;')}&nbsp;|&nbsp;</span>${lines[err.span.start.line - 2]}`
+                .replaceAll(' ', '&nbsp;')}&nbsp;|&nbsp;</span>${lines[err.span.start.line - 2]
+                .replaceAll('\t', '    ')
+                .replaceAll(' ', '&nbsp;')}`
 
-        const line2 = `&nbsp;<span class="gray">${(err.span.start.line - 0)
+        const line2 = `&nbsp;<span class="gray">${err.span.start.line
             .toString()
             .padStart(3, ' ')
-            .replaceAll(' ', '&nbsp;')}&nbsp;|&nbsp;</span>${lines[err.span.start.line - 1]}`
+            .replaceAll(' ', '&nbsp;')}&nbsp;|&nbsp;</span>${lines[err.span.start.line - 1]
+            .replaceAll('\t', '    ')
+            .replaceAll(' ', '&nbsp;')}`
 
         let line3 = ''
-        if (err.span.start.line > lines.length)
-            line1 = `<br>&nbsp;<span class="gray">${(err.span.start.line + 1)
+        if (err.span.start.line < lines.length)
+            line3 = `<br>&nbsp;<span class="gray">${(err.span.start.line + 1)
                 .toString()
                 .padStart(3, ' ')
-                .replaceAll(' ', '&nbsp;')}&nbsp;|&nbsp;</span>${lines[err.span.start.line]}`
+                .replaceAll(' ', '&nbsp;')}&nbsp;|&nbsp;</span>${lines[err.span.start.line]
+                .replaceAll('\t', '    ')
+                .replaceAll(' ', '&nbsp;')}`
 
         let color = 'red'
         if (err.kind == 'Warning') {
@@ -45,6 +51,8 @@
         }
         if (err.span.start.line === err.span.end.line) {
             rawMarker = rawMarker.repeat(err.span.end.column - err.span.start.column + 1)
+        } else {
+            rawMarker = '^'
         }
 
         const marker = `${'&nbsp;'.repeat(
@@ -106,6 +114,10 @@
 
         .red {
             color: #ff616e;
+        }
+
+        .yellow {
+            color: #ffef55;
         }
 
         .cyan {

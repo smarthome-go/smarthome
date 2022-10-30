@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -15,21 +16,46 @@ import (
 
 const megabyte = 1000000
 
-type HMSMessageOut struct {
-	Kind    HMSMessageKind `json:"kind"`
-	Payload string         `json:"payload"`
+// Messages sent by the server
+type HMSMessageTXErr struct {
+	Kind    HMSMessageKindTX `json:"kind"`
+	Message string           `json:"message"`
 }
-type HMSResWs struct {
-	Kind     HMSMessageKind        `json:"kind"`
+type HMSMessageTXOut struct {
+	Kind    HMSMessageKindTX `json:"kind"`
+	Payload string           `json:"payload"`
+}
+type HMSMessageTXRes struct {
+	Kind     HMSMessageKindTX      `json:"kind"`
 	Exitcode int                   `json:"exitCode"`
 	Errors   []homescript.HmsError `json:"errors"`
 }
-
-type HMSMessageKind string
+type HMSMessageKindTX string
 
 const (
-	MessageKindStdOut  HMSMessageKind = "out"
-	MessageKindResults HMSMessageKind = "res"
+	// Sent by the server
+	MessageKindErr     HMSMessageKindTX = "err"
+	MessageKindStdOut  HMSMessageKindTX = "out"
+	MessageKindResults HMSMessageKindTX = "res"
+)
+
+// Messages sent by the client
+type HmsMessageRXInit struct {
+	Kind HMSMessageKindRX `json:"kind"`
+	Code string           `json:"code"`
+	Args []HomescriptArg  `json:"args"`
+}
+
+type HmsMessageRXKill struct {
+	Kind HMSMessageKindRX `json:"kind"`
+}
+
+type HMSMessageKindRX string
+
+const (
+	// Sent by the client
+	MessageKindInit HMSMessageKindRX = "init"
+	MessageKindKill HMSMessageKindRX = "kill"
 )
 
 // Runs any given Homescript as a string
@@ -42,6 +68,7 @@ func RunHomescriptStringAsync(w http.ResponseWriter, r *http.Request) {
 
 	// Upgrade the connection
 	upgrader := websocket.Upgrader{}
+	wsMutex := sync.Mutex{}
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Error("Could not upgrade connection to WS: ", err.Error())
@@ -51,11 +78,6 @@ func RunHomescriptStringAsync(w http.ResponseWriter, r *http.Request) {
 
 	outReader, outWriter, err := os.Pipe()
 	if err != nil {
-		log.Error("Could not open OS pipe: ", err.Error())
-		if err := ws.WriteJSON(Response{Success: false, Message: "could not run Homescript", Error: "could not open os pipe"}); err != nil {
-			log.Error("Cannot write to websocket: ", err.Error())
-			return
-		}
 		return
 	}
 	defer outReader.Close()
@@ -63,18 +85,32 @@ func RunHomescriptStringAsync(w http.ResponseWriter, r *http.Request) {
 
 	// Receive the code and args to run
 	ws.SetReadLimit(100 * megabyte)
-	if err := ws.SetWriteDeadline(time.Now().Add(time.Minute)); err != nil {
+	if err := ws.SetReadDeadline(time.Now().Add(time.Minute)); err != nil {
 		return
 	}
 	ws.SetPongHandler(func(string) error { ws.SetReadDeadline(time.Now().Add(time.Minute)); return nil })
-	var request HomescriptLiveRunRequest
+	var request HmsMessageRXInit
 	if err := ws.ReadJSON(&request); err != nil {
-		log.Error("Cannot receive JSON: ", err.Error())
+		wsMutex.Lock()
+		ws.WriteJSON(HMSMessageTXErr{
+			Kind:    MessageKindErr,
+			Message: fmt.Sprintf("invalid init request: %s", err.Error()),
+		})
+		wsMutex.Unlock()
+		return
+	}
+	if request.Kind != MessageKindInit {
+		wsMutex.Lock()
+		ws.WriteJSON(HMSMessageTXErr{
+			Kind:    MessageKindErr,
+			Message: fmt.Sprintf("invalid init request kind: %s", request.Kind),
+		})
 		return
 	}
 
 	// Start running the code
 	res := make(chan homescript.HmsExecRes)
+	sigTerm := make(chan int)
 	go func(writer io.Writer, results *chan homescript.HmsExecRes) {
 		res := homescript.HmsManager.Run(
 			username,
@@ -83,12 +119,46 @@ func RunHomescriptStringAsync(w http.ResponseWriter, r *http.Request) {
 			make(map[string]string),
 			make([]string, 0),
 			homescript.InitiatorAPI,
-			make(chan int),
+			sigTerm,
 			writer,
 		)
 		outWriter.Close()
 		*results <- res
 	}(outWriter, &res)
+
+	time.Sleep(time.Second * 5)
+	sigTerm <- 10
+
+	go func() {
+		// Check if the script should be killed
+		ws.SetReadLimit(100 * megabyte)
+		if err := ws.SetReadDeadline(time.Now().Add(time.Minute)); err != nil {
+			return
+		}
+		ws.SetPongHandler(func(string) error { ws.SetReadDeadline(time.Now().Add(time.Minute)); return nil })
+		var request HmsMessageRXKill
+		if err := ws.ReadJSON(&request); err != nil {
+			wsMutex.Lock()
+			ws.WriteJSON(HMSMessageTXErr{
+				Kind:    MessageKindErr,
+				Message: fmt.Sprintf("invalid kill message: %s", err.Error()),
+			})
+			wsMutex.Unlock()
+			return
+		}
+		if request.Kind != MessageKindKill {
+			wsMutex.Lock()
+			ws.WriteJSON(HMSMessageTXErr{
+				Kind:    MessageKindErr,
+				Message: fmt.Sprintf("invalid kill request kind: %s", request.Kind),
+			})
+			wsMutex.Unlock()
+		}
+		// Kill the Homescript
+		fmt.Println("killing scum")
+		sigTerm <- 10
+		fmt.Println("killed scum")
+	}()
 
 	// Stream the stdout
 	scanner := bufio.NewScanner(outReader)
@@ -99,11 +169,13 @@ func RunHomescriptStringAsync(w http.ResponseWriter, r *http.Request) {
 			out := scanner.Bytes()
 			fmt.Println(string(out))
 
+			wsMutex.Lock()
 			ws.SetWriteDeadline(time.Now().Add(10 * time.Second))
-			ws.WriteJSON(HMSMessageOut{
+			ws.WriteJSON(HMSMessageTXOut{
 				Kind:    MessageKindStdOut,
 				Payload: string(out),
 			})
+			wsMutex.Unlock()
 		}
 		if scanner.Err() != nil {
 			log.Error("Scanner failed: ", err.Error())
@@ -116,19 +188,23 @@ outer:
 		select {
 		case res := <-res:
 			killPipe <- true
+			wsMutex.Lock()
 			ws.SetWriteDeadline(time.Now().Add(10 * time.Second))
-			ws.WriteJSON(HMSResWs{
+			ws.WriteJSON(HMSMessageTXRes{
 				Kind:     MessageKindResults,
 				Exitcode: res.ExitCode,
 				Errors:   res.Errors,
 			})
+			wsMutex.Unlock()
 			break outer
 		default:
 			time.Sleep(time.Millisecond)
 		}
 	}
+	wsMutex.Lock()
 	ws.SetWriteDeadline(time.Now().Add(10 * time.Second))
 	ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+	wsMutex.Unlock()
 	time.Sleep(time.Second)
 	ws.Close()
 }
