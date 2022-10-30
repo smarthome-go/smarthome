@@ -169,14 +169,11 @@ func RunHomescriptStringAsync(w http.ResponseWriter, r *http.Request) {
 	killPipe := make(chan bool)
 	go func(kill chan bool) {
 		for scanner.Scan() {
-			out := scanner.Bytes()
-			fmt.Println(string(out))
-
 			wsMutex.Lock()
 			ws.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			ws.WriteJSON(HMSMessageTXOut{
 				Kind:    MessageKindStdOut,
-				Payload: string(out),
+				Payload: string(scanner.Bytes()),
 			})
 			wsMutex.Unlock()
 		}
@@ -208,6 +205,7 @@ outer:
 	ws.SetWriteDeadline(time.Now().Add(10 * time.Second))
 	ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 	wsMutex.Unlock()
-	time.Sleep(time.Second)
+	// Give the client a grace period to close the connection
+	time.Sleep(300 * time.Millisecond)
 	ws.Close()
 }
