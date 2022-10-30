@@ -1,6 +1,7 @@
 package automation
 
 import (
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -64,7 +65,7 @@ func createMockData() error {
 				Description:         "A Homescript for testing purposes",
 				QuickActionsEnabled: false,
 				SchedulerEnabled:    false,
-				Code:                "switch('test_switch', on)",
+				Code:                "switch('test_switch', on);",
 			},
 		}); err != nil {
 			panic(err.Error())
@@ -84,7 +85,7 @@ func createMockData() error {
 				Description:         "Another Homescript for testing purposes",
 				QuickActionsEnabled: false,
 				SchedulerEnabled:    false,
-				Code:                "switch('test_switch_modify', on)",
+				Code:                "switch('test_switch_modify', on);",
 			},
 		}); err != nil {
 			panic(err.Error())
@@ -104,7 +105,7 @@ func createMockData() error {
 				Description:         "Another Homescript for testing purposes",
 				QuickActionsEnabled: false,
 				SchedulerEnabled:    false,
-				Code:                "switch('test_switch_inactive', on)",
+				Code:                "switch('test_switch_inactive', on);",
 			},
 		}); err != nil {
 			panic(err.Error())
@@ -124,7 +125,7 @@ func createMockData() error {
 				Description:         "Another Homescript for testing purposes",
 				QuickActionsEnabled: false,
 				SchedulerEnabled:    false,
-				Code:                "switch('test_switch_abort', on)",
+				Code:                "switch('test_switch_abort', on);",
 			},
 		}); err != nil {
 			panic(err.Error())
@@ -538,6 +539,8 @@ func TestDisableOnce(t *testing.T) {
 		return
 	}
 
+	fmt.Println("PASS, starting part 2")
+
 	// Check if the `DisableOnce` boolean has reset to `false`
 	automation, found, err = GetUserAutomationById("admin", id)
 	assert.NoError(t, err)
@@ -564,6 +567,9 @@ func TestDisableOnce(t *testing.T) {
 		DisableOnce:    false,
 		TimingMode:     database.TimingNormal,
 	}))
+
+	// Toggle the switch to off
+	assert.NoError(t, hardware.SetSwitchPowerAll("test_switch", false, "admin"))
 
 	valid := false
 	for i := 0; i < 7; i++ {

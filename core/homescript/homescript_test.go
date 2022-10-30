@@ -1,6 +1,7 @@
 package homescript
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/hardware"
+	"github.com/smarthome-go/smarthome/core/user"
 )
 
 func TestMain(m *testing.M) {
@@ -20,6 +22,7 @@ func TestMain(m *testing.M) {
 	log.Level = logrus.FatalLevel
 	InitLogger(log)
 	event.InitLogger(log)
+	user.InitLogger(log)
 	hardware.InitLogger(log)
 	hardware.Init()
 	InitManager()
@@ -73,7 +76,7 @@ func TestRun(t *testing.T) {
 		Owner: "admin",
 		Data: database.HomescriptData{
 			Id:   "test",
-			Code: "print(getArg('key'))",
+			Code: "print(ARGS.key);",
 		},
 	}); err != nil {
 		t.Error(err.Error())
@@ -98,7 +101,7 @@ func TestRun(t *testing.T) {
 		}
 	}{
 		{
-			Code: "print(user)",
+			Code: "println(user);",
 			Result: struct {
 				Output     string
 				Code       int
@@ -110,7 +113,7 @@ func TestRun(t *testing.T) {
 			},
 		},
 		{
-			Code: "print('Hello World')",
+			Code: "println('Hello World');",
 			Result: struct {
 				Output     string
 				Code       int
@@ -122,7 +125,7 @@ func TestRun(t *testing.T) {
 			},
 		},
 		{
-			Code: "print('Hello World'",
+			Code: "println('Hello World';",
 			Result: struct {
 				Output     string
 				Code       int
@@ -130,11 +133,11 @@ func TestRun(t *testing.T) {
 			}{
 				Output:     "",
 				Code:       1,
-				FirstError: "Expected ')', found 'EOF'",
+				FirstError: "Unclosed function call: Expected r-paren, found semicolon",
 			},
 		},
 		{
-			Code: "switch('test', on); print(switchOn('test'))",
+			Code: "switch('test', on); println(get_switch('test').power);",
 			Result: struct {
 				Output     string
 				Code       int
@@ -146,7 +149,7 @@ func TestRun(t *testing.T) {
 			},
 		},
 		{
-			Code: "switch('test', off); print(switchOn('test'))",
+			Code: "switch('test', off); println(get_switch('test').power);",
 			Result: struct {
 				Output     string
 				Code       int
@@ -158,7 +161,7 @@ func TestRun(t *testing.T) {
 			},
 		},
 		{
-			Code: "switch('does_not_exist', on)",
+			Code: "switch('does_not_exist', on);",
 			Result: struct {
 				Output     string
 				Code       int
@@ -170,7 +173,7 @@ func TestRun(t *testing.T) {
 			},
 		},
 		{
-			Code: "print(switchOn('does_not_exist'))",
+			Code: "print(get_switch('does_not_exist'));",
 			Result: struct {
 				Output     string
 				Code       int
@@ -178,11 +181,11 @@ func TestRun(t *testing.T) {
 			}{
 				Output:     "",
 				Code:       1,
-				FirstError: "Could not get power state of switch 'does_not_exist': switch does not exists",
+				FirstError: "switch 'does_not_exist' was not found",
 			},
 		},
 		{
-			Code: "notify('', '', 1)",
+			Code: "notify('', '', 1);",
 			Result: struct {
 				Output     string
 				Code       int
@@ -194,7 +197,7 @@ func TestRun(t *testing.T) {
 			},
 		},
 		{
-			Code: "notify('', '', 2)",
+			Code: "notify('', '', 2);",
 			Result: struct {
 				Output     string
 				Code       int
@@ -206,7 +209,7 @@ func TestRun(t *testing.T) {
 			},
 		},
 		{
-			Code: "notify('', '', 3)",
+			Code: "notify('', '', 3);",
 			Result: struct {
 				Output     string
 				Code       int
@@ -218,7 +221,7 @@ func TestRun(t *testing.T) {
 			},
 		},
 		{
-			Code: "notify('', '', 4)",
+			Code: "notify('', '', 4);",
 			Result: struct {
 				Output     string
 				Code       int
@@ -226,11 +229,11 @@ func TestRun(t *testing.T) {
 			}{
 				Output:     "",
 				Code:       1,
-				FirstError: "Notification level has to be one of 1, 2, or 3, got 4",
+				FirstError: "notification level has to be one of 1, 2, or 3, got 4",
 			},
 		},
 		{
-			Code: "print(exec('test'))",
+			Code: "print(exec('test'));",
 			Result: struct {
 				Output     string
 				Code       int
@@ -238,23 +241,23 @@ func TestRun(t *testing.T) {
 			}{
 				Output:     "",
 				Code:       1,
-				FirstError: "Homescript terminated with exit code 1: Failed to retrieve argument 'key': not provided to the Homescript runtime",
+				FirstError: "TypeError: object has no member named key (1:12)",
 			},
 		},
 		{
-			Code: "print(exec('test', pair('key', 'value')))",
+			Code: "print(exec('test', 'key' => 'value').output);",
 			Result: struct {
 				Output     string
 				Code       int
 				FirstError string
 			}{
-				Output:     "value\n\n",
+				Output:     "value",
 				Code:       0,
 				FirstError: "",
 			},
 		},
 		{
-			Code: "exec('test2')",
+			Code: "exec('test2');",
 			Result: struct {
 				Output     string
 				Code       int
@@ -262,11 +265,12 @@ func TestRun(t *testing.T) {
 			}{
 				Output:     "",
 				Code:       1,
-				FirstError: "Invalid Homescript id: no data associated with id",
+				FirstError: "invalid Homescript id: no data associated with id",
 			},
 		},
 	}
 	for _, test := range table {
+		var buffer bytes.Buffer
 		res := HmsManager.Run(
 			"admin",
 			"testing",
@@ -275,6 +279,7 @@ func TestRun(t *testing.T) {
 			make([]string, 0),
 			InitiatorInternal,
 			make(chan int),
+			&buffer,
 			nil,
 		)
 		if len(res.Errors) > 0 {
@@ -290,8 +295,9 @@ func TestRun(t *testing.T) {
 			t.Errorf("Unexpected exit code. want: `%d` got: `%d`", test.Result.Code, res.ExitCode)
 			return
 		}
-		if res.Output != test.Result.Output {
-			t.Errorf("Unexpected output: want: `%s` got: `%s`", test.Result.Output, res.Output)
+		output := buffer.String()
+		if output != test.Result.Output {
+			t.Errorf("Unexpected output: want: `%s` got: `%s`", test.Result.Output, output)
 			return
 		}
 	}
@@ -329,6 +335,7 @@ func TestRecursion(t *testing.T) {
 			make(map[string]string),
 			InitiatorInternal,
 			make(chan int),
+			nil, nil,
 		)
 		assert.NoError(t, err)
 		if len(res.Errors) == 0 {
@@ -374,6 +381,7 @@ func TestRecursion(t *testing.T) {
 			t.Error(err.Error())
 		}
 
+		var buffer bytes.Buffer
 		// Run the actual test
 		res, err := HmsManager.RunById(
 			"normal1",
@@ -382,12 +390,14 @@ func TestRecursion(t *testing.T) {
 			make(map[string]string),
 			InitiatorInternal,
 			make(chan int),
+			&buffer,
+			nil,
 		)
 		assert.NoError(t, err)
 		if len(res.Errors) != 0 {
 			fmt.Printf("%s: %s (%d:%d)", res.Errors[0].Kind, res.Errors[0].Message, res.Errors[0].Span.Start.Line, res.Errors[0].Span.Start.Column)
 		}
 		assert.Equal(t, 0, res.ExitCode)
-		assert.Equal(t, "2\n\n3\n\n", res.Output)
+		assert.Equal(t, "2\n\n3\n\n", buffer.String())
 	})
 }
