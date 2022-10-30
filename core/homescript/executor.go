@@ -81,7 +81,7 @@ type Executor struct {
 	}
 }
 
-// Is used to allow the abort of a running script at any point in time
+// Is used to allow the abortion of a running script at any point in time
 // => Checks if a sigTerm has been received
 // Is used to break out of expensive operations, for example sleep calls
 // Only a bool static that a code has been received is returned
@@ -92,7 +92,7 @@ func (self *Executor) checkSigTerm() bool {
 		// Forwards the signal to the interpreter
 		go func() {
 			// This goroutine is required because otherwise,
-			// The sending of the signal would block forever
+			// the sending of the signal would block forever
 			// This is due to the interpreter only handling sigTerms on every AST-node
 			// However, the interpreter will only handle the next node if this function's caller quits
 			// Because of this, not using a goroutine would invoke a deadlock
@@ -127,6 +127,7 @@ func (self *Executor) Sleep(seconds float64) {
 	self.InExpensiveBuiltin.Mutex.Lock()
 	self.InExpensiveBuiltin.Value = true
 	self.InExpensiveBuiltin.Mutex.Unlock()
+
 	defer func() {
 		self.InExpensiveBuiltin.Mutex.Lock()
 		self.InExpensiveBuiltin.Value = false
@@ -263,11 +264,13 @@ func (self *Executor) Get(requestUrl string) (homescript.HttpResponse, error) {
 	self.InExpensiveBuiltin.Mutex.Lock()
 	self.InExpensiveBuiltin.Value = true
 	self.InExpensiveBuiltin.Mutex.Unlock()
+
 	defer func() {
 		self.InExpensiveBuiltin.Mutex.Lock()
 		self.InExpensiveBuiltin.Value = false
 		self.InExpensiveBuiltin.Mutex.Unlock()
 	}()
+
 	// The permissions can be validated beforehand
 	hasPermission, err := database.UserHasPermission(self.Username, database.PermissionHomescriptNetwork)
 	if err != nil {
@@ -344,6 +347,7 @@ func (self *Executor) Get(requestUrl string) (homescript.HttpResponse, error) {
 	}
 
 	res, err := client.Do(req)
+
 	// Evaluate the request's outcome
 	if err != nil {
 		return homescript.HttpResponse{}, err
@@ -375,6 +379,7 @@ func (self *Executor) Http(requestUrl string, method string, body string, header
 		self.InExpensiveBuiltin.Value = false
 		self.InExpensiveBuiltin.Mutex.Unlock()
 	}()
+
 	// Check permissions and request building beforehand
 	hasPermission, err := database.UserHasPermission(self.Username, database.PermissionHomescriptNetwork)
 	if err != nil {
