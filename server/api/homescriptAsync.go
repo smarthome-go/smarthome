@@ -110,24 +110,24 @@ func RunHomescriptStringAsync(w http.ResponseWriter, r *http.Request) {
 
 	// Start running the code
 	res := make(chan homescript.HmsExecRes)
-	sigTerm := make(chan int)
-	go func(writer io.Writer, results *chan homescript.HmsExecRes) {
-		res := homescript.HmsManager.Run(
+	idChan := make(chan uint64)
+
+	go func(writer io.Writer, results *chan homescript.HmsExecRes, id *chan uint64) {
+		res := homescript.HmsManager.RunAsync(
 			username,
 			"live",
 			request.Code,
 			make(map[string]string),
 			make([]string, 0),
 			homescript.InitiatorAPI,
-			sigTerm,
 			writer,
+			id,
 		)
 		outWriter.Close()
 		*results <- res
-	}(outWriter, &res)
+	}(outWriter, &res, &idChan)
 
-	time.Sleep(time.Second * 5)
-	sigTerm <- 10
+	id := <-idChan
 
 	go func() {
 		// Check if the script should be killed
@@ -155,9 +155,12 @@ func RunHomescriptStringAsync(w http.ResponseWriter, r *http.Request) {
 			wsMutex.Unlock()
 		}
 		// Kill the Homescript
-		fmt.Println("killing scum")
-		sigTerm <- 10
-		fmt.Println("killed scum")
+		log.Trace("Killing script via Websocket")
+		if !homescript.HmsManager.Kill(id) {
+			// Either the id is invalid or the script is not running anymore
+			return
+		}
+		log.Trace("Killed script via Websocket")
 	}()
 
 	// Stream the stdout

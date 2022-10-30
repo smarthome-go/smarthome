@@ -176,9 +176,8 @@ func (m *Manager) RunAsync(
 	callStack []string,
 	initiator HomescriptInitiator,
 	outputWriter io.Writer,
-	resChannel *chan HmsExecRes,
 	idChannel *chan uint64,
-) {
+) HmsExecRes {
 	// Is passed to the executor so that it can forward messages from its own `SigTerm` onto the `sigTermInternalPtr`
 	// Is also passed to `homescript.Run` so that the newly spawned interpreter uses the same channel
 	interpreterSigTerm := make(chan int)
@@ -238,7 +237,7 @@ func (m *Manager) RunAsync(
 	}
 
 	// Process outcome
-	*resChannel <- HmsExecRes{
+	return HmsExecRes{
 		ReturnValue:   returnValue,
 		RootScope:     rootScope,
 		ExitCode:      exitCode,
@@ -395,8 +394,19 @@ func (m *Manager) Kill(jobId uint64) bool {
 	defer m.Lock.Unlock()
 	for _, job := range m.Jobs {
 		if job.Id == jobId {
-			// Exit code 10 means `killed via sigterm`
-			job.Executor.SigTerm <- 10
+			job.Executor.InExpensiveBuiltin.Mutex.Lock()
+			if job.Executor.InExpensiveBuiltin.Value {
+				// If the executor is currently handling an expensive builtin function, terminate it
+				log.Trace("Dispatching sigTerm to executor channel")
+				job.Executor.SigTerm <- 10
+				log.Trace("Successfully dispatched sigTerm to executor channel")
+			} else {
+				// Otherwise, terminate the interpreter directly
+				log.Trace("Dispatching sigTerm to HMS interpreter channel")
+				*job.Executor.sigTermInternalPtr <- 10
+				log.Trace("Successfully dispatched sigTerm to HMS interpreter channel")
+			}
+			job.Executor.InExpensiveBuiltin.Mutex.Unlock()
 			return true
 		}
 	}
