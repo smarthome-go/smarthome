@@ -2,6 +2,7 @@ package utils
 
 import (
 	"runtime"
+	"time"
 
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/hardware"
@@ -25,6 +26,14 @@ type DebugInfo struct {
 	HardwareNodesEnabled   uint8                   `json:"hardwareNodesEnabled"`
 	Nodes                  []database.HardwareNode `json:"hardwareNodes"`
 	HomescriptJobCount     uint                    `json:"homescriptJobCount"`
+	Time                   serverTime              `json:"time"`
+}
+
+type serverTime struct {
+	Hours   uint `json:"hours"`
+	Minutes uint `json:"minutes"`
+	Seconds uint `json:"seconds"`
+	Unix    uint `json:"unix"`
 }
 
 func SysInfo() DebugInfo {
@@ -71,5 +80,11 @@ func SysInfo() DebugInfo {
 		HardwareNodesEnabled:   uint8(nodesEnabled),
 		Nodes:                  nodes,
 		HomescriptJobCount:     uint(len(homescript.HmsManager.GetJobList())),
+		Time: serverTime{
+			Hours:   uint(time.Now().Hour()),
+			Minutes: uint(time.Now().Minute()),
+			Seconds: uint(time.Now().Second()),
+			Unix:    uint(time.Now().UnixMilli()),
+		},
 	}
 }
