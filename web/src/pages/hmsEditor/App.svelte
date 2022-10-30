@@ -120,7 +120,7 @@
             saveCurrent()
         } else if (e.key === 'F8') {
             if (currentExecutionHandles > 0) return
-            if (savedCode === currentData.data.code) {
+            if (savedCode !== currentData.data.code) {
                 $createSnackbar('This document contains unsaved changes')
                 return
             }
