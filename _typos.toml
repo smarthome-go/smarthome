@@ -1,2 +1,6 @@
 [files]
-extend-exclude = ["web/public/assets/icons.json"]
+extend-exclude = [
+  "web/public/assets/icons.json",
+  "/web/src/components/Homescript/HmsEditor/index.js",
+  "/web/src/components/Homescript/HmsEditor/index.cjs",
+]

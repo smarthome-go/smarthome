@@ -20,7 +20,7 @@
     export let code = ''
     $: setCode(code)
 
-    // Whether the editor should show diagnostics whith the `info` level
+    // Whether the editor should show diagnostics with the `info` level
     export let showLintInfo = true
     $: if (showLintInfo !== undefined) triggerUpdate()
 

@@ -41,7 +41,7 @@ type Executor struct {
 	//Output string
 	// TODO: end
 
-	// Output writer for asyncronous Homescript output (for example via the Web-UI)
+	// Output writer for asynchronous Homescript output (for example via the Web-UI)
 	OutputWriter io.Writer
 
 	// If set to true, a script will only check its correctness
