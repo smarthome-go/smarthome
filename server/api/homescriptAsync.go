@@ -88,23 +88,29 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 	if err := ws.SetReadDeadline(time.Now().Add(time.Minute)); err != nil {
 		return
 	}
-	ws.SetPongHandler(func(string) error { ws.SetReadDeadline(time.Now().Add(time.Minute)); return nil })
+	ws.SetPongHandler(func(string) error {
+		return ws.SetReadDeadline(time.Now().Add(time.Minute))
+	})
 	var request HmsMessageRXInit
 	if err := ws.ReadJSON(&request); err != nil {
 		wsMutex.Lock()
-		ws.WriteJSON(HMSMessageTXErr{
+		if err := ws.WriteJSON(HMSMessageTXErr{
 			Kind:    MessageKindErr,
 			Message: fmt.Sprintf("invalid init request: %s", err.Error()),
-		})
+		}); err != nil {
+			return
+		}
 		wsMutex.Unlock()
 		return
 	}
 	if request.Kind != MessageKindInit {
 		wsMutex.Lock()
-		ws.WriteJSON(HMSMessageTXErr{
+		if err := ws.WriteJSON(HMSMessageTXErr{
 			Kind:    MessageKindErr,
 			Message: fmt.Sprintf("invalid init request kind: %s", request.Kind),
-		})
+		}); err != nil {
+			return
+		}
 		wsMutex.Unlock()
 		return
 	}
@@ -131,10 +137,12 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 		)
 		if err != nil {
 			wsMutex.Lock()
-			ws.WriteJSON(HMSMessageTXErr{
+			if err := ws.WriteJSON(HMSMessageTXErr{
 				Kind:    MessageKindErr,
 				Message: fmt.Sprintf("Could not run Homescript: internal error: %s", err.Error()),
-			})
+			}); err != nil {
+				return
+			}
 			ws.Close()
 			wsMutex.Unlock()
 			return
@@ -151,23 +159,27 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 		if err := ws.SetReadDeadline(time.Now().Add(time.Minute)); err != nil {
 			return
 		}
-		ws.SetPongHandler(func(string) error { ws.SetReadDeadline(time.Now().Add(time.Minute)); return nil })
+		ws.SetPongHandler(func(string) error { return ws.SetReadDeadline(time.Now().Add(time.Minute)) })
 		var request HmsMessageRXKill
 		if err := ws.ReadJSON(&request); err != nil {
 			wsMutex.Lock()
-			ws.WriteJSON(HMSMessageTXErr{
+			if err := ws.WriteJSON(HMSMessageTXErr{
 				Kind:    MessageKindErr,
 				Message: fmt.Sprintf("invalid kill message: %s", err.Error()),
-			})
+			}); err != nil {
+				return
+			}
 			wsMutex.Unlock()
 			return
 		}
 		if request.Kind != MessageKindKill {
 			wsMutex.Lock()
-			ws.WriteJSON(HMSMessageTXErr{
+			if err := ws.WriteJSON(HMSMessageTXErr{
 				Kind:    MessageKindErr,
 				Message: fmt.Sprintf("invalid kill request kind: %s", request.Kind),
-			})
+			}); err != nil {
+				return
+			}
 			wsMutex.Unlock()
 		}
 		// Kill the Homescript
@@ -186,11 +198,15 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 	go func(kill chan bool) {
 		for scanner.Scan() {
 			wsMutex.Lock()
-			ws.SetWriteDeadline(time.Now().Add(10 * time.Second))
-			ws.WriteJSON(HMSMessageTXOut{
+			if err := ws.SetWriteDeadline(time.Now().Add(10 * time.Second)); err != nil {
+				return
+			}
+			if err := ws.WriteJSON(HMSMessageTXOut{
 				Kind:    MessageKindStdOut,
 				Payload: string(scanner.Bytes()),
-			})
+			}); err != nil {
+				return
+			}
 			wsMutex.Unlock()
 		}
 		if scanner.Err() != nil {
@@ -205,12 +221,16 @@ outer:
 		case res := <-res:
 			killPipe <- true
 			wsMutex.Lock()
-			ws.SetWriteDeadline(time.Now().Add(10 * time.Second))
-			ws.WriteJSON(HMSMessageTXRes{
+			if err := ws.SetWriteDeadline(time.Now().Add(10 * time.Second)); err != nil {
+				return
+			}
+			if err := ws.WriteJSON(HMSMessageTXRes{
 				Kind:     MessageKindResults,
 				Exitcode: res.ExitCode,
 				Errors:   res.Errors,
-			})
+			}); err != nil {
+				return
+			}
 			wsMutex.Unlock()
 			break outer
 		default:
@@ -218,8 +238,12 @@ outer:
 		}
 	}
 	wsMutex.Lock()
-	ws.SetWriteDeadline(time.Now().Add(10 * time.Second))
-	ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+	if err := ws.SetWriteDeadline(time.Now().Add(10 * time.Second)); err != nil {
+		return
+	}
+	if err := ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "")); err != nil {
+		return
+	}
 	wsMutex.Unlock()
 	// Give the client a grace period to close the connection
 	time.Sleep(300 * time.Millisecond)
