@@ -78,7 +78,7 @@ export interface homescriptArgSubmit {
     value: string
 }
 
-// Container for homescript argument
+// Container for homescript arguments
 export interface homescriptArg {
     id: number
     data: homescriptArgData

@@ -24,6 +24,7 @@
     import Button, { Label } from '@smui/button'
     import HmsArgumentPrompts from '../../components/Homescript/ArgumentPrompts/HmsArgumentPrompts.svelte'
     import type { hmsResWrapper } from './websocket'
+    import CreateNode from '../system/hardware/nodes/CreateNode.svelte'
 
     /*
        General variables
@@ -132,7 +133,7 @@
             initCurrentLint()
         } else if (e.key === 'F10') {
             e.preventDefault()
-            killAllJobsOfCurrent()
+            killCurrentRun()
         }
     })
 
@@ -191,16 +192,8 @@
         try {
             output = ''
             currentExecRes = undefined
-            /*
-            const currentExecResTemp = await runHomescriptById(currentData.data.id, args)
-            currentExecRes = {
-                code: currentData.data.code,
-                modeRun: true,
-                response: currentExecResTemp,
-            }
-            */
             if (currentData.data.code === '') output = 'Nothing to run.'
-            else runCodeWS(currentData.data.code, [])
+            else runCodeWS(currentData.data.code, args)
         } catch (err) {
             $createSnackbar(`Failed to run '${currentScript}': ${err}`)
         }
@@ -245,36 +238,42 @@
     }
 
     async function killCurrentRun() {
-        requestLoading = true
+        otherLoading = true
         try {
-            conn.send(JSON.stringify({ kind: 'kill' }))
+            if (conn !== undefined) {
+                conn.send(JSON.stringify({ kind: 'kill' }))
+            } else {
+                console.error('This is bad')
+            }
         } catch (err) {
             $createSnackbar(`Failed to terminate current run'${currentScript}': ${err}`)
         }
-        requestLoading = false
+        otherLoading = false
     }
 
     let conn: WebSocket = undefined
-    function runCodeWS(code: string, args: homescriptArg[]) {
+    function runCodeWS(code: string, args: homescriptArgSubmit[]) {
         let url = 'ws://' + location.host + '/api/homescript/run/live/ws'
+
         conn = new WebSocket(url)
 
-        requestLoading = true
-        currentExecutionCount++
-        currentExecutionHandles++
-
         conn.onopen = () => {
+            requestLoading = true
+            currentExecutionCount++
+            currentExecutionHandles++
             // Send the code to execute
             conn.send(JSON.stringify({ kind: 'init', code, args }))
         }
 
         conn.onclose = () => {
-            if (requestLoading) {
-                requestLoading = false
-                currentExecutionCount--
-                currentExecutionHandles--
-            }
             conn = undefined
+            currentExecutionHandles--
+            if (requestLoading) {
+                $createSnackbar(`Websocket closed unexpectedly: connection lost`)
+                output = 'Connection lost'
+                currentExecutionCount--
+                requestLoading = false
+            }
         }
 
         conn.onmessage = evt => {
@@ -289,9 +288,8 @@
                         exitCode: message.exitCode,
                         errors: message.errors,
                     }
-                    requestLoading = false
                     currentExecutionCount--
-                    currentExecutionHandles--
+                    requestLoading = false
                 } else if (message.kind === 'err') {
                     $createSnackbar(`Websocket error: ${message.message}`)
                 } else {
@@ -405,7 +403,7 @@
                             currentExecRes = undefined
                             output = ''
                         }}
-                        disabled={currentExecutionHandles > 0}>replay</IconButton
+                        disabled={requestLoading || currentExecRes == undefined || output == ''}>replay</IconButton
                     >
                 </div>
                 <Progress type="linear" bind:loading={requestLoading} />

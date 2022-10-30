@@ -1,17 +1,17 @@
 <script lang="ts">
-    import Dialog, { Actions, Content, Header, Title } from "@smui/dialog";
-    import Button, { Label } from "@smui/button";
-    import type { homescriptResponseWrapper } from "../../../homescript";
-    import Terminal from "./Terminal.svelte";
-    import { createEventDispatcher } from "svelte";
+    import Dialog, { Actions, Content, Header, Title } from '@smui/dialog'
+    import Button, { Label } from '@smui/button'
+    import type { homescriptResponseWrapper } from '../../../homescript'
+    import Terminal from './Terminal.svelte'
+    import { createEventDispatcher } from 'svelte'
 
-    const dispatch = createEventDispatcher();
+    const dispatch = createEventDispatcher()
 
     // Keeps track of whether the dialog should be open or not
-    export let open = false;
+    export let open = false
 
     // Data is bound to display the result
-    export let data: homescriptResponseWrapper;
+    export let data: homescriptResponseWrapper
 </script>
 
 <Dialog
@@ -19,7 +19,7 @@
     aria-labelledby="title"
     aria-describedby="content"
     fullscreen
-    on:SMUIDialog:closed={() => dispatch("close", null)}
+    on:SMUIDialog:closed={() => dispatch('close', null)}
 >
     <Header>
         <Title id="title">Result of {data.response.id}</Title>
@@ -33,42 +33,36 @@
                         class="status__indicator mdc-elevation-z3"
                         class:failure={!data.response.success}
                     >
-                        <i class="material-icons"
-                            >{data.response.success ? "check" : "error"}</i
-                        >
+                        <i class="material-icons">{data.response.success ? 'check' : 'error'}</i>
                         {#if !data.modeRun}
-                            {data.response.success
-                                ? "Check successful"
-                                : "Errors detected"}
+                            {data.response.success ? 'Check successful' : 'Errors detected'}
                         {:else}
-                            {data.response.success
-                                ? "Run successful"
-                                : "Run failed"}
+                            {data.response.success ? 'Run successful' : 'Run failed'}
                         {/if}
                     </div>
                 </div>
                 <div class="status__group">
-                    {#if !data.response.success && data.response.error.length > 0}
+                    {#if !data.response.success && data.response.errors.length > 0}
                         <div class="status__error">
                             <i class="material-icons">
-                                {#if data.response.error[0].errorType === "SyntaxError"}
+                                {#if data.response.errors[0].kind === 'SyntaxError'}
                                     code
-                                {:else if data.response.error[0].errorType === "TypeError"}
+                                {:else if data.response.errors[0].kind === 'TypeError'}
                                     tag
-                                {:else if data.response.error[0].errorType === "ReferenceError"}
+                                {:else if data.response.errors[0].kind === 'ReferenceError'}
                                     alt_route
-                                {:else if data.response.error[0].errorType === "ValueError"}
+                                {:else if data.response.errors[0].kind === 'ValueError'}
                                     rule
-                                {:else if data.response.error[0].errorType === "RuntimeError"}
+                                {:else if data.response.errors[0].kind === 'RuntimeError' || data.response.errors[0].kind === 'StackOverflow' || data.response.errors[0].kind === 'OutOfBoundsError'}
                                     running_with_errors
-                                {:else if data.response.error[0].errorType === "Panic"}
+                                {:else if data.response.errors[0].kind === 'ThrowError'}
                                     sms_failed
                                 {:else}
                                     error
                                 {/if}
                             </i>
                             <code>
-                                {data.response.error[0].errorType}
+                                {data.response.errors[0].kind}
                             </code>
                         </div>
                     {/if}
@@ -77,13 +71,21 @@
         </div>
         <div class="output mdc-elevation-z1">
             <h6>Output</h6>
-            <Terminal {data} />
+            <Terminal
+                data={{
+                    code: data.code,
+                    modeRun: data.modeRun,
+                    exitCode: data.response.exitCode,
+                    errors: data.response.errors
+                }}
+                output={data.response.output}
+            />
         </div>
     </Content>
     <Actions>
         <Button
             on:click={() => {
-                dispatch("close", null);
+                dispatch('close', null)
             }}
         >
             <Label>Close</Label>
@@ -92,7 +94,7 @@
 </Dialog>
 
 <style lang="scss">
-    @use "../../../mixins" as *;
+    @use '../../../mixins' as *;
 
     .status {
         background-color: var(--clr-height-0-1);

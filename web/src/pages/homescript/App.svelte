@@ -1,73 +1,67 @@
 <script lang="ts">
-    import Button, { Icon, Label } from "@smui/button";
-    import IconButton from "@smui/icon-button";
-    import { onMount, tick } from "svelte";
-    import Progress from "../../components/Progress.svelte";
-    import { createSnackbar, data as userData, sleep } from "../../global";
-    import Page from "../../Page.svelte";
-    import Inputs from "./Inputs.svelte";
-    import AddHomescript from "./dialogs/AddHomescript.svelte";
-    import HmsSelector from "./dialogs/HmsSelector.svelte";
-    import { hmsLoaded, homescripts, jobs, loading } from "./main";
-    import DeleteHomescript from "./dialogs/DeleteHomescript.svelte";
+    import Button, { Icon, Label } from '@smui/button'
+    import IconButton from '@smui/icon-button'
+    import { onMount, tick } from 'svelte'
+    import Progress from '../../components/Progress.svelte'
+    import { createSnackbar, data as userData, sleep } from '../../global'
+    import Page from '../../Page.svelte'
+    import Inputs from './Inputs.svelte'
+    import AddHomescript from './dialogs/AddHomescript.svelte'
+    import HmsSelector from './dialogs/HmsSelector.svelte'
+    import { hmsLoaded, homescripts, jobs, loading } from './main'
+    import DeleteHomescript from './dialogs/DeleteHomescript.svelte'
     import {
         killAllJobsById,
         type homescriptArgSubmit,
         type homescriptData,
         type homescriptResponseWrapper,
-    } from "../../homescript";
-    import {
-        runHomescriptById,
-        lintHomescriptById,
-        getRunningJobs,
-    } from "../../homescript";
-    import HmsArgumentPrompts from "../../components/Homescript/ArgumentPrompts/HmsArgumentPrompts.svelte";
-    import ExecutionResultPopup from "../../components/Homescript/ExecutionResultPopup/ExecutionResultPopup.svelte";
-    import TabBar from "@smui/tab-bar";
-    import Tab from "@smui/tab";
+    } from '../../homescript'
+    import { runHomescriptById, lintHomescriptById, getRunningJobs } from '../../homescript'
+    import HmsArgumentPrompts from '../../components/Homescript/ArgumentPrompts/HmsArgumentPrompts.svelte'
+    import ExecutionResultPopup from '../../components/Homescript/ExecutionResultPopup/ExecutionResultPopup.svelte'
+    import TabBar from '@smui/tab-bar'
+    import Tab from '@smui/tab'
 
     /*
         //// Dialog state management ////
      */
-    let addOpen = false;
-    let deleteOpen = false;
+    let addOpen = false
+    let deleteOpen = false
 
-    let workspaces: string[] = [];
-    let workspace = "default";
+    let workspaces: string[] = []
+    let workspace = 'default'
 
     // Is used when the run button is pressed and the current script has arguments
-    let argumentsPromptOpen = false;
+    let argumentsPromptOpen = false
     // Specifies whether the current argument prompts are used for linting or running
-    let currentExecModeLint = false;
+    let currentExecModeLint = false
 
-    let selectedDataChanged = false;
-    let selection = "";
+    let selectedDataChanged = false
+    let selection = ''
     let selectedData: homescriptData = {
-        id: "",
-        name: "",
-        description: "",
-        mdIcon: "code",
-        code: "",
+        id: '',
+        name: '',
+        description: '',
+        mdIcon: 'code',
+        code: '',
         quickActionsEnabled: false,
         schedulerEnabled: false,
-        workspace: "default",
-    };
+        workspace: 'default',
+    }
 
     // Using a copied `buffer` for the active script
     // Useful for a cancel feature
-    $: if (selection !== "") updateSelectedData();
+    $: if (selection !== '') updateSelectedData()
 
     // Updates the `selectedDataChanged` boolean
     // Which is used to disable the action buttons conditionally
 
-    $: if (selectedData !== undefined && selection !== "")
-        updateSelectedDataChanged();
+    $: if (selectedData !== undefined && selection !== '') updateSelectedDataChanged()
 
     // Depending on whether the data has changed
     // the according boolean is updated
     function updateSelectedDataChanged() {
-        const data = $homescripts.find((h) => h.data.data.id === selection).data
-            .data;
+        const data = $homescripts.find(h => h.data.data.id === selection).data.data
 
         selectedDataChanged =
             data.name !== selectedData.name ||
@@ -76,121 +70,106 @@
             data.code !== selectedData.code ||
             data.schedulerEnabled !== selectedData.schedulerEnabled ||
             data.quickActionsEnabled !== selectedData.quickActionsEnabled ||
-            data.workspace !== selectedData.workspace;
+            data.workspace !== selectedData.workspace
     }
 
     // Is used as soon as the active script is changed and is not empty
     function updateSelectedData() {
-        const selectedDataTemp = $homescripts.find(
-            (h) => h.data.data.id === selection
-        ).data.data;
+        const selectedDataTemp = $homescripts.find(h => h.data.data.id === selection).data.data
 
         // Static, contextual data
-        selectedData.id = selectedDataTemp.id; // Is required in order to send the request
-        selectedData.code = selectedDataTemp.code; // Required to preserve code
+        selectedData.id = selectedDataTemp.id // Is required in order to send the request
+        selectedData.code = selectedDataTemp.code // Required to preserve code
 
         // Changeable data
-        selectedData.name = selectedDataTemp.name;
-        selectedData.description = selectedDataTemp.description;
-        selectedData.mdIcon = selectedDataTemp.mdIcon;
-        selectedData.quickActionsEnabled = selectedDataTemp.quickActionsEnabled;
-        selectedData.schedulerEnabled = selectedDataTemp.schedulerEnabled;
-        selectedData.workspace = selectedDataTemp.workspace;
+        selectedData.name = selectedDataTemp.name
+        selectedData.description = selectedDataTemp.description
+        selectedData.mdIcon = selectedDataTemp.mdIcon
+        selectedData.quickActionsEnabled = selectedDataTemp.quickActionsEnabled
+        selectedData.schedulerEnabled = selectedDataTemp.schedulerEnabled
+        selectedData.workspace = selectedDataTemp.workspace
     }
 
     // Is called when the changes have been successfully submitted and applied
     function updateSourceFromSelectedData() {
         // The index is required because JS clones the object
-        const replaceIndex = $homescripts.findIndex(
-            (h) => h.data.data.id === selection
-        );
-        $homescripts[replaceIndex].data.data.name = selectedData.name;
-        $homescripts[replaceIndex].data.data.description =
-            selectedData.description;
-        $homescripts[replaceIndex].data.data.mdIcon = selectedData.mdIcon;
-        $homescripts[replaceIndex].data.data.quickActionsEnabled =
-            selectedData.quickActionsEnabled;
-        $homescripts[replaceIndex].data.data.schedulerEnabled =
-            selectedData.schedulerEnabled;
-        $homescripts[replaceIndex].data.data.workspace = selectedData.workspace;
-        updateSelectedData();
+        const replaceIndex = $homescripts.findIndex(h => h.data.data.id === selection)
+        $homescripts[replaceIndex].data.data.name = selectedData.name
+        $homescripts[replaceIndex].data.data.description = selectedData.description
+        $homescripts[replaceIndex].data.data.mdIcon = selectedData.mdIcon
+        $homescripts[replaceIndex].data.data.quickActionsEnabled = selectedData.quickActionsEnabled
+        $homescripts[replaceIndex].data.data.schedulerEnabled = selectedData.schedulerEnabled
+        $homescripts[replaceIndex].data.data.workspace = selectedData.workspace
+        updateSelectedData()
     }
 
     // Fetches the available Homescripts for the selection and naming
     async function loadHomescripts() {
-        $loading = true;
+        $loading = true
         try {
-            let res = await (
-                await fetch("/api/homescript/list/personal/complete")
-            ).json();
+            let res = await (await fetch('/api/homescript/list/personal/complete')).json()
 
-            if (res.success !== undefined && !res.success)
-                throw Error(res.error);
-            homescripts.set(res); // Move the fetched homescripts into the store
+            if (res.success !== undefined && !res.success) throw Error(res.error)
+            homescripts.set(res) // Move the fetched homescripts into the store
 
             // Required because JS was created in 7 days
-            await sleep(0);
+            await sleep(0)
 
-            hmsLoaded.set(true); // Signal that the homescripts are loaded
+            hmsLoaded.set(true) // Signal that the homescripts are loaded
         } catch (err) {
-            $createSnackbar(`Could not load Homescripts: ${err}`);
+            $createSnackbar(`Could not load Homescripts: ${err}`)
         }
-        $loading = false;
+        $loading = false
     }
 
     // Requests modification of the currently-selected Homescript
     async function modifyCurrentHomescript() {
-        $loading = true;
+        $loading = true
         try {
             let res = await (
-                await fetch("/api/homescript/modify", {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
+                await fetch('/api/homescript/modify', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(selectedData),
                 })
-            ).json();
-            if (!res.success) throw Error(res.error);
+            ).json()
+            if (!res.success) throw Error(res.error)
 
             // Create a new workspace if it does not exist already
             if (!workspaces.includes(selectedData.workspace))
-                workspaces = [...workspaces, selectedData.workspace];
+                workspaces = [...workspaces, selectedData.workspace]
 
-            const oldWorkspace = $homescripts.find(
-                (h) => h.data.data.id === selectedData.id
-            ).data.data.workspace;
-            if (
-                $homescripts.filter(
-                    (h) => h.data.data.workspace === oldWorkspace
-                ).length === 1
-            )
-                workspaces = workspaces.filter((w) => w !== oldWorkspace);
+            const oldWorkspace = $homescripts.find(h => h.data.data.id === selectedData.id).data
+                .data.workspace
+            if ($homescripts.filter(h => h.data.data.workspace === oldWorkspace).length === 1)
+                workspaces = workspaces.filter(w => w !== oldWorkspace)
 
-            await tick();
+            await tick()
 
-            workspace = selectedData.workspace;
+            workspace = selectedData.workspace
 
-            updateSourceFromSelectedData();
+            updateSourceFromSelectedData()
         } catch (err) {
-            $createSnackbar(`Could not modify Homescript: ${err}`);
+            $createSnackbar(`Could not modify Homescript: ${err}`)
         }
-        $loading = false;
+        $loading = false
     }
 
     // Requests creation of a new Homescript
     async function createHomescript(data: homescriptData) {
-        data.mdIcon = "code";
-        data.schedulerEnabled = false;
-        data.quickActionsEnabled = false;
-        $loading = true;
+        data.mdIcon = 'code'
+        data.schedulerEnabled = false
+        data.quickActionsEnabled = false
+        $loading = true
         try {
             let res = await (
-                await fetch("/api/homescript/add", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                await fetch('/api/homescript/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data),
                 })
-            ).json();
-            if (!res.success) throw Error(res.error);
+            ).json()
+            if (!res.success) throw Error(res.error)
             // Append the new Homescript to the global store
             $homescripts = [
                 ...$homescripts,
@@ -201,125 +180,110 @@
                         data: data,
                     },
                 },
-            ];
+            ]
             // The wait is required in order to delay the selection
-            await sleep(50);
+            await sleep(50)
 
             // Create a new workspace if it does not exist already
-            if (!workspaces.includes(data.workspace))
-                workspaces = [...workspaces, data.workspace];
+            if (!workspaces.includes(data.workspace)) workspaces = [...workspaces, data.workspace]
 
-            await tick();
+            await tick()
 
             // Select the newly created workspace first
-            workspace = data.workspace;
+            workspace = data.workspace
 
             // Select the newly created Homescript for editing
-            selection = data.id;
+            selection = data.id
             // Show the newly selected Homescript in the Inputs
-            updateSelectedData();
+            updateSelectedData()
         } catch (err) {
-            $createSnackbar(`Could not create Homescript: ${err}`);
+            $createSnackbar(`Could not create Homescript: ${err}`)
         }
-        $loading = false;
+        $loading = false
     }
 
     // Requests deletion of a Homescript
     async function deleteHomescript(id: string) {
-        $loading = true;
+        $loading = true
         try {
             let res = await (
-                await fetch("/api/homescript/delete", {
-                    method: "DELETE",
-                    headers: { "Content-Type": "application/json" },
+                await fetch('/api/homescript/delete', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id }),
                 })
-            ).json();
-            if (!res.success) throw Error(res.error);
+            ).json()
+            if (!res.success) throw Error(res.error)
             // Remove the current Homescript from the global store
             // An intermediate version of the list is required to prevent an edge case in which the script at index 0 is also the script to-be-deleted
             // In this case, a runtime error would occur in `Inputs.svelte`, and probably other places too
-            const homescriptsTemp = $homescripts.filter(
-                (h) => h.data.data.id !== selection
-            );
+            const homescriptsTemp = $homescripts.filter(h => h.data.data.id !== selection)
 
-            const wsToBeDeleted = $homescripts.find(
-                (h) => h.data.data.id === id
-            ).data.data.workspace;
-            if (
-                $homescripts.filter(
-                    (h) => h.data.data.workspace === wsToBeDeleted
-                ).length === 1
-            )
-                workspaces = workspaces.filter((w) => w !== wsToBeDeleted);
+            const wsToBeDeleted = $homescripts.find(h => h.data.data.id === id).data.data.workspace
+            if ($homescripts.filter(h => h.data.data.workspace === wsToBeDeleted).length === 1)
+                workspaces = workspaces.filter(w => w !== wsToBeDeleted)
 
-            await tick();
-            if (workspaces.length > 0) workspace = workspaces[0];
+            await tick()
+            if (workspaces.length > 0) workspace = workspaces[0]
 
             // If no Homescript exist besides this one, only make changes persistent
             if (homescriptsTemp.length == 0) {
-                selection = "";
-                await sleep(10);
-                $homescripts = homescriptsTemp;
-                $loading = false;
+                selection = ''
+                await sleep(10)
+                $homescripts = homescriptsTemp
+                $loading = false
             } else {
                 // Select the first available Homescript as active
-                selection = homescriptsTemp[0].data.data.id;
+                selection = homescriptsTemp[0].data.data.id
                 // Assign the intermediate list to the store in order to make changes persistent
-                $homescripts = homescriptsTemp;
+                $homescripts = homescriptsTemp
 
                 // Sleep 50ms in order to delay the selection update
-                await sleep(50);
+                await sleep(50)
 
                 // Show the newly selected Homescript in the Inputs
-                updateSourceFromSelectedData();
+                updateSourceFromSelectedData()
             }
         } catch (err) {
-            $createSnackbar(`Could not delete Homescript: ${err}`);
+            $createSnackbar(`Could not delete Homescript: ${err}`)
         }
-        $loading = false;
+        $loading = false
     }
 
     /*
        Executing the currently selected Homescript
     */
-    let hmsExecutionResults: homescriptResponseWrapper[] = [];
+    let hmsExecutionResults: homescriptResponseWrapper[] = []
 
     // If the current Homescript contains arguments, the function triggers the argument-prompt dialog opening
     function initCurrentRun() {
-        if (
-            $homescripts.find((h) => h.data.data.id === selection).arguments
-                .length === 0
-        ) {
-            runCurrentWithArgs([]);
+        if ($homescripts.find(h => h.data.data.id === selection).arguments.length === 0) {
+            runCurrentWithArgs([])
             setTimeout(async () => {
-                $jobs = await getRunningJobs();
-            }, 100);
-            return;
+                $jobs = await getRunningJobs()
+            }, 100)
+            return
         }
         // The script is executed via callback: refer to the argument dialog
-        currentExecModeLint = false;
-        argumentsPromptOpen = true;
+        currentExecModeLint = false
+        argumentsPromptOpen = true
     }
 
     // If the current Homescript contains arguments, the function triggers the argument-prompt dialog opening
     function initCurrentLint() {
-        if (
-            $homescripts.find((h) => h.data.data.id === selection).arguments
-                .length === 0
-        ) {
-            lintCurrentWithArgs([]);
-            return;
+        if ($homescripts.find(h => h.data.data.id === selection).arguments.length === 0) {
+            lintCurrentWithArgs([])
+            return
         }
         // The script is linted via callback: refer to the argument dialog
-        currentExecModeLint = true;
-        argumentsPromptOpen = true;
+        currentExecModeLint = true
+        argumentsPromptOpen = true
     }
 
     // Used when the run button is pressed, error handling is accomplished here
     async function runCurrentWithArgs(args: homescriptArgSubmit[]) {
         try {
-            const hmsRes = await runHomescriptById(selection, args);
+            const hmsRes = await runHomescriptById(selection, args)
             hmsExecutionResults = [
                 ...hmsExecutionResults,
                 {
@@ -327,18 +291,18 @@
                     code: selectedData.code,
                     modeRun: true,
                 },
-            ];
-            $jobs = await getRunningJobs();
+            ]
+            $jobs = await getRunningJobs()
         } catch (err) {
-            $createSnackbar(`Could not execute ${selection}: ${err}`);
+            $createSnackbar(`Could not execute ${selection}: ${err}`)
         }
     }
 
     // Used when the check button is pressed, error handling is accomplished here
     async function lintCurrentWithArgs(args: homescriptArgSubmit[]) {
-        $loading = true;
+        $loading = true
         try {
-            const hmsRes = await lintHomescriptById(selection, args);
+            const hmsRes = await lintHomescriptById(selection, args)
             hmsExecutionResults = [
                 ...hmsExecutionResults,
                 {
@@ -346,62 +310,56 @@
                     code: selectedData.code,
                     modeRun: false,
                 },
-            ];
+            ]
         } catch (err) {
-            $createSnackbar(`Could not lint ${selection}: ${err}`);
+            $createSnackbar(`Could not lint ${selection}: ${err}`)
         }
-        $loading = false;
+        $loading = false
     }
 
     onMount(async () => {
         // Load Homescripts as soon as the component is mounted
-        await loadHomescripts();
+        await loadHomescripts()
 
         // Do some workspace-specific logic
         if ($homescripts.length > 0) {
-            workspaces = [
-                ...new Set($homescripts.map((h) => h.data.data.workspace)),
-            ];
-            workspace = workspaces[0];
-            selection = $homescripts.find(
-                (h) => h.data.data.workspace === workspace
-            ).data.data.id;
+            workspaces = [...new Set($homescripts.map(h => h.data.data.workspace))]
+            workspace = workspaces[0]
+            selection = $homescripts.find(h => h.data.data.workspace === workspace).data.data.id
 
-            await tick();
+            await tick()
 
-            updateSelectedData();
+            updateSelectedData()
         }
 
         // Load the currently running jobs
-        $jobs = await getRunningJobs();
-    });
+        $jobs = await getRunningJobs()
+    })
 </script>
 
 <AddHomescript
     {workspace}
-    on:add={(event) => {
-        createHomescript(event.detail);
+    on:add={event => {
+        createHomescript(event.detail)
     }}
     bind:open={addOpen}
 />
 <DeleteHomescript
     bind:data={selectedData}
     bind:open={deleteOpen}
-    on:delete={(event) => deleteHomescript(event.detail.id)}
+    on:delete={event => deleteHomescript(event.detail.id)}
 />
 
-{#if argumentsPromptOpen && $homescripts.find((h) => h.data.data.id === selection) !== undefined && $homescripts.find((h) => h.data.data.id === selection).arguments.length > 0}
+{#if argumentsPromptOpen && $homescripts.find(h => h.data.data.id === selection) !== undefined && $homescripts.find(h => h.data.data.id === selection).arguments.length > 0}
     <HmsArgumentPrompts
-        on:submit={(event) => {
+        on:submit={event => {
             // Handle the decision between lint and run here
             if (currentExecModeLint) {
-                lintCurrentWithArgs(event.detail);
-            } else runCurrentWithArgs(event.detail);
+                lintCurrentWithArgs(event.detail)
+            } else runCurrentWithArgs(event.detail)
         }}
         bind:open={argumentsPromptOpen}
-        args={$homescripts
-            .find((h) => h.data.data.id === selection)
-            .arguments.map((a) => a.data)}
+        args={$homescripts.find(h => h.data.data.id === selection).arguments.map(a => a.data)}
     />
 {/if}
 
@@ -429,8 +387,8 @@
                 title="Refresh"
                 class="material-icons"
                 on:click={async () => {
-                    await loadHomescripts();
-                    $jobs = await getRunningJobs();
+                    await loadHomescripts()
+                    $jobs = await getRunningJobs()
                 }}>refresh</IconButton
             >
             {#if $homescripts.length > 0}
@@ -444,23 +402,12 @@
     <Progress id="loader" bind:loading={$loading} />
 
     <div id="content">
-        <div
-            class="container mdc-elevation--z1"
-            class:empty={$homescripts.length == 0}
-        >
-            <div
-                class="homescripts"
-                class:empty={$homescripts.length == 0 && $hmsLoaded}
-            >
+        <div class="container mdc-elevation--z1" class:empty={$homescripts.length == 0}>
+            <div class="homescripts" class:empty={$homescripts.length == 0 && $hmsLoaded}>
                 {#if $homescripts.length == 0 && $hmsLoaded}
-                    <i class="material-icons" id="no-homescripts-icon"
-                        >code_off</i
-                    >
+                    <i class="material-icons" id="no-homescripts-icon">code_off</i>
                     <h6 class="text-hint">No Homescripts</h6>
-                    <Button
-                        on:click={() => (addOpen = true)}
-                        variant="outlined"
-                    >
+                    <Button on:click={() => (addOpen = true)} variant="outlined">
                         <Label>Create New</Label>
                         <Icon class="material-icons">add</Icon>
                     </Button>
@@ -469,17 +416,13 @@
                 {/if}
             </div>
         </div>
-        <div
-            id="inputs"
-            class="mdc-elevation--z1"
-            class:disabled={$homescripts.length == 0}
-        >
+        <div id="inputs" class="mdc-elevation--z1" class:disabled={$homescripts.length == 0}>
             <div class="header">
                 <h6>
                     Homescript {selection}
                 </h6>
             </div>
-            {#if $hmsLoaded && selection !== "" && selectedData !== undefined && $homescripts.find((h) => h.data.data.id === selection) !== undefined}
+            {#if $hmsLoaded && selection !== '' && selectedData !== undefined && $homescripts.find(h => h.data.data.id === selection) !== undefined}
                 <Inputs bind:data={selectedData} bind:deleteOpen />
                 <div class="run">
                     <div class="run__title">
@@ -489,7 +432,7 @@
                         <Button
                             on:click={() =>
                                 (window.location.href = `/homescript/editor?id=${encodeURIComponent(
-                                    selection
+                                    selection,
                                 )}`)}
                             disabled={selectedDataChanged}
                             variant="outlined"
@@ -497,12 +440,12 @@
                             <Label>Code</Label>
                             <Icon class="material-icons">code</Icon>
                         </Button>
-                        {#if $jobs.filter((j) => j.homescriptId === selection).length > 0}
+                        {#if $jobs.filter(j => j.homescriptId === selection).length > 0}
                             <Button
                                 on:click={async function () {
-                                    await killAllJobsById(selection);
-                                    await sleep(100);
-                                    $jobs = await getRunningJobs();
+                                    await killAllJobsById(selection)
+                                    await sleep(100)
+                                    $jobs = await getRunningJobs()
                                 }}
                                 variant="outlined"
                             >
@@ -530,16 +473,10 @@
                     </div>
                 </div>
                 <div class="actions">
-                    <Button
-                        on:click={updateSelectedData}
-                        disabled={!selectedDataChanged}
-                    >
+                    <Button on:click={updateSelectedData} disabled={!selectedDataChanged}>
                         <Label>Cancel</Label>
                     </Button>
-                    <Button
-                        on:click={modifyCurrentHomescript}
-                        disabled={!selectedDataChanged}
-                    >
+                    <Button on:click={modifyCurrentHomescript} disabled={!selectedDataChanged}>
                         <Label>Apply Changes</Label>
                     </Button>
                 </div>
@@ -549,7 +486,7 @@
 </Page>
 
 <style lang="scss">
-    @use "../../mixins" as *;
+    @use '../../mixins' as *;
 
     #header {
         display: flex;
