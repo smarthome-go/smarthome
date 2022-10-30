@@ -100,7 +100,7 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 	)
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
-			Success:  true,
+			Success:  res.ExitCode == 0,
 			Id:       request.Id,
 			Output:   outputBuffer.String(),
 			Exitcode: res.ExitCode,
@@ -203,7 +203,7 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 	)
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
-			Success:  true,
+			Success:  res.ExitCode == 0,
 			Output:   outputBuffer.String(),
 			Exitcode: res.ExitCode,
 			Errors:   res.Errors,
