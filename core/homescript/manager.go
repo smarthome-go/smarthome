@@ -314,17 +314,18 @@ func (m *Manager) Kill(jobId uint64) bool {
 		if job.Id == jobId {
 			job.Executor.InExpensiveBuiltin.Mutex.Lock()
 			if job.Executor.InExpensiveBuiltin.Value {
+				job.Executor.InExpensiveBuiltin.Mutex.Unlock()
 				// If the executor is currently handling an expensive builtin function, terminate it
 				log.Trace("Dispatching sigTerm to executor channel")
 				job.Executor.SigTerm <- 10
 				log.Trace("Successfully dispatched sigTerm to executor channel")
 			} else {
+				job.Executor.InExpensiveBuiltin.Mutex.Unlock()
 				// Otherwise, terminate the interpreter directly
 				log.Trace("Dispatching sigTerm to HMS interpreter channel")
 				*job.Executor.sigTermInternalPtr <- 10
 				log.Trace("Successfully dispatched sigTerm to HMS interpreter channel")
 			}
-			job.Executor.InExpensiveBuiltin.Mutex.Unlock()
 			return true
 		}
 	}
