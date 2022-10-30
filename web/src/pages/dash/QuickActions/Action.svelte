@@ -101,6 +101,9 @@
     class:success
     class:failure
     use:Ripple={{ surface: !running }}
+    on:keydown={running
+        ? () => $createSnackbar("This action is already running")
+        : initCurrentRun}
     on:click={running
         ? () => $createSnackbar("This action is already running")
         : initCurrentRun}

@@ -81,7 +81,7 @@
                 <span class="text-hint"
                     >You can also use the CLI to create Homescripts. <a
                         href="https://github.com/smarthome-go/cli"
-                        target="_blank">learn more</a
+                        target="_blank" rel="noreferrer">learn more</a
                     ></span
                 >
             </p>

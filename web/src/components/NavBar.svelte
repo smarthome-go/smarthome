@@ -133,7 +133,7 @@
         class:mdc-elevation--z16={drawerClosed}
         class:mdc-elevation--z8={!drawerClosed}
     />
-    <div id="toggle" on:click={toggleClosed}>
+    <div id="toggle" on:click={toggleClosed} on:keydown={toggleClosed}>
         <i class="material-icons">chevron_right</i>
     </div>
     <div id="header">
@@ -146,7 +146,7 @@
             <span>{$data.userData.user.username}</span>
         </div>
     </div>
-    <div id="bell" on:click={() => (drawerClosed = !drawerClosed)}>
+    <div id="bell" on:click={() => (drawerClosed = !drawerClosed)} on:keydown={() => (drawerClosed = !drawerClosed)}>
         <div id="bell__icon">
             <div id="bell__icon__inner">
                 <i class="material-icons"

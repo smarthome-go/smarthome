@@ -16,7 +16,6 @@
     import type { hmsResWrapper } from './websocket'
     import Checkbox from '@smui/checkbox'
     import FormField from '@smui/form-field'
-    import Dialog from '@smui/dialog/src/Dialog.svelte'
 
     /*
        General variables

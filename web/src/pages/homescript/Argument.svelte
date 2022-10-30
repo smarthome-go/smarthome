@@ -54,6 +54,7 @@
 <div
     class="argument"
     on:click={() => (editOpen = true)}
+    on:keydown={() => (editOpen = true)}
     use:Ripple={{ surface: true, color: "primary" }}
 >
     {data.data.argKey}

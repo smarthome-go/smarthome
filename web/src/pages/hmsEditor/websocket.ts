@@ -1,4 +1,4 @@
-import type { homescriptArg, homescriptError } from '../../homescript'
+import type {  homescriptError } from '../../homescript'
 
 export interface hmsOutMessage {
     kind: 'out' | 'res'
