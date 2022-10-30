@@ -98,11 +98,15 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		&outputBuffer,
 		nil,
 	)
+	output := outputBuffer.String()
+	if len(output) > 100_000 {
+		output = "Output too large"
+	}
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
 			Success:  res.ExitCode == 0,
 			Id:       request.Id,
-			Output:   outputBuffer.String(),
+			Output:   output,
 			Exitcode: res.ExitCode,
 			Errors:   res.Errors,
 		}); err != nil {
@@ -201,10 +205,14 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		&outputBuffer,
 		nil,
 	)
+	output := outputBuffer.String()
+	if len(output) > 100_000 {
+		output = "Output too large"
+	}
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
 			Success:  res.ExitCode == 0,
-			Output:   outputBuffer.String(),
+			Output:   output,
 			Exitcode: res.ExitCode,
 			Errors:   res.Errors,
 		}); err != nil {
