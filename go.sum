@@ -36,6 +36,8 @@ github.com/smarthome-go/homescript/v2 v2.0.3 h1:RU87+HLYLx2a6a/pfO58v1uH+4oTmg7e
 github.com/smarthome-go/homescript/v2 v2.0.3/go.mod h1:Wah7YOQTkoOtZiqjBElBUgTqOf2MqeUS0Xvji6fFq9E=
 github.com/smarthome-go/homescript/v2 v2.0.4 h1:s99awynkWozqfC0TBxDkF3tzBppZtuzv3w7AyPoQ2po=
 github.com/smarthome-go/homescript/v2 v2.0.4/go.mod h1:Wah7YOQTkoOtZiqjBElBUgTqOf2MqeUS0Xvji6fFq9E=
+github.com/smarthome-go/homescript/v2 v2.0.5 h1:3q885s1LAw8InD5Hz0tjzkR1F8aLcrteZ47FWKf9Zko=
+github.com/smarthome-go/homescript/v2 v2.0.5/go.mod h1:Wah7YOQTkoOtZiqjBElBUgTqOf2MqeUS0Xvji6fFq9E=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSSt89Yw=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
