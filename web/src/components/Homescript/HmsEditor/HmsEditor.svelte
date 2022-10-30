@@ -20,6 +20,20 @@
     export let code = ''
     $: setCode(code)
 
+    // Whether the editor should show diagnostics whith the `info` level
+    export let showLintInfo = true
+    $: if (showLintInfo !== undefined) triggerUpdate()
+
+    function triggerUpdate() {
+        // Reload the diagnostics if this value changes
+        if (editor !== undefined) {
+            let oldCode = code
+            // Updates the code so that new diagnostics can be seen
+            setCode(code += ' ')
+            setCode(oldCode)
+        }
+    }
+
     function setCode(cd: string) {
         if (editor === undefined || editor.state.doc.toString() === cd) return
         editor.dispatch(
@@ -64,8 +78,8 @@
             $createSnackbar(`Failed to lint: ${err}`)
             console.error(err)
         }
-
-        return diagnostics
+        if (showLintInfo) return diagnostics
+        else return diagnostics.filter(d => d.severity !== 'info')
     })
 
     onMount(() => {

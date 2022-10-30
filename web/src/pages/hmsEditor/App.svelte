@@ -14,6 +14,9 @@
     import Button, { Label } from '@smui/button'
     import HmsArgumentPrompts from '../../components/Homescript/ArgumentPrompts/HmsArgumentPrompts.svelte'
     import type { hmsResWrapper } from './websocket'
+    import Checkbox from '@smui/checkbox'
+    import FormField from '@smui/form-field'
+    import Dialog from '@smui/dialog/src/Dialog.svelte'
 
     /*
        General variables
@@ -24,6 +27,10 @@
 
     // Specifies whether the alternate layout (larger terminal) should be active or not
     let layoutAlt = false
+
+    // Specifies if additional linter information should be shown
+    // This raises the lint-level to `info`
+    let showLintInfo = true
 
     // Is set to true when a script is linted or executed
     let requestLoading = false
@@ -214,11 +221,14 @@
             if (currentData.data.code === '') output = 'Nothing to lint.'
             else {
                 const currentExecResTemp = await lintHomescriptCode(currentData.data.code, args)
+                let diagnostics = currentExecResTemp.errors
+                // If Info diagnostics should be hidden, do it here
+                if (!showLintInfo) diagnostics = diagnostics.filter(d => d.kind !== 'Info')
                 currentExecRes = {
                     code: currentData.data.code,
                     modeRun: false,
                     exitCode: currentExecResTemp.exitCode,
-                    errors: currentExecResTemp.errors,
+                    errors: diagnostics,
                 }
                 output = currentExecResTemp.output
             }
@@ -349,7 +359,7 @@
             <div id="header__buttons">
                 <Select
                     bind:value={currentScript}
-                    label="Preview script"
+                    label="Select current script"
                     disabled={currentExecutionHandles !== 0}
                 >
                     {#each homescripts as hms}
@@ -369,39 +379,47 @@
         </div>
         <div class="container">
             <div class="container__editor" class:alt={layoutAlt}>
-                <HmsEditor bind:code={currentData.data.code} />
+                <HmsEditor bind:code={currentData.data.code} {showLintInfo} />
             </div>
             <div class="container__terminal" class:alt={layoutAlt}>
                 <div class="container__terminal__header mdc-elevation--z2">
-                    <IconButton
-                        class="material-icons"
-                        on:click={initCurrentRun}
-                        disabled={savedCode !== currentData.data.code ||
-                            currentExecutionHandles > 0}>play_arrow</IconButton
-                    >
-                    <IconButton
-                        class="material-icons"
-                        on:click={initCurrentLint}
-                        disabled={currentExecutionHandles > 0}
-                    >
-                        bug_report</IconButton
-                    >
-                    <IconButton
-                        class="material-icons"
-                        on:click={killCurrentRun}
-                        disabled={currentExecutionCount === 0}
-                    >
-                        cancel</IconButton
-                    >
-                    <IconButton
-                        class="material-icons"
-                        on:click={() => {
-                            currentExecRes = undefined
-                            output = ''
-                        }}
-                        disabled={requestLoading || currentExecRes == undefined || output == ''}
-                        >replay</IconButton
-                    >
+                    <div class="container__terminal__header__left">
+                        <IconButton
+                            class="material-icons"
+                            on:click={initCurrentRun}
+                            disabled={savedCode !== currentData.data.code ||
+                                currentExecutionHandles > 0}>play_arrow</IconButton
+                        >
+                        <IconButton
+                            class="material-icons"
+                            on:click={initCurrentLint}
+                            disabled={currentExecutionHandles > 0}
+                        >
+                            bug_report</IconButton
+                        >
+                        <IconButton
+                            class="material-icons"
+                            on:click={killCurrentRun}
+                            disabled={currentExecutionCount === 0}
+                        >
+                            cancel</IconButton
+                        >
+                        <IconButton
+                            class="material-icons"
+                            on:click={() => {
+                                currentExecRes = undefined
+                                output = ''
+                            }}
+                            disabled={requestLoading || currentExecRes == undefined || output == ''}
+                            >replay</IconButton
+                        >
+                    </div>
+                    <div class="container__terminal__header__right">
+                        <FormField>
+                            <Checkbox bind:checked={showLintInfo} />
+                            <span slot="label">show info</span>
+                        </FormField>
+                    </div>
                 </div>
                 <Progress type="linear" bind:loading={requestLoading} />
                 <div class="container__terminal__content" bind:this={terminal}>
@@ -552,6 +570,13 @@
             &__header {
                 padding: 0.2rem;
                 background-color: var(--clr-height-0-1);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+
+                &__right {
+                    padding-right: 1rem;
+                }
             }
 
             &__content {
