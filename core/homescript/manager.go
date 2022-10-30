@@ -175,7 +175,6 @@ func (m *Manager) Run(
 		Username:   username,
 		ScriptName: scriptLabel,
 		DryRun:     false,
-		Args:       arguments,
 		CallStack:  callStack,
 		// This channel will receive the initial sigTerm which can quit the currently running callback function
 		// Additionally, the executor forwards the sigTerm to the interpreter which finally prevents any further node-evaluation
@@ -199,13 +198,18 @@ func (m *Manager) Run(
 		*idChan <- id
 	}
 
+	valueArgs := make(map[string]homescript.Value)
+	for key, value := range arguments {
+		valueArgs[key] = homescript.ValueString{Value: value}
+	}
+
 	// Run the script
 	returnValue, exitCode, rootScope, hmsErrors := homescript.Run(
 		executor,
 		&interpreterSigTerm,
 		scriptCode,
 		make(map[string]homescript.Value),
-		make(map[string]homescript.Value),
+		valueArgs,
 		false,
 		10000,
 		make([]string, 0),
