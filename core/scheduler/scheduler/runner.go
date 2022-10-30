@@ -79,6 +79,7 @@ func scheduleRunnerFunc(id uint) {
 			homescript.InitiatorScheduler,
 			make(chan int),
 			&bytes.Buffer{},
+			nil,
 		)
 		if len(res.Errors) > 0 {
 			log.Error("Executing schedule's Homescript failed: ", res.Errors[0].Message)
@@ -106,6 +107,7 @@ func scheduleRunnerFunc(id uint) {
 			homescript.InitiatorScheduler,
 			make(chan int),
 			&bytes.Buffer{},
+			nil,
 		)
 		if err != nil {
 			log.Error("Executing schedule's Homescript failed: ", err.Error())

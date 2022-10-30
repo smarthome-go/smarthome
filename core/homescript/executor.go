@@ -607,6 +607,7 @@ func (self *Executor) Exec(homescriptId string, args map[string]string) (homescr
 		InitiatorExec,
 		self.SigTerm,
 		&outputBuffer,
+		nil,
 	)
 	// Check if the script was killed using a sigTerm
 	if res.WasTerminated {

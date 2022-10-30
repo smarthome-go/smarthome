@@ -96,6 +96,7 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		homescript.InitiatorAPI,
 		make(chan int),
 		&outputBuffer,
+		nil,
 	)
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
@@ -198,6 +199,7 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		homescript.InitiatorAPI,
 		make(chan int),
 		&outputBuffer,
+		nil,
 	)
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{

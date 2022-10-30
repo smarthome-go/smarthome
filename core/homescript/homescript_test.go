@@ -275,6 +275,7 @@ func TestRun(t *testing.T) {
 			make([]string, 0),
 			InitiatorInternal,
 			make(chan int),
+			nil,
 		)
 		if len(res.Errors) > 0 {
 			if res.Errors[0].Message != test.Result.FirstError {
