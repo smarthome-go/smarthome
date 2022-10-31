@@ -1,7 +1,6 @@
 package homescript
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -599,7 +598,6 @@ func (self *Executor) Exec(homescriptId string, args map[string]string) (homescr
 	}
 	// Execute the target script after the checks
 	start := time.Now()
-	var outputBuffer bytes.Buffer
 	res, err := HmsManager.RunById(
 		homescriptId,
 		self.Username,
@@ -609,7 +607,7 @@ func (self *Executor) Exec(homescriptId string, args map[string]string) (homescr
 		args,
 		InitiatorExec,
 		self.SigTerm,
-		&outputBuffer,
+		self.OutputWriter,
 		nil,
 	)
 	// Check if the script was killed using a sigTerm
@@ -624,7 +622,6 @@ func (self *Executor) Exec(homescriptId string, args map[string]string) (homescr
 		return homescript.ExecResponse{}, fmt.Errorf("%s: %s (%d:%d)", res.Errors[0].Kind, res.Errors[0].Message, res.Errors[0].Span.Start.Line, res.Errors[0].Span.Start.Column)
 	}
 	return homescript.ExecResponse{
-		Output:      outputBuffer.String(),
 		RuntimeSecs: float64(time.Since(start).Seconds()),
 		ReturnValue: res.ReturnValue,
 		RootScope:   res.RootScope,
