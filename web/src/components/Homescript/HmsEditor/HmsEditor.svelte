@@ -20,6 +20,9 @@
     export let code = ''
     $: setCode(code)
 
+    // Can be bound to give the code a module name
+    export let moduleName = ''
+
     // Whether the editor should show diagnostics with the `info` level
     export let showLintInfo = true
     $: if (showLintInfo !== undefined) triggerUpdate()
@@ -29,7 +32,7 @@
         if (editor !== undefined) {
             let oldCode = code
             // Updates the code so that new diagnostics can be seen
-            setCode(code += ' ')
+            setCode((code += ' '))
             setCode(oldCode)
         }
     }
@@ -55,7 +58,7 @@
         let diagnostics: Diagnostic[] = []
 
         try {
-            const result = await lintHomescriptCode(code, [])
+            const result = await lintHomescriptCode(code, [], moduleName)
             diagnostics = result.errors.map(e => {
                 let severity = 'error'
                 if (e.kind === 'Warning') {

@@ -179,11 +179,11 @@ export async function lintHomescriptById(id: string, args: homescriptArgSubmit[]
 // Sends a lint request to the server
 // Returns the Homescript Response
 // Can throw an error if non-Homescript errors occur
-export async function lintHomescriptCode(code: string, args: homescriptArgSubmit[]): Promise<homescriptResponse> {
+export async function lintHomescriptCode(code: string, args: homescriptArgSubmit[], moduleName: string): Promise<homescriptResponse> {
     const res = await fetch(`/api/homescript/lint/live`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, args: args }),
+        body: JSON.stringify({ code, args, moduleName }),
     })
     if (res.status !== 200 && res.status !== 500) throw Error(await (res.json()))
     return await (res.json())

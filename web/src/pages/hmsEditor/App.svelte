@@ -378,7 +378,7 @@
         </div>
         <div class="container">
             <div class="container__editor" class:alt={layoutAlt}>
-                <HmsEditor bind:code={currentData.data.code} {showLintInfo} />
+                <HmsEditor bind:moduleName={currentData.data.id} bind:code={currentData.data.code} {showLintInfo} />
             </div>
             <div class="container__terminal" class:alt={layoutAlt}>
                 <div class="container__terminal__header mdc-elevation--z2">

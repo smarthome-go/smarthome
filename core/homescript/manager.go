@@ -97,6 +97,8 @@ func (m *Manager) Analyze(
 	callStack []string,
 	initiator HomescriptInitiator,
 	username string,
+	moduleStack []string,
+	moduleName string,
 ) []HmsError {
 	executor := &AnalyzerExecutor{
 		Username: username,
@@ -110,10 +112,12 @@ func (m *Manager) Analyze(
 	)
 
 	// Run the script
-	diagnostics, _ := homescript.Analyze(
+	diagnostics, _, _ := homescript.Analyze(
 		executor,
 		scriptCode,
 		make(map[string]homescript.Value),
+		moduleStack,
+		moduleName,
 	)
 
 	// Remove the Job from the jobs list when this function ends
@@ -150,6 +154,8 @@ func (m *Manager) AnalyzeById(
 		append(callStack, scriptId),
 		initiator,
 		username,
+		make([]string, 0),
+		scriptId,
 	), nil
 }
 

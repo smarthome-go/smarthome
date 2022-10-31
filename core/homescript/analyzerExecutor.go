@@ -16,12 +16,12 @@ type AnalyzerExecutor struct {
 }
 
 // Resolves a Homescript module
-func (self *AnalyzerExecutor) ResolveModule(id string) (string, bool, error) {
+func (self *AnalyzerExecutor) ResolveModule(id string) (string, bool, bool, error) {
 	script, found, err := database.GetUserHomescriptById(id, self.Username)
 	if !found || err != nil {
-		return "", found, err
+		return "", found, true, err
 	}
-	return script.Data.Code, true, nil
+	return script.Data.Code, true, true, nil
 }
 
 func (self *AnalyzerExecutor) Sleep(seconds float64) {

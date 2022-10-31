@@ -34,12 +34,6 @@ type Executor struct {
 	// or need to access the username for other reasons, e.g. `notify`
 	Username string
 
-	// TODO: remove this
-	// Will be appended to when the print function is used
-	// Is required in order to return the complete output of a Homescript
-	//Output string
-	// TODO: end
-
 	// Output writer for asynchronous Homescript output (for example via the Web-UI)
 	OutputWriter io.Writer
 
@@ -109,12 +103,12 @@ func (self *Executor) checkSigTerm() bool {
 }
 
 // Resolves a Homescript module
-func (self *Executor) ResolveModule(id string) (string, bool, error) {
+func (self *Executor) ResolveModule(id string) (string, bool, bool, error) {
 	script, found, err := database.GetUserHomescriptById(id, self.Username)
 	if !found || err != nil {
-		return "", found, err
+		return "", found, true, err
 	}
-	return script.Data.Code, true, nil
+	return script.Data.Code, true, true, nil
 }
 
 // Pauses the execution of the current script for the amount of the specified seconds

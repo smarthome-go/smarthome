@@ -114,10 +114,10 @@
                     </span>
 
                     <span class="schedule__target__hms__lint">
-                        {#await lintHomescriptCode($homescripts.find((h) => h.data.id === data.data.homescriptTargetId).data.code, [])}
+                        {#await lintHomescriptCode($homescripts.find((h) => h.data.id === data.data.homescriptTargetId).data.code, [], "")}
                             <Progress type="circular" loading={true} />
                         {:then res}
-                            {res.success ? "Working" : res.error[0].errorType}
+                            {res.success ? "Working" : res.errors[0].kind}
                             <i
                                 class="material-icons"
                                 class:passing={res.success}
@@ -135,10 +135,10 @@
                         </code>
                     </span>
                     <span class="schedule__target__code__indicator">
-                        {#await lintHomescriptCode(data.data.homescriptCode, [])}
+                        {#await lintHomescriptCode(data.data.homescriptCode, [], '')}
                             <Progress type="circular" loading={true} />
                         {:then res}
-                            {res.success ? "Working" : res.error[0].errorType}
+                            {res.success ? "Working" : res.errors[0].kind}
                             <i
                                 class="material-icons"
                                 class:passing={res.success}

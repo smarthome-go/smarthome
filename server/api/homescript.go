@@ -45,6 +45,12 @@ type HomescriptLiveRunRequest struct {
 	Args []HomescriptArg `json:"args"`
 }
 
+type LintHomescriptStringRequest struct {
+	Code       string          `json:"code"`
+	Args       []HomescriptArg `json:"args"`
+	ModuleName string          `json:"moduleName"`
+}
+
 type HomescriptIdRunRequest struct {
 	Id   string          `json:"id"`
 	Args []HomescriptArg `json:"args"`
@@ -153,6 +159,8 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 		make([]string, 0),
 		homescript.InitiatorAPI,
 		username,
+		make([]string, 0),
+		request.Id,
 	)
 	isSuccess := true
 	for _, diagnostic := range diagnostics {
@@ -230,7 +238,7 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 	}
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
-	var request HomescriptLiveRunRequest
+	var request LintHomescriptStringRequest
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
@@ -243,11 +251,13 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 	}
 	// Lint the Homescript
 	diagnostics := homescript.HmsManager.Analyze(
-		"lint",
+		request.ModuleName,
 		request.Code,
 		make([]string, 0),
 		homescript.InitiatorAPI,
 		username,
+		make([]string, 0),
+		request.ModuleName,
 	)
 	isSuccess := true
 	for _, diagnostic := range diagnostics {
