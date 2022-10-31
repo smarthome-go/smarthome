@@ -129,7 +129,7 @@
         } else if (e.key === 'F9') {
             if (currentExecutionHandles > 0) return
             e.preventDefault()
-            initCurrentLint()
+            lintCurrentCode()
         } else if (e.key === 'F10') {
             e.preventDefault()
             killCurrentRun()
@@ -198,28 +198,17 @@
         }
     }
 
-    // If the current Homescript contains arguments, the function triggers the argument-prompt dialog opening
-    // Ported from `src/pages/homescript/App.svelte`
-    function initCurrentLint() {
-        if (homescripts.find(h => h.data.data.id === currentScript).arguments.length === 0) {
-            lintCurrentCode([])
-            return
-        }
-        // The script is linted via callback: refer to the argument dialog
-        currentExecModeLint = true
-        argumentsPromptOpen = true
-    }
-
     // Dry-run function without data modifications or expensive operations
     // Can be used to validate the correctness of a script without the need for execution
-    async function lintCurrentCode(args: homescriptArgSubmit[]) {
+    async function lintCurrentCode() {
+        currentExecModeLint = true
         requestLoading = true
         currentExecutionCount++
         currentExecutionHandles++
         try {
             if (currentData.data.code === '') output = 'Nothing to lint.'
             else {
-                const currentExecResTemp = await lintHomescriptCode(currentData.data.code, args)
+                const currentExecResTemp = await lintHomescriptCode(currentData.data.code, [], currentData.data.id)
                 let diagnostics = currentExecResTemp.errors
                 // If Info diagnostics should be hidden, do it here
                 if (!showLintInfo) diagnostics = diagnostics.filter(d => d.kind !== 'Info')
@@ -391,7 +380,7 @@
                         >
                         <IconButton
                             class="material-icons"
-                            on:click={initCurrentLint}
+                            on:click={lintCurrentCode}
                             disabled={currentExecutionHandles > 0}
                         >
                             bug_report</IconButton
@@ -409,7 +398,7 @@
                                 currentExecRes = undefined
                                 output = ''
                             }}
-                            disabled={requestLoading || currentExecRes == undefined || output == ''}
+                            disabled={requestLoading || (currentExecRes == undefined && output == '')}
                             >replay</IconButton
                         >
                     </div>
