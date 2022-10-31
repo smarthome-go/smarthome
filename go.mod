@@ -15,7 +15,7 @@ require (
 	github.com/nathan-osman/go-sunrise v1.1.0
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/sirupsen/logrus v1.9.0
-	github.com/smarthome-go/homescript/v2 v2.0.5
+	github.com/smarthome-go/homescript/v2 v2.0.6
 	github.com/stretchr/testify v1.8.0
 	golang.org/x/crypto v0.1.0
 	golang.org/x/exp v0.0.0-20221028150844-83b7d23a625f
