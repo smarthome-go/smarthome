@@ -1,7 +1,6 @@
 package automation
 
 import (
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -538,8 +537,6 @@ func TestDisableOnce(t *testing.T) {
 		t.Error("Power of `test_switch` changed but should have not")
 		return
 	}
-
-	fmt.Println("PASS, starting part 2")
 
 	// Check if the `DisableOnce` boolean has reset to `false`
 	automation, found, err = GetUserAutomationById("admin", id)

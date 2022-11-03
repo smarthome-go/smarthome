@@ -387,7 +387,6 @@ func (m *Manager) GetUserDirectJobs(username string) []ApiJob {
 		}
 		// Skip any indirect jobs
 		if len(job.Executor.CallStack) > 1 {
-			fmt.Println(job.Executor.CallStack)
 			continue
 		}
 		jobs = append(jobs, ApiJob{
