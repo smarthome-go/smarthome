@@ -113,6 +113,17 @@ func ImportConfiguration(w http.ResponseWriter, r *http.Request) {
 	Res(w, Response{Success: true, Message: "successfully ran setup"})
 }
 
+// Is used to reset the Smarthome server to its factory settings
+func FactoryReset(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if err := config.FactoryReset(); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		Res(w, Response{Success: false, Message: "failed to reset to factory settings", Error: err.Error()})
+		return
+	}
+	Res(w, Response{Success: true, Message: "factory settings were applied successfully"})
+}
+
 // Is used to flush the Homescript URL cache manually
 // Deletes all recors older than 12 hours
 func ClearHomescriptURLCache(w http.ResponseWriter, r *http.Request) {

@@ -89,7 +89,7 @@ func abortSetup() error {
 	return addRescueUser()
 }
 
-func RunSetupStruct(setup SetupStruct) error {
+func FactoryReset() error {
 	// Delete database first
 	if err := database.DeleteTables(); err != nil {
 		return err
@@ -99,6 +99,13 @@ func RunSetupStruct(setup SetupStruct) error {
 		GetConfig().Database,
 		"admin",
 	); err != nil {
+		return err
+	}
+	return nil
+}
+
+func RunSetupStruct(setup SetupStruct) error {
+	if err := FactoryReset(); err != nil {
 		return err
 	}
 	// Run the actual setup

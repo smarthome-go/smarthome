@@ -215,6 +215,7 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/system/lockdown/modify", mdl.ApiAuth(mdl.Perm(api.UpdateLockDownMode, database.PermissionSystemConfig))).Methods("PUT")
 	r.HandleFunc("/api/system/config/export", mdl.ApiAuth(mdl.Perm(api.ExportConfiguration, database.PermissionSystemConfig))).Methods("GET")
 	r.HandleFunc("/api/system/config/import", mdl.ApiAuth(mdl.Perm(api.ImportConfiguration, database.PermissionSystemConfig))).Methods("POST")
+	r.HandleFunc("/api/system/config/factory", mdl.ApiAuth(mdl.Perm(api.FactoryReset, database.PermissionSystemConfig))).Methods("DELETE")
 
 	// Hardware node management
 	r.HandleFunc("/api/system/hardware/node/list", mdl.ApiAuth(mdl.Perm(api.ListHardwareNodes, database.PermissionSystemConfig))).Methods("GET")

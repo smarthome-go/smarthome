@@ -10,8 +10,8 @@
 
     let confirm = false
 
-    let importStarted = false
-    let importRunning = false
+    let resetStarted = false
+    let resetRunning = false
 
     let statusMessage = ''
     let statusError = ''
@@ -23,15 +23,14 @@
         if (confirm) window.location.href = '/logout'
     }
 
-    async function importConfig() {
-        importRunning = true
-        importStarted = true
+    async function doReset() {
+        resetRunning = true
+        resetStarted = true
         try {
             const res = await (
-                await fetch('/api/system/config/import', {
-                    method: 'POST',
+                await fetch('/api/system/config/factory', {
+                    method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
-                    body: importedJSONString,
                 })
             ).json()
             if (!res.success) {
@@ -41,78 +40,38 @@
                 redirect()
             }
         } catch (err) {
-            $createSnackbar(`Could not import configuration: ${err}`)
+            $createSnackbar(`Could not perform factory reset: ${err}`)
         }
-        importRunning = false
-    }
-
-    let fileInput: HTMLInputElement = undefined
-    let importedJSONString = ''
-
-    // Callback to be executed as soon as a file has been picked
-    function onFileSelected(e: Event): string {
-        const importFile = (e.target as HTMLInputElement).files[0]
-        if (importFile === undefined) {
-            open = false
-            return
-        }
-        const reader = new FileReader()
-        reader.readAsText(importFile)
-        reader.onload = () => {
-            importedJSONString = reader.result as string
-        }
+        resetRunning = false
     }
 </script>
 
-<input
-    style="display:none"
-    type="file"
-    accept=".json"
-    on:input={e => onFileSelected(e)}
-    bind:this={fileInput}
-/>
-
 <Dialog bind:open aria-labelledby="title" aria-describedby="content">
     <Header>
-        <Title id="title">Configuration Import</Title>
+        <Title id="title">Factory Reset</Title>
     </Header>
     <Content id="content">
-        {#if importedJSONString === ''}
-            <div id="upload">
-                <span>Upload a smarhome config export file to get started. </span>
-                <div class="list">
-                    <span> How it works: </span>
-                    <ul>
-                        <li>Before the import, the server is reset to factory defaults</li>
-                        <li>When the file is imported, it's contents are evaluated</li>
-                        <li>You are notified about the outcome</li>
-                    </ul>
-                </div>
-                <Button variant="raised" on:click={() => fileInput.click()}>
-                    <Label>Upload</Label>
-                    <Icon class="material-icons">file_upload</Icon>
-                </Button>
-            </div>
-        {:else if importStarted}
+        {#if resetStarted}
             {#if statusMessage !== '' || statusError !== ''}
-                <span id="import-output">
+                <span id="reset-output">
                     {statusMessage}
                     <br />
                     <span style="color: var(--clr-error)">
                         {statusError}
                     </span>
                 </span>
-            {:else if !importRunning}
+            {:else if !resetRunning}
                 <span style="color: var(--clr-success)">
                     <strong>Success: </strong>
-                    the new configuration has been successfully imported.
+                    this server has been reset to factory settings.
                 </span>
+                <br />
                 <span class="text-hint">
                     You will be redirected to the login screen in {remainingSecs} second(s)
                 </span>
             {:else}
-                <Progress bind:loading={importRunning} />
-                Importing data...
+                <Progress bind:loading={resetRunning} />
+                Performing factory reset...
             {/if}
         {:else}
             <div id="confirm">
@@ -120,26 +79,22 @@
                     <span>Before you continue</span>
                     <ul>
                         <li>
-                            Importing will <strong>erase all data</strong> on this server
+                            This action will <strong>erase all data</strong> on this server
                         </li>
                         <li>
                             Do <strong>not shutdown</strong> the server during the process
                         </li>
                         <li>Proceeding comes at your own risk</li>
-                        <li>Importing may take some time</li>
+                        <li>A factory reset may take some time</li>
                     </ul>
                 </div>
+
                 <FormField>
-                    <Checkbox id="import-confirm" bind:checked={confirm} />
+                    <Checkbox id="reset-confirm" bind:checked={confirm} />
                     <span slot="label">I know the risk and want to continue.</span>
                 </FormField>
-                <Button
-                    id="import-button"
-                    variant="raised"
-                    disabled={importedJSONString === '' || !confirm}
-                    on:click={importConfig}
-                >
-                    <Label>Import</Label>
+                <Button id="reset-button" variant="raised" disabled={!confirm} on:click={doReset}>
+                    <Label>Reset</Label>
                 </Button>
             </div>
         {/if}
@@ -147,7 +102,6 @@
     <Actions>
         <Button
             on:click={() => {
-                importedJSONString = ''
                 confirm = false
             }}
         >
@@ -158,19 +112,6 @@
 
 <style lang="scss">
     @use '../../../mixins' as *;
-
-    #upload {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-
-        width: 30rem;
-
-        @include mobile {
-            width: auto;
-        }
-    }
 
     #confirm {
         width: 30rem;
@@ -200,16 +141,16 @@
             margin-top: 0.125rem;
         }
     }
-    :global #import-confirm {
+    :global #reset-confirm {
         --mdc-theme-secondary: var(--clr-error);
         --mdc-ripple-color: var(--clr-error);
     }
-    :global #import-button {
+    :global #reset-button {
         --mdc-theme-primary: var(--clr-error);
         margin-top: 0.8rem;
         display: block;
     }
-    #import-output {
+    #reset-output {
         font-family: 'Jetbrains Mono', monospace;
         font-size: 0.9rem;
     }

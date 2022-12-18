@@ -98,7 +98,7 @@ var (
 			// (Admin) is allowed to change global config parameters
 			Permission:  PermissionSystemConfig,
 			Name:        "System Config",
-			Description: "Manage and export system configuration (includes sensitive data)",
+			Description: "Manage, export, and erase system configuration (includes sensitive data)",
 		},
 		{
 			// WARNING: This allows a user to do everything, should only be allowed to admin users

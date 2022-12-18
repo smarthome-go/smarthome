@@ -1,46 +1,45 @@
 <script lang="ts">
-    import { Icon, Label } from "@smui/button";
-    import Button from "@smui/button/src/Button.svelte";
-    import Progress from "../../components/Progress.svelte";
-    import { createSnackbar } from "../../global";
-    import ConfigImport from "./dialogs/ConfigImport.svelte";
+    import { Icon, Label } from '@smui/button'
+    import Button from '@smui/button/src/Button.svelte'
+    import Progress from '../../components/Progress.svelte'
+    import { createSnackbar } from '../../global'
+    import ConfigImport from './dialogs/ConfigImport.svelte'
+    import FactoryReset from './dialogs/FactoryReset.svelte'
 
-    let importConfigOpen = false;
+    let importConfigOpen = false
+    let factoryOpen = false
 
-    let loading = false;
+    let loading = false
 
     function downloadTextFile(filename: string, content: string) {
-        const temp = document.createElement("a");
-        temp.href =
-            "data:text/plain;charset=utf-8," + encodeURIComponent(content);
-        temp.download = filename;
-        temp.style.display = "Configuration Export";
-        document.body.appendChild(temp);
-        temp.click();
-        document.body.removeChild(temp);
+        const temp = document.createElement('a')
+        temp.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(content)
+        temp.download = filename
+        temp.style.display = 'Configuration Export'
+        document.body.appendChild(temp)
+        temp.click()
+        document.body.removeChild(temp)
     }
 
     async function exportConfig() {
-        loading = true;
+        loading = true
         try {
-            const res = await (await fetch("/api/system/config/export")).json();
-            if (res.success != undefined && !res.success)
-                throw Error(res.error);
+            const res = await (await fetch('/api/system/config/export')).json()
+            if (res.success != undefined && !res.success) throw Error(res.error)
             // Download the fetched configuration
             downloadTextFile(
-                `${
-                    window.location.hostname
-                }_${new Date().toISOString()}_smarthome_export.json`,
-                JSON.stringify(res, null, "\t")
-            );
+                `${window.location.hostname}_${new Date().toISOString()}_smarthome_export.json`,
+                JSON.stringify(res, null, '\t'),
+            )
         } catch (err) {
-            $createSnackbar(`Failed to export system configuration: ${err}`);
+            $createSnackbar(`Failed to export system configuration: ${err}`)
         }
-        loading = false;
+        loading = false
     }
 </script>
 
 <ConfigImport bind:open={importConfigOpen} />
+<FactoryReset bind:open={factoryOpen} />
 
 <Progress bind:loading />
 
@@ -69,15 +68,21 @@
                 Only useful for fresh instances: will erase all data.
             </span>
         </div>
-        <Button on:click={() => (importConfigOpen = true)} variant="outlined">
-            <Label>Import</Label>
-            <Icon class="material-icons">file_upload</Icon>
-        </Button>
+        <div class="container__import__buttons">
+            <Button on:click={() => (importConfigOpen = true)} variant="outlined">
+                <Label>Import</Label>
+                <Icon class="material-icons">file_upload</Icon>
+            </Button>
+            <Button on:click={() => (factoryOpen = true)} variant="outlined">
+                <Label>Factory</Label>
+                <Icon class="material-icons">restart_alt</Icon>
+            </Button>
+        </div>
     </div>
 </div>
 
 <style lang="scss">
-    @use "../../mixins" as *;
+    @use '../../mixins' as *;
 
     h6 {
         margin: 0;
@@ -107,7 +112,7 @@
 
         &__export {
             background-color: var(--clr-height-1-3);
-            padding: .9rem 1.5rem;
+            padding: 0.9rem 1.5rem;
             border-radius: 0.2rem;
 
             @include widescreen {
@@ -125,7 +130,7 @@
         }
         &__import {
             background-color: var(--clr-height-1-3);
-            padding: .9rem 1.5rem;
+            padding: 0.9rem 1.5rem;
             border-radius: 0.2rem;
 
             @include widescreen {
@@ -138,6 +143,15 @@
 
                 @include widescreen {
                     font-size: 0.9rem;
+                }
+            }
+
+            &__buttons {
+                display: flex;
+                gap: 0.9rem;
+
+                @include mobile {
+                    flex-direction: column;
                 }
             }
         }
