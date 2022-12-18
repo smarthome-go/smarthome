@@ -267,16 +267,25 @@ func ModifyAutomationById(automationId uint, newAutomation database.AutomationDa
 		log.Error("Failed to modify automation by id: database failure during modification: ", err.Error())
 		return err
 	}
-	if automationBefore.Data.Enabled { // If the automation was enabled before it was modified, remove it from the cron jobs
+	// If the automation was enabled before it was modified, remove it from the cron jobs
+	// Only attempt to remove it if the server's automation system is enabled
+	serverConfig, found, err := database.GetServerConfiguration()
+	if err != nil {
+		return err
+	}
+	if !found {
+		return errors.New("could not retrieve server configuration")
+	}
+	if automationBefore.Data.Enabled && serverConfig.AutomationEnabled {
 		// After the metadata has been changed, restart the scheduler
 		if err := scheduler.RemoveByTag(fmt.Sprintf("%d", automationId)); err != nil {
 			log.Error("Failed to remove automation item: could not stop cron job: ", err.Error())
 			return err
 		}
 	}
-	if newAutomation.Enabled {
-		// Restart the scheduler after the old one was disabled
-		// Only add the scheduler if it is enabled in the new version
+	// Restart the scheduler after the old one was disabled
+	// Only add the scheduler if it is enabled in the new version and the server's automation system is active
+	if newAutomation.Enabled && serverConfig.AutomationEnabled {
 		automationJob := scheduler.Cron(newAutomation.CronExpression)
 		automationJob.Tag(fmt.Sprintf("%d", automationId))
 		if _, err := automationJob.Do(automationRunnerFunc, automationId); err != nil {
