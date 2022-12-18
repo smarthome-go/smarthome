@@ -1,77 +1,76 @@
 <script lang="ts">
-    import Box from "./Box.svelte";
-    import { createSnackbar } from "../../global";
-    import { onMount } from "svelte";
+    import Box from './Box.svelte'
+    import { createSnackbar } from '../../global'
+    import { onMount } from 'svelte'
 
     const mainIcons = {
-        Clear: ["light_mode", "nightlight"],
-        Rain: ["cloudy_snowing", "cloudy_snowing"],
-        Clouds: ["cloud", "nights_stay"],
-        Snow: ["ac_unit", "ac_unit"],
-        Thunderstorm: ["thunderstorm", "thunderstorm"],
-        Drizzle: ["grain", "grain"],
-    };
+        Clear: ['light_mode', 'nightlight'],
+        Rain: ['cloudy_snowing', 'cloudy_snowing'],
+        Clouds: ['cloud', 'nights_stay'],
+        Snow: ['ac_unit', 'ac_unit'],
+        Thunderstorm: ['thunderstorm', 'thunderstorm'],
+        Drizzle: ['grain', 'grain'],
+    }
 
-    let loading = false;
-    let loaded = false;
-    let cachedOnly = false;
+    let loading = false
+    let loaded = false
+    let cachedOnly = false
 
-    let isNight = true;
+    let isNight = true
 
     let data: weatherData = {
         id: 0,
         time: 0,
-        weatherTitle: "",
-        weatherDescription: "unknown",
+        weatherTitle: '',
+        weatherDescription: 'unknown',
         temperature: 0,
         feelsLike: 0,
         humidity: 0,
         sunrise: 0,
         sunset: 0,
-    };
+    }
 
     interface weatherData {
-        id: number;
-        time: number;
-        weatherTitle: string;
-        weatherDescription: string;
-        temperature: number;
-        feelsLike: number;
-        humidity: number;
-        sunrise: number;
-        sunset: number;
+        id: number
+        time: number
+        weatherTitle: string
+        weatherDescription: string
+        temperature: number
+        feelsLike: number
+        humidity: number
+        sunrise: number
+        sunset: number
     }
 
     // Is used in case the normal weather data is not fetchable due to broken network conditions
     // Requests a max. 30 minute old snapshot of the weather data from the server
     async function loadCachedWeatherData(): Promise<weatherData> {
-        let res = await (await fetch("/api/weather/cached")).json();
-        if (res.success !== undefined && !res.success) throw Error(res.error);
-        return res;
+        let res = await (await fetch('/api/weather/cached')).json()
+        if (res.success !== undefined && !res.success) throw Error(res.error)
+        return res
     }
 
     // Fetches a current (max. 5 minutes old) weather from the server
     async function loadWeatherData() {
-        loading = true;
+        loading = true
         try {
-            let res = await fetch("/api/weather");
+            let res = await fetch('/api/weather')
 
             // If the request fails due to the server failing unexpectedly, try using the cached data instead
             if (res.status === 500) {
-                data = await loadCachedWeatherData();
-                cachedOnly = true;
+                data = await loadCachedWeatherData()
+                cachedOnly = true
                 $createSnackbar(
-                    `Warning: Using fallback weather data from cache due to server error`
-                );
-                return;
+                    `Warning: Using fallback weather data from cache due to server error`,
+                )
+                return
             }
 
-            const resTemp = await res.json();
-            if (resTemp.success !== undefined && !resTemp.success)
-                throw Error(resTemp.error);
+            const resTemp = await res.json()
+            if (resTemp.success !== undefined && !resTemp.success) throw Error(resTemp.error)
 
             // Signal that the weather has been loaded successfully
-            data = resTemp;
+            data = resTemp
 
             // Detect if the night icon should be used
             const sunrise = new Date(data.sunrise)
@@ -81,14 +80,14 @@
             // Actual detection
             isNight = now.getHours() >= sunset.getHours() || now.getHours() < sunrise.getHours()
 
-            loaded = true;
+            loaded = true
         } catch (err) {
-            $createSnackbar(`Could not load weather: ${err}`);
+            $createSnackbar(`Could not load weather: ${err}`)
         }
-        loading = false;
+        loading = false
     }
 
-    onMount(loadWeatherData);
+    onMount(loadWeatherData)
 </script>
 
 <Box bind:loading>
@@ -97,9 +96,7 @@
         <div class="weather__top">
             {#if loaded}
                 <i class="material-icons weather__top__icon">
-                    {isNight
-                        ? mainIcons[data.weatherTitle][1]
-                        : mainIcons[data.weatherTitle][0]}
+                    {isNight ? mainIcons[data.weatherTitle][1] : mainIcons[data.weatherTitle][0]}
                 </i>
             {/if}
             <div class="weather__top__labels">
@@ -131,6 +128,11 @@
                 <span class="text-hint">Humidity</span>
             </div>
         </div>
+
+        {#if cachedOnly}
+            <br />
+            <span class="text-hint">Using cached data</span>
+        {/if}
     </div>
 </Box>
 
