@@ -275,7 +275,7 @@
             try {
                 let message = JSON.parse(evt.data)
                 if (message.kind !== undefined && message.kind === 'out')
-                    output += message.payload + '\n'
+                    output += message.payload
                 else if (message.kind !== undefined && message.kind === 'res') {
                     currentExecRes = {
                         code: currentData.data.code,
@@ -291,7 +291,7 @@
                     requestLoading = false
                     currentExecutionCount--
                 } else {
-                    console.log(message)
+                    console.error(message)
                     $createSnackbar(`Websocket error: unknown message kind: ${message.kind}`)
                 }
             } catch (err) {

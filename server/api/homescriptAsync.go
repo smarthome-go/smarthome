@@ -148,6 +148,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		outWriter.Close()
+
 		*results <- res
 	}(outWriter, &res, &idChan)
 
@@ -196,6 +197,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 
 	killPipe := make(chan bool)
 	go func(kill chan bool) {
+		scanner.Split(bufio.ScanRunes)
 		for scanner.Scan() {
 			wsMutex.Lock()
 			if err := ws.SetWriteDeadline(time.Now().Add(10 * time.Second)); err != nil {
@@ -207,6 +209,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 			}); err != nil {
 				return
 			}
+
 			wsMutex.Unlock()
 		}
 		if scanner.Err() != nil {

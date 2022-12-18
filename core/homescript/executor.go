@@ -130,7 +130,7 @@ func (self *Executor) Sleep(seconds float64) {
 		if self.checkSigTerm() {
 			// Sleep function is terminated
 			// Additional wait time is used to dispatch the signal to the interpreter
-			time.Sleep(time.Millisecond * 10)
+			//time.Sleep(time.Millisecond * 10)
 			break
 		}
 		time.Sleep(time.Millisecond * 10)
@@ -254,16 +254,6 @@ func (self *Executor) Ping(ip string, timeoutSecs float64) (bool, error) {
 
 // Makes a GET request to an arbitrary URL and returns the result
 func (self *Executor) Get(requestUrl string) (homescript.HttpResponse, error) {
-	self.InExpensiveBuiltin.Mutex.Lock()
-	self.InExpensiveBuiltin.Value = true
-	self.InExpensiveBuiltin.Mutex.Unlock()
-
-	defer func() {
-		self.InExpensiveBuiltin.Mutex.Lock()
-		self.InExpensiveBuiltin.Value = false
-		self.InExpensiveBuiltin.Mutex.Unlock()
-	}()
-
 	// The permissions can be validated beforehand
 	hasPermission, err := database.UserHasPermission(self.Username, database.PermissionHomescriptNetwork)
 	if err != nil {
@@ -364,15 +354,6 @@ func (self *Executor) Get(requestUrl string) (homescript.HttpResponse, error) {
 
 // Makes a request to an arbitrary URL using a custom method and body in order to return the result
 func (self *Executor) Http(requestUrl string, method string, body string, headers map[string]string) (homescript.HttpResponse, error) {
-	self.InExpensiveBuiltin.Mutex.Lock()
-	self.InExpensiveBuiltin.Value = true
-	self.InExpensiveBuiltin.Mutex.Unlock()
-	defer func() {
-		self.InExpensiveBuiltin.Mutex.Lock()
-		self.InExpensiveBuiltin.Value = false
-		self.InExpensiveBuiltin.Mutex.Unlock()
-	}()
-
 	// Check permissions and request building beforehand
 	hasPermission, err := database.UserHasPermission(self.Username, database.PermissionHomescriptNetwork)
 	if err != nil {
@@ -480,8 +461,18 @@ func (self *Executor) httpCancelationMonitor(
 	cancelRequest context.CancelFunc,
 	requestHasFinished chan struct{},
 ) {
+	self.InExpensiveBuiltin.Mutex.Lock()
+	self.InExpensiveBuiltin.Value = true
+	self.InExpensiveBuiltin.Mutex.Unlock()
+
+	defer func() {
+		self.InExpensiveBuiltin.Mutex.Lock()
+		self.InExpensiveBuiltin.Value = false
+		self.InExpensiveBuiltin.Mutex.Unlock()
+		log.Trace("Finished Homescript http request monitoring")
+	}()
+
 	log.Trace("Started Homescript http request monitoring")
-	defer log.Trace("Finished Homescript http request monitoring")
 	for {
 		select {
 		// If the request has finished regularely, stop the monitor and to nothing
@@ -492,8 +483,8 @@ func (self *Executor) httpCancelationMonitor(
 		default:
 			// If a sigTerm is received whilst waiting for the request to be completed, cancel the request and stop the monitor
 			if self.checkSigTerm() {
-				cancelRequest()
 				log.Debug("Detected sigTerm while waiting for Homescript http request to be completed: canceling request...")
+				cancelRequest()
 				return
 			}
 			time.Sleep(10 * time.Millisecond)
