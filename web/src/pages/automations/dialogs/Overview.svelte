@@ -1,17 +1,7 @@
 <script lang="ts">
-    import Button,{ Label } from '@smui/button'
-    import Dialog,{
-    Actions,
-    Content,
-    Header,
-    InitialFocus,
-    Title
-    } from '@smui/dialog'
-    import {
-    automations,
-    homescripts,
-    parseCronExpressionToTime
-    } from '../main'
+    import Button, { Label } from '@smui/button'
+    import Dialog, { Actions, Content, Header, InitialFocus, Title } from '@smui/dialog'
+    import { automations, homescripts, parseCronExpressionToTime } from '../main'
 
     interface day {
         short: string
@@ -69,10 +59,8 @@
             {#each days as day (day.short)}
                 <div
                     class="day"
-                    class:empty={$automations.filter((a) =>
-                        parseCronExpressionToTime(
-                            a.cronExpression
-                        ).days.includes(day.index)
+                    class:empty={$automations.filter(a =>
+                        parseCronExpressionToTime(a.cronExpression).days.includes(day.index),
                     ).length == 0}
                 >
                     <div class="day__header">
@@ -80,12 +68,12 @@
                     </div>
                     <div class="day__automations">
                         {#each $automations
-                            .filter( (a) => parseCronExpressionToTime(a.cronExpression).days.includes(day.index) )
+                            .filter( a => parseCronExpressionToTime(a.cronExpression).days.includes(day.index), )
                             .sort((a, b) => {
                                 // Sorts the automations by time (descending)
                                 const timeDataA = parseCronExpressionToTime(a.cronExpression)
                                 const timeDataB = parseCronExpressionToTime(b.cronExpression)
-                                
+
                                 // If the hour of two automations to be compared match, the earlier minute is chosen.
                                 if (timeDataA.hours === timeDataB.hours) {
                                     return timeDataA.minutes - timeDataB.minutes
@@ -95,34 +83,33 @@
                             }) as automation (automation.id)}
                             <div
                                 class="automation mdc-elevation--z2"
-                                class:disabled={!automation.enabled}
+                                class:disabled={!automation.enabled || automation.disableOnce}
                             >
                                 <span class="automation__name">
                                     {automation.name}
                                 </span>
-                                {#if automation.enabled}
+                                {#if automation.enabled && !automation.disableOnce}
                                     <div class="automation__time-hms">
                                         <span>
                                             {`${
-                                                parseCronExpressionToTime(
-                                                    automation.cronExpression
-                                                ).hours <= 12
+                                                parseCronExpressionToTime(automation.cronExpression)
+                                                    .hours <= 12
                                                     ? parseCronExpressionToTime(
-                                                          automation.cronExpression
+                                                          automation.cronExpression,
                                                       ).hours
                                                     : parseCronExpressionToTime(
-                                                          automation.cronExpression
+                                                          automation.cronExpression,
                                                       ).hours - 12
                                             }`.padStart(2, '0') +
                                                 ':' +
                                                 `${
                                                     parseCronExpressionToTime(
-                                                        automation.cronExpression
+                                                        automation.cronExpression,
                                                     ).minutes
                                                 }`.padStart(2, '0') +
                                                 ` ${
                                                     parseCronExpressionToTime(
-                                                        automation.cronExpression
+                                                        automation.cronExpression,
                                                     ).hours < 12
                                                         ? 'AM'
                                                         : 'PM'
@@ -132,27 +119,21 @@
                                         <div class="automation__time-hms__hms">
                                             <span
                                                 >{$homescripts.find(
-                                                    (h) =>
-                                                        h.data.id ===
-                                                        automation.homescriptId
+                                                    h => h.data.id === automation.homescriptId,
                                                 ) !== undefined
                                                     ? $homescripts.find(
-                                                          (h) =>
-                                                              h.data.id ===
-                                                              automation.homescriptId
+                                                          h =>
+                                                              h.data.id === automation.homescriptId,
                                                       ).data.name
                                                     : 'No script'}</span
                                             >
                                             <i class="material-icons">
                                                 {$homescripts.find(
-                                                    (h) =>
-                                                        h.data.id ===
-                                                        automation.homescriptId
+                                                    h => h.data.id === automation.homescriptId,
                                                 ) !== undefined
                                                     ? $homescripts.find(
-                                                          (h) =>
-                                                              h.data.id ===
-                                                              automation.homescriptId
+                                                          h =>
+                                                              h.data.id === automation.homescriptId,
                                                       ).data.mdIcon
                                                     : 'code'}
                                             </i>
