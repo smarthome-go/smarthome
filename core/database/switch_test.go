@@ -63,7 +63,7 @@ func TestSwitches(t *testing.T) {
 				RoomId: "invalid",
 				Watts:  3,
 			},
-			Error: "Error 1452: Cannot add or update a child row: a foreign key constraint fails",
+			Error: "Error 1452 (23000): Cannot add or update a child row: a foreign key constraint fails",
 		},
 	}
 	for _, test := range table {
@@ -181,11 +181,11 @@ func TestUserSwitches(t *testing.T) {
 		},
 		"4": {
 			User:  "invalid",
-			Error: "Error 1452: Cannot add or update a child row: a foreign key constraint fails",
+			Error: "Error 1452 (23000): Cannot add or update a child row: a foreign key constraint fails",
 		},
 		"invalid": {
 			User:  "admin",
-			Error: "Error 1452: Cannot add or update a child row: a foreign key constraint fails",
+			Error: "Error 1452 (23000): Cannot add or update a child row: a foreign key constraint fails",
 		},
 	}
 

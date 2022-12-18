@@ -90,7 +90,7 @@ func TestHomescript(t *testing.T) {
 					SchedulerEnabled:    false,
 				},
 			},
-			Error:             "Error 1452: Cannot add or update a child row: a foreign key constraint fails (`smarthome`.`homescript`, CONSTRAINT `HomescriptOwner` FOREIGN KEY (`Owner`) REFERENCES `user` (`Username`))",
+			Error:             "Error 1452 (23000): Cannot add or update a child row: a foreign key constraint fails (`smarthome`.`homescript`, CONSTRAINT `HomescriptOwner` FOREIGN KEY (`Owner`) REFERENCES `user` (`Username`))",
 			AfterModification: Homescript{},
 			ErrorModification: "", // Modification will not take place when an error is expected
 		},

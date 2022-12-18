@@ -34,7 +34,7 @@ func TestHomescriptArgs(t *testing.T) {
 					Display:      TypeDefault,
 				},
 			},
-			Error: "Error 1452: Cannot add or update a child row: a foreign key constraint fails (`smarthome`.`homescriptArg`, CONSTRAINT `homescriptArg_ibfk_1` FOREIGN KEY (`HomescriptId`) REFERENCES `homescript` (`Id`))",
+			Error: "Error 1452 (23000): Cannot add or update a child row: a foreign key constraint fails (`smarthome`.`homescriptArg`, CONSTRAINT `homescriptArg_ibfk_1` FOREIGN KEY (`HomescriptId`) REFERENCES `homescript` (`Id`))",
 		},
 		{
 			Data: HomescriptArg{
@@ -46,7 +46,7 @@ func TestHomescriptArgs(t *testing.T) {
 					Display:      TypeDefault,
 				},
 			},
-			Error: "Error 1265: Data truncated for column 'InputType' at row 1",
+			Error: "Error 1265 (01000): Data truncated for column 'InputType' at row 1",
 		},
 		{
 			Data: HomescriptArg{
@@ -58,7 +58,7 @@ func TestHomescriptArgs(t *testing.T) {
 					Display:      "invalid",
 				},
 			},
-			Error: "Error 1265: Data truncated for column 'Display' at row 1",
+			Error: "Error 1265 (01000): Data truncated for column 'Display' at row 1",
 		},
 		{
 			Data: HomescriptArg{

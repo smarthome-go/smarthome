@@ -18,7 +18,8 @@ func TestCreateAutomationTable(t *testing.T) {
 	}
 }
 
-/*Tests:
+/*
+Tests:
 - Creation of automations
 - Error handline
 - Foreign keys
@@ -88,7 +89,7 @@ func TestCreateNewAutomation(t *testing.T) {
 					TimingMode:     TimingNormal,
 				},
 			},
-			Error: "Error 1452: Cannot add or update a child row: a foreign key constraint fails",
+			Error: "Error 1452 (23000): Cannot add or update a child row: a foreign key constraint fails",
 		},
 		{
 			Automation: Automation{
@@ -103,7 +104,7 @@ func TestCreateNewAutomation(t *testing.T) {
 					TimingMode:     TimingNormal,
 				},
 			},
-			Error: "Error 1452: Cannot add or update a child row: a foreign key constraint fails",
+			Error: "Error 1452 (23000): Cannot add or update a child row: a foreign key constraint fails",
 		},
 	}
 	// Create and evaluate the automations
@@ -307,7 +308,7 @@ func TestGetUserAutomations(t *testing.T) {
 					TimingMode:     TimingNormal,
 				},
 			},
-			Error: "Error 1452: Cannot add or update a child row: a foreign key constraint fails",
+			Error: "Error 1452 (23000): Cannot add or update a child row: a foreign key constraint fails",
 		},
 		{
 			Automation: Automation{
@@ -322,7 +323,7 @@ func TestGetUserAutomations(t *testing.T) {
 					TimingMode:     TimingNormal,
 				},
 			},
-			Error: "Error 1452: Cannot add or update a child row: a foreign key constraint fails",
+			Error: "Error 1452 (23000): Cannot add or update a child row: a foreign key constraint fails",
 		},
 	}
 	// Create and evaluate the automations
@@ -435,7 +436,7 @@ func TestModifyDeleteAutomation(t *testing.T) {
 					TimingMode:     TimingNormal,
 				},
 			},
-			Error: "Error 1452: Cannot add or update a child row: a foreign key constraint fails",
+			Error: "Error 1452 (23000): Cannot add or update a child row: a foreign key constraint fails",
 		},
 	}
 	// Create the initial automation
