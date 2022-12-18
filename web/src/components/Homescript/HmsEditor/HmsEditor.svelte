@@ -1,10 +1,11 @@
 <script lang="ts">
-    import { EditorState, EditorView, basicSetup } from '@codemirror/basic-setup'
+    import { EditorView, basicSetup } from 'codemirror'
+    import { EditorState } from '@codemirror/state'
     import { indentWithTab } from '@codemirror/commands'
     import { keymap } from '@codemirror/view'
     import { linter, lintGutter, type Diagnostic } from '@codemirror/lint'
     import { createEventDispatcher, onMount } from 'svelte'
-    import { Homescript } from './index.js'
+    import { Homescript } from 'codemirror-lang-homescript'
     import { oneDark } from './oneDark'
     import { lintHomescriptCode } from '../../../homescript'
     import { createSnackbar } from '../../../global'

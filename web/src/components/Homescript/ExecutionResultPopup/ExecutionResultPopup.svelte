@@ -12,6 +12,9 @@
 
     // Data is bound to display the result
     export let data: homescriptResponseWrapper
+
+    // Specifies the id of the current script
+    export let scriptId = ''
 </script>
 
 <Dialog
@@ -76,8 +79,9 @@
                     code: data.code,
                     modeRun: data.modeRun,
                     exitCode: data.response.exitCode,
-                    errors: data.response.errors
+                    errors: data.response.errors,
                 }}
+                {scriptId}
                 output={data.response.output}
             />
         </div>

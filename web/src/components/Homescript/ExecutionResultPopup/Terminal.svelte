@@ -5,6 +5,7 @@
 
     // Data is bound to display the result
     export let data: hmsResWrapper
+    export let scriptId = ''
 
     // Terminal output
     export let output: string
@@ -60,11 +61,7 @@
         )}<span class="${color} bold">${rawMarker}</span>`
 
         return (
-            `<span class="${color} bold">${
-                err.kind
-            }</span><span class="bold">&nbsp;at&nbsp;${'SOME-FILE'}:${err.span.start.line}:${
-                err.span.start.column
-            }</span>` +
+            `<span class="${color} bold">${err.kind}</span><span class="bold">&nbsp;at&nbsp;${scriptId}:${err.span.start.line}:${err.span.start.column}</span>` +
             `<br>${line1}<br>${line2}<br>${marker}${line3}<br><br><span class="${color} bold">${err.message
                 .replaceAll(' ', '&nbsp;')
                 .replaceAll('\n', '<br>')}</span>`

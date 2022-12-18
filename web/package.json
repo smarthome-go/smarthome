@@ -47,7 +47,9 @@
     "vite": "^3.2.1"
   },
   "dependencies": {
-    "@codemirror/basic-setup": "^0.20.0",
+    "@codemirror/commands": "^6.1.2",
+    "@codemirror/lint": "^6.1.0",
+    "@codemirror/view": "^6.7.1",
     "@fontsource/jetbrains-mono": "^4.5.11",
     "@smui-extra/autocomplete": "^6.2.0",
     "@smui/button": "^6.1.4",
@@ -73,6 +75,8 @@
     "@smui/tooltip": "^6.1.4",
     "chart.js": "^3.9.1",
     "chartjs-adapter-date-fns": "^2.0.0",
+    "codemirror": "^6.0.1",
+    "codemirror-lang-homescript": "^0.1.1",
     "date-fns": "^2.29.3",
     "material-icons": "^1.12.0",
     "prism": "^4.1.2",

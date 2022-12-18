@@ -208,7 +208,11 @@
         try {
             if (currentData.data.code === '') output = 'Nothing to lint.'
             else {
-                const currentExecResTemp = await lintHomescriptCode(currentData.data.code, [], currentData.data.id)
+                const currentExecResTemp = await lintHomescriptCode(
+                    currentData.data.code,
+                    [],
+                    currentData.data.id,
+                )
                 let diagnostics = currentExecResTemp.errors
                 // If Info diagnostics should be hidden, do it here
                 if (!showLintInfo) diagnostics = diagnostics.filter(d => d.kind !== 'Info')
@@ -316,7 +320,7 @@
         on:submit={event => {
             // Handle the decision between lint and run here
             if (currentExecModeLint) {
-                lintCurrentCode(event.detail)
+                lintCurrentCode()
             } else runCurrentCode(event.detail)
         }}
         bind:open={argumentsPromptOpen}
@@ -367,7 +371,11 @@
         </div>
         <div class="container">
             <div class="container__editor" class:alt={layoutAlt}>
-                <HmsEditor bind:moduleName={currentData.data.id} bind:code={currentData.data.code} {showLintInfo} />
+                <HmsEditor
+                    bind:moduleName={currentData.data.id}
+                    bind:code={currentData.data.code}
+                    {showLintInfo}
+                />
             </div>
             <div class="container__terminal" class:alt={layoutAlt}>
                 <div class="container__terminal__header mdc-elevation--z2">
@@ -398,8 +406,8 @@
                                 currentExecRes = undefined
                                 output = ''
                             }}
-                            disabled={requestLoading || (currentExecRes == undefined && output == '')}
-                            >replay</IconButton
+                            disabled={requestLoading ||
+                                (currentExecRes == undefined && output == '')}>replay</IconButton
                         >
                     </div>
                     <div class="container__terminal__header__right">
@@ -414,7 +422,7 @@
                     {#if output.length === 0 && currentExecRes === undefined}
                         <span class="gray"> Homescript output will be displayed here. </span>
                     {:else}
-                        <Terminal data={currentExecRes} {output} />
+                        <Terminal data={currentExecRes} scriptId={`${currentScript}.hms`} {output} />
                     {/if}
                 </div>
             </div>

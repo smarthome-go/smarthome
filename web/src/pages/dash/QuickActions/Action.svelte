@@ -91,6 +91,7 @@
     <ExecutionResultPopup
         open={true}
         data={hmsExecutionResults[0]}
+        scriptId={data.data.data.id}
         on:close={() => (hmsExecutionResults = hmsExecutionResults.slice(1))}
     />
 {/if}
