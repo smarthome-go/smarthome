@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Button, { Icon, Label } from '@smui/button'
+    import Button, { Label } from '@smui/button'
     import Checkbox from '@smui/checkbox'
     import Dialog, { Actions, Content, Header, Title } from '@smui/dialog'
     import FormField from '@smui/form-field'
