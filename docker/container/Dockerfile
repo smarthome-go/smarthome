@@ -16,7 +16,8 @@ RUN addgroup smarthome && adduser \
 
 RUN mkdir -p /app/.config
 RUN mkdir -p /app/.cache
-# Tzdata is installed to allow setting of the timezone via the environment variables
+
+# tzdata is installed to allow setting of the timezone via the environment variables
 RUN apk add bash tzdata && rm -rf /var/cache/apk/*
 
 COPY motd /etc/motd
