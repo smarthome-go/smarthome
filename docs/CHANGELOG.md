@@ -1,8 +1,24 @@
-## Changelog for v0.5.1
+## Changelog for v0.6.0
+
+### Additions
+
+- Added the `remind` builtin function to Homescript
+- The `remind` function adds a new reminder to the user's reminders
+- It can be used like this:
+
+```py
+remind(
+   'title',
+   'description',
+   1, // 1 - 5 (urgency)
+   {
+     day: time.now().calendar_day,
+     month: time.now().month,
+     year: time.now().year,
+   }
+ );
+```
 
 ### Bugfixes
 
-- The Homescript web-editor now uses the correct set of builtin functions &
-  variables
-- The web-ui now works again due to a fixed issue in the build-process of the
-  web-ui
+- Fixed minor bugs in Homescript
