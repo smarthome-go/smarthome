@@ -514,6 +514,30 @@ func (self *Executor) Notify(
 	return nil
 }
 
+// Add a reminder to the user's reminders.
+func (self *Executor) Remind(
+	title string,
+	description string,
+	urgency homescript.ReminderUrgency,
+	dueDate time.Time,
+) (uint, error) {
+	// If using DryRun, stop here
+	if self.DryRun {
+		return 0, nil
+	}
+	id, err := database.CreateNewReminder(
+		title,
+		description,
+		dueDate,
+		self.Username,
+		database.ReminderPriority(urgency),
+	)
+	if err != nil {
+		log.Error(fmt.Sprintf("[Homescript] ERROR: script: '%s' user: '%s': failed to add reminder to user: %s", self.ScriptName, self.Username, err.Error()))
+	}
+	return id, err
+}
+
 // Adds a log entry to the internal logging system
 func (self *Executor) Log(
 	title string,

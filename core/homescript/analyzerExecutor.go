@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/go-ping/ping"
 	"github.com/smarthome-go/homescript/v2/homescript"
@@ -173,6 +174,15 @@ func (self *AnalyzerExecutor) Notify(
 	level homescript.NotificationLevel,
 ) error {
 	return nil
+}
+
+func (self *AnalyzerExecutor) Remind(
+	title string,
+	description string,
+	urgency homescript.ReminderUrgency,
+	dueDate time.Time,
+) (uint, error) {
+	return 0, nil
 }
 
 func (self *AnalyzerExecutor) Log(
