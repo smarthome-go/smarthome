@@ -47,7 +47,7 @@ func createNotificationTable() error {
 // Adds a new notification to a user's `inbox`, can return an error if the database fails
 func AddNotification(receiverUsername string, name string, description string, priority uint8) error {
 	if priority > 3 || priority < 1 {
-		log.Error("Invalid Priority range")
+		log.Error("Invalid Priority range: ", priority)
 		return errors.New("failed to send notification: invalid priority range")
 	}
 	query, err := db.Prepare(`

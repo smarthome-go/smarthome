@@ -506,7 +506,7 @@ func (self *Executor) Notify(
 		self.Username,
 		title,
 		description,
-		user.NotificationLevel(level-1),
+		user.NotificationLevel(level+1),
 	)
 	if err != nil {
 		log.Error(fmt.Sprintf("[Homescript] ERROR: script: '%s' user: '%s': failed to notify user: %s", self.ScriptName, self.Username, err.Error()))
