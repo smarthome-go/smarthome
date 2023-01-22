@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+	"unicode/utf8"
 
 	"github.com/go-ping/ping"
 	"github.com/smarthome-go/homescript/v2/homescript"
@@ -222,4 +223,18 @@ func (self *AnalyzerExecutor) GetUser() string {
 
 func (self *AnalyzerExecutor) GetWeather() (homescript.Weather, error) {
 	return homescript.Weather{}, nil
+}
+
+func (self *AnalyzerExecutor) GetStorage(key string) (*string, error) {
+	if utf8.RuneCountInString(key) > 50 {
+		return nil, errors.New("key is larger than 50 characters")
+	}
+	return nil, nil
+}
+
+func (self *AnalyzerExecutor) SetStorage(key string, value string) error {
+	if utf8.RuneCountInString(key) > 50 {
+		return errors.New("key is larger than 50 characters")
+	}
+	return nil
 }

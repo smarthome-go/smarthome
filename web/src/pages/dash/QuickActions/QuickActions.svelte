@@ -13,6 +13,7 @@
 
     let loading = false;
 
+    export let homescripts: homescriptWithArgs[] = [];
     let actions: homescriptWithArgs[] = [];
     let homescriptLoaded = false;
 
@@ -30,6 +31,8 @@
             ).json();
             if (res.success !== undefined && !res.success)
                 throw Error(res.error);
+            // `homescripts` will include all Homescripts
+            homescripts = res
             // Just include Homescript which have enabled quick actions
             actions = res.filter(
                 (h: homescriptWithArgs) => h.data.data.quickActionsEnabled

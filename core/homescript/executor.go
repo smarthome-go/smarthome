@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"golang.org/x/net/context"
 
@@ -657,4 +658,18 @@ func (self *Executor) GetWeather() (homescript.Weather, error) {
 		FeelsLike:          float64(wthr.FeelsLike),
 		Humidity:           wthr.Humidity,
 	}, nil
+}
+
+func (self *Executor) GetStorage(key string) (*string, error) {
+	if utf8.RuneCountInString(key) > 50 {
+		return nil, errors.New("key is larger than 50 characters")
+	}
+	return database.GetHmsStorageEntry(self.Username, key)
+}
+
+func (self *Executor) SetStorage(key string, value string) error {
+	if utf8.RuneCountInString(key) > 50 {
+		return errors.New("key is larger than 50 characters")
+	}
+	return database.InsertHmsStorageEntry(self.Username, key, value)
 }

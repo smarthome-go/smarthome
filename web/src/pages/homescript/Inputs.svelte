@@ -1,123 +1,114 @@
 <script lang="ts">
-    import Switch from "@smui/switch/src/Switch.svelte";
-    import Textfield from "@smui/textfield";
-    import CharacterCounter from "@smui/textfield/character-counter";
-    import type { homescriptArgData, homescriptData } from "../../homescript";
-    import IconPicker from "../../components/IconPicker/IconPicker.svelte";
-    import Button, { Icon, Label } from "@smui/button";
-    import { homescripts, loading } from "./main";
-    import IconButton from "@smui/icon-button";
-    import AddArgument from "./dialogs/AddArgument.svelte";
-    import { createSnackbar } from "../../global";
-    import Argument from "./Argument.svelte";
-    import Autocomplete from "@smui-extra/autocomplete";
-    import { Text } from "@smui/list";
-    import Dialog, { Actions, Content, Title } from "@smui/dialog";
+    import Switch from '@smui/switch/src/Switch.svelte'
+    import Textfield from '@smui/textfield'
+    import CharacterCounter from '@smui/textfield/character-counter'
+    import type { homescriptArgData, homescriptData } from '../../homescript'
+    import IconPicker from '../../components/IconPicker/IconPicker.svelte'
+    import Button, { Icon, Label } from '@smui/button'
+    import { homescripts, loading } from './main'
+    import IconButton from '@smui/icon-button'
+    import AddArgument from './dialogs/AddArgument.svelte'
+    import { createSnackbar } from '../../global'
+    import Argument from './Argument.svelte'
+    import Autocomplete from '@smui-extra/autocomplete'
+    import { Text } from '@smui/list'
+    import Dialog, { Actions, Content, Title } from '@smui/dialog'
 
-    let iconPickerOpen = false;
-    let addArgOpen = false;
-    export let deleteOpen = false;
+    let iconPickerOpen = false
+    let addArgOpen = false
+    export let deleteOpen = false
 
     // Can be bound in order to allow data modification
-    export let data: homescriptData;
+    export let data: homescriptData
 
-    let workspaceInputText = "";
-    let newWorkspaceInputText = "";
-    let newWorkspaceOpen = false;
+    let workspaceInputText = ''
+    let newWorkspaceInputText = ''
+    let newWorkspaceOpen = false
 
-    let workspaces: string[] = [];
-    $: workspaces = [
-        ...new Set([
-            ...$homescripts.map((h) => h.data.data.workspace),
-            "default",
-        ]),
-    ];
+    let workspaces: string[] = []
+    $: workspaces = [...new Set([...$homescripts.map(h => h.data.data.workspace), 'default'])]
 
     async function createHomescriptArg(
         key: string,
         prompt: string,
-        inputType: "string" | "number" | "boolean",
+        inputType: 'string' | 'number' | 'boolean',
         display:
-            | "type_default"
-            | "string_switches"
-            | "boolean_yes_no"
-            | "boolean_on_off"
-            | "number_hour"
-            | "number_minute" = "type_default"
+            | 'type_default'
+            | 'string_switches'
+            | 'boolean_yes_no'
+            | 'boolean_on_off'
+            | 'number_hour'
+            | 'number_minute' = 'type_default',
     ) {
-        $loading = true;
+        $loading = true
         let payload: homescriptArgData = {
             argKey: key,
             homescriptId: data.id,
             prompt: prompt,
-            mdIcon: "data_array",
+            mdIcon: 'data_array',
             inputType: inputType,
             display: display,
-        };
+        }
         // Is required because the user may change the active script while this function is loading
-        const selectionBefore = data.id;
+        const selectionBefore = data.id
         try {
             const res = await (
-                await fetch("/api/homescript/arg/add", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                await fetch('/api/homescript/arg/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload),
                 })
-            ).json();
-            if (!res.response.success) throw Error(res.response.error);
+            ).json()
+            if (!res.response.success) throw Error(res.response.error)
             // If successful, append the argument to the argument list of the current Homescript
-            const selectionIndex = $homescripts.findIndex(
-                (h) => h.data.data.id === selectionBefore
-            );
+            const selectionIndex = $homescripts.findIndex(h => h.data.data.id === selectionBefore)
             $homescripts[selectionIndex].arguments = [
                 ...$homescripts[selectionIndex].arguments,
                 {
                     id: res.id,
                     data: payload,
                 },
-            ];
+            ]
         } catch (err) {
-            $createSnackbar(`Could not create Homescript argument: ${err}`);
+            $createSnackbar(`Could not create Homescript argument: ${err}`)
         }
-        $loading = false;
+        $loading = false
     }
 
     // Requests deletion of a Homescript argument
     async function deleteHomescriptArgument(id: number) {
-        $loading = true;
+        $loading = true
         try {
             let res = await (
-                await fetch("/api/homescript/arg/delete", {
-                    method: "DELETE",
-                    headers: { "Content-Type": "application/json" },
+                await fetch('/api/homescript/arg/delete', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id }),
                 })
-            ).json();
-            if (!res.success) throw Error(res.error);
+            ).json()
+            if (!res.success) throw Error(res.error)
             // Remove the deleted argument from the argument list
-            const modifyIndex = $homescripts.findIndex(
-                (h) => h.data.data.id === data.id
-            );
-            $homescripts[modifyIndex].arguments = $homescripts[
-                modifyIndex
-            ].arguments.filter((a) => a.id !== id);
+            const modifyIndex = $homescripts.findIndex(h => h.data.data.id === data.id)
+            $homescripts[modifyIndex].arguments = $homescripts[modifyIndex].arguments.filter(
+                a => a.id !== id,
+            )
         } catch (err) {
-            $createSnackbar(`Could not delete Homescript argument: ${err}`);
+            $createSnackbar(`Could not delete Homescript argument: ${err}`)
         }
-        $loading = false;
+        $loading = false
     }
 </script>
 
 <IconPicker bind:open={iconPickerOpen} bind:selected={data.mdIcon} />
 
 <AddArgument
-    on:add={(event) => {
+    on:add={event => {
         createHomescriptArg(
             event.detail.argKey,
             event.detail.prompt,
             event.detail.inputType,
-            event.detail.display
-        );
+            event.detail.display,
+        )
     }}
     bind:open={addArgOpen}
 />
@@ -137,8 +128,8 @@
         </Button>
         <Button
             on:click={() => {
-                workspaces = [...workspaces, newWorkspaceInputText];
-                data.workspace = newWorkspaceInputText;
+                workspaces = [...workspaces, newWorkspaceInputText]
+                data.workspace = newWorkspaceInputText
             }}
         >
             <Label>Add</Label>
@@ -177,8 +168,8 @@
             noMatchesActionDisabled={false}
             bind:text={workspaceInputText}
             on:SMUIAutocomplete:noMatchesAction={() => {
-                newWorkspaceInputText = workspaceInputText;
-                newWorkspaceOpen = true;
+                newWorkspaceInputText = workspaceInputText
+                newWorkspaceOpen = true
             }}
         >
             <div slot="no-matches">
@@ -191,11 +182,21 @@
         <div class="toggles-actions__toggles">
             <span class="text-hint">Selection and visibility</span>
             <div>
-                <Switch bind:checked={data.schedulerEnabled} />
+                <Switch disabled={data.isWidget} bind:checked={data.schedulerEnabled} />
                 <span class="text-hint">Show Selection</span>
             </div>
             <div>
-                <Switch bind:checked={data.quickActionsEnabled} />
+                <Switch
+                    bind:checked={data.isWidget}
+                    on:SMUISwitch:change={() => {
+                        data.schedulerEnabled = false
+                        data.quickActionsEnabled = false
+                    }}
+                />
+                <span class="text-hint">Is Widget</span>
+            </div>
+            <div>
+                <Switch disabled={data.isWidget} bind:checked={data.quickActionsEnabled} />
                 <span class="text-hint">Quick actions </span>
             </div>
         </div>
@@ -204,7 +205,7 @@
             <span class="text-hint">Actions and theming</span>
             <Button
                 on:click={() => {
-                    iconPickerOpen = true;
+                    iconPickerOpen = true
                 }}
             >
                 Pick Icon
@@ -215,36 +216,31 @@
             </Button>
         </div>
     </div>
-    {#if $homescripts.find((h) => h.data.data.id === data.id) !== undefined}
+    {#if $homescripts.find(h => h.data.data.id === data.id) !== undefined}
         <div class="arguments">
             <span class="text-hint">Argument Prompts</span>
             <div
                 class="arguments__list"
-                class:empty={$homescripts.find(
-                    (h) => h.data.data.id === data.id
-                ).arguments.length === 0}
+                class:empty={$homescripts.find(h => h.data.data.id === data.id).arguments.length ===
+                    0}
             >
-                {#if $homescripts.find((h) => h.data.data.id === data.id).arguments.length === 0}
-                    <span class="text-disabled"
-                        >No argument prompts set up.</span
-                    >
-                    <IconButton
-                        class="material-icons"
-                        on:click={() => (addArgOpen = true)}>add</IconButton
+                {#if $homescripts.find(h => h.data.data.id === data.id).arguments.length === 0}
+                    <span class="text-disabled">No argument prompts set up.</span>
+                    <IconButton class="material-icons" on:click={() => (addArgOpen = true)}
+                        >add</IconButton
                     >
                 {:else}
-                    {#each $homescripts.find((h) => h.data.data.id === data.id).arguments as arg (arg.id)}
+                    {#each $homescripts.find(h => h.data.data.id === data.id).arguments as arg (arg.id)}
                         <Argument
                             on:delete={() => {
-                                deleteHomescriptArgument(arg.id);
+                                deleteHomescriptArgument(arg.id)
                             }}
                             bind:data={arg}
                         />
                     {/each}
                     <div class="argument">
-                        <IconButton
-                            class="material-icons"
-                            on:click={() => (addArgOpen = true)}>add</IconButton
+                        <IconButton class="material-icons" on:click={() => (addArgOpen = true)}
+                            >add</IconButton
                         >
                     </div>
                 {/if}
@@ -254,7 +250,7 @@
 </div>
 
 <style lang="scss">
-    @use "../../mixins" as *;
+    @use '../../mixins' as *;
     .container {
         display: flex;
         flex-wrap: wrap;

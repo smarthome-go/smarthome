@@ -1,50 +1,41 @@
 <script lang="ts">
-    import Box from "../Box.svelte";
-    import { createSnackbar } from "../../../global";
-    import { onMount } from "svelte";
-    import Reminder from "./Reminder.svelte";
-    import type { reminder } from "./types";
+    import Box from '../Box.svelte'
+    import { createSnackbar } from '../../../global'
+    import { onMount } from 'svelte'
+    import Reminder from './Reminder.svelte'
+    import type { reminder } from './types'
 
-    let reminders: reminder[] = [];
-    let remindersLoaded = false;
+    let reminders: reminder[] = []
+    let remindersLoaded = false
 
-    let loading = false;
+    let loading = false
 
     async function loadReminders() {
-        loading = true;
+        loading = true
         try {
-            const res = (await (
-                await fetch("/api/reminder/list")
-            ).json()) as reminder[];
-            reminders = res.sort((a, b) => b.priority - a.priority);
-            remindersLoaded = true;
+            const res = (await (await fetch('/api/reminder/list')).json()) as reminder[]
+            reminders = res.sort((a, b) => b.priority - a.priority)
+            remindersLoaded = true
         } catch (err) {
-            $createSnackbar("Could not load reminders");
+            $createSnackbar('Could not load reminders')
         }
-        loading = false;
+        loading = false
     }
 
-    onMount(loadReminders);
+    onMount(loadReminders)
 </script>
 
 <Box bind:loading>
     <a href="/reminders" slot="header" class="title">Reminders</a>
-    <div
-        class="reminders"
-        class:empty={remindersLoaded && reminders.length === 0}
-        slot="content"
-    >
+    <div class="reminders" class:empty={remindersLoaded && reminders.length === 0} slot="content">
         {#if remindersLoaded && reminders.length === 0}
             <i class="reminders__empty__icon material-icons">done</i>
-            <span class="text-hint">
-                All caught up, nothing to do</span
-            >
+            <span class="text-hint"> All caught up, nothing to do</span>
         {:else}
             {#each reminders as data (data.id)}
                 <Reminder
                     bind:data
-                    on:delete={() =>
-                        (reminders = reminders.filter((r) => r.id !== data.id))}
+                    on:delete={() => (reminders = reminders.filter(r => r.id !== data.id))}
                 />
             {/each}
         {/if}

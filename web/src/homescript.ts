@@ -33,6 +33,7 @@ export interface homescriptData {
     mdIcon: string
     code: string
     quickActionsEnabled: boolean
+    isWidget: boolean
     schedulerEnabled: boolean
     workspace: string
 }

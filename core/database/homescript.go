@@ -10,6 +10,7 @@ type HomescriptData struct {
 	Name                string `json:"name"`
 	Description         string `json:"description"`
 	QuickActionsEnabled bool   `json:"quickActionsEnabled"`
+	IsWidget            bool   `json:"isWidget"`
 	SchedulerEnabled    bool   `json:"schedulerEnabled"`
 	Code                string `json:"code"`
 	MDIcon              string `json:"mdIcon"`
@@ -29,6 +30,7 @@ func createHomescriptTable() error {
 		Description			TEXT,
 		QuickActionsEnabled BOOLEAN,
 		SchedulerEnabled	BOOLEAN,
+		isWidget			BOOLEAN,
 		Code				TEXT,
 		MDIcon				VARCHAR(100),
 		Workspace			VARCHAR(50),
@@ -57,11 +59,12 @@ func CreateNewHomescript(homescript Homescript) error {
 		Description,
 		QuickActionsEnabled,
 		SchedulerEnabled,
+		IsWidget,
 		Code,
 		MDIcon,
 		Workspace
 	)
-	VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
+	VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		log.Error("Failed to create new Homescript: preparing query failed: ", err.Error())
@@ -80,6 +83,7 @@ func CreateNewHomescript(homescript Homescript) error {
 		homescript.Data.Description,
 		homescript.Data.QuickActionsEnabled,
 		homescript.Data.SchedulerEnabled,
+		homescript.Data.IsWidget,
 		homescript.Data.Code,
 		homescript.Data.MDIcon,
 		homescript.Data.Workspace,
@@ -104,6 +108,7 @@ func ModifyHomescriptById(id string, homescript HomescriptData) error {
 		Description=?,
 		QuickActionsEnabled=?,
 		SchedulerEnabled=?,
+		IsWidget=?,
 		Code=?,
 		MDIcon=?,
 		Workspace=?
@@ -119,6 +124,7 @@ func ModifyHomescriptById(id string, homescript HomescriptData) error {
 		homescript.Description,
 		homescript.QuickActionsEnabled,
 		homescript.SchedulerEnabled,
+		homescript.IsWidget,
 		homescript.Code,
 		homescript.MDIcon,
 		homescript.Workspace,
@@ -141,6 +147,7 @@ func ListHomescriptOfUser(username string) ([]Homescript, error) {
 		Description,
 		QuickActionsEnabled,
 		SchedulerEnabled,
+		IsWidget,
 		Code,
 		MDIcon,
 		Workspace
@@ -168,6 +175,7 @@ func ListHomescriptOfUser(username string) ([]Homescript, error) {
 			&homescript.Data.Description,
 			&homescript.Data.QuickActionsEnabled,
 			&homescript.Data.SchedulerEnabled,
+			&homescript.Data.IsWidget,
 			&homescript.Data.Code,
 			&homescript.Data.MDIcon,
 			&homescript.Data.Workspace,
@@ -191,6 +199,7 @@ func ListHomescriptFiles() ([]Homescript, error) {
 		Description,
 		QuickActionsEnabled,
 		SchedulerEnabled,
+		IsWidget,
 		Code,
 		MDIcon,
 		Workspace
@@ -217,6 +226,7 @@ func ListHomescriptFiles() ([]Homescript, error) {
 			&homescript.Data.Description,
 			&homescript.Data.QuickActionsEnabled,
 			&homescript.Data.SchedulerEnabled,
+			&homescript.Data.IsWidget,
 			&homescript.Data.Code,
 			&homescript.Data.MDIcon,
 			&homescript.Data.Workspace,

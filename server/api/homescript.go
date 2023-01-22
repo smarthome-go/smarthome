@@ -29,6 +29,7 @@ type CreateHomescriptRequest struct {
 	Name                string `json:"name"`
 	Description         string `json:"description"`
 	QuickActionsEnabled bool   `json:"quickActionsEnabled"`
+	IsWidget            bool   `json:"isWidget"`
 	SchedulerEnabled    bool   `json:"schedulerEnabled"`
 	Code                string `json:"code"`
 	MDIcon              string `json:"mdIcon"`
@@ -105,9 +106,9 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		nil,
 	)
 	output := outputBuffer.String()
-	if len(output) > 100_000 {
-		output = "Output too large"
-	}
+	// if len(output) > 100_000 {
+	// 	output = "Output too large"
+	// }
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
 			Success:  res.ExitCode == 0,
@@ -214,9 +215,9 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		nil,
 	)
 	output := outputBuffer.String()
-	if len(output) > 100_000 {
-		output = "Output too large"
-	}
+	// if len(output) > 100_000 {
+	// 	output = "Output too large"
+	// }
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
 			Success:  res.ExitCode == 0,
@@ -361,6 +362,11 @@ func CreateNewHomescript(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to add Homescript", Error: fmt.Sprintf("the name: '%s' must not exceed 30 characters", request.Name)})
 		return
 	}
+	if request.IsWidget && (request.SchedulerEnabled || request.QuickActionsEnabled) {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to add Homescript", Error: "cannot use script in scheduler or as quick-action if it is a widget"})
+		return
+	}
 	homescriptToAdd := database.Homescript{
 		Owner: username,
 		Data: database.HomescriptData{
@@ -368,6 +374,7 @@ func CreateNewHomescript(w http.ResponseWriter, r *http.Request) {
 			Name:                request.Name,
 			Description:         request.Description,
 			QuickActionsEnabled: request.QuickActionsEnabled,
+			IsWidget:            request.IsWidget,
 			SchedulerEnabled:    request.SchedulerEnabled,
 			Code:                request.Code,
 			MDIcon:              request.MDIcon,
@@ -458,6 +465,7 @@ func ModifyHomescript(w http.ResponseWriter, r *http.Request) {
 		Description:         request.Description,
 		QuickActionsEnabled: request.QuickActionsEnabled,
 		SchedulerEnabled:    request.SchedulerEnabled,
+		IsWidget:            request.IsWidget,
 		Code:                request.Code,
 		MDIcon:              request.MDIcon,
 		Workspace:           request.Workspace,

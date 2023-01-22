@@ -6,6 +6,9 @@
     import Reminders from './Reminders/Reminders.svelte'
     import Weather from './Weather.svelte'
     import { data } from '../../global'
+    import Box from './Box.svelte'
+    import Progress from '../../components/Progress.svelte'
+    import { runHomescriptById } from '../../homescript'
 
     function hasPermission(permission: string): boolean {
         return (
@@ -13,13 +16,16 @@
             $data.userData.permissions.includes('*')
         )
     }
+
+    let homescripts = undefined
+    $: console.log(homescripts)
 </script>
 
 <Page>
     <div class="dash">
         <PowerUsage />
         {#if $data && hasPermission('homescript')}
-            <QuickActions />
+            <QuickActions bind:homescripts />
         {/if}
         <Weather />
         {#if ($data && hasPermission('automation')) || hasPermission('scheduler')}
@@ -27,6 +33,31 @@
         {/if}
         {#if $data && hasPermission('reminder')}
             <Reminders />
+        {/if}
+        {#if $data && hasPermission('homescript') && homescripts !== undefined}
+            {#each homescripts.filter(h => h.data.data.isWidget) as hms (hms.data.data.id)}
+                <Box loading={false}>
+                    <span slot="header" class="title">{hms.data.data.name}</span>
+                    <i slot="header-right" class="material-icons text-disabled"
+                        >{hms.data.data.mdIcon}</i
+                    >
+                    <div class="actions" slot="content">
+                        {#await runHomescriptById(hms.data.data.id, [])}
+                            <Progress type="circular" loading={true} />
+                        {:then res}
+                            {#if res.success}
+                                {@html res.output}
+                            {:else}
+                                <span style:color="var(--clr-error)">Widget Crashed</span>
+                                <br />
+                                <code style="font-size: .9rem">
+                                    {res.errors[0].kind}: {res.errors[0].message}
+                                </code>
+                            {/if}
+                        {/await}
+                    </div></Box
+                >
+            {/each}
         {/if}
         <div class="placeholder" />
         <div class="placeholder" />

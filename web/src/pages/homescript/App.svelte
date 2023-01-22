@@ -45,6 +45,7 @@
         mdIcon: 'code',
         code: '',
         quickActionsEnabled: false,
+        isWidget: false,
         schedulerEnabled: false,
         workspace: 'default',
     }
@@ -70,6 +71,7 @@
             data.code !== selectedData.code ||
             data.schedulerEnabled !== selectedData.schedulerEnabled ||
             data.quickActionsEnabled !== selectedData.quickActionsEnabled ||
+            data.isWidget !== selectedData.isWidget ||
             data.workspace !== selectedData.workspace
     }
 
@@ -87,6 +89,7 @@
         selectedData.mdIcon = selectedDataTemp.mdIcon
         selectedData.quickActionsEnabled = selectedDataTemp.quickActionsEnabled
         selectedData.schedulerEnabled = selectedDataTemp.schedulerEnabled
+        selectedData.isWidget = selectedDataTemp.isWidget
         selectedData.workspace = selectedDataTemp.workspace
     }
 
@@ -99,6 +102,7 @@
         $homescripts[replaceIndex].data.data.mdIcon = selectedData.mdIcon
         $homescripts[replaceIndex].data.data.quickActionsEnabled = selectedData.quickActionsEnabled
         $homescripts[replaceIndex].data.data.schedulerEnabled = selectedData.schedulerEnabled
+        $homescripts[replaceIndex].data.data.isWidget = selectedData.isWidget
         $homescripts[replaceIndex].data.data.workspace = selectedData.workspace
         updateSelectedData()
     }

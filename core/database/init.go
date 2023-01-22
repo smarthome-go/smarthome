@@ -90,6 +90,9 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 	if err := createHomescriptUrlCacheTable(); err != nil {
 		return err
 	}
+	if err := createHomescriptStorageTable(); err != nil {
+		return err
+	}
 	if err := createWeatherTable(); err != nil {
 		return err
 	}

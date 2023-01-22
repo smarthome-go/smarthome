@@ -115,7 +115,7 @@ func (m *Manager) Analyze(
 	diagnostics, _, _ := homescript.Analyze(
 		executor,
 		scriptCode,
-		make(map[string]homescript.Value),
+		scopeAdditions,
 		moduleStack,
 		moduleName,
 	)
@@ -214,7 +214,7 @@ func (m *Manager) Run(
 		executor,
 		&interpreterSigTerm,
 		scriptCode,
-		make(map[string]homescript.Value),
+		scopeAdditions,
 		valueArgs,
 		false,
 		10000,
