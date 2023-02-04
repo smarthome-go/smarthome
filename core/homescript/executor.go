@@ -38,6 +38,9 @@ type Executor struct {
 	// Output writer for asynchronous Homescript output (for example via the Web-UI)
 	OutputWriter io.Writer
 
+	// How many bytes were already written to the io writer
+	BytesWritten uint
+
 	// If set to true, a script will only check its correctness
 	// Does not actually modify or wait for any data
 	DryRun bool
@@ -138,6 +141,25 @@ func (self *Executor) Sleep(seconds float64) {
 	}
 }
 
+const IO_WRITER_BYTES_CAP = 5 * 1_000_000 // X * 1 Megabyte
+
+func (self *Executor) writeIO(data []byte) error {
+	bytes, err := self.OutputWriter.Write(data)
+	if err != nil {
+		return err
+	}
+
+	self.BytesWritten += uint(bytes)
+
+	if self.BytesWritten > IO_WRITER_BYTES_CAP {
+		return fmt.Errorf("IO writer capacity of %d bytes exceeded", IO_WRITER_BYTES_CAP)
+	}
+
+	fmt.Println(self.BytesWritten / 1_000_000)
+
+	return nil
+}
+
 // Emulates printing to the console
 // Instead, appends the provided message to the output of the executor
 // Exists in order to return the script's output to the user
@@ -145,9 +167,11 @@ func (self *Executor) Print(args ...string) error {
 	if self.DryRun {
 		return nil
 	}
-	if _, err := self.OutputWriter.Write([]byte(strings.Join(args, " "))); err != nil {
+
+	if err := self.writeIO([]byte(strings.Join(args, " "))); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -159,9 +183,11 @@ func (self *Executor) Println(args ...string) error {
 	if self.DryRun {
 		return nil
 	}
-	if _, err := self.OutputWriter.Write([]byte(strings.Join(args, " ") + "\n")); err != nil {
+
+	if err := self.writeIO([]byte(strings.Join(args, " ") + "\n")); err != nil {
 		return err
 	}
+
 	return nil
 }
 
