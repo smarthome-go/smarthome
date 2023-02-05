@@ -155,8 +155,6 @@ func (self *Executor) writeIO(data []byte) error {
 		return fmt.Errorf("IO writer capacity of %d bytes exceeded", IO_WRITER_BYTES_CAP)
 	}
 
-	fmt.Println(self.BytesWritten / 1_000_000)
-
 	return nil
 }
 
