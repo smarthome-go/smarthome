@@ -17,6 +17,8 @@ type AnalyzerExecutor struct {
 	Username string
 }
 
+func (self AnalyzerExecutor) IsAnalyzer() bool { return true }
+
 // Resolves a Homescript module
 func (self *AnalyzerExecutor) ResolveModule(id string) (string, bool, bool, error) {
 	script, found, err := database.GetUserHomescriptById(id, self.Username)
@@ -229,7 +231,7 @@ func (self *AnalyzerExecutor) GetStorage(key string) (*string, error) {
 	if utf8.RuneCountInString(key) > 50 {
 		return nil, errors.New("key is larger than 50 characters")
 	}
-	return nil, nil
+	return database.GetHmsStorageEntry(self.Username, key)
 }
 
 func (self *AnalyzerExecutor) SetStorage(key string, value string) error {
