@@ -106,7 +106,9 @@ func (self *Executor) checkSigTerm() bool {
 	}
 }
 
-func (self Executor) IsAnalyzer() bool { return false }
+func (self *Executor) IsAnalyzer() bool {
+	return false
+}
 
 // Resolves a Homescript module
 func (self *Executor) ResolveModule(id string) (string, bool, bool, error) {

@@ -282,6 +282,14 @@ func createUsersInDatabase(users []setupUser) error {
 				}
 			}
 		}
+
+		// Setup Homescript storage
+		for _, storageItem := range usr.HomescriptStorage {
+			if err := database.InsertHmsStorageEntry(usr.User.Username, storageItem.Key, storageItem.Value); err != nil {
+				return err
+			}
+		}
+
 		// Setup the user's reminders
 		for _, rem := range usr.Reminders {
 			if _, err := database.CreateNewReminder(

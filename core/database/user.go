@@ -120,6 +120,12 @@ func InsertUser(user FullUser) error {
 	VALUES(?, ?, ?, ?, ?, ?, ?, DEFAULT, DEFAULT)
 	ON DUPLICATE KEY
 	UPDATE
+		Forename=VALUES(Forename),
+		Surname=VALUES(Surname),
+		PrimaryColorDark=VALUES(PrimaryColorDark),
+		PrimaryColorLight=VALUES(PrimaryColorLight),
+		DarkTheme=VALUES(DarkTheme),
+		SchedulerEnabled=VALUES(SchedulerEnabled),
 		Password=VALUES(Password)
 	`)
 	if err != nil {
@@ -160,6 +166,9 @@ func DeleteUser(username string) error {
 		return err
 	}
 	if err := DeleteAllAutomationsFromUser(username); err != nil {
+		return err
+	}
+	if err := DeleteHomescriptStorageOfUser(username); err != nil {
 		return err
 	}
 	if err := DeleteAllHomescriptsOfUser(username); err != nil {

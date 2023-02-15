@@ -35,10 +35,11 @@ type setupCamera struct {
 }
 
 type setupUser struct {
-	User        setupUserData     `json:"user"`
-	Tokens      []setupAuthToken  `json:"tokens"`
-	Homescripts []setupHomescript `json:"homescripts"`
-	Reminders   []setupReminder   `json:"reminders"`
+	User              setupUserData            `json:"user"`
+	Tokens            []setupAuthToken         `json:"tokens"`
+	Homescripts       []setupHomescript        `json:"homescripts"`
+	HomescriptStorage []setupHomescriptStorage `json:"homescriptStorage"`
+	Reminders         []setupReminder          `json:"reminders"`
 
 	// Permissions
 	Permissions       []string `json:"permissions"`
@@ -80,6 +81,11 @@ type setupHomescriptArg struct {
 	MDIcon    string                   `json:"mdIcon"`    // A Google MD icon which will be displayed
 	InputType database.HmsArgInputType `json:"inputType"` // Specifies the expected data type
 	Display   database.HmsArgDisplay   `json:"display"`   // Specifies the visual display of the prompt (handled by GUI)
+}
+
+type setupHomescriptStorage struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 type setupAutomation struct {
@@ -228,6 +234,20 @@ func Export() (SetupStruct, error) {
 			})
 		}
 
+		// Homescript storage
+		storage, err := database.GetPersonalHomescriptStorage(user.Username)
+		if err != nil {
+			return SetupStruct{}, nil
+		}
+
+		storageOutput := make([]setupHomescriptStorage, 0)
+		for key, value := range storage {
+			storageOutput = append(storageOutput, setupHomescriptStorage{
+				Key:   key,
+				Value: value,
+			})
+		}
+
 		// Reminders
 		remindersDB, err := database.GetUserReminders(user.Username)
 		if err != nil {
@@ -278,6 +298,7 @@ func Export() (SetupStruct, error) {
 			},
 			Tokens:            tokens,
 			Homescripts:       homescripts,
+			HomescriptStorage: storageOutput,
 			Reminders:         reminders,
 			Permissions:       permissions,
 			SwitchPermissions: swPermissions,

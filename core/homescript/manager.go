@@ -20,6 +20,7 @@ var (
 	InitiatorExec       HomescriptInitiator = "exec_target"
 	InitiatorInternal   HomescriptInitiator = "internal"
 	InitiatorAPI        HomescriptInitiator = "api"
+	InitiatorWidget     HomescriptInitiator = "widget"
 )
 
 // Global manager

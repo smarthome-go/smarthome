@@ -1,6 +1,9 @@
 package database
 
-import "database/sql"
+import (
+	"database/sql"
+	"fmt"
+)
 
 // Creates the table containing Homescript storage keys and values
 // If the database fails, this function returns an error
@@ -71,4 +74,55 @@ func GetHmsStorageEntry(user string, key string) (*string, error) {
 	}
 
 	return &value, nil
+}
+
+func DeleteHomescriptStorageOfUser(username string) error {
+	query, err := db.Prepare(`
+	DELETE FROM homescriptStorage
+	WHERE owner=?
+	`)
+	if err != nil {
+		log.Error(fmt.Sprintf("Could not delete all homescript storage entries of user `%s`: Preparing query failed: %s", username, err.Error()))
+		return err
+	}
+
+	if _, err := query.Exec(username); err != nil {
+		log.Error(fmt.Sprintf("Could not delete all homescript storage entries of user `%s`: Executing query failed: %s", username, err.Error()))
+		return err
+	}
+
+	return nil
+}
+
+func GetPersonalHomescriptStorage(username string) (map[string]string, error) {
+	query, err := db.Prepare(`
+	SELECT VarKey, VarValue
+	From homescriptStorage
+	WHERE owner=?
+	`)
+	if err != nil {
+		log.Error(fmt.Sprintf("Could not get homescript storage entries of user `%s`: Preparing query failed: %s", username, err.Error()))
+		return nil, err
+	}
+	res, err := query.Query(username)
+	if err != nil {
+		log.Error(fmt.Sprintf("Could not get homescript storage entries of user `%s`: Executing query failed: %s", username, err.Error()))
+		return nil, err
+	}
+
+	output := make(map[string]string)
+
+	for res.Next() {
+		var key string
+		var value string
+
+		if err := res.Scan(&key, &value); err != nil {
+			log.Error(fmt.Sprintf("Could not get homescript storage entries of user `%s`: Scanning query result failed: %s", username, err.Error()))
+			return nil, err
+		}
+
+		output[key] = value
+	}
+
+	return output, nil
 }

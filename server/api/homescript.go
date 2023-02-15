@@ -53,8 +53,9 @@ type LintHomescriptStringRequest struct {
 }
 
 type HomescriptIdRunRequest struct {
-	Id   string          `json:"id"`
-	Args []HomescriptArg `json:"args"`
+	Id       string          `json:"id"`
+	Args     []HomescriptArg `json:"args"`
+	IsWidget bool            `json:"isWidget"`
 }
 
 type HomescriptIdRequest struct {
@@ -92,6 +93,12 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "Homescript not found", Error: "no data associated with id"})
 		return
 	}
+
+	initiator := homescript.InitiatorAPI
+	if request.IsWidget {
+		initiator = homescript.InitiatorWidget
+	}
+
 	// Run the Homescript
 	var outputBuffer bytes.Buffer
 	res := homescript.HmsManager.Run(
@@ -100,15 +107,13 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		hmsData.Data.Code,
 		args,
 		make([]string, 0),
-		homescript.InitiatorAPI,
+		initiator,
 		make(chan int),
 		&outputBuffer,
 		nil,
 	)
 	output := outputBuffer.String()
-	// if len(output) > 100_000 {
-	// 	output = "Output too large"
-	// }
+
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
 			Success:  res.ExitCode == 0,
