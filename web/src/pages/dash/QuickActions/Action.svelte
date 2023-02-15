@@ -51,7 +51,7 @@
         running = true;
         dispatch("run", null);
         try {
-            const hmsRes = await runHomescriptById(data.data.data.id, args);
+            const hmsRes = await runHomescriptById(data.data.data.id, args, false);
 
             success = hmsRes.success;
             failure = !success;

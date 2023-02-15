@@ -89,6 +89,7 @@
             code: '',
             quickActionsEnabled: false,
             schedulerEnabled: false,
+            isWidget: false,
             workspace: 'default',
         },
     }
@@ -192,7 +193,7 @@
             output = ''
             currentExecRes = undefined
             if (currentData.data.code === '') output = 'Nothing to run.'
-            else runCodeWS(currentData.data.code, args)
+            else runCodeWS(args)
         } catch (err) {
             $createSnackbar(`Failed to run '${currentScript}': ${err}`)
         }
@@ -247,7 +248,7 @@
     }
 
     let conn: WebSocket = undefined
-    function runCodeWS(code: string, args: homescriptArgSubmit[]) {
+    function runCodeWS(args: homescriptArgSubmit[]) {
         let url = 'ws://' + location.host + '/api/homescript/run/ws'
 
         conn = new WebSocket(url)
@@ -295,7 +296,6 @@
                     $createSnackbar(`Websocket error: unknown message kind: ${message.kind}`)
                 }
             } catch (err) {
-                console.log(evt.data)
                 console.error(err)
                 $createSnackbar(`Websocket error: ${err}`)
             }

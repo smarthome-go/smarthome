@@ -51,7 +51,7 @@
         loading = true;
         try {
             jobs = await getRunningJobs();
-            running = jobs.length;
+            running = jobs.filter(j => j.initiator != "widget").length
         } catch (err) {
             $createSnackbar(`Failed to load current Homescript jobs: ${err}`);
         }

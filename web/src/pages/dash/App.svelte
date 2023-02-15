@@ -18,7 +18,6 @@
     }
 
     let homescripts = undefined
-    $: console.log(homescripts)
 </script>
 
 <Page>
@@ -42,7 +41,7 @@
                         >{hms.data.data.mdIcon}</i
                     >
                     <div class="actions" slot="content">
-                        {#await runHomescriptById(hms.data.data.id, [])}
+                        {#await runHomescriptById(hms.data.data.id, [], true)}
                             <Progress type="circular" loading={true} />
                         {:then res}
                             {#if res.success}

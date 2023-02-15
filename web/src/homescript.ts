@@ -141,11 +141,11 @@ export const displayOpts: DisplayOpt[] = [
 // Sends an execution request to the server
 // Returns the Homescript Response
 // Can throw an error if non-Homescript errors occur
-export async function runHomescriptById(id: string, args: homescriptArgSubmit[]): Promise<homescriptResponse> {
+export async function runHomescriptById(id: string, args: homescriptArgSubmit[], isWidget: boolean): Promise<homescriptResponse> {
     const res = await fetch(`/api/homescript/run`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, args: args }),
+        body: JSON.stringify({ id, args, isWidget}),
     })
     if (res.status !== 200 && res.status !== 500) throw Error(await (res.json()))
     return await (res.json())

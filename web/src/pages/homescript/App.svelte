@@ -287,7 +287,7 @@
     // Used when the run button is pressed, error handling is accomplished here
     async function runCurrentWithArgs(args: homescriptArgSubmit[]) {
         try {
-            const hmsRes = await runHomescriptById(selection, args)
+            const hmsRes = await runHomescriptById(selection, args, false)
             hmsExecutionResults = [
                 ...hmsExecutionResults,
                 {
