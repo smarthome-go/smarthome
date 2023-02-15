@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
-	"github.com/smarthome-go/smarthome/core/scheduler/automation"
+	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/core/user"
 	"github.com/stretchr/testify/assert"
 )
@@ -18,8 +18,8 @@ func TestExportGeneration(t *testing.T) {
 	log := logrus.New()
 	event.InitLogger(log)
 	user.InitLogger(log)
-	automation.InitLogger(log)
-	assert.NoError(t, automation.Init())
+	homescript.InitLogger(log)
+	assert.NoError(t, homescript.InitAutomations())
 	///
 	/// Part 1: Mock data creation
 	///
@@ -145,7 +145,7 @@ func TestExportGeneration(t *testing.T) {
 		},
 	}))
 	// Create automation
-	_, err = automation.CreateNewAutomation(
+	_, err = homescript.CreateNewAutomation(
 		"My Automation",
 		"This is a description.",
 		4,

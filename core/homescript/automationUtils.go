@@ -1,4 +1,4 @@
-package automation
+package homescript
 
 import (
 	"errors"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
+	"github.com/smarthome-go/smarthome/core/homescript/automation"
 	"github.com/smarthome-go/smarthome/core/user"
 )
 
@@ -37,7 +38,7 @@ func CreateNewAutomation(
 ) (uint, error) {
 	// Generate a cron expression based on the input data
 	// The `days` slice should not contain more than 7 elements
-	cronExpression, err := GenerateCronExpression(
+	cronExpression, err := automation.GenerateCronExpression(
 		hour,
 		minute,
 		days,
@@ -91,17 +92,17 @@ func CreateNewAutomation(
 	}
 	if timingMode != database.TimingNormal {
 		// Add a dummy scheduler which does nothing in order to prevent the modify function from failing
-		automationJob := scheduler.Cron(cronExpression)
+		automationJob := automationScheduler.Cron(cronExpression)
 		automationJob.Tag(fmt.Sprintf("%d", newAutomationId))
 		if _, err := automationJob.Do(func() {}); err != nil {
 			log.Error("Failed to register dummy cron job: ", err.Error())
 			return 0, err
 		}
 		// If the timing mode is set to either `sunrise` or `sunset`, do not activate the automation, update it instead
-		return newAutomationId, updateJobTime(newAutomationId, timingMode == database.TimingSunrise)
+		return newAutomationId, UpdateJobTime(newAutomationId, timingMode == database.TimingSunrise)
 	}
 	// Otherwise, register a cron job for the automation
-	automationJob := scheduler.Cron(cronExpression)
+	automationJob := automationScheduler.Cron(cronExpression)
 	automationJob.Tag(fmt.Sprintf("%d", newAutomationId))
 	if _, err = automationJob.Do(automationRunnerFunc, newAutomationId); err != nil {
 		log.Error("Failed to register cron job: ", err.Error())
@@ -135,7 +136,7 @@ func RemoveAutomation(automationId uint) error {
 		log.Trace(fmt.Sprintf("Removed an already disabled automation id: '%d'", automationId))
 		return nil
 	}
-	if err := scheduler.RemoveByTag(fmt.Sprintf("%d", automationId)); err != nil {
+	if err := automationScheduler.RemoveByTag(fmt.Sprintf("%d", automationId)); err != nil {
 		log.Error("Failed to remove automation item: could not stop cron job: ", err.Error())
 		return err
 	}
@@ -162,24 +163,24 @@ func GetUserAutomations(username string) ([]Automation, error) {
 		log.Error("Failed to list automations of user: database failure: ", err.Error())
 		return nil, err
 	}
-	for _, automation := range automationsTemp {
-		cronDescription, err := generateHumanReadableCronExpression(automation.Data.CronExpression)
+	for _, automationItem := range automationsTemp {
+		cronDescription, err := automation.GenerateHumanReadableCronExpression(automationItem.Data.CronExpression)
 		if err != nil {
 			log.Error("Failed to list automations of user: could not generate cron description: ", err.Error())
 			return nil, err
 		}
 		automations = append(automations,
 			Automation{
-				Id:              automation.Id,
-				Name:            automation.Data.Name,
-				Description:     automation.Data.Description,
-				CronExpression:  automation.Data.CronExpression,
+				Id:              automationItem.Id,
+				Name:            automationItem.Data.Name,
+				Description:     automationItem.Data.Description,
+				CronExpression:  automationItem.Data.CronExpression,
 				CronDescription: cronDescription,
-				HomescriptId:    automation.Data.HomescriptId,
-				Owner:           automation.Owner,
-				Enabled:         automation.Data.Enabled,
-				DisableOnce:     automation.Data.DisableOnce,
-				TimingMode:      automation.Data.TimingMode,
+				HomescriptId:    automationItem.Data.HomescriptId,
+				Owner:           automationItem.Owner,
+				Enabled:         automationItem.Data.Enabled,
+				DisableOnce:     automationItem.Data.DisableOnce,
+				TimingMode:      automationItem.Data.TimingMode,
 			},
 		)
 	}
@@ -193,26 +194,26 @@ func GetUserAutomationById(username string, automationId uint) (Automation, bool
 		log.Error("Failed to get user automation by id: database failure: ", err.Error())
 		return Automation{}, false, err
 	}
-	for _, automation := range automationsTemp {
-		if automation.Id != automationId {
+	for _, automationItem := range automationsTemp {
+		if automationItem.Id != automationId {
 			continue // Skip any automations which don't match
 		}
-		cronDescription, err := generateHumanReadableCronExpression(automation.Data.CronExpression)
+		cronDescription, err := automation.GenerateHumanReadableCronExpression(automationItem.Data.CronExpression)
 		if err != nil {
 			log.Error("Failed to get user automation by id: could not generate cron description: ", err.Error())
 			return Automation{}, false, err
 		}
 		return Automation{
-			Id:              automation.Id,
-			Name:            automation.Data.Name,
-			Description:     automation.Data.Description,
-			CronExpression:  automation.Data.CronExpression,
+			Id:              automationItem.Id,
+			Name:            automationItem.Data.Name,
+			Description:     automationItem.Data.Description,
+			CronExpression:  automationItem.Data.CronExpression,
 			CronDescription: cronDescription,
-			HomescriptId:    automation.Data.HomescriptId,
-			Owner:           automation.Owner,
-			Enabled:         automation.Data.Enabled,
-			DisableOnce:     automation.Data.DisableOnce,
-			TimingMode:      automation.Data.TimingMode,
+			HomescriptId:    automationItem.Data.HomescriptId,
+			Owner:           automationItem.Owner,
+			Enabled:         automationItem.Data.Enabled,
+			DisableOnce:     automationItem.Data.DisableOnce,
+			TimingMode:      automationItem.Data.TimingMode,
 		}, true, nil
 	}
 	return Automation{}, false, nil
@@ -221,7 +222,7 @@ func GetUserAutomationById(username string, automationId uint) (Automation, bool
 // Changes the metadata of a given automation, then restarts it so that it uses the updated values such as execution time
 // Is also used after an automation with non-normal timing has been added
 func ModifyAutomationById(automationId uint, newAutomation database.AutomationData) error {
-	if !IsValidCronExpression(newAutomation.CronExpression) {
+	if !automation.IsValidCronExpression(newAutomation.CronExpression) {
 		log.Error("Failed to modify automation: invalid cron expression provided")
 		return errors.New("failed to modify automation: invalid cron expression provided")
 	}
@@ -243,21 +244,21 @@ func ModifyAutomationById(automationId uint, newAutomation database.AutomationDa
 			return errors.New("could not update launch time: failed to obtain server config")
 		}
 		// Calculate both the sunrise and sunset time
-		sunRise, sunSet := CalculateSunRiseSet(config.Latitude, config.Longitude)
+		sunRise, sunSet := automation.CalculateSunRiseSet(config.Latitude, config.Longitude)
 		// Select the time which is desired
-		var finalTime SunTime
+		var finalTime automation.SunTime
 		if newAutomation.TimingMode == database.TimingSunrise {
 			finalTime = sunRise
 		} else {
 			finalTime = sunSet
 		}
 		// Extract the days from the cron-expression
-		days, err := getDaysFromCronExpression(newAutomation.CronExpression)
+		days, err := automation.GetDaysFromCronExpression(newAutomation.CronExpression)
 		if err != nil {
 			log.Error(fmt.Sprintf("Failed to extract days from cron-expression '%s': Error: %s", newAutomation.CronExpression, err))
 			return err
 		}
-		cronExpression, err := GenerateCronExpression(uint8(finalTime.Hour), uint8(finalTime.Minute), days)
+		cronExpression, err := automation.GenerateCronExpression(uint8(finalTime.Hour), uint8(finalTime.Minute), days)
 		if err != nil {
 			return err
 		}
@@ -278,7 +279,7 @@ func ModifyAutomationById(automationId uint, newAutomation database.AutomationDa
 	}
 	if automationBefore.Data.Enabled && serverConfig.AutomationEnabled {
 		// After the metadata has been changed, restart the scheduler
-		if err := scheduler.RemoveByTag(fmt.Sprintf("%d", automationId)); err != nil {
+		if err := automationScheduler.RemoveByTag(fmt.Sprintf("%d", automationId)); err != nil {
 			log.Error("Failed to remove automation item: could not stop cron job: ", err.Error())
 			return err
 		}
@@ -286,7 +287,7 @@ func ModifyAutomationById(automationId uint, newAutomation database.AutomationDa
 	// Restart the scheduler after the old one was disabled
 	// Only add the scheduler if it is enabled in the new version and the server's automation system is active
 	if newAutomation.Enabled && serverConfig.AutomationEnabled {
-		automationJob := scheduler.Cron(newAutomation.CronExpression)
+		automationJob := automationScheduler.Cron(newAutomation.CronExpression)
 		automationJob.Tag(fmt.Sprintf("%d", automationId))
 		if _, err := automationJob.Do(automationRunnerFunc, automationId); err != nil {
 			log.Error("Failed to modify automation, registering cron job failed: ", err.Error())

@@ -17,8 +17,6 @@ import (
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/hardware"
 	"github.com/smarthome-go/smarthome/core/homescript"
-	"github.com/smarthome-go/smarthome/core/scheduler/automation"
-	"github.com/smarthome-go/smarthome/core/scheduler/scheduler"
 	"github.com/smarthome-go/smarthome/core/user"
 	"github.com/smarthome-go/smarthome/core/utils"
 	"github.com/smarthome-go/smarthome/server/api"
@@ -66,6 +64,7 @@ func main() {
 
 	// Initialize module loggers
 	config.InitLogger(log)
+	homescript.InitLogger(log)
 	camera.InitLogger(log)
 	database.InitLogger(log)
 	middleware.InitLogger(log)
@@ -75,9 +74,6 @@ func main() {
 	user.InitLogger(log)
 	hardware.InitLogger(log)
 	event.InitLogger(log)
-	homescript.InitLogger(log)
-	automation.InitLogger(log)
-	scheduler.InitLogger(log)
 	reminder.InitLogger(log)
 
 	// Read configuration file
@@ -203,11 +199,11 @@ func main() {
 	}
 
 	// Schedulers
-	if err := automation.Init(); err != nil { // Initializes the automation scheduler
+	if err := homescript.InitAutomations(); err != nil { // Initializes the automation scheduler
 		log.Error("Failed to activate automation system: ", err.Error())
 		os.Exit(1)
 	}
-	if err := scheduler.Init(); err != nil { // Initializes the normal scheduler
+	if err := homescript.InitScheduler(); err != nil { // Initializes the normal scheduler
 		log.Error("Failed to activate scheduler system: ", err.Error())
 		os.Exit(1)
 	}

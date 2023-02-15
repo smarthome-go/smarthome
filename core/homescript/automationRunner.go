@@ -1,4 +1,4 @@
-package automation
+package homescript
 
 import (
 	"bytes"
@@ -6,7 +6,6 @@ import (
 
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
-	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/core/user"
 )
 
@@ -30,7 +29,7 @@ func automationRunnerFunc(id uint) {
 			fmt.Sprintf("Automation with id: '%d' could not be executed because it could not be found in the database", id),
 		)
 		// Abort this automation in order to prevent future errors
-		if err := scheduler.RemoveByTag(fmt.Sprintf("%d", id)); err != nil {
+		if err := automationScheduler.RemoveByTag(fmt.Sprintf("%d", id)); err != nil {
 			log.Error("Failed to remove dangling automation: could not stop cron job: ", err.Error())
 			return
 		}
@@ -88,7 +87,7 @@ func automationRunnerFunc(id uint) {
 	}
 	// If the timing mode is set to either 'sunrise' or 'sunset', a new time with according cron-expression should be generated
 	if job.Data.TimingMode != database.TimingNormal {
-		if err := updateJobTime(id, job.Data.TimingMode == database.TimingSunrise); err != nil {
+		if err := UpdateJobTime(id, job.Data.TimingMode == database.TimingSunrise); err != nil {
 			log.Error("Failed to run automation: could not update next launch time: ", err.Error())
 			event.Error(
 				"Automation Failed",
@@ -142,12 +141,12 @@ func automationRunnerFunc(id uint) {
 		}
 		return
 	}
-	res, err := homescript.HmsManager.RunById(
+	res, err := HmsManager.RunById(
 		job.Data.HomescriptId,
 		job.Owner,
 		make([]string, 0),
 		make(map[string]string, 0),
-		homescript.InitiatorAutomation,
+		InitiatorAutomation,
 		make(chan int),
 		&bytes.Buffer{},
 		nil,

@@ -6,7 +6,8 @@ import (
 	"net/http"
 
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/scheduler/automation"
+	"github.com/smarthome-go/smarthome/core/homescript"
+	"github.com/smarthome-go/smarthome/core/homescript/automation"
 	"github.com/smarthome-go/smarthome/server/middleware"
 )
 
@@ -49,7 +50,7 @@ func GetUserAutomations(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	automations, err := automation.GetUserAutomations(username)
+	automations, err := homescript.GetUserAutomations(username)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		Res(w, Response{Success: false, Message: "failed to list personal automations", Error: "internal server error"})
@@ -129,7 +130,7 @@ func CreateNewAutomation(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to create new automation", Error: "invalid hour and / or minute"})
 		return
 	}
-	id, err := automation.CreateNewAutomation(
+	id, err := homescript.CreateNewAutomation(
 		request.Name,
 		request.Description,
 		uint8(request.Hour),
@@ -164,7 +165,7 @@ func RemoveAutomation(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	_, doesExists, err := automation.GetUserAutomationById(username, request.Id) // Checks if the automation exists and if the user is allowed to delete it
+	_, doesExists, err := homescript.GetUserAutomationById(username, request.Id) // Checks if the automation exists and if the user is allowed to delete it
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		Res(w, Response{Success: false, Message: "failed to delete automation", Error: "backend failure"})
@@ -175,7 +176,7 @@ func RemoveAutomation(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to delete automation", Error: "invalid id / not found"})
 		return
 	}
-	if err := automation.RemoveAutomation(request.Id); err != nil {
+	if err := homescript.RemoveAutomation(request.Id); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		Res(w, Response{Success: false, Message: "failed to delete automation", Error: "backend failure"})
 		return
@@ -199,7 +200,7 @@ func ModifyAutomation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Check if the requested automation is valid
-	_, automationValid, err := automation.GetUserAutomationById(username, request.Id)
+	_, automationValid, err := homescript.GetUserAutomationById(username, request.Id)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to modify automation", Error: "database failure"})
@@ -278,7 +279,7 @@ func ModifyAutomation(w http.ResponseWriter, r *http.Request) {
 		DisableOnce:    request.DisableOnce,
 		TimingMode:     request.TimingMode,
 	}
-	if err := automation.ModifyAutomationById(request.Id, newAutomation); err != nil {
+	if err := homescript.ModifyAutomationById(request.Id, newAutomation); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		Res(w, Response{Success: false, Message: "failed to modify automation", Error: "internal server error"})
 		return
@@ -309,13 +310,13 @@ func ChangeActivationAutomation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if request.Enabled {
-		if err := automation.ActivateAutomationSystem(); err != nil {
+		if err := homescript.ActivateAutomationSystem(); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			Res(w, Response{Success: false, Message: "failed to activate automations", Error: "internal server error"})
 			return
 		}
 	} else {
-		if err := automation.DeactivateAutomationSystem(); err != nil {
+		if err := homescript.DeactivateAutomationSystem(); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			Res(w, Response{Success: false, Message: "failed to deactivate automations", Error: "internal server error"})
 			return
@@ -324,13 +325,13 @@ func ChangeActivationAutomation(w http.ResponseWriter, r *http.Request) {
 	if err := database.SetAutomationSystemActivation(request.Enabled); err != nil {
 		// If this fails, rollback the change
 		if !request.Enabled {
-			if err := automation.ActivateAutomationSystem(); err != nil {
+			if err := homescript.ActivateAutomationSystem(); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				Res(w, Response{Success: false, Message: "failed to activate automations", Error: "internal server error"})
 				return
 			}
 		} else {
-			if err := automation.DeactivateAutomationSystem(); err != nil {
+			if err := homescript.DeactivateAutomationSystem(); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				Res(w, Response{Success: false, Message: "failed to deactivate automations", Error: "internal server error"})
 				return

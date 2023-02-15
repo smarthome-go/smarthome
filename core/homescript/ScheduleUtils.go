@@ -1,4 +1,4 @@
-package scheduler
+package homescript
 
 import (
 	"fmt"
@@ -24,8 +24,11 @@ func CreateNewSchedule(data database.ScheduleData, owner string) error {
 		log.Error("Failed to create new schedule: database failure: ", err.Error())
 		return err
 	}
+
+	fmt.Println(newScheduleId)
+
 	// Prepare the job for go-cron
-	schedulerJob := scheduler.Every(1).Day().At(fmt.Sprintf("%02d:%02d", data.Hour, data.Minute))
+	schedulerJob := scheduleScheduler.Every(1).Day().At(fmt.Sprintf("%02d:%02d", data.Hour, data.Minute))
 	schedulerJob.Tag(fmt.Sprintf("%d", newScheduleId))
 	schedulerJob.LimitRunsTo(1)
 	if _, err := schedulerJob.Do(scheduleRunnerFunc, newScheduleId); err != nil {
@@ -43,7 +46,7 @@ func RemoveScheduleById(id uint) error {
 		log.Error("Failed to remove schedule: could not delete schedule from database: ", err.Error())
 		return err
 	}
-	if err := scheduler.RemoveByTag(fmt.Sprintf("%d", id)); err != nil {
+	if err := scheduleScheduler.RemoveByTag(fmt.Sprintf("%d", id)); err != nil {
 		log.Error("Failed to remove schedule: could not abort schedule: ", err.Error())
 		return err
 	}
@@ -59,12 +62,12 @@ func ModifyScheduleById(id uint, newSchedule database.ScheduleData) error {
 		log.Error("Failed to modify schedule by id: ", err.Error())
 		return err
 	}
-	if err := scheduler.RemoveByTag(fmt.Sprintf("%d", id)); err != nil {
+	if err := scheduleScheduler.RemoveByTag(fmt.Sprintf("%d", id)); err != nil {
 		log.Error("Failed to modify schedule: could not abort schedule: ", err.Error())
 		return err
 	}
 	// Prepare the job for go-cron
-	schedulerJob := scheduler.Every(1).Day().At(fmt.Sprintf("%02d:%02d", newSchedule.Hour, newSchedule.Minute))
+	schedulerJob := scheduleScheduler.Every(1).Day().At(fmt.Sprintf("%02d:%02d", newSchedule.Hour, newSchedule.Minute))
 	schedulerJob.Tag(fmt.Sprintf("%d", id))
 	schedulerJob.LimitRunsTo(1)
 	if _, err := schedulerJob.Do(scheduleRunnerFunc, id); err != nil {

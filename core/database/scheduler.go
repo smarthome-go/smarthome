@@ -115,7 +115,7 @@ func CreateNewSchedule(
 }
 
 // Returns a schedule struct which matches the given id
-// If the id does not match a struct, a `false`` is returned
+// If the id does not match a struct, a `false“ is returned
 func GetScheduleById(id uint) (Schedule, bool, error) {
 	query, err := db.Prepare(`
 	SELECT

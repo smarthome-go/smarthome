@@ -13,8 +13,6 @@ import (
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/hardware"
 	"github.com/smarthome-go/smarthome/core/homescript"
-	"github.com/smarthome-go/smarthome/core/scheduler/automation"
-	"github.com/smarthome-go/smarthome/core/scheduler/scheduler"
 	"github.com/smarthome-go/smarthome/core/user"
 	"github.com/smarthome-go/smarthome/core/utils"
 	"github.com/smarthome-go/smarthome/server/api"
@@ -41,8 +39,6 @@ func TestServer(t *testing.T) {
 	hardware.InitLogger(log)
 	event.InitLogger(log)
 	homescript.InitLogger(log)
-	automation.InitLogger(log)
-	scheduler.InitLogger(log)
 
 	// Simulates a typical server startup
 
@@ -76,10 +72,10 @@ func TestServer(t *testing.T) {
 	assert.NoError(t, database.SetAutomationSystemActivation(true))
 
 	// Initializes the automation scheduler
-	assert.NoError(t, automation.Init())
+	assert.NoError(t, homescript.InitAutomations())
 
 	// Initializes the normal scheduler
-	assert.NoError(t, scheduler.Init())
+	assert.NoError(t, homescript.InitScheduler())
 
 	r := routes.NewRouter()
 	middleware.InitWithRandomKey()

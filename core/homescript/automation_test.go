@@ -1,37 +1,15 @@
-package automation
+package homescript
 
 import (
-	"os"
 	"testing"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/hardware"
-	"github.com/smarthome-go/smarthome/core/homescript"
+	"github.com/smarthome-go/smarthome/core/homescript/automation"
 )
-
-// Sets up the tests dependencies
-func TestMain(m *testing.M) {
-	log := logrus.New()
-	log.Level = logrus.FatalLevel
-	InitLogger(log)
-	event.InitLogger(log)
-	homescript.InitLogger(log)
-	hardware.InitLogger(log)
-	if err := initDB(true); err != nil {
-		panic(err.Error())
-	}
-	if err := createMockData(); err != nil {
-		panic(err.Error())
-	}
-	hardware.Init()
-	code := m.Run()
-	os.Exit(code)
-}
 
 // Creates mock data, including a room, switches and homescripts
 func createMockData() error {
@@ -133,33 +111,11 @@ func createMockData() error {
 	return nil
 }
 
-func initDB(args ...bool) error {
-	database.InitLogger(logrus.New())
-	if err := database.Init(database.DatabaseConfig{
-		Username: "smarthome",
-		Password: "testing",
-		Hostname: "localhost",
-		Database: "smarthome",
-		Port:     3330,
-	}, "admin",
-	); err != nil {
-		return err
-	}
-	if len(args) > 0 {
-		if err := database.DeleteTables(); err != nil {
-			return err
-		}
-		time.Sleep(time.Second)
-		return initDB()
-	}
-	return nil
-}
-
 // Creates a regular automation and checks if it is executed on time
 func TestAutomation(t *testing.T) {
 	now := time.Now()
 	then := now.Add(time.Minute)
-	if err := Init(); err != nil {
+	if err := InitAutomations(); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -205,7 +161,7 @@ func TestAutomation(t *testing.T) {
 func TestModificationToDifferentScript(t *testing.T) {
 	now := time.Now()
 	then := now.Add(time.Minute)
-	if err := Init(); err != nil {
+	if err := InitAutomations(); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -226,7 +182,7 @@ func TestModificationToDifferentScript(t *testing.T) {
 		return
 	}
 	// Modify second automation to use the other homescript file
-	cronExpression, err := GenerateCronExpression(uint8(then.Hour()), uint8(then.Minute()), []uint8{0, 1, 2, 3, 4, 5, 6})
+	cronExpression, err := automation.GenerateCronExpression(uint8(then.Hour()), uint8(then.Minute()), []uint8{0, 1, 2, 3, 4, 5, 6})
 	if err != nil {
 		t.Error(err.Error())
 		return
@@ -270,7 +226,7 @@ func TestModificationToDifferentScript(t *testing.T) {
 func TestModificationToAbort(t *testing.T) {
 	now := time.Now()
 	then := now.Add(time.Minute)
-	if err := Init(); err != nil {
+	if err := InitAutomations(); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -370,7 +326,7 @@ func TestStartInactiveAutomation(t *testing.T) {
 
 // Tests if the different timing modes `sunrise` and `sunset` generate appropriate Cron-Expressions
 func TestTimingModes(t *testing.T) {
-	if err := Init(); err != nil {
+	if err := InitAutomations(); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -430,7 +386,7 @@ func TestTimingModes(t *testing.T) {
 func TestUserDisabled(t *testing.T) {
 	now := time.Now()
 	then := now.Add(time.Minute)
-	if err := Init(); err != nil {
+	if err := InitAutomations(); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -476,7 +432,7 @@ func TestUserDisabled(t *testing.T) {
 func TestDisableOnce(t *testing.T) {
 	now := time.Now()
 	then := now.Add(time.Minute)
-	if err := Init(); err != nil {
+	if err := InitAutomations(); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -499,7 +455,7 @@ func TestDisableOnce(t *testing.T) {
 		return
 	}
 	// Create a manual cron expression
-	cronExpr, err := GenerateCronExpression(uint8(then.Hour()), uint8(then.Minute()), []uint8{0, 1, 2, 3, 4, 5, 6})
+	cronExpr, err := automation.GenerateCronExpression(uint8(then.Hour()), uint8(then.Minute()), []uint8{0, 1, 2, 3, 4, 5, 6})
 	assert.NoError(t, err)
 
 	// Disable the automation once
@@ -514,10 +470,10 @@ func TestDisableOnce(t *testing.T) {
 	}))
 
 	// Check if the `DisableOnce` boolean has been set to `true`
-	automation, found, err := GetUserAutomationById("admin", id)
+	automationDb, found, err := GetUserAutomationById("admin", id)
 	assert.NoError(t, err)
 	assert.True(t, found)
-	assert.True(t, automation.DisableOnce)
+	assert.True(t, automationDb.DisableOnce)
 
 	invalid := false
 	for i := 0; i < 9; i++ {
@@ -539,20 +495,20 @@ func TestDisableOnce(t *testing.T) {
 	}
 
 	// Check if the `DisableOnce` boolean has reset to `false`
-	automation, found, err = GetUserAutomationById("admin", id)
+	automationDb, found, err = GetUserAutomationById("admin", id)
 	assert.NoError(t, err)
 	assert.True(t, found)
-	assert.False(t, automation.DisableOnce)
+	assert.False(t, automationDb.DisableOnce)
 
 	// Check if the automation runs the second time
 	now = time.Now()
 	then = now.Add(time.Minute)
-	if err := Init(); err != nil {
+	if err := InitAutomations(); err != nil {
 		t.Error(err.Error())
 		return
 	}
 	// Create a manual cron expression
-	cronExpr, err = GenerateCronExpression(uint8(then.Hour()), uint8(then.Minute()), []uint8{0, 1, 2, 3, 4, 5, 6})
+	cronExpr, err = automation.GenerateCronExpression(uint8(then.Hour()), uint8(then.Minute()), []uint8{0, 1, 2, 3, 4, 5, 6})
 	assert.NoError(t, err)
 	// Update the next run-time
 	assert.NoError(t, ModifyAutomationById(id, database.AutomationData{
@@ -590,7 +546,7 @@ func TestDisableOnce(t *testing.T) {
 
 // Tests if the automation system can be initialized
 func TestInit(t *testing.T) {
-	if err := Init(); err != nil {
+	if err := InitAutomations(); err != nil {
 		t.Error(err.Error())
 		return
 	}

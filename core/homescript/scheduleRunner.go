@@ -1,4 +1,4 @@
-package scheduler
+package homescript
 
 import (
 	"bytes"
@@ -7,7 +7,6 @@ import (
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/hardware"
-	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/core/user"
 )
 
@@ -24,7 +23,7 @@ func scheduleRunnerFunc(id uint) {
 	if !jobFound {
 		log.Error(fmt.Sprintf("Failed to run schedule '%s': no metadata saved in the database: %s", job.Data.Name, err.Error()))
 		// Abort this schedule to avoid future errors
-		if err := scheduler.RemoveByTag(fmt.Sprintf("%d", id)); err != nil {
+		if err := scheduleScheduler.RemoveByTag(fmt.Sprintf("%d", id)); err != nil {
 			log.Error("Failed to remove dangling schedule: could not abort schedule: ", err.Error())
 			return
 		}
@@ -70,13 +69,13 @@ func scheduleRunnerFunc(id uint) {
 	log.Debug(fmt.Sprintf("Schedule '%s' (%d) is executing...", job.Data.Name, id))
 	switch job.Data.TargetMode {
 	case database.ScheduleTargetModeCode:
-		res := homescript.HmsManager.Run(
+		res := HmsManager.Run(
 			owner.Username,
 			fmt.Sprintf("%d.hms", id),
 			job.Data.HomescriptCode,
 			make(map[string]string, 0),
 			make([]string, 0),
-			homescript.InitiatorScheduler,
+			InitiatorScheduler,
 			make(chan int),
 			&bytes.Buffer{},
 			nil,
@@ -99,12 +98,12 @@ func scheduleRunnerFunc(id uint) {
 			return
 		}
 	case database.ScheduleTargetModeHMS:
-		res, err := homescript.HmsManager.RunById(
+		res, err := HmsManager.RunById(
 			job.Data.HomescriptTargetId,
 			owner.Username,
 			make([]string, 0),
 			make(map[string]string, 0),
-			homescript.InitiatorScheduler,
+			InitiatorScheduler,
 			make(chan int),
 			&bytes.Buffer{},
 			nil,

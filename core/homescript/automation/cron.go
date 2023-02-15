@@ -7,7 +7,14 @@ import (
 	"strings"
 
 	"github.com/lnquy/cron"
+	"github.com/sirupsen/logrus"
 )
+
+var log *logrus.Logger
+
+func InitLogger(logger *logrus.Logger) {
+	log = logger
+}
 
 // This file contains cron utils functions, mostly for parsing cron-expressions
 
@@ -38,7 +45,7 @@ func GenerateCronExpression(hour uint8, minute uint8, days []uint8) (string, err
 
 // Returns and a slice which contains the days on which a given cron-expression will run
 // Used for generating a new cron-expression when the timing function is set to either `sunrise` or `sunset`
-func getDaysFromCronExpression(expr string) ([]uint8, error) {
+func GetDaysFromCronExpression(expr string) ([]uint8, error) {
 	if !IsValidCronExpression(expr) {
 		return nil, errors.New("cannot get values from cron-expression: invalid cron-expression supplied")
 	}
@@ -63,7 +70,7 @@ func getDaysFromCronExpression(expr string) ([]uint8, error) {
 }
 
 // Generates a human-readable representation for a given (valid) cron-expression
-func generateHumanReadableCronExpression(expr string) (string, error) {
+func GenerateHumanReadableCronExpression(expr string) (string, error) {
 	descriptor, err := cron.NewDescriptor()
 	if err != nil {
 		log.Error("Failed to parse cron-expression into human readable format: ", err.Error())
