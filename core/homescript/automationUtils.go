@@ -252,13 +252,13 @@ func ModifyAutomationById(automationId uint, newAutomation database.AutomationDa
 		} else {
 			finalTime = sunSet
 		}
-		// Extract the days from the cron-expression
-		days, err := automation.GetDaysFromCronExpression(newAutomation.CronExpression)
+		// Extract the cronData from the cron-expression
+		cronData, err := automation.GetDataFromCronExpression(newAutomation.CronExpression)
 		if err != nil {
-			log.Error(fmt.Sprintf("Failed to extract days from cron-expression '%s': Error: %s", newAutomation.CronExpression, err))
+			log.Error(fmt.Sprintf("Failed to extract data from cron-expression '%s': Error: %s", newAutomation.CronExpression, err))
 			return err
 		}
-		cronExpression, err := automation.GenerateCronExpression(uint8(finalTime.Hour), uint8(finalTime.Minute), days)
+		cronExpression, err := automation.GenerateCronExpression(uint8(finalTime.Hour), uint8(finalTime.Minute), cronData.Days)
 		if err != nil {
 			return err
 		}

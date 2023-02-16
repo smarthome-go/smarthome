@@ -18,14 +18,12 @@ type UserSchedule struct {
 }
 
 // Creates and starts a schedule based on the provided input data
-func CreateNewSchedule(data database.ScheduleData, owner string) error {
+func CreateNewSchedule(data database.ScheduleData, owner string) (uint, error) {
 	newScheduleId, err := database.CreateNewSchedule(owner, data)
 	if err != nil {
 		log.Error("Failed to create new schedule: database failure: ", err.Error())
-		return err
+		return 0, err
 	}
-
-	fmt.Println(newScheduleId)
 
 	// Prepare the job for go-cron
 	schedulerJob := scheduleScheduler.Every(1).Day().At(fmt.Sprintf("%02d:%02d", data.Hour, data.Minute))
@@ -33,11 +31,11 @@ func CreateNewSchedule(data database.ScheduleData, owner string) error {
 	schedulerJob.LimitRunsTo(1)
 	if _, err := schedulerJob.Do(scheduleRunnerFunc, newScheduleId); err != nil {
 		log.Error("Failed to create new schedule: could not register cron job: ", err.Error())
-		return err
+		return 0, err
 	}
 	event.Debug("Schedule Created", fmt.Sprintf("%s created Schedule `%s` (ID: %d)", owner, data.Name, newScheduleId))
 	log.Trace(fmt.Sprintf("Successfully added and setup schedule '%d'", newScheduleId))
-	return nil
+	return newScheduleId, nil
 }
 
 // Aborts and deletes a schedule based on its id

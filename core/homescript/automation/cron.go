@@ -43,30 +43,47 @@ func GenerateCronExpression(hour uint8, minute uint8, days []uint8) (string, err
 	return strings.Join(output[:], " "), nil
 }
 
+type CronTime struct {
+	Days   []uint8
+	Hour   uint
+	Minute uint
+}
+
 // Returns and a slice which contains the days on which a given cron-expression will run
 // Used for generating a new cron-expression when the timing function is set to either `sunrise` or `sunset`
-func GetDaysFromCronExpression(expr string) ([]uint8, error) {
+func GetDataFromCronExpression(expr string) (CronTime, error) {
 	if !IsValidCronExpression(expr) {
-		return nil, errors.New("cannot get values from cron-expression: invalid cron-expression supplied")
+		return CronTime{}, errors.New("cannot get values from cron-expression: invalid cron-expression supplied")
 	}
 	exprSlice := strings.Split(expr, " ")
 	if len(exprSlice) != 5 {
-		return nil, errors.New("cannot get values from cron-expression: invalid cron-expression supplied")
+		return CronTime{}, errors.New("cannot get values from cron-expression: invalid cron-expression supplied")
 	}
+
+	minutes, err := strconv.Atoi(exprSlice[0])
+	if err != nil {
+		return CronTime{}, fmt.Errorf("cannot get values from cron-expression: invalid minutes: %s", exprSlice[0])
+	}
+
+	hours, err := strconv.Atoi(exprSlice[1])
+	if err != nil {
+		return CronTime{}, fmt.Errorf("cannot get values from cron-expression: invalid hours: %s", exprSlice[1])
+	}
+
 	if exprSlice[4] == "*" {
 		// All days are selected for execution
-		return []uint8{0, 1, 2, 3, 4, 5, 6}, nil
+		return CronTime{Hour: uint(hours), Minute: uint(minutes), Days: []uint8{0, 1, 2, 3, 4, 5, 6}}, nil
 	}
 	daysTemp := strings.Split(exprSlice[4], ",") // The value at index 4 contains the days separated by a comma
 	days := make([]uint8, 0)
 	for _, day := range daysTemp {
 		dayInt, err := strconv.Atoi(day)
 		if err != nil {
-			return nil, errors.New("cannot get values from cron-expression: invalid day in cron-expression: day is not a number")
+			return CronTime{}, errors.New("cannot get values from cron-expression: invalid day in cron-expression: day is not a number")
 		}
 		days = append(days, uint8(dayInt))
 	}
-	return days, nil
+	return CronTime{Hour: uint(hours), Minute: uint(minutes), Days: days}, nil
 }
 
 // Generates a human-readable representation for a given (valid) cron-expression

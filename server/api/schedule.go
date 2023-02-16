@@ -130,12 +130,13 @@ func CreateNewSchedule(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to create new schedule", Error: fmt.Sprintf("invalid `targetMode`: `%s`", request.TargetMode)})
 		return
 	}
-	if err := homescript.CreateNewSchedule(request, username); err != nil {
+	id, err := homescript.CreateNewSchedule(request, username)
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		Res(w, Response{Success: false, Message: "failed to add schedule", Error: "internal server error"})
 		return
 	}
-	Res(w, Response{Success: true, Message: "successfully created new schedule"})
+	Res(w, Response{Success: true, Message: fmt.Sprintf("successfully created new schedule with ID `%d`", id)})
 }
 
 // Modify a generic schedule which already exists

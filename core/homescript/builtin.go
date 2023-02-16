@@ -8,6 +8,7 @@ import (
 	"github.com/smarthome-go/homescript/v2/homescript/errors"
 	hmsErrors "github.com/smarthome-go/homescript/v2/homescript/errors"
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/homescript/automation"
 )
 
 func valPtr(input homescript.Value) *homescript.Value {
@@ -47,9 +48,63 @@ func scopeAdditions() map[string]homescript.Value {
 				return homescript.ValueString{Value: wrapper, Range: span}, nil, nil
 			},
 		},
-		"scheduler": homescript.ValueBuiltinVariable{
+		"system": homescript.ValueBuiltinVariable{
 			Callback: func(executor homescript.Executor, span hmsErrors.Span) (homescript.Value, *hmsErrors.Error) {
 				return homescript.ValueObject{
+					IsProtected: true,
+					DataType:    "system",
+					ObjFields: map[string]*homescript.Value{
+						"scheduler_enabled": valPtr(homescript.ValueBuiltinVariable{Callback: func(executor homescript.Executor, span hmsErrors.Span) (homescript.Value, *hmsErrors.Error) {
+							serverConfig, found, err := database.GetServerConfiguration()
+							if err != nil || !found {
+								return nil, errors.NewError(span, "Could not retrieve system configuration", errors.RuntimeError)
+							}
+							return homescript.ValueBool{Value: serverConfig.AutomationEnabled}, nil
+						}}),
+						"lockdown_mode_enabled": valPtr(homescript.ValueBuiltinVariable{Callback: func(executor homescript.Executor, span hmsErrors.Span) (homescript.Value, *hmsErrors.Error) {
+							serverConfig, found, err := database.GetServerConfiguration()
+							if err != nil || !found {
+								return nil, errors.NewError(span, "Could not retrieve system configuration", errors.RuntimeError)
+							}
+							return homescript.ValueBool{Value: serverConfig.LockDownMode}, nil
+						}}),
+						"location": valPtr(homescript.ValueBuiltinVariable{Callback: func(executor homescript.Executor, span hmsErrors.Span) (homescript.Value, *hmsErrors.Error) {
+							serverConfig, found, err := database.GetServerConfiguration()
+							if err != nil || !found {
+								return nil, errors.NewError(span, "Could not retrieve system configuration", errors.RuntimeError)
+							}
+							return homescript.ValueObject{DataType: "location", ObjFields: map[string]*homescript.Value{
+								"lat": valPtr(homescript.ValueNumber{Value: float64(serverConfig.Latitude)}),
+								"lon": valPtr(homescript.ValueNumber{Value: float64(serverConfig.Longitude)}),
+							}}, nil
+						}}),
+						"sun_times": valPtr(homescript.ValueBuiltinVariable{Callback: func(executor homescript.Executor, span hmsErrors.Span) (homescript.Value, *hmsErrors.Error) {
+							serverConfig, found, err := database.GetServerConfiguration()
+							if err != nil || !found {
+								return nil, errors.NewError(span, "Could not retrieve system configuration", errors.RuntimeError)
+							}
+
+							rise, set := automation.CalculateSunRiseSet(serverConfig.Latitude, serverConfig.Longitude)
+
+							return homescript.ValueObject{DataType: "sun_times", ObjFields: map[string]*homescript.Value{
+								"sunrise": valPtr(homescript.ValueObject{DataType: "time_simple", ObjFields: map[string]*homescript.Value{
+									"hour":   valPtr(homescript.ValueNumber{Value: float64(rise.Hour)}),
+									"minute": valPtr(homescript.ValueNumber{Value: float64(rise.Minute)}),
+								}}),
+								"sunset": valPtr(homescript.ValueObject{DataType: "time_simple", ObjFields: map[string]*homescript.Value{
+									"hour":   valPtr(homescript.ValueNumber{Value: float64(set.Hour)}),
+									"minute": valPtr(homescript.ValueNumber{Value: float64(set.Minute)}),
+								}}),
+							}}, nil
+						}}),
+					},
+				}, nil
+			},
+		},
+		"automation": homescript.ValueBuiltinVariable{
+			Callback: func(executor homescript.Executor, span hmsErrors.Span) (homescript.Value, *hmsErrors.Error) {
+				return homescript.ValueObject{
+					DataType: "automation",
 					ObjFields: map[string]*homescript.Value{
 						"new": valPtr(homescript.ValueBuiltinFunction{
 							Callback: func(executor homescript.Executor, span hmsErrors.Span, args ...homescript.Value) (homescript.Value, *int, *hmsErrors.Error) {
@@ -58,13 +113,201 @@ func scopeAdditions() map[string]homescript.Value {
 								}
 
 								obj := args[0].(homescript.ValueObject)
-								if err := checkObj(span, obj, map[string]homescript.ValueType{
+								valErr, stop := checkObj(span, obj, map[string]homescript.ValueType{
+									"name":        homescript.TypeString,
+									"description": homescript.TypeString,
+									"hour":        homescript.TypeNumber,
+									"minute":      homescript.TypeNumber,
+									"hms_id":      homescript.TypeString,
+									"days":        homescript.TypeList,
+								})
+								if valErr != nil {
+									return nil, nil, valErr
+								}
+								if stop {
+									return homescript.ValueNumber{Value: 0.0}, nil, nil
+								}
+
+								name := (*obj.Fields()["name"]).(homescript.ValueString)
+								description := (*obj.Fields()["description"]).(homescript.ValueString)
+								hour := (*obj.Fields()["hour"]).(homescript.ValueNumber)
+								minute := (*obj.Fields()["minute"]).(homescript.ValueNumber)
+								hmsId := (*obj.Fields()["hms_id"]).(homescript.ValueString)
+								days := (*obj.Fields()["days"]).(homescript.ValueList)
+
+								if err := checkInt(span, hour, "Field `hour`"); err != nil {
+									return nil, nil, err
+								}
+								if err := checkInt(span, minute, "Field `minute`"); err != nil {
+									return nil, nil, err
+								}
+
+								if hour.Value < 0.0 || hour.Value > 24.0 {
+									return nil, nil, errors.NewError(span, "Hour must be => 0 and <= 24", errors.ValueError)
+								}
+
+								if minute.Value < 0.0 || minute.Value > 60.0 {
+									return nil, nil, errors.NewError(span, "Minute must be => 0 and <= 60", errors.ValueError)
+								}
+
+								data, exists, err := database.GetUserHomescriptById(hmsId.Value, executor.GetUser())
+								if err != nil {
+									return nil, nil, errors.NewError(span, err.Error(), errors.RuntimeError)
+								}
+
+								if !exists {
+									return nil, nil, errors.NewError(span, fmt.Sprintf("Homescript with ID `%s` does not exist", hmsId.Value), errors.ValueError)
+								}
+
+								if data.Data.SchedulerEnabled {
+									return nil, nil, errors.NewError(span, fmt.Sprintf("Homescript with ID `%s` cannot be used as an automation / scheduler target", hmsId.Value), errors.ValueError)
+								}
+
+								if len(*days.Values) == 0 || len(*days.Values) > 7 {
+									return nil, nil, errors.NewError(span, fmt.Sprintf("Invalid `days` list: expected >= 0 and <=7, got `%d`", len(*days.Values)), errors.ValueError)
+								}
+
+								// Check for duplicates and if each provided day is valid
+								containsDays := make([]uint8, 0) // Contains the days, is used to check if there are duplicates in the days
+								for idx, day := range *days.Values {
+									if err := checkInt(span, (*day).(homescript.ValueNumber), fmt.Sprintf("Day at index `%d` invalid: ", idx)); err != nil {
+										return nil, nil, err
+									}
+
+									dayInt := int((*day).(homescript.ValueNumber).Value)
+									if dayInt > 6 {
+										return nil, nil, errors.NewError(span, fmt.Sprintf("invalid day in `days`: day must be >= 0 and <= 6, found `%d`", day), errors.ValueError)
+									}
+									dayIsAlreadyPresend := false
+									for _, dayTemp := range containsDays {
+										if dayTemp == uint8(dayInt) {
+											dayIsAlreadyPresend = true
+										}
+									}
+									if dayIsAlreadyPresend {
+										return nil, nil, errors.NewError(span, fmt.Sprintf("Duplicate entry in `days` list: `%d`", dayInt), errors.ValueError)
+									}
+									containsDays = append(containsDays, uint8(dayInt)) // If the day is not already present, add it
+								}
+
+								if executor.IsAnalyzer() {
+									return homescript.ValueNumber{Value: 0.0}, nil, nil
+								}
+
+								id, err := CreateNewAutomation(name.Value, description.Value, uint8(hour.Value), uint8(minute.Value), containsDays, hmsId.Value, executor.GetUser(), true, database.TimingNormal)
+								if err != nil {
+									return nil, nil, hmsErrors.NewError(span, err.Error(), errors.RuntimeError)
+								}
+								return homescript.ValueNumber{Value: float64(id)}, nil, nil
+							},
+						}),
+						"automations": valPtr(homescript.ValueBuiltinFunction{
+							Callback: func(executor homescript.Executor, span hmsErrors.Span, args ...homescript.Value) (homescript.Value, *int, *hmsErrors.Error) {
+								if err := checkArgs("automations", span, args); err != nil {
+									return nil, nil, err
+								}
+
+								output := make([]*homescript.Value, 0)
+
+								automations, err := database.GetUserAutomations(executor.GetUser())
+								if err != nil {
+									return nil, nil, hmsErrors.NewError(span, err.Error(), errors.RuntimeError)
+								}
+
+								for _, automationItem := range automations {
+									cronData, err := automation.GetDataFromCronExpression(automationItem.Data.CronExpression)
+									if err != nil {
+										return nil, nil, hmsErrors.NewError(span, err.Error(), errors.RuntimeError)
+									}
+
+									numberType := homescript.TypeNumber
+									days := make([]*homescript.Value, 0)
+									for _, day := range cronData.Days {
+										days = append(days, valPtr(homescript.ValueNumber{Value: float64(day)}))
+									}
+
+									output = append(output, valPtr(homescript.ValueObject{
+										DataType: "automation",
+										ObjFields: map[string]*homescript.Value{
+											"id": valPtr(homescript.ValueNumber{Value: float64(automationItem.Id)}),
+											"name": valPtr(homescript.ValueString{
+												Value: automationItem.Data.Name,
+											}),
+											"timing_mode": valPtr(homescript.ValueString{
+												Value: string(automationItem.Data.TimingMode),
+											}),
+											"hms_id": valPtr(homescript.ValueString{Value: automationItem.Data.HomescriptId}),
+											"hour":   valPtr(homescript.ValueNumber{Value: float64(cronData.Hour)}),
+											"minute": valPtr(homescript.ValueNumber{Value: float64(cronData.Minute)}),
+											"days":   valPtr(homescript.ValueList{ValueType: &numberType, Values: &days}),
+										},
+									}))
+								}
+
+								type_ := homescript.TypeObject
+								return homescript.ValueList{Values: &output, ValueType: &type_}, nil, nil
+							},
+						}),
+						"delete": valPtr(homescript.ValueBuiltinFunction{
+							Callback: func(executor homescript.Executor, span hmsErrors.Span, args ...homescript.Value) (homescript.Value, *int, *hmsErrors.Error) {
+								if err := checkArgs("delete", span, args, homescript.TypeNumber); err != nil {
+									return nil, nil, err
+								}
+
+								id := args[0].(homescript.ValueNumber).Value
+
+								if float64(int(id)) != id || id < 0.0 {
+									return nil, nil, errors.NewError(span, fmt.Sprintf("Illegal value: ID needs to be a positive integer, got `%f`", id), errors.ValueError)
+								}
+
+								automationData, found, err := database.GetAutomationById(uint(id))
+								if err != nil {
+									return nil, nil, errors.NewError(span, err.Error(), errors.RuntimeError)
+								}
+
+								if !found || automationData.Owner != executor.GetUser() {
+									return nil, nil, errors.NewError(span, fmt.Sprintf("Automation with ID `%d` does not exist", int(id)), errors.ValueError)
+								}
+
+								if executor.IsAnalyzer() {
+									return homescript.ValueNull{}, nil, nil
+								}
+
+								if err := RemoveAutomation(uint(id)); err != nil {
+									return nil, nil, errors.NewError(span, err.Error(), errors.RuntimeError)
+								}
+
+								return homescript.ValueNull{}, nil, nil
+							},
+						}),
+					},
+				}, nil
+			},
+		},
+		"scheduler": homescript.ValueBuiltinVariable{
+			Callback: func(executor homescript.Executor, span hmsErrors.Span) (homescript.Value, *hmsErrors.Error) {
+				return homescript.ValueObject{
+
+					DataType: "scheduler",
+					ObjFields: map[string]*homescript.Value{
+						"new": valPtr(homescript.ValueBuiltinFunction{
+							Callback: func(executor homescript.Executor, span hmsErrors.Span, args ...homescript.Value) (homescript.Value, *int, *hmsErrors.Error) {
+								if err := checkArgs("new", span, args, homescript.TypeObject); err != nil {
+									return nil, nil, err
+								}
+
+								obj := args[0].(homescript.ValueObject)
+								valErr, stop := checkObj(span, obj, map[string]homescript.ValueType{
 									"name":   homescript.TypeString,
 									"hour":   homescript.TypeNumber,
 									"minute": homescript.TypeNumber,
 									"code":   homescript.TypeString,
-								}); err != nil {
-									return nil, nil, err
+								})
+								if valErr != nil {
+									return nil, nil, valErr
+								}
+								if stop {
+									return homescript.ValueNumber{Value: 0.0}, nil, nil
 								}
 
 								name := (*obj.Fields()["name"]).(homescript.ValueString)
@@ -79,17 +322,95 @@ func scopeAdditions() map[string]homescript.Value {
 									return nil, nil, err
 								}
 
-								if executor.IsAnalyzer() {
-									return homescript.ValueNull{}, nil, nil
+								if hour.Value < 0.0 || hour.Value > 24.0 {
+									return nil, nil, errors.NewError(span, "Hour must be => 0 and <= 24", errors.ValueError)
 								}
 
-								if err := CreateNewSchedule(database.ScheduleData{
+								if minute.Value < 0.0 || minute.Value > 60.0 {
+									return nil, nil, errors.NewError(span, "Minute must be => 0 and <= 60", errors.ValueError)
+								}
+
+								if executor.IsAnalyzer() {
+									return homescript.ValueNumber{Value: 0.0}, nil, nil
+								}
+
+								id, err := CreateNewSchedule(database.ScheduleData{
 									Name:           name.Value,
 									Hour:           uint(hour.Value),
 									Minute:         uint(minute.Value),
 									TargetMode:     database.ScheduleTargetModeCode,
 									HomescriptCode: code.Value,
-								}, executor.GetUser()); err != nil {
+								}, executor.GetUser())
+								if err != nil {
+									return nil, nil, hmsErrors.NewError(span, err.Error(), errors.RuntimeError)
+								}
+								return homescript.ValueNumber{Value: float64(id)}, nil, nil
+							},
+						}),
+						"modify": valPtr(homescript.ValueBuiltinFunction{
+							Callback: func(executor homescript.Executor, span hmsErrors.Span, args ...homescript.Value) (homescript.Value, *int, *hmsErrors.Error) {
+								if err := checkArgs("modify", span, args, homescript.TypeNumber, homescript.TypeObject); err != nil {
+									return nil, nil, err
+								}
+
+								obj := args[1].(homescript.ValueObject)
+								valErr, stop := checkObj(span, obj, map[string]homescript.ValueType{
+									"name":   homescript.TypeString,
+									"hour":   homescript.TypeNumber,
+									"minute": homescript.TypeNumber,
+									"code":   homescript.TypeString,
+								})
+								if valErr != nil {
+									return nil, nil, valErr
+								}
+								if stop {
+									return homescript.ValueNull{}, nil, nil
+								}
+
+								name := (*obj.Fields()["name"]).(homescript.ValueString)
+								hour := (*obj.Fields()["hour"]).(homescript.ValueNumber)
+								minute := (*obj.Fields()["minute"]).(homescript.ValueNumber)
+								code := (*obj.Fields()["code"]).(homescript.ValueString)
+
+								if err := checkInt(span, hour, "Field `hour`"); err != nil {
+									return nil, nil, err
+								}
+								if err := checkInt(span, minute, "Field `minute`"); err != nil {
+									return nil, nil, err
+								}
+
+								if hour.Value < 0.0 || hour.Value > 24.0 {
+									return nil, nil, errors.NewError(span, "Hour must be => 0 and <= 24", errors.ValueError)
+								}
+								if minute.Value < 0.0 || minute.Value > 60.0 {
+									return nil, nil, errors.NewError(span, "Minute must be => 0 and <= 60", errors.ValueError)
+								}
+
+								id := args[0].(homescript.ValueNumber)
+								if err := checkInt(span, id, "argument `id` is not an integer"); err != nil {
+									return nil, nil, err
+								}
+
+								if executor.IsAnalyzer() {
+									return homescript.ValueNull{}, nil, nil
+								}
+
+								schedulerData, found, err := database.GetScheduleById(uint(id.Value))
+								if err != nil {
+									return nil, nil, errors.NewError(span, err.Error(), errors.RuntimeError)
+								}
+
+								if !found || schedulerData.Owner != executor.GetUser() {
+									return nil, nil, errors.NewError(span, fmt.Sprintf("Schedule with ID `%d` does not exist", int(id.Value)), errors.ValueError)
+								}
+
+								if err := ModifyScheduleById(uint(id.Value), database.ScheduleData{
+									Name:           name.Value,
+									Hour:           uint(hour.Value),
+									Minute:         uint(minute.Value),
+									TargetMode:     database.ScheduleTargetModeCode,
+									HomescriptCode: code.Value,
+								}); err != nil {
 									return nil, nil, hmsErrors.NewError(span, err.Error(), errors.RuntimeError)
 								}
 								return homescript.ValueNull{}, nil, nil
@@ -105,6 +426,15 @@ func scopeAdditions() map[string]homescript.Value {
 
 								if float64(int(id)) != id || id < 0.0 {
 									return nil, nil, errors.NewError(span, fmt.Sprintf("Illegal value: ID needs to be a positive integer, got `%f`", id), errors.ValueError)
+								}
+
+								schedulerData, found, err := database.GetScheduleById(uint(id))
+								if err != nil {
+									return nil, nil, errors.NewError(span, err.Error(), errors.RuntimeError)
+								}
+
+								if !found || schedulerData.Owner != executor.GetUser() {
+									return nil, nil, errors.NewError(span, fmt.Sprintf("Schedule with ID `%d` does not exist", int(id)), errors.ValueError)
 								}
 
 								if executor.IsAnalyzer() {
@@ -212,18 +542,22 @@ func checkArgs(name string, span errors.Span, args []homescript.Value, types ...
 }
 
 // Helper function which checks that the passed object contains the correct keys
-func checkObj(span errors.Span, obj homescript.ValueObject, check map[string]homescript.ValueType) *errors.Error {
+func checkObj(span errors.Span, obj homescript.ValueObject, check map[string]homescript.ValueType) (*errors.Error, bool) {
 	for key, type_ := range check {
 		if obj.Fields()[key] == nil {
-			return errors.NewError(span, fmt.Sprintf("Key `%s` of type `%v` not found in object", key, type_.String()), errors.TypeError)
+			return errors.NewError(span, fmt.Sprintf("Key `%s` of type `%v` not found in object", key, type_.String()), errors.TypeError), false
+		}
+
+		if (*obj.Fields()[key]) == nil {
+			return nil, true
 		}
 
 		if (*obj.Fields()[key]).Type() != type_ {
-			return errors.NewError(span, fmt.Sprintf("Key `%s` has type `%v`, however `%v` was expected", key, (*obj.Fields()[key]).Type(), type_.String()), errors.TypeError)
+			return errors.NewError(span, fmt.Sprintf("Key `%s` has type `%v`, however `%v` was expected", key, (*obj.Fields()[key]).Type(), type_.String()), errors.TypeError), false
 		}
 	}
 
-	return nil
+	return nil, false
 }
 
 func checkInt(span errors.Span, num homescript.ValueNumber, errPrefix string) *errors.Error {
