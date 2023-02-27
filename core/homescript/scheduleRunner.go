@@ -188,15 +188,6 @@ func scheduleRunnerFunc(id uint) {
 	default:
 		log.Error("Unimplemented schedule mode")
 	}
-	if err := user.Notify(
-		job.Owner,
-		"Schedule Executed Successfully",
-		fmt.Sprintf("Schedule '%s' has been executed successfully", job.Data.Name),
-		1,
-	); err != nil {
-		log.Error("Failed to notify user about failing schedule: ", err.Error())
-		return
-	}
 	event.Info("Schedule Executed Successfully",
 		fmt.Sprintf("Schedule '%s' of user '%s' has been executed successfully", job.Data.Name, job.Owner),
 	)
