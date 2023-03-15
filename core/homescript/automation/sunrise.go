@@ -20,6 +20,7 @@ func CalculateSunRiseSet(lat float32, lon float32) (SunTime, SunTime) {
 		float64(lat), float64(lon),
 		time.Now().Year(), time.Now().Month(), time.Now().Day(),
 	)
+
 	return SunTime{
 			uint(sunRise.Local().Hour()), uint(sunRise.Local().Minute()),
 		}, SunTime{
