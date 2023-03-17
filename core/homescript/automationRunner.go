@@ -3,6 +3,7 @@ package homescript
 import (
 	"bytes"
 	"fmt"
+	"time"
 
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
@@ -85,8 +86,24 @@ func automationRunnerFunc(id uint) {
 		}
 		return
 	}
+
+	// Update the execution time of the automation
+	if err := database.UpdateAutomationExecuteTime(job.Id); err != nil {
+		log.Error(fmt.Sprintf("Could not update `lastRun` of automation with ID `%d`: %s", job.Id, err.Error()))
+		event.Error(
+			"Automation Failed",
+			fmt.Sprintf("Automation '%s' failed because its last run time could not be adjusted: %s", job.Data.Name, err.Error()),
+		)
+		return
+	}
+
 	// If the timing mode is set to either 'sunrise' or 'sunset', a new time with according cron-expression should be generated
 	if job.Data.TimingMode != database.TimingNormal {
+		if time.Since(job.Data.LastRun).Minutes() < 5 {
+			event.Trace("Geological Time Automation Skipped", fmt.Sprintf("The automation `%s` with ID `%d` was skipped due to cooldown.", job.Data.Name, job.Id))
+			return
+		}
+
 		if err := UpdateJobTime(id, job.Data.TimingMode == database.TimingSunrise); err != nil {
 			log.Error("Failed to run automation: could not update next launch time: ", err.Error())
 			event.Error(

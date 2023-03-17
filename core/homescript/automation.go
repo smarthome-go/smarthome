@@ -91,43 +91,43 @@ func DeactivateAutomationSystem() error {
 // Used when an automation with non-normal Timing-Mode is executed in order to update its next start time
 func UpdateJobTime(id uint, useSunRise bool) error {
 	// Obtain the server's configuration in order to determine the latitude and longitude
-	// config, found, err := database.GetServerConfiguration()
-	// if err != nil || !found {
-	// 	log.Error("Failed to update job launch time: could not obtain the server's configuration")
-	// 	return errors.New("could not update launch time: failed to obtain server config")
-	// }
+	config, found, err := database.GetServerConfiguration()
+	if err != nil || !found {
+		log.Error("Failed to update job launch time: could not obtain the server's configuration")
+		return errors.New("could not update launch time: failed to obtain server config")
+	}
+
 	// Retrieve the current job in order to get its current cron-expression (for the days)
 	job, found, err := database.GetAutomationById(id)
 	if err != nil || !found {
 		return errors.New("could not update launch time: invalid id supplied")
 	}
-	// // Calculate both the sunrise and sunset time
-	// sunRise, sunSet := CalculateSunRiseSet(config.Latitude, config.Longitude)
-	// // Select the time which is desired
-	// var finalTime SunTime
-	// if useSunRise {
-	// 	finalTime = sunRise
-	// } else {
-	// 	finalTime = sunSet
-	// }
-	// // Extract the days from the cron-expression
-	// days, err := GetDaysFromCronExpression(job.CronExpression)
-	// if err != nil {
-	// 	log.Error(fmt.Sprintf("Failed to extract days from cron-expression '%s': Error: %s", job.CronExpression, err))
-	// 	return err
-	// }
-	// cronExpression, err := GenerateCronExpression(uint8(finalTime.Hour), uint8(finalTime.Minute), days)
-	// if err != nil {
-	// 	return err
-	// }
 
-	// TODO: why is this off?
+	// Calculate both the sunrise and sunset time
+	sunRise, sunSet := automation.CalculateSunRiseSet(config.Latitude, config.Longitude)
+	// Select the time which is desired
+	var finalTime automation.SunTime
+	if useSunRise {
+		finalTime = sunRise
+	} else {
+		finalTime = sunSet
+	}
+	// Extract the data from the cron-expression
+	data, err := automation.GetDataFromCronExpression(job.Data.CronExpression)
+	if err != nil {
+		log.Error(fmt.Sprintf("Failed to extract days from cron-expression '%s': Error: %s", job.Data.CronExpression, err))
+		return err
+	}
+	cronExpression, err := automation.GenerateCronExpression(uint8(finalTime.Hour), uint8(finalTime.Minute), data.Days)
+	if err != nil {
+		return err
+	}
 
 	// Only triggers the generic modification due to a lot of work being done in the modification function
 	if err := ModifyAutomationById(id, database.AutomationData{
 		Name:           job.Data.Name,
 		Description:    job.Data.Description,
-		CronExpression: job.Data.CronExpression,
+		CronExpression: cronExpression,
 		HomescriptId:   job.Data.HomescriptId,
 		Enabled:        job.Data.Enabled,
 		TimingMode:     job.Data.TimingMode,

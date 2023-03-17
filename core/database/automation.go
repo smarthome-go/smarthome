@@ -1,7 +1,11 @@
 // Contains the database backend for static automation
 package database
 
-import "database/sql"
+import (
+	"database/sql"
+	"fmt"
+	"time"
+)
 
 // Represents the timing mode on which the automation operates
 type TimingMode string
@@ -35,6 +39,7 @@ type AutomationData struct {
 	// Wont run the automation the next time it would
 	DisableOnce bool       `json:"disableOnce"`
 	TimingMode  TimingMode `json:"timingMode"`
+	LastRun     time.Time  `json:"lastRun"`
 }
 
 // Creates a new table containing the automation jobs
@@ -56,6 +61,7 @@ func createAutomationTable() error {
 			'sunrise',
 			'sunset'
 		),
+		LastRun DATETIME DEFAULT CURRENT_TIMESTAMP,
 		PRIMARY KEY(Id),
 		FOREIGN KEY (HomescriptId)
 		REFERENCES homescript(Id),
@@ -83,9 +89,10 @@ func CreateNewAutomation(automation Automation) (uint, error) {
 		Owner,
 		Enabled,
 		DisableOnce,
-		TimingMode
-	)	
-	VALUES(DEFAULT, ?, ?, ?, ?, ?, ?, ?, ?)
+		TimingMode,
+		LastRun
+	)
+	VALUES(DEFAULT, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		log.Error("Failed to create new automation: preparing query failed: ", err.Error())
@@ -101,6 +108,7 @@ func CreateNewAutomation(automation Automation) (uint, error) {
 		automation.Data.Enabled,
 		automation.Data.DisableOnce,
 		automation.Data.TimingMode,
+		time.Unix(0, 0),
 	)
 	if err != nil {
 		log.Error("Failed to create new automation: executing query failed: ", err.Error())
@@ -127,7 +135,8 @@ func GetAutomationById(id uint) (Automation, bool, error) {
 		Owner,
 		Enabled,
 		DisableOnce,
-		TimingMode
+		TimingMode,
+		LastRun
 	FROM automation
 	WHERE Id=?
 	`)
@@ -137,6 +146,7 @@ func GetAutomationById(id uint) (Automation, bool, error) {
 	}
 	defer query.Close()
 	var automation Automation
+	var lastRun sql.NullTime
 	if err := query.QueryRow(id).Scan(
 		&automation.Id,
 		&automation.Data.Name,
@@ -147,12 +157,21 @@ func GetAutomationById(id uint) (Automation, bool, error) {
 		&automation.Data.Enabled,
 		&automation.Data.DisableOnce,
 		&automation.Data.TimingMode,
+		&lastRun,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return Automation{}, false, nil
 		}
 		return Automation{}, false, err
 	}
+
+	if !lastRun.Valid {
+		log.Error("Invalid time column when getting automation")
+		return Automation{}, false, fmt.Errorf("invalid time column when scanning logs")
+	} else {
+		automation.Data.LastRun = lastRun.Time
+	}
+
 	return automation, true, nil
 }
 
@@ -169,7 +188,8 @@ func GetUserAutomations(username string) ([]Automation, error) {
 		Owner,
 		Enabled,
 		DisableOnce,
-		TimingMode
+		TimingMode,
+		LastRun
 	FROM automation
 	WHERE Owner=?
 	`)
@@ -187,6 +207,7 @@ func GetUserAutomations(username string) ([]Automation, error) {
 	automations := make([]Automation, 0)
 	for res.Next() {
 		var automation Automation
+		var lastRun sql.NullTime
 		if err := res.Scan(
 			&automation.Id,
 			&automation.Data.Name,
@@ -197,10 +218,19 @@ func GetUserAutomations(username string) ([]Automation, error) {
 			&automation.Data.Enabled,
 			&automation.Data.DisableOnce,
 			&automation.Data.TimingMode,
+			&lastRun,
 		); err != nil {
 			log.Error("Failed to list user automations: scanning for results failed: ", err.Error())
 			return nil, err
 		}
+
+		if !lastRun.Valid {
+			log.Error("Invalid time column when getting automation")
+			return nil, fmt.Errorf("invalid time column when scanning logs")
+		} else {
+			automation.Data.LastRun = lastRun.Time
+		}
+
 		automations = append(automations, automation)
 	}
 	return automations, nil
@@ -219,7 +249,8 @@ func GetAutomations() ([]Automation, error) {
 		Owner,
 		Enabled,
 		DisableOnce,
-		TimingMode
+		TimingMode,
+		LastRun
 	FROM automation
 	`)
 	if err != nil {
@@ -230,6 +261,8 @@ func GetAutomations() ([]Automation, error) {
 	automations := make([]Automation, 0)
 	for res.Next() {
 		var automation Automation
+		var lastRun sql.NullTime
+
 		if err := res.Scan(
 			&automation.Id,
 			&automation.Data.Name,
@@ -240,10 +273,19 @@ func GetAutomations() ([]Automation, error) {
 			&automation.Data.Enabled,
 			&automation.Data.DisableOnce,
 			&automation.Data.TimingMode,
+			&lastRun,
 		); err != nil {
 			log.Error("Failed to list all automations: scanning for results failed: ", err.Error())
 			return nil, err
 		}
+
+		if !lastRun.Valid {
+			log.Error("Invalid time column when getting automation")
+			return nil, fmt.Errorf("invalid time column when scanning logs")
+		} else {
+			automation.Data.LastRun = lastRun.Time
+		}
+
 		automations = append(automations, automation)
 	}
 	return automations, nil
@@ -282,6 +324,30 @@ func ModifyAutomation(id uint, newItem AutomationData) error {
 	)
 	if err != nil {
 		log.Error("Failed to modify automation: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}
+
+// Sets the last run timestamp of the given automation to now.
+func UpdateAutomationExecuteTime(id uint) error {
+	query, err := db.Prepare(`
+	UPDATE automation
+	SET
+		LastRun=?
+	WHERE Id=?
+	`)
+	if err != nil {
+		log.Error("Failed to modify automation `lastRun` timestamp: preparing query failed: ", err.Error())
+		return err
+	}
+	defer query.Close()
+	_, err = query.Exec(
+		time.Now(),
+		id,
+	)
+	if err != nil {
+		log.Error("Failed to modify automation `lastRun` timestamp: executing query failed: ", err.Error())
 		return err
 	}
 	return nil
