@@ -3,7 +3,7 @@
     import Progress from '../../components/Progress.svelte'
     import { createSnackbar } from '../../global'
     import Edit from './Edit.svelte'
-    import { reminders } from './main'
+    import { reminders, sortReminders } from './main'
 
     export let id: number
     export let name: string
@@ -64,7 +64,8 @@
             if (!res.success) throw Error()
             deleted = true
             setTimeout(() => {
-                $reminders = $reminders.filter((n) => n.id !== id)
+                let temp = $reminders.filter((n) => n.id !== id)
+                sortReminders(temp)
             }, 300)
         } catch (err) {
             $createSnackbar('Could not mark reminder as completed')
@@ -94,7 +95,6 @@
                 })
             ).json()
             if (!res.success) throw Error(res.error)
-            $createSnackbar('Successfully updated reminder')
         } catch (err) {
             $createSnackbar(`Failed to modify reminder: ${err}`)
         }

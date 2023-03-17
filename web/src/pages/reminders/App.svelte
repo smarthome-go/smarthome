@@ -5,7 +5,7 @@
     import { createSnackbar, data } from "../../global";
     import Page from "../../Page.svelte";
     import Inputs from "./Inputs.svelte";
-    import { loading, reminders } from "./main";
+    import { loading, reminders, sortReminders } from "./main";
     import type { reminder } from "./main";
     import Reminder from "./Reminder.svelte";
 
@@ -18,7 +18,7 @@
             const res = (await (
                 await fetch("/api/reminder/list")
             ).json()) as reminder[];
-            reminders.set(res.sort((a, b) => b.priority - a.priority));
+            sortReminders(res)
         } catch (err) {
             $createSnackbar("Could not load reminders");
         }
@@ -47,7 +47,7 @@
                 })
             ).json();
             if (!res.success) throw Error(`request error: ${res.error}`);
-            $reminders = [
+            let temp = [
                 ...$reminders,
                 {
                     id: res.id,
@@ -61,6 +61,7 @@
                     userWasNotifiedAt: 0,
                 },
             ];
+            sortReminders(temp)
         } catch (err) {
             $createSnackbar(`Could not create reminder ${err}`);
         }
