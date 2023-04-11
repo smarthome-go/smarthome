@@ -283,6 +283,7 @@
                         modeRun: true,
                         exitCode: message.exitCode,
                         errors: message.errors,
+                        fileContents: message.fileContents,
                     }
                     currentExecutionCount--
                     requestLoading = false

@@ -1,7 +1,7 @@
 <script lang="ts">
     import Dialog, { Actions, Content, Header, Title } from '@smui/dialog'
     import Button, { Label } from '@smui/button'
-    import type { homescriptResponseWrapper } from '../../../homescript'
+    import type { homescriptResponseWrapper, homescriptResponse } from '../../../homescript'
     import Terminal from './Terminal.svelte'
     import { createEventDispatcher } from 'svelte'
 
@@ -79,9 +79,9 @@
                     code: data.code,
                     modeRun: data.modeRun,
                     exitCode: data.response.exitCode,
+                    fileContents: data.response.fileContents,
                     errors: data.response.errors,
                 }}
-                {scriptId}
                 output={data.response.output}
             />
         </div>
