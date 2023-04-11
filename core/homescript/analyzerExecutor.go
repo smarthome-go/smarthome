@@ -20,12 +20,24 @@ type AnalyzerExecutor struct {
 func (self AnalyzerExecutor) IsAnalyzer() bool { return true }
 
 // Resolves a Homescript module
-func (self *AnalyzerExecutor) ResolveModule(id string) (string, bool, bool, error) {
+func (self *AnalyzerExecutor) ResolveModule(id string) (string, string, bool, bool, error) {
 	script, found, err := database.GetUserHomescriptById(id, self.Username)
 	if !found || err != nil {
-		return "", found, true, err
+		return "", "", found, true, err
 	}
-	return script.Data.Code, true, true, nil
+	return script.Data.Code, id, true, true, nil
+}
+
+// Resolves a Homescript module
+func (self *AnalyzerExecutor) ReadFile(path string) (string, error) {
+	script, found, err := database.GetUserHomescriptById(path, self.Username)
+	if err != nil {
+		return "", err
+	}
+	if !found {
+		return "", fmt.Errorf("Script `%s` was not found but required", path)
+	}
+	return script.Data.Code, nil
 }
 
 func (self *AnalyzerExecutor) Sleep(seconds float64) {
@@ -128,7 +140,13 @@ func (self *AnalyzerExecutor) Get(requestUrl string) (homescript.HttpResponse, e
 	return homescript.HttpResponse{}, nil
 }
 
-func (self *AnalyzerExecutor) Http(requestUrl string, method string, body string, headers map[string]string) (homescript.HttpResponse, error) {
+func (self *AnalyzerExecutor) Http(
+	requestUrl string,
+	method string,
+	body string,
+	headers map[string]string,
+	cookies map[string]string,
+) (homescript.HttpResponse, error) {
 	// Check permissions and request building beforehand
 	hasPermission, err := database.UserHasPermission(self.Username, database.PermissionHomescriptNetwork)
 	if err != nil {

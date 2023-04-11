@@ -111,12 +111,24 @@ func (self *Executor) IsAnalyzer() bool {
 }
 
 // Resolves a Homescript module
-func (self *Executor) ResolveModule(id string) (string, bool, bool, error) {
+func (self *Executor) ResolveModule(id string) (string, string, bool, bool, error) {
 	script, found, err := database.GetUserHomescriptById(id, self.Username)
 	if !found || err != nil {
-		return "", found, true, err
+		return "", "", found, true, err
 	}
-	return script.Data.Code, true, true, nil
+	return script.Data.Code, id, true, true, nil
+}
+
+// Resolves a Homescript module
+func (self *Executor) ReadFile(path string) (string, error) {
+	script, found, err := database.GetUserHomescriptById(path, self.Username)
+	if err != nil {
+		return "", err
+	}
+	if !found {
+		return "", fmt.Errorf("Script `%s` was not found but required", path)
+	}
+	return script.Data.Code, nil
 }
 
 // Pauses the execution of the current script for the amount of the specified seconds
@@ -374,15 +386,22 @@ func (self *Executor) Get(requestUrl string) (homescript.HttpResponse, error) {
 	if err != nil {
 		return homescript.HttpResponse{}, err
 	}
+
+	cookies := make([]http.Cookie, 0)
+	for _, cookie := range res.Cookies() {
+		cookies = append(cookies, *cookie)
+	}
+
 	return homescript.HttpResponse{
 		Status:     res.Status,
 		StatusCode: uint16(res.StatusCode),
 		Body:       string(resBody),
+		Cookies:    cookies,
 	}, nil
 }
 
 // Makes a request to an arbitrary URL using a custom method and body in order to return the result
-func (self *Executor) Http(requestUrl string, method string, body string, headers map[string]string) (homescript.HttpResponse, error) {
+func (self *Executor) Http(requestUrl string, method string, body string, headers map[string]string, cookies map[string]string) (homescript.HttpResponse, error) {
 	// Check permissions and request building beforehand
 	hasPermission, err := database.UserHasPermission(self.Username, database.PermissionHomescriptNetwork)
 	if err != nil {
@@ -439,9 +458,19 @@ func (self *Executor) Http(requestUrl string, method string, body string, header
 	}
 	// Set the user agent to the Smarthome HMS client
 	req.Header.Set("User-Agent", "Smarthome-homescript")
+
 	// Set the headers included via the function call
 	for headerKey, headerValue := range headers {
 		req.Header.Set(headerKey, headerValue)
+	}
+
+	// Set the cookies
+	for key, value := range cookies {
+		c := http.Cookie{
+			Name:  key,
+			Value: value,
+		}
+		req.AddCookie(&c)
 	}
 
 	// Create a new context
@@ -478,10 +507,17 @@ func (self *Executor) Http(requestUrl string, method string, body string, header
 	if err != nil {
 		return homescript.HttpResponse{}, err
 	}
+
+	outCookies := make([]http.Cookie, 0)
+	for _, cookie := range res.Cookies() {
+		outCookies = append(outCookies, *cookie)
+	}
+
 	return homescript.HttpResponse{
 		Status:     res.Status,
 		StatusCode: uint16(res.StatusCode),
 		Body:       string(resBody),
+		Cookies:    outCookies,
 	}, nil
 }
 
