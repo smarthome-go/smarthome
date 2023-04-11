@@ -17,11 +17,12 @@ import (
 )
 
 type HomescriptResponse struct {
-	Id       string                `json:"id"`
-	Success  bool                  `json:"success"`
-	Exitcode int                   `json:"exitCode"`
-	Output   string                `json:"output"`
-	Errors   []homescript.HmsError `json:"errors"`
+	Id           string                `json:"id"`
+	Success      bool                  `json:"success"`
+	Exitcode     int                   `json:"exitCode"`
+	Output       string                `json:"output"`
+	FileContents map[string]string     `json:"fileContents"`
+	Errors       []homescript.HmsError `json:"errors"`
 }
 
 type CreateHomescriptRequest struct {
@@ -114,13 +115,27 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 	)
 	output := outputBuffer.String()
 
+	fileContents := make(map[string]string)
+	for _, errItem := range res.Errors {
+		if fileContents[errItem.Span.Filename] == "" {
+			script, found, err := database.GetUserHomescriptById(errItem.Span.Filename, username)
+			if err != nil || !found {
+				w.WriteHeader(http.StatusServiceUnavailable)
+				Res(w, Response{Success: false, Message: "could not retrieve error source Homescript from database", Error: "database failure"})
+				return
+			}
+			fileContents[errItem.Span.Filename] = script.Data.Code
+		}
+	}
+
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
-			Success:  res.ExitCode == 0,
-			Id:       request.Id,
-			Output:   output,
-			Exitcode: res.ExitCode,
-			Errors:   res.Errors,
+			Success:      res.ExitCode == 0,
+			Id:           request.Id,
+			Output:       output,
+			Exitcode:     res.ExitCode,
+			FileContents: fileContents,
+			Errors:       res.Errors,
 		}); err != nil {
 		log.Error(err.Error())
 		Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
@@ -169,17 +184,33 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 		request.Id,
 	)
 	isSuccess := true
+
 	for _, diagnostic := range diagnostics {
 		if diagnostic.Kind != "Warning" && diagnostic.Kind != "Info" {
 			isSuccess = false
 			break
 		}
 	}
+
+	fileContents := make(map[string]string)
+	for _, errItem := range diagnostics {
+		if fileContents[errItem.Span.Filename] == "" {
+			script, found, err := database.GetUserHomescriptById(errItem.Span.Filename, username)
+			if err != nil || !found {
+				w.WriteHeader(http.StatusServiceUnavailable)
+				Res(w, Response{Success: false, Message: "could not retrieve error source Homescript from database", Error: "database failure"})
+				return
+			}
+			fileContents[errItem.Span.Filename] = script.Data.Code
+		}
+	}
+
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
-			Success: isSuccess,
-			Id:      request.Id,
-			Errors:  diagnostics,
+			Success:      isSuccess,
+			Id:           request.Id,
+			FileContents: fileContents,
+			Errors:       diagnostics,
 		}); err != nil {
 		log.Error(err.Error())
 		Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
@@ -223,12 +254,29 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 	// if len(output) > 100_000 {
 	// 	output = "Output too large"
 	// }
+
+	fileContents := make(map[string]string)
+	for _, errItem := range res.Errors {
+		if fileContents[errItem.Span.Filename] == "" {
+			script, found, err := database.GetUserHomescriptById(errItem.Span.Filename, username)
+			if err != nil {
+				w.WriteHeader(http.StatusServiceUnavailable)
+				Res(w, Response{Success: false, Message: "could not retrieve error source Homescript from database", Error: "database failure"})
+				return
+			}
+			if found {
+				fileContents[errItem.Span.Filename] = script.Data.Code
+			}
+		}
+	}
+
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
-			Success:  res.ExitCode == 0,
-			Output:   output,
-			Exitcode: res.ExitCode,
-			Errors:   res.Errors,
+			Success:      res.ExitCode == 0,
+			Output:       output,
+			Exitcode:     res.ExitCode,
+			Errors:       res.Errors,
+			FileContents: fileContents,
 		}); err != nil {
 		log.Error(err.Error())
 		Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
@@ -272,10 +320,27 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 	}
+
+	fileContents := make(map[string]string)
+	for _, errItem := range diagnostics {
+		if fileContents[errItem.Span.Filename] == "" {
+			script, found, err := database.GetUserHomescriptById(errItem.Span.Filename, username)
+			if err != nil {
+				w.WriteHeader(http.StatusServiceUnavailable)
+				Res(w, Response{Success: false, Message: "could not retrieve error source Homescript from database", Error: "database failure"})
+				return
+			}
+			if found {
+				fileContents[errItem.Span.Filename] = script.Data.Code
+			}
+		}
+	}
+
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
-			Success: isSuccess,
-			Errors:  diagnostics,
+			Success:      isSuccess,
+			Errors:       diagnostics,
+			FileContents: fileContents,
 		}); err != nil {
 		log.Error(err.Error())
 		Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})

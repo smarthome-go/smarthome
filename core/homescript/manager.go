@@ -60,9 +60,10 @@ type HmsExecRes struct {
 }
 
 type HmsError struct {
-	Kind    string         `json:"kind"`
-	Message string         `json:"message"`
-	Span    hmsErrors.Span `json:"span"`
+	Kind         string         `json:"kind"`
+	Message      string         `json:"message"`
+	Span         hmsErrors.Span `json:"span"`
+	FileContents string         `json:"code"`
 }
 
 func convertErrors(input []hmsErrors.Error) []HmsError {
@@ -118,6 +119,7 @@ func (m *Manager) Analyze(
 		scriptCode,
 		scopeAdditions(),
 		moduleStack,
+		moduleName,
 		moduleName,
 	)
 
@@ -220,7 +222,8 @@ func (m *Manager) Run(
 		false,
 		10000,
 		make([]string, 0),
-		"",
+		"<live>",
+		"<live>",
 	)
 
 	wasTerminated := executor.WasTerminated

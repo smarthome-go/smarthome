@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/server/middleware"
 )
@@ -26,9 +27,10 @@ type HMSMessageTXOut struct {
 	Payload string           `json:"payload"`
 }
 type HMSMessageTXRes struct {
-	Kind     HMSMessageKindTX      `json:"kind"`
-	Exitcode int                   `json:"exitCode"`
-	Errors   []homescript.HmsError `json:"errors"`
+	Kind         HMSMessageKindTX      `json:"kind"`
+	Exitcode     int                   `json:"exitCode"`
+	Errors       []homescript.HmsError `json:"errors"`
+	FileContents map[string]string     `json:"fileContents"`
 }
 type HMSMessageKindTX string
 
@@ -227,10 +229,28 @@ outer:
 			if err := ws.SetWriteDeadline(time.Now().Add(10 * time.Second)); err != nil {
 				return
 			}
+
+			fileContents := make(map[string]string)
+			for _, errItem := range res.Errors {
+				if fileContents[errItem.Span.Filename] == "" {
+					script, found, err := database.GetUserHomescriptById(errItem.Span.Filename, username)
+					if err != nil || !found {
+						if err := ws.WriteJSON(HMSMessageTXErr{
+							Kind:    MessageKindErr,
+							Message: fmt.Sprintf("cannot get homescript for error location: %s", err.Error()),
+						}); err != nil {
+							return
+						}
+					}
+					fileContents[errItem.Span.Filename] = script.Data.Code
+				}
+			}
+
 			if err := ws.WriteJSON(HMSMessageTXRes{
-				Kind:     MessageKindResults,
-				Exitcode: res.ExitCode,
-				Errors:   res.Errors,
+				Kind:         MessageKindResults,
+				Exitcode:     res.ExitCode,
+				Errors:       res.Errors,
+				FileContents: fileContents,
 			}); err != nil {
 				return
 			}
