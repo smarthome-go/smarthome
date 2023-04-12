@@ -119,12 +119,14 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 	for _, errItem := range res.Errors {
 		if fileContents[errItem.Span.Filename] == "" {
 			script, found, err := database.GetUserHomescriptById(errItem.Span.Filename, username)
-			if err != nil || !found {
+			if err != nil {
 				w.WriteHeader(http.StatusServiceUnavailable)
-				Res(w, Response{Success: false, Message: "could not retrieve error source Homescript from database", Error: "database failure"})
+				Res(w, Response{Success: false, Message: fmt.Sprintf("could not retrieve error source Homescript (%s) from database", errItem.Span.Filename), Error: "database failure"})
 				return
 			}
-			fileContents[errItem.Span.Filename] = script.Data.Code
+			if found {
+				fileContents[errItem.Span.Filename] = script.Data.Code
+			}
 		}
 	}
 
@@ -196,12 +198,14 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 	for _, errItem := range diagnostics {
 		if fileContents[errItem.Span.Filename] == "" {
 			script, found, err := database.GetUserHomescriptById(errItem.Span.Filename, username)
-			if err != nil || !found {
+			if err != nil {
 				w.WriteHeader(http.StatusServiceUnavailable)
 				Res(w, Response{Success: false, Message: "could not retrieve error source Homescript from database", Error: "database failure"})
 				return
 			}
-			fileContents[errItem.Span.Filename] = script.Data.Code
+			if found {
+				fileContents[errItem.Span.Filename] = script.Data.Code
+			}
 		}
 	}
 
