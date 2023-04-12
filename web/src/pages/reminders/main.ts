@@ -22,6 +22,7 @@ export function sortReminders(input: reminder[]) {
         if (b.priority !== a.priority) {
             return b.priority - a.priority
         }
+        // then sort by due date
         return a.dueDate - b.dueDate
     }))
 }

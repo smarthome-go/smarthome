@@ -14,12 +14,27 @@
         loading = true
         try {
             const res = (await (await fetch('/api/reminder/list')).json()) as reminder[]
-            reminders = res.sort((a, b) => b.priority - a.priority)
+            sortReminders(res)
             remindersLoaded = true
         } catch (err) {
             $createSnackbar('Could not load reminders')
         }
         loading = false
+    }
+
+    function sortReminders(input: reminder[]) {
+        reminders = input.sort((a, b) => {
+            // Sort by priority
+            if (b.priority !== a.priority) {
+                return b.priority - a.priority
+            }
+            // then sort by due date
+            return a.dueDate - b.dueDate
+        })
+    }
+
+    function deleteReminder(id: number) {
+        sortReminders(reminders.filter(r => r.id !== id))
     }
 
     onMount(loadReminders)
@@ -33,10 +48,7 @@
             <span class="text-hint"> All caught up, nothing to do</span>
         {:else}
             {#each reminders as data (data.id)}
-                <Reminder
-                    bind:data
-                    on:delete={() => (reminders = reminders.filter(r => r.id !== data.id))}
-                />
+                <Reminder bind:data on:delete={() => deleteReminder(data.id)} />
             {/each}
         {/if}
     </div>
