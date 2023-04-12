@@ -1,19 +1,20 @@
-## Changelog for v0.7.0
+## Changelog for v0.8.0
 
-- Added HMS widgets
-  - Homescripts can now be used as dashboard widgets
-  - The setting `Is Widget` of the desired Homescript is to be activated
-  - Everything outputted via `print` or `println` is rendered as bare HTML
-  - Javascript is also supported
-- Fixed various Homescript-related bugs
-- The automation and scheduling system can now be controlled via Homescript
+### Fixes
 
-```lua
-# Example
-scheduler.new({
-  name: "Title",
-  hour: 4,
-  minute: 21,
-  code: "switch('switch_id', on);"
-});
-  ```
+- Fixed invalid priority range in notifications
+- Added maximum capacity to Homescript runtime output
+- Removed debug print from HMS executor
+- Fixed various bugs concerning the HMS key-value store
+- web: HMS jobs initiated by widgets are now hidden
+- The user is no longer informed that a schedule executed
+- Prevented multiple consecutive runs of a geolocation-timed automation
+- When an HMS error originates from a different file than the executed segment,
+  the platform no longer crashes
+
+### Additions
+
+- Automations and schedulers can now be controlled via Homescript
+- web: Reminders are now sorted by priority and due-date
+- Added Homescript HTTP cookie support
+- Added Homescript enumerations
