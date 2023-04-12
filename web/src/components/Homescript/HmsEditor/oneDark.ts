@@ -19,6 +19,7 @@ const highlightBackground = '#2c313a',
     cyan = '#56b6c2',
     red = '#e86671',
     grey = '#5c6370',
+    yellow = '#e1bd79',
     light_grey = '#848b98'
 
 export const oneDarkTheme = EditorView.theme({
@@ -100,6 +101,7 @@ export const oneDarkTheme = EditorView.theme({
 /// The highlighting style for code in the One Dark theme.
 export const oneDarkHighlightStyle = HighlightStyle.define([
     { tag: t.keyword, color: purple },
+    { tag: t.className, color: yellow },
     { tag: [t.variableName, t.operator], color: fg },
     { tag: [t.bool, t.null, t.typeName, t.number], color: orange },
     { tag: [t.function(t.variableName), t.function(t.propertyName)], color: blue },
