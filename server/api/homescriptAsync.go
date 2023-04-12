@@ -233,8 +233,8 @@ outer:
 			fileContents := make(map[string]string)
 			for _, errItem := range res.Errors {
 				if fileContents[errItem.Span.Filename] == "" {
-					script, found, err := database.GetUserHomescriptById(errItem.Span.Filename, username)
-					if err != nil || !found {
+					script, _, err := database.GetUserHomescriptById(errItem.Span.Filename, username)
+					if err != nil {
 						if err := ws.WriteJSON(HMSMessageTXErr{
 							Kind:    MessageKindErr,
 							Message: fmt.Sprintf("cannot get homescript for error location: %s", err.Error()),
