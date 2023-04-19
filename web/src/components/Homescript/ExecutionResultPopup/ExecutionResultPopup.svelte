@@ -1,7 +1,7 @@
 <script lang="ts">
     import Dialog, { Actions, Content, Header, Title } from '@smui/dialog'
     import Button, { Label } from '@smui/button'
-    import type { homescriptResponseWrapper, homescriptResponse } from '../../../homescript'
+    import type { homescriptResponseWrapper } from '../../../homescript'
     import Terminal from './Terminal.svelte'
     import { createEventDispatcher } from 'svelte'
 
@@ -12,9 +12,6 @@
 
     // Data is bound to display the result
     export let data: homescriptResponseWrapper
-
-    // Specifies the id of the current script
-    export let scriptId = ''
 </script>
 
 <Dialog
