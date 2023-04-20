@@ -120,7 +120,7 @@ func scopeAdditions() map[string]homescript.Value {
 									"minute":      homescript.TypeNumber,
 									"hms_id":      homescript.TypeString,
 									"days":        homescript.TypeList,
-								})
+								}, executor)
 								if valErr != nil {
 									return nil, nil, valErr
 								}
@@ -128,12 +128,17 @@ func scopeAdditions() map[string]homescript.Value {
 									return homescript.ValueNumber{Value: 0.0}, nil, nil
 								}
 
-								name := (*obj.Fields()["name"]).(homescript.ValueString)
-								description := (*obj.Fields()["description"]).(homescript.ValueString)
-								hour := (*obj.Fields()["hour"]).(homescript.ValueNumber)
-								minute := (*obj.Fields()["minute"]).(homescript.ValueNumber)
-								hmsId := (*obj.Fields()["hms_id"]).(homescript.ValueString)
-								days := (*obj.Fields()["days"]).(homescript.ValueList)
+								fields, fieldErr := obj.Fields(executor, span)
+								if fieldErr != nil {
+									return nil, nil, fieldErr
+								}
+
+								name := (*fields["name"]).(homescript.ValueString)
+								description := (*fields["description"]).(homescript.ValueString)
+								hour := (*fields["hour"]).(homescript.ValueNumber)
+								minute := (*fields["minute"]).(homescript.ValueNumber)
+								hmsId := (*fields["hms_id"]).(homescript.ValueString)
+								days := (*fields["days"]).(homescript.ValueList)
 
 								if err := checkInt(span, hour, "Field `hour`"); err != nil {
 									return nil, nil, err
@@ -302,7 +307,7 @@ func scopeAdditions() map[string]homescript.Value {
 									"hour":   homescript.TypeNumber,
 									"minute": homescript.TypeNumber,
 									"code":   homescript.TypeString,
-								})
+								}, executor)
 								if valErr != nil {
 									return nil, nil, valErr
 								}
@@ -310,10 +315,15 @@ func scopeAdditions() map[string]homescript.Value {
 									return homescript.ValueNumber{Value: 0.0}, nil, nil
 								}
 
-								name := (*obj.Fields()["name"]).(homescript.ValueString)
-								hour := (*obj.Fields()["hour"]).(homescript.ValueNumber)
-								minute := (*obj.Fields()["minute"]).(homescript.ValueNumber)
-								code := (*obj.Fields()["code"]).(homescript.ValueString)
+								fields, fieldErr := obj.Fields(executor, span)
+								if fieldErr != nil {
+									return nil, nil, fieldErr
+								}
+
+								name := (*fields["name"]).(homescript.ValueString)
+								hour := (*fields["hour"]).(homescript.ValueNumber)
+								minute := (*fields["minute"]).(homescript.ValueNumber)
+								code := (*fields["code"]).(homescript.ValueString)
 
 								if err := checkInt(span, hour, "Field `hour`"); err != nil {
 									return nil, nil, err
@@ -359,7 +369,7 @@ func scopeAdditions() map[string]homescript.Value {
 									"hour":   homescript.TypeNumber,
 									"minute": homescript.TypeNumber,
 									"code":   homescript.TypeString,
-								})
+								}, executor)
 								if valErr != nil {
 									return nil, nil, valErr
 								}
@@ -367,10 +377,15 @@ func scopeAdditions() map[string]homescript.Value {
 									return homescript.ValueNull{}, nil, nil
 								}
 
-								name := (*obj.Fields()["name"]).(homescript.ValueString)
-								hour := (*obj.Fields()["hour"]).(homescript.ValueNumber)
-								minute := (*obj.Fields()["minute"]).(homescript.ValueNumber)
-								code := (*obj.Fields()["code"]).(homescript.ValueString)
+								fields, fieldErr := obj.Fields(executor, span)
+								if fieldErr != nil {
+									return nil, nil, fieldErr
+								}
+
+								name := (*fields["name"]).(homescript.ValueString)
+								hour := (*fields["hour"]).(homescript.ValueNumber)
+								minute := (*fields["minute"]).(homescript.ValueNumber)
+								code := (*fields["code"]).(homescript.ValueString)
 
 								if err := checkInt(span, hour, "Field `hour`"); err != nil {
 									return nil, nil, err
@@ -542,18 +557,24 @@ func checkArgs(name string, span errors.Span, args []homescript.Value, types ...
 }
 
 // Helper function which checks that the passed object contains the correct keys
-func checkObj(span errors.Span, obj homescript.ValueObject, check map[string]homescript.ValueType) (*errors.Error, bool) {
+func checkObj(span errors.Span, obj homescript.ValueObject, check map[string]homescript.ValueType, executor homescript.Executor) (*errors.Error, bool) {
+	fields, err := obj.Fields(executor, span)
+	if err != nil {
+		return err, false
+	}
+
 	for key, type_ := range check {
-		if obj.Fields()[key] == nil {
+
+		if fields[key] == nil {
 			return errors.NewError(span, fmt.Sprintf("Key `%s` of type `%v` not found in object", key, type_.String()), errors.TypeError), false
 		}
 
-		if (*obj.Fields()[key]) == nil {
+		if (*fields[key]) == nil {
 			return nil, true
 		}
 
-		if (*obj.Fields()[key]).Type() != type_ {
-			return errors.NewError(span, fmt.Sprintf("Key `%s` has type `%v`, however `%v` was expected", key, (*obj.Fields()[key]).Type(), type_.String()), errors.TypeError), false
+		if (*fields[key]).Type() != type_ {
+			return errors.NewError(span, fmt.Sprintf("Key `%s` has type `%v`, however `%v` was expected", key, (*fields[key]).Type(), type_.String()), errors.TypeError), false
 		}
 	}
 
