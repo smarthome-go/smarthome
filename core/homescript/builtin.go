@@ -97,6 +97,75 @@ func scopeAdditions() map[string]homescript.Value {
 								}}),
 							}}, nil
 						}}),
+						"hardware": valPtr(homescript.ValueBuiltinVariable{Callback: func(executor homescript.Executor, span hmsErrors.Span) (homescript.Value, *hmsErrors.Error) {
+							hasPermission, err := database.UserHasPermission(executor.GetUser(), database.PermissionSystemConfig)
+							if err != nil {
+								return nil, errors.NewError(span, err.Error(), errors.RuntimeError)
+							}
+
+							if !hasPermission {
+								return nil, errors.NewError(span, fmt.Sprintf("Permission denied: you lack the permission `%s`", database.PermissionSystemConfig), errors.RuntimeError)
+							}
+
+							outList := make([]*homescript.Value, 0)
+							typeObj := homescript.TypeObject
+
+							if executor.IsAnalyzer() {
+								return homescript.ValueList{ValueType: &typeObj, Values: &outList}, nil
+							}
+
+							nodes, err := database.GetHardwareNodes()
+							if err != nil {
+								return nil, errors.NewError(span, err.Error(), errors.RuntimeError)
+							}
+
+							for _, node := range nodes {
+								nameCopy := node.Name
+								urlCopy := node.Url
+								tokenCopy := node.Token
+								onlineCopy := node.Online
+								enabledCopy := node.Enabled
+
+								currObj := homescript.ValueObject{
+									DataType:  "hw_node",
+									IsDynamic: false,
+									ObjFields: map[string]*homescript.Value{
+										"name":    valPtr(homescript.ValueString{Value: nameCopy}),
+										"online":  valPtr(homescript.ValueBool{Value: onlineCopy}),
+										"enabled": valPtr(homescript.ValueBool{Value: enabledCopy}),
+										"url":     valPtr(homescript.ValueString{Value: urlCopy}),
+										"token":   valPtr(homescript.ValueString{Value: tokenCopy}),
+										"set_enabled": valPtr(homescript.ValueBuiltinFunction{Callback: func(executor homescript.Executor, span hmsErrors.Span, args ...homescript.Value) (homescript.Value, *int, *hmsErrors.Error) {
+											if err := checkArgs("set_enabled", span, args, homescript.TypeBoolean); err != nil {
+												return nil, nil, err
+											}
+
+											shouldEnable := args[0].(homescript.ValueBool).Value
+
+											fmt.Printf("setting %s to %t\n", urlCopy, shouldEnable)
+
+											if err := database.ModifyHardwareNode(urlCopy, shouldEnable, nameCopy, tokenCopy); err != nil {
+												return nil, nil, errors.NewError(span, err.Error(), errors.RuntimeError)
+											}
+
+											return homescript.ValueNull{}, nil, nil
+										}}),
+									},
+
+									Range:       span,
+									IsProtected: true,
+								}
+
+								outList = append(outList, valPtr(currObj))
+							}
+
+							return homescript.ValueList{
+								Values:      &outList,
+								ValueType:   &typeObj,
+								Range:       span,
+								IsProtected: true,
+							}, nil
+						}}),
 					},
 				}, nil
 			},
