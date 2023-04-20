@@ -222,8 +222,8 @@ func (m *Manager) Run(
 		false,
 		10000,
 		make([]string, 0),
-		"<live>",
-		"<live>",
+		scriptLabel,
+		scriptLabel,
 	)
 
 	wasTerminated := executor.WasTerminated
