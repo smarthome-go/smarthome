@@ -11,6 +11,7 @@
 
     function errToHtml(err: homescriptError, data: hmsResWrapper): string {
         let code = data.code
+
         if (data.fileContents[err.span.filename] !== undefined) {
             code = data.fileContents[err.span.filename]
         }

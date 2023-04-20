@@ -222,6 +222,7 @@
                     modeRun: false,
                     exitCode: currentExecResTemp.exitCode,
                     errors: diagnostics,
+                    fileContents: currentExecResTemp.fileContents,
                 }
                 output = currentExecResTemp.output
             }
@@ -423,7 +424,7 @@
                     {#if output.length === 0 && currentExecRes === undefined}
                         <span class="gray"> Homescript output will be displayed here. </span>
                     {:else}
-                        <Terminal data={currentExecRes} scriptId={`${currentScript}.hms`} {output} />
+                        <Terminal data={currentExecRes} {output} />
                     {/if}
                 </div>
             </div>
