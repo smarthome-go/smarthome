@@ -115,10 +115,7 @@ func createMockData() error {
 func TestAutomation(t *testing.T) {
 	now := time.Now()
 	then := now.Add(time.Minute)
-	if err := InitAutomations(); err != nil {
-		t.Error(err.Error())
-		return
-	}
+	TestInit(t)
 	// Normal automation
 	if _, err := CreateNewAutomation(
 		"name",
@@ -161,10 +158,7 @@ func TestAutomation(t *testing.T) {
 func TestModificationToDifferentScript(t *testing.T) {
 	now := time.Now()
 	then := now.Add(time.Minute)
-	if err := InitAutomations(); err != nil {
-		t.Error(err.Error())
-		return
-	}
+	TestInit(t)
 	// Create initial automation
 	modifyId, err := CreateNewAutomation(
 		"name",
@@ -226,10 +220,7 @@ func TestModificationToDifferentScript(t *testing.T) {
 func TestModificationToAbort(t *testing.T) {
 	now := time.Now()
 	then := now.Add(time.Minute)
-	if err := InitAutomations(); err != nil {
-		t.Error(err.Error())
-		return
-	}
+	TestInit(t)
 	// Create initial automation
 	abortId, err := CreateNewAutomation(
 		"name",
@@ -326,10 +317,7 @@ func TestStartInactiveAutomation(t *testing.T) {
 
 // Tests if the different timing modes `sunrise` and `sunset` generate appropriate Cron-Expressions
 func TestTimingModes(t *testing.T) {
-	if err := InitAutomations(); err != nil {
-		t.Error(err.Error())
-		return
-	}
+	TestInit(t)
 	sunriseId, err := CreateNewAutomation(
 		"name",
 		"description",
@@ -386,10 +374,7 @@ func TestTimingModes(t *testing.T) {
 func TestUserDisabled(t *testing.T) {
 	now := time.Now()
 	then := now.Add(time.Minute)
-	if err := InitAutomations(); err != nil {
-		t.Error(err.Error())
-		return
-	}
+	TestInit(t)
 	// Set the switch to off
 	assert.NoError(t, hardware.SetPower("test_switch", false))
 	// Set the user's schedules and automations to off
@@ -432,10 +417,7 @@ func TestUserDisabled(t *testing.T) {
 func TestDisableOnce(t *testing.T) {
 	now := time.Now()
 	then := now.Add(time.Minute)
-	if err := InitAutomations(); err != nil {
-		t.Error(err.Error())
-		return
-	}
+	TestInit(t)
 	// Set the switch to off
 	assert.NoError(t, hardware.SetPower("test_switch", false))
 	// Normal automation
@@ -503,10 +485,7 @@ func TestDisableOnce(t *testing.T) {
 	// Check if the automation runs the second time
 	now = time.Now()
 	then = now.Add(time.Minute)
-	if err := InitAutomations(); err != nil {
-		t.Error(err.Error())
-		return
-	}
+	TestInit(t)
 	// Create a manual cron expression
 	cronExpr, err = automation.GenerateCronExpression(uint8(then.Hour()), uint8(then.Minute()), []uint8{0, 1, 2, 3, 4, 5, 6})
 	assert.NoError(t, err)
@@ -546,6 +525,11 @@ func TestDisableOnce(t *testing.T) {
 
 // Tests if the automation system can be initialized
 func TestInit(t *testing.T) {
+	if err := createMockData(); err != nil {
+		t.Error(err.Error())
+		return
+	}
+
 	if err := InitAutomations(); err != nil {
 		t.Error(err.Error())
 		return
