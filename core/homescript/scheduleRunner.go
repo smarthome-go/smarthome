@@ -178,10 +178,9 @@ func scheduleRunnerFunc(id uint) {
 					fmt.Sprintf("Schedule '%d' failed due to changed permissions.", id),
 				)
 			}
-			if err := hardware.SetPower(
-				switchJob.SwitchId,
-				switchJob.PowerOn,
-			); err != nil {
+
+			if err := hardware.SetSwitchPowerAll(switchJob.SwitchId, switchJob.PowerOn, owner.Username); err != nil {
+				log.Error(fmt.Sprintf("Failed to set schedule power: `%s`", err.Error()))
 				return
 			}
 		}

@@ -76,11 +76,23 @@ func TestSetPower(t *testing.T) {
 		return
 	}
 	for _, req := range table {
-		if err := database.CreateSwitch(req.Switch, req.Switch, "test", 0); err != nil {
+		if err := database.CreateSwitch(req.Switch, req.Switch, "test", 0, nil); err != nil {
 			t.Error(err.Error())
 			return
 		}
-		if err := SetPower(req.Switch, req.Power); err != nil {
+
+		switchItem, found, err := database.GetSwitchById(req.Switch)
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+
+		if !found {
+			t.Errorf("Switch `%s` was just created but could not be found", req.Switch)
+			return
+		}
+
+		if err := SetPower(switchItem, req.Power); err != nil {
 			if !strings.Contains(err.Error(), req.Error) || req.Error == "" {
 				t.Errorf("Unexpected error: want: `%s` got: `%s`", req.Error, err.Error())
 				return
@@ -113,7 +125,19 @@ func TestSetPower(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
-	if err := SetPower("test", false); err != nil {
+
+	switchItem, found, err := database.GetSwitchById("test")
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	if !found {
+		t.Errorf("Switch `%s` was just created but could not be found", "test")
+		return
+	}
+
+	if err := SetPower(switchItem, false); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -191,11 +215,23 @@ func TestSetPowerAsync(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if err := database.CreateSwitch(req.Switch, req.Switch, "test", 0); err != nil {
+			if err := database.CreateSwitch(req.Switch, req.Switch, "test", 0, nil); err != nil {
 				t.Error(err.Error())
 				return
 			}
-			if err := SetPower(req.Switch, req.Power); err != nil {
+
+			switchItem, found, err := database.GetSwitchById(req.Switch)
+			if err != nil {
+				t.Error(err.Error())
+				return
+			}
+
+			if !found {
+				t.Errorf("Switch `%s` was just created but could not be found", req.Switch)
+				return
+			}
+
+			if err := SetPower(switchItem, req.Power); err != nil {
 				if !strings.Contains(err.Error(), req.Error) || req.Error == "" {
 					t.Errorf("Unexpected error: want: `%s` got: `%s`", req.Error, err.Error())
 					return
@@ -215,7 +251,19 @@ func TestSetPowerAsync(t *testing.T) {
 			t.Error(err.Error())
 			return
 		}
-		if err := SetPower("test", false); err != nil {
+
+		switchItem, found, err := database.GetSwitchById("test")
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+
+		if !found {
+			t.Errorf("Switch `%s` was just created but could not be found", req.Switch)
+			return
+		}
+
+		if err := SetPower(switchItem, false); err != nil {
 			t.Error(err.Error())
 			return
 		}

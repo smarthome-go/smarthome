@@ -214,7 +214,7 @@ func DeleteCamera(w http.ResponseWriter, r *http.Request) {
 	Res(w, Response{Success: true, Message: "successfully deleted camera"})
 }
 
-///Camera feed and image fetching ///
+// /Camera feed and image fetching ///
 func GetCameraFeed(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(w, r)
@@ -280,7 +280,7 @@ func GetCameraFeed(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", http.DetectContentType(imageData))
 	if _, err := w.Write(imageData); err != nil {
-		log.Debug("Client disconnected before awaiting response")
+		log.Debug("Camera proxy: client disconnected before awaiting response")
 		return
 	}
 }

@@ -13,16 +13,18 @@ import (
 )
 
 type AddSwitchRequest struct {
-	Id     string `json:"id"`
-	Name   string `json:"name"`
-	RoomId string `json:"roomId"`
-	Watts  uint16 `json:"watts"`
+	Id         string  `json:"id"`
+	Name       string  `json:"name"`
+	RoomId     string  `json:"roomId"`
+	Watts      uint16  `json:"watts"`
+	TargetNode *string `json:"targetNode"`
 }
 
 type ModifySwitchRequest struct {
-	Id    string `json:"id"`
-	Name  string `json:"name"`
-	Watts uint16 `json:"watts"`
+	Id         string  `json:"id"`
+	Name       string  `json:"name"`
+	Watts      uint16  `json:"watts"`
+	TargetNode *string `json:"targetNode"`
 }
 
 type DeleteSwitchRequest struct {
@@ -111,11 +113,27 @@ func CreateSwitch(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to create switch", Error: "invalid room id"})
 		return
 	}
+
+	if request.TargetNode != nil {
+		_, found, err := database.GetHardwareNodeByUrl(*request.TargetNode)
+		if err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			Res(w, Response{Success: false, Message: "failed to modify switch", Error: "database failure"})
+			return
+		}
+		if !found {
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			Res(w, Response{Success: false, Message: "failed to modify switch", Error: "no hardware node with URL exists"})
+			return
+		}
+	}
+
 	if err := database.CreateSwitch(
 		request.Id,
 		request.Name,
 		request.RoomId,
 		request.Watts,
+		request.TargetNode,
 	); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to create switch", Error: "database failure"})
@@ -134,7 +152,7 @@ func ModifySwitch(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	switchItem, found, err := database.GetSwitchById(request.Id)
+	_, found, err := database.GetSwitchById(request.Id)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to modify switch", Error: "database failure"})
@@ -145,17 +163,29 @@ func ModifySwitch(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to modify switch", Error: "no switch with id exists"})
 		return
 	}
-	if switchItem.Name == request.Name && switchItem.Watts == request.Watts {
-		Res(w, Response{Success: true, Message: "properties unchanged"})
-		return
+
+	if request.TargetNode != nil {
+		_, found, err := database.GetHardwareNodeByUrl(*request.TargetNode)
+		if err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			Res(w, Response{Success: false, Message: "failed to modify switch", Error: "database failure"})
+			return
+		}
+		if !found {
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			Res(w, Response{Success: false, Message: "failed to modify switch", Error: "no hardware node with URL exists"})
+			return
+		}
 	}
+
 	// Validate length
 	if len(request.Name) > 30 {
 		w.WriteHeader(http.StatusBadRequest)
 		Res(w, Response{Success: false, Message: "bad request", Error: "maximum name length of 30 chars. was exceeded"})
 		return
 	}
-	if err := database.ModifySwitch(request.Id, request.Name, request.Watts); err != nil {
+
+	if err := database.ModifySwitch(request.Id, request.Name, request.Watts, request.TargetNode); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to modify switch", Error: "database failure"})
 		return

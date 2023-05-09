@@ -16,16 +16,16 @@ func createMockData() error {
 	if err := database.CreateRoom(database.RoomData{Id: "test_room"}); err != nil {
 		panic(err.Error())
 	}
-	if err := database.CreateSwitch("test_switch", "", "test_room", 0); err != nil {
+	if err := database.CreateSwitch("test_switch", "", "test_room", 0, nil); err != nil {
 		panic(err.Error())
 	}
-	if err := database.CreateSwitch("test_switch_modify", "", "test_room", 0); err != nil {
+	if err := database.CreateSwitch("test_switch_modify", "", "test_room", 0, nil); err != nil {
 		panic(err.Error())
 	}
-	if err := database.CreateSwitch("test_switch_inactive", "", "test_room", 0); err != nil {
+	if err := database.CreateSwitch("test_switch_inactive", "", "test_room", 0, nil); err != nil {
 		panic(err.Error())
 	}
-	if err := database.CreateSwitch("test_switch_abort", "", "test_room", 0); err != nil {
+	if err := database.CreateSwitch("test_switch_abort", "", "test_room", 0, nil); err != nil {
 		panic(err.Error())
 	}
 	_, doesExists, err := database.GetUserHomescriptById("test", "admin")
@@ -375,8 +375,15 @@ func TestUserDisabled(t *testing.T) {
 	now := time.Now()
 	then := now.Add(time.Minute)
 	TestInit(t)
+
+	testSwitch, _, err := database.GetSwitchById("test_switch")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
 	// Set the switch to off
-	assert.NoError(t, hardware.SetPower("test_switch", false))
+	assert.NoError(t, hardware.SetPower(testSwitch, false))
 	// Set the user's schedules and automations to off
 	assert.NoError(t, database.SetUserSchedulerEnabled("admin", false))
 	// Normal automation
@@ -418,8 +425,15 @@ func TestDisableOnce(t *testing.T) {
 	now := time.Now()
 	then := now.Add(time.Minute)
 	TestInit(t)
+
+	testSwitch, _, err := database.GetSwitchById("test_switch")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
 	// Set the switch to off
-	assert.NoError(t, hardware.SetPower("test_switch", false))
+	assert.NoError(t, hardware.SetPower(testSwitch, false))
 	// Normal automation
 	id, err := CreateNewAutomation(
 		"name_once",

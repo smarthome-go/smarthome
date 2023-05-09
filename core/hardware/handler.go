@@ -4,6 +4,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/smarthome-go/smarthome/core/database"
 )
 
 /*
@@ -52,17 +54,17 @@ const cooldown = 500
 // Main interface for interacting with the queuing system
 // Usage: SetPower("s1", true)
 // Waits until all jobs are completed, can return an error
-func setPower(switchId string, powerOn bool) error {
+func setPower(switchItem database.Switch, powerOn bool) error {
 	uniqueId := time.Now().UnixNano()
-	addJobToQueue(switchId, powerOn, uniqueId)
+	addJobToQueue(switchItem, powerOn, uniqueId)
 	result := consumeResult(uniqueId)
 	return result.Error
 }
 
 // Used for adding a job to a queue, keeps track of daemons and spawns them if needed
 // Waits until the daemon quits, waiting for all (and the new) job(s) to be completed.
-func addJobToQueue(switchId string, turnOn bool, id int64) {
-	item := PowerJob{Switch: switchId, Power: turnOn, Id: id}
+func addJobToQueue(switchItem database.Switch, turnOn bool, id int64) {
+	item := PowerJob{Switch: switchItem, Power: turnOn, Id: id}
 
 	jobQueue.m.Lock()
 	jobQueue.JobQueue = append(jobQueue.JobQueue, item)
@@ -117,7 +119,7 @@ func jobDaemon(ch chan bool) {
 		jobQueue.m.RUnlock()
 
 		// Call the function which interacts with the hardware
-		err := setPowerOnAllNodes(currentJob.Switch, currentJob.Power)
+		err := setPowerOnNodesWrapper(currentJob.Switch, currentJob.Power)
 
 		jobResults.m.Lock()
 		jobResults.JobResults = append(jobResults.JobResults, JobResult{Id: currentJob.Id, Error: err})

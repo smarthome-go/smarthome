@@ -94,6 +94,21 @@ func SetNodeOnline(nodeUrl string, online bool) error {
 
 // Deletes a node given its url
 func DeleteHardwareNode(url string) error {
+	// Retrieve all switches which use this hardware node as the target node
+	switches, err := ListSwitches()
+	if err != nil {
+		return err
+	}
+
+	// Remove this node from all affected switches
+	for _, sw := range switches {
+		if sw.TargetNode != nil && *sw.TargetNode == url {
+			if err := removeSwitchTargetNode(sw.Id); err != nil {
+				return err
+			}
+		}
+	}
+
 	query, err := db.Prepare(`
 	DELETE FROM
 	hardware

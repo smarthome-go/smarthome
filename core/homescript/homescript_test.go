@@ -61,7 +61,7 @@ func TestRun(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
-	if err := database.CreateSwitch("test", "", "test", 0); err != nil {
+	if err := database.CreateSwitch("test", "", "test", 0, nil); err != nil {
 		t.Error(err.Error())
 		return
 	}

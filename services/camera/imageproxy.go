@@ -75,41 +75,40 @@ func ensureValidFormat(data []byte) (valid bool) {
 
 // Converts the fetched bytes (any of the following formats) to PNG bytes, supported media types are `png, jpeg, and webp`
 // [DEPRECATED] this function is temporarily deprecated due to extreme delays (initial * 1000) when converting jpeg to png
-/**
-func convertBytesToPng(imageBytes []byte) ([]byte, error) {
-	log.Trace("Converting image to PNG")
-	contentType := http.DetectContentType(imageBytes)
-	var intermediateImage image.Image
-	switch contentType {
-	case "image/png":
-		log.Trace("Image is already in target format:(`image/png`)")
-		return imageBytes, nil
-	case "image/webp":
-		log.Trace("Image is not in target format:(`image/webp`)")
-		intermediateImageTemp, err := webp.Decode(bytes.NewReader(imageBytes))
-		if err != nil {
-			log.Error("Could not decode image: ", err.Error())
-			return nil, errors.Wrap(err, "unable to decode webp")
-		}
-		intermediateImage = intermediateImageTemp
-	case "image/jpeg":
-		log.Trace("Image is not in target format:(`image/jpeg`)")
-		intermediateImageTemp, err := jpeg.Decode(bytes.NewReader(imageBytes))
-		if err != nil {
-			log.Error("Could not decode image: ", err.Error())
-			return nil, errors.Wrap(err, "unable to decode jpeg")
-		}
-		intermediateImage = intermediateImageTemp
-	default:
-		log.Error(fmt.Sprintf("Unable to convert `%#v` to `image/png`: incompatible media type: ", contentType))
-		return nil, errors.New("Unable to convert to `image/png`: incompatible source media type")
-	}
-	buffer := new(bytes.Buffer)
-	if err := png.Encode(buffer, intermediateImage); err != nil {
-		log.Error("Could not decode image: ", err.Error())
-		return nil, errors.Wrap(err, "unable to encode png")
-	}
-	log.Trace("Successfully converted image to PNG")
-	return buffer.Bytes(), nil
-}
-*/
+
+// func convertBytesToPng(imageBytes []byte) ([]byte, error) {
+// 	log.Trace("Converting image to PNG")
+// 	contentType := http.DetectContentType(imageBytes)
+// 	var intermediateImage image.Image
+// 	switch contentType {
+// 	case "image/png":
+// 		log.Trace("Image is already in target format:(`image/png`)")
+// 		return imageBytes, nil
+// 	case "image/webp":
+// 		log.Trace("Image is not in target format:(`image/webp`)")
+// 		intermediateImageTemp, err := webp.Decode(bytes.NewReader(imageBytes))
+// 		if err != nil {
+// 			log.Error("Could not decode image: ", err.Error())
+// 			return nil, errors.Wrap(err, "unable to decode webp")
+// 		}
+// 		intermediateImage = intermediateImageTemp
+// 	case "image/jpeg":
+// 		log.Trace("Image is not in target format:(`image/jpeg`)")
+// 		intermediateImageTemp, err := jpeg.Decode(bytes.NewReader(imageBytes))
+// 		if err != nil {
+// 			log.Error("Could not decode image: ", err.Error())
+// 			return nil, errors.Wrap(err, "unable to decode jpeg")
+// 		}
+// 		intermediateImage = intermediateImageTemp
+// 	default:
+// 		log.Error(fmt.Sprintf("Unable to convert `%#v` to `image/png`: incompatible media type: ", contentType))
+// 		return nil, errors.New("Unable to convert to `image/png`: incompatible source media type")
+// 	}
+// 	buffer := new(bytes.Buffer)
+// 	if err := png.Encode(buffer, intermediateImage); err != nil {
+// 		log.Error("Could not decode image: ", err.Error())
+// 		return nil, errors.Wrap(err, "unable to encode png")
+// 	}
+// 	log.Trace("Successfully converted image to PNG")
+// 	return buffer.Bytes(), nil
+// }

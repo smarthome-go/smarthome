@@ -22,10 +22,11 @@ type setupRoom struct {
 }
 
 type setupSwitch struct {
-	Id      string `json:"id"`
-	Name    string `json:"name"`
-	PowerOn bool   `json:"powerOn"`
-	Watts   uint16 `json:"watts"`
+	Id         string  `json:"id"`
+	Name       string  `json:"name"`
+	PowerOn    bool    `json:"powerOn"`
+	Watts      uint16  `json:"watts"`
+	TargetNode *string `json:"targetNode"`
 }
 
 type setupCamera struct {
@@ -117,7 +118,7 @@ func Export() (SetupStruct, error) {
 		return SetupStruct{}, fmt.Errorf("No configuration could be found")
 	}
 	// Rooms configuration
-	roomsDB, err := database.ListAllRoomsWithData()
+	roomsDB, err := database.ListAllRoomsWithData(false) // camera URLs shall not be redacted
 	if err != nil {
 		return SetupStruct{}, err
 	}
@@ -126,10 +127,11 @@ func Export() (SetupStruct, error) {
 		roomSwitches := make([]setupSwitch, 0)
 		for _, sw := range room.Switches {
 			roomSwitches = append(roomSwitches, setupSwitch{
-				Id:      sw.Id,
-				Name:    sw.Name,
-				PowerOn: sw.PowerOn,
-				Watts:   sw.Watts,
+				Id:         sw.Id,
+				Name:       sw.Name,
+				PowerOn:    sw.PowerOn,
+				Watts:      sw.Watts,
+				TargetNode: sw.TargetNode,
 			})
 		}
 		roomCameras := make([]setupCamera, 0)

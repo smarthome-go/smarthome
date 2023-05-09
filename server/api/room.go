@@ -41,9 +41,9 @@ func ListUserRoomsWithData(w http.ResponseWriter, r *http.Request) {
 }
 
 // Returns list of all rooms
-func ListAllRoomsWithSwitches(w http.ResponseWriter, r *http.Request) {
+func ListAllRoomsWithData(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	rooms, err := database.ListAllRoomsWithData()
+	rooms, err := database.ListAllRoomsWithData(true) // camera URLs shall be redacted
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "could not list all rooms", Error: "database failure"})

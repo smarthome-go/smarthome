@@ -31,7 +31,7 @@ func PowerPostHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	_, switchExists, err := database.GetSwitchById(request.Switch)
+	switchItem, switchExists, err := database.GetSwitchById(request.Switch)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to check existence of this switch", Error: "database error"})
@@ -53,7 +53,7 @@ func PowerPostHandler(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "permission denied", Error: "missing permission to interact with this switch, contact your administrator"})
 		return
 	}
-	if err := hardware.SetPower(request.Switch, request.PowerOn); err != nil {
+	if err := hardware.SetPower(switchItem, request.PowerOn); err != nil {
 		if errors.Is(err, hardware.ErrorLockDownMode) {
 			w.WriteHeader(http.StatusForbidden)
 			Res(w, Response{Success: false, Message: "lock down mode is ebabled", Error: "lockdown mode is currently enabled"})

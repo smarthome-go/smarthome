@@ -31,12 +31,13 @@ func TestExportGeneration(t *testing.T) {
 		Longitude:         3.14159265,
 	}))
 	// Create Hardware nodes
-	assert.NoError(t, database.CreateHardwareNode(database.HardwareNode{
+	testNode := database.HardwareNode{
 		Name:    "Living Room",
 		Url:     "http://10.0.0.1:7000",
 		Token:   "secret_t0ken",
 		Enabled: true,
-	}))
+	}
+	assert.NoError(t, database.CreateHardwareNode(testNode))
 	// Create a room with contents
 	assert.NoError(t, database.CreateRoom(database.RoomData{
 		Id:          "living_room",
@@ -49,12 +50,14 @@ func TestExportGeneration(t *testing.T) {
 		"Big Lamp",
 		"living_room",
 		42,
+		nil,
 	))
 	assert.NoError(t, database.CreateSwitch(
 		"desk_lamp",
 		"Desk Lamp",
 		"living_room",
 		24,
+		&testNode.Url,
 	))
 	// Create cameras
 	assert.NoError(t, database.CreateCamera(database.Camera{

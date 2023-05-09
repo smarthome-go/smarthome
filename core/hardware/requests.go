@@ -27,13 +27,18 @@ func checkNodeOnlineRequest(node database.HardwareNode) error {
 	urlTemp, err := url.Parse(node.Url)
 	if err != nil {
 		log.Warn(fmt.Sprintf(
-			"Can not check health of node: '%s' due to malformed base URL: %s",
+			"Can not check health of node: '%s' due to malformed base URL: `%s`",
 			node.Name,
 			err.Error(),
 		))
 		return err
 	}
 	urlTemp.Path = "/health"
+
+	// New in node v.0.4.0: healthcheck requires authentication
+	query := url.Values{}
+	query.Add("token", node.Token)
+	urlTemp.RawQuery = query.Encode()
 
 	// Perform the health-check request
 	res, err := client.Get(urlTemp.String())
@@ -152,12 +157,88 @@ func checkNodeOnlineWrapper(node database.HardwareNode) {
 	}
 }
 
+func setPowerOnNodesWrapper(switchItem database.Switch, powerOn bool) error {
+	if switchItem.TargetNode != nil {
+		hardwareNode, found, err := database.GetHardwareNodeByUrl(*switchItem.TargetNode)
+		if err != nil {
+			log.Error(fmt.Sprintf("Hardware node `%s` could not be retrieved from the database", *switchItem.TargetNode))
+			return err
+		}
+
+		if !found {
+			errMsg := fmt.Sprintf("Hardware node `%s` of switch `%s` does not exist but is referenced", *switchItem.TargetNode, switchItem.Id)
+			log.Error(errMsg)
+			return errors.New(errMsg)
+		}
+
+		actionPerformed, err := setPowerOnNode(hardwareNode, powerOn, switchItem)
+		if err != nil {
+			return err
+		}
+
+		if !actionPerformed {
+			log.Warn("No power action performed since switch target node is disabled")
+		}
+
+		// Update the switch power-state in the database
+		if _, err := database.SetPowerState(switchItem.Id, powerOn); err != nil {
+			log.Error("Failed to set power after dispatching to all nodes: updating power-state database entry failed: ", err.Error())
+			return err
+		}
+
+		return nil
+	} else {
+		return setPowerOnAllNodes(switchItem, powerOn)
+	}
+}
+
+func setPowerOnNode(node database.HardwareNode, powerOn bool, switchItem database.Switch) (performedAction bool, err error) {
+	if !node.Online && node.Enabled {
+		// Check if the node is back online
+		// a goroutine is used in order to keep up a fast response time
+		go checkNodeOnlineWrapper(node)
+
+		log.Warn(fmt.Sprintf("Skipping node: '%s' because it is currently marked as offline", node.Name))
+
+	}
+
+	// If the node is not enabled, skip the request
+	if !node.Enabled {
+		log.Trace(fmt.Sprintf("Skipping power request to disabled node '%s'", node.Name))
+		return false, nil
+	}
+
+	// Perform node request
+	errTemp := sendPowerRequest(node, switchItem.Id, powerOn)
+	if errTemp != nil {
+		event.Error("Node Request Failed", fmt.Sprintf("Power request to node '%s' failed: %s", node.Name, errTemp.Error()))
+
+		// If the request failed, check the node and mark it as offline
+		if err := checkNodeOnline(node); err != nil {
+			log.Error("Failed to check node online: ", err.Error())
+		}
+		return false, errTemp
+	} else {
+		// If the node was previously offline and is now online, run a healthcheck to update its state
+		// Log the event and mark the node as `online`
+		if !node.Online {
+			if err := checkNodeOnline(node); err != nil {
+				log.Error("Failed to check node online: ", err.Error())
+				return false, err
+			}
+		}
+		log.Debug("Successfully dispatched power request to: ", node.Name)
+	}
+
+	return true, nil
+}
+
 // More user-friendly API to directly address all hardware nodes
 // However, the preferred method of communication is by using the API `ExecuteJob()` this way, priorities and interrupts are scheduled automatically
 // This function is internally used by `ExecuteJob`
 // Makes a database request at the beginning in order to obtain information about the available nodes
 // Updates the power state in the database after the jobs have been sent to the hardware nodes
-func setPowerOnAllNodes(switchName string, powerOn bool) error {
+func setPowerOnAllNodes(switchItem database.Switch, powerOn bool) error {
 	var err error
 	// Retrieves available hardware nodes from the database
 	nodes, err := database.GetHardwareNodes()
@@ -165,50 +246,37 @@ func setPowerOnAllNodes(switchName string, powerOn bool) error {
 		log.Error("Failed to process power request: could not get nodes from database: ", err.Error())
 		return err
 	}
+
+	nodesFailed := 0
+	nodesPerformed := 0
+
 	for _, node := range nodes {
-		if !node.Online && node.Enabled {
-			// Check if the node is back online
-			// a goroutine is used in order to keep up a fast response time
-			go checkNodeOnlineWrapper(node)
-
-			log.Warn(fmt.Sprintf("Skipping node: '%s' because it is currently marked as offline", node.Name))
+		actionPerformed, err := setPowerOnNode(node, powerOn, switchItem)
+		if err != nil {
+			nodesFailed++
 			continue
 		}
-
-		// If the node is not enabled, skip the request
-		if !node.Enabled {
-			log.Trace(fmt.Sprintf("Skipping power request to disabled node '%s'", node.Name))
-			continue
+		if actionPerformed {
+			nodesPerformed++
 		}
+	}
 
-		// Perform node request
-		errTemp := sendPowerRequest(node, switchName, powerOn)
-		if errTemp != nil {
-			event.Error("Node Request Failed", fmt.Sprintf("Power request to node '%s' failed: %s", node.Name, errTemp.Error()))
+	// all nodes failed, should not update the power state
+	if nodesFailed == len(nodes) {
+		return fmt.Errorf("All nodes failed: `%s`", err.Error())
+	}
 
-			// If the request failed, check the node and mark it as offline
-			if err := checkNodeOnline(node); err != nil {
-				log.Error("Failed to check node online: ", err.Error())
-			}
-			err = errTemp
-		} else {
-			// If the node was previously offline and is now online, run a healthcheck to update its state
-			// Log the event and mark the node as `online`
-			if !node.Online {
-				if err := checkNodeOnline(node); err != nil {
-					log.Error("Failed to check node online: ", err.Error())
-					return err
-				}
-			}
-			log.Debug("Successfully dispatched power request to: ", node.Name)
-		}
+	if nodesPerformed == 0 {
+		log.Warn("All nodes are disabled, no power action performed")
+		return fmt.Errorf("All nodes are disabled, no action performed")
 	}
 
 	// Update the switch power-state in the database
-	if _, err := database.SetPowerState(switchName, powerOn); err != nil {
+	if _, err := database.SetPowerState(switchItem.Id, powerOn); err != nil {
 		log.Error("Failed to set power after dispatching to all nodes: updating power-state database entry failed: ", err.Error())
 		return err
 	}
+
 	return err
 }
 

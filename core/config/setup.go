@@ -124,12 +124,12 @@ func runSetupStruct(setup SetupStruct) error {
 		log.Error("Aborting setup: could not update system configuration in database: ", err.Error())
 		return err
 	}
-	if err := createRoomsInDatabase(setup.Rooms); err != nil {
-		log.Error("Aborting setup: could not create rooms in database: ", err.Error())
-		return err
-	}
 	if err := createHardwareNodesInDatabase(setup.HardwareNodes); err != nil {
 		log.Error("Aborting setup: could not create hardware nodes in database: ", err.Error())
+		return err
+	}
+	if err := createRoomsInDatabase(setup.Rooms); err != nil {
+		log.Error("Aborting setup: could not create rooms in database: ", err.Error())
 		return err
 	}
 	if err := createUsersInDatabase(setup.Users); err != nil {
@@ -319,6 +319,7 @@ func createRoomsInDatabase(rooms []setupRoom) error {
 				switchItem.Name,
 				room.Data.Id,
 				switchItem.Watts,
+				switchItem.TargetNode,
 			); err != nil {
 				log.Error("Could not create switches from setup file: ", err.Error())
 				return err

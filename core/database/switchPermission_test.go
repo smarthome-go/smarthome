@@ -36,7 +36,7 @@ func TestAddUserSwitchPermission(t *testing.T) {
 		},
 	}
 	for _, test := range table {
-		if err := CreateSwitch(test.Switch, "", "test_permissions", 0); err != nil {
+		if err := CreateSwitch(test.Switch, "", "test_permissions", 0, nil); err != nil {
 			t.Error(err.Error())
 			return
 		}

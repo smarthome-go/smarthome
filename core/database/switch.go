@@ -7,11 +7,12 @@ import (
 
 // Identified by a Switch Id, has a name and belongs to a room
 type Switch struct {
-	Id      string `json:"id"`
-	Name    string `json:"name"`
-	RoomId  string `json:"roomId"`
-	PowerOn bool   `json:"powerOn"`
-	Watts   uint16 `json:"watts"`
+	Id         string  `json:"id"`
+	Name       string  `json:"name"`
+	RoomId     string  `json:"roomId"`
+	PowerOn    bool    `json:"powerOn"`
+	Watts      uint16  `json:"watts"`
+	TargetNode *string `json:"targetNode"`
 }
 
 // Contains the switch id and a matching boolean which indicates whether the switch is on or off
@@ -47,9 +48,32 @@ func createSwitchTable() error {
 	return nil
 }
 
+// Creates the table containing optional target hardware ids
+// If the database fails, this function returns an error
+func createSwitchTargetNodeTable() error {
+	query := `
+	CREATE TABLE
+	IF NOT EXISTS
+	switchTargetNode(
+		SwitchId VARCHAR(20) PRIMARY KEY,
+		NodeUrl VARCHAR(50),
+		FOREIGN KEY (SwitchId)
+		REFERENCES switch(Id),
+		FOREIGN KEY (NodeUrl)
+		REFERENCES hardware(Url)
+	)
+	`
+	_, err := db.Exec(query)
+	if err != nil {
+		log.Error("Failed to create switch target node Table: Executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}
+
 // Creates a new switch
 // Will return an error if the database fails
-func CreateSwitch(id string, name string, roomId string, watts uint16) error {
+func CreateSwitch(id string, name string, roomId string, watts uint16, targetNode *string) error {
 	query, err := db.Prepare(`
 	INSERT INTO
 	switch(
@@ -76,6 +100,14 @@ func CreateSwitch(id string, name string, roomId string, watts uint16) error {
 		log.Error("Failed to add switch: executing query failed: ", err.Error())
 		return err
 	}
+
+	// create target node entry if required
+	if targetNode != nil {
+		if err := setSwitchTargetNode(id, *targetNode); err != nil {
+			return err
+		}
+	}
+
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
 		log.Error("Could not get result of createSwitch: obtaining rowsAffected failed: ", err.Error())
@@ -88,7 +120,7 @@ func CreateSwitch(id string, name string, roomId string, watts uint16) error {
 }
 
 // Modifies the metadata of a given switch
-func ModifySwitch(id string, name string, watts uint16) error {
+func ModifySwitch(id string, name string, watts uint16, targetNode *string) error {
 	query, err := db.Prepare(`
 	UPDATE switch
 	SET
@@ -100,8 +132,52 @@ func ModifySwitch(id string, name string, watts uint16) error {
 		log.Error("Failed to modify switch: preparing query failed: ", err.Error())
 		return err
 	}
+
+	defer query.Close()
+
 	if _, err := query.Exec(name, watts, id); err != nil {
 		log.Error("Failed to modify switch: executing query failed: ", err.Error())
+		return err
+	}
+
+	if targetNode == nil {
+		return removeSwitchTargetNode(id)
+	} else {
+		return setSwitchTargetNode(id, *targetNode)
+	}
+}
+
+func removeSwitchTargetNode(switchId string) error {
+	query, err := db.Prepare(`
+		DELETE FROM switchTargetNode
+			WHERE SwitchId=?
+		`)
+	if err != nil {
+		log.Error("Failed to modify switch target node: preparing deletion query failed: ", err.Error())
+		return err
+	}
+	defer query.Close()
+	if _, err := query.Exec(switchId); err != nil {
+		log.Error("Failed to modify switch target node: executing deletion query failed: ", err.Error())
+		return err
+	}
+	return nil
+}
+
+func setSwitchTargetNode(switchId string, nodeUrl string) error {
+	query, err := db.Prepare(`
+		INSERT INTO switchTargetNode(SwitchId, NodeUrl)
+		VALUES(?, ?)
+		ON DUPLICATE KEY
+			UPDATE NodeUrl=VALUES(NodeUrl)
+		`)
+	if err != nil {
+		log.Error("Failed to modify switch target node: preparing insertion query failed: ", err.Error())
+		return err
+	}
+	defer query.Close()
+	if _, err := query.Exec(switchId, nodeUrl); err != nil {
+		log.Error("Failed to modify switch target node: executing insertion query failed: ", err.Error())
 		return err
 	}
 	return nil
@@ -110,6 +186,9 @@ func ModifySwitch(id string, name string, watts uint16) error {
 // Delete a given switch after all data which depends on this switch has been deleted
 func DeleteSwitch(switchId string) error {
 	if err := RemoveSwitchFromPermissions(switchId); err != nil {
+		return err
+	}
+	if err := removeSwitchTargetNode(switchId); err != nil {
 		return err
 	}
 	query, err := db.Prepare(`
@@ -151,12 +230,15 @@ func DeleteRoomSwitches(roomId string) error {
 func ListSwitches() ([]Switch, error) {
 	res, err := db.Query(`
 	SELECT
-		Id,
-		Name,
-		Power,
-		RoomId,
-		Watts
+		switch.Id,
+		switch.Name,
+		switch.Power,
+		switch.RoomId,
+		switch.Watts,
+		switchTargetNode.NodeUrl
 	FROM switch
+	LEFT JOIN switchTargetNode
+		ON switchTargetNode.SwitchId = switch.Id
 	`)
 	if err != nil {
 		log.Error("Could not list switches: failed to execute query: ", err.Error())
@@ -166,15 +248,20 @@ func ListSwitches() ([]Switch, error) {
 	switches := make([]Switch, 0)
 	for res.Next() {
 		var switchItem Switch
+		var switchTargetNode sql.NullString
 		if err := res.Scan(
 			&switchItem.Id,
 			&switchItem.Name,
 			&switchItem.PowerOn,
 			&switchItem.RoomId,
 			&switchItem.Watts,
+			&switchTargetNode,
 		); err != nil {
 			log.Error("Could not list switches: Failed to scan results: ", err.Error())
 			return nil, err
+		}
+		if switchTargetNode.Valid {
+			switchItem.TargetNode = &switchTargetNode.String
 		}
 		switches = append(switches, switchItem)
 	}
@@ -186,14 +273,17 @@ func ListSwitches() ([]Switch, error) {
 func ListUserSwitchesQuery(username string) ([]Switch, error) {
 	query, err := db.Prepare(`
 	SELECT
-		Id,
-		Name,
-		RoomId,
-		Power,
-		Watts
+		switch.Id,
+		switch.Name,
+		switch.RoomId,
+		switch.Power,
+		switch.Watts,
+		switchTargetNode.NodeUrl
 	FROM switch
 	JOIN hasSwitchPermission
 		ON hasSwitchPermission.Switch=switch.Id
+	LEFT JOIN switchTargetNode
+		ON switchTargetNode.switchId = switch.Id
 	WHERE hasSwitchPermission.Username=?`,
 	)
 	if err != nil {
@@ -209,16 +299,24 @@ func ListUserSwitchesQuery(username string) ([]Switch, error) {
 	switches := make([]Switch, 0)
 	for res.Next() {
 		var switchItem Switch
+		var switchTargetNode sql.NullString
+
 		if err := res.Scan(
 			&switchItem.Id,
 			&switchItem.Name,
 			&switchItem.RoomId,
 			&switchItem.PowerOn,
 			&switchItem.Watts,
+			&switchTargetNode,
 		); err != nil {
 			log.Error("Could not list user switches: Failed to scan results: ", err.Error())
 			return nil, err
 		}
+
+		if switchTargetNode.Valid {
+			switchItem.TargetNode = &switchTargetNode.String
+		}
+
 		switches = append(switches, switchItem)
 	}
 	return switches, nil
@@ -239,12 +337,15 @@ func ListUserSwitches(username string) ([]Switch, error) {
 func GetSwitchById(id string) (Switch, bool, error) {
 	query, err := db.Prepare(`
 	SELECT
-		Id,
-		Name,
-		RoomId,
-		Power,
-		Watts
+		switch.Id,
+		switch.Name,
+		switch.RoomId,
+		switch.Power,
+		switch.Watts,
+		switchTargetNode.NodeUrl
 	FROM switch
+	LEFT JOIN switchTargetNode
+		ON switchTargetNode.SwitchId = switch.Id
 	WHERE Id=?
 	`)
 	if err != nil {
@@ -252,12 +353,14 @@ func GetSwitchById(id string) (Switch, bool, error) {
 		return Switch{}, false, err
 	}
 	var switchItem Switch
+	var switchTargetNode sql.NullString
 	if err := query.QueryRow(id).Scan(
 		&switchItem.Id,
 		&switchItem.Name,
 		&switchItem.RoomId,
 		&switchItem.PowerOn,
 		&switchItem.Watts,
+		&switchTargetNode,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return Switch{}, false, nil
@@ -265,6 +368,11 @@ func GetSwitchById(id string) (Switch, bool, error) {
 		log.Error("Failed to get switch by id: scanning results failed: ", err.Error())
 		return Switch{}, false, err
 	}
+
+	if switchTargetNode.Valid {
+		switchItem.TargetNode = &switchTargetNode.String
+	}
+
 	return switchItem, true, nil
 }
 

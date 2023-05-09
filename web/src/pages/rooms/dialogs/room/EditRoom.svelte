@@ -1,10 +1,11 @@
 <script lang="ts">
-    import Button,{ Icon,Label } from '@smui/button'
-    import Dialog,{ Actions,Content,InitialFocus,Title } from '@smui/dialog'
+    import Button, { Icon, Label } from '@smui/button'
+    import Dialog, { Actions, Content, InitialFocus, Title } from '@smui/dialog'
     import Textfield from '@smui/textfield'
     import CharacterCounter from '@smui/textfield/character-counter'
     import { createSnackbar } from '../../../../global'
-    import { loading,Room } from '../../main'
+    import { loading } from '../../main'
+    import type { Room } from '../../main'
 
     export let open = false
     let deleteOpen = false
@@ -35,7 +36,7 @@
             if (!res.success) throw Error(res.error)
             nameBefore = name
             descriptionBefore = description
-            rooms[rooms.findIndex((r) => r.data.id === id)].data = {
+            rooms[rooms.findIndex(r => r.data.id === id)].data = {
                 id,
                 name,
                 description,
@@ -57,8 +58,8 @@
                 })
             ).json()
             if (!res.success) throw Error(res.error)
-            rooms = rooms.filter((r) => r.data.id != id)
-            open=false
+            rooms = rooms.filter(r => r.data.id != id)
+            open = false
         } catch (err) {
             $createSnackbar(`Failed to delete room: ${err}`)
         }
@@ -75,8 +76,8 @@
     >
         <Title id="confirmation-title">Confirm Deletion</Title>
         <Content id="confirmation-content">
-            You are about to delete the room '{name}' and all its contents. This
-            action is irreversible, do you want to proceed?
+            You are about to delete the room '{name}' and all its contents. This action is
+            irreversible, do you want to proceed?
         </Content>
         <Actions>
             <Button on:click={deleteRoom}>
@@ -96,7 +97,8 @@
         </Textfield>
         <Textfield bind:value={description} label="Description" />
         <div id="delete">
-            <Button variant='outlined'
+            <Button
+                variant="outlined"
                 on:click={() => {
                     deleteOpen = true
                 }}

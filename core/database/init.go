@@ -69,6 +69,9 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 	if err := createHardwareNodeTable(); err != nil {
 		return err
 	}
+	if err := createSwitchTargetNodeTable(); err != nil {
+		return err
+	}
 	if err := createHomescriptTable(); err != nil {
 		return err
 	}

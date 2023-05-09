@@ -86,6 +86,7 @@ func TestListRooms(t *testing.T) {
 			switchItem.Name,
 			switchItem.RoomId,
 			switchItem.Watts,
+			nil,
 		); err != nil {
 			t.Error(err.Error())
 		}

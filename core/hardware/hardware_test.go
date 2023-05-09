@@ -70,11 +70,23 @@ func TestPower(t *testing.T) {
 		{"6", false},
 	}
 	for _, item := range table {
-		if err := database.CreateSwitch(item.Switch, item.Switch, "testing", 0); err != nil {
+		if err := database.CreateSwitch(item.Switch, item.Switch, "testing", 0, nil); err != nil {
 			t.Error(err.Error())
 			return
 		}
-		if err := setPowerOnAllNodes(item.Switch, item.Power); err != nil {
+
+		switchItem, found, err := database.GetSwitchById(item.Switch)
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+
+		if !found {
+			t.Errorf("Switch `%s` was just created but could not be found", item.Switch)
+			return
+		}
+
+		if err := setPowerOnAllNodes(switchItem, item.Power); err != nil {
 			t.Error(err.Error())
 			return
 		}

@@ -75,7 +75,7 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/power/set", mdl.ApiAuth(mdl.Perm(api.PowerPostHandler, database.PermissionPower))).Methods("POST")
 
 	// Rooms
-	r.HandleFunc("/api/room/list/all", mdl.ApiAuth(api.ListAllRoomsWithSwitches)).Methods("GET")
+	r.HandleFunc("/api/room/list/all", mdl.ApiAuth(api.ListAllRoomsWithData)).Methods("GET")
 	r.HandleFunc("/api/room/list/personal", mdl.ApiAuth(api.ListUserRoomsWithData)).Methods("GET")
 	r.HandleFunc("/api/room/add", mdl.ApiAuth(mdl.Perm(api.AddRoom, database.PermissionModifyRooms))).Methods("POST")
 	r.HandleFunc("/api/room/modify", mdl.ApiAuth(mdl.Perm(api.ModifyRoomData, database.PermissionModifyRooms))).Methods("PUT")
@@ -219,6 +219,7 @@ func NewRouter() *mux.Router {
 
 	// Hardware node management
 	r.HandleFunc("/api/system/hardware/node/list", mdl.ApiAuth(mdl.Perm(api.ListHardwareNodes, database.PermissionSystemConfig))).Methods("GET")
+	r.HandleFunc("/api/system/hardware/node/list/nopriv", mdl.ApiAuth(mdl.Perm(api.ListHardwareNodesNoPriv, database.PermissionPower))).Methods("GET")
 	r.HandleFunc("/api/system/hardware/node/check", mdl.ApiAuth(mdl.Perm(api.ListHardwareNodesWithCheck, database.PermissionSystemConfig))).Methods("GET")
 	r.HandleFunc("/api/system/hardware/node/add", mdl.ApiAuth(mdl.Perm(api.CreateHardwareNode, database.PermissionSystemConfig))).Methods("POST")
 	r.HandleFunc("/api/system/hardware/node/modify", mdl.ApiAuth(mdl.Perm(api.ModifyHardwareNode, database.PermissionSystemConfig))).Methods("PUT")

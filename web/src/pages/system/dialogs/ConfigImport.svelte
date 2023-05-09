@@ -1,7 +1,7 @@
 <script lang="ts">
     import Button, { Icon, Label } from '@smui/button'
     import Checkbox from '@smui/checkbox'
-    import Dialog, { Actions, Content, Header, Title } from '@smui/dialog'
+    import Dialog, { Actions, Content, Header, Title, InitialFocus } from '@smui/dialog'
     import FormField from '@smui/form-field'
     import Progress from '../../../components/Progress.svelte'
     import { createSnackbar, sleep } from '../../../global'
@@ -146,6 +146,8 @@
     </Content>
     <Actions>
         <Button
+            defaultAction
+            use={[InitialFocus]}
             on:click={() => {
                 importedJSONString = ''
                 confirm = false

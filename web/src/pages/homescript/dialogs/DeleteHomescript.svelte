@@ -47,7 +47,8 @@
         >
             <Label>Delete</Label>
         </Button>
-        <Button use={[InitialFocus]}>
+
+        <Button defaultAction use={[InitialFocus]}>
             <Label>Cancel</Label>
         </Button>
     </Actions>

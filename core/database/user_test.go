@@ -30,7 +30,7 @@ func createUserMockData() error {
 		return err
 	}
 	// Create a switch
-	if err := CreateSwitch("delete_me", "", "delete_me", 0); err != nil {
+	if err := CreateSwitch("delete_me", "", "delete_me", 0, nil); err != nil {
 		return err
 	}
 	// Give the user switch permission

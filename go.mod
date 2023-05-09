@@ -13,6 +13,7 @@ require (
 	github.com/gorilla/websocket v1.5.0
 	github.com/lnquy/cron v1.1.1
 	github.com/nathan-osman/go-sunrise v1.1.0
+	github.com/pkg/errors v0.9.1
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/sirupsen/logrus v1.9.0
 	github.com/smarthome-go/homescript/v2 v2.5.0

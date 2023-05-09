@@ -73,6 +73,7 @@ func TestSwitches(t *testing.T) {
 				test.Switch.Name,
 				test.Switch.RoomId,
 				test.Switch.Watts,
+				test.Switch.TargetNode,
 			); err != nil {
 				if !strings.Contains(err.Error(), test.Error) || test.Error == "" {
 					t.Errorf("Unexpected error: want: %s got: %s ", test.Error, err.Error())
@@ -197,6 +198,7 @@ func TestUserSwitches(t *testing.T) {
 					switchItem.Name,
 					switchItem.RoomId,
 					switchItem.Watts,
+					switchItem.TargetNode,
 				); err != nil {
 					t.Error(err.Error())
 					return
@@ -311,6 +313,7 @@ func TestDoesSwitchExist(t *testing.T) {
 		"test1",
 		"test",
 		1,
+		nil,
 	); err != nil {
 		t.Error(err.Error())
 		return
@@ -333,40 +336,76 @@ func TestModifySwitch(t *testing.T) {
 	if err := CreateRoom(RoomData{Id: "test"}); err != nil {
 		t.Error(err.Error())
 	}
+
+	foobarNode := HardwareNode{
+		Url:     "http://foo.bar.com",
+		Name:    "FooBar",
+		Enabled: true,
+		Online:  true,
+		Token:   "foobar",
+	}
+
+	if err := CreateHardwareNode(foobarNode); err != nil {
+		t.Error(err.Error())
+		return
+	}
+
 	table := []struct {
 		Origin   Switch
 		Modified Switch
 	}{
 		{
 			Origin: Switch{
-				Id:      "test_1",
-				Name:    "Test 1",
-				RoomId:  "test",
-				Watts:   0,
-				PowerOn: false, // Power is set to false because the power state is not modified
+				Id:         "test_1",
+				Name:       "Test 1",
+				RoomId:     "test",
+				Watts:      0,
+				PowerOn:    false, // Power is set to false because the power state is not modified
+				TargetNode: nil,
 			},
 			Modified: Switch{
-				Id:      "test_1",
-				Name:    "Test 1-2",
-				RoomId:  "test",
-				Watts:   1,
-				PowerOn: false,
+				Id:         "test_1",
+				Name:       "Test 1-2",
+				RoomId:     "test",
+				Watts:      1,
+				PowerOn:    false,
+				TargetNode: &foobarNode.Url,
 			},
 		},
 		{
 			Origin: Switch{
-				Id:      "test_2",
-				Name:    "Test 2",
-				RoomId:  "test",
-				Watts:   2,
-				PowerOn: false,
+				Id:         "test_2",
+				Name:       "Test 2",
+				RoomId:     "test",
+				Watts:      2,
+				PowerOn:    false,
+				TargetNode: &foobarNode.Url,
 			},
 			Modified: Switch{
-				Id:      "test_2",
-				Name:    "Test 2-2",
-				RoomId:  "test",
-				Watts:   3,
-				PowerOn: false,
+				Id:         "test_2",
+				Name:       "Test 2-2",
+				RoomId:     "test",
+				Watts:      3,
+				PowerOn:    false,
+				TargetNode: nil,
+			},
+		},
+		{
+			Origin: Switch{
+				Id:         "test_3",
+				Name:       "Test 3",
+				RoomId:     "test",
+				Watts:      3,
+				PowerOn:    false,
+				TargetNode: &foobarNode.Url,
+			},
+			Modified: Switch{
+				Id:         "test_3",
+				Name:       "Test 3",
+				RoomId:     "test",
+				Watts:      3,
+				PowerOn:    false,
+				TargetNode: &foobarNode.Url,
 			},
 		},
 	}
@@ -377,6 +416,7 @@ func TestModifySwitch(t *testing.T) {
 			test.Origin.Name,
 			test.Origin.RoomId,
 			test.Origin.Watts,
+			test.Origin.TargetNode,
 		); err != nil {
 			t.Error(err.Error())
 		}
@@ -394,6 +434,7 @@ func TestModifySwitch(t *testing.T) {
 			test.Origin.Id,
 			test.Modified.Name,
 			test.Modified.Watts,
+			test.Modified.TargetNode,
 		); err != nil {
 			t.Error(err.Error())
 		}

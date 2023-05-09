@@ -255,7 +255,7 @@ func ListPersonalRoomsWithData(username string) ([]Room, error) {
 }
 
 // Returns a complete list of rooms, includes its metadata like switches and cameras
-func ListAllRoomsWithData() ([]Room, error) {
+func ListAllRoomsWithData(redactCameraUrl bool) ([]Room, error) {
 	rooms, err := ListRooms()
 	if err != nil {
 		return nil, err
@@ -282,7 +282,9 @@ func ListAllRoomsWithData() ([]Room, error) {
 		}
 		// Add all cameras of the current room
 		for _, camera := range cameras {
-			camera.Url = "redacted"
+			if redactCameraUrl {
+				camera.Url = "redacted"
+			}
 			if camera.RoomId == room.Id {
 				camerasTemp = append(camerasTemp, camera)
 			}

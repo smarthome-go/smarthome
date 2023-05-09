@@ -53,6 +53,33 @@ func ListHardwareNodes(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Returns a list of configured hardware nodes and their state (no priveleged information included)
+func ListHardwareNodesNoPriv(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	nodes, err := database.GetHardwareNodes()
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "could not list hardware nodes", Error: "database failure"})
+		return
+	}
+	outputNodes := make([]database.HardwareNode, 0)
+	for _, node := range nodes {
+		outputNodes = append(outputNodes, database.HardwareNode{
+			Name:    node.Name,
+			Url:     node.Url,
+			Token:   "redacted",
+			Online:  node.Online,
+			Enabled: node.Enabled,
+		})
+	}
+	if err := json.NewEncoder(w).Encode(outputNodes); err != nil {
+		log.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		Res(w, Response{Success: false, Message: "could not list hardware nodes", Error: "could not encode content"})
+		return
+	}
+}
+
 func ListHardwareNodesWithCheck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	// Run the healcheck first (will update the database entries if node states change)

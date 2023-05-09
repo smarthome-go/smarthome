@@ -11,9 +11,9 @@ import (
 )
 
 type PowerJob struct {
-	Id     int64  `json:"id"`
-	Switch string `json:"switch"`
-	Power  bool   `json:"power"`
+	Id     int64           `json:"id"`
+	Switch database.Switch `json:"switch"`
+	Power  bool            `json:"power"`
 }
 
 type JobResult struct {
@@ -43,7 +43,7 @@ func GetPowerState(switchId string) (bool, error) {
 }
 
 // As setPower, just with additional logs and account for taking a snapshot of the power states
-func SetPower(switchId string, powerOn bool) error {
+func SetPower(switchItem database.Switch, powerOn bool) error {
 	// Check if lockdown mode is enabled
 	config, _, err := database.GetServerConfiguration()
 	if err != nil {
@@ -53,11 +53,11 @@ func SetPower(switchId string, powerOn bool) error {
 		log.Warn("Cannot set power: lockdown mode is enabled")
 		return ErrorLockDownMode
 	}
-	if err := setPower(switchId, powerOn); err != nil {
+	if err := setPower(switchItem, powerOn); err != nil {
 		go event.Warn(
 			"Hardware Error",
 			fmt.Sprintf("The hardware failed while a user tried to interact with switch '%s': Error: %s",
-				switchId,
+				switchItem.Id,
 				err.Error(),
 			),
 		)
@@ -67,9 +67,9 @@ func SetPower(switchId string, powerOn bool) error {
 	go SaveCurrentPowerUsageWithLogs()
 	// Add event logs that inform about the switch power change
 	if powerOn {
-		go event.Info("Switch Activated", fmt.Sprintf("Switch '%s' was activated", switchId))
+		go event.Info("Switch Activated", fmt.Sprintf("Switch '%s' was activated", switchItem.Id))
 	} else {
-		go event.Info("Switch Deactivated", fmt.Sprintf("Switch '%s' was deactivated", switchId))
+		go event.Info("Switch Deactivated", fmt.Sprintf("Switch '%s' was deactivated", switchItem.Id))
 	}
 	return nil
 }
@@ -79,12 +79,12 @@ func SetPower(switchId string, powerOn bool) error {
 // Checks if the user has all required permissions
 // Sends a power request to all available nodes
 func SetSwitchPowerAll(switchId string, powerOn bool, username string) error {
-	_, switchExists, err := database.GetSwitchById(switchId)
+	switchItem, switchExists, err := database.GetSwitchById(switchId)
 	if err != nil {
 		return err
 	}
 	if !switchExists {
-		return fmt.Errorf("Failed to set power: switch '%s' does not exist", switchId)
+		return fmt.Errorf("Failed to set power: switch '%s' does not exist", switchItem.Id)
 	}
 	userHasPowerPermission, err := database.UserHasPermission(username, database.PermissionPower)
 	if err != nil {
@@ -100,7 +100,7 @@ func SetSwitchPowerAll(switchId string, powerOn bool, username string) error {
 	if !userHasSwitchPermission {
 		return fmt.Errorf("Failed to set power: user is not allowed to interact with switch '%s'", switchId)
 	}
-	if err := SetPower(switchId, powerOn); err != nil {
+	if err := SetPower(switchItem, powerOn); err != nil {
 		return fmt.Errorf("Failed to set power: hardware error: %s", err.Error())
 	}
 	return nil
