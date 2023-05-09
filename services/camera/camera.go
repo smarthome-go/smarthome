@@ -11,6 +11,7 @@ import (
 
 // Can be adjusted to define a maximum image size
 const maxImageSize uint8 = 10 // Size is in megabytes
+const imageQualityPercent uint8 = 25
 
 var log *logrus.Logger
 
@@ -47,5 +48,10 @@ func GetCameraFeed(id string, timeoutSecs int) (data []byte, err error) {
 		log.Warn("invalid content-type of fetched bytes: not a supported image type")
 		return nil, errors.New("content-type of fetched bytes not supported")
 	}
+
+	// [DEPRECATED] Uses a C library which causes programs for cross compilation
+	// Convert to WEBP & compress image
+	// return compressConvert(byteData)
+
 	return byteData, nil
 }

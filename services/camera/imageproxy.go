@@ -59,6 +59,28 @@ func fetchImageBytes(imgURL string, timeout int) ([]byte, error) {
 	return imageData, nil
 }
 
+// [DEPRECATED] Uses a C library which causes programs for cross compilation
+// func compressConvert(dataIn []byte) ([]byte, error) {
+// 	fmt.Println("converting...")
+// 	start := time.Now()
+//
+// 	// Convert to WEBP
+// 	converted, err := bimg.NewImage(dataIn).Convert(bimg.WEBP)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	// Compress to lower quality
+// 	compressed, err := bimg.NewImage(converted).Process(bimg.Options{Quality: int(imageQualityPercent)})
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	fmt.Printf("TIME %v | bef: %d | af: %d\n", time.Since(start), len(dataIn), len(compressed))
+//
+// 	return compressed, nil
+// }
+
 // Validates an arbitrary set of bytes to match any of the formats below
 // Supported formats: webp, png or jpeg/jpg
 // Used to validate result when fetching a camera's video preview
