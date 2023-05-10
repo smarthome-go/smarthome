@@ -247,6 +247,12 @@ func setPowerOnAllNodes(switchItem database.Switch, powerOn bool) error {
 		return err
 	}
 
+	if len(nodes) == 0 {
+		msg := "There are no hardware nodes, power state unaffected"
+		log.Warn(msg)
+		return fmt.Errorf(msg)
+	}
+
 	nodesFailed := 0
 	nodesPerformed := 0
 
