@@ -250,7 +250,24 @@
 
     let conn: WebSocket = undefined
     function runCodeWS(args: homescriptArgSubmit[]) {
-        let url = 'ws://' + location.host + '/api/homescript/run/ws'
+        // Choose correct websocket protocol depending on the current context
+        let protocol = undefined
+        switch (document.location.protocol) {
+            case 'http:':
+                protocol = 'ws:'
+                break
+            case 'https:':
+                protocol = 'wss:'
+                break
+            default:
+                $createSnackbar(
+                    `Unsupported protocol '${document.location.protocol}': only http and https are supported`,
+                )
+                return
+        }
+
+        // Build the websocket URL from the components
+        let url = `${protocol}//${location.host}/api/homescript/run/ws`
 
         conn = new WebSocket(url)
 
@@ -276,8 +293,7 @@
         conn.onmessage = evt => {
             try {
                 let message = JSON.parse(evt.data)
-                if (message.kind !== undefined && message.kind === 'out')
-                    output += message.payload
+                if (message.kind !== undefined && message.kind === 'out') output += message.payload
                 else if (message.kind !== undefined && message.kind === 'res') {
                     currentExecRes = {
                         code: currentData.data.code,
