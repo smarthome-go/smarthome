@@ -1,6 +1,9 @@
 package api
 
 import (
+	"bytes"
+	"fmt"
+	"io"
 	"net/http"
 	"strings"
 
@@ -56,7 +59,14 @@ func HandleAvatarUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Do the actual setup
-	if err := user.UploadAvatar(username, handler.Filename, file); err != nil {
+	fileBuffer := bytes.NewBuffer(nil)
+	if _, err := io.Copy(fileBuffer, file); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "avatar upload failed", Error: fmt.Sprintf("IO error: %s", err.Error())})
+		return
+	}
+
+	if err := user.UploadAvatar(username, handler.Filename, fileBuffer.Bytes()); err != nil {
 		log.Error("Could not update database entry: backend failed: ", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		Res(w, Response{Success: false, Message: "avatar upload failed", Error: "internal server error"})

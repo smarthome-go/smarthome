@@ -182,10 +182,7 @@ func (self *Executor) Print(args ...string) error {
 		return nil
 	}
 
-	out := strings.Join(args, " ")
-	log.Trace(fmt.Sprintf("[Homescript %s]: %s", self.ScriptName, out))
-
-	if err := self.writeIO([]byte(out)); err != nil {
+	if err := self.writeIO([]byte(strings.Join(args, " "))); err != nil {
 		return err
 	}
 
@@ -201,10 +198,7 @@ func (self *Executor) Println(args ...string) error {
 		return nil
 	}
 
-	out := strings.Join(args, " ") + "\n"
-	log.Trace(fmt.Sprintf("[Homescript %s]: %s", self.ScriptName, out))
-
-	if err := self.writeIO([]byte(out)); err != nil {
+	if err := self.writeIO([]byte(strings.Join(args, " ") + "\n")); err != nil {
 		return err
 	}
 

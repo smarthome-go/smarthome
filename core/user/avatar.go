@@ -3,8 +3,6 @@ package user
 import (
 	"crypto/md5"
 	"fmt"
-	"io"
-	"mime/multipart"
 	"os"
 
 	"github.com/smarthome-go/smarthome/core/database"
@@ -72,7 +70,7 @@ func GetUserAvatar(username string) ([]byte, error) {
 func UploadAvatar(
 	username string,
 	filename string,
-	file multipart.File,
+	file []byte,
 ) error {
 	// Remove the old image first, if it exists
 	filepathBefore, err := database.GetAvatarPathByUsername(username)
@@ -113,11 +111,13 @@ func UploadAvatar(
 		}
 	}
 	defer newFile.Close()
+
 	// Copy the uploaded file to the newly created file on the filesystem
-	if _, err := io.Copy(newFile, file); err != nil {
+	if _, err := newFile.Write(file); err != nil {
 		log.Error("Could not copy file to filesystem: ", err.Error())
 		return err
 	}
+
 	// Update the file location in the database
 	if err := database.SetUserAvatarPath(username, filepath); err != nil {
 		return err

@@ -1,6 +1,7 @@
 package database
 
 import (
+	"database/sql"
 	"time"
 )
 
@@ -35,8 +36,8 @@ func createWeatherTable() error {
 	return nil
 }
 
-func GetWeatherDataRecords(maxAgeMinutes uint) ([]WeatherMeasurement, error) {
-	query, err := db.Prepare(`
+func GetWeatherDataRecords(maxAgeMinutes int) ([]WeatherMeasurement, error) {
+	rawQuery := `
 	SELECT
 		Id,
 		Time,
@@ -46,19 +47,35 @@ func GetWeatherDataRecords(maxAgeMinutes uint) ([]WeatherMeasurement, error) {
 		FeelsLike,
 		Humidity
 	From weather
-	WHERE
-		Time > NOW() - INTERVAL ? MINUTE
-	`)
+	`
+
+	if maxAgeMinutes >= 0 {
+		rawQuery += `
+		WHERE
+			Time > NOW() - INTERVAL ? MINUTE
+		`
+	}
+
+	query, err := db.Prepare(rawQuery)
 	if err != nil {
 		log.Error("Failed to get weather data records: preparing query failed: ", err.Error())
 		return nil, err
 	}
 	defer query.Close()
-	res, err := query.Query(maxAgeMinutes)
+
+	// Decide if the argument (max-age) should be passed
+	var res *sql.Rows
+	if maxAgeMinutes >= 0 {
+		res, err = query.Query(maxAgeMinutes)
+	} else {
+		res, err = query.Query()
+	}
+
 	if err != nil {
 		log.Error("Failed to get weather data records: executing failed: ", err.Error())
 		return nil, err
 	}
+
 	results := make([]WeatherMeasurement, 0)
 	for res.Next() {
 		var row WeatherMeasurement

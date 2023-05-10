@@ -17,6 +17,11 @@ type lockDownModeRequest struct {
 	Enabled bool `json:"enabled"`
 }
 
+type exportConfigurationRequest struct {
+	IncludeProfilePictures bool `json:"includeProfilePictures"`
+	IncludeCacheData       bool `json:"includeCacheData"`
+}
+
 func GetSystemConfig(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	data, found, err := database.GetServerConfiguration()
@@ -83,7 +88,17 @@ func UpdateLocation(w http.ResponseWriter, r *http.Request) {
 // Is used to request an export of the server's configuration
 func ExportConfiguration(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	export, err := config.Export()
+
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request exportConfigurationRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+
+	export, err := config.Export(request.IncludeProfilePictures, request.IncludeCacheData)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		Res(w, Response{Success: false, Message: "failed to perform configuration export", Error: "internal server error"})

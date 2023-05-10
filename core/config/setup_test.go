@@ -14,7 +14,7 @@ func TestRunSetup(t *testing.T) {
 	setup := SetupStruct{
 		Users: []setupUser{
 			{
-				User: setupUserData{
+				Data: setupUserData{
 					Username:          "setup",
 					Forename:          "Set",
 					Surname:           "Up",

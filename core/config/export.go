@@ -1,11 +1,15 @@
 package config
 
 import (
+	"encoding/base64"
 	"fmt"
 	"time"
 
+	"github.com/h2non/filetype"
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/hardware"
 	"github.com/smarthome-go/smarthome/core/homescript"
+	"github.com/smarthome-go/smarthome/core/user"
 )
 
 type SetupStruct struct {
@@ -13,6 +17,7 @@ type SetupStruct struct {
 	Rooms               []setupRoom           `json:"rooms"`
 	HardwareNodes       []setupHardwareNode   `json:"hardwareNodes"`
 	ServerConfiguration database.ServerConfig `json:"serverConfiguration"`
+	CacheData           setupCacheData        `json:"cacheData"`
 }
 
 type setupRoom struct {
@@ -36,16 +41,24 @@ type setupCamera struct {
 }
 
 type setupUser struct {
-	User              setupUserData            `json:"user"`
+	Data              setupUserData            `json:"user"`
 	Tokens            []setupAuthToken         `json:"tokens"`
 	Homescripts       []setupHomescript        `json:"homescripts"`
 	HomescriptStorage []setupHomescriptStorage `json:"homescriptStorage"`
 	Reminders         []setupReminder          `json:"reminders"`
 
+	// Profile picture as B64
+	ProfilePicture *setupUserProfilePicture `json:"profilePicture"`
+
 	// Permissions
 	Permissions       []string `json:"permissions"`
 	SwitchPermissions []string `json:"switchPermissions"`
 	CameraPermissions []string `json:"cameraPermissions"`
+}
+
+type setupUserProfilePicture struct {
+	B64Data       string `json:"data"`
+	FileExtension string `json:"fileExtension"`
 }
 
 type setupHardwareNode struct {
@@ -108,7 +121,25 @@ type setupUserData struct {
 	DarkTheme         bool   `json:"darkTheme"`
 }
 
-func Export() (SetupStruct, error) {
+type setupCacheData struct {
+	WeatherHistory []setupWeatherMeasurement               `json:"weatherHistory"`
+	PowerData      []hardware.PowerDrawDataPointUnixMillis `json:"powerData"`
+}
+
+type setupWeatherMeasurement struct {
+	Id                 uint    `json:"id"`
+	Time               uint    `json:"time"` // unix millis
+	WeatherTitle       string  `json:"weatherTitle"`
+	WeatherDescription string  `json:"weatherDescription"`
+	Temperature        float32 `json:"temperature"`
+	FeelsLike          float32 `json:"feelsLike"`
+	Humidity           uint8   `json:"humidity"`
+}
+
+func Export(
+	includeProfilePictures bool, // The user's profile pictures in base64
+	includedCacheData bool, // Weather history and power data
+) (SetupStruct, error) {
 	// Server configuration
 	serverConfig, found, err := database.GetServerConfiguration()
 	if err != nil {
@@ -171,15 +202,15 @@ func Export() (SetupStruct, error) {
 		return SetupStruct{}, nil
 	}
 	users := make([]setupUser, 0)
-	for _, user := range usersTemp {
+	for _, userData := range usersTemp {
 		// Password Hash
-		pwHash, err := database.GetUserPasswordHash(user.Username)
+		pwHash, err := database.GetUserPasswordHash(userData.Username)
 		if err != nil {
 			return SetupStruct{}, err
 		}
 
 		// Authentication tokens
-		tokensDB, err := database.GetUserTokensOfUser(user.Username)
+		tokensDB, err := database.GetUserTokensOfUser(userData.Username)
 		if err != nil {
 			return SetupStruct{}, err
 		}
@@ -194,13 +225,13 @@ func Export() (SetupStruct, error) {
 		}
 
 		// Automations
-		automationsDB, err := database.GetUserAutomations(user.Username)
+		automationsDB, err := database.GetUserAutomations(userData.Username)
 		if err != nil {
 			return SetupStruct{}, err
 		}
 
 		// Homescripts
-		homescriptsDB, err := homescript.ListPersonalHomescriptWithArgs(user.Username)
+		homescriptsDB, err := homescript.ListPersonalHomescriptWithArgs(userData.Username)
 		if err != nil {
 			return SetupStruct{}, err
 		}
@@ -237,7 +268,7 @@ func Export() (SetupStruct, error) {
 		}
 
 		// Homescript storage
-		storage, err := database.GetPersonalHomescriptStorage(user.Username)
+		storage, err := database.GetPersonalHomescriptStorage(userData.Username)
 		if err != nil {
 			return SetupStruct{}, nil
 		}
@@ -251,7 +282,7 @@ func Export() (SetupStruct, error) {
 		}
 
 		// Reminders
-		remindersDB, err := database.GetUserReminders(user.Username)
+		remindersDB, err := database.GetUserReminders(userData.Username)
 		if err != nil {
 			return SetupStruct{}, err
 		}
@@ -269,35 +300,57 @@ func Export() (SetupStruct, error) {
 		}
 
 		// Permissions
-		permissions, err := database.GetUserPermissions(user.Username)
+		permissions, err := database.GetUserPermissions(userData.Username)
 		if err != nil {
 			return SetupStruct{}, err
 		}
 
 		// Switch p0ermissionws
-		swPermissions, err := database.GetUserSwitchPermissions(user.Username)
+		swPermissions, err := database.GetUserSwitchPermissions(userData.Username)
 		if err != nil {
 			return SetupStruct{}, err
 		}
 
 		// Camera permissions
-		camPermissions, err := database.GetUserCameraPermissions(user.Username)
+		camPermissions, err := database.GetUserCameraPermissions(userData.Username)
 		if err != nil {
 			return SetupStruct{}, err
 		}
 
+		// Include profile picture if desired
+		var profilePicture *setupUserProfilePicture = nil
+		if includeProfilePictures {
+			picture, err := user.GetUserAvatar(userData.Username)
+			if err != nil {
+				return SetupStruct{}, err
+			}
+
+			filetype, err := filetype.Match(picture)
+			if err != nil {
+				return SetupStruct{}, err
+			}
+
+			picTemp := setupUserProfilePicture{
+				B64Data:       base64.StdEncoding.EncodeToString(picture),
+				FileExtension: filetype.Extension,
+			}
+
+			profilePicture = &picTemp
+		}
+
 		// Append assembled user
 		users = append(users, setupUser{
-			User: setupUserData{
-				Username:          user.Username,
-				Forename:          user.Forename,
-				Surname:           user.Surname,
-				PrimaryColorDark:  user.PrimaryColorDark,
-				PrimaryColorLight: user.PrimaryColorLight,
+			Data: setupUserData{
+				Username:          userData.Username,
+				Forename:          userData.Forename,
+				Surname:           userData.Surname,
+				PrimaryColorDark:  userData.PrimaryColorDark,
+				PrimaryColorLight: userData.PrimaryColorLight,
 				Password:          pwHash,
-				SchedulerEnabled:  user.SchedulerEnabled,
-				DarkTheme:         user.DarkTheme,
+				SchedulerEnabled:  userData.SchedulerEnabled,
+				DarkTheme:         userData.DarkTheme,
 			},
+			ProfilePicture:    profilePicture,
 			Tokens:            tokens,
 			Homescripts:       homescripts,
 			HomescriptStorage: storageOutput,
@@ -308,10 +361,46 @@ func Export() (SetupStruct, error) {
 		})
 	}
 
+	// Include cache data if desired
+	cacheData := setupCacheData{
+		WeatherHistory: make([]setupWeatherMeasurement, 0),
+		PowerData:      make([]hardware.PowerDrawDataPointUnixMillis, 0),
+	}
+	if includedCacheData {
+		// Weather history
+		weatherHistory, err := database.GetWeatherDataRecords(-1)
+		if err != nil {
+			return SetupStruct{}, err
+		}
+
+		// Transform to the type that uses unix millis
+		weatherHistoryOut := make([]setupWeatherMeasurement, 0)
+		for _, measurement := range weatherHistory {
+			weatherHistoryOut = append(weatherHistoryOut, setupWeatherMeasurement{
+				Id:                 measurement.Id,
+				Time:               uint(measurement.Time.UnixMilli()),
+				WeatherTitle:       measurement.WeatherTitle,
+				WeatherDescription: measurement.WeatherDescription,
+				Temperature:        measurement.Temperature,
+				FeelsLike:          measurement.FeelsLike,
+				Humidity:           measurement.Humidity,
+			})
+		}
+		cacheData.WeatherHistory = weatherHistoryOut
+
+		// Power data
+		powerData, err := hardware.GetPowerUsageRecordsUnixMillis(-1)
+		if err != nil {
+			return SetupStruct{}, err
+		}
+		cacheData.PowerData = powerData
+	}
+
 	return SetupStruct{
 		Users:               users,
 		Rooms:               rooms,
 		HardwareNodes:       hwNodesNew,
 		ServerConfiguration: serverConfig,
+		CacheData:           cacheData,
 	}, nil
 }

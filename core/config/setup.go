@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -136,6 +137,10 @@ func runSetupStruct(setup SetupStruct) error {
 		log.Error("Aborting setup: could not create users in database: ", err.Error())
 		return err
 	}
+	if err := createCacheDataInDatabase(setup.CacheData); err != nil {
+		log.Error("Aborting setup: could not create cache data in database: ", err.Error())
+		return err
+	}
 	log.Info(fmt.Sprintf("Successfully ran setup using `%s`", setupPath))
 	return nil
 }
@@ -143,29 +148,41 @@ func runSetupStruct(setup SetupStruct) error {
 // Takes the `users` slice and createas according database entries
 func createUsersInDatabase(users []setupUser) error {
 	for _, usr := range users {
-		_, alreadyExists, err := database.GetUserByUsername(usr.User.Username)
+		_, alreadyExists, err := database.GetUserByUsername(usr.Data.Username)
 		if err != nil {
 			return err
 		}
 		// It is likely that an `admin` user already exists
 		// In this case, the admin user is re-created using the new metadata
-		if alreadyExists && usr.User.Username != "admin" {
-			return fmt.Errorf("cannot create user: user `%s` already exists", usr.User.Username)
+		if alreadyExists && usr.Data.Username != "admin" {
+			return fmt.Errorf("cannot create user: user `%s` already exists", usr.Data.Username)
 		}
 		// Create the user itself
 		if err := database.InsertUser(database.FullUser{
-			Username:          usr.User.Username,
-			Forename:          usr.User.Forename,
-			Surname:           usr.User.Surname,
-			PrimaryColorDark:  usr.User.PrimaryColorDark,
-			PrimaryColorLight: usr.User.PrimaryColorLight,
-			Password:          usr.User.Password,
+			Username:          usr.Data.Username,
+			Forename:          usr.Data.Forename,
+			Surname:           usr.Data.Surname,
+			PrimaryColorDark:  usr.Data.PrimaryColorDark,
+			PrimaryColorLight: usr.Data.PrimaryColorLight,
+			Password:          usr.Data.Password,
 		}); err != nil {
 			return err
 		}
+
+		// Create the user's profile picture (if exported)
+		if usr.ProfilePicture != nil {
+			imgBytes, err := base64.StdEncoding.DecodeString(usr.ProfilePicture.B64Data)
+			if err != nil {
+				return err
+			}
+			if err := user.UploadAvatar(usr.Data.Username, fmt.Sprintf("imported.%s", usr.ProfilePicture.FileExtension), imgBytes); err != nil {
+				return err
+			}
+		}
+
 		// Setup the user's authentication tokens
 		for _, token := range usr.Tokens {
-			if err := database.InsertUserToken(token.Token, usr.User.Username, token.Label); err != nil {
+			if err := database.InsertUserToken(token.Token, usr.Data.Username, token.Label); err != nil {
 				return err
 			}
 		}
@@ -178,10 +195,10 @@ func createUsersInDatabase(users []setupUser) error {
 				}
 			}
 			if !valid {
-				return fmt.Errorf("cannot grant invalid permission: `%s` to user `%s`", permission, usr.User.Username)
+				return fmt.Errorf("cannot grant invalid permission: `%s` to user `%s`", permission, usr.Data.Username)
 			}
 			if _, err := user.AddPermission(
-				usr.User.Username,
+				usr.Data.Username,
 				database.PermissionType(permission),
 			); err != nil {
 				return err
@@ -194,10 +211,10 @@ func createUsersInDatabase(users []setupUser) error {
 				return err
 			}
 			if !found {
-				return fmt.Errorf("cannot grant invalid switch permission `%s` to user `%s`", swPermission, usr.User.Username)
+				return fmt.Errorf("cannot grant invalid switch permission `%s` to user `%s`", swPermission, usr.Data.Username)
 			}
 			if _, err := database.AddUserSwitchPermission(
-				usr.User.Username,
+				usr.Data.Username,
 				swPermission,
 			); err != nil {
 				return err
@@ -210,10 +227,10 @@ func createUsersInDatabase(users []setupUser) error {
 				return err
 			}
 			if !found {
-				return fmt.Errorf("cannot grant invalid camera permission `%s` to user `%s`", camPermission, usr.User.Username)
+				return fmt.Errorf("cannot grant invalid camera permission `%s` to user `%s`", camPermission, usr.Data.Username)
 			}
 			if _, err := database.AddUserCameraPermission(
-				usr.User.Username,
+				usr.Data.Username,
 				camPermission,
 			); err != nil {
 				return err
@@ -221,14 +238,14 @@ func createUsersInDatabase(users []setupUser) error {
 		}
 		// Setup the user's Homescripts
 		// Current arguments are being used for checking preexistence of arguments
-		argsDB, err := database.ListAllHomescriptArgsOfUser(usr.User.Username)
+		argsDB, err := database.ListAllHomescriptArgsOfUser(usr.Data.Username)
 		if err != nil {
 			return err
 		}
 		for _, homescript := range usr.Homescripts {
 			_, found, err := database.GetUserHomescriptById(
 				homescript.Data.Id,
-				usr.User.Username,
+				usr.Data.Username,
 			)
 			if err != nil {
 				return err
@@ -237,7 +254,7 @@ func createUsersInDatabase(users []setupUser) error {
 				return fmt.Errorf("cannot create Homescript: id `%s` is already taken", homescript.Data.Id)
 			}
 			if err := database.CreateNewHomescript(database.Homescript{
-				Owner: usr.User.Username,
+				Owner: usr.Data.Username,
 				Data:  homescript.Data,
 			}); err != nil {
 				return err
@@ -268,7 +285,7 @@ func createUsersInDatabase(users []setupUser) error {
 			// Create automations using this Homescript
 			for _, autom := range homescript.Automations {
 				if _, err := database.CreateNewAutomation(database.Automation{
-					Owner: usr.User.Username,
+					Owner: usr.Data.Username,
 					Data: database.AutomationData{
 						Name:           autom.Name,
 						Description:    autom.Description,
@@ -285,7 +302,7 @@ func createUsersInDatabase(users []setupUser) error {
 
 		// Setup Homescript storage
 		for _, storageItem := range usr.HomescriptStorage {
-			if err := database.InsertHmsStorageEntry(usr.User.Username, storageItem.Key, storageItem.Value); err != nil {
+			if err := database.InsertHmsStorageEntry(usr.Data.Username, storageItem.Key, storageItem.Value); err != nil {
 				return err
 			}
 		}
@@ -296,7 +313,7 @@ func createUsersInDatabase(users []setupUser) error {
 				rem.Name,
 				rem.Description,
 				rem.DueDate,
-				usr.User.Username,
+				usr.Data.Username,
 				rem.Priority,
 			); err != nil {
 				return err
@@ -371,5 +388,10 @@ func createSystemConfigInDatabase(systemConfig database.ServerConfig) error {
 		log.Error("Could not create system configuration from setup file: ", err.Error())
 		return err
 	}
+	return nil
+}
+
+func createCacheDataInDatabase(cacheData setupCacheData) error {
+	// TODO not currently supported
 	return nil
 }
