@@ -43,7 +43,21 @@ func ListUserRoomsWithData(w http.ResponseWriter, r *http.Request) {
 // Returns list of all rooms
 func ListAllRoomsWithData(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	rooms, err := database.ListAllRoomsWithData(true) // camera URLs shall be redacted
+	username, err := middleware.GetUserFromCurrentSession(w, r)
+	if err != nil {
+		return
+	}
+
+	// If the user can modify rooms, do NOT redact camera URLs
+	hasPermission, err := database.UserHasPermission(username, database.PermissionModifyRooms)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "could not list all rooms", Error: "database failure"})
+		return
+	}
+
+	// camera URLs shall be redacted if the user has no sufficient permissions
+	rooms, err := database.ListAllRoomsWithData(!hasPermission)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "could not list all rooms", Error: "database failure"})
