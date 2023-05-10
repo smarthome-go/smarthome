@@ -405,7 +405,7 @@ func CreateNewHomescript(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	alreadyExists, err := database.DoesHomescriptExist(request.Id)
+	alreadyExists, err := database.DoesHomescriptExist(request.Id, username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to add Homescript", Error: "database failure"})
@@ -500,7 +500,7 @@ func DeleteHomescriptById(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "can not delete Homescript: safety violation", Error: "script is used in one or more automations"})
 		return
 	}
-	if err := database.DeleteHomescriptById(request.Id); err != nil {
+	if err := database.DeleteHomescriptById(request.Id, username); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to delete Homescript", Error: "database failure"})
 		return
@@ -534,7 +534,7 @@ func ModifyHomescript(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to modify Homescript", Error: "not found / permission denied: no data is associated to this id"})
 		return
 	}
-	homescriptMetadata := database.HomescriptData{
+	newHmsData := database.HomescriptData{
 		Name:                request.Name,
 		Description:         request.Description,
 		QuickActionsEnabled: request.QuickActionsEnabled,
@@ -544,7 +544,11 @@ func ModifyHomescript(w http.ResponseWriter, r *http.Request) {
 		MDIcon:              request.MDIcon,
 		Workspace:           request.Workspace,
 	}
-	if err := database.ModifyHomescriptById(request.Id, homescriptMetadata); err != nil {
+	if err := database.ModifyHomescriptById(
+		request.Id,
+		username,
+		newHmsData,
+	); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to modify Homescript", Error: "database failure"})
 		return

@@ -24,7 +24,7 @@ func createHomescriptTable() error {
 	CREATE TABLE
 	IF NOT EXISTS
 	homescript(
-		Id					VARCHAR(30) PRIMARY KEY,
+		Id					VARCHAR(30),
 		Owner				VARCHAR(20),
 		Name				VARCHAR(30),
 		Description			TEXT,
@@ -35,6 +35,7 @@ func createHomescriptTable() error {
 		MDIcon				VARCHAR(100),
 		Workspace			VARCHAR(50),
 
+		PRIMARY KEY (Id, Owner),
 		CONSTRAINT HomescriptOwner
 		FOREIGN KEY (Owner)
 		REFERENCES user(Username)
@@ -96,10 +97,10 @@ func CreateNewHomescript(homescript Homescript) error {
 
 // Modifies the metadata of a given homescript
 // Does not check the validity of the homescript's id
-func ModifyHomescriptById(id string, homescript HomescriptData) error {
+func ModifyHomescriptById(id string, owner string, newData HomescriptData) error {
 	// Check if the workspace is the default
-	if homescript.Workspace == "" {
-		homescript.Workspace = "default"
+	if newData.Workspace == "" {
+		newData.Workspace = "default"
 	}
 	query, err := db.Prepare(`
 	UPDATE homescript
@@ -112,7 +113,7 @@ func ModifyHomescriptById(id string, homescript HomescriptData) error {
 		Code=?,
 		MDIcon=?,
 		Workspace=?
-	WHERE Id=?
+	WHERE Id=? AND Owner=?
 	`)
 	if err != nil {
 		log.Error("Failed to update Homescript: preparing query failed: ", err.Error())
@@ -120,15 +121,16 @@ func ModifyHomescriptById(id string, homescript HomescriptData) error {
 	}
 	defer query.Close()
 	_, err = query.Exec(
-		homescript.Name,
-		homescript.Description,
-		homescript.QuickActionsEnabled,
-		homescript.SchedulerEnabled,
-		homescript.IsWidget,
-		homescript.Code,
-		homescript.MDIcon,
-		homescript.Workspace,
+		newData.Name,
+		newData.Description,
+		newData.QuickActionsEnabled,
+		newData.SchedulerEnabled,
+		newData.IsWidget,
+		newData.Code,
+		newData.MDIcon,
+		newData.Workspace,
 		id,
+		owner,
 	)
 	if err != nil {
 		log.Error("Failed to update Homescript: executing query failed: ", err.Error())
@@ -190,7 +192,7 @@ func ListHomescriptOfUser(username string) ([]Homescript, error) {
 }
 
 // Lists all Homescript files in the database
-func ListHomescriptFiles() ([]Homescript, error) {
+func ListAllHomescripts() ([]Homescript, error) {
 	query, err := db.Prepare(`
 	SELECT
 		Id,
@@ -258,15 +260,15 @@ func GetUserHomescriptById(homescriptId string, username string) (Homescript, bo
 }
 
 // TODO: remove and intigrate into get user homescript
-// Checks if a Homescript with an id exists in the database
-func DoesHomescriptExist(homescriptId string) (bool, error) {
-	homescripts, err := ListHomescriptFiles()
+// Checks if a Homescript with an id exists in the database and belongs to a certain user
+func DoesHomescriptExist(homescriptId string, owner string) (bool, error) {
+	homescripts, err := ListAllHomescripts()
 	if err != nil {
 		log.Error("Failed to check existence of Homescript: ", err.Error())
 		return false, err
 	}
 	for _, homescriptItem := range homescripts {
-		if homescriptItem.Data.Id == homescriptId {
+		if homescriptItem.Data.Id == homescriptId && homescriptItem.Owner == owner {
 			return true, nil
 		}
 	}
@@ -274,21 +276,21 @@ func DoesHomescriptExist(homescriptId string) (bool, error) {
 }
 
 // Deletes a homescript by its Id, does not check if the user has access to the homescript
-func DeleteHomescriptById(homescriptId string) error {
+func DeleteHomescriptById(homescriptId string, owner string) error {
 	if err := DeleteAllHomescriptArgsFromScript(homescriptId); err != nil {
 		return err
 	}
 	query, err := db.Prepare(`
 	DELETE FROM
 	homescript
-	WHERE Id=?
+	WHERE Id=? AND Owner=?
 	`)
 	if err != nil {
 		log.Error("Failed to delete Homescript by id: preparing query failed: ", err.Error())
 		return err
 	}
 	defer query.Close()
-	if _, err := query.Exec(homescriptId); err != nil {
+	if _, err := query.Exec(homescriptId, owner); err != nil {
 		log.Error("Failed to delete Homescript by id: executing query failed: ", err.Error())
 		return err
 	}
@@ -306,7 +308,7 @@ func DeleteAllHomescriptsOfUser(username string) error {
 		if err := DeleteAllHomescriptArgsFromScript(hms.Data.Id); err != nil {
 			return err
 		}
-		if err := DeleteHomescriptById(hms.Data.Id); err != nil {
+		if err := DeleteHomescriptById(hms.Data.Id, username); err != nil {
 			return err
 		}
 	}

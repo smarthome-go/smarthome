@@ -122,6 +122,7 @@ func automationRunnerFunc(id uint) {
 			return
 		}
 	}
+
 	log.Debug(fmt.Sprintf("Automation '%d' is running", id))
 	_, scriptExists, err := database.GetUserHomescriptById(job.Data.HomescriptId, job.Owner)
 	if err != nil {
