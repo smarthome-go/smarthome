@@ -53,7 +53,7 @@ func ListHardwareNodes(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Returns a list of configured hardware nodes and their state (no priveleged information included)
+// Returns a list of configured hardware nodes and their state (no privileged information included)
 func ListHardwareNodesNoPriv(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	nodes, err := database.GetHardwareNodes()
