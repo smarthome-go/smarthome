@@ -111,12 +111,12 @@ func (self *Executor) IsAnalyzer() bool {
 }
 
 // Resolves a Homescript module
-func (self *Executor) ResolveModule(id string) (string, string, bool, bool, error) {
+func (self *Executor) ResolveModule(id string) (string, string, bool, bool, map[string]homescript.Value, error) {
 	script, found, err := database.GetUserHomescriptById(id, self.Username)
 	if !found || err != nil {
-		return "", "", found, true, err
+		return "", "", found, true, nil, err
 	}
-	return script.Data.Code, id, true, true, nil
+	return script.Data.Code, id, true, true, scopeAdditions(), nil
 }
 
 // Resolves a Homescript module
