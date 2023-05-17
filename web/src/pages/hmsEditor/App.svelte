@@ -223,6 +223,7 @@
                     exitCode: currentExecResTemp.exitCode,
                     errors: diagnostics,
                     fileContents: currentExecResTemp.fileContents,
+                    success: currentExecResTemp.success,
                 }
                 output = currentExecResTemp.output
             }
@@ -301,6 +302,7 @@
                         exitCode: message.exitCode,
                         errors: message.errors,
                         fileContents: message.fileContents,
+                        success: message.success,
                     }
                     currentExecutionCount--
                     requestLoading = false
@@ -365,6 +367,17 @@
                     >
                     {savedCode === currentData.data.code ? 'saved' : 'unsaved'}
                 </div>
+                {#if currentExecRes !== undefined}
+                    <div
+                        id="header__left__errors"
+                        class:error={!currentExecRes.modeRun && !currentExecRes.success}
+                    >
+                        <i class="material-icons"
+                            >{currentExecRes.success ? 'done' : 'error'}</i
+                        >
+                        {currentExecRes.success ? 'working' : 'errors'}
+                    </div>
+                {/if}
             </div>
             <div id="header__buttons">
                 <Select
@@ -493,7 +506,7 @@
                 }
             }
 
-            &__save {
+            &__save, &__errors {
                 color: var(--clr-text-disabled);
                 display: flex;
                 align-items: center;
@@ -508,7 +521,7 @@
                     font-size: 1.25em;
                 }
 
-                &.unsaved {
+                &.unsaved, &.error {
                     color: var(--clr-error);
                 }
             }

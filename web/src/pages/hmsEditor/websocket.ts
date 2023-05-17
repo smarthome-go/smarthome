@@ -17,4 +17,5 @@ export interface hmsResWrapper {
     exitCode: number
     fileContents: {}
     errors: homescriptError[]
+    success: boolean
 }
