@@ -43,8 +43,9 @@ type HomescriptArg struct {
 }
 
 type HomescriptLiveRunRequest struct {
-	Code string          `json:"code"`
-	Args []HomescriptArg `json:"args"`
+	Code                 string          `json:"code"`
+	Args                 []HomescriptArg `json:"args"`
+	TerminateWithRequest bool            `json:"terminateWithRequest"`
 }
 
 type LintHomescriptStringRequest struct {
@@ -54,9 +55,10 @@ type LintHomescriptStringRequest struct {
 }
 
 type HomescriptIdRunRequest struct {
-	Id       string          `json:"id"`
-	Args     []HomescriptArg `json:"args"`
-	IsWidget bool            `json:"isWidget"`
+	Id                   string          `json:"id"`
+	Args                 []HomescriptArg `json:"args"`
+	IsWidget             bool            `json:"isWidget"`
+	TerminateWithRequest bool            `json:"terminateWithRequest"`
 }
 
 type HomescriptIdRequest struct {
@@ -83,6 +85,16 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 	for _, arg := range request.Args {
 		args[arg.Key] = arg.Value
 	}
+
+	// If the user desires this, terminate the script as soon as the user disconnects
+	sigTerm := make(chan int)
+	if request.TerminateWithRequest {
+		go func() {
+			<-r.Context().Done()
+			sigTerm <- homescript.HmsSigtermCanceled
+		}()
+	}
+
 	hmsData, found, err := database.GetUserHomescriptById(request.Id, username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
@@ -109,7 +121,7 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		args,
 		make([]string, 0),
 		initiator,
-		make(chan int),
+		sigTerm,
 		&outputBuffer,
 		nil,
 	)
@@ -236,11 +248,22 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
+
 	// Fill the arguments using the request
 	args := make(map[string]string, 0)
 	for _, arg := range request.Args {
 		args[arg.Key] = arg.Value
 	}
+
+	// If the user desires this, terminate the script as soon as the user disconnects
+	sigTerm := make(chan int)
+	if request.TerminateWithRequest {
+		go func() {
+			<-r.Context().Done()
+			sigTerm <- homescript.HmsSigtermCanceled
+		}()
+	}
+
 	// Run the Homescript
 	var outputBuffer bytes.Buffer
 	res := homescript.HmsManager.Run(
@@ -250,7 +273,7 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		make(map[string]string),
 		make([]string, 0),
 		homescript.InitiatorAPI,
-		make(chan int),
+		sigTerm,
 		&outputBuffer,
 		nil,
 	)

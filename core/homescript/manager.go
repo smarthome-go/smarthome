@@ -14,13 +14,18 @@ import (
 
 type HomescriptInitiator string
 
-var (
+const (
 	InitiatorAutomation HomescriptInitiator = "automation"
 	InitiatorScheduler  HomescriptInitiator = "scheduler"
 	InitiatorExec       HomescriptInitiator = "exec_target"
 	InitiatorInternal   HomescriptInitiator = "internal"
 	InitiatorAPI        HomescriptInitiator = "api"
 	InitiatorWidget     HomescriptInitiator = "widget"
+)
+
+const (
+	HmsSigtermSuccess  int = 0
+	HmsSigtermCanceled int = 10
 )
 
 // Global manager
