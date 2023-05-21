@@ -3,21 +3,24 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"math"
+	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
 	"time"
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/smarthome-go/smarthome/core"
 	"github.com/smarthome-go/smarthome/core/config"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/hardware"
 	"github.com/smarthome-go/smarthome/core/homescript"
-	"github.com/smarthome-go/smarthome/core/user"
 	"github.com/smarthome-go/smarthome/core/utils"
 	"github.com/smarthome-go/smarthome/server/api"
 	"github.com/smarthome-go/smarthome/server/middleware"
@@ -30,6 +33,12 @@ import (
 // Default port on which the server listens,
 // can be overwritten using the config file or an environment variable
 var port uint16 = 8082
+
+type contextKey string
+
+const (
+	ShutdownContextKey = contextKey("shutdown")
+)
 
 func main() {
 	// Do not change the version manually, use the `make version` command instead
@@ -63,17 +72,12 @@ func main() {
 	}
 
 	// Initialize module loggers
-	config.InitLogger(log)
-	homescript.InitLogger(log)
+	core.InitLogger(log)
 	camera.InitLogger(log)
-	database.InitLogger(log)
 	middleware.InitLogger(log)
 	api.InitLogger(log)
 	routes.InitLogger(log)
 	templates.InitLogger(log)
-	user.InitLogger(log)
-	hardware.InitLogger(log)
-	event.InitLogger(log)
 	reminder.InitLogger(log)
 
 	// Read configuration file
@@ -241,8 +245,61 @@ func main() {
 	if configStruct.Server.Production {
 		operatingMode = "production"
 	}
+
+	///// Start the server /////
+	errCh := make(chan error)
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt)
+
+	// Register a shutdown handler
+	ctx := context.Background()
+	shutdownCtx, cancel := context.WithCancel(context.Background())
+	ctx = context.WithValue(ctx, ShutdownContextKey, shutdownCtx)
+
+	server := http.Server{
+		Addr:        fmt.Sprintf(":%d", port),
+		BaseContext: func(l net.Listener) context.Context { return ctx },
+	}
+	server.RegisterOnShutdown(cancel)
+
 	log.Info(fmt.Sprintf("Smarthome v%s is listening on http://localhost:%d using %s mode", utils.Version, port, operatingMode))
-	if err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
-		log.Fatal("Web server failed unexpectedly: ", err.Error())
+	go func() { errCh <- server.ListenAndServe() }()
+
+	// Main loop
+mainLoop:
+	for err == nil {
+		select {
+		case s := <-sigCh:
+			if s == os.Interrupt {
+				break mainLoop
+			}
+		case err = <-errCh:
+			// this will also terminate loop execution
+		}
+	}
+
+	// Shutdown
+	{
+		log.Warn("System shutting down...")
+		signal.Reset(os.Interrupt)
+
+		// Shutdown the webserver
+		server.SetKeepAlivesEnabled(false)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		if err := server.Shutdown(ctx); err != nil {
+			log.Error(fmt.Sprintf("Shutdown error: `%s`", err.Error()))
+		}
+		cancel()
+
+		// Wait for any other tasks
+		if err := core.Shutdown(); err != nil {
+			log.Error(fmt.Sprintf("Error(s) occured during shutdown: `%s`", err.Error()))
+		}
+
+		log.Info("Shutdown compete")
+	}
+
+	if err != nil {
+		panic(err.Error())
 	}
 }

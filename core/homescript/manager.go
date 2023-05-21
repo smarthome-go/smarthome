@@ -238,6 +238,8 @@ func (m *Manager) Run(
 
 	if len(hmsErrors) > 0 {
 		log.Debug(fmt.Sprintf("Homescript '%s' ran by user '%s' has terminated: %s", scriptLabel, username, hmsErrors[0].Message))
+	} else if wasTerminated {
+		log.Debug(fmt.Sprintf("Homescript '%s' ran by user '%s' was terminated", scriptLabel, username))
 	} else {
 		log.Debug(fmt.Sprintf("Homescript '%s' ran by user '%s' was executed successfully", scriptLabel, username))
 	}
