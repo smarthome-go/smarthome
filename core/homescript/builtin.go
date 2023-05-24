@@ -15,8 +15,8 @@ func valPtr(input homescript.Value) *homescript.Value {
 	return &input
 }
 
-func scopeAdditions() map[string]homescript.Value {
-	return map[string]homescript.Value{
+var builtinModules = map[string]map[string]homescript.Value{
+	"sys": {
 		"on_click_hms": homescript.ValueBuiltinFunction{
 			Callback: func(executor homescript.Executor, span hmsErrors.Span, args ...homescript.Value) (homescript.Value, *int, *hmsErrors.Error) {
 				if err := checkArgs("on_click_hms", span, args, homescript.TypeString, homescript.TypeString); err != nil {
@@ -267,17 +267,19 @@ func scopeAdditions() map[string]homescript.Value {
 								if executor.IsAnalyzer() {
 									return homescript.ValueNumber{Value: 0.0}, nil, nil
 								}
+								h := uint(hour.Value)
+								m := uint(minute.Value)
 
-								id, err := CreateNewAutomation(name.Value, description.Value, uint8(hour.Value), uint8(minute.Value), containsDays, hmsId.Value, executor.GetUser(), true, database.TimingNormal)
+								id, err := CreateNewAutomation(name.Value, description.Value, hmsId.Value, executor.GetUser(), true, &h, &m, &containsDays, database.TriggerCron, nil)
 								if err != nil {
 									return nil, nil, hmsErrors.NewError(span, err.Error(), errors.RuntimeError)
 								}
 								return homescript.ValueNumber{Value: float64(id)}, nil, nil
 							},
 						}),
-						"automations": valPtr(homescript.ValueBuiltinFunction{
+						"list": valPtr(homescript.ValueBuiltinFunction{
 							Callback: func(executor homescript.Executor, span hmsErrors.Span, args ...homescript.Value) (homescript.Value, *int, *hmsErrors.Error) {
-								if err := checkArgs("automations", span, args); err != nil {
+								if err := checkArgs("list", span, args); err != nil {
 									return nil, nil, err
 								}
 
@@ -289,15 +291,14 @@ func scopeAdditions() map[string]homescript.Value {
 								}
 
 								for _, automationItem := range automations {
-									cronData, err := automation.GetDataFromCronExpression(automationItem.Data.CronExpression)
-									if err != nil {
-										return nil, nil, hmsErrors.NewError(span, err.Error(), errors.RuntimeError)
+									triggerInterval := valPtr(homescript.ValueNull{})
+									if automationItem.Data.TriggerIntervalSeconds != nil {
+										triggerInterval = valPtr(homescript.ValueNumber{Value: float64(*automationItem.Data.TriggerIntervalSeconds)})
 									}
 
-									numberType := homescript.TypeNumber
-									days := make([]*homescript.Value, 0)
-									for _, day := range cronData.Days {
-										days = append(days, valPtr(homescript.ValueNumber{Value: float64(day)}))
+									triggerCronExpression := valPtr(homescript.ValueNull{})
+									if automationItem.Data.TriggerCronExpression != nil {
+										triggerCronExpression = valPtr(homescript.ValueString{Value: *automationItem.Data.TriggerCronExpression})
 									}
 
 									output = append(output, valPtr(homescript.ValueObject{
@@ -307,13 +308,18 @@ func scopeAdditions() map[string]homescript.Value {
 											"name": valPtr(homescript.ValueString{
 												Value: automationItem.Data.Name,
 											}),
-											"timing_mode": valPtr(homescript.ValueString{
-												Value: string(automationItem.Data.TimingMode),
+											"description": valPtr(homescript.ValueString{
+												Value: automationItem.Data.Description,
 											}),
-											"hms_id": valPtr(homescript.ValueString{Value: automationItem.Data.HomescriptId}),
-											"hour":   valPtr(homescript.ValueNumber{Value: float64(cronData.Hour)}),
-											"minute": valPtr(homescript.ValueNumber{Value: float64(cronData.Minute)}),
-											"days":   valPtr(homescript.ValueList{ValueType: &numberType, Values: &days}),
+											"homescript_id": valPtr(homescript.ValueString{Value: automationItem.Data.HomescriptId}),
+											"enabled":       valPtr(homescript.ValueBool{Value: automationItem.Data.Enabled}),
+											"disable_once":  valPtr(homescript.ValueBool{Value: automationItem.Data.DisableOnce}),
+											"last_run":      valPtr(homescript.ValueNumber{Value: float64(automationItem.Data.LastRun.UnixMilli())}),
+											"trigger": valPtr(homescript.ValueString{
+												Value: string(automationItem.Data.Trigger),
+											}),
+											"trigger_cron_expression": triggerCronExpression,
+											"trigger_interval":        triggerInterval,
 										},
 									}))
 								}
@@ -532,9 +538,9 @@ func scopeAdditions() map[string]homescript.Value {
 								return homescript.ValueNull{}, nil, nil
 							},
 						}),
-						"schedules": valPtr(homescript.ValueBuiltinFunction{
+						"list": valPtr(homescript.ValueBuiltinFunction{
 							Callback: func(executor homescript.Executor, span hmsErrors.Span, args ...homescript.Value) (homescript.Value, *int, *hmsErrors.Error) {
-								if err := checkArgs("schedules", span, args); err != nil {
+								if err := checkArgs("list", span, args); err != nil {
 									return nil, nil, err
 								}
 
@@ -597,7 +603,7 @@ func scopeAdditions() map[string]homescript.Value {
 				}, nil
 			},
 		},
-	}
+	},
 }
 
 // Helper function which checks the validity of args provided to builtin functions

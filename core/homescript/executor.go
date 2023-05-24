@@ -76,6 +76,9 @@ type Executor struct {
 		Mutex sync.Mutex
 		Value bool
 	}
+
+	// Used for certain internal things, such as preventing recursive notification hooks
+	Initiator HomescriptInitiator
 }
 
 // Is used to allow the abortion of a running script at any point in time
@@ -112,11 +115,16 @@ func (self *Executor) IsAnalyzer() bool {
 
 // Resolves a Homescript module
 func (self *Executor) ResolveModule(id string) (string, string, bool, bool, map[string]homescript.Value, error) {
+	moduleScopeAdditions, exists := builtinModules[id]
+	if exists {
+		return "", id, true, true, moduleScopeAdditions, nil
+	}
+
 	script, found, err := database.GetUserHomescriptById(id, self.Username)
 	if !found || err != nil {
 		return "", "", found, true, nil, err
 	}
-	return script.Data.Code, id, true, true, scopeAdditions(), nil
+	return script.Data.Code, id, true, true, make(map[string]homescript.Value), nil
 }
 
 // Resolves a Homescript module
@@ -683,6 +691,7 @@ func (self *Executor) Exec(homescriptId string, args map[string]string) (homescr
 		self.SigTerm,
 		self.OutputWriter,
 		nil,
+		make(map[string]homescript.Value),
 	)
 	// Check if the script was killed using a sigTerm
 	if res.WasTerminated {

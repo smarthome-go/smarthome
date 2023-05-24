@@ -106,6 +106,7 @@ func (m *Manager) Analyze(
 	username string,
 	moduleStack []string,
 	moduleName string,
+	scopeInjections map[string]homescript.Value,
 ) []HmsError {
 	executor := &AnalyzerExecutor{
 		Username: username,
@@ -118,11 +119,31 @@ func (m *Manager) Analyze(
 		make(chan uint64),
 	)
 
+	scopeAdditionsFinal := make(map[string]homescript.Value)
+
+	for key, value := range scopeInjections {
+		_, exists := scopeAdditionsFinal[key]
+		if exists {
+			panic(fmt.Sprintf("Duplicate scope insertion key `%s`", key))
+		}
+		// insert this value
+		scopeAdditionsFinal[key] = value
+	}
+
+	if _, exists := scopeAdditionsFinal["context"]; !exists {
+		// Include `context` in order to prevent false errors during analysis
+		scopeAdditionsFinal["context"] = homescript.ValueBuiltinVariable{
+			Callback: func(executor homescript.Executor, span hmsErrors.Span) (homescript.Value, *hmsErrors.Error) {
+				return homescript.ValueObject{IsDynamic: true, IsProtected: true, ObjFields: make(map[string]*homescript.Value)}, nil
+			},
+		}
+	}
+
 	// Run the script
 	diagnostics, _, _ := homescript.Analyze(
 		executor,
 		scriptCode,
-		scopeAdditions(),
+		scopeAdditionsFinal,
 		moduleStack,
 		moduleName,
 		moduleName,
@@ -148,6 +169,7 @@ func (m *Manager) AnalyzeById(
 	username string,
 	callStack []string,
 	initiator HomescriptInitiator,
+	scopeInjections map[string]homescript.Value,
 ) ([]HmsError, error) {
 	homescriptItem, hasBeenFound, err := database.GetUserHomescriptById(scriptId, username)
 	if err != nil {
@@ -164,6 +186,7 @@ func (m *Manager) AnalyzeById(
 		username,
 		make([]string, 0),
 		scriptId,
+		scopeInjections,
 	), nil
 }
 
@@ -180,6 +203,7 @@ func (m *Manager) Run(
 	sigTerm chan int,
 	outputWriter io.Writer,
 	idChan *chan uint64,
+	scopeInjections map[string]homescript.Value,
 ) HmsExecRes {
 	// Is passed to the executor so that it can forward messages from its own `SigTerm` onto the `sigTermInternalPtr`
 	// Is also passed to `homescript.Run` so that the newly spawned interpreter uses the same channel
@@ -199,6 +223,7 @@ func (m *Manager) Run(
 		sigTermInternalPtr: &interpreterSigTerm,
 		StartTime:          time.Now(),
 		OutputWriter:       outputWriter,
+		Initiator:          initiator,
 	}
 
 	// Append the executor to the jobs
@@ -207,6 +232,7 @@ func (m *Manager) Run(
 		initiator,
 		make(chan uint64),
 	)
+
 	// Only send back the id if the channel exists
 	if idChan != nil {
 		*idChan <- id
@@ -217,12 +243,31 @@ func (m *Manager) Run(
 		valueArgs[key] = homescript.ValueString{Value: value}
 	}
 
+	scopeAdditionsFinal := make(map[string]homescript.Value)
+	for key, value := range scopeInjections {
+		_, exists := scopeAdditionsFinal[key]
+		if exists {
+			panic(fmt.Sprintf("Duplicate scope insertion key `%s`", key))
+		}
+		// insert this value
+		scopeAdditionsFinal[key] = value
+	}
+
+	if _, exists := scopeAdditionsFinal["context"]; !exists {
+		// Include `context` in order to prevent false errors during analysis
+		scopeAdditionsFinal["context"] = homescript.ValueBuiltinVariable{
+			Callback: func(executor homescript.Executor, span hmsErrors.Span) (homescript.Value, *hmsErrors.Error) {
+				return homescript.ValueObject{IsDynamic: true, IsProtected: true, ObjFields: make(map[string]*homescript.Value)}, nil
+			},
+		}
+	}
+
 	// Run the script
 	returnValue, exitCode, rootScope, hmsErrors := homescript.Run(
 		executor,
 		&interpreterSigTerm,
 		scriptCode,
-		scopeAdditions(),
+		scopeAdditionsFinal,
 		valueArgs,
 		false,
 		10000,
@@ -268,6 +313,7 @@ func (m *Manager) RunById(
 	sigTerm chan int,
 	outputWriter io.Writer,
 	idChan *chan uint64,
+	scopeInjections map[string]homescript.Value,
 ) (HmsExecRes, error) {
 	homescriptItem, hasBeenFound, err := database.GetUserHomescriptById(scriptId, username)
 	if err != nil {
@@ -287,6 +333,7 @@ func (m *Manager) RunById(
 		sigTerm,
 		outputWriter,
 		idChan,
+		scopeInjections,
 	), nil
 }
 

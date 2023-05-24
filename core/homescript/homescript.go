@@ -7,6 +7,10 @@ import (
 	"github.com/smarthome-go/smarthome/core/homescript/automation"
 )
 
+var RESERVED_IDS = []string{
+	"sys",
+}
+
 var log *logrus.Logger
 
 func InitLogger(logger *logrus.Logger) {
