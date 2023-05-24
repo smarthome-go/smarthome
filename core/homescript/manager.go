@@ -15,17 +15,21 @@ import (
 type HomescriptInitiator string
 
 const (
-	InitiatorAutomation HomescriptInitiator = "automation"
-	InitiatorScheduler  HomescriptInitiator = "scheduler"
-	InitiatorExec       HomescriptInitiator = "exec_target"
-	InitiatorInternal   HomescriptInitiator = "internal"
-	InitiatorAPI        HomescriptInitiator = "api"
-	InitiatorWidget     HomescriptInitiator = "widget"
+	InitiatorAutomation         HomescriptInitiator = "automation"
+	InitiatorAutomationOnNotify HomescriptInitiator = "automation_on_notify"
+	InitiatorScheduler          HomescriptInitiator = "scheduler"
+	InitiatorExec               HomescriptInitiator = "exec_target"
+	InitiatorInternal           HomescriptInitiator = "internal"
+	InitiatorAPI                HomescriptInitiator = "api"
+	InitiatorWidget             HomescriptInitiator = "widget"
 )
 
+type HomescriptSigterm int
+
 const (
-	HmsSigtermSuccess  int = 0
-	HmsSigtermCanceled int = 10
+	HmsSigtermSuccess         HomescriptSigterm = 0
+	HmsSigtermCanceled        HomescriptSigterm = 10
+	HmsSigtermRuntimeExceeded HomescriptSigterm = 20
 )
 
 // Global manager
@@ -371,7 +375,7 @@ func (m *Manager) GetJobById(jobId uint64) (Job, bool) {
 // Terminates a job given its internal job ID
 // This method operates on all types of run-type
 // The returned boolean indicates whether a job was killed or not
-func (m *Manager) Kill(jobId uint64) bool {
+func (m *Manager) Kill(jobId uint64, sigtermType HomescriptSigterm) bool {
 	m.Lock.Lock()
 	defer m.Lock.Unlock()
 	for _, job := range m.Jobs {
@@ -381,13 +385,13 @@ func (m *Manager) Kill(jobId uint64) bool {
 				job.Executor.InExpensiveBuiltin.Mutex.Unlock()
 				// If the executor is currently handling an expensive builtin function, terminate it
 				log.Trace("Dispatching sigTerm to executor channel")
-				job.Executor.SigTerm <- 10
+				job.Executor.SigTerm <- int(sigtermType)
 				log.Trace("Successfully dispatched sigTerm to executor channel")
 			} else {
 				job.Executor.InExpensiveBuiltin.Mutex.Unlock()
 				// Otherwise, terminate the interpreter directly
 				log.Trace("Dispatching sigTerm to HMS interpreter channel")
-				*job.Executor.sigTermInternalPtr <- 10
+				*job.Executor.sigTermInternalPtr <- int(sigtermType)
 				log.Trace("Successfully dispatched sigTerm to HMS interpreter channel")
 			}
 			return true
@@ -398,23 +402,22 @@ func (m *Manager) Kill(jobId uint64) bool {
 
 // Terminates all jobs which are executing a given Homescript-ID / Homescript-label
 // The returned boolean indicates whether a job was killed or not
-func (m *Manager) KillAllId(hmsId string) (count uint64, success bool) {
+func (m *Manager) KillAllId(hmsId string, sigtermType HomescriptSigterm) (count uint64, success bool) {
 	m.Lock.Lock()
 	defer m.Lock.Unlock()
 	for _, job := range m.Jobs {
 		// Only standalone scripts may be terminated (callstack validation)
 		if job.Executor.ScriptName == hmsId && len(job.Executor.CallStack) < 2 {
-			// Exit code 10 means `killed via sigterm`
 			job.Executor.InExpensiveBuiltin.Mutex.Lock()
 			if job.Executor.InExpensiveBuiltin.Value {
 				// If the executor is currently handling an expensive builtin function, terminate it
 				log.Trace("Dispatching sigTerm to executor channel")
-				job.Executor.SigTerm <- 10
+				job.Executor.SigTerm <- int(sigtermType)
 				log.Trace("Successfully dispatched sigTerm to executor channel")
 			} else {
 				// Otherwise, terminate the interpreter directly
 				log.Trace("Dispatching sigTerm to HMS interpreter channel")
-				*job.Executor.sigTermInternalPtr <- 10
+				*job.Executor.sigTermInternalPtr <- int(sigtermType)
 				log.Trace("Successfully dispatched sigTerm to HMS interpreter channel")
 			}
 			job.Executor.InExpensiveBuiltin.Mutex.Unlock()

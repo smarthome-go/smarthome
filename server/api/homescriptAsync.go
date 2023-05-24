@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	hmsRuntime "github.com/smarthome-go/homescript/v2/homescript"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/server/middleware"
@@ -136,6 +137,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 			make(chan int),
 			writer,
 			id,
+			make(map[string]hmsRuntime.Value),
 		)
 		if err != nil {
 			wsMutex.Lock()
@@ -187,7 +189,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 		}
 		// Kill the Homescript
 		log.Trace("Killing script via Websocket")
-		if !homescript.HmsManager.Kill(id) {
+		if !homescript.HmsManager.Kill(id, homescript.HmsSigtermCanceled) {
 			// Either the id is invalid or the script is not running anymore
 			return
 		}

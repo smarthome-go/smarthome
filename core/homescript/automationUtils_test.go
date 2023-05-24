@@ -58,12 +58,12 @@ func TestModifyAutomation(t *testing.T) {
 		return
 	}
 	if err := ModifyAutomationById(id, database.AutomationData{
-		Name:           "name2",
-		Description:    "description2",
-		CronExpression: "* * * * *",
-		HomescriptId:   "test",
-		Enabled:        true,
-		TimingMode:     database.TimingNormal,
+		Name:                  "name2",
+		Description:           "description2",
+		TriggerCronExpression: "* * * * *",
+		HomescriptId:          "test",
+		Enabled:               true,
+		TimingMode:            database.TimingNormal,
 	}); err != nil {
 		t.Error(err.Error())
 		return

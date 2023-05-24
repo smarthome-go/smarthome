@@ -11,6 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 
+	hmsRuntime "github.com/smarthome-go/homescript/v2/homescript"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/server/middleware"
@@ -43,9 +44,8 @@ type HomescriptArg struct {
 }
 
 type HomescriptLiveRunRequest struct {
-	Code                 string          `json:"code"`
-	Args                 []HomescriptArg `json:"args"`
-	TerminateWithRequest bool            `json:"terminateWithRequest"`
+	Code string          `json:"code"`
+	Args []HomescriptArg `json:"args"`
 }
 
 type LintHomescriptStringRequest struct {
@@ -55,10 +55,9 @@ type LintHomescriptStringRequest struct {
 }
 
 type HomescriptIdRunRequest struct {
-	Id                   string          `json:"id"`
-	Args                 []HomescriptArg `json:"args"`
-	IsWidget             bool            `json:"isWidget"`
-	TerminateWithRequest bool            `json:"terminateWithRequest"`
+	Id       string          `json:"id"`
+	Args     []HomescriptArg `json:"args"`
+	IsWidget bool            `json:"isWidget"`
 }
 
 type HomescriptIdRequest struct {
@@ -84,15 +83,6 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 	args := make(map[string]string, 0)
 	for _, arg := range request.Args {
 		args[arg.Key] = arg.Value
-	}
-
-	// If the user desires this, terminate the script as soon as the user disconnects
-	sigTerm := make(chan int)
-	if request.TerminateWithRequest {
-		go func() {
-			<-r.Context().Done()
-			sigTerm <- homescript.HmsSigtermCanceled
-		}()
 	}
 
 	hmsData, found, err := database.GetUserHomescriptById(request.Id, username)
@@ -121,9 +111,10 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		args,
 		make([]string, 0),
 		initiator,
-		sigTerm,
+		make(chan int),
 		&outputBuffer,
 		nil,
+		make(map[string]hmsRuntime.Value),
 	)
 	output := outputBuffer.String()
 
@@ -196,6 +187,7 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 		username,
 		make([]string, 0),
 		request.Id,
+		make(map[string]hmsRuntime.Value),
 	)
 	isSuccess := true
 
@@ -255,15 +247,6 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		args[arg.Key] = arg.Value
 	}
 
-	// If the user desires this, terminate the script as soon as the user disconnects
-	sigTerm := make(chan int)
-	if request.TerminateWithRequest {
-		go func() {
-			<-r.Context().Done()
-			sigTerm <- homescript.HmsSigtermCanceled
-		}()
-	}
-
 	// Run the Homescript
 	var outputBuffer bytes.Buffer
 	res := homescript.HmsManager.Run(
@@ -273,9 +256,10 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		make(map[string]string),
 		make([]string, 0),
 		homescript.InitiatorAPI,
-		sigTerm,
+		make(chan int),
 		&outputBuffer,
 		nil,
+		make(map[string]hmsRuntime.Value),
 	)
 	output := outputBuffer.String()
 	// if len(output) > 100_000 {
@@ -339,6 +323,7 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 		username,
 		make([]string, 0),
 		request.ModuleName,
+		make(map[string]hmsRuntime.Value),
 	)
 	isSuccess := true
 	for _, diagnostic := range diagnostics {
@@ -428,6 +413,16 @@ func CreateNewHomescript(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
+
+	// Check if this id is reserved
+	for _, id := range homescript.RESERVED_IDS {
+		if id == request.Id {
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			Res(w, Response{Success: false, Message: "failed to add Homescript", Error: fmt.Sprintf("the id: '%s' is reserved, use another one", request.Id)})
+			return
+		}
+	}
+
 	alreadyExists, err := database.DoesHomescriptExist(request.Id, username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
@@ -636,8 +631,12 @@ func KillJobById(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to kill Homescript job", Error: "invalid id provided"})
 		return
 	}
-	_ = homescript.HmsManager.Kill(uint64(idInt))
-	Res(w, Response{Success: true, Message: "successfully killed Homescript job"})
+	if homescript.HmsManager.Kill(uint64(idInt), homescript.HmsSigtermCanceled) {
+		Res(w, Response{Success: true, Message: "successfully killed Homescript job"})
+	} else {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to kill Homescript job", Error: "internal error"})
+	}
 }
 
 // Kills all jobs executing an arbitrary Homescript id
@@ -666,7 +665,7 @@ func KillAllHMSIdJobs(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "could not kill all Homescript jobs", Error: "invalid Homescript id specified"})
 		return
 	}
-	count, _ := homescript.HmsManager.KillAllId(id)
+	count, _ := homescript.HmsManager.KillAllId(id, homescript.HmsSigtermCanceled)
 	Res(w, Response{Success: true, Message: fmt.Sprintf("successfully killed %d Homescript job(s)", count)})
 }
 

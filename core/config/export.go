@@ -103,11 +103,12 @@ type setupHomescriptStorage struct {
 }
 
 type setupAutomation struct {
-	Name           string              `json:"name"`
-	Description    string              `json:"description"`
-	CronExpression string              `json:"cronExpression"`
-	Enabled        bool                `json:"enabled"`
-	TimingMode     database.TimingMode `json:"timingMode"`
+	Name                   string                     `json:"name"`
+	Description            string                     `json:"description"`
+	Enabled                bool                       `json:"enabled"`
+	Trigger                database.AutomationTrigger `json:"trigger"`
+	TriggerCronExpression  *string                    `json:"cronExpression"`
+	TriggerIntervalSeconds *uint                      `json:"intervalSeconds"`
 }
 
 type setupUserData struct {
@@ -252,11 +253,12 @@ func Export(
 			for _, aut := range automationsDB {
 				if aut.Data.HomescriptId == hms.Data.Data.Id {
 					automationsThis = append(automationsThis, setupAutomation{
-						Name:           aut.Data.Name,
-						Description:    aut.Data.Description,
-						CronExpression: aut.Data.CronExpression,
-						Enabled:        aut.Data.Enabled,
-						TimingMode:     aut.Data.TimingMode,
+						Name:                   aut.Data.Name,
+						Description:            aut.Data.Description,
+						Enabled:                aut.Data.Enabled,
+						Trigger:                aut.Data.Trigger,
+						TriggerCronExpression:  aut.Data.TriggerCronExpression,
+						TriggerIntervalSeconds: aut.Data.TriggerIntervalSeconds,
 					})
 				}
 			}

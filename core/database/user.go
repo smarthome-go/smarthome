@@ -221,7 +221,7 @@ func AddUser(user FullUser) error {
 	if err = InsertUser(user); err != nil {
 		return err
 	}
-	if err = AddNotification(user.Username, "Hello!", "Welcome to Smarthome, a self-built home automation system.", 1); err != nil {
+	if _, err = AddNotification(user.Username, "Hello!", "Welcome to Smarthome, the self-built home automation system.", 1); err != nil {
 		return err
 	}
 	log.Debug(fmt.Sprintf("Added user %s %s <%s>", user.Forename, user.Surname, user.Username))

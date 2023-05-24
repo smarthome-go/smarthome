@@ -6,6 +6,7 @@ import (
 
 	"github.com/smarthome-go/smarthome/core/config"
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/homescript/automation"
 )
 
 type updateLocationRequest struct {
@@ -20,6 +21,13 @@ type lockDownModeRequest struct {
 type exportConfigurationRequest struct {
 	IncludeProfilePictures bool `json:"includeProfilePictures"`
 	IncludeCacheData       bool `json:"includeCacheData"`
+}
+
+type suntimes struct {
+	SunriseHour   uint8 `json:"sunriseHour"`
+	SunriseMinute uint8 `json:"sunriseMinute"`
+	SunsetHour    uint8 `json:"sunsetHour"`
+	SunsetMinute  uint8 `json:"sunsetMinute"`
 }
 
 func GetSystemConfig(w http.ResponseWriter, r *http.Request) {
@@ -83,6 +91,26 @@ func UpdateLocation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	Res(w, Response{Success: true, Message: "successfully updated location"})
+}
+
+func GetSunTimes(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	serverConfig, found, err := database.GetServerConfiguration()
+	if err != nil || !found {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "could not get suntimes", Error: "database error"})
+		return
+	}
+
+	rise, set := automation.CalculateSunRiseSet(serverConfig.Latitude, serverConfig.Longitude)
+	if err := json.NewEncoder(w).Encode(suntimes{
+		SunriseHour:   uint8(rise.Hour),
+		SunriseMinute: uint8(rise.Minute),
+		SunsetHour:    uint8(set.Hour),
+		SunsetMinute:  uint8(set.Minute),
+	}); err != nil {
+		Res(w, Response{Success: false, Message: "failed to export server configuration", Error: "could not encode content"})
+	}
 }
 
 // Is used to request an export of the server's configuration

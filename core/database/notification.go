@@ -45,10 +45,11 @@ func createNotificationTable() error {
 }
 
 // Adds a new notification to a user's `inbox`, can return an error if the database fails
-func AddNotification(receiverUsername string, name string, description string, priority uint8) error {
+// Also returns the newly created id of the notification
+func AddNotification(receiverUsername string, name string, description string, priority uint8) (uint, error) {
 	if priority > 3 || priority < 1 {
 		log.Error("Invalid Priority range: ", priority)
-		return errors.New("failed to send notification: invalid priority range")
+		return 0, errors.New("failed to send notification: invalid priority range")
 	}
 	query, err := db.Prepare(`
 	INSERT INTO
@@ -64,15 +65,22 @@ func AddNotification(receiverUsername string, name string, description string, p
 	`)
 	if err != nil {
 		log.Error("Failed to add notification: preparing query failed: ", err.Error())
-		return err
+		return 0, err
 	}
 	defer query.Close()
-	_, err = query.Exec(receiverUsername, priority, name, description)
+	res, err := query.Exec(receiverUsername, priority, name, description)
 	if err != nil {
 		log.Error("Failed to add notification: executing query failed: ", err.Error())
-		return err
+		return 0, err
 	}
-	return nil
+
+	newId, err := res.LastInsertId()
+	if err != nil {
+		log.Error("Failed to add notification: could not get inserted id: ", err.Error())
+		return 0, err
+	}
+
+	return uint(newId), nil
 }
 
 // If the user requests to empty their notification area, all hist notifications will be deleted

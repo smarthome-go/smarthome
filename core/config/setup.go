@@ -287,12 +287,13 @@ func createUsersInDatabase(users []setupUser) error {
 				if _, err := database.CreateNewAutomation(database.Automation{
 					Owner: usr.Data.Username,
 					Data: database.AutomationData{
-						Name:           autom.Name,
-						Description:    autom.Description,
-						CronExpression: autom.CronExpression,
-						HomescriptId:   homescript.Data.Id,
-						Enabled:        autom.Enabled,
-						TimingMode:     autom.TimingMode,
+						Name:                   autom.Name,
+						Description:            autom.Description,
+						HomescriptId:           homescript.Data.Id,
+						Enabled:                autom.Enabled,
+						Trigger:                autom.Trigger,
+						TriggerCronExpression:  autom.TriggerCronExpression,
+						TriggerIntervalSeconds: autom.TriggerIntervalSeconds,
 					},
 				}); err != nil {
 					return err

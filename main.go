@@ -194,6 +194,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Obtain the server's configuration
+	serverConfig, found, err := database.GetServerConfiguration()
+	if err != nil || !found {
+		log.Fatal("Could not retrieve server configuration")
+		os.Exit(1)
+	}
+
 	// Homescript Manager initialization
 	homescript.InitManager()
 	// Initialize Homescript URL cache flushing scheduler
@@ -203,7 +210,7 @@ func main() {
 	}
 
 	// Schedulers
-	if err := homescript.InitAutomations(); err != nil { // Initializes the automation scheduler
+	if err := homescript.InitAutomations(serverConfig); err != nil { // Initializes the automation scheduler
 		log.Error("Failed to activate automation system: ", err.Error())
 		os.Exit(1)
 	}
@@ -264,6 +271,7 @@ func main() {
 
 	log.Info(fmt.Sprintf("Smarthome v%s is listening on http://localhost:%d using %s mode", utils.Version, port, operatingMode))
 	go func() { errCh <- server.ListenAndServe() }()
+	go core.RunBootAutomations(serverConfig)
 
 	// Main loop
 mainLoop:
@@ -292,7 +300,7 @@ mainLoop:
 		cancel()
 
 		// Wait for any other tasks
-		if err := core.Shutdown(); err != nil {
+		if err := core.Shutdown(serverConfig); err != nil {
 			log.Error(fmt.Sprintf("Error(s) occured during shutdown: `%s`", err.Error()))
 		}
 
@@ -300,6 +308,6 @@ mainLoop:
 	}
 
 	if err != nil {
-		panic(err.Error())
+		log.Fatal("Graceful shutdown failed: ", err.Error())
 	}
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/user"
+	"github.com/smarthome-go/smarthome/core/homescript"
 )
 
 var log *logrus.Logger
@@ -17,13 +17,13 @@ func InitLogger(logger *logrus.Logger) {
 }
 
 // Send a fitting notification which informs the reminders owner of the remaining time to complete the specified task
-func sendDueInReminder(id uint, username string, name string, daysLeft uint, dueDate time.Time, level user.NotificationLevel) error {
+func sendDueInReminder(id uint, username string, name string, daysLeft uint, dueDate time.Time, level homescript.NotificationLevel) error {
 	daysLeft++ // The current day should be added to the days the user has left to complete the task
 	dayText := "days"
 	if daysLeft == 1 {
 		dayText = "day"
 	}
-	if err := user.Notify(
+	if _, err := homescript.Notify(
 		username,
 		fmt.Sprintf("Task is due on %s", dueDate.Format("Monday, 2.1.2006")),
 		fmt.Sprintf("You have %d %s left to complete the task '%s'",
@@ -32,6 +32,7 @@ func sendDueInReminder(id uint, username string, name string, daysLeft uint, due
 			name,
 		),
 		level,
+		true,
 	); err != nil {
 		return err
 	}
@@ -63,7 +64,7 @@ func SendUrgencyNotifications(username string) error {
 		}
 
 		if remainingDays < 0 && reminder.Priority > database.Low {
-			if err := user.Notify(
+			if _, err := homescript.Notify(
 				username,
 				fmt.Sprintf("Reminder '%s' Is Overdue", reminder.Name),
 				fmt.Sprintf("The task '%s' was supposed to be finished on %s. You are behind schedule by %d %s.",
@@ -72,7 +73,8 @@ func SendUrgencyNotifications(username string) error {
 					remainingDays*-1,
 					dayText,
 				),
-				user.NotificationLevelError,
+				homescript.NotificationLevelError,
+				true,
 			); err != nil {
 				return err
 			}
@@ -88,7 +90,7 @@ func SendUrgencyNotifications(username string) error {
 			continue // The low priority will not trigger any notification
 		case database.Normal:
 			if remainingDays < 2 {
-				if err := sendDueInReminder(reminder.Id, username, reminder.Name, uint(remainingDays), reminder.DueDate, user.NotificationLevelInfo); err != nil {
+				if err := sendDueInReminder(reminder.Id, username, reminder.Name, uint(remainingDays), reminder.DueDate, homescript.NotificationLevelInfo); err != nil {
 					log.Error("Failed to send notification for reminder: ", err.Error())
 					return err
 				}
@@ -96,7 +98,7 @@ func SendUrgencyNotifications(username string) error {
 			continue
 		case database.Medium:
 			if remainingDays < 3 {
-				if err := sendDueInReminder(reminder.Id, username, reminder.Name, uint(remainingDays), reminder.DueDate, user.NotificationLevelInfo); err != nil {
+				if err := sendDueInReminder(reminder.Id, username, reminder.Name, uint(remainingDays), reminder.DueDate, homescript.NotificationLevelInfo); err != nil {
 					log.Error("Failed to send notification for reminder: ", err.Error())
 					return err
 				}
@@ -104,7 +106,7 @@ func SendUrgencyNotifications(username string) error {
 			continue
 		case database.High:
 			if remainingDays < 4 {
-				if err := sendDueInReminder(reminder.Id, username, reminder.Name, uint(remainingDays), reminder.DueDate, user.NotificationLevelWarn); err != nil {
+				if err := sendDueInReminder(reminder.Id, username, reminder.Name, uint(remainingDays), reminder.DueDate, homescript.NotificationLevelWarn); err != nil {
 					log.Error("Failed to send notification for reminder: ", err.Error())
 					return err
 				}
@@ -112,7 +114,7 @@ func SendUrgencyNotifications(username string) error {
 			continue
 		case database.Urgent:
 			if remainingDays < 5 {
-				if err := sendDueInReminder(reminder.Id, username, reminder.Name, uint(remainingDays), reminder.DueDate, user.NotificationLevelError); err != nil {
+				if err := sendDueInReminder(reminder.Id, username, reminder.Name, uint(remainingDays), reminder.DueDate, homescript.NotificationLevelError); err != nil {
 					log.Error("Failed to send notification for reminder: ", err.Error())
 					return err
 				}

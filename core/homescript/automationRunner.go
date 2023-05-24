@@ -3,17 +3,31 @@ package homescript
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"time"
 
+	"github.com/smarthome-go/homescript/v2/homescript"
+	hmsErrors "github.com/smarthome-go/homescript/v2/homescript/errors"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
-	"github.com/smarthome-go/smarthome/core/user"
 )
 
+type AutomationContext struct {
+	NotificationContext *NotificationContext
+	MaximumHMSRuntime   *time.Duration
+}
+
+type NotificationContext struct {
+	Id          uint
+	Title       string
+	Description string
+	Level       uint8
+}
+
 // Is called when the scheduler executes the given automation
-// The automationRunnerFunc automatically tries to fetch the required configuration from the provided id
+// The AutomationRunnerFunc automatically tries to fetch the required configuration from the provided id
 // Error handling is accomplished by logging to the internal event system and notifying the user about their automations failure
-func automationRunnerFunc(id uint) {
+func AutomationRunnerFunc(id uint, context AutomationContext) {
 	job, jobFound, err := database.GetAutomationById(id)
 	if err != nil {
 		log.Error(fmt.Sprintf("Automation with id: '%d' could not be executed: database failure: %s", id, err.Error()))
@@ -37,6 +51,7 @@ func automationRunnerFunc(id uint) {
 		log.Info(fmt.Sprintf("Successfully aborted dangling automation: %d", id))
 		return
 	}
+
 	// Check if the user has blocked their automations & schedules
 	userData, found, err := database.GetUserByUsername(job.Owner)
 	if err != nil {
@@ -58,28 +73,31 @@ func automationRunnerFunc(id uint) {
 		)
 		return
 	}
+
 	// Check if the automation's next run (this run) is disabled
 	if job.Data.DisableOnce {
 		// Re-enable the automation again
 		if err := ModifyAutomationById(job.Id, database.AutomationData{
-			Name:           job.Data.Name,
-			Description:    job.Data.Description,
-			CronExpression: job.Data.CronExpression,
-			HomescriptId:   job.Data.HomescriptId,
-			Enabled:        job.Data.Enabled,
-			DisableOnce:    false,
-			TimingMode:     job.Data.TimingMode,
+			Name:                   job.Data.Name,
+			Description:            job.Data.Description,
+			HomescriptId:           job.Data.HomescriptId,
+			Enabled:                job.Data.Enabled,
+			DisableOnce:            false,
+			Trigger:                job.Data.Trigger,
+			TriggerCronExpression:  job.Data.TriggerCronExpression,
+			TriggerIntervalSeconds: job.Data.TriggerIntervalSeconds,
 		}); err != nil {
 			event.Error("Could not re-enable automation", fmt.Sprintf("Could not re-enable automation `%s`: %s", job.Data.Name, err.Error()))
 			return
 		}
 		// Notify the user
 		log.Info(fmt.Sprintf("Automation '%s' was skipped once", job.Data.Name))
-		if err := user.Notify(
+		if _, err := Notify(
 			job.Owner,
 			"Automation Skipped Once",
 			fmt.Sprintf("Automation '%s' was skipped once. It will run regularely the next time.", job.Data.Name),
-			user.NotificationLevelInfo,
+			NotificationLevelInfo,
+			false,
 		); err != nil {
 			log.Error("Failed to notify user: ", err.Error())
 			return
@@ -88,7 +106,7 @@ func automationRunnerFunc(id uint) {
 	}
 
 	// Update the execution time of the automation
-	if err := database.UpdateAutomationExecuteTime(job.Id); err != nil {
+	if err := database.UpdateAutomationLastRunTime(job.Id); err != nil {
 		log.Error(fmt.Sprintf("Could not update `lastRun` of automation with ID `%d`: %s", job.Id, err.Error()))
 		event.Error(
 			"Automation Failed",
@@ -98,23 +116,31 @@ func automationRunnerFunc(id uint) {
 	}
 
 	// If the timing mode is set to either 'sunrise' or 'sunset', a new time with according cron-expression should be generated
-	if job.Data.TimingMode != database.TimingNormal {
-		if time.Since(job.Data.LastRun).Minutes() < 5 {
+	if job.Data.Trigger == database.TriggerSunrise || job.Data.Trigger == database.TriggerSunset {
+		serverConfig, found, err := database.GetServerConfiguration()
+		if err != nil || !found {
+			log.Fatal("Could not retrieve server configuration")
+			os.Exit(1)
+		}
+
+		// TODO: is this safe?
+		if time.Since(*job.Data.LastRun).Minutes() < 5 {
 			event.Trace("Geological Time Automation Skipped", fmt.Sprintf("The automation `%s` with ID `%d` was skipped due to cooldown.", job.Data.Name, job.Id))
 			return
 		}
 
-		if err := UpdateJobTime(id, job.Data.TimingMode == database.TimingSunrise); err != nil {
+		if err := UpdateJobTime(id, serverConfig); err != nil {
 			log.Error("Failed to run automation: could not update next launch time: ", err.Error())
 			event.Error(
 				"Automation Failed",
 				fmt.Sprintf("Automation '%s' failed because its next launch time could not be adjusted: %s", job.Data.Name, err.Error()),
 			)
-			if err := user.Notify(
+			if _, err := Notify(
 				job.Owner,
 				"Automation Failed",
-				fmt.Sprintf("Automation '%s' was not executed because the next time it should run could not be determined. This is caused by the automations timing mode which is currently set to '%s'", job.Data.Name, job.Data.TimingMode),
-				user.NotificationLevelError,
+				fmt.Sprintf("Automation '%s' was not executed because the next time it should run could not be determined. This is caused by the automations trigger which is currently set to '%s'", job.Data.Name, job.Data.Trigger),
+				NotificationLevelError,
+				false,
 			); err != nil {
 				log.Error("Failed to notify user: ", err.Error())
 				return
@@ -131,11 +157,12 @@ func automationRunnerFunc(id uint) {
 			"Automation Failed",
 			fmt.Sprintf("Automation '%s' could not be executed because it s Homescript Id could not be retrieved from the database: %s", job.Data.Name, err.Error()),
 		)
-		if err := user.Notify(
+		if _, err := Notify(
 			job.Owner,
 			"Automation Failed",
 			fmt.Sprintf("Automation '%s' was not executed because its referenced Homescript could not be found in the database due to an internal error, contact your administrator", job.Data.Name),
-			user.NotificationLevelError,
+			NotificationLevelError,
+			false,
 		); err != nil {
 			log.Error("Failed to notify user: ", err.Error())
 			return
@@ -148,38 +175,83 @@ func automationRunnerFunc(id uint) {
 			"Automation Failed",
 			fmt.Sprintf("Automation '%s' failed because its Homescript Id: '%s' is invalid. This indicates a bad configuration.", job.Data.Name, job.Data.HomescriptId),
 		)
-		if err := user.Notify(
+		if _, err := Notify(
 			job.Owner,
 			"Automation Failed",
 			fmt.Sprintf("Automation '%s' was not executed because its referenced Homescript could not be found in the database, contact your administrator", job.Data.Name),
-			user.NotificationLevelError,
+			NotificationLevelError,
+			false,
 		); err != nil {
 			log.Error("Failed to notify user: ", err.Error())
 			return
 		}
 		return
 	}
+
+	var initiator HomescriptInitiator
+	switch job.Data.Trigger {
+	case database.TriggerOnNotification:
+		initiator = InitiatorAutomationOnNotify
+	default:
+		initiator = InitiatorAutomation
+	}
+
+	idChan := make(chan uint64)
+	if context.MaximumHMSRuntime != nil {
+		// Kill this automation in the event that it takes too long to execute
+		go func() {
+			id := <-idChan
+			time.Sleep(*context.MaximumHMSRuntime)
+			if !HmsManager.Kill(id, HmsSigtermRuntimeExceeded) {
+				log.Fatal(fmt.Sprintf("Could not kill HMS boot job with id %d", id))
+			}
+		}()
+	} else {
+		go func() {
+			<-idChan
+		}()
+	}
+
+	// Use context information for scope injections
+	scopeInjections := make(map[string]homescript.Value)
+
+	if context.NotificationContext != nil {
+		scopeInjections["context"] = homescript.ValueBuiltinVariable{
+			Callback: func(executor homescript.Executor, span hmsErrors.Span) (homescript.Value, *hmsErrors.Error) {
+				return homescript.ValueObject{IsDynamic: true, IsProtected: true, ObjFields: map[string]*homescript.Value{
+					"id":          valPtr(homescript.ValueNumber{Value: float64(context.NotificationContext.Id)}),
+					"title":       valPtr(homescript.ValueString{Value: context.NotificationContext.Title}),
+					"description": valPtr(homescript.ValueString{Value: context.NotificationContext.Description}),
+					"level":       valPtr(homescript.ValueNumber{Value: float64(context.NotificationContext.Level)}),
+				}}, nil
+			},
+		}
+	}
+
 	res, err := HmsManager.RunById(
 		job.Data.HomescriptId,
 		job.Owner,
 		make([]string, 0),
 		make(map[string]string, 0),
-		InitiatorAutomation,
+		initiator,
 		make(chan int),
 		&bytes.Buffer{},
-		nil,
+		&idChan,
+		scopeInjections,
 	)
+
 	if err != nil {
 		log.Warn(fmt.Sprintf("Automation '%s' failed during the execution of Homescript: '%s', which terminated abnormally", job.Data.Name, job.Data.HomescriptId))
 		event.Error(
 			"Automation Failed",
 			fmt.Sprintf("Automation '%s' failed during execution of Homescript '%s'. Error: %s", job.Data.Name, job.Data.HomescriptId, err.Error()),
 		)
-		if err := user.Notify(
+		if _, err := Notify(
 			job.Owner,
 			"Automation Failed",
 			fmt.Sprintf("Automation '%s' failed during execution of Homescript '%s'. Error: %s", job.Data.Name, job.Data.HomescriptId, err.Error()),
-			user.NotificationLevelError,
+			NotificationLevelError,
+			false,
 		); err != nil {
 			log.Error("Failed to notify user: ", err.Error())
 			return
@@ -192,11 +264,12 @@ func automationRunnerFunc(id uint) {
 			"Automation Failed",
 			fmt.Sprintf("Automation '%s' failed during execution of Homescript '%s'. Error: %s", job.Data.Name, job.Data.HomescriptId, res.Errors[0].Message),
 		)
-		if err := user.Notify(
+		if _, err := Notify(
 			job.Owner,
 			"Automation Failed",
 			fmt.Sprintf("Automation '%s' failed during execution of Homescript '%s'. Error: %s", job.Data.Name, job.Data.HomescriptId, res.Errors[0].Message),
-			user.NotificationLevelError,
+			NotificationLevelError,
+			false,
 		); err != nil {
 			log.Error("Failed to notify user: ", err.Error())
 			return
@@ -205,6 +278,6 @@ func automationRunnerFunc(id uint) {
 	}
 	event.Debug(
 		"Automation Executed Successfully",
-		fmt.Sprintf("Automation '%d' of user '%s' has executed successfully. HMS-Exit code: %d", id, job.Owner, res.ExitCode),
+		fmt.Sprintf("Automation `%s` (%d) of user '%s' has executed successfully. HMS-Exit code: %d", job.Data.Name, id, job.Owner, res.ExitCode),
 	)
 }

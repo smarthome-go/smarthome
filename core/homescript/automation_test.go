@@ -183,13 +183,13 @@ func TestModificationToDifferentScript(t *testing.T) {
 	}
 	if err := ModifyAutomationById(modifyId,
 		database.AutomationData{
-			Name:           "name",
-			Description:    "description",
-			CronExpression: cronExpression,
-			HomescriptId:   "test_modify",
-			Enabled:        true,
-			DisableOnce:    false,
-			TimingMode:     database.TimingNormal,
+			Name:                  "name",
+			Description:           "description",
+			TriggerCronExpression: cronExpression,
+			HomescriptId:          "test_modify",
+			Enabled:               true,
+			DisableOnce:           false,
+			TimingMode:            database.TimingNormal,
 		}); err != nil {
 		t.Error(err.Error())
 		return
@@ -252,12 +252,12 @@ func TestModificationToAbort(t *testing.T) {
 	// Set its activation status to `disabled`
 	if err := ModifyAutomationById(abortId,
 		database.AutomationData{
-			Name:           "name",
-			Description:    "description",
-			CronExpression: automation.Data.CronExpression,
-			HomescriptId:   "test_abort",
-			Enabled:        false,
-			TimingMode:     database.TimingNormal,
+			Name:                  "name",
+			Description:           "description",
+			TriggerCronExpression: automation.Data.TriggerCronExpression,
+			HomescriptId:          "test_abort",
+			Enabled:               false,
+			TimingMode:            database.TimingNormal,
 		}); err != nil {
 		t.Error(err.Error())
 		return
@@ -366,8 +366,8 @@ func TestTimingModes(t *testing.T) {
 		t.Errorf("Automation %d was not found after creation", sunSetId)
 		return
 	}
-	if sunrise.Data.CronExpression == sunSet.Data.CronExpression {
-		t.Errorf("Cron expression of sunrise and sunset is not valid. `%s`|`%s`", sunSet.Data.CronExpression, sunrise.Data.CronExpression)
+	if sunrise.Data.TriggerCronExpression == sunSet.Data.TriggerCronExpression {
+		t.Errorf("Cron expression of sunrise and sunset is not valid. `%s`|`%s`", sunSet.Data.TriggerCronExpression, sunrise.Data.TriggerCronExpression)
 	}
 }
 
@@ -456,13 +456,13 @@ func TestDisableOnce(t *testing.T) {
 
 	// Disable the automation once
 	assert.NoError(t, ModifyAutomationById(id, database.AutomationData{
-		Name:           "name_once",
-		Description:    "description_once",
-		CronExpression: cronExpr,
-		HomescriptId:   "test",
-		Enabled:        true,
-		DisableOnce:    true,
-		TimingMode:     database.TimingNormal,
+		Name:                  "name_once",
+		Description:           "description_once",
+		TriggerCronExpression: cronExpr,
+		HomescriptId:          "test",
+		Enabled:               true,
+		DisableOnce:           true,
+		TimingMode:            database.TimingNormal,
 	}))
 
 	// Check if the `DisableOnce` boolean has been set to `true`
@@ -505,13 +505,13 @@ func TestDisableOnce(t *testing.T) {
 	assert.NoError(t, err)
 	// Update the next run-time
 	assert.NoError(t, ModifyAutomationById(id, database.AutomationData{
-		Name:           "name_once",
-		Description:    "description_once",
-		CronExpression: cronExpr,
-		HomescriptId:   "test",
-		Enabled:        true,
-		DisableOnce:    false,
-		TimingMode:     database.TimingNormal,
+		Name:                  "name_once",
+		Description:           "description_once",
+		TriggerCronExpression: cronExpr,
+		HomescriptId:          "test",
+		Enabled:               true,
+		DisableOnce:           false,
+		TimingMode:            database.TimingNormal,
 	}))
 
 	// Toggle the switch to off

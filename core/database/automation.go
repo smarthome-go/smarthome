@@ -3,23 +3,47 @@ package database
 
 import (
 	"database/sql"
-	"fmt"
 	"time"
 )
 
-// Represents the timing mode on which the automation operates
-type TimingMode string
+// Specifies when the automation runs
+type AutomationTrigger string
 
 const (
 	// Will not change, an automation will always execute based on this time
-	TimingNormal TimingMode = "normal"
+	TriggerCron AutomationTrigger = "cron"
 	// Uses the time of local sunrise
 	// => Each run of a set automation will update the underlyingk time
 	// => Each run will update and regenerate a cron-expression
-	TimingSunrise TimingMode = "sunrise"
+	TriggerSunrise AutomationTrigger = "on_sunrise"
 	// Same as above, just uses the time of local sunset
-	TimingSunset TimingMode = "sunset"
+	TriggerSunset AutomationTrigger = "on_sunset"
+	// A continuous interval, executes every n seconds
+	TriggerInterval AutomationTrigger = "interval"
+	// TODO: maybe on:weatherchange
+	// As soon as the owner logs in
+	TriggerOnLogin AutomationTrigger = "on_login"
+	// As soon as the owner loggs out
+	TriggerOnLogout AutomationTrigger = "on_logout"
+	// When the owner receives a notification
+	TriggerOnNotification AutomationTrigger = "on_notification"
+	// When the server shuts down
+	TriggerOnShutdown AutomationTrigger = "on_shutdown"
+	// When the server boots up
+	TriggerOnBoot AutomationTrigger = "on_boot"
 )
+
+func IsValidAutomationTrigger(toCheck string) bool {
+	return toCheck == string(TriggerCron) ||
+		toCheck == string(TriggerSunrise) ||
+		toCheck == string(TriggerSunset) ||
+		toCheck == string(TriggerInterval) ||
+		toCheck == string(TriggerOnLogin) ||
+		toCheck == string(TriggerOnLogout) ||
+		toCheck == string(TriggerOnNotification) ||
+		toCheck == string(TriggerOnShutdown) ||
+		toCheck == string(TriggerOnBoot)
+}
 
 type Automation struct {
 	// The ID is automatically generated
@@ -29,17 +53,27 @@ type Automation struct {
 }
 
 type AutomationData struct {
-	Name        string `json:"name"`
+	// A helpful name
+	Name string `json:"name"`
+	// A short description
 	Description string `json:"description"`
-	// Saves the underlying cron-expression to wrap the time and days of execution
-	CronExpression string `json:"cronExpression"`
-	// Specifies which Homescript is to be executed when the automation runs
+	// The target script to run
 	HomescriptId string `json:"homescriptId"`
-	Enabled      bool   `json:"enabled"`
-	// Wont run the automation the next time it would
-	DisableOnce bool       `json:"disableOnce"`
-	TimingMode  TimingMode `json:"timingMode"`
-	LastRun     time.Time  `json:"lastRun"`
+	// Specifies whether the automation is enabled or disabled
+	Enabled bool `json:"enabled"`
+	// Skips the next execution of this automation
+	DisableOnce bool `json:"disableOnce"`
+	// Specifies the last time this automation was executed (TODO: false trigger when using skiponce?)
+	LastRun *time.Time `json:"lastRun"`
+	// Trigger mode of the automation
+	Trigger AutomationTrigger `json:"trigger"`
+
+	//// Trigger-specific data ////
+
+	// Saves the underlying cron-expression to wrap the time and days of execution
+	TriggerCronExpression *string `json:"triggerCronExpression"`
+	// Saves the seconds of the continuous interval
+	TriggerIntervalSeconds *uint `json:"triggerIntervalSeconds"`
 }
 
 // Creates a new table containing the automation jobs
@@ -51,17 +85,24 @@ func createAutomationTable() error {
 		Id INT AUTO_INCREMENT,
 		Name VARCHAR(30),
 		Description TEXT,
-		CronExpression VARCHAR(100),
 		HomescriptId VARCHAR(30),
 		Owner VARCHAR(20),
 		Enabled BOOL,
 		DisableOnce BOOL,
-		TimingMode ENUM(
-			'normal',
-			'sunrise',
-			'sunset'
+		LastRun DATETIME DEFAULT NULL,
+		AutomationTrigger ENUM(
+			'cron',
+			'on_sunrise',
+			'on_sunset',
+			'interval',
+			'on_login',
+			'on_logout',
+			'on_notification',
+			'on_shutdown',
+			'on_boot'
 		),
-		LastRun DATETIME DEFAULT CURRENT_TIMESTAMP,
+		TriggerCronExpression VARCHAR(100),
+		TriggerInterval INT UNSIGNED,
 		PRIMARY KEY(Id),
 		FOREIGN KEY (HomescriptId)
 		REFERENCES homescript(Id),
@@ -84,31 +125,34 @@ func CreateNewAutomation(automation Automation) (uint, error) {
 		Id,
 		Name,
 		Description,
-		CronExpression,
 		HomescriptId,
 		Owner,
 		Enabled,
 		DisableOnce,
-		TimingMode,
-		LastRun
+		LastRun,
+		AutomationTrigger,
+		TriggerCronExpression,
+		TriggerInterval
 	)
-	VALUES(DEFAULT, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	VALUES(DEFAULT, ?, ?, ?, ?, ?, ?, DEFAULT, ?, ?, ?)
 	`)
 	if err != nil {
 		log.Error("Failed to create new automation: preparing query failed: ", err.Error())
 		return 0, err
 	}
 	defer query.Close()
+
 	res, err := query.Exec(
 		automation.Data.Name,
 		automation.Data.Description,
-		automation.Data.CronExpression,
 		automation.Data.HomescriptId,
 		automation.Owner,
 		automation.Data.Enabled,
 		automation.Data.DisableOnce,
-		automation.Data.TimingMode,
-		time.Unix(0, 0),
+		automation.Data.Trigger,
+		automation.Data.TriggerCronExpression,
+		automation.Data.TriggerIntervalSeconds,
+		// time.Unix(0, 0),
 	)
 	if err != nil {
 		log.Error("Failed to create new automation: executing query failed: ", err.Error())
@@ -130,13 +174,14 @@ func GetAutomationById(id uint) (Automation, bool, error) {
 		Id,
 		Name,
 		Description,
-		CronExpression,
 		HomescriptId,
 		Owner,
 		Enabled,
 		DisableOnce,
-		TimingMode,
-		LastRun
+		LastRun,
+		AutomationTrigger,
+		TriggerCronExpression,
+		TriggerInterval
 	FROM automation
 	WHERE Id=?
 	`)
@@ -151,13 +196,14 @@ func GetAutomationById(id uint) (Automation, bool, error) {
 		&automation.Id,
 		&automation.Data.Name,
 		&automation.Data.Description,
-		&automation.Data.CronExpression,
 		&automation.Data.HomescriptId,
 		&automation.Owner,
 		&automation.Data.Enabled,
 		&automation.Data.DisableOnce,
-		&automation.Data.TimingMode,
 		&lastRun,
+		&automation.Data.Trigger,
+		&automation.Data.TriggerCronExpression,  // TODO: can be null
+		&automation.Data.TriggerIntervalSeconds, // TODO: can be null
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return Automation{}, false, nil
@@ -166,10 +212,9 @@ func GetAutomationById(id uint) (Automation, bool, error) {
 	}
 
 	if !lastRun.Valid {
-		log.Error("Invalid time column when getting automation")
-		return Automation{}, false, fmt.Errorf("invalid time column when scanning logs")
+		automation.Data.LastRun = nil
 	} else {
-		automation.Data.LastRun = lastRun.Time
+		automation.Data.LastRun = &lastRun.Time
 	}
 
 	return automation, true, nil
@@ -183,13 +228,14 @@ func GetUserAutomations(username string) ([]Automation, error) {
 		Id,
 		Name,
 		Description,
-		CronExpression,
 		HomescriptId,
 		Owner,
 		Enabled,
 		DisableOnce,
-		TimingMode,
-		LastRun
+		LastRun,
+		AutomationTrigger,
+		TriggerCronExpression,
+		TriggerInterval
 	FROM automation
 	WHERE Owner=?
 	`)
@@ -212,23 +258,23 @@ func GetUserAutomations(username string) ([]Automation, error) {
 			&automation.Id,
 			&automation.Data.Name,
 			&automation.Data.Description,
-			&automation.Data.CronExpression,
 			&automation.Data.HomescriptId,
 			&automation.Owner,
 			&automation.Data.Enabled,
 			&automation.Data.DisableOnce,
-			&automation.Data.TimingMode,
 			&lastRun,
+			&automation.Data.Trigger,
+			&automation.Data.TriggerCronExpression,  // TODO: can be null
+			&automation.Data.TriggerIntervalSeconds, // TODO: can be null
 		); err != nil {
 			log.Error("Failed to list user automations: scanning for results failed: ", err.Error())
 			return nil, err
 		}
 
 		if !lastRun.Valid {
-			log.Error("Invalid time column when getting automation")
-			return nil, fmt.Errorf("invalid time column when scanning logs")
+			automation.Data.LastRun = nil
 		} else {
-			automation.Data.LastRun = lastRun.Time
+			automation.Data.LastRun = &lastRun.Time
 		}
 
 		automations = append(automations, automation)
@@ -244,13 +290,14 @@ func GetAutomations() ([]Automation, error) {
 		Id,
 		Name,
 		Description,
-		CronExpression,
 		HomescriptId,
 		Owner,
 		Enabled,
 		DisableOnce,
-		TimingMode,
-		LastRun
+		LastRun,
+		AutomationTrigger,
+		TriggerCronExpression,
+		TriggerInterval
 	FROM automation
 	`)
 	if err != nil {
@@ -267,23 +314,24 @@ func GetAutomations() ([]Automation, error) {
 			&automation.Id,
 			&automation.Data.Name,
 			&automation.Data.Description,
-			&automation.Data.CronExpression,
 			&automation.Data.HomescriptId,
 			&automation.Owner,
 			&automation.Data.Enabled,
 			&automation.Data.DisableOnce,
-			&automation.Data.TimingMode,
 			&lastRun,
+			&automation.Data.Trigger,
+			&automation.Data.TriggerCronExpression,  // TODO: can be null
+			&automation.Data.TriggerIntervalSeconds, // TODO: can be null
 		); err != nil {
 			log.Error("Failed to list all automations: scanning for results failed: ", err.Error())
 			return nil, err
 		}
 
+		// Handle potential null column
 		if !lastRun.Valid {
-			log.Error("Invalid time column when getting automation")
-			return nil, fmt.Errorf("invalid time column when scanning logs")
+			automation.Data.LastRun = nil
 		} else {
-			automation.Data.LastRun = lastRun.Time
+			automation.Data.LastRun = &lastRun.Time
 		}
 
 		automations = append(automations, automation)
@@ -300,11 +348,12 @@ func ModifyAutomation(id uint, newItem AutomationData) error {
 	SET
 		Name=?,
 		Description=?,
-		CronExpression=?,
 		HomescriptId=?,
 		Enabled=?,
 		DisableOnce=?,
-		TimingMode=?
+		AutomationTrigger=?,
+		TriggerCronExpression=?,
+		TriggerInterval=?
 	WHERE Id=?
 	`)
 	if err != nil {
@@ -315,11 +364,12 @@ func ModifyAutomation(id uint, newItem AutomationData) error {
 	_, err = query.Exec(
 		newItem.Name,
 		newItem.Description,
-		newItem.CronExpression,
 		newItem.HomescriptId,
 		newItem.Enabled,
 		newItem.DisableOnce,
-		newItem.TimingMode,
+		newItem.Trigger,
+		newItem.TriggerCronExpression,
+		newItem.TriggerIntervalSeconds,
 		id,
 	)
 	if err != nil {
@@ -330,11 +380,10 @@ func ModifyAutomation(id uint, newItem AutomationData) error {
 }
 
 // Sets the last run timestamp of the given automation to now.
-func UpdateAutomationExecuteTime(id uint) error {
+func UpdateAutomationLastRunTime(id uint) error {
 	query, err := db.Prepare(`
 	UPDATE automation
-	SET
-		LastRun=?
+	SET LastRun=?
 	WHERE Id=?
 	`)
 	if err != nil {

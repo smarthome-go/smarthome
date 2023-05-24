@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/user"
+	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/server/middleware"
 )
 
@@ -43,7 +43,7 @@ func GetNotifications(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	notifications, err := user.GetNotifications(username)
+	notifications, err := homescript.GetNotifications(username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to get notifications", Error: "database failure"})

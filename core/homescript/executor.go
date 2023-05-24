@@ -18,7 +18,6 @@ import (
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/hardware"
-	"github.com/smarthome-go/smarthome/core/user"
 	"github.com/smarthome-go/smarthome/services/weather"
 )
 
@@ -575,11 +574,12 @@ func (self *Executor) Notify(
 	if self.DryRun {
 		return nil
 	}
-	err := user.Notify(
+	_, err := Notify(
 		self.Username,
 		title,
 		description,
-		user.NotificationLevel(level+1),
+		NotificationLevel(level+1),
+		self.Initiator != InitiatorAutomationOnNotify, // Do not trigger other hooks if this Homescript is itself a hook
 	)
 	if err != nil {
 		log.Error(fmt.Sprintf("[Homescript] ERROR: script: '%s' user: '%s': failed to notify user: %s", self.ScriptName, self.Username, err.Error()))

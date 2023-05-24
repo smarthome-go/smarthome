@@ -36,12 +36,12 @@ func TestCreateNewAutomation(t *testing.T) {
 				Owner: "admin",
 				Data: AutomationData{
 
-					Name:           "test1",
-					Description:    "test1",
-					CronExpression: "* * * * * *",
-					HomescriptId:   "test",
-					Enabled:        false,
-					TimingMode:     TimingNormal,
+					Name:                  "test1",
+					Description:           "test1",
+					TriggerCronExpression: "* * * * * *",
+					HomescriptId:          "test",
+					Enabled:               false,
+					TimingMode:            TimingNormal,
 				},
 			},
 			Error: "",
@@ -51,12 +51,12 @@ func TestCreateNewAutomation(t *testing.T) {
 				Owner: "admin",
 				Data: AutomationData{
 
-					Name:           "test1",
-					Description:    "test1",
-					CronExpression: "* * * * * *",
-					HomescriptId:   "test",
-					Enabled:        false,
-					TimingMode:     TimingSunrise,
+					Name:                  "test1",
+					Description:           "test1",
+					TriggerCronExpression: "* * * * * *",
+					HomescriptId:          "test",
+					Enabled:               false,
+					TimingMode:            TimingSunrise,
 				},
 			},
 			Error: "",
@@ -66,12 +66,12 @@ func TestCreateNewAutomation(t *testing.T) {
 				Owner: "admin",
 				Data: AutomationData{
 
-					Name:           "test1",
-					Description:    "test1",
-					CronExpression: "* * * * * *",
-					HomescriptId:   "test",
-					Enabled:        false,
-					TimingMode:     TimingSunset,
+					Name:                  "test1",
+					Description:           "test1",
+					TriggerCronExpression: "* * * * * *",
+					HomescriptId:          "test",
+					Enabled:               false,
+					TimingMode:            TimingSunset,
 				},
 			},
 			Error: "",
@@ -81,12 +81,12 @@ func TestCreateNewAutomation(t *testing.T) {
 				Owner: "admin",
 				Data: AutomationData{
 
-					Name:           "test2",
-					Description:    "test2",
-					CronExpression: "* * * * * *",
-					HomescriptId:   "test_invalid", // Test for invalid homescript
-					Enabled:        false,
-					TimingMode:     TimingNormal,
+					Name:                  "test2",
+					Description:           "test2",
+					TriggerCronExpression: "* * * * * *",
+					HomescriptId:          "test_invalid", // Test for invalid homescript
+					Enabled:               false,
+					TimingMode:            TimingNormal,
 				},
 			},
 			Error: "Error 1452 (23000): Cannot add or update a child row: a foreign key constraint fails",
@@ -96,12 +96,12 @@ func TestCreateNewAutomation(t *testing.T) {
 				Owner: "admin_invalid", // Test for invalid user
 				Data: AutomationData{
 
-					Name:           "test2",
-					Description:    "test2",
-					CronExpression: "* * * * * *",
-					HomescriptId:   "test",
-					Enabled:        false,
-					TimingMode:     TimingNormal,
+					Name:                  "test2",
+					Description:           "test2",
+					TriggerCronExpression: "* * * * * *",
+					HomescriptId:          "test",
+					Enabled:               false,
+					TimingMode:            TimingNormal,
 				},
 			},
 			Error: "Error 1452 (23000): Cannot add or update a child row: a foreign key constraint fails",
@@ -131,7 +131,7 @@ func TestCreateNewAutomation(t *testing.T) {
 			if item.Id == newId &&
 				item.Data.Name == automation.Automation.Data.Name &&
 				item.Data.Description == automation.Automation.Data.Description &&
-				item.Data.CronExpression == automation.Automation.Data.CronExpression &&
+				item.Data.TriggerCronExpression == automation.Automation.Data.TriggerCronExpression &&
 				item.Data.HomescriptId == automation.Automation.Data.HomescriptId &&
 				item.Owner == automation.Automation.Owner &&
 				item.Data.Enabled == automation.Automation.Data.Enabled &&
@@ -158,12 +158,12 @@ func TestGetAutomationById(t *testing.T) {
 				Owner: "admin",
 				Data: AutomationData{
 
-					Name:           "test1",
-					Description:    "test1",
-					CronExpression: "* * * * * *",
-					HomescriptId:   "test",
-					Enabled:        false,
-					TimingMode:     TimingNormal,
+					Name:                  "test1",
+					Description:           "test1",
+					TriggerCronExpression: "* * * * * *",
+					HomescriptId:          "test",
+					Enabled:               false,
+					TimingMode:            TimingNormal,
 				},
 			},
 			Error:         "",
@@ -174,12 +174,12 @@ func TestGetAutomationById(t *testing.T) {
 				Owner: "admin",
 				Data: AutomationData{
 
-					Name:           "test2",
-					Description:    "test2",
-					CronExpression: "* * * * * *",
-					HomescriptId:   "test",
-					Enabled:        false,
-					TimingMode:     TimingSunrise,
+					Name:                  "test2",
+					Description:           "test2",
+					TriggerCronExpression: "* * * * * *",
+					HomescriptId:          "test",
+					Enabled:               false,
+					TimingMode:            TimingSunrise,
 				},
 			},
 			Error:         "",
@@ -190,12 +190,12 @@ func TestGetAutomationById(t *testing.T) {
 				Owner: "admin",
 				Data: AutomationData{
 
-					Name:           "test3",
-					Description:    "test3",
-					CronExpression: "* * * * * *",
-					HomescriptId:   "test",
-					Enabled:        false,
-					TimingMode:     TimingSunset,
+					Name:                  "test3",
+					Description:           "test3",
+					TriggerCronExpression: "* * * * * *",
+					HomescriptId:          "test",
+					Enabled:               false,
+					TimingMode:            TimingSunset,
 				},
 			},
 			Error:         "",
@@ -232,7 +232,7 @@ func TestGetAutomationById(t *testing.T) {
 		if res.Id == newId &&
 			res.Data.Name == automation.Automation.Data.Name &&
 			res.Data.Description == automation.Automation.Data.Description &&
-			res.Data.CronExpression == automation.Automation.Data.CronExpression &&
+			res.Data.TriggerCronExpression == automation.Automation.Data.TriggerCronExpression &&
 			res.Data.HomescriptId == automation.Automation.Data.HomescriptId &&
 			res.Owner == automation.Automation.Owner &&
 			res.Data.Enabled == automation.Automation.Data.Enabled &&
@@ -255,12 +255,12 @@ func TestGetUserAutomations(t *testing.T) {
 				Owner: "testing",
 				Data: AutomationData{
 
-					Name:           "test1",
-					Description:    "test1",
-					CronExpression: "* * * * * *",
-					HomescriptId:   "test",
-					Enabled:        false,
-					TimingMode:     TimingNormal,
+					Name:                  "test1",
+					Description:           "test1",
+					TriggerCronExpression: "* * * * * *",
+					HomescriptId:          "test",
+					Enabled:               false,
+					TimingMode:            TimingNormal,
 				},
 			},
 			Error: "",
@@ -270,12 +270,12 @@ func TestGetUserAutomations(t *testing.T) {
 				Owner: "testing",
 				Data: AutomationData{
 
-					Name:           "test1",
-					Description:    "test1",
-					CronExpression: "* * * * * *",
-					HomescriptId:   "test",
-					Enabled:        false,
-					TimingMode:     TimingSunrise,
+					Name:                  "test1",
+					Description:           "test1",
+					TriggerCronExpression: "* * * * * *",
+					HomescriptId:          "test",
+					Enabled:               false,
+					TimingMode:            TimingSunrise,
 				},
 			},
 			Error: "",
@@ -285,12 +285,12 @@ func TestGetUserAutomations(t *testing.T) {
 				Owner: "admin",
 				Data: AutomationData{
 
-					Name:           "test1",
-					Description:    "test1",
-					CronExpression: "* * * * * *",
-					HomescriptId:   "test",
-					Enabled:        false,
-					TimingMode:     TimingSunset,
+					Name:                  "test1",
+					Description:           "test1",
+					TriggerCronExpression: "* * * * * *",
+					HomescriptId:          "test",
+					Enabled:               false,
+					TimingMode:            TimingSunset,
 				},
 			},
 			Error: "",
@@ -300,12 +300,12 @@ func TestGetUserAutomations(t *testing.T) {
 				Owner: "admin",
 				Data: AutomationData{
 
-					Name:           "test2",
-					Description:    "test2",
-					CronExpression: "* * * * * *",
-					HomescriptId:   "test_invalid", // Test for invalid homescript
-					Enabled:        false,
-					TimingMode:     TimingNormal,
+					Name:                  "test2",
+					Description:           "test2",
+					TriggerCronExpression: "* * * * * *",
+					HomescriptId:          "test_invalid", // Test for invalid homescript
+					Enabled:               false,
+					TimingMode:            TimingNormal,
 				},
 			},
 			Error: "Error 1452 (23000): Cannot add or update a child row: a foreign key constraint fails",
@@ -315,12 +315,12 @@ func TestGetUserAutomations(t *testing.T) {
 				Owner: "admin_invalid", // Test for invalid user
 				Data: AutomationData{
 
-					Name:           "test2",
-					Description:    "test2",
-					CronExpression: "* * * * * *",
-					HomescriptId:   "test",
-					Enabled:        false,
-					TimingMode:     TimingNormal,
+					Name:                  "test2",
+					Description:           "test2",
+					TriggerCronExpression: "* * * * * *",
+					HomescriptId:          "test",
+					Enabled:               false,
+					TimingMode:            TimingNormal,
 				},
 			},
 			Error: "Error 1452 (23000): Cannot add or update a child row: a foreign key constraint fails",
@@ -368,12 +368,12 @@ func TestModifyDeleteAutomation(t *testing.T) {
 				Owner: "admin",
 				Data: AutomationData{
 
-					Name:           "1",
-					Description:    "1",
-					CronExpression: "* * * * * 1",
-					HomescriptId:   "test",
-					Enabled:        false,
-					TimingMode:     TimingNormal,
+					Name:                  "1",
+					Description:           "1",
+					TriggerCronExpression: "* * * * * 1",
+					HomescriptId:          "test",
+					Enabled:               false,
+					TimingMode:            TimingNormal,
 				},
 			},
 			Error: "",
@@ -383,12 +383,12 @@ func TestModifyDeleteAutomation(t *testing.T) {
 				Owner: "admin",
 				Data: AutomationData{
 
-					Name:           "2",
-					Description:    "2",
-					CronExpression: "* * * * * *",
-					HomescriptId:   "test",
-					Enabled:        true,
-					TimingMode:     TimingNormal,
+					Name:                  "2",
+					Description:           "2",
+					TriggerCronExpression: "* * * * * *",
+					HomescriptId:          "test",
+					Enabled:               true,
+					TimingMode:            TimingNormal,
 				},
 			},
 			Error: "",
@@ -398,12 +398,12 @@ func TestModifyDeleteAutomation(t *testing.T) {
 				Owner: "admin",
 				Data: AutomationData{
 
-					Name:           "3",
-					Description:    "3",
-					CronExpression: "* * * * * *",
-					HomescriptId:   "test",
-					Enabled:        false,
-					TimingMode:     TimingSunrise,
+					Name:                  "3",
+					Description:           "3",
+					TriggerCronExpression: "* * * * * *",
+					HomescriptId:          "test",
+					Enabled:               false,
+					TimingMode:            TimingSunrise,
 				},
 			},
 			Error: "",
@@ -413,12 +413,12 @@ func TestModifyDeleteAutomation(t *testing.T) {
 				Owner: "admin",
 				Data: AutomationData{
 
-					Name:           "4",
-					Description:    "4",
-					CronExpression: "* * * * * *",
-					HomescriptId:   "test",
-					Enabled:        false,
-					TimingMode:     TimingSunset,
+					Name:                  "4",
+					Description:           "4",
+					TriggerCronExpression: "* * * * * *",
+					HomescriptId:          "test",
+					Enabled:               false,
+					TimingMode:            TimingSunset,
 				},
 			},
 			Error: "",
@@ -428,12 +428,12 @@ func TestModifyDeleteAutomation(t *testing.T) {
 				Owner: "admin",
 				Data: AutomationData{
 
-					Name:           "5",
-					Description:    "5",
-					CronExpression: "* * * * * *",
-					HomescriptId:   "test_invalid", // Test for invalid homescript
-					Enabled:        false,
-					TimingMode:     TimingNormal,
+					Name:                  "5",
+					Description:           "5",
+					TriggerCronExpression: "* * * * * *",
+					HomescriptId:          "test_invalid", // Test for invalid homescript
+					Enabled:               false,
+					TimingMode:            TimingNormal,
 				},
 			},
 			Error: "Error 1452 (23000): Cannot add or update a child row: a foreign key constraint fails",
@@ -444,12 +444,12 @@ func TestModifyDeleteAutomation(t *testing.T) {
 		Id:    1,
 		Owner: "admin",
 		Data: AutomationData{
-			Name:           "before",
-			Description:    "before",
-			CronExpression: "before",
-			HomescriptId:   "test",
-			Enabled:        false,
-			TimingMode:     TimingNormal,
+			Name:                  "before",
+			Description:           "before",
+			TriggerCronExpression: "before",
+			HomescriptId:          "test",
+			Enabled:               false,
+			TimingMode:            TimingNormal,
 		},
 	})
 	if err != nil {
@@ -459,12 +459,12 @@ func TestModifyDeleteAutomation(t *testing.T) {
 	// Modify the automation to these values and evaluate the outcome
 	for _, automation := range table {
 		err := ModifyAutomation(newId, AutomationData{
-			Name:           automation.Automation.Data.Name,
-			Description:    automation.Automation.Data.Description,
-			CronExpression: automation.Automation.Data.CronExpression,
-			HomescriptId:   automation.Automation.Data.HomescriptId,
-			Enabled:        automation.Automation.Data.Enabled,
-			TimingMode:     automation.Automation.Data.TimingMode,
+			Name:                  automation.Automation.Data.Name,
+			Description:           automation.Automation.Data.Description,
+			TriggerCronExpression: automation.Automation.Data.TriggerCronExpression,
+			HomescriptId:          automation.Automation.Data.HomescriptId,
+			Enabled:               automation.Automation.Data.Enabled,
+			TimingMode:            automation.Automation.Data.TimingMode,
 		})
 		// Check for error validity
 		if err != nil {
@@ -488,7 +488,7 @@ func TestModifyDeleteAutomation(t *testing.T) {
 		}
 		if item.Data.Name != automation.Automation.Data.Name ||
 			item.Data.Description != automation.Automation.Data.Description ||
-			item.Data.CronExpression != automation.Automation.Data.CronExpression ||
+			item.Data.TriggerCronExpression != automation.Automation.Data.TriggerCronExpression ||
 			item.Data.Enabled != automation.Automation.Data.Enabled ||
 			item.Data.HomescriptId != automation.Automation.Data.HomescriptId ||
 			item.Owner != automation.Automation.Owner ||

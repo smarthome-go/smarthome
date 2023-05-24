@@ -7,6 +7,7 @@ import (
 
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
+	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/core/user"
 	"github.com/smarthome-go/smarthome/server/api"
 	"github.com/smarthome-go/smarthome/server/middleware"
@@ -71,6 +72,9 @@ func tokenLoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Debug(fmt.Sprintf("User `%s` logged in successfully using an access-token", tokenData.User))
 	go event.Info("Successful login", fmt.Sprintf("User `%s` logged in using an access-token", tokenData.User))
+
+	// Run any login hooks
+	go homescript.RunAllAutomationsWithTrigger(tokenData.User, database.TriggerOnLogin, homescript.AutomationContext{})
 }
 
 // Accepts a json request like `{"username": "user", "password":"password"}`
@@ -110,10 +114,18 @@ func userLoginHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 	log.Debug(fmt.Sprintf("User `%s` logged in successfully", loginRequest.Username))
 	go event.Info("Successful login", fmt.Sprintf("User %s logged in", loginRequest.Username))
+
+	// Run any login hooks
+	go homescript.RunAllAutomationsWithTrigger(loginRequest.Username, database.TriggerOnLogin, homescript.AutomationContext{})
 }
 
 // invalidates the user session and then redirects back to the login page
 func logoutGetHandler(w http.ResponseWriter, r *http.Request) {
+	username, err := middleware.GetUserFromCurrentSession(w, r)
+	if err != nil {
+		return
+	}
+
 	session, err := middleware.Store.Get(r, "session")
 	if err != nil {
 		// No user is logged in
@@ -128,4 +140,7 @@ func logoutGetHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Trace("A user logged out")
 	http.Redirect(w, r, "/login", http.StatusFound)
+
+	// Run any logout hooks
+	go homescript.RunAllAutomationsWithTrigger(username, database.TriggerOnLogout, homescript.AutomationContext{})
 }
