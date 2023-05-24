@@ -1,13 +1,13 @@
 package homescript
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/hardware"
 	"github.com/smarthome-go/smarthome/core/homescript/automation"
 )
 
@@ -42,7 +42,7 @@ func createMockData() error {
 				Description:         "A Homescript for testing purposes",
 				QuickActionsEnabled: false,
 				SchedulerEnabled:    false,
-				Code:                "switch('test_switch', on);",
+				Code:                "STORAGE.set('AUTOMATION_RAN', true);",
 			},
 		}); err != nil {
 			panic(err.Error())
@@ -115,18 +115,28 @@ func createMockData() error {
 func TestAutomation(t *testing.T) {
 	now := time.Now()
 	then := now.Add(time.Minute)
+
 	TestInit(t)
+
+	err := database.InsertHmsStorageEntry("admin", "AUTOMATION_RAN", "false")
+	assert.NoError(t, err)
+
+	var hour uint = uint(then.Hour())
+	var minute uint = uint(then.Minute())
+	days := []uint8{0, 1, 2, 3, 4, 5, 6}
+
 	// Normal automation
 	if _, err := CreateNewAutomation(
-		"name",
-		"description",
-		uint8(then.Hour()),
-		uint8(then.Minute()),
-		[]uint8{0, 1, 2, 3, 4, 5, 6},
+		"Name",
+		"Description",
 		"test",
 		"admin",
 		true,
-		database.TimingNormal,
+		&hour,
+		&minute,
+		&days,
+		database.TriggerCron,
+		nil,
 	); err != nil {
 		t.Error(err.Error())
 		return
@@ -134,19 +144,22 @@ func TestAutomation(t *testing.T) {
 	valid := false
 	for i := 0; i < 7; i++ {
 		time.Sleep(time.Second * 10)
-		switchItem, found, err := database.GetSwitchById("test_switch")
+		storageMap, err := database.GetPersonalHomescriptStorage("admin")
 		if err != nil {
 			t.Error(err.Error())
 			return
 		}
-		assert.True(t, found, "Switch not found")
-		if switchItem.PowerOn {
+
+		value := storageMap["AUTOMATION_RAN"]
+
+		if value == "true" {
 			valid = true
 			break
 		}
 	}
+
 	if !valid {
-		t.Error("Power of `test_switch` did not change")
+		t.Error("Automation did not report its success")
 		return
 	}
 }
@@ -158,18 +171,28 @@ func TestAutomation(t *testing.T) {
 func TestModificationToDifferentScript(t *testing.T) {
 	now := time.Now()
 	then := now.Add(time.Minute)
+
 	TestInit(t)
-	// Create initial automation
-	modifyId, err := CreateNewAutomation(
-		"name",
-		"description",
-		uint8(then.Hour()),
-		uint8(then.Minute()),
-		[]uint8{0, 1, 2, 3, 4, 5, 6},
+
+	err := database.InsertHmsStorageEntry("admin", "AUTOMATION_RAN", "false")
+	assert.NoError(t, err)
+
+	var hour uint = uint(then.Hour())
+	var minute uint = uint(then.Minute())
+	days := []uint8{0, 1, 2, 3, 4, 5, 6}
+
+	// Normal automation
+	id, err := CreateNewAutomation(
+		"Name",
+		"Description",
 		"test",
 		"admin",
 		true,
-		database.TimingNormal,
+		&hour,
+		&minute,
+		&days,
+		database.TriggerCron,
+		nil,
 	)
 	if err != nil {
 		t.Error(err.Error())
@@ -181,15 +204,15 @@ func TestModificationToDifferentScript(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
-	if err := ModifyAutomationById(modifyId,
+	if err := ModifyAutomationById(id,
 		database.AutomationData{
 			Name:                  "name",
 			Description:           "description",
-			TriggerCronExpression: cronExpression,
-			HomescriptId:          "test_modify",
+			TriggerCronExpression: &cronExpression,
+			HomescriptId:          "test",
 			Enabled:               true,
 			DisableOnce:           false,
-			TimingMode:            database.TimingNormal,
+			Trigger:               database.TriggerCron,
 		}); err != nil {
 		t.Error(err.Error())
 		return
@@ -198,19 +221,22 @@ func TestModificationToDifferentScript(t *testing.T) {
 	valid := false
 	for i := 0; i < 7; i++ {
 		time.Sleep(time.Second * 10)
-		switchItem, found, err := database.GetSwitchById("test_switch_modify")
+		storageMap, err := database.GetPersonalHomescriptStorage("admin")
 		if err != nil {
 			t.Error(err.Error())
 			return
 		}
-		assert.True(t, found, "Switch not found")
-		if switchItem.PowerOn {
+
+		value := storageMap["AUTOMATION_RAN"]
+
+		if value == "true" {
 			valid = true
+			break
 		}
 	}
 	// Check if the updated script did change the power
 	if !valid {
-		t.Error("Power of `test_switch_modify` did not change")
+		t.Error("Automation did not report its success")
 		return
 	}
 }
@@ -220,18 +246,27 @@ func TestModificationToDifferentScript(t *testing.T) {
 func TestModificationToAbort(t *testing.T) {
 	now := time.Now()
 	then := now.Add(time.Minute)
+
 	TestInit(t)
-	// Create initial automation
-	abortId, err := CreateNewAutomation(
-		"name",
-		"description",
-		uint8(then.Hour()),
-		uint8(then.Minute()),
-		[]uint8{0, 1, 2, 3, 4, 5, 6},
-		"test_abort",
+	err := database.InsertHmsStorageEntry("admin", "AUTOMATION_RAN", "false")
+	assert.NoError(t, err)
+
+	var hour uint = uint(then.Hour())
+	var minute uint = uint(then.Minute())
+	days := []uint8{0, 1, 2, 3, 4, 5, 6}
+
+	// Normal automation
+	id, err := CreateNewAutomation(
+		"Name",
+		"Description",
+		"test",
 		"admin",
 		true,
-		database.TimingNormal,
+		&hour,
+		&minute,
+		&days,
+		database.TriggerCron,
+		nil,
 	)
 	if err != nil {
 		t.Error(err.Error())
@@ -240,24 +275,24 @@ func TestModificationToAbort(t *testing.T) {
 	// Gets the initial automation in order to copy its cron-expression
 	// The old cron-expression is required in order to preserve the time window in
 	// which the automation could be executed if the modification fails
-	automation, found, err := database.GetAutomationById(abortId)
+	automation, found, err := database.GetAutomationById(id)
 	if err != nil {
 		t.Error(err.Error())
 		return
 	}
 	if !found {
-		t.Errorf("Automation %d not found in database", abortId)
+		t.Errorf("Automation %d not found in database", id)
 		return
 	}
 	// Set its activation status to `disabled`
-	if err := ModifyAutomationById(abortId,
+	if err := ModifyAutomationById(id,
 		database.AutomationData{
 			Name:                  "name",
 			Description:           "description",
 			TriggerCronExpression: automation.Data.TriggerCronExpression,
 			HomescriptId:          "test_abort",
 			Enabled:               false,
-			TimingMode:            database.TimingNormal,
+			Trigger:               database.TriggerCron,
 		}); err != nil {
 		t.Error(err.Error())
 		return
@@ -265,14 +300,16 @@ func TestModificationToAbort(t *testing.T) {
 	// Wait for approx. a minute until the test can be considered to be successful
 	for i := 0; i < 7; i++ {
 		time.Sleep(time.Second * 10)
-		switchItem, found, err := database.GetSwitchById("test_switch_abort")
+		storageMap, err := database.GetPersonalHomescriptStorage("admin")
 		if err != nil {
 			t.Error(err.Error())
 			return
 		}
-		assert.True(t, found, "Switch not found")
-		if switchItem.PowerOn {
-			t.Errorf("Power of `test_switch_abort` changed but should not")
+
+		value := storageMap["AUTOMATION_RAN"]
+
+		if value == "true" {
+			t.Error("Automation ran but was aborted earlier")
 			return
 		}
 	}
@@ -285,64 +322,81 @@ func TestModificationToAbort(t *testing.T) {
 func TestStartInactiveAutomation(t *testing.T) {
 	now := time.Now()
 	then := now.Add(time.Minute)
-	if _, err := CreateNewAutomation(
-		"name",
-		"description",
-		uint8(then.Hour()),
-		uint8(then.Minute()),
-		[]uint8{0, 1, 2, 3, 4, 5, 6},
-		"test_inactive",
+	var hour uint = uint(then.Hour())
+	var minute uint = uint(then.Minute())
+	days := []uint8{0, 1, 2, 3, 4, 5, 6}
+
+	TestInit(t)
+	err := database.InsertHmsStorageEntry("admin", "AUTOMATION_RAN", "false")
+	assert.NoError(t, err)
+
+	// Normal automation
+	_, err = CreateNewAutomation(
+		"Name",
+		"Description",
+		"test",
 		"admin",
 		false,
-		database.TimingNormal,
-	); err != nil {
+		&hour,
+		&minute,
+		&days,
+		database.TriggerCron,
+		nil,
+	)
+	if err != nil {
 		t.Error(err.Error())
 		return
 	}
+
 	// Wait for approx. a minute until to decide that the test was executed successfully
 	for i := 0; i < 7; i++ {
 		time.Sleep(time.Second * 10)
-		switchItem, found, err := database.GetSwitchById("test_switch_inactive")
+		storageMap, err := database.GetPersonalHomescriptStorage("admin")
 		if err != nil {
 			t.Error(err.Error())
 			return
 		}
-		assert.True(t, found, "Switch not found")
-		if switchItem.PowerOn {
-			t.Errorf("Power of `test_switch_inactive` changed but should not")
+
+		value := storageMap["AUTOMATION_RAN"]
+
+		if value == "true" {
+			t.Error("Automation ran but is inactive")
 			return
 		}
 	}
 }
 
-// Tests if the different timing modes `sunrise` and `sunset` generate appropriate Cron-Expressions
-func TestTimingModes(t *testing.T) {
+// Tests if the different triggers `sunrise` and `sunset` will run at the correct time
+func SunRiseSet(t *testing.T) {
 	TestInit(t)
+
 	sunriseId, err := CreateNewAutomation(
-		"name",
-		"description",
-		23,
-		59,
-		[]uint8{0, 1, 2, 3, 4, 5, 6},
+		"Name",
+		"Description",
 		"test",
 		"admin",
 		true,
-		database.TimingSunrise,
+		nil,
+		nil,
+		nil,
+		database.TriggerSunrise,
+		nil,
 	)
 	if err != nil {
 		t.Error(err.Error())
 		return
 	}
 	sunSetId, err := CreateNewAutomation(
-		"name",
-		"description",
-		23,
-		59,
-		[]uint8{0, 1, 2, 3, 4, 5, 6},
+		"Name",
+		"Description",
 		"test",
 		"admin",
 		true,
-		database.TimingSunset,
+		nil,
+		nil,
+		nil,
+		database.TriggerSunset,
+		nil,
 	)
 	if err != nil {
 		t.Error(err.Error())
@@ -366,57 +420,78 @@ func TestTimingModes(t *testing.T) {
 		t.Errorf("Automation %d was not found after creation", sunSetId)
 		return
 	}
-	if sunrise.Data.TriggerCronExpression == sunSet.Data.TriggerCronExpression {
-		t.Errorf("Cron expression of sunrise and sunset is not valid. `%s`|`%s`", sunSet.Data.TriggerCronExpression, sunrise.Data.TriggerCronExpression)
+
+	sunriseJob, err := automationScheduler.FindJobsByTag(fmt.Sprint(sunrise.Id))
+	assert.NoError(t, err)
+
+	sunsetJob, err := automationScheduler.FindJobsByTag(fmt.Sprint(sunSet.Id))
+	assert.NoError(t, err)
+
+	config, found, err := database.GetServerConfiguration()
+	assert.NoError(t, err)
+	assert.True(t, found)
+
+	sunriseTime, sunsetTime := automation.CalculateSunRiseSet(config.Latitude, config.Longitude)
+
+	if sunriseJob[0].NextRun().Hour() != int(sunriseTime.Hour) || sunriseJob[0].NextRun().Minute() != int(sunriseTime.Minute) {
+		t.Error("Sunrise automation will not run at sunrise")
+	}
+
+	if sunsetJob[0].NextRun().Hour() != int(sunsetTime.Hour) || sunriseJob[0].NextRun().Minute() != int(sunsetTime.Minute) {
+		t.Error("Sunset automation will not run at sunrise")
 	}
 }
 
 func TestUserDisabled(t *testing.T) {
 	now := time.Now()
 	then := now.Add(time.Minute)
+
 	TestInit(t)
+	err := database.InsertHmsStorageEntry("admin", "AUTOMATION_RAN", "false")
+	assert.NoError(t, err)
 
-	testSwitch, _, err := database.GetSwitchById("test_switch")
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	hour := uint(then.Hour())
+	minute := uint(then.Minute())
+	days := []uint8{0, 1, 2, 3, 4, 5, 6}
 
-	// Set the switch to off
-	assert.NoError(t, hardware.SetPower(testSwitch, false))
 	// Set the user's schedules and automations to off
 	assert.NoError(t, database.SetUserSchedulerEnabled("admin", false))
+
 	// Normal automation
 	if _, err := CreateNewAutomation(
-		"name_pers",
-		"description_pers",
-		uint8(then.Hour()),
-		uint8(then.Minute()),
-		[]uint8{0, 1, 2, 3, 4, 5, 6},
+		"Name",
+		"Description",
 		"test",
 		"admin",
 		true,
-		database.TimingNormal,
+		&hour,
+		&minute,
+		&days,
+		database.TriggerCron,
+		nil,
 	); err != nil {
 		t.Error(err.Error())
 		return
 	}
-	valid := false
+	invalid := false
 	for i := 0; i < 7; i++ {
 		time.Sleep(time.Second * 10)
-		switchItem, found, err := database.GetSwitchById("test_switch")
+		storageMap, err := database.GetPersonalHomescriptStorage("admin")
 		if err != nil {
 			t.Error(err.Error())
 			return
 		}
-		assert.True(t, found, "Switch not found")
-		if switchItem.PowerOn {
-			valid = true
+
+		value := storageMap["AUTOMATION_RAN"]
+
+		if value == "true" {
+			invalid = true
 			break
 		}
 	}
-	if valid {
-		t.Error("Power of `test_switch` changed but should not")
+
+	if invalid {
+		t.Error("Automation ran but the user has disabled automations")
 		return
 	}
 }
@@ -424,27 +499,27 @@ func TestUserDisabled(t *testing.T) {
 func TestDisableOnce(t *testing.T) {
 	now := time.Now()
 	then := now.Add(time.Minute)
+
+	hour := uint(then.Hour())
+	minute := uint(then.Minute())
+	days := []uint8{0, 1, 2, 3, 4, 5, 6}
+
 	TestInit(t)
+	err := database.InsertHmsStorageEntry("admin", "AUTOMATION_RAN", "false")
+	assert.NoError(t, err)
 
-	testSwitch, _, err := database.GetSwitchById("test_switch")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	// Set the switch to off
-	assert.NoError(t, hardware.SetPower(testSwitch, false))
 	// Normal automation
 	id, err := CreateNewAutomation(
-		"name_once",
-		"description_once",
-		uint8(then.Hour()),
-		uint8(then.Minute()),
-		[]uint8{0, 1, 2, 3, 4, 5, 6},
+		"Name",
+		"Description",
 		"test",
 		"admin",
 		true,
-		database.TimingNormal,
+		&hour,
+		&minute,
+		&days,
+		database.TriggerCron,
+		nil,
 	)
 	if err != nil {
 		t.Error(err.Error())
@@ -458,11 +533,11 @@ func TestDisableOnce(t *testing.T) {
 	assert.NoError(t, ModifyAutomationById(id, database.AutomationData{
 		Name:                  "name_once",
 		Description:           "description_once",
-		TriggerCronExpression: cronExpr,
+		TriggerCronExpression: &cronExpr,
 		HomescriptId:          "test",
 		Enabled:               true,
 		DisableOnce:           true,
-		TimingMode:            database.TimingNormal,
+		Trigger:               database.TriggerCron,
 	}))
 
 	// Check if the `DisableOnce` boolean has been set to `true`
@@ -474,19 +549,21 @@ func TestDisableOnce(t *testing.T) {
 	invalid := false
 	for i := 0; i < 9; i++ {
 		time.Sleep(time.Second * 10)
-		switchItem, found, err := database.GetSwitchById("test_switch")
+		storageMap, err := database.GetPersonalHomescriptStorage("admin")
 		if err != nil {
 			t.Error(err.Error())
 			return
 		}
-		assert.True(t, found, "Switch not found")
-		if switchItem.PowerOn {
+
+		value := storageMap["AUTOMATION_RAN"]
+
+		if value == "true" {
 			invalid = true
 			break
 		}
 	}
 	if invalid {
-		t.Error("Power of `test_switch` changed but should have not")
+		t.Error("Automation ran but is disabled once")
 		return
 	}
 
@@ -500,6 +577,7 @@ func TestDisableOnce(t *testing.T) {
 	now = time.Now()
 	then = now.Add(time.Minute)
 	TestInit(t)
+
 	// Create a manual cron expression
 	cronExpr, err = automation.GenerateCronExpression(uint8(then.Hour()), uint8(then.Minute()), []uint8{0, 1, 2, 3, 4, 5, 6})
 	assert.NoError(t, err)
@@ -507,32 +585,34 @@ func TestDisableOnce(t *testing.T) {
 	assert.NoError(t, ModifyAutomationById(id, database.AutomationData{
 		Name:                  "name_once",
 		Description:           "description_once",
-		TriggerCronExpression: cronExpr,
+		TriggerCronExpression: &cronExpr,
 		HomescriptId:          "test",
 		Enabled:               true,
 		DisableOnce:           false,
-		TimingMode:            database.TimingNormal,
+		Trigger:               database.TriggerCron,
 	}))
 
-	// Toggle the switch to off
-	assert.NoError(t, hardware.SetSwitchPowerAll("test_switch", false, "admin"))
+	err = database.InsertHmsStorageEntry("admin", "AUTOMATION_RAN", "false")
+	assert.NoError(t, err)
 
 	valid := false
-	for i := 0; i < 7; i++ {
+	for i := 0; i < 8; i++ {
 		time.Sleep(time.Second * 10)
-		switchItem, found, err := database.GetSwitchById("test_switch")
+		storageMap, err := database.GetPersonalHomescriptStorage("admin")
 		if err != nil {
 			t.Error(err.Error())
 			return
 		}
-		assert.True(t, found, "Switch not found")
-		if switchItem.PowerOn {
+
+		value := storageMap["AUTOMATION_RAN"]
+
+		if value == "true" {
 			valid = true
 			break
 		}
 	}
 	if !valid {
-		t.Error("Power of `test_switch` did not change but should have")
+		t.Error("Automation did not run after its disable once flag was removed")
 		return
 	}
 }
@@ -544,7 +624,11 @@ func TestInit(t *testing.T) {
 		return
 	}
 
-	if err := InitAutomations(); err != nil {
+	config, found, err := database.GetServerConfiguration()
+	assert.NoError(t, err)
+	assert.True(t, found)
+
+	if err := InitAutomations(config); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -553,10 +637,15 @@ func TestInit(t *testing.T) {
 // Deactivates and Reactivates the automation system in order to check for errors
 func TestActivate(t *testing.T) {
 	TestInit(t)
-	if err := DeactivateAutomationSystem(); err != nil {
+
+	config, found, err := database.GetServerConfiguration()
+	assert.NoError(t, err)
+	assert.True(t, found)
+
+	if err := DeactivateAutomationSystem(config); err != nil {
 		t.Error(err.Error())
 	}
-	if err := ActivateAutomationSystem(); err != nil {
+	if err := ActivateAutomationSystem(config); err != nil {
 		t.Error(err.Error())
 	}
 }

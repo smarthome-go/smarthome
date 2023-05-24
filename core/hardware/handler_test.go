@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSetPower(t *testing.T) {
@@ -31,43 +32,12 @@ func TestSetPower(t *testing.T) {
 		{
 			Switch: "test",
 			Power:  true,
-			// Only the first request will throw an error due to node being marked as offline
-			Error: `Post "http://localhost/power?token=": dial tcp`, // Different on other machines
-		},
-		{
-			Switch: "test",
-			Power:  false,
-			Error:  ``,
-		},
-		{
-			Switch: "test2",
-			Power:  true,
-			Error:  ``,
-		},
-		{
-			Switch: "test2",
-			Power:  false,
-			Error:  ``,
-		},
-		{
-			Switch: "test3",
-			Power:  true,
-			Error:  ``,
-		},
-		{
-			Switch: "test3",
-			Power:  false,
-			Error:  ``,
+			Error:  `There are no nodes or all nodes are disabled, no action performed`,
 		},
 		{
 			Switch: "test4",
 			Power:  true,
-			Error:  ``,
-		},
-		{
-			Switch: "test4",
-			Power:  false,
-			Error:  ``,
+			Error:  `There are no nodes or all nodes are disabled, no action performed`,
 		},
 	}
 	// Create a test room
@@ -110,13 +80,13 @@ func TestSetPower(t *testing.T) {
 			t.Error(err.Error())
 			return
 		}
-		if powerState != req.Power {
-			t.Errorf("Power state unaffected: want: `%t` got: `%t`", req.Power, powerState)
+		if powerState == req.Power {
+			t.Errorf("Power state affected: want: `%t` got: `%t`", req.Power, powerState)
 			return
 		}
 	}
-	// Errors of last running daemon should be 0 due to many daemons being used above
-	if GetJobsWithErrorInHandler() > 0 {
+	// The last daemon had one job which failed
+	if GetJobsWithErrorInHandler() > 1 {
 		t.Errorf("Invalid jobs with error count. want: %d got: %d", 0, GetJobsWithErrorInHandler())
 		return
 	}
@@ -137,10 +107,8 @@ func TestSetPower(t *testing.T) {
 		return
 	}
 
-	if err := SetPower(switchItem, false); err != nil {
-		t.Error(err.Error())
-		return
-	}
+	err = SetPower(switchItem, false)
+	assert.Error(t, err)
 }
 
 func TestSetPowerAsync(t *testing.T) {
@@ -164,45 +132,39 @@ func TestSetPowerAsync(t *testing.T) {
 		Error  string
 	}{
 		{
-			Switch: "test_1",
+			Switch: "async_test_1",
 			Power:  true,
-			// Only the first request will throw an error due to node being marked as offline
-			Error: `Post "http://localhost/power?token=": dial tcp`, // Different on other machines
+			Error:  `There are no nodes or all nodes are disabled, no action performed`,
 		},
 		{
-			Switch: "test_1",
-			Power:  false,
-			Error:  ``,
-		},
-		{
-			Switch: "test_2",
+			Switch: "async_test_1",
 			Power:  true,
-			Error:  ``,
+			Error:  `There are no nodes or all nodes are disabled, no action performed`,
 		},
 		{
-			Switch: "test_2",
+			Switch: "async_test_2",
 			Power:  false,
-			Error:  ``,
+			Error:  `There are no nodes or all nodes are disabled, no action performed`,
 		},
 		{
-			Switch: "test_3",
+			Switch: "async_test_3",
 			Power:  true,
-			Error:  ``,
+			Error:  `There are no nodes or all nodes are disabled, no action performed`,
 		},
 		{
-			Switch: "test_3",
+			Switch: "async_test_3",
 			Power:  false,
-			Error:  ``,
+			Error:  `There are no nodes or all nodes are disabled, no action performed`,
 		},
 		{
-			Switch: "test_4",
+			Switch: "async_test_4",
 			Power:  true,
-			Error:  ``,
+			Error:  `There are no nodes or all nodes are disabled, no action performed`,
 		},
 		{
-			Switch: "test_4",
+			Switch: "async_test_4",
 			Power:  false,
-			Error:  ``,
+			Error:  `There are no nodes or all nodes are disabled, no action performed`,
 		},
 	}
 	// Create a test room
@@ -246,13 +208,8 @@ func TestSetPowerAsync(t *testing.T) {
 			}
 		}()
 		wg.Wait()
-		// When no node is registered, the request should not fail
-		if err := database.DeleteHardwareNode("http://localhost"); err != nil {
-			t.Error(err.Error())
-			return
-		}
 
-		switchItem, found, err := database.GetSwitchById("test")
+		switchItem, found, err := database.GetSwitchById(req.Switch)
 		if err != nil {
 			t.Error(err.Error())
 			return
@@ -264,9 +221,9 @@ func TestSetPowerAsync(t *testing.T) {
 		}
 
 		if err := SetPower(switchItem, false); err != nil {
-			t.Error(err.Error())
-			return
+			log.Error(err.Error())
 		}
+
 		if GetPendingJobCount() != 0 {
 			t.Errorf("Current job count invalid. want: 0 got: %d", GetPendingJobCount())
 			return

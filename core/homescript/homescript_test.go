@@ -11,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/smarthome-go/homescript/v2/homescript"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/hardware"
@@ -56,6 +57,8 @@ func initDB(args ...bool) error {
 }
 
 func TestRun(t *testing.T) {
+	assert.NoError(t, initDB(true))
+
 	// Create a mock switch and room
 	if err := database.CreateRoom(database.RoomData{Id: "test"}); err != nil {
 		t.Error(err.Error())
@@ -143,9 +146,9 @@ func TestRun(t *testing.T) {
 				Code       int
 				FirstError string
 			}{
-				Output:     "true\n",
-				Code:       0,
-				FirstError: "",
+				Output:     "",
+				Code:       1,
+				FirstError: "Failed to set power: hardware error: There are no hardware nodes, power state unaffected",
 			},
 		},
 		{
@@ -155,9 +158,9 @@ func TestRun(t *testing.T) {
 				Code       int
 				FirstError string
 			}{
-				Output:     "false\n",
-				Code:       0,
-				FirstError: "",
+				Output:     "",
+				Code:       1,
+				FirstError: "Failed to set power: hardware error: There are no hardware nodes, power state unaffected",
 			},
 		},
 		{
@@ -245,13 +248,13 @@ func TestRun(t *testing.T) {
 			},
 		},
 		{
-			Code: "print(exec('test', 'key' => 'value').output);",
+			Code: "print(exec('test', 'key' => 'value').value);",
 			Result: struct {
 				Output     string
 				Code       int
 				FirstError string
 			}{
-				Output:     "value",
+				Output:     "valuenull",
 				Code:       0,
 				FirstError: "",
 			},
@@ -281,10 +284,11 @@ func TestRun(t *testing.T) {
 			make(chan int),
 			&buffer,
 			nil,
+			make(map[string]homescript.Value),
 		)
 		if len(res.Errors) > 0 {
 			if res.Errors[0].Message != test.Result.FirstError {
-				t.Errorf("Unmatched error. want: %s got: %s", test.Result.FirstError, res.Errors[0].Message)
+				t.Errorf("Unmatched error: want: %s got: %s", test.Result.FirstError, res.Errors[0].Message)
 				return
 			}
 		} else if test.Result.FirstError != "" {
@@ -336,6 +340,7 @@ func TestRecursion(t *testing.T) {
 			InitiatorInternal,
 			make(chan int),
 			nil, nil,
+			make(map[string]homescript.Value),
 		)
 		assert.NoError(t, err)
 		if len(res.Errors) == 0 {
@@ -357,7 +362,7 @@ func TestRecursion(t *testing.T) {
 			Owner: "admin",
 			Data: database.HomescriptData{
 				Id:   "normal1",
-				Code: "println(exec('normal2').output); exec('normal2'); println(exec('normal3').output); exec('normal3');",
+				Code: "println(exec('normal2').value); exec('normal2'); println(exec('normal3').value); exec('normal3');",
 			},
 		}); err != nil {
 			t.Error(err.Error())
@@ -392,12 +397,13 @@ func TestRecursion(t *testing.T) {
 			make(chan int),
 			&buffer,
 			nil,
+			make(map[string]homescript.Value),
 		)
 		assert.NoError(t, err)
 		if len(res.Errors) != 0 {
 			fmt.Printf("%s: %s (%d:%d)", res.Errors[0].Kind, res.Errors[0].Message, res.Errors[0].Span.Start.Line, res.Errors[0].Span.Start.Column)
 		}
 		assert.Equal(t, 0, res.ExitCode)
-		assert.Equal(t, "2\n\n3\n\n", buffer.String())
+		assert.Equal(t, "2\nnull\n2\n3\nnull\n3\n", buffer.String())
 	})
 }

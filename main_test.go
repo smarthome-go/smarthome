@@ -60,6 +60,10 @@ func TestServer(t *testing.T) {
 		}
 	}
 
+	serverConfig, found, err := database.GetServerConfiguration()
+	assert.NoError(t, err)
+	assert.True(t, found)
+
 	// If the connection failed after 5 retries, give up
 	assert.NoError(t, dbErr)
 
@@ -72,7 +76,7 @@ func TestServer(t *testing.T) {
 	assert.NoError(t, database.SetAutomationSystemActivation(true))
 
 	// Initializes the automation scheduler
-	assert.NoError(t, homescript.InitAutomations())
+	assert.NoError(t, homescript.InitAutomations(serverConfig))
 
 	// Initializes the normal scheduler
 	assert.NoError(t, homescript.InitScheduler())
