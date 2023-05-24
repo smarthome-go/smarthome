@@ -8,6 +8,8 @@
     import Button, { Label } from '@smui/button'
 
     let loading = false
+    let sunTimesLoaded = false
+    let sunTimes = undefined
 
     let automations: automationWrapper[] = []
     let automationsToday: automationWrapper[] = []
@@ -15,55 +17,99 @@
 
     const now = new Date()
 
+    function getTimeOfAutomation(data: automation): {
+        hours: number
+        minutes: number
+        days: number[]
+    } {
+        switch (data.trigger) {
+            case 'cron':
+                return parseCronExpressionToTime(data.triggerCronExpression)
+            case 'on_sunrise':
+                return {
+                    hours: sunTimes.sunriseHour,
+                    minutes: sunTimes.sunriseMinute,
+                    days: [0, 1, 2, 3, 4, 5, 6],
+                }
+            case 'on_sunset':
+                return {
+                    hours: sunTimes.sunsetHour,
+                    minutes: sunTimes.sunsetMinute,
+                    days: [0, 1, 2, 3, 4, 5, 6],
+                }
+            default:
+                throw 'Not supported'
+        }
+    }
+
+    async function loadSunTimes() {
+        loading = true
+        try {
+            const res = await (await fetch('/api/system/location/suntimes')).json()
+            sunTimes = res
+        } catch (err) {
+            $createSnackbar(`Could not delete automation: ${err}`)
+        }
+        loading = false
+        sunTimesLoaded = true
+    }
+
     // Fetches the current automations from the server
     async function loadAutomations() {
         loading = true
+
+        let res = undefined
+
         try {
-            const res = await (await fetch('/api/automation/list/personal')).json()
-
+            res = await (await fetch('/api/automation/list/personal')).json()
             if (res.success !== undefined && !res.success) throw Error(res.error)
-            ;(res as automation[]).forEach(a => {
-                const timeData = parseCronExpressionToTime(a.cronExpression)
-                automations = [
-                    ...automations,
-                    {
-                        data: a,
-                        hours: timeData.hours,
-                        minutes: timeData.minutes,
-                        days: timeData.days,
-                    },
-                ]
-            })
-            automationsToday = automations
-                .filter(a => {
-                    // Filter out any disabled automations
-                    if (!a.data.enabled || a.data.disableOnce) return false
-
-                    // Filter out any automations from not today
-                    if (!a.days.includes(now.getDay())) return false
-
-                    // Only display the automations which are still coming
-                    return (
-                        a.hours > now.getHours() ||
-                        (a.hours === now.getHours() && a.minutes >= now.getMinutes())
-                    )
-                })
-                .sort((a, b) => {
-                    let aDate = new Date()
-                    aDate.setHours(a.hours)
-                    aDate.setMinutes(a.minutes)
-
-                    let bDate = new Date()
-                    bDate.setHours(b.hours)
-                    bDate.setMinutes(b.minutes)
-
-                    return aDate.getTime() - bDate.getTime()
-                })
-
-            automationsLoaded = true
         } catch (err) {
             $createSnackbar(`Could not load automations: ${err}`)
         }
+
+        ;(res as automation[]).forEach(a => {
+            if (a.trigger !== 'cron' && a.trigger !== 'on_sunrise' && a.trigger !== 'on_sunset')
+                return
+
+            const timeData = getTimeOfAutomation(a)
+            automations = [
+                ...automations,
+                {
+                    data: a,
+                    hours: timeData.hours,
+                    minutes: timeData.minutes,
+                    days: timeData.days,
+                },
+            ]
+        })
+
+        automationsToday = automations
+            .filter(a => {
+                // Filter out any disabled automations
+                if (!a.data.enabled || a.data.disableOnce) return false
+
+                // Filter out any automations from not today
+                if (!a.days.includes(now.getDay())) return false
+
+                // Only display the automations which are still coming
+                return (
+                    a.hours > now.getHours() ||
+                    (a.hours === now.getHours() && a.minutes >= now.getMinutes())
+                )
+            })
+            .sort((a, b) => {
+                let aDate = new Date()
+                aDate.setHours(a.hours)
+                aDate.setMinutes(a.minutes)
+
+                let bDate = new Date()
+                bDate.setHours(b.hours)
+                bDate.setMinutes(b.minutes)
+
+                return aDate.getTime() - bDate.getTime()
+            })
+
+        automationsLoaded = true
         loading = false
     }
 
@@ -117,6 +163,7 @@
     onMount(async () => {
         let hasStarPerm = $userData.userData.permissions.includes('*')
         if ($userData.userData.permissions.includes('automation') || hasStarPerm)
+            await loadSunTimes()
             await loadAutomations()
         if ($userData.userData.permissions.includes('scheduler') || hasStarPerm)
             await loadSchedules()
