@@ -11,6 +11,9 @@ import (
 )
 
 func TestRunSetup(t *testing.T) {
+	cronExpression := "1 2 * * *"
+	var interval uint = 42
+
 	setup := SetupStruct{
 		Users: []setupUser{
 			{
@@ -53,11 +56,27 @@ func TestRunSetup(t *testing.T) {
 						},
 						Automations: []setupAutomation{
 							{
-								Name:           "Setup automation",
-								Description:    "An automation for testing the setup",
-								CronExpression: "1 2 * * *",
-								Enabled:        true,
-								TimingMode:     database.TimingNormal,
+								Name:                  "automation (cron)",
+								Description:           "An automation for testing the setup using cron",
+								TriggerCronExpression: &cronExpression,
+								Enabled:               true,
+								Trigger:               database.TriggerCron,
+							},
+							{
+								Name:                   "automation (interval)",
+								Description:            "An automation for testing the setup using interval",
+								TriggerCronExpression:  nil,
+								Enabled:                true,
+								Trigger:                database.TriggerInterval,
+								TriggerIntervalSeconds: &interval,
+							},
+							{
+								Name:                   "automation (on notification)",
+								Description:            "An automation for testing the setup using on_notification",
+								TriggerCronExpression:  nil,
+								Enabled:                true,
+								Trigger:                database.TriggerOnNotification,
+								TriggerIntervalSeconds: nil,
 							},
 						},
 					},

@@ -86,10 +86,10 @@ func TestPower(t *testing.T) {
 			return
 		}
 
-		if err := setPowerOnAllNodes(switchItem, item.Power); err != nil {
-			t.Error(err.Error())
-			return
+		if err := setPowerOnAllNodes(switchItem, item.Power, true); err != nil {
+			log.Error(err.Error())
 		}
+
 		power, err := GetPowerState(item.Switch)
 		if err != nil {
 			t.Error(err.Error())

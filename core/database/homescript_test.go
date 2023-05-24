@@ -132,6 +132,7 @@ func TestHomescript(t *testing.T) {
 		if item.Error == "" {
 			if err := ModifyHomescriptById(
 				item.Homescript.Data.Id,
+				"admin",
 				item.AfterModification.Data,
 			); err != nil {
 				if err.Error() != item.ErrorModification {
@@ -164,11 +165,11 @@ func TestHomescript(t *testing.T) {
 			}
 		}
 		// Delete Homescript
-		if err := DeleteHomescriptById(item.Homescript.Data.Id); err != nil {
+		if err := DeleteHomescriptById(item.Homescript.Data.Id, "admin"); err != nil {
 			t.Error(err.Error())
 			return
 		}
-		exists, err = DoesHomescriptExist(item.Homescript.Data.Id)
+		exists, err = DoesHomescriptExist(item.Homescript.Data.Id, "admin")
 		if err != nil {
 			t.Error(err.Error())
 			return

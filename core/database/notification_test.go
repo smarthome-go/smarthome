@@ -43,12 +43,13 @@ func TestNotifications(t *testing.T) {
 		},
 	}
 	for _, item := range table {
-		if err := AddNotification(
+		newId, err := AddNotification(
 			"admin",
 			item.Name,
 			item.Description,
 			item.Priority,
-		); err != nil {
+		)
+		if err != nil {
 			t.Error(err.Error())
 			return
 		}
@@ -59,7 +60,7 @@ func TestNotifications(t *testing.T) {
 		}
 		found := false
 		for _, v := range notifications {
-			if v.Name == item.Name &&
+			if v.Id == newId && v.Name == item.Name &&
 				v.Description == item.Description &&
 				v.Priority == item.Priority {
 				found = true

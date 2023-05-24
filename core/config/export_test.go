@@ -19,7 +19,12 @@ func TestExportGeneration(t *testing.T) {
 	event.InitLogger(log)
 	user.InitLogger(log)
 	homescript.InitLogger(log)
-	assert.NoError(t, homescript.InitAutomations())
+
+	config, found, err := database.GetServerConfiguration()
+	assert.NoError(t, err)
+	assert.True(t, found)
+
+	assert.NoError(t, homescript.InitAutomations(config))
 	///
 	/// Part 1: Mock data creation
 	///
@@ -104,7 +109,7 @@ func TestExportGeneration(t *testing.T) {
 		assert.NoError(t, err)
 	}
 	// Grant the user one switch permission
-	_, err := database.AddUserSwitchPermission("test", "big_lamp")
+	_, err = database.AddUserSwitchPermission("test", "big_lamp")
 	assert.NoError(t, err)
 	// Grant the user one camera permission
 	_, err = database.AddUserCameraPermission("test", "lvr_shelf")
@@ -148,16 +153,18 @@ func TestExportGeneration(t *testing.T) {
 		},
 	}))
 	// Create automation
+	var interval uint = 42
 	_, err = homescript.CreateNewAutomation(
 		"My Automation",
-		"This is a description.",
-		4,
-		2,
-		[]uint8{0, 1, 2, 3, 4},
-		"my_homescript",
+		"This is a description",
+		"automation_homescript",
 		"test",
 		true,
-		database.TimingNormal,
+		nil,
+		nil,
+		nil,
+		database.TriggerInterval,
+		&interval,
 	)
 	assert.NoError(t, err)
 	// Create Reminder
@@ -172,6 +179,6 @@ func TestExportGeneration(t *testing.T) {
 	///
 	/// Part 2: Export testing
 	///
-	_, err = Export()
+	_, err = Export(false, true)
 	assert.NoError(t, err)
 }

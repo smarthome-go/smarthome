@@ -8,16 +8,22 @@ import (
 
 func TestCreateAutomation(t *testing.T) {
 	TestInit(t)
+
+	var hour uint = 2
+	var minute uint = 42
+	days := []uint8{3, 1, 4}
+
 	id, err := CreateNewAutomation(
 		"name",
 		"description",
-		0,
-		0,
-		[]uint8{0},
 		"test",
 		"admin",
 		false,
-		database.TimingNormal,
+		&hour,
+		&minute,
+		&days,
+		database.TriggerCron,
+		nil,
 	)
 	if err != nil {
 		t.Error(err.Error())
@@ -42,28 +48,34 @@ func TestCreateAutomation(t *testing.T) {
 
 func TestModifyAutomation(t *testing.T) {
 	TestInit(t)
+	var hour uint = 2
+	var minute uint = 42
+	days := []uint8{3, 1, 4}
+
 	id, err := CreateNewAutomation(
 		"name",
 		"description",
-		0,
-		0,
-		[]uint8{0},
 		"test",
 		"admin",
-		false,
-		database.TimingSunrise,
+		true,
+		&hour,
+		&minute,
+		&days,
+		database.TriggerCron,
+		nil,
 	)
 	if err != nil {
 		t.Error(err.Error())
 		return
 	}
+	cronExpression1 := "* * * * *"
 	if err := ModifyAutomationById(id, database.AutomationData{
 		Name:                  "name2",
 		Description:           "description2",
-		TriggerCronExpression: "* * * * *",
+		TriggerCronExpression: &cronExpression1,
 		HomescriptId:          "test",
 		Enabled:               true,
-		TimingMode:            database.TimingNormal,
+		Trigger:               database.TriggerCron,
 	}); err != nil {
 		t.Error(err.Error())
 		return
@@ -79,10 +91,10 @@ func TestModifyAutomation(t *testing.T) {
 	}
 	if temp.Name != "name2" ||
 		temp.Description != "description2" ||
-		temp.CronExpression != "* * * * *" ||
+		*temp.TriggerCronExpression != "* * * * *" ||
 		!temp.Enabled ||
-		temp.TimingMode != database.TimingNormal {
-		t.Errorf("invalid metadata of modified automation. Want: (`name2`, `description2`, `true`, `* * * * *`) | Got: (Name: %s, Desc: %s, Enabled: %t, Cron: %s)", temp.Name, temp.Description, temp.Enabled, temp.CronExpression)
+		temp.Trigger != database.TriggerCron {
+		t.Errorf("invalid metadata of modified automation. Want: (`name2`, `description2`, `true`, `* * * * *`) | Got: (Name: %s, Desc: %s, Enabled: %t, Cron: %s)", temp.Name, temp.Description, temp.Enabled, *temp.TriggerCronExpression)
 		return
 	}
 }
@@ -91,16 +103,21 @@ func TestModifyAutomation(t *testing.T) {
 // For actual execution tests, have a look at `automation_test.go`
 func TestRemoveAutomation(t *testing.T) {
 	TestInit(t)
+	var hour uint = 2
+	var minute uint = 42
+	days := []uint8{3, 1, 4}
+
 	id, err := CreateNewAutomation(
 		"name",
 		"description",
-		0,
-		0,
-		[]uint8{0},
 		"test",
 		"admin",
-		false,
-		database.TimingNormal,
+		true,
+		&hour,
+		&minute,
+		&days,
+		database.TriggerCron,
+		nil,
 	)
 	if err != nil {
 		t.Error(err.Error())
@@ -132,19 +149,24 @@ func TestRemoveAutomation(t *testing.T) {
 
 func TestGetUserAutomations(t *testing.T) {
 	TestInit(t)
+	var hour uint = 2
+	var minute uint = 42
+	days := []uint8{3, 1, 4}
 	for i := 0; i < 100; i++ {
-		if _, err := CreateNewAutomation(
+		_, err := CreateNewAutomation(
 			"name",
 			"description",
-			1,
-			1,
-			[]uint8{0},
 			"test",
 			"admin",
 			true,
-			database.TimingNormal,
-		); err != nil {
-			t.Error(err.Error())
+			&hour,
+			&minute,
+			&days,
+			database.TriggerCron,
+			nil,
+		)
+		if err != nil {
+			t.Error(err)
 			return
 		}
 	}
@@ -166,10 +188,10 @@ func TestGetUserAutomations(t *testing.T) {
 		}
 		if fromDb.Name != item.Name ||
 			fromDb.Description != item.Description ||
-			fromDb.CronExpression != item.CronExpression ||
+			*fromDb.TriggerCronExpression != *item.TriggerCronExpression ||
 			fromDb.Enabled != item.Enabled ||
 			fromDb.HomescriptId != item.HomescriptId ||
-			fromDb.TimingMode != item.TimingMode ||
+			fromDb.Trigger != item.Trigger ||
 			fromDb.Owner != item.Owner {
 			t.Errorf("Adding and retrieving automations failed: values are not equal. want: %v got: %v", item, fromDb)
 			return
