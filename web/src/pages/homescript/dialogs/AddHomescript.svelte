@@ -1,55 +1,50 @@
 <script lang="ts">
-    import Dialog, {
-        Actions,
-        Content,
-        Header,
-        InitialFocus,
-        Title,
-    } from "@smui/dialog";
-    import { createEventDispatcher } from "svelte";
-    import Button, { Label } from "@smui/button";
-    import Textfield from "@smui/textfield";
-    import CharacterCounter from "@smui/textfield/character-counter";
-    import { homescripts } from "../main";
-    import Autocomplete from "@smui-extra/autocomplete";
-    import { Text } from "@smui/list";
-    import { onMount } from "svelte";
-    export let open = false;
+    import Dialog, { Actions, Content, Header, InitialFocus, Title } from '@smui/dialog'
+    import { createEventDispatcher } from 'svelte'
+    import Button, { Label } from '@smui/button'
+    import Textfield from '@smui/textfield'
+    import CharacterCounter from '@smui/textfield/character-counter'
+    import { homescripts, RESERVED_HOMESCRIPTS } from '../main'
+    import Autocomplete from '@smui-extra/autocomplete'
+    import { Text } from '@smui/list'
+    import { onMount } from 'svelte'
+    export let open = false
 
     // Input data
-    let id = "";
-    let name = "";
-    let description = "";
-    export let workspace = "default";
+    let id = ''
+    let name = ''
+    let description = ''
+    export let workspace = 'default'
 
-    let newWorkspace = "";
-    let workspaceText = "";
-    let newWorkspaceOpen = false;
+    let newWorkspace = ''
+    let workspaceText = ''
+    let newWorkspaceOpen = false
 
-    let workspaces: string[] = [];
-    $: workspaces = [
-        ...new Set([
-            ...$homescripts.map((h) => h.data.data.workspace),
-            "default",
-        ]),
-    ];
+    let workspaces: string[] = []
+    $: workspaces = [...new Set([...$homescripts.map(h => h.data.data.workspace), 'default'])]
 
     // Event dispatcher
-    const dispatch = createEventDispatcher();
+    const dispatch = createEventDispatcher()
 
     function submit() {
-        dispatch("add", { id, name, description, workspace });
+        dispatch('add', { id, name, description, workspace })
         // Reset data after creation
-        id = "";
-        name = "";
-        description = "";
-        workspace = "default";
-        open = false;
+        id = ''
+        name = ''
+        description = ''
+        workspace = 'default'
+        open = false
     }
 
+    let isDisabled = false
+    $: isDisabled =
+        id.includes(' ') ||
+        RESERVED_HOMESCRIPTS.includes(id) ||
+        $homescripts.find(h => h.data.data.id === id) !== undefined
+
     onMount(() => {
-        workspace = "default";
-    });
+        workspace = 'default'
+    })
 </script>
 
 <Dialog bind:open aria-labelledby="title" aria-describedby="content">
@@ -66,8 +61,8 @@
                 noMatchesActionDisabled={false}
                 bind:text={workspaceText}
                 on:SMUIAutocomplete:noMatchesAction={() => {
-                    newWorkspace = workspaceText;
-                    newWorkspaceOpen = true;
+                    newWorkspace = workspaceText
+                    newWorkspaceOpen = true
                 }}
             >
                 <div slot="no-matches">
@@ -77,9 +72,7 @@
             <br />
             <Textfield
                 bind:value={id}
-                invalid={id.includes(" ") ||
-                    $homescripts.find((h) => h.data.data.id === id) !==
-                        undefined}
+                invalid={isDisabled}
                 input$maxlength={30}
                 label="Id"
                 required
@@ -113,20 +106,20 @@
     <Actions>
         <Button
             on:click={() => {
-                id = "";
-                name = "";
-                description = "";
-                workspace = "default";
-                open = false;
+                id = ''
+                name = ''
+                description = ''
+                workspace = 'default'
+                open = false
             }}
         >
             <Label>Cancel</Label>
         </Button>
         <Button
-            disabled={name === "" || id === ""}
+            disabled={name === '' || id === '' || isDisabled}
             use={[InitialFocus]}
             on:click={() => {
-                submit();
+                submit()
             }}
         >
             <Label>Create</Label>
@@ -149,8 +142,8 @@
             </Button>
             <Button
                 on:click={() => {
-                    workspaces = [...workspaces, newWorkspace];
-                    workspace = newWorkspace;
+                    workspaces = [...workspaces, newWorkspace]
+                    workspace = newWorkspace
                 }}
             >
                 <Label>Add</Label>

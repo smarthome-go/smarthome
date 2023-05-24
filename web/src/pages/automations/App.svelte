@@ -9,7 +9,15 @@
     import Automation from './Automation.svelte'
     import AddAutomation from './dialogs/AddAutomation.svelte'
     import Overview from './dialogs/Overview.svelte'
-    import { automations, automationsLoaded, hmsLoaded, homescripts, loading } from './main'
+    import {
+        sunTimes,
+        automations,
+        automationsLoaded,
+        sunTimesLoaded,
+        hmsLoaded,
+        homescripts,
+        loading,
+    } from './main'
     import type { addAutomation, automation } from './main'
 
     let addOpen = false
@@ -56,6 +64,17 @@
     async function createAutomation(data: addAutomation) {
         $loading = true
         try {
+            // Remove hour, minute, and days if not using cron
+            if (data.trigger != 'cron') {
+                data.hour = null
+                data.minute = null
+                data.days = null
+            }
+            // Remove interval when not using interval
+            if (data.trigger != 'interval') {
+                data.triggerInterval = null
+            }
+
             const res = await (
                 await fetch('/api/automation/add', {
                     method: 'POST',
@@ -70,14 +89,15 @@
                 ...$automations,
                 {
                     cronDescription: 'not yet generated',
-                    cronExpression: '* * * * *',
+                    triggerCronExpression: '* * * * *',
+                    triggerInterval: data.triggerInterval,
                     description: data.description,
                     enabled: data.enabled,
                     homescriptId: data.homescriptId,
                     id: 0,
                     name: data.name,
                     owner: $userData.userData.user.username,
-                    timingMode: data.timingMode,
+                    trigger: data.trigger,
                     disableOnce: false,
                 },
             ]
@@ -107,14 +127,29 @@
         $loading = false
     }
 
+    async function loadSunTimes() {
+        $loading = true
+        try {
+            const res = await (await fetch('/api/system/location/suntimes')).json()
+            $sunTimes = res
+        } catch (err) {
+            $createSnackbar(`Could not delete automation: ${err}`)
+        }
+        $loading = false
+        $sunTimesLoaded = true
+    }
+
     function handleAddAutomation(event) {
         const data = event.detail as addAutomation
         createAutomation(data).then()
     }
 
-    onMount(() => {
-        loadAutomations().then(loadHomescript)
-    }) // Load automations as soon as the component is mounted
+    // Load everyting as soon as the component is mounted
+    onMount(async () => {
+        await loadAutomations()
+        await loadHomescript()
+        await loadSunTimes()
+    })
 </script>
 
 <!-- Popup is shown when an automation is being added -->

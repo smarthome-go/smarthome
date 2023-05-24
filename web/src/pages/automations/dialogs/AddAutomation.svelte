@@ -1,54 +1,62 @@
 <script lang="ts">
-    import Button, { Icon, Label } from "@smui/button";
-    import Dialog, {
-        Actions,
-        Content,
-        Header,
-        InitialFocus,
-        Title,
-    } from "@smui/dialog";
-    import IconButton from "@smui/icon-button";
-    import { createEventDispatcher } from "svelte";
-    import { hmsLoaded, homescripts } from "../main";
-    import type { addAutomation } from "../main";
-    import Inputs from "./Inputs.svelte";
+    import Button, { Icon, Label } from '@smui/button'
+    import Dialog, { Actions, Content, Header, InitialFocus, Title } from '@smui/dialog'
+    import IconButton from '@smui/icon-button'
+    import { createEventDispatcher } from 'svelte'
+    import { hmsLoaded, homescripts, sunTimes } from '../main'
+    import type { addAutomation } from '../main'
+    import Inputs from './Inputs.svelte'
 
-    export let open = false;
+    export let open = false
 
     // Event dispatcher
-    const dispatch = createEventDispatcher();
+    const dispatch = createEventDispatcher()
 
     // Is required in order to reset the previous day-state
-    let selectedDays: string[] = [];
+    let selectedDays: string[] = []
 
     // Is bound to the `Inputs.svelte` component
     let data: addAutomation = {
         days: [],
-        description: "",
+        description: '',
         enabled: true,
-        homescriptId: "",
+        homescriptId: '',
         hour: 0,
         minute: 0,
-        name: "",
-        timingMode: "normal",
-    };
+        name: '',
+        trigger: 'cron',
+    }
 
     function reset() {
         // Reset the reverse-bound days
-        selectedDays = [];
+        selectedDays = []
         data = {
             days: [],
-            description: "",
+            description: '',
             enabled: true,
             // `$homescripts` can be used because it is likely
             // that the user can only invoke reset when Homescripts are loaded
             homescriptId: $homescripts[0].data.id,
             hour: 0,
             minute: 0,
-            name: "",
-            timingMode: "normal",
-        };
-        open = false;
+            name: '',
+            trigger: 'cron',
+        }
+        open = false
+    }
+
+    // Show the correct time in the time picker when using sun-times
+    $: if (data.trigger == 'on_sunrise' || data.trigger == 'on_sunset') {
+        switch (data.trigger) {
+            case 'on_sunrise':
+                data.hour = $sunTimes.sunriseHour
+                data.minute = $sunTimes.sunriseMinute
+                break
+            case 'on_sunset':
+                data.hour = $sunTimes.sunsetHour
+                data.minute = $sunTimes.sunsetMinute
+                break
+        }
     }
 </script>
 
@@ -69,26 +77,15 @@
         {#if $hmsLoaded && $homescripts.length > 0}
             <IconButton action="close" class="material-icons">close</IconButton>
         {/if}
-        <!-- TODO: better code -->
+        <!-- TODO: fix this ugly code -->
     </Header>
     <Content id="content">
         {#if $hmsLoaded && $homescripts.length == 0}
             <p>
-                You must create a Homescript in order to continue. <br /> If
-                there are Homescripts, check that they are enabled for
-                automations / scheduler.
-                <!-- TODO: write CLI documentation and link it here -->
-                <span class="text-hint"
-                    >You can also use the CLI to create Homescripts. <a
-                        href="https://github.com/smarthome-go/cli"
-                        target="_blank" rel="noreferrer">learn more</a
-                    ></span
-                >
+                You must create a Homescript in order to continue. <br /> If there are Homescripts, check
+                that they are enabled for automations / scheduler.
             </p>
-            <Button
-                on:click={() => (window.location.href = "/homescript")}
-                variant="outlined"
-            >
+            <Button on:click={() => (window.location.href = '/homescript')} variant="outlined">
                 <Icon class="material-icons">code</Icon>
                 Create one
             </Button>
@@ -102,12 +99,15 @@
                 <Label>Cancel</Label>
             </Button>
             <Button
-                disabled={data.name == "" || data.days.length == 0}
+                disabled={data.name === '' ||
+                    (data.trigger === 'cron' && data.days.length === 0) ||
+                    (data.trigger === 'interval' &&
+                        (data.triggerInterval <= 0 || data.triggerInterval > 60 * 60 * 24 * 365))}
                 use={[InitialFocus]}
                 on:click={() => {
-                    dispatch("add", data);
+                    dispatch('add', data)
                     // Reset values after creation
-                    reset();
+                    reset()
                 }}
             >
                 <Label>Create</Label>
@@ -119,14 +119,3 @@
         {/if}
     </Actions>
 </Dialog>
-
-<style lang="scss">
-    .text-hint {
-        font-size: 0.9rem;
-        display: block;
-    }
-    a {
-        color: var(--clr-primary);
-        opacity: 90%;
-    }
-</style>

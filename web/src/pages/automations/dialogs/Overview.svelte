@@ -1,7 +1,14 @@
 <script lang="ts">
     import Button, { Label } from '@smui/button'
     import Dialog, { Actions, Content, Header, InitialFocus, Title } from '@smui/dialog'
-    import { automations, homescripts, parseCronExpressionToTime } from '../main'
+    import {
+        automations,
+        homescripts,
+        parseCronExpressionToTime,
+        getTimeOfAutomation,
+        type automation,
+        sunTimes,
+    } from '../main'
 
     interface day {
         short: string
@@ -46,7 +53,6 @@
             short: 'sa',
         },
     ]
-
     export let open = false
 </script>
 
@@ -59,20 +65,35 @@
             {#each days as day (day.short)}
                 <div
                     class="day"
-                    class:empty={$automations.filter(a =>
-                        parseCronExpressionToTime(a.cronExpression).days.includes(day.index),
-                    ).length == 0}
+                    class:empty={$automations.filter(a => {
+                        if (
+                            a.trigger === 'cron' ||
+                            a.trigger === 'on_sunrise' ||
+                            a.trigger === 'on_sunset'
+                        ) {
+                            return getTimeOfAutomation(a).days.includes(day.index)
+                        } else {
+                            false
+                        }
+                    }).length == 0}
                 >
                     <div class="day__header">
                         {day.long}
                     </div>
                     <div class="day__automations">
                         {#each $automations
-                            .filter( a => parseCronExpressionToTime(a.cronExpression).days.includes(day.index), )
+                            .filter(a => {
+                                if (a.trigger === 'cron') {
+                                    return parseCronExpressionToTime(a.triggerCronExpression).days.includes(day.index)
+                                } else if (a.trigger === 'on_sunrise' || a.trigger === 'on_sunset') {
+                                    return true
+                                }
+                                return false
+                            })
                             .sort((a, b) => {
+                                const timeDataA = getTimeOfAutomation(a)
+                                const timeDataB = getTimeOfAutomation(b)
                                 // Sorts the automations by time (descending)
-                                const timeDataA = parseCronExpressionToTime(a.cronExpression)
-                                const timeDataB = parseCronExpressionToTime(b.cronExpression)
 
                                 // If the hour of two automations to be compared match, the earlier minute is chosen.
                                 if (timeDataA.hours === timeDataB.hours) {
@@ -92,25 +113,16 @@
                                     <div class="automation__time-hms">
                                         <span>
                                             {`${
-                                                parseCronExpressionToTime(automation.cronExpression)
-                                                    .hours <= 12
-                                                    ? parseCronExpressionToTime(
-                                                          automation.cronExpression,
-                                                      ).hours
-                                                    : parseCronExpressionToTime(
-                                                          automation.cronExpression,
-                                                      ).hours - 12
+                                                getTimeOfAutomation(automation).hours <= 12
+                                                    ? getTimeOfAutomation(automation).hours
+                                                    : getTimeOfAutomation(automation).hours - 12
                                             }`.padStart(2, '0') +
                                                 ':' +
                                                 `${
-                                                    parseCronExpressionToTime(
-                                                        automation.cronExpression,
-                                                    ).minutes
+                                                    getTimeOfAutomation(automation).minutes
                                                 }`.padStart(2, '0') +
                                                 ` ${
-                                                    parseCronExpressionToTime(
-                                                        automation.cronExpression,
-                                                    ).hours < 12
+                                                    getTimeOfAutomation(automation).hours < 12
                                                         ? 'AM'
                                                         : 'PM'
                                                 }`}
