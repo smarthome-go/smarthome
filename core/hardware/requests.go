@@ -188,7 +188,7 @@ func setPowerOnNodesWrapper(switchItem database.Switch, powerOn bool) error {
 
 		return nil
 	} else {
-		return setPowerOnAllNodes(switchItem, powerOn)
+		return setPowerOnAllNodes(switchItem, powerOn, false)
 	}
 }
 
@@ -238,7 +238,7 @@ func setPowerOnNode(node database.HardwareNode, powerOn bool, switchItem databas
 // This function is internally used by `ExecuteJob`
 // Makes a database request at the beginning in order to obtain information about the available nodes
 // Updates the power state in the database after the jobs have been sent to the hardware nodes
-func setPowerOnAllNodes(switchItem database.Switch, powerOn bool) error {
+func setPowerOnAllNodes(switchItem database.Switch, powerOn bool, forcePowerSet bool) error {
 	var err error
 	// Retrieves available hardware nodes from the database
 	nodes, err := database.GetHardwareNodes()
@@ -267,23 +267,39 @@ func setPowerOnAllNodes(switchItem database.Switch, powerOn bool) error {
 		}
 	}
 
-	// all nodes failed, should not update the power state
+	if forcePowerSet {
+		// Update the switch power-state in the database
+		if _, err := database.SetPowerState(switchItem.Id, powerOn); err != nil {
+			log.Error("Failed to set power after dispatching to all nodes: updating power-state database entry failed: ", err.Error())
+			return err
+		}
+	}
+
+	// If there was an error, return early
+	if err != nil {
+		return err
+	}
+
+	// There are no nodes or all nodes are disabled
+	if nodesPerformed == 0 {
+		log.Warn("There are no nodes or all nodes are disabled, no power action performed")
+		return fmt.Errorf("There are no nodes or all nodes are disabled, no action performed")
+	}
+
+	// All nodes failed, should not update the power state
 	if nodesFailed == len(nodes) {
 		return fmt.Errorf("All nodes failed: `%s`", err.Error())
 	}
 
-	if nodesPerformed == 0 {
-		log.Warn("All nodes are disabled, no power action performed")
-		return fmt.Errorf("All nodes are disabled, no action performed")
-	}
-
 	// Update the switch power-state in the database
-	if _, err := database.SetPowerState(switchItem.Id, powerOn); err != nil {
-		log.Error("Failed to set power after dispatching to all nodes: updating power-state database entry failed: ", err.Error())
-		return err
+	if !forcePowerSet {
+		if _, err := database.SetPowerState(switchItem.Id, powerOn); err != nil {
+			log.Error("Failed to set power after dispatching to all nodes: updating power-state database entry failed: ", err.Error())
+			return err
+		}
 	}
 
-	return err
+	return nil
 }
 
 // Runs a health-check on all nodes of the system
