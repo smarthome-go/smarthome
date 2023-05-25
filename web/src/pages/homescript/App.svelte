@@ -371,8 +371,10 @@
     <ExecutionResultPopup
         open={true}
         data={hmsExecutionResults[0]}
-        scriptId={selection}
-        on:close={() => (hmsExecutionResults = hmsExecutionResults.slice(1))}
+        on:close={() => {
+            // This hack is required so that the window still remains scrollable after removal
+            setTimeout(() => (hmsExecutionResults = hmsExecutionResults.slice(1)), 1000)
+        }}
     />
 {/if}
 

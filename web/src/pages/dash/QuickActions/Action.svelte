@@ -1,65 +1,65 @@
 <script lang="ts">
-    import { killAllJobsById, runHomescriptById } from "../../../homescript";
+    import { killAllJobsById, runHomescriptById } from '../../../homescript'
     import type {
         homescriptArgSubmit,
         homescriptResponseWrapper,
         homescriptWithArgs,
-    } from "../../../homescript";
-    import { createSnackbar } from "../../../global";
-    import HmsArgumentPrompts from "../../../components/Homescript/ArgumentPrompts/HmsArgumentPrompts.svelte";
-    import ExecutionResultPopup from "../../../components/Homescript/ExecutionResultPopup/ExecutionResultPopup.svelte";
-    import { createEventDispatcher } from "svelte";
-    import Progress from "../../../components/Progress.svelte";
-    import IconButton from "@smui/icon-button";
-    import Ripple from "@smui/ripple";
+    } from '../../../homescript'
+    import { createSnackbar } from '../../../global'
+    import HmsArgumentPrompts from '../../../components/Homescript/ArgumentPrompts/HmsArgumentPrompts.svelte'
+    import ExecutionResultPopup from '../../../components/Homescript/ExecutionResultPopup/ExecutionResultPopup.svelte'
+    import { createEventDispatcher } from 'svelte'
+    import Progress from '../../../components/Progress.svelte'
+    import IconButton from '@smui/icon-button'
+    import Ripple from '@smui/ripple'
 
     // Used for dispatching events
-    const dispatch = createEventDispatcher();
+    const dispatch = createEventDispatcher()
 
-    export let data: homescriptWithArgs;
+    export let data: homescriptWithArgs
 
     // Specifies whether the current script is running
-    export let running = false;
-    $: if (isAlreadyRunning) running = true;
+    export let running = false
+    $: if (isAlreadyRunning) running = true
 
-    export let isAlreadyRunning = false;
+    export let isAlreadyRunning = false
 
-    let success = false;
-    let failure = false;
+    let success = false
+    let failure = false
 
     // Is used when the run button is pressed and the current script has arguments
-    let argumentsPromptOpen = false;
+    let argumentsPromptOpen = false
 
     /*
        Executing the currently selected Homescript
     */
-    let hmsExecutionResults: homescriptResponseWrapper[] = [];
+    let hmsExecutionResults: homescriptResponseWrapper[] = []
 
     // If the current Homescript contains arguments, the function triggers the argument-prompt dialog opening
     function initCurrentRun() {
         isAlreadyRunning = false
         if (data.arguments.length === 0) {
-            runCurrentWithArgs([]);
-            return;
+            runCurrentWithArgs([])
+            return
         }
         // The script is executed via callback: refer to the argument dialog
-        argumentsPromptOpen = true;
+        argumentsPromptOpen = true
     }
 
     // Used when the run button is pressed, error handling is accomplished here
     async function runCurrentWithArgs(args: homescriptArgSubmit[]) {
-        running = true;
-        dispatch("run", null);
+        running = true
+        dispatch('run', null)
         try {
-            const hmsRes = await runHomescriptById(data.data.data.id, args, false);
+            const hmsRes = await runHomescriptById(data.data.data.id, args, false)
 
-            success = hmsRes.success;
-            failure = !success;
+            success = hmsRes.success
+            failure = !success
 
             setTimeout(() => {
-                success = false;
-                failure = false;
-            }, 2000);
+                success = false
+                failure = false
+            }, 2000)
 
             hmsExecutionResults = [
                 ...hmsExecutionResults,
@@ -68,31 +68,34 @@
                     code: data.data.data.code,
                     modeRun: true,
                 },
-            ];
+            ]
         } catch (err) {
-            $createSnackbar(`Could not execute ${data.data.data.name}: ${err}`);
+            $createSnackbar(`Could not execute ${data.data.data.name}: ${err}`)
         }
-        dispatch("finish", null);
-        running = false;
+        dispatch('finish', null)
+        running = false
     }
 </script>
 
 {#if argumentsPromptOpen && data.arguments.length > 0}
     <HmsArgumentPrompts
-        on:submit={(event) => {
-            runCurrentWithArgs(event.detail);
+        on:submit={event => {
+            runCurrentWithArgs(event.detail)
         }}
         bind:open={argumentsPromptOpen}
-        args={data.arguments.map((a) => a.data)}
+        args={data.arguments.map(a => a.data)}
     />
 {/if}
 
 {#if hmsExecutionResults[0] !== undefined}
     <ExecutionResultPopup
-        open={true}
+        open={hmsExecutionResults[0] !== undefined}
         data={hmsExecutionResults[0]}
         scriptId={data.data.data.id}
-        on:close={() => (hmsExecutionResults = hmsExecutionResults.slice(1))}
+        on:close={() => {
+            // This hack is required so that the window still remains scrollable after removal
+            setTimeout(() => (hmsExecutionResults = hmsExecutionResults.slice(1)), 1000)
+        }}
     />
 {/if}
 
@@ -102,23 +105,19 @@
     class:success
     class:failure
     use:Ripple={{ surface: !running }}
-    on:keydown={running
-        ? () => $createSnackbar("This action is already running")
-        : initCurrentRun}
-    on:click={running
-        ? () => $createSnackbar("This action is already running")
-        : initCurrentRun}
+    on:keydown={running ? () => $createSnackbar('This action is already running') : initCurrentRun}
+    on:click={running ? () => $createSnackbar('This action is already running') : initCurrentRun}
 >
     <div class="action__overlay">
         <div class="action__overlay__cancel" class:hidden={!running}>
             <IconButton
                 class="material-icons"
-                on:click={(e) => {
-                    e.stopPropagation();
-                    killAllJobsById(data.data.data.id);
+                on:click={e => {
+                    e.stopPropagation()
+                    killAllJobsById(data.data.data.id)
                     if (isAlreadyRunning) {
-                        running = false;
-                        dispatch("finish", null);
+                        running = false
+                        dispatch('finish', null)
                     }
                 }}
                 size="button"
@@ -137,7 +136,7 @@
 </div>
 
 <style lang="scss">
-    @use "../../../_mixins.scss" as *;
+    @use '../../../_mixins.scss' as *;
 
     .action {
         aspect-ratio: 1;
