@@ -8,18 +8,17 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/smarthome-go/smarthome/core/config"
+	"github.com/smarthome-go/smarthome/core"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
-	"github.com/smarthome-go/smarthome/core/hardware"
 	"github.com/smarthome-go/smarthome/core/homescript"
-	"github.com/smarthome-go/smarthome/core/user"
 	"github.com/smarthome-go/smarthome/core/utils"
 	"github.com/smarthome-go/smarthome/server/api"
 	"github.com/smarthome-go/smarthome/server/middleware"
 	"github.com/smarthome-go/smarthome/server/routes"
 	"github.com/smarthome-go/smarthome/server/templates"
 	"github.com/smarthome-go/smarthome/services/camera"
+	"github.com/smarthome-go/smarthome/services/reminder"
 )
 
 func TestServer(t *testing.T) {
@@ -28,17 +27,13 @@ func TestServer(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Initialize module loggers
-	config.InitLogger(log)
+	core.InitLoggers(log)
 	camera.InitLogger(log)
-	database.InitLogger(log)
 	middleware.InitLogger(log)
 	api.InitLogger(log)
 	routes.InitLogger(log)
 	templates.InitLogger(log)
-	user.InitLogger(log)
-	hardware.InitLogger(log)
-	event.InitLogger(log)
-	homescript.InitLogger(log)
+	reminder.InitLogger(log)
 
 	// Simulates a typical server startup
 
@@ -68,7 +63,7 @@ func TestServer(t *testing.T) {
 	assert.NoError(t, dbErr)
 
 	// Run setup file if it exists
-	assert.NoError(t, config.RunSetup())
+	assert.NoError(t, core.RunSetup())
 
 	// Always flush old logs
 	assert.NoError(t, event.FlushOldLogs())

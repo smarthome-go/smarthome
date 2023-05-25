@@ -1,4 +1,4 @@
-package config
+package core
 
 import (
 	"encoding/json"
@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/smarthome-go/smarthome/core/config"
 	"github.com/smarthome-go/smarthome/core/database"
 )
 
@@ -14,10 +15,10 @@ func TestRunSetup(t *testing.T) {
 	cronExpression := "1 2 * * *"
 	var interval uint = 42
 
-	setup := SetupStruct{
-		Users: []SetupUser{
+	setup := config.SetupStruct{
+		Users: []config.SetupUser{
 			{
-				Data: SetupUserData{
+				Data: config.SetupUserData{
 					Username:          "setup",
 					Forename:          "Set",
 					Surname:           "Up",
@@ -27,7 +28,7 @@ func TestRunSetup(t *testing.T) {
 					SchedulerEnabled:  true,
 					DarkTheme:         true,
 				},
-				Homescripts: []SetupHomescript{
+				Homescripts: []config.SetupHomescript{
 					{
 						Data: database.HomescriptData{
 							Id:                  "setup_hms",
@@ -38,7 +39,7 @@ func TestRunSetup(t *testing.T) {
 							Code:                "print('Hello World!')",
 							MDIcon:              "code",
 						},
-						Arguments: []SetupHomescriptArg{
+						Arguments: []config.SetupHomescriptArg{
 							{
 								ArgKey:    "a_key",
 								Prompt:    "Enter your value",
@@ -54,7 +55,7 @@ func TestRunSetup(t *testing.T) {
 								Display:   database.NumberHour,
 							},
 						},
-						Automations: []SetupAutomation{
+						Automations: []config.SetupAutomation{
 							{
 								Name:                  "automation (cron)",
 								Description:           "An automation for testing the setup using cron",
@@ -81,7 +82,7 @@ func TestRunSetup(t *testing.T) {
 						},
 					},
 				},
-				Reminders: []SetupReminder{
+				Reminders: []config.SetupReminder{
 					{
 						Name:              "Do something",
 						Description:       "This is an important task",
@@ -101,14 +102,14 @@ func TestRunSetup(t *testing.T) {
 				CameraPermissions: []string{"lvr_main_door"},
 			},
 		},
-		Rooms: []SetupRoom{
+		Rooms: []config.SetupRoom{
 			{
 				Data: database.RoomData{
 					Id:          "living_room",
 					Name:        "Living Room",
 					Description: "This is the room where people live in",
 				},
-				Switches: []SetupSwitch{
+				Switches: []config.SetupSwitch{
 					{
 						Id:      "lvr_big_lamp",
 						Name:    "Big Lamp",
@@ -116,7 +117,7 @@ func TestRunSetup(t *testing.T) {
 						Watts:   0,
 					},
 				},
-				Cameras: []SetupCamera{
+				Cameras: []config.SetupCamera{
 					{
 						Id:   "lvr_main_door",
 						Name: "Living Room Main Door",
@@ -125,32 +126,34 @@ func TestRunSetup(t *testing.T) {
 				},
 			},
 		},
-		HardwareNodes: []SetupHardwareNode{},
+		HardwareNodes: []config.SetupHardwareNode{},
 		ServerConfiguration: database.ServerConfig{
 			AutomationEnabled: false,
 			LockDownMode:      false,
 			Latitude:          0.0,
 			Longitude:         0.0}}
 	// Write the json to a temp directory so it can be read later
-	setupPath = fmt.Sprintf("%s/setup.json", t.TempDir()) // Global variable is changed here in order to use the temp location
+	SetupPath = fmt.Sprintf("%s/setup.json", t.TempDir()) // Global variable is changed here in order to use the temp location
 	content, err := json.Marshal(setup)
 	if err != nil {
 		t.Error(err.Error())
 		return
 	}
 	if err := os.WriteFile(
-		setupPath,
+		SetupPath,
 		content,
 		0755,
 	); err != nil {
 		t.Error(err.Error())
 		return
 	}
+
 	// Run the setup
 	if err := RunSetup(); err != nil {
 		t.Error(err.Error())
 		return
 	}
+
 	for _, switchItem := range setup.Rooms[0].Switches {
 		_, exists, err := database.GetSwitchById(switchItem.Id)
 		if err != nil {
@@ -200,9 +203,9 @@ func TestRunSetup(t *testing.T) {
 
 func TestReadBrokenSetupFile(t *testing.T) {
 	// Write the bad contents to another temp directory so it can be read later
-	setupPath = fmt.Sprintf("%s/setup_invalid.json", t.TempDir())
+	SetupPath = fmt.Sprintf("%s/setup_invalid.json", t.TempDir())
 	if err := os.WriteFile(
-		setupPath,
+		SetupPath,
 		[]byte("invalid_content"),
 		0755,
 	); err != nil {
@@ -216,14 +219,14 @@ func TestReadBrokenSetupFile(t *testing.T) {
 }
 
 func TestSetupFileDoesNotExist(t *testing.T) {
-	setupPath = "/does/not/exist"
+	SetupPath = "/does/not/exist"
 	_, fileExists, err := readSetupFile()
 	if err != nil {
 		t.Error(err.Error())
 		return
 	}
 	if fileExists {
-		t.Errorf("Non-existent file %s was readable by function", setupPath)
+		t.Errorf("Non-existent file %s was readable by function", SetupPath)
 		return
 	}
 }

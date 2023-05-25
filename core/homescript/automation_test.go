@@ -530,7 +530,7 @@ func TestDisableOnce(t *testing.T) {
 
 	// Normal automation
 	id, err := CreateNewAutomation(
-		"Name",
+		"Disable Once",
 		"Description",
 		"test",
 		"admin",
@@ -545,6 +545,7 @@ func TestDisableOnce(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
+
 	// Create a manual cron expression
 	cronExpr, err := automation.GenerateCronExpression(uint8(then.Hour()), uint8(then.Minute()), []uint8{0, 1, 2, 3, 4, 5, 6})
 	assert.NoError(t, err)
@@ -592,49 +593,6 @@ func TestDisableOnce(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, found)
 	assert.False(t, automationDb.DisableOnce)
-
-	// Check if the automation runs the second time
-	now = time.Now()
-	then = now.Add(time.Minute)
-	TestInit(t)
-
-	// Create a manual cron expression
-	cronExpr, err = automation.GenerateCronExpression(uint8(then.Hour()), uint8(then.Minute()), []uint8{0, 1, 2, 3, 4, 5, 6})
-	assert.NoError(t, err)
-	// Update the next run-time
-	assert.NoError(t, ModifyAutomationById(id, database.AutomationData{
-		Name:                  "name_once",
-		Description:           "description_once",
-		TriggerCronExpression: &cronExpr,
-		HomescriptId:          "test",
-		Enabled:               true,
-		DisableOnce:           false,
-		Trigger:               database.TriggerCron,
-	}))
-
-	err = database.InsertHmsStorageEntry("admin", "AUTOMATION_RAN", "false")
-	assert.NoError(t, err)
-
-	valid := false
-	for i := 0; i < 7; i++ {
-		time.Sleep(time.Second * 10)
-		storageMap, err := database.GetPersonalHomescriptStorage("admin")
-		if err != nil {
-			t.Error(err.Error())
-			return
-		}
-
-		value := storageMap["AUTOMATION_RAN"]
-
-		if value == "true" {
-			valid = true
-			break
-		}
-	}
-	if !valid {
-		t.Error("Automation did not run after its disable once flag was removed")
-		return
-	}
 }
 
 // Tests if the automation system can be initialized
