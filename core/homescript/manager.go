@@ -258,10 +258,10 @@ func (m *Manager) Run(
 	}
 
 	if _, exists := scopeAdditionsFinal["context"]; !exists {
-		// Include `context` in order to prevent false errors during analysis
+		// Include a default null `context` if ther is no other
 		scopeAdditionsFinal["context"] = homescript.ValueBuiltinVariable{
 			Callback: func(executor homescript.Executor, span hmsErrors.Span) (homescript.Value, *hmsErrors.Error) {
-				return homescript.ValueObject{IsDynamic: true, IsProtected: true, ObjFields: make(map[string]*homescript.Value)}, nil
+				return homescript.ValueNull{}, nil
 			},
 		}
 	}

@@ -113,8 +113,9 @@ func RunAllAutomationsWithTrigger(username string, trigger database.AutomationTr
 		if job.Trigger != trigger || !job.Enabled {
 			continue
 		}
+
+		wg.Add(1)
 		go func(jobId uint) {
-			wg.Add(1)
 			AutomationRunnerFunc(jobId, context)
 			wg.Done()
 		}(job.Id)
