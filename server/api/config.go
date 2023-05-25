@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/smarthome-go/smarthome/core"
 	"github.com/smarthome-go/smarthome/core/config"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/homescript/automation"
+	"github.com/smarthome-go/smarthome/server/middleware"
 )
 
 type updateLocationRequest struct {
@@ -148,23 +150,25 @@ func ImportConfiguration(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	if err := config.RunSetupStruct(request); err != nil {
+	if err := core.RunSetupStruct(request); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		Res(w, Response{Success: false, Message: "failed to run setup", Error: err.Error()})
 		return
 	}
 	Res(w, Response{Success: true, Message: "successfully ran setup"})
+	middleware.InitWithRandomKey()
 }
 
 // Is used to reset the Smarthome server to its factory settings
 func FactoryReset(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	if err := config.FactoryReset(); err != nil {
+	if err := core.FactoryReset(); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		Res(w, Response{Success: false, Message: "failed to reset to factory settings", Error: err.Error()})
 		return
 	}
 	Res(w, Response{Success: true, Message: "factory settings were applied successfully"})
+	middleware.InitWithRandomKey()
 }
 
 // Is used to flush the Homescript URL cache manually

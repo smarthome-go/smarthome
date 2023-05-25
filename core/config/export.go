@@ -13,20 +13,20 @@ import (
 )
 
 type SetupStruct struct {
-	Users               []setupUser           `json:"users"`
-	Rooms               []setupRoom           `json:"rooms"`
-	HardwareNodes       []setupHardwareNode   `json:"hardwareNodes"`
+	Users               []SetupUser           `json:"users"`
+	Rooms               []SetupRoom           `json:"rooms"`
+	HardwareNodes       []SetupHardwareNode   `json:"hardwareNodes"`
 	ServerConfiguration database.ServerConfig `json:"serverConfiguration"`
-	CacheData           setupCacheData        `json:"cacheData"`
+	CacheData           SetupCacheData        `json:"cacheData"`
 }
 
-type setupRoom struct {
+type SetupRoom struct {
 	Data     database.RoomData `json:"data"`
-	Switches []setupSwitch     `json:"switches"`
-	Cameras  []setupCamera     `json:"cameras"`
+	Switches []SetupSwitch     `json:"switches"`
+	Cameras  []SetupCamera     `json:"cameras"`
 }
 
-type setupSwitch struct {
+type SetupSwitch struct {
 	Id         string  `json:"id"`
 	Name       string  `json:"name"`
 	PowerOn    bool    `json:"powerOn"`
@@ -34,21 +34,21 @@ type setupSwitch struct {
 	TargetNode *string `json:"targetNode"`
 }
 
-type setupCamera struct {
+type SetupCamera struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
 	Url  string `json:"url"`
 }
 
-type setupUser struct {
-	Data              setupUserData            `json:"user"`
-	Tokens            []setupAuthToken         `json:"tokens"`
-	Homescripts       []setupHomescript        `json:"homescripts"`
-	HomescriptStorage []setupHomescriptStorage `json:"homescriptStorage"`
-	Reminders         []setupReminder          `json:"reminders"`
+type SetupUser struct {
+	Data              SetupUserData            `json:"user"`
+	Tokens            []SetupAuthToken         `json:"tokens"`
+	Homescripts       []SetupHomescript        `json:"homescripts"`
+	HomescriptStorage []SetupHomescriptStorage `json:"homescriptStorage"`
+	Reminders         []SetupReminder          `json:"reminders"`
 
 	// Profile picture as B64
-	ProfilePicture *setupUserProfilePicture `json:"profilePicture"`
+	ProfilePicture *SetupUserProfilePicture `json:"profilePicture"`
 
 	// Permissions
 	Permissions       []string `json:"permissions"`
@@ -56,24 +56,24 @@ type setupUser struct {
 	CameraPermissions []string `json:"cameraPermissions"`
 }
 
-type setupUserProfilePicture struct {
+type SetupUserProfilePicture struct {
 	B64Data       string `json:"data"`
 	FileExtension string `json:"fileExtension"`
 }
 
-type setupHardwareNode struct {
+type SetupHardwareNode struct {
 	Name    string `json:"name"`
 	Enabled bool   `json:"enabled"` // Can be used to temporarily deactivate a node in case of maintenance
 	Url     string `json:"url"`
 	Token   string `json:"token"`
 }
 
-type setupAuthToken struct {
+type SetupAuthToken struct {
 	Token string `json:"token"`
 	Label string `json:"label"`
 }
 
-type setupReminder struct {
+type SetupReminder struct {
 	Name              string                    `json:"name"`
 	Description       string                    `json:"description"`
 	Priority          database.ReminderPriority `json:"priority"`
@@ -83,13 +83,13 @@ type setupReminder struct {
 	UserWasNotifiedAt time.Time                 `json:"userWasNotifiedAt"`
 }
 
-type setupHomescript struct {
+type SetupHomescript struct {
 	Data        database.HomescriptData `json:"data"`
-	Arguments   []setupHomescriptArg    `json:"arguments"`
-	Automations []setupAutomation       `json:"automations"`
+	Arguments   []SetupHomescriptArg    `json:"arguments"`
+	Automations []SetupAutomation       `json:"automations"`
 }
 
-type setupHomescriptArg struct {
+type SetupHomescriptArg struct {
 	ArgKey    string                   `json:"argKey"`    // The unique key of the argument
 	Prompt    string                   `json:"prompt"`    // The prompt the user will see
 	MDIcon    string                   `json:"mdIcon"`    // A Google MD icon which will be displayed
@@ -97,12 +97,12 @@ type setupHomescriptArg struct {
 	Display   database.HmsArgDisplay   `json:"display"`   // Specifies the visual display of the prompt (handled by GUI)
 }
 
-type setupHomescriptStorage struct {
+type SetupHomescriptStorage struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
 }
 
-type setupAutomation struct {
+type SetupAutomation struct {
 	Name                   string                     `json:"name"`
 	Description            string                     `json:"description"`
 	Enabled                bool                       `json:"enabled"`
@@ -111,7 +111,7 @@ type setupAutomation struct {
 	TriggerIntervalSeconds *uint                      `json:"intervalSeconds"`
 }
 
-type setupUserData struct {
+type SetupUserData struct {
 	Username          string `json:"username"`
 	Forename          string `json:"forename"`
 	Surname           string `json:"surname"`
@@ -122,12 +122,12 @@ type setupUserData struct {
 	DarkTheme         bool   `json:"darkTheme"`
 }
 
-type setupCacheData struct {
-	WeatherHistory []setupWeatherMeasurement               `json:"weatherHistory"`
+type SetupCacheData struct {
+	WeatherHistory []SetupWeatherMeasurement               `json:"weatherHistory"`
 	PowerData      []hardware.PowerDrawDataPointUnixMillis `json:"powerData"`
 }
 
-type setupWeatherMeasurement struct {
+type SetupWeatherMeasurement struct {
 	Id                 uint    `json:"id"`
 	Time               uint    `json:"time"` // unix millis
 	WeatherTitle       string  `json:"weatherTitle"`
@@ -154,11 +154,11 @@ func Export(
 	if err != nil {
 		return SetupStruct{}, err
 	}
-	rooms := make([]setupRoom, 0)
+	rooms := make([]SetupRoom, 0)
 	for _, room := range roomsDB {
-		roomSwitches := make([]setupSwitch, 0)
+		roomSwitches := make([]SetupSwitch, 0)
 		for _, sw := range room.Switches {
-			roomSwitches = append(roomSwitches, setupSwitch{
+			roomSwitches = append(roomSwitches, SetupSwitch{
 				Id:         sw.Id,
 				Name:       sw.Name,
 				PowerOn:    sw.PowerOn,
@@ -166,15 +166,15 @@ func Export(
 				TargetNode: sw.TargetNode,
 			})
 		}
-		roomCameras := make([]setupCamera, 0)
+		roomCameras := make([]SetupCamera, 0)
 		for _, cam := range room.Cameras {
-			roomCameras = append(roomCameras, setupCamera{
+			roomCameras = append(roomCameras, SetupCamera{
 				Id:   cam.Id,
 				Name: cam.Name,
 				Url:  cam.Url,
 			})
 		}
-		rooms = append(rooms, setupRoom{
+		rooms = append(rooms, SetupRoom{
 			Data: database.RoomData{
 				Id:          room.Data.Id,
 				Name:        room.Data.Name,
@@ -189,9 +189,9 @@ func Export(
 	if err != nil {
 		return SetupStruct{}, err
 	}
-	hwNodesNew := make([]setupHardwareNode, 0)
+	hwNodesNew := make([]SetupHardwareNode, 0)
 	for _, node := range hwNodes {
-		hwNodesNew = append(hwNodesNew, setupHardwareNode{
+		hwNodesNew = append(hwNodesNew, SetupHardwareNode{
 			Name:    node.Name,
 			Enabled: node.Enabled,
 			Token:   node.Token,
@@ -202,7 +202,7 @@ func Export(
 	if err != nil {
 		return SetupStruct{}, nil
 	}
-	users := make([]setupUser, 0)
+	users := make([]SetupUser, 0)
 	for _, userData := range usersTemp {
 		// Password Hash
 		pwHash, err := database.GetUserPasswordHash(userData.Username)
@@ -217,9 +217,9 @@ func Export(
 		}
 
 		// Transform the tokens into a setup-compatible version
-		tokens := make([]setupAuthToken, 0)
+		tokens := make([]SetupAuthToken, 0)
 		for _, t := range tokensDB {
-			tokens = append(tokens, setupAuthToken{
+			tokens = append(tokens, SetupAuthToken{
 				Token: t.Token,
 				Label: t.Data.Label,
 			})
@@ -236,11 +236,11 @@ func Export(
 		if err != nil {
 			return SetupStruct{}, err
 		}
-		homescripts := make([]setupHomescript, 0)
+		homescripts := make([]SetupHomescript, 0)
 		for _, hms := range homescriptsDB {
-			args := make([]setupHomescriptArg, 0)
+			args := make([]SetupHomescriptArg, 0)
 			for _, arg := range hms.Arguments {
-				args = append(args, setupHomescriptArg{
+				args = append(args, SetupHomescriptArg{
 					ArgKey:    arg.Data.ArgKey,
 					Prompt:    arg.Data.Prompt,
 					MDIcon:    arg.Data.MDIcon,
@@ -249,10 +249,10 @@ func Export(
 				})
 			}
 			// Filter out automations using this Homescript
-			automationsThis := make([]setupAutomation, 0)
+			automationsThis := make([]SetupAutomation, 0)
 			for _, aut := range automationsDB {
 				if aut.Data.HomescriptId == hms.Data.Data.Id {
-					automationsThis = append(automationsThis, setupAutomation{
+					automationsThis = append(automationsThis, SetupAutomation{
 						Name:                   aut.Data.Name,
 						Description:            aut.Data.Description,
 						Enabled:                aut.Data.Enabled,
@@ -262,7 +262,7 @@ func Export(
 					})
 				}
 			}
-			homescripts = append(homescripts, setupHomescript{
+			homescripts = append(homescripts, SetupHomescript{
 				Data:        hms.Data.Data,
 				Arguments:   args,
 				Automations: automationsThis,
@@ -275,9 +275,9 @@ func Export(
 			return SetupStruct{}, nil
 		}
 
-		storageOutput := make([]setupHomescriptStorage, 0)
+		storageOutput := make([]SetupHomescriptStorage, 0)
 		for key, value := range storage {
-			storageOutput = append(storageOutput, setupHomescriptStorage{
+			storageOutput = append(storageOutput, SetupHomescriptStorage{
 				Key:   key,
 				Value: value,
 			})
@@ -288,9 +288,9 @@ func Export(
 		if err != nil {
 			return SetupStruct{}, err
 		}
-		reminders := make([]setupReminder, 0)
+		reminders := make([]SetupReminder, 0)
 		for _, reminder := range remindersDB {
-			reminders = append(reminders, setupReminder{
+			reminders = append(reminders, SetupReminder{
 				Name:              reminder.Name,
 				Description:       reminder.Description,
 				Priority:          reminder.Priority,
@@ -320,7 +320,7 @@ func Export(
 		}
 
 		// Include profile picture if desired
-		var profilePicture *setupUserProfilePicture = nil
+		var profilePicture *SetupUserProfilePicture = nil
 		if includeProfilePictures {
 			picture, err := user.GetUserAvatar(userData.Username)
 			if err != nil {
@@ -332,7 +332,7 @@ func Export(
 				return SetupStruct{}, err
 			}
 
-			picTemp := setupUserProfilePicture{
+			picTemp := SetupUserProfilePicture{
 				B64Data:       base64.StdEncoding.EncodeToString(picture),
 				FileExtension: filetype.Extension,
 			}
@@ -341,8 +341,8 @@ func Export(
 		}
 
 		// Append assembled user
-		users = append(users, setupUser{
-			Data: setupUserData{
+		users = append(users, SetupUser{
+			Data: SetupUserData{
 				Username:          userData.Username,
 				Forename:          userData.Forename,
 				Surname:           userData.Surname,
@@ -364,8 +364,8 @@ func Export(
 	}
 
 	// Include cache data if desired
-	cacheData := setupCacheData{
-		WeatherHistory: make([]setupWeatherMeasurement, 0),
+	cacheData := SetupCacheData{
+		WeatherHistory: make([]SetupWeatherMeasurement, 0),
 		PowerData:      make([]hardware.PowerDrawDataPointUnixMillis, 0),
 	}
 	if includedCacheData {
@@ -376,9 +376,9 @@ func Export(
 		}
 
 		// Transform to the type that uses unix millis
-		weatherHistoryOut := make([]setupWeatherMeasurement, 0)
+		weatherHistoryOut := make([]SetupWeatherMeasurement, 0)
 		for _, measurement := range weatherHistory {
-			weatherHistoryOut = append(weatherHistoryOut, setupWeatherMeasurement{
+			weatherHistoryOut = append(weatherHistoryOut, SetupWeatherMeasurement{
 				Id:                 measurement.Id,
 				Time:               uint(measurement.Time.UnixMilli()),
 				WeatherTitle:       measurement.WeatherTitle,

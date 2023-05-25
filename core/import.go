@@ -1,45 +1,46 @@
-package config
+package core
 
 import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 
+	"github.com/smarthome-go/smarthome/core/config"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/user"
 )
 
-var setupPath = "./data/config/setup.json"
+var SetupPath = "./data/config/setup.json"
 
-// TODO: add some sort of web import / export later
 // Returns the setup struct, a bool that indicates that a setup file has been read and an error
-func readSetupFile() (SetupStruct, bool, error) {
-	log.Trace(fmt.Sprintf("Looking for setup file at `%s`", setupPath))
+func readSetupFile() (config.SetupStruct, bool, error) {
+	log.Trace(fmt.Sprintf("Looking for setup file at `%s`", SetupPath))
 	// Read file from `setupPath` on disk
-	content, err := os.ReadFile(setupPath)
+	content, err := os.ReadFile(SetupPath)
 	if err != nil {
-		return SetupStruct{}, false, nil
+		return config.SetupStruct{}, false, nil
 	}
 	// Move the file after a successful read
 	if err := os.WriteFile(
-		fmt.Sprintf("%s.old", setupPath),
+		fmt.Sprintf("%s.old", SetupPath),
 		content,
 		0755,
 	); err != nil {
-		return SetupStruct{}, false, err
+		return config.SetupStruct{}, false, err
 	}
-	if err := os.Remove(setupPath); err != nil {
-		return SetupStruct{}, false, err
+	if err := os.Remove(SetupPath); err != nil {
+		return config.SetupStruct{}, false, err
 	}
 	// Parse setup file to struct `Setup`
-	var setupTemp SetupStruct
+	var setupTemp config.SetupStruct
 	decoder := json.NewDecoder(bytes.NewReader(content))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&setupTemp); err != nil {
-		log.Error(fmt.Sprintf("Failed to parse setup file at `%s` into setup struct: %s", configPath, err.Error()))
-		return SetupStruct{}, false, err
+		log.Error(fmt.Sprintf("Failed to parse setup file at `%s` into setup struct: %s", SetupPath, err.Error()))
+		return config.SetupStruct{}, false, err
 	}
 	return setupTemp, true, nil
 }
@@ -57,7 +58,7 @@ func RunSetup() error {
 		return nil
 	}
 
-	log.Debug(fmt.Sprintf("Setup file was detected. Moved setup file to `%s.old`.", setupPath))
+	log.Debug(fmt.Sprintf("Setup file was detected. Moved setup file to `%s.old`.", SetupPath))
 	return runSetupStruct(setup)
 }
 
@@ -82,7 +83,7 @@ func abortSetup() error {
 	}
 	// Initialize database (fresh setup)
 	if err := database.Init(
-		config.Database,
+		config.GetConfig().Database,
 		"rescue",
 	); err != nil {
 		return err
@@ -91,13 +92,25 @@ func abortSetup() error {
 }
 
 func FactoryReset() error {
+	// Shutdown the core
+	serverConfig, err := getServerConfiguration()
+	if err != nil {
+		return err
+	}
+
+	// Shutdown the core
+	if err := Shutdown(serverConfig); err != nil {
+		log.Error("Setup failed, could not shutdown core: ", err.Error())
+		return err
+	}
+
 	// Delete database first
 	if err := database.DeleteTables(); err != nil {
 		return err
 	}
 	// Initialize database (fresh setup)
 	if err := database.Init(
-		GetConfig().Database,
+		config.GetConfig().Database,
 		"admin",
 	); err != nil {
 		return err
@@ -105,21 +118,45 @@ func FactoryReset() error {
 	return nil
 }
 
-func RunSetupStruct(setup SetupStruct) error {
+func getServerConfiguration() (database.ServerConfig, error) {
+	config, found, err := database.GetServerConfiguration()
+	if err != nil {
+		return database.ServerConfig{}, err
+	}
+
+	if !found {
+		return database.ServerConfig{}, errors.New("Server configuration was not found")
+	}
+	return config, nil
+}
+
+func RunSetupStruct(setup config.SetupStruct) error {
 	if err := FactoryReset(); err != nil {
 		return err
 	}
 	// Run the actual setup
 	if err := runSetupStruct(setup); err != nil {
 		if err2 := abortSetup(); err2 != nil {
-			log.Fatal(fmt.Sprintf("Aborting setup failed: could not add rescue user: %s", err2.Error()))
+			log.Error(fmt.Sprintf("Aborting setup failed: could not add rescue user: %s", err2.Error()))
 		}
 		return err
 	}
+
+	config, err := getServerConfiguration()
+	if err != nil {
+		return err
+	}
+
+	// Start the core again
+	if err := Init(config); err != nil {
+		log.Error("Setup failed, could not restart core: ", err.Error())
+		return err
+	}
+
 	return nil
 }
 
-func runSetupStruct(setup SetupStruct) error {
+func runSetupStruct(setup config.SetupStruct) error {
 	log.Info("Running configuration setup...")
 	if err := createSystemConfigInDatabase(setup.ServerConfiguration); err != nil {
 		log.Error("Aborting setup: could not update system configuration in database: ", err.Error())
@@ -141,12 +178,12 @@ func runSetupStruct(setup SetupStruct) error {
 		log.Error("Aborting setup: could not create cache data in database: ", err.Error())
 		return err
 	}
-	log.Info(fmt.Sprintf("Successfully ran setup using `%s`", setupPath))
+	log.Info("Successfully ran setup`")
 	return nil
 }
 
 // Takes the `users` slice and createas according database entries
-func createUsersInDatabase(users []setupUser) error {
+func createUsersInDatabase(users []config.SetupUser) error {
 	for _, usr := range users {
 		_, alreadyExists, err := database.GetUserByUsername(usr.Data.Username)
 		if err != nil {
@@ -325,7 +362,7 @@ func createUsersInDatabase(users []setupUser) error {
 }
 
 // Takes the specified `rooms` and creates according database entries
-func createRoomsInDatabase(rooms []setupRoom) error {
+func createRoomsInDatabase(rooms []config.SetupRoom) error {
 	for _, room := range rooms {
 		if err := database.CreateRoom(room.Data); err != nil {
 			log.Error("Could not create rooms from setup file: ", err.Error())
@@ -360,7 +397,7 @@ func createRoomsInDatabase(rooms []setupRoom) error {
 }
 
 // Takes the specified `hardwareNodes` and creates according database entries
-func createHardwareNodesInDatabase(nodes []setupHardwareNode) error {
+func createHardwareNodesInDatabase(nodes []config.SetupHardwareNode) error {
 	for _, node := range nodes {
 		if err := database.CreateHardwareNode(
 			database.HardwareNode{
@@ -392,7 +429,7 @@ func createSystemConfigInDatabase(systemConfig database.ServerConfig) error {
 	return nil
 }
 
-func createCacheDataInDatabase(cacheData setupCacheData) error {
+func createCacheDataInDatabase(cacheData config.SetupCacheData) error {
 	// TODO not currently supported
 	return nil
 }
