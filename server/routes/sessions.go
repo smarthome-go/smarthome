@@ -123,6 +123,8 @@ func userLoginHandler(w http.ResponseWriter, r *http.Request) {
 func logoutGetHandler(w http.ResponseWriter, r *http.Request) {
 	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
+		// No user is logged in
+		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
 
