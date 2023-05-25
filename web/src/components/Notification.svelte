@@ -1,7 +1,8 @@
 <script lang="ts">
     import IconButton from '@smui/icon-button'
-    import { createSnackbar,data } from '../global'
+    import { createSnackbar, data } from '../global'
     import Progress from './Progress.svelte'
+    import { marked } from 'marked'
 
     export let dummy = false
 
@@ -14,11 +15,7 @@
     let loading = false
     let deleted = false
     let container: HTMLDivElement
-    const priorityColors = [
-        'var(--clr-success)',
-        'var(--clr-warn)',
-        'var(--clr-error)',
-    ]
+    const priorityColors = ['var(--clr-success)', 'var(--clr-warn)', 'var(--clr-error)']
 
     $: if (deleted) {
         container.style.setProperty('--height', container.getBoundingClientRect().height + 'px')
@@ -39,15 +36,34 @@
             if (!res.success) throw Error()
             deleted = true
             setTimeout(() => {
-                $data.notifications = $data.notifications.filter(
-                    (n) => n.id !== id
-                )
+                $data.notifications = $data.notifications.filter(n => n.id !== id)
             }, 300)
         } catch {
             $createSnackbar('Could not delete notification')
         }
         loading = false
     }
+
+    const renderer = {
+        code(code: string, infostring: string, escaped: boolean) {
+            let outputCode = code
+                .replaceAll('\n', '<br/>')
+                .replaceAll(' ', '&nbsp;<wbr>')
+                .replaceAll('\t', '&nbsp;&nbsp;&nbsp;&nbsp;<wbr>')
+
+            return `<code class='md-code'>${outputCode}</code>`
+        },
+        codespan(code: string) {
+            let outputCode = code
+                .replaceAll(' ', '&nbsp;<wbr>')
+                .replaceAll('\t', '&nbsp;&nbsp;&nbsp;&nbsp;<wbr>')
+
+            return `<code class='md-codespan'>${outputCode}</code>`
+        },
+    }
+
+    marked.use({ renderer })
+    let html = marked.parse(description)
 </script>
 
 <div
@@ -65,14 +81,18 @@
     {:else}
         <div class="line" style:--clr-priority={priorityColors[priority - 1]} />
         <Progress class="spinner" bind:loading type="circular" />
-        <IconButton
-            class="delete material-icons"
-            title="Delete"
-            on:click={deleteSelf}>delete</IconButton
+        <IconButton class="delete material-icons" title="Delete" on:click={deleteSelf}
+            >delete</IconButton
         >
         <h6>{name}</h6>
-        <p>{description}</p>
-        <p class="date text-hint">{new Date(date - 2 * 60 * 60 * 1000 /* Subtract two hours off the time */).toLocaleString()}</p>
+        <p>
+            {@html html}
+        </p>
+        <p class="date text-hint">
+            {new Date(
+                date - 2 * 60 * 60 * 1000 /* Subtract two hours off the time */,
+            ).toLocaleString()}
+        </p>
     {/if}
 </div>
 
@@ -187,5 +207,23 @@
         &.visible {
             opacity: 1;
         }
+    }
+
+    // Markdown styles
+    :global .md-code,
+    :global .md-codespan {
+        background-color: var(--clr-height-2-1);
+        box-sizing: border-box;
+        border-radius: .25rem;
+    }
+
+    :global .md-codespan {
+        padding: .1rem .2rem;
+    }
+
+    :global .md-code {
+        padding: .2rem .5rem;
+        display: block;
+        width: 100%;
     }
 </style>
