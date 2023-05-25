@@ -11,6 +11,15 @@ import (
 	"github.com/smarthome-go/smarthome/core/homescript/automation"
 )
 
+func removeAllAutomations(t *testing.T) {
+	automations, err := database.GetAutomations()
+	assert.NoError(t, err)
+
+	for _, autom := range automations {
+		assert.NoError(t, RemoveAutomation(autom.Id))
+	}
+}
+
 // Creates mock data, including a room, switches and homescripts
 func createMockData() error {
 	if err := database.CreateRoom(database.RoomData{Id: "test_room"}); err != nil {
@@ -116,6 +125,7 @@ func TestAutomation(t *testing.T) {
 	now := time.Now()
 	then := now.Add(time.Minute)
 
+	removeAllAutomations(t)
 	TestInit(t)
 
 	err := database.InsertHmsStorageEntry("admin", "AUTOMATION_RAN", "false")
@@ -172,6 +182,7 @@ func TestModificationToDifferentScript(t *testing.T) {
 	now := time.Now()
 	then := now.Add(time.Minute)
 
+	removeAllAutomations(t)
 	TestInit(t)
 
 	err := database.InsertHmsStorageEntry("admin", "AUTOMATION_RAN", "false")
@@ -247,7 +258,9 @@ func TestModificationToAbort(t *testing.T) {
 	now := time.Now()
 	then := now.Add(time.Minute)
 
+	removeAllAutomations(t)
 	TestInit(t)
+
 	err := database.InsertHmsStorageEntry("admin", "AUTOMATION_RAN", "false")
 	assert.NoError(t, err)
 
@@ -326,7 +339,9 @@ func TestStartInactiveAutomation(t *testing.T) {
 	var minute uint = uint(then.Minute())
 	days := []uint8{0, 1, 2, 3, 4, 5, 6}
 
+	removeAllAutomations(t)
 	TestInit(t)
+
 	err := database.InsertHmsStorageEntry("admin", "AUTOMATION_RAN", "false")
 	assert.NoError(t, err)
 
@@ -368,6 +383,7 @@ func TestStartInactiveAutomation(t *testing.T) {
 
 // Tests if the different triggers `sunrise` and `sunset` will run at the correct time
 func SunRiseSet(t *testing.T) {
+	removeAllAutomations(t)
 	TestInit(t)
 
 	sunriseId, err := CreateNewAutomation(
@@ -446,7 +462,9 @@ func TestUserDisabled(t *testing.T) {
 	now := time.Now()
 	then := now.Add(time.Minute)
 
+	removeAllAutomations(t)
 	TestInit(t)
+
 	err := database.InsertHmsStorageEntry("admin", "AUTOMATION_RAN", "false")
 	assert.NoError(t, err)
 
@@ -504,7 +522,9 @@ func TestDisableOnce(t *testing.T) {
 	minute := uint(then.Minute())
 	days := []uint8{0, 1, 2, 3, 4, 5, 6}
 
+	removeAllAutomations(t)
 	TestInit(t)
+
 	err := database.InsertHmsStorageEntry("admin", "AUTOMATION_RAN", "false")
 	assert.NoError(t, err)
 
@@ -547,7 +567,7 @@ func TestDisableOnce(t *testing.T) {
 	assert.True(t, automationDb.DisableOnce)
 
 	invalid := false
-	for i := 0; i < 9; i++ {
+	for i := 0; i < 7; i++ {
 		time.Sleep(time.Second * 10)
 		storageMap, err := database.GetPersonalHomescriptStorage("admin")
 		if err != nil {
@@ -575,7 +595,7 @@ func TestDisableOnce(t *testing.T) {
 
 	// Check if the automation runs the second time
 	now = time.Now()
-	then = now.Add(time.Second * 90)
+	then = now.Add(time.Minute)
 	TestInit(t)
 
 	// Create a manual cron expression
@@ -596,7 +616,7 @@ func TestDisableOnce(t *testing.T) {
 	assert.NoError(t, err)
 
 	valid := false
-	for i := 0; i < 8; i++ {
+	for i := 0; i < 7; i++ {
 		time.Sleep(time.Second * 10)
 		storageMap, err := database.GetPersonalHomescriptStorage("admin")
 		if err != nil {

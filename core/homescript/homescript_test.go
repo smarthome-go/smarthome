@@ -20,7 +20,7 @@ import (
 
 func TestMain(m *testing.M) {
 	log := logrus.New()
-	log.Level = logrus.FatalLevel
+	log.Level = logrus.TraceLevel
 	InitLogger(log)
 	event.InitLogger(log)
 	user.InitLogger(log)

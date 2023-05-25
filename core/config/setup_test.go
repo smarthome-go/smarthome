@@ -15,9 +15,9 @@ func TestRunSetup(t *testing.T) {
 	var interval uint = 42
 
 	setup := SetupStruct{
-		Users: []setupUser{
+		Users: []SetupUser{
 			{
-				Data: setupUserData{
+				Data: SetupUserData{
 					Username:          "setup",
 					Forename:          "Set",
 					Surname:           "Up",
@@ -27,7 +27,7 @@ func TestRunSetup(t *testing.T) {
 					SchedulerEnabled:  true,
 					DarkTheme:         true,
 				},
-				Homescripts: []setupHomescript{
+				Homescripts: []SetupHomescript{
 					{
 						Data: database.HomescriptData{
 							Id:                  "setup_hms",
@@ -38,7 +38,7 @@ func TestRunSetup(t *testing.T) {
 							Code:                "print('Hello World!')",
 							MDIcon:              "code",
 						},
-						Arguments: []setupHomescriptArg{
+						Arguments: []SetupHomescriptArg{
 							{
 								ArgKey:    "a_key",
 								Prompt:    "Enter your value",
@@ -54,7 +54,7 @@ func TestRunSetup(t *testing.T) {
 								Display:   database.NumberHour,
 							},
 						},
-						Automations: []setupAutomation{
+						Automations: []SetupAutomation{
 							{
 								Name:                  "automation (cron)",
 								Description:           "An automation for testing the setup using cron",
@@ -81,7 +81,7 @@ func TestRunSetup(t *testing.T) {
 						},
 					},
 				},
-				Reminders: []setupReminder{
+				Reminders: []SetupReminder{
 					{
 						Name:              "Do something",
 						Description:       "This is an important task",
@@ -101,14 +101,14 @@ func TestRunSetup(t *testing.T) {
 				CameraPermissions: []string{"lvr_main_door"},
 			},
 		},
-		Rooms: []setupRoom{
+		Rooms: []SetupRoom{
 			{
 				Data: database.RoomData{
 					Id:          "living_room",
 					Name:        "Living Room",
 					Description: "This is the room where people live in",
 				},
-				Switches: []setupSwitch{
+				Switches: []SetupSwitch{
 					{
 						Id:      "lvr_big_lamp",
 						Name:    "Big Lamp",
@@ -116,7 +116,7 @@ func TestRunSetup(t *testing.T) {
 						Watts:   0,
 					},
 				},
-				Cameras: []setupCamera{
+				Cameras: []SetupCamera{
 					{
 						Id:   "lvr_main_door",
 						Name: "Living Room Main Door",
@@ -125,7 +125,7 @@ func TestRunSetup(t *testing.T) {
 				},
 			},
 		},
-		HardwareNodes: []setupHardwareNode{},
+		HardwareNodes: []SetupHardwareNode{},
 		ServerConfiguration: database.ServerConfig{
 			AutomationEnabled: false,
 			LockDownMode:      false,
