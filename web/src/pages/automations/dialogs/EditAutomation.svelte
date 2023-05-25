@@ -25,8 +25,6 @@
         'Saturday',
     ]
 
-    export let open = false
-
     // Event dispatcher
     const dispatch = createEventDispatcher()
 
@@ -37,12 +35,20 @@
         hasUpdatedPrevious = true
     }
 
+    $: if (open) {
+        updateInputData()
+    }
+
     /**
      * Data flow:
      *  - `data` is used for convenient binding from `Automation.svelte`
      *  - `inputData` is bound to the `Inputs` element
      *  - `inputDataBefore` preserves the previous state before any modification
      */
+
+    // Keeping track of dialog states
+    let deleteOpen = false
+    export let open = false
 
     // Bound to the `Inputs.svelte` component
     let inputData: editAutomation
@@ -57,7 +63,7 @@
     let intervalUnit = undefined
     let intervalUnitBefore = undefined
 
-    onMount(() => {
+    function updateInputData() {
         const timeData =
             data.trigger === 'cron' || data.trigger === 'on_sunrise' || data.trigger === 'on_sunset'
                 ? getTimeOfAutomation(data)
@@ -74,10 +80,9 @@
             trigger: data.trigger,
             disableOnce: data.disableOnce,
             triggerInterval: data.triggerInterval,
-            // TODO: something is missing here
         }
         inputData['id'] = data.id
-    })
+    }
 
     // Setting each field individually is required in order to prevent the assignment of references
     function applyCurrentState() {
@@ -134,15 +139,13 @@
             disableOnce: inputDataBefore.disableOnce,
             triggerInterval: inputDataBefore.triggerInterval,
         }
-        inputData['id'] = inputDataBefore["id"]
+        inputData['id'] = inputDataBefore['id']
         intervalUnit = intervalUnitBefore
     }
 
-    // Automation deletion
-    let deleteOpen = false
+    onMount(updateInputData)
 </script>
 
-<!-- TODO: fix before value undefined -->
 {#if inputData !== undefined}
     <Dialog bind:open fullscreen aria-labelledby="title" aria-describedby="content">
         <!-- Deletion confirmation dialog -->
