@@ -547,6 +547,8 @@ func TestDisableOnce(t *testing.T) {
 	}
 
 	// Create a manual cron expression
+	now = time.Now()
+	then = now.Add(time.Minute)
 	cronExpr, err := automation.GenerateCronExpression(uint8(then.Hour()), uint8(then.Minute()), []uint8{0, 1, 2, 3, 4, 5, 6})
 	assert.NoError(t, err)
 

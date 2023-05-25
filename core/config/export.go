@@ -124,7 +124,8 @@ type SetupUserData struct {
 
 type SetupCacheData struct {
 	WeatherHistory []SetupWeatherMeasurement               `json:"weatherHistory"`
-	PowerData      []hardware.PowerDrawDataPointUnixMillis `json:"powerData"`
+	PowerUsageData []hardware.PowerDrawDataPointUnixMillis `json:"powerUsageData"`
+	PowerStates    []database.PowerState                   `json:"powerStates"`
 }
 
 type SetupWeatherMeasurement struct {
@@ -366,7 +367,7 @@ func Export(
 	// Include cache data if desired
 	cacheData := SetupCacheData{
 		WeatherHistory: make([]SetupWeatherMeasurement, 0),
-		PowerData:      make([]hardware.PowerDrawDataPointUnixMillis, 0),
+		PowerUsageData: make([]hardware.PowerDrawDataPointUnixMillis, 0),
 	}
 	if includedCacheData {
 		// Weather history
@@ -390,12 +391,19 @@ func Export(
 		}
 		cacheData.WeatherHistory = weatherHistoryOut
 
-		// Power data
+		// Power usage data
 		powerData, err := hardware.GetPowerUsageRecordsUnixMillis(-1)
 		if err != nil {
 			return SetupStruct{}, err
 		}
-		cacheData.PowerData = powerData
+		cacheData.PowerUsageData = powerData
+
+		// Power state data
+		powerStates, err := database.GetPowerStates()
+		if err != nil {
+			return SetupStruct{}, err
+		}
+		cacheData.PowerStates = powerStates
 	}
 
 	return SetupStruct{

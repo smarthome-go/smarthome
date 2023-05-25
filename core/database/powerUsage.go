@@ -44,25 +44,21 @@ func createPowerUsageTable() error {
 }
 
 // Inserts a new data point into the power usage time record table
-func AddPowerUsagePoint(onData PowerDrawData, offData PowerDrawData) (uint, error) {
+func AddPowerUsagePoint(onData PowerDrawData, offData PowerDrawData, entryTime time.Time) (uint, error) {
 	query, err := db.Prepare(`
 	INSERT INTO
 	powerUsage(
 		Id,
 		Time,
-
 		OnSwitchCount,
 		OnWatts,
 		OnPercent,
-
 		OffSwitchCount,
 		OffWatts,
 		OffPercent
 	)
 	VALUES(
-		DEFAULT, DEFAULT,
-		?, ?, ?,
-		?, ?, ?
+		DEFAULT, ?, ?, ?, ?, ?, ?, ?
 	)
 	`)
 	if err != nil {
@@ -71,6 +67,7 @@ func AddPowerUsagePoint(onData PowerDrawData, offData PowerDrawData) (uint, erro
 	}
 	defer query.Close()
 	res, err := query.Exec(
+		entryTime,
 		// On data
 		onData.SwitchCount,
 		onData.Watts,

@@ -106,6 +106,7 @@ func SaveCurrentPowerUsage() error {
 	if _, err = database.AddPowerUsagePoint(
 		onData,
 		offData,
+		time.Now(),
 	); err != nil {
 		return err
 	}

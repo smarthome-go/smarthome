@@ -7,9 +7,12 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sync"
+	"time"
 
 	"github.com/smarthome-go/smarthome/core/config"
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/hardware"
 	"github.com/smarthome-go/smarthome/core/user"
 )
 
@@ -153,6 +156,10 @@ func RunSetupStruct(setup config.SetupStruct) error {
 		return err
 	}
 
+	// Remove redundant power data points
+	if err := hardware.SaveCurrentPowerUsage(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -430,6 +437,82 @@ func createSystemConfigInDatabase(systemConfig database.ServerConfig) error {
 }
 
 func createCacheDataInDatabase(cacheData config.SetupCacheData) error {
-	// TODO not currently supported
+	var wg sync.WaitGroup
+	error := struct {
+		err  error
+		lock sync.Mutex
+	}{
+		err:  nil,
+		lock: sync.Mutex{},
+	}
+
+	// Insert weather data
+	if len(cacheData.WeatherHistory) > 0 {
+		wg.Add(1)
+		go func() {
+			log.Trace("Importing weather data...")
+			defer func() { wg.Done() }()
+			for _, weatherEntry := range cacheData.WeatherHistory {
+				if _, err := database.AddWeatherDataRecord(
+					weatherEntry.WeatherTitle,
+					time.UnixMilli(int64(weatherEntry.Time)),
+					weatherEntry.WeatherDescription,
+					weatherEntry.Temperature,
+					weatherEntry.FeelsLike,
+					weatherEntry.Humidity,
+				); err != nil {
+					error.lock.Lock()
+					defer error.lock.Unlock()
+					error.err = err
+					return
+				}
+			}
+			log.Debug("Successfully imported weather data")
+		}()
+	}
+
+	// Insert power usage data
+	if len(cacheData.PowerUsageData) > 0 {
+		wg.Add(1)
+		go func() {
+			log.Trace("Importing power usage data...")
+			defer func() { wg.Done() }()
+			for _, pwr := range cacheData.PowerUsageData {
+				if _, err := database.AddPowerUsagePoint(
+					database.PowerDrawData{
+						SwitchCount: pwr.On.SwitchCount,
+						Watts:       pwr.On.Watts,
+						Percent:     pwr.On.Percent,
+					},
+					database.PowerDrawData{
+						SwitchCount: pwr.Off.SwitchCount,
+						Watts:       pwr.Off.Watts,
+						Percent:     pwr.Off.Percent,
+					},
+					time.UnixMilli(int64(pwr.Time)),
+				); err != nil {
+					error.lock.Lock()
+					defer error.lock.Unlock()
+					error.err = err
+					return
+				}
+			}
+			log.Debug("Successfully imported power data")
+		}()
+	}
+
+	// Insert power state data
+	if len(cacheData.PowerStates) > 0 {
+		log.Trace("Importing power state data...")
+		for _, state := range cacheData.PowerStates {
+			if _, err := database.SetPowerState(state.Switch, state.PowerOn); err != nil {
+				return err
+			}
+		}
+		log.Debug("Successfully imported power state data")
+	}
+
+	wg.Wait()
+
 	return nil
 }

@@ -100,6 +100,7 @@ func GetWeatherDataRecords(maxAgeMinutes int) ([]WeatherMeasurement, error) {
 
 func AddWeatherDataRecord(
 	weatherTitle string,
+	weatherTime time.Time,
 	weatherDescription string,
 	temperature float32,
 	feelsLike float32,
@@ -116,13 +117,14 @@ func AddWeatherDataRecord(
 		FeelsLike,
 		Humidity
 	)
-	VALUES(DEFAULT, DEFAULT, ?, ?, ?, ?, ?)
+	VALUES(DEFAULT, ?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		log.Error("Failed to add weather measurement: preparing query failed: ", err.Error())
 		return 0, err
 	}
 	res, err := query.Exec(
+		weatherTime,
 		weatherTitle,
 		weatherDescription,
 		temperature,

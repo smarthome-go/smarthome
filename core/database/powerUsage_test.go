@@ -24,7 +24,7 @@ func TestAddPowerUsagePoint(t *testing.T) {
 		Percent:     16.66,
 	}
 	// Insert a new record into the database
-	insertedId, err := AddPowerUsagePoint(onData, offData)
+	insertedId, err := AddPowerUsagePoint(onData, offData, time.Now())
 	assert.NoError(t, err)
 	// Search the records for the inserted id and assert data equality
 	records, err := GetPowerUsageRecords(1)
@@ -50,7 +50,7 @@ func TestFlushPowerUsagePoints(t *testing.T) {
 	}
 	t.Run("flush_all", func(t *testing.T) {
 		// Insert a new record into the database
-		insertedId, err := AddPowerUsagePoint(onData, offData)
+		insertedId, err := AddPowerUsagePoint(onData, offData, time.Now())
 		assert.NoError(t, err)
 		// Search the records for the inserted id
 		records, err := GetPowerUsageRecords(1)
@@ -87,7 +87,7 @@ func TestFlushPowerUsagePoints(t *testing.T) {
 	})
 	t.Run("flush_old", func(t *testing.T) {
 		// Insert another point into the tatabase
-		insertedId, err := AddPowerUsagePoint(onData, offData)
+		insertedId, err := AddPowerUsagePoint(onData, offData, time.Now())
 		assert.NoError(t, err)
 		// Must wait around 5 Seconds for the point's time to be considered old (safety measure to be sure)
 		time.Sleep(time.Second * 5)
