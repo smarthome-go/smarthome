@@ -301,6 +301,11 @@ var builtinModules = map[string]map[string]homescript.Value{
 										triggerCronExpression = valPtr(homescript.ValueString{Value: *automationItem.Data.TriggerCronExpression})
 									}
 
+									lastRun := valPtr(homescript.ValueNull{})
+									if automationItem.Data.LastRun != nil {
+										lastRun = valPtr(homescript.ValueNumber{Value: float64(automationItem.Data.LastRun.UnixMilli())})
+									}
+
 									output = append(output, valPtr(homescript.ValueObject{
 										DataType: "automation",
 										ObjFields: map[string]*homescript.Value{
@@ -314,7 +319,7 @@ var builtinModules = map[string]map[string]homescript.Value{
 											"homescript_id": valPtr(homescript.ValueString{Value: automationItem.Data.HomescriptId}),
 											"enabled":       valPtr(homescript.ValueBool{Value: automationItem.Data.Enabled}),
 											"disable_once":  valPtr(homescript.ValueBool{Value: automationItem.Data.DisableOnce}),
-											"last_run":      valPtr(homescript.ValueNumber{Value: float64(automationItem.Data.LastRun.UnixMilli())}),
+											"last_run":      lastRun,
 											"trigger": valPtr(homescript.ValueString{
 												Value: string(automationItem.Data.Trigger),
 											}),
