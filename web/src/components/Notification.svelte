@@ -214,16 +214,31 @@
     :global .md-codespan {
         background-color: var(--clr-height-2-1);
         box-sizing: border-box;
-        border-radius: .25rem;
+        border-radius: 0.25rem;
     }
 
     :global .md-codespan {
-        padding: .1rem .2rem;
+        padding: 0.1rem 0.2rem;
     }
 
     :global .md-code {
-        padding: .2rem .5rem;
+        padding: 0.2rem 0.5rem;
         display: block;
         width: 100%;
+    }
+
+    :global table,
+    :global td,
+    :global th {
+        border: 1px solid var(--clr-text-disabled);
+    }
+
+    :global td {
+        padding: 0.2rem 0.5rem;
+    }
+
+    :global table {
+        width: 100%;
+        border-collapse: collapse;
     }
 </style>
