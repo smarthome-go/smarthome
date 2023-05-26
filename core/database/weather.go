@@ -123,6 +123,7 @@ func AddWeatherDataRecord(
 		log.Error("Failed to add weather measurement: preparing query failed: ", err.Error())
 		return 0, err
 	}
+	defer query.Close()
 	res, err := query.Exec(
 		weatherTime,
 		weatherTitle,
