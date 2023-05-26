@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/smarthome-go/homescript/v2/homescript"
@@ -95,7 +96,7 @@ func AutomationRunnerFunc(id uint, context AutomationContext) {
 		if _, err := Notify(
 			job.Owner,
 			"Automation Skipped Once",
-			fmt.Sprintf("Automation '%s' was skipped once. It will run regularely the next time.", job.Data.Name),
+			fmt.Sprintf("Automation `%s` was skipped once. It will run regularely the next time.", job.Data.Name),
 			NotificationLevelInfo,
 			false,
 		); err != nil {
@@ -138,7 +139,7 @@ func AutomationRunnerFunc(id uint, context AutomationContext) {
 			if _, err := Notify(
 				job.Owner,
 				"Automation Failed",
-				fmt.Sprintf("Automation '%s' was not executed because the next time it should run could not be determined. This is caused by the automations trigger which is currently set to '%s'", job.Data.Name, job.Data.Trigger),
+				fmt.Sprintf("Automation `%s` was not executed because the next time it should run could not be determined. This is caused by the automations trigger which is currently set to `%s`", job.Data.Name, job.Data.Trigger),
 				NotificationLevelError,
 				false,
 			); err != nil {
@@ -160,7 +161,7 @@ func AutomationRunnerFunc(id uint, context AutomationContext) {
 		if _, err := Notify(
 			job.Owner,
 			"Automation Failed",
-			fmt.Sprintf("Automation '%s' was not executed because its referenced Homescript could not be found in the database due to an internal error, contact your administrator", job.Data.Name),
+			fmt.Sprintf("Automation `%s` was not executed because its referenced Homescript could not be found in the database due to an internal error, contact your administrator", job.Data.Name),
 			NotificationLevelError,
 			false,
 		); err != nil {
@@ -178,7 +179,7 @@ func AutomationRunnerFunc(id uint, context AutomationContext) {
 		if _, err := Notify(
 			job.Owner,
 			"Automation Failed",
-			fmt.Sprintf("Automation '%s' was not executed because its referenced Homescript could not be found in the database, contact your administrator", job.Data.Name),
+			fmt.Sprintf("Automation `%s` was not executed because its referenced Homescript could not be found in the database, contact your administrator", job.Data.Name),
 			NotificationLevelError,
 			false,
 		); err != nil {
@@ -249,7 +250,7 @@ func AutomationRunnerFunc(id uint, context AutomationContext) {
 		if _, err := Notify(
 			job.Owner,
 			"Automation Failed",
-			fmt.Sprintf("Automation '%s' failed during execution of Homescript '%s'. Error: %s", job.Data.Name, job.Data.HomescriptId, err.Error()),
+			fmt.Sprintf("Automation `%s` failed during execution of Homescript `%s`.\nError:\n```\n%s\n```", job.Data.Name, job.Data.HomescriptId, strings.ReplaceAll(err.Error(), "`", "\\`")),
 			NotificationLevelError,
 			false,
 		); err != nil {
@@ -264,10 +265,11 @@ func AutomationRunnerFunc(id uint, context AutomationContext) {
 			"Automation Failed",
 			fmt.Sprintf("Automation '%s' failed during execution of Homescript '%s'. Error: %s", job.Data.Name, job.Data.HomescriptId, res.Errors[0].Message),
 		)
+
 		if _, err := Notify(
 			job.Owner,
 			"Automation Failed",
-			fmt.Sprintf("Automation '%s' failed during execution of Homescript '%s'. Error: %s", job.Data.Name, job.Data.HomescriptId, res.Errors[0].Message),
+			fmt.Sprintf("Automation '**%s**' failed during execution of Homescript '**%s**'.\n```\n%s\n```", job.Data.Name, job.Data.HomescriptId, strings.ReplaceAll(res.Errors[0].Message, "`", "\\`")),
 			NotificationLevelError,
 			false,
 		); err != nil {
