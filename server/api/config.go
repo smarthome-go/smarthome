@@ -147,7 +147,7 @@ func ImportConfiguration(w http.ResponseWriter, r *http.Request) {
 	var request config.SetupStruct
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		Res(w, Response{Success: false, Message: "bad request", Error: err.Error()})
 		return
 	}
 	if err := core.RunSetupStruct(request); err != nil {
