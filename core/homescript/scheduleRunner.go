@@ -2,13 +2,16 @@ package homescript
 
 import (
 	"bytes"
+	"context"
 	"fmt"
+	"time"
 
-	"github.com/smarthome-go/homescript/v2/homescript"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/hardware"
 )
+
+const SCHEDULE_MAXIMUM_RUNTIME = time.Minute * 10
 
 // Executes a given scheduler
 // If the user's schedulers are currently disabled
@@ -70,24 +73,25 @@ func scheduleRunnerFunc(id uint) {
 	log.Debug(fmt.Sprintf("Schedule '%s' (%d) is executing...", job.Data.Name, id))
 	switch job.Data.TargetMode {
 	case database.ScheduleTargetModeCode:
-		res := HmsManager.Run(
+		ctx, cancel := context.WithTimeout(context.Background(), SCHEDULE_MAXIMUM_RUNTIME)
+
+		res, err := HmsManager.Run(
 			owner.Username,
-			fmt.Sprintf("%d.hms", id),
-			job.Data.HomescriptCode,
-			make(map[string]string, 0),
-			make([]string, 0),
-			InitiatorScheduler,
-			make(chan int),
-			&bytes.Buffer{},
 			nil,
-			make(map[string]homescript.Value),
+			job.Data.HomescriptCode,
+			InitiatorSchedule,
+			ctx,
+			cancel,
+			nil,
+			nil,
+			&bytes.Buffer{},
 		)
-		if len(res.Errors) > 0 {
-			log.Error("Executing schedule's Homescript failed: ", res.Errors[0].Message)
+		if err != nil {
+			log.Error("Executing schedule's Homescript failed: ", err.Error())
 			if _, err := Notify(
 				owner.Username,
 				"Schedule Failed",
-				fmt.Sprintf("Schedule '%s' failed due to Homescript error: %s", job.Data.Name, res.Errors[0].Message),
+				fmt.Sprintf("Schedule '%s' failed due to Homescript error: %s", job.Data.Name, err.Error()),
 				NotificationLevelError,
 				true,
 			); err != nil {
@@ -96,21 +100,40 @@ func scheduleRunnerFunc(id uint) {
 			}
 			event.Error(
 				"Schedule Failure",
-				fmt.Sprintf("Schedule '%d' failed. Error: %s", id, res.Errors[0].Message),
+				fmt.Sprintf("Schedule '%d' failed. Error: %s", id, err.Error()),
+			)
+			return
+		}
+		if !res.Success {
+			log.Error("Executing schedule's Homescript failed: ", res.Errors[0])
+			if _, err := Notify(
+				owner.Username,
+				"Schedule Failed",
+				fmt.Sprintf("Schedule '%s' failed due to Homescript error: %s", job.Data.Name, res.Errors[0]),
+				NotificationLevelError,
+				true,
+			); err != nil {
+				log.Error("Failed to notify user: ", err.Error())
+				return
+			}
+			event.Error(
+				"Schedule Failure",
+				fmt.Sprintf("Schedule '%d' failed. Error: %s", id, res.Errors[0]),
 			)
 			return
 		}
 	case database.ScheduleTargetModeHMS:
+		ctx, cancel := context.WithTimeout(context.Background(), SCHEDULE_MAXIMUM_RUNTIME)
+
 		res, err := HmsManager.RunById(
 			job.Data.HomescriptTargetId,
 			owner.Username,
-			make([]string, 0),
-			make(map[string]string, 0),
-			InitiatorScheduler,
-			make(chan int),
-			&bytes.Buffer{},
+			InitiatorSchedule,
+			ctx,
+			cancel,
 			nil,
-			make(map[string]homescript.Value),
+			nil,
+			&bytes.Buffer{},
 		)
 		if err != nil {
 			log.Error("Executing schedule's Homescript failed: ", err.Error())
@@ -130,12 +153,12 @@ func scheduleRunnerFunc(id uint) {
 			)
 			return
 		}
-		if len(res.Errors) > 0 {
-			log.Error("Executing schedule's Homescript failed: ", res.Errors[0].Message)
+		if !res.Success {
+			log.Error("Executing schedule's Homescript failed: ", res.Errors[0])
 			if _, err := Notify(
 				owner.Username,
 				"Schedule Failed",
-				fmt.Sprintf("Schedule '%s' failed due to Homescript execution error: %s", job.Data.Name, res.Errors[0].Message),
+				fmt.Sprintf("Schedule '%s' failed due to Homescript execution error: %s", job.Data.Name, res.Errors[0]),
 				NotificationLevelError,
 				true,
 			); err != nil {
@@ -144,7 +167,7 @@ func scheduleRunnerFunc(id uint) {
 			}
 			event.Error(
 				"Schedule Failure",
-				fmt.Sprintf("Schedule '%d' failed. Error: %s", id, res.Errors[0].Message),
+				fmt.Sprintf("Schedule '%d' failed. Error: %s", id, res.Errors[0]),
 			)
 			return
 		}

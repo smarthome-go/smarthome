@@ -50,7 +50,14 @@
                                 <span style:color="var(--clr-error)">Widget Crashed</span>
                                 <br />
                                 <code style="font-size: .9rem">
-                                    {res.errors[0].kind}: {res.errors[0].message}
+                                    {#if res.errors[0].syntaxError !== null}
+                                        SyntaxError: {res.errors[0].syntaxError.message}
+                                    {:else if res.errors[0].diagnosticError !== null}
+                                        SemanticError: {res.errors[0].diagnosticError.message}
+                                    {:else}
+                                        {res.errors[0].runtimeError.kind}: {res.errors[0]
+                                            .runtimeError.message}
+                                    {/if}
                                 </code>
                             {/if}
                         {/await}

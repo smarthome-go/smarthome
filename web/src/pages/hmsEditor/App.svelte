@@ -207,26 +207,32 @@
         currentExecutionCount++
         currentExecutionHandles++
         try {
-            if (currentData.data.code === '') output = 'Nothing to lint.'
-            else {
-                const currentExecResTemp = await lintHomescriptCode(
-                    currentData.data.code,
-                    [],
-                    currentData.data.id,
-                )
-                let diagnostics = currentExecResTemp.errors
-                // If Info diagnostics should be hidden, do it here
-                if (!showLintInfo) diagnostics = diagnostics.filter(d => d.kind !== 'Info')
-                currentExecRes = {
-                    code: currentData.data.code,
-                    modeRun: false,
-                    exitCode: currentExecResTemp.exitCode,
-                    errors: diagnostics,
-                    fileContents: currentExecResTemp.fileContents,
-                    success: currentExecResTemp.success,
-                }
-                output = currentExecResTemp.output
+            const currentExecResTemp = await lintHomescriptCode(
+                currentData.data.code,
+                [],
+                currentData.data.id,
+            )
+            let errs = currentExecResTemp.errors
+
+            // If hint and info diagnostics should be hidden, do it here
+            if (!showLintInfo)
+                errs = errs.filter(d => {
+                    if (d.diagnosticError !== null) {
+                        if (d.diagnosticError.kind <= 1) {
+                            return false
+                        }
+                    }
+                    return true
+                })
+
+            currentExecRes = {
+                code: currentData.data.code,
+                modeRun: false,
+                errors: errs,
+                fileContents: currentExecResTemp.fileContents,
+                success: currentExecResTemp.success,
             }
+            output = currentExecResTemp.output
         } catch (err) {
             $createSnackbar(`Failed to lint '${currentScript}': ${err}`)
         }
@@ -299,7 +305,6 @@
                     currentExecRes = {
                         code: currentData.data.code,
                         modeRun: true,
-                        exitCode: message.exitCode,
                         errors: message.errors,
                         fileContents: message.fileContents,
                         success: message.success,
@@ -372,9 +377,7 @@
                         id="header__left__errors"
                         class:error={!currentExecRes.modeRun && !currentExecRes.success}
                     >
-                        <i class="material-icons"
-                            >{currentExecRes.success ? 'done' : 'error'}</i
-                        >
+                        <i class="material-icons">{currentExecRes.success ? 'done' : 'error'}</i>
                         {currentExecRes.success ? 'working' : 'errors'}
                     </div>
                 {/if}
@@ -506,7 +509,8 @@
                 }
             }
 
-            &__save, &__errors {
+            &__save,
+            &__errors {
                 color: var(--clr-text-disabled);
                 display: flex;
                 align-items: center;
@@ -521,7 +525,8 @@
                     font-size: 1.25em;
                 }
 
-                &.unsaved, &.error {
+                &.unsaved,
+                &.error {
                     color: var(--clr-error);
                 }
             }

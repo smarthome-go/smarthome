@@ -9,11 +9,67 @@
     // Terminal output
     export let output: string
 
+    function replaceWithHTMLCharacterCodes(input: string): string {
+        return input
+            .replaceAll('\t', '&#09;')
+            .replaceAll(' ', '&nbsp;')
+            .replaceAll('\n', '&#10')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+    }
+
     function errToHtml(err: homescriptError, data: hmsResWrapper): string {
         let code = data.code
 
         if (data.fileContents[err.span.filename] !== undefined) {
             code = data.fileContents[err.span.filename]
+        }
+
+        let color = 'red'
+        let kind = 'error: unknown'
+        let message = 'error: unknown'
+        let notes = ''
+
+        if (err.syntaxError !== null) {
+            kind = 'SyntaxError'
+            message = err.syntaxError.message
+        } else if (err.diagnosticError !== null) {
+            message = err.diagnosticError.message
+            notes = err.diagnosticError.notes
+                .map(n => `<span class='cyan bold'>- note:</span> ${n}`)
+                .join('')
+
+            switch (err.diagnosticError.kind) {
+                case 0:
+                    kind = 'Hint'
+                    color = 'purple'
+                    break
+                case 1:
+                    kind = 'Info'
+                    color = 'cyan'
+                    break
+                case 2:
+                    kind = 'Warning'
+                    color = 'yellow'
+                    break
+                case 3:
+                    kind = 'Error'
+                    color = 'red'
+                    break
+            }
+        } else {
+            kind = err.runtimeError.kind
+            message = err.runtimeError.message
+        }
+
+        // if there is no useful span, do not try to include it
+        if (
+            err.span.start.line === 0 &&
+            err.span.start.column === 0 &&
+            err.span.end.line === 0 &&
+            err.span.end.column == 0
+        ) {
+            return `<span class="${color}">${kind}</span> in ${err.span.filename}<br>${message}<br>${notes}`
         }
 
         const lines = code.split('\n')
@@ -43,16 +99,8 @@
                 .replaceAll('\t', '    ')
                 .replaceAll(' ', '&nbsp;')}`
 
-        let color = 'red'
-        if (err.kind == 'Warning') {
-            color = 'yellow'
-        }
-        if (err.kind == 'Info') {
-            color = 'cyan'
-        }
-
         let rawMarker = '^'
-        if (err.kind === 'Warning' || err.kind === 'Info') {
+        if (color == 'yellow' || color === 'cyan' || color === 'purple') {
             rawMarker = '~'
         }
         if (err.span.start.line === err.span.end.line) {
@@ -66,21 +114,21 @@
         )}<span class="${color} bold">${rawMarker}</span>`
 
         return (
-            `<span class="${color} bold">${err.kind}</span><span class="bold">&nbsp;at&nbsp;${err.span.filename}:${err.span.start.line}:${err.span.start.column}</span>` +
-            `<br>${line1}<br>${line2}<br>${marker}${line3}<br><br><span class="${color} bold">${err.message
+            `<span class="${color} bold">${kind}</span><span class="bold">&nbsp;at&nbsp;${err.span.filename}:${err.span.start.line}:${err.span.start.column}</span>` +
+            `<br>${line1}<br>${line2}<br>${marker}${line3}<br><br><span class="${color} bold">${message
                 .replaceAll(' ', '&nbsp;')
-                .replaceAll('\n', '<br>')}</span>`
+                .replaceAll('\n', '<br>')}</span><br>${notes}`
         )
     }
 </script>
 
 <div class="terminal">
     {#if output.length > 0}
-        {@html output.replaceAll('\n', '<br>').replaceAll(' ', '&nbsp;')}
+        {@html replaceWithHTMLCharacterCodes(output)}
         <br />
     {/if}
     {#if data !== undefined}
-        {#if data.exitCode !== 0 && output.length > 0}
+        {#if !data.success}
             <br />
         {/if}
         {#each data.errors as err}
@@ -90,11 +138,15 @@
         {/each}
         <span class="text-disabled">
             {#if data.modeRun}
-                Homescript stopped with exit code
-                {data.exitCode}
+                {#if data.success}
+                    Homescript executed successfully
+                {:else}
+                    Homescript failed with interrupt
+                {/if}
+            {:else if data.success}
+                Analyzer detected no issues
             {:else}
-                Lint finished with exit code
-                {data.exitCode}
+                Analyzer detected issues
             {/if}
         </span>
     {:else}
@@ -123,7 +175,7 @@
         }
 
         .cyan {
-            color: #4cd1e0;
+            color: #4ad0df;
         }
 
         .gray {

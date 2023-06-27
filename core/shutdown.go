@@ -35,7 +35,11 @@ func waitForHomescripts(ch *chan struct{}) {
 			if idx > 0 {
 				hmsList += ", "
 			}
-			hmsList += "`" + hms.Executor.ScriptName + "`"
+			id := "<unknown>"
+			if hms.HmsId != nil {
+				id = *hms.HmsId
+			}
+			hmsList += "`" + id + "`"
 		}
 
 		log.Trace(fmt.Sprintf("Waiting for %d Homescripts [%s] to finish execution...", len(homescript.HmsManager.GetJobList()), hmsList))

@@ -100,6 +100,7 @@ export const oneDarkTheme = EditorView.theme({
 
 /// The highlighting style for code in the One Dark theme.
 export const oneDarkHighlightStyle = HighlightStyle.define([
+    { tag: t.namespace, color: yellow },
     { tag: t.keyword, color: purple },
     { tag: t.className, color: yellow },
     { tag: [t.variableName, t.operator], color: fg },

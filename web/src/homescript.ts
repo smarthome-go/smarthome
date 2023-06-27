@@ -47,19 +47,33 @@ export interface homescriptResponseWrapper {
 }
 
 export interface homescriptResponse {
-    success: boolean
     id: string
-    exitCode: number
-    message: string
+    success: boolean
     output: string
     fileContents: {}
     errors: homescriptError[]
 }
 
 export interface homescriptError {
+    syntaxError: syntaxError
+    diagnosticError: diagnosticError
+    runtimeError: runtimeError
+    span: span
+}
+
+export interface syntaxError {
+    message: string
+}
+
+export interface diagnosticError {
+    kind: number
+    message: string
+    notes: string[]
+}
+
+export interface runtimeError {
     kind: string
     message: string
-    span: span
 }
 
 export interface span {

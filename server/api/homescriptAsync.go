@@ -2,6 +2,7 @@ package api
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,8 +11,6 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	hmsRuntime "github.com/smarthome-go/homescript/v2/homescript"
-	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/server/middleware"
 )
@@ -29,9 +28,9 @@ type HMSMessageTXOut struct {
 }
 type HMSMessageTXRes struct {
 	Kind         HMSMessageKindTX      `json:"kind"`
-	Exitcode     int                   `json:"exitCode"`
 	Errors       []homescript.HmsError `json:"errors"`
 	FileContents map[string]string     `json:"fileContents"`
+	Success      bool                  `json:"success"`
 }
 type HMSMessageKindTX string
 
@@ -123,21 +122,19 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Start running the code
-	res := make(chan homescript.HmsExecRes)
-	idChan := make(chan uint64)
+	res := make(chan homescript.HmsRes)
+	ctx, cancel := context.WithCancel(context.Background())
 
-	go func(writer io.Writer, results *chan homescript.HmsExecRes, id *chan uint64) {
-
+	go func(writer io.Writer, results *chan homescript.HmsRes, ctx context.Context, cancel context.CancelFunc) {
 		res, err := homescript.HmsManager.RunById(
-			request.Payload, // The payload is the script-id in this case
+			request.Payload,
 			username,
-			make([]string, 0),
-			args,
 			homescript.InitiatorAPI,
-			make(chan int),
-			writer,
-			id,
-			make(map[string]hmsRuntime.Value),
+			ctx,
+			cancel,
+			nil,
+			args,
+			outWriter,
 		)
 		if err != nil {
 			wsMutex.Lock()
@@ -154,9 +151,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 		outWriter.Close()
 
 		*results <- res
-	}(outWriter, &res, &idChan)
-
-	id := <-idChan
+	}(outWriter, &res, ctx, cancel)
 
 	go func() {
 		// Check if the script should be killed
@@ -189,10 +184,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 		}
 		// Kill the Homescript
 		log.Trace("Killing script via Websocket")
-		if !homescript.HmsManager.Kill(id, homescript.HmsSigtermCanceled) {
-			// Either the id is invalid or the script is not running anymore
-			return
-		}
+		cancel()
 		log.Trace("Killed script via Websocket")
 	}()
 
@@ -232,27 +224,11 @@ outer:
 				return
 			}
 
-			fileContents := make(map[string]string)
-			for _, errItem := range res.Errors {
-				if fileContents[errItem.Span.Filename] == "" {
-					script, _, err := database.GetUserHomescriptById(errItem.Span.Filename, username)
-					if err != nil {
-						if err := ws.WriteJSON(HMSMessageTXErr{
-							Kind:    MessageKindErr,
-							Message: fmt.Sprintf("cannot get homescript for error location: %s", err.Error()),
-						}); err != nil {
-							return
-						}
-					}
-					fileContents[errItem.Span.Filename] = script.Data.Code
-				}
-			}
-
 			if err := ws.WriteJSON(HMSMessageTXRes{
 				Kind:         MessageKindResults,
-				Exitcode:     res.ExitCode,
 				Errors:       res.Errors,
-				FileContents: fileContents,
+				FileContents: res.FileContents,
+				Success:      res.Success,
 			}); err != nil {
 				return
 			}

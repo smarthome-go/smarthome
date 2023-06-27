@@ -2,13 +2,12 @@ package homescript
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/smarthome-go/homescript/v2/homescript"
-	hmsErrors "github.com/smarthome-go/homescript/v2/homescript/errors"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
 )
@@ -28,7 +27,7 @@ type NotificationContext struct {
 // Is called when the scheduler executes the given automation
 // The AutomationRunnerFunc automatically tries to fetch the required configuration from the provided id
 // Error handling is accomplished by logging to the internal event system and notifying the user about their automations failure
-func AutomationRunnerFunc(id uint, context AutomationContext) {
+func AutomationRunnerFunc(id uint, automationCtx AutomationContext) {
 	job, jobFound, err := database.GetAutomationById(id)
 	if err != nil {
 		log.Error(fmt.Sprintf("Automation with id: '%d' could not be executed: database failure: %s", id, err.Error()))
@@ -197,48 +196,53 @@ func AutomationRunnerFunc(id uint, context AutomationContext) {
 		initiator = InitiatorAutomation
 	}
 
-	idChan := make(chan uint64)
-	if context.MaximumHMSRuntime != nil {
-		// Kill this automation in the event that it takes too long to execute
-		go func() {
-			id := <-idChan
-			time.Sleep(*context.MaximumHMSRuntime)
-			if !HmsManager.Kill(id, HmsSigtermRuntimeExceeded) {
-				log.Fatal(fmt.Sprintf("Could not kill HMS boot job with id %d", id))
-			}
-		}()
-	} else {
-		go func() {
-			<-idChan
-		}()
+	// idChan := make(chan uint64)
+	// if automationCtx.MaximumHMSRuntime != nil {
+	// 	// Kill this automation in the event that it takes too long to execute
+	// 	go func() {
+	// 		id := <-idChan
+	// 		time.Sleep(*automationCtx.MaximumHMSRuntime)
+	// 		if !HmsManager.Kill(id, fmt.Errorf("Maximum automation HMS runtime of %v exceeded", *context.MaximumHMSRuntime)) {
+	// 			log.Fatal(fmt.Sprintf("Could not kill HMS boot job with id %d", id))
+	// 		}
+	// 	}()
+	// } else {
+	// 	go func() {
+	// 		<-idChan
+	// 	}()
+	// }
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	if automationCtx.MaximumHMSRuntime != nil {
+		ctx, cancel = context.WithTimeout(context.Background(), *automationCtx.MaximumHMSRuntime)
 	}
 
-	// Use context information for scope injections
-	scopeInjections := make(map[string]homescript.Value)
-
-	if context.NotificationContext != nil {
-		scopeInjections["context"] = homescript.ValueBuiltinVariable{
-			Callback: func(executor homescript.Executor, span hmsErrors.Span) (homescript.Value, *hmsErrors.Error) {
-				return homescript.ValueObject{IsDynamic: true, IsProtected: true, ObjFields: map[string]*homescript.Value{
-					"id":          valPtr(homescript.ValueNumber{Value: float64(context.NotificationContext.Id)}),
-					"title":       valPtr(homescript.ValueString{Value: context.NotificationContext.Title}),
-					"description": valPtr(homescript.ValueString{Value: context.NotificationContext.Description}),
-					"level":       valPtr(homescript.ValueNumber{Value: float64(context.NotificationContext.Level)}),
-				}}, nil
-			},
-		}
-	}
+	// Use context information for scope injections // TODO: do this properly, not like this!
+	// scopeInjections := make(map[string]homescript.Value)
+	//
+	// if context.NotificationContext != nil {
+	// 	scopeInjections["context"] = homescript.ValueBuiltinVariable{
+	// 		Callback: func(executor homescript.Executor, span hmsErrors.Span) (homescript.Value, *hmsErrors.Error) {
+	// 			return homescript.ValueObject{IsDynamic: true, IsProtected: true, ObjFields: map[string]*homescript.Value{
+	// 				"id":          valPtr(homescript.ValueNumber{Value: float64(context.NotificationContext.Id)}),
+	// 				"title":       valPtr(homescript.ValueString{Value: context.NotificationContext.Title}),
+	// 				"description": valPtr(homescript.ValueString{Value: context.NotificationContext.Description}),
+	// 				"level":       valPtr(homescript.ValueNumber{Value: float64(context.NotificationContext.Level)}),
+	// 			}}, nil
+	// 		},
+	// 	}
+	// }
 
 	res, err := HmsManager.RunById(
 		job.Data.HomescriptId,
 		job.Owner,
-		make([]string, 0),
-		make(map[string]string, 0),
 		initiator,
-		make(chan int),
+		ctx,
+		cancel,
+		nil,
+		nil,
 		&bytes.Buffer{},
-		&idChan,
-		scopeInjections,
 	)
 
 	if err != nil {
@@ -259,17 +263,17 @@ func AutomationRunnerFunc(id uint, context AutomationContext) {
 		}
 		return
 	}
-	if len(res.Errors) > 0 {
+	if !res.Success {
 		log.Warn(fmt.Sprintf("Automation '%s' failed during the execution of Homescript: '%s', which terminated abnormally", job.Data.Name, job.Data.HomescriptId))
 		event.Error(
 			"Automation Failed",
-			fmt.Sprintf("Automation '%s' failed during execution of Homescript '%s'. Error: %s", job.Data.Name, job.Data.HomescriptId, res.Errors[0].Message),
+			fmt.Sprintf("Automation '%s' failed during execution of Homescript '%s'. Error: %s", job.Data.Name, job.Data.HomescriptId, res.Errors[0]),
 		)
 
 		if _, err := Notify(
 			job.Owner,
 			"Automation Failed",
-			fmt.Sprintf("Automation '**%s**' failed during execution of Homescript '**%s**'.\n```\n%s\n```", job.Data.Name, job.Data.HomescriptId, strings.ReplaceAll(res.Errors[0].Message, "`", "\\`")),
+			fmt.Sprintf("Automation '**%s**' failed during execution of Homescript '**%s**'.\n```\n%s\n```", job.Data.Name, job.Data.HomescriptId, strings.ReplaceAll(res.Errors[0].String(), "`", "\\`")),
 			NotificationLevelError,
 			false,
 		); err != nil {
@@ -280,6 +284,6 @@ func AutomationRunnerFunc(id uint, context AutomationContext) {
 	}
 	event.Debug(
 		"Automation Executed Successfully",
-		fmt.Sprintf("Automation `%s` (%d) of user '%s' has executed successfully. HMS-Exit code: %d", job.Data.Name, id, job.Owner, res.ExitCode),
+		fmt.Sprintf("Automation `%s` (%d) of user '%s' has executed successfully.", job.Data.Name, id, job.Owner),
 	)
 }

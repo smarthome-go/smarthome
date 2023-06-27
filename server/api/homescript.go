@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -11,16 +12,13 @@ import (
 
 	"github.com/gorilla/mux"
 
-	hmsRuntime "github.com/smarthome-go/homescript/v2/homescript"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/server/middleware"
 )
 
 type HomescriptResponse struct {
-	Id           string                `json:"id"`
 	Success      bool                  `json:"success"`
-	Exitcode     int                   `json:"exitCode"`
 	Output       string                `json:"output"`
 	FileContents map[string]string     `json:"fileContents"`
 	Errors       []homescript.HmsError `json:"errors"`
@@ -102,44 +100,27 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		initiator = homescript.InitiatorWidget
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	// Run the Homescript
 	var outputBuffer bytes.Buffer
-	res := homescript.HmsManager.Run(
+	res, err := homescript.HmsManager.Run(
 		username,
-		request.Id,
+		&request.Id,
 		hmsData.Data.Code,
-		args,
-		make([]string, 0),
 		initiator,
-		make(chan int),
-		&outputBuffer,
+		ctx,
+		cancel,
 		nil,
-		make(map[string]hmsRuntime.Value),
+		args,
+		&outputBuffer,
 	)
-	output := outputBuffer.String()
-
-	fileContents := make(map[string]string)
-	for _, errItem := range res.Errors {
-		if fileContents[errItem.Span.Filename] == "" {
-			script, found, err := database.GetUserHomescriptById(errItem.Span.Filename, username)
-			if err != nil {
-				w.WriteHeader(http.StatusServiceUnavailable)
-				Res(w, Response{Success: false, Message: fmt.Sprintf("could not retrieve error source Homescript (%s) from database", errItem.Span.Filename), Error: "database failure"})
-				return
-			}
-			if found {
-				fileContents[errItem.Span.Filename] = script.Data.Code
-			}
-		}
-	}
 
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
-			Success:      res.ExitCode == 0,
-			Id:           request.Id,
-			Output:       output,
-			Exitcode:     res.ExitCode,
-			FileContents: fileContents,
+			Success:      res.Success,
+			Output:       outputBuffer.String(),
+			FileContents: res.FileContents,
 			Errors:       res.Errors,
 		}); err != nil {
 		log.Error(err.Error())
@@ -179,46 +160,23 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Lint the Homescript
-	diagnostics := homescript.HmsManager.Analyze(
+	_, res, err := homescript.HmsManager.Analyze(
+		username,
 		request.Id,
 		hmsData.Data.Code,
-		make([]string, 0),
-		homescript.InitiatorAPI,
-		username,
-		make([]string, 0),
-		request.Id,
-		make(map[string]hmsRuntime.Value),
 	)
-	isSuccess := true
 
-	for _, diagnostic := range diagnostics {
-		if diagnostic.Kind != "Warning" && diagnostic.Kind != "Info" {
-			isSuccess = false
-			break
-		}
-	}
-
-	fileContents := make(map[string]string)
-	for _, errItem := range diagnostics {
-		if fileContents[errItem.Span.Filename] == "" {
-			script, found, err := database.GetUserHomescriptById(errItem.Span.Filename, username)
-			if err != nil {
-				w.WriteHeader(http.StatusServiceUnavailable)
-				Res(w, Response{Success: false, Message: "could not retrieve error source Homescript from database", Error: "database failure"})
-				return
-			}
-			if found {
-				fileContents[errItem.Span.Filename] = script.Data.Code
-			}
-		}
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		Res(w, Response{Success: false, Message: "Could not analyze Homescript", Error: "internal failure"})
+		return
 	}
 
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
-			Success:      isSuccess,
-			Id:           request.Id,
-			FileContents: fileContents,
-			Errors:       diagnostics,
+			Success:      res.Success,
+			FileContents: res.FileContents,
+			Errors:       res.Errors,
 		}); err != nil {
 		log.Error(err.Error())
 		Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
@@ -247,47 +205,32 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		args[arg.Key] = arg.Value
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	// Run the Homescript
 	var outputBuffer bytes.Buffer
-	res := homescript.HmsManager.Run(
+	res, err := homescript.HmsManager.Run(
 		username,
-		"live",
-		request.Code,
-		make(map[string]string),
-		make([]string, 0),
-		homescript.InitiatorAPI,
-		make(chan int),
-		&outputBuffer,
 		nil,
-		make(map[string]hmsRuntime.Value),
+		request.Code,
+		homescript.InitiatorAPI,
+		ctx,
+		cancel,
+		nil,
+		args,
+		&outputBuffer,
 	)
 	output := outputBuffer.String()
 	// if len(output) > 100_000 {
 	// 	output = "Output too large"
-	// }
-
-	fileContents := make(map[string]string)
-	for _, errItem := range res.Errors {
-		if fileContents[errItem.Span.Filename] == "" {
-			script, found, err := database.GetUserHomescriptById(errItem.Span.Filename, username)
-			if err != nil {
-				w.WriteHeader(http.StatusServiceUnavailable)
-				Res(w, Response{Success: false, Message: "could not retrieve error source Homescript from database", Error: "database failure"})
-				return
-			}
-			if found {
-				fileContents[errItem.Span.Filename] = script.Data.Code
-			}
-		}
-	}
+	// } TODO: maybe re-introduce such a limit
 
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
-			Success:      res.ExitCode == 0,
+			Success:      res.Success,
 			Output:       output,
-			Exitcode:     res.ExitCode,
 			Errors:       res.Errors,
-			FileContents: fileContents,
+			FileContents: res.FileContents,
 		}); err != nil {
 		log.Error(err.Error())
 		Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
@@ -314,45 +257,25 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 	for _, arg := range request.Args {
 		args[arg.Key] = arg.Value
 	}
+
 	// Lint the Homescript
-	diagnostics := homescript.HmsManager.Analyze(
+	_, res, err := homescript.HmsManager.Analyze(
+		username,
 		request.ModuleName,
 		request.Code,
-		make([]string, 0),
-		homescript.InitiatorAPI,
-		username,
-		make([]string, 0),
-		request.ModuleName,
-		make(map[string]hmsRuntime.Value),
 	)
-	isSuccess := true
-	for _, diagnostic := range diagnostics {
-		if diagnostic.Kind != "Warning" && diagnostic.Kind != "Info" {
-			isSuccess = false
-			break
-		}
-	}
 
-	fileContents := make(map[string]string)
-	for _, errItem := range diagnostics {
-		if fileContents[errItem.Span.Filename] == "" {
-			script, found, err := database.GetUserHomescriptById(errItem.Span.Filename, username)
-			if err != nil {
-				w.WriteHeader(http.StatusServiceUnavailable)
-				Res(w, Response{Success: false, Message: "could not retrieve error source Homescript from database", Error: "database failure"})
-				return
-			}
-			if found {
-				fileContents[errItem.Span.Filename] = script.Data.Code
-			}
-		}
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to lint Homescript string", Error: "internal server error"})
+		return
 	}
 
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
-			Success:      isSuccess,
-			Errors:       diagnostics,
-			FileContents: fileContents,
+			Success:      res.Success,
+			Errors:       res.Errors,
+			FileContents: res.FileContents,
 		}); err != nil {
 		log.Error(err.Error())
 		Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
@@ -626,12 +549,12 @@ func KillJobById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	job, found := homescript.HmsManager.GetJobById(uint64(idInt))
-	if !found || job.Executor.Username != username {
+	if !found || job.Username != username {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		Res(w, Response{Success: false, Message: "failed to kill Homescript job", Error: "invalid id provided"})
 		return
 	}
-	if homescript.HmsManager.Kill(uint64(idInt), homescript.HmsSigtermCanceled) {
+	if homescript.HmsManager.Kill(uint64(idInt)) {
 		Res(w, Response{Success: true, Message: "successfully killed Homescript job"})
 	} else {
 		w.WriteHeader(http.StatusServiceUnavailable)
@@ -665,7 +588,7 @@ func KillAllHMSIdJobs(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "could not kill all Homescript jobs", Error: "invalid Homescript id specified"})
 		return
 	}
-	count, _ := homescript.HmsManager.KillAllId(id, homescript.HmsSigtermCanceled)
+	count, _ := homescript.HmsManager.KillAllId(id)
 	Res(w, Response{Success: true, Message: fmt.Sprintf("successfully killed %d Homescript job(s)", count)})
 }
 

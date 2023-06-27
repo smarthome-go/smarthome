@@ -2,10 +2,12 @@
     import { EditorView, basicSetup } from 'codemirror'
     import { EditorState } from '@codemirror/state'
     import { indentWithTab } from '@codemirror/commands'
-    import { keymap } from '@codemirror/view'
+    import { keymap, drawSelection, dropCursor } from '@codemirror/view'
     import { linter, lintGutter, type Diagnostic } from '@codemirror/lint'
     import { createEventDispatcher, onMount } from 'svelte'
-    import { Homescript } from 'codemirror-lang-homescript'
+    import { indentUnit } from '@codemirror/language'
+    //import { Homescript } from 'codemirror-lang-homescript'
+    import {Homescript} from './index'
     import { oneDark } from './oneDark'
     import { lintHomescriptCode } from '../../../homescript'
     import { createSnackbar } from '../../../global'
@@ -55,6 +57,8 @@
     // eslint-disable-next-line no-undef
     let timer: NodeJS.Timeout
 
+    // TODO: check filenames + syntaax erorrs in imported module
+
     const HMSlinter = linter(async () => {
         let diagnostics: Diagnostic[] = []
 
@@ -62,11 +66,37 @@
             const result = await lintHomescriptCode(code, [], moduleName)
             diagnostics = result.errors.map(e => {
                 let severity = 'error'
-                if (e.kind === 'Warning') {
-                    severity = 'warning'
-                } else if (e.kind === 'Info') {
-                    severity = 'info'
+                let message = 'error: unknown'
+                let kind = 'error: unknown'
+
+                // everything except diagnostics will be a standard `error`
+                if (e.syntaxError !== null) {
+                    message = e.syntaxError.message
+                    kind = 'SyntaxError'
+                } else if (e.diagnosticError !== null) {
+                    message = e.diagnosticError.message
+                    switch (e.diagnosticError.kind) {
+                        case 0:
+                            kind = 'Hint'
+                            severity = 'hint'
+                            break
+                        case 1:
+                            kind = 'Info'
+                            severity = 'info'
+                            break
+                        case 2:
+                            kind = 'Warning'
+                            severity = 'warning'
+                            break
+                        case 3:
+                            kind = 'Error'
+                            severity = 'error'
+                            break
+                    }
+                } else if (e.runtimeError) {
+                    throw 'A runtime error cannot occur during analysis'
                 }
+
                 return Object.create({
                     from: e.span.start.index,
                     to:
@@ -74,7 +104,7 @@
                             ? e.span.end.index + 1
                             : e.span.end.index,
                     severity: severity,
-                    message: `${e.kind}: ${e.message}`,
+                    message: `${kind}: ${message}`,
                     source: 'Homescript analyzer',
                 })
             })
@@ -94,10 +124,14 @@
                     dispatch('update', code)
                 }
             })
+
         editor = new EditorView({
             state: EditorState.create({
                 extensions: [
                     basicSetup,
+                    drawSelection(),
+                    dropCursor(),
+                    indentUnit.of('    '),
                     keymap.of([indentWithTab]),
                     Homescript(),
                     oneDark,
@@ -124,15 +158,6 @@
             }),
             parent: editorDiv,
         })
-
-        /*
-        editor.dispatch(
-            editor.state.changeByRange((range) => ({
-                changes: [{ from: range.from, insert: "switch('id', on)" }],
-                range: EditorSelection.range(range.from + 2, range.to + 2),
-            }))
-        );
-         */
     })
 </script>
 
@@ -152,6 +177,14 @@
         }
         .cm-lint-marker-error {
             content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" height="48" width="48"><path fill="rgb(207, 102, 121)" d="M24 35.1q1.2 0 1.95-.7t.75-1.9q0-1.25-.725-2.025Q25.25 29.7 24 29.7q-1.2 0-1.95.775T21.3 32.5q0 1.2.725 1.9t1.975.7Zm-2.1-8.7h4.55V13H21.9ZM24 45q-4.35 0-8.175-1.65Q12 41.7 9.15 38.85 6.3 36 4.65 32.2 3 28.4 3 24q0-4.4 1.65-8.225Q6.3 11.95 9.15 9.1 12 6.25 15.8 4.6q3.8-1.65 8.2-1.65 4.4 0 8.225 1.65Q36.05 6.25 38.9 9.1q2.85 2.85 4.5 6.675Q45.05 19.6 45.05 24q0 4.4-1.65 8.2-1.65 3.8-4.5 6.65-2.85 2.85-6.675 4.5Q28.4 45 24 45Z"/></svg>') !important;
+        }
+
+        .ͼ4 .cm-line ::selection {
+            background-color: rgba(255, 255, 255, 0.2) !important;
+        }
+
+        .cm-selectionMatch {
+            background-color: rgba(100, 255, 0, 0.05) !important;
         }
     }
 </style>
