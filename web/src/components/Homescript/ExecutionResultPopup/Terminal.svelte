@@ -178,6 +178,10 @@
             color: #4ad0df;
         }
 
+        .purple {
+            color: #d472fe;
+        }
+
         .gray {
             color: #7d7e82;
         }

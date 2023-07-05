@@ -78,7 +78,7 @@
                     switch (e.diagnosticError.kind) {
                         case 0:
                             kind = 'Hint'
-                            severity = 'hint'
+                            severity = 'info'
                             break
                         case 1:
                             kind = 'Info'
