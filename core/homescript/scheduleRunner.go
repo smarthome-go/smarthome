@@ -85,6 +85,7 @@ func scheduleRunnerFunc(id uint) {
 			nil,
 			nil,
 			&bytes.Buffer{},
+			nil,
 		)
 		if err != nil {
 			log.Error("Executing schedule's Homescript failed: ", err.Error())
@@ -134,6 +135,7 @@ func scheduleRunnerFunc(id uint) {
 			nil,
 			nil,
 			&bytes.Buffer{},
+			nil,
 		)
 		if err != nil {
 			log.Error("Executing schedule's Homescript failed: ", err.Error())

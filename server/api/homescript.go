@@ -114,6 +114,7 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		nil,
 		args,
 		&outputBuffer,
+		nil,
 	)
 
 	if err := json.NewEncoder(w).Encode(
@@ -219,6 +220,7 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		nil,
 		args,
 		&outputBuffer,
+		nil,
 	)
 	output := outputBuffer.String()
 	// if len(output) > 100_000 {

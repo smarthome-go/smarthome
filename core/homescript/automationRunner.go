@@ -196,43 +196,11 @@ func AutomationRunnerFunc(id uint, automationCtx AutomationContext) {
 		initiator = InitiatorAutomation
 	}
 
-	// idChan := make(chan uint64)
-	// if automationCtx.MaximumHMSRuntime != nil {
-	// 	// Kill this automation in the event that it takes too long to execute
-	// 	go func() {
-	// 		id := <-idChan
-	// 		time.Sleep(*automationCtx.MaximumHMSRuntime)
-	// 		if !HmsManager.Kill(id, fmt.Errorf("Maximum automation HMS runtime of %v exceeded", *context.MaximumHMSRuntime)) {
-	// 			log.Fatal(fmt.Sprintf("Could not kill HMS boot job with id %d", id))
-	// 		}
-	// 	}()
-	// } else {
-	// 	go func() {
-	// 		<-idChan
-	// 	}()
-	// }
-
+	// NOTE: If the automation context includes a maximum runtime, kill the script if it exceeds this timeout
 	ctx, cancel := context.WithCancel(context.Background())
-
 	if automationCtx.MaximumHMSRuntime != nil {
 		ctx, cancel = context.WithTimeout(context.Background(), *automationCtx.MaximumHMSRuntime)
 	}
-
-	// Use context information for scope injections // TODO: do this properly, not like this!
-	// scopeInjections := make(map[string]homescript.Value)
-	//
-	// if context.NotificationContext != nil {
-	// 	scopeInjections["context"] = homescript.ValueBuiltinVariable{
-	// 		Callback: func(executor homescript.Executor, span hmsErrors.Span) (homescript.Value, *hmsErrors.Error) {
-	// 			return homescript.ValueObject{IsDynamic: true, IsProtected: true, ObjFields: map[string]*homescript.Value{
-	// 				"id":          valPtr(homescript.ValueNumber{Value: float64(context.NotificationContext.Id)}),
-	// 				"title":       valPtr(homescript.ValueString{Value: context.NotificationContext.Title}),
-	// 				"description": valPtr(homescript.ValueString{Value: context.NotificationContext.Description}),
-	// 				"level":       valPtr(homescript.ValueNumber{Value: float64(context.NotificationContext.Level)}),
-	// 			}}, nil
-	// 		},
-	// 	}
-	// }
 
 	res, err := HmsManager.RunById(
 		job.Data.HomescriptId,
@@ -243,6 +211,7 @@ func AutomationRunnerFunc(id uint, automationCtx AutomationContext) {
 		nil,
 		nil,
 		&bytes.Buffer{},
+		&automationCtx,
 	)
 
 	if err != nil {

@@ -14,21 +14,31 @@ import (
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/hardware"
+	"github.com/smarthome-go/smarthome/core/homescript/automation"
 )
 
 type interpreterExecutor struct {
-	username string
-	ioWriter io.Writer
+	username          string
+	ioWriter          io.Writer
+	args              map[string]string
+	automationContext *AutomationContext
 }
 
 func (self interpreterExecutor) GetUser() string {
 	return self.username
 }
 
-func newInterpreterExecutor(username string, writer io.Writer) interpreterExecutor {
+func newInterpreterExecutor(
+	username string,
+	writer io.Writer,
+	args map[string]string,
+	automationContext *AutomationContext,
+) interpreterExecutor {
 	return interpreterExecutor{
-		username: username,
-		ioWriter: writer,
+		username:          username,
+		ioWriter:          writer,
+		args:              args,
+		automationContext: automationContext,
 	}
 }
 
@@ -41,8 +51,65 @@ func parseDate(year, month, day int) (time.Time, bool) {
 // if it exists, returns a value which is part of the host builtin modules
 func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport string) (val value.Value, found bool) {
 	switch moduleName {
+	case "location":
+		switch toImport {
+		case "sun_times":
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+
+				serverConfig, found, err := database.GetServerConfiguration()
+				if err != nil || !found {
+					return nil, value.NewRuntimeErr(
+						"Could not retrieve system configuration",
+						value.HostErrorKind,
+						span,
+					)
+				}
+
+				rise, set := automation.CalculateSunRiseSet(serverConfig.Latitude, serverConfig.Longitude)
+
+				return value.NewValueObject(map[string]*value.Value{
+					"sunrise": value.NewValueObject(map[string]*value.Value{
+						"hour":   value.NewValueInt(int64(rise.Hour)),
+						"minute": value.NewValueInt(int64(rise.Minute)),
+					}),
+					"sunset": value.NewValueObject(map[string]*value.Value{
+						"hour":   value.NewValueInt(int64(set.Hour)),
+						"minute": value.NewValueInt(int64(set.Minute)),
+					}),
+				}), nil
+			}), true
+		}
 	case "switch":
 		switch toImport {
+		case "get_switch":
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+				sw, found, err := database.GetSwitchById(args[0].(value.ValueString).Inner)
+				if err != nil {
+					return nil, value.NewRuntimeErr(
+						err.Error(),
+						value.HostErrorKind,
+						span,
+					)
+				}
+
+				if !found {
+					return value.NewNoneOption(), nil
+				}
+
+				targetNode := value.NewNoneOption()
+
+				if sw.TargetNode != nil {
+					targetNode = value.NewValueOption(value.NewValueString(*sw.TargetNode))
+				}
+
+				return value.NewValueOption(value.NewValueObject(map[string]*value.Value{
+					"name":        value.NewValueString(sw.Name),
+					"room_id":     value.NewValueString(sw.RoomId),
+					"power":       value.NewValueBool(sw.PowerOn),
+					"watts":       value.NewValueInt(int64(sw.Watts)),
+					"target_node": targetNode,
+				})), nil
+			}), true
 		case "power":
 			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
 				switchId := args[0].(value.ValueString).Inner
@@ -141,17 +208,11 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 					)
 				}
 
-				valTemp := ""
 				if val != nil {
-					valTemp = *val
+					return value.NewValueOption(value.NewValueString(*val)), nil
 				}
 
-				fields := map[string]*value.Value{
-					"value": value.NewValueString(valTemp),
-					"found": value.NewValueBool(val != nil),
-				}
-
-				return value.NewValueObject(fields), nil
+				return value.NewNoneOption(), nil
 			}), true
 		}
 	case "reminder":
@@ -481,8 +542,34 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				}),
 			}), true
 		}
+	case "context":
+		switch toImport {
+		case "args":
+			return *value.NewValueAnyObject(self.getArgs()), true
+		case "notification":
+			if self.automationContext == nil || self.automationContext.NotificationContext == nil {
+				return nil, false
+			}
+
+			return *value.NewValueObject(map[string]*value.Value{
+				"id":          value.NewValueInt(int64(self.automationContext.NotificationContext.Id)),
+				"title":       value.NewValueString(self.automationContext.NotificationContext.Title),
+				"description": value.NewValueString(self.automationContext.NotificationContext.Description),
+				"level":       value.NewValueInt(int64(self.automationContext.NotificationContext.Level)),
+			}), true
+		}
 	}
 	return nil, false
+}
+
+func (self interpreterExecutor) getArgs() map[string]*value.Value {
+	result := make(map[string]*value.Value)
+
+	for key, val := range self.args {
+		result[key] = value.NewValueString(val)
+	}
+
+	return result
 }
 
 // returns the Homescript code of the requested module

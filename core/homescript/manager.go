@@ -242,6 +242,7 @@ func (m *Manager) Run(
 	idChan *chan uint64,
 	args map[string]string,
 	outputWriter io.Writer,
+	automationContext *AutomationContext,
 ) (HmsRes, error) {
 	// TODO: handle arguments
 
@@ -271,7 +272,12 @@ func (m *Manager) Run(
 		CALL_STACK_LIMIT_SIZE,
 		modules,
 		internalFilename,
-		newInterpreterExecutor(username, outputWriter),
+		newInterpreterExecutor(
+			username,
+			outputWriter,
+			args,
+			automationContext,
+		),
 		interpreterScopeAdditions(),
 		&cancelCtx,
 	); i != nil {
@@ -324,6 +330,7 @@ func (m *Manager) RunById(
 	idChan *chan uint64,
 	args map[string]string,
 	outputWriter io.Writer,
+	automationContext *AutomationContext,
 ) (HmsRes, error) {
 	script, found, err := database.GetUserHomescriptById(hmsId, username)
 	if err != nil {
@@ -343,6 +350,7 @@ func (m *Manager) RunById(
 		idChan,
 		args,
 		outputWriter,
+		automationContext,
 	)
 }
 

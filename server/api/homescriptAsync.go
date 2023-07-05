@@ -135,6 +135,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 			nil,
 			args,
 			outWriter,
+			nil,
 		)
 		if err != nil {
 			wsMutex.Lock()

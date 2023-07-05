@@ -22,8 +22,48 @@ func newAnalyzerHost(username string) analyzerHost {
 
 func (self analyzerHost) GetBuiltinImport(moduleName string, valueName string, span errors.Span) (valueType ast.Type, moduleFound bool, valueFound bool) {
 	switch moduleName {
+	case "location":
+		switch valueName {
+		case "sun_times":
+			timeObjType := func(span errors.Span) ast.Type {
+				return ast.NewObjectType([]ast.ObjectTypeField{
+					ast.NewObjectTypeField(pAst.NewSpannedIdent("hour", span), ast.NewIntType(span), span),
+					ast.NewObjectTypeField(pAst.NewSpannedIdent("minute", span), ast.NewIntType(span), span),
+				}, span)
+			}
+
+			return ast.NewFunctionType(
+				ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)),
+				span,
+				ast.NewObjectType([]ast.ObjectTypeField{
+					ast.NewObjectTypeField(pAst.NewSpannedIdent("sunrise", span), timeObjType(span), span),
+					ast.NewObjectTypeField(pAst.NewSpannedIdent("sunset", span), timeObjType(span), span),
+				}, span),
+				span,
+			), true, true
+		}
+		return nil, true, false
 	case "switch":
 		switch valueName {
+		case "get_switch":
+			return ast.NewFunctionType(
+				ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("id", span), ast.NewStringType(span)),
+				}),
+				span,
+				ast.NewOptionType(
+					ast.NewObjectType(
+						[]ast.ObjectTypeField{
+							ast.NewObjectTypeField(pAst.NewSpannedIdent("name", span), ast.NewStringType(span), span),
+							ast.NewObjectTypeField(pAst.NewSpannedIdent("room_id", span), ast.NewStringType(span), span),
+							ast.NewObjectTypeField(pAst.NewSpannedIdent("power", span), ast.NewBoolType(span), span),
+							ast.NewObjectTypeField(pAst.NewSpannedIdent("watts", span), ast.NewIntType(span), span),
+							ast.NewObjectTypeField(pAst.NewSpannedIdent("target_node", span), ast.NewOptionType(ast.NewStringType(span), span), span),
+						},
+						span),
+					span),
+				span,
+			), true, true
 		case "power":
 			return ast.NewFunctionType(
 				ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
@@ -85,11 +125,7 @@ func (self analyzerHost) GetBuiltinImport(moduleName string, valueName string, s
 				},
 			),
 				span,
-				ast.NewObjectType([]ast.ObjectTypeField{
-					ast.NewObjectTypeField(pAst.NewSpannedIdent("value", span), ast.NewStringType(span), span),
-					ast.NewObjectTypeField(pAst.NewSpannedIdent("found", span), ast.NewBoolType(span), span),
-				},
-					span),
+				ast.NewOptionType(ast.NewStringType(span), span),
 				span,
 			), true, true
 		default:
@@ -231,6 +267,19 @@ func (self analyzerHost) GetBuiltinImport(moduleName string, valueName string, s
 		default:
 			return nil, true, false
 		}
+	case "context":
+		switch valueName {
+		case "args":
+			return ast.NewAnyObjectType(span), true, true
+		case "notification":
+			return ast.NewObjectType([]ast.ObjectTypeField{
+				ast.NewObjectTypeField(pAst.NewSpannedIdent("id", span), ast.NewIntType(span), span),
+				ast.NewObjectTypeField(pAst.NewSpannedIdent("title", span), ast.NewStringType(span), span),
+				ast.NewObjectTypeField(pAst.NewSpannedIdent("description", span), ast.NewStringType(span), span),
+				ast.NewObjectTypeField(pAst.NewSpannedIdent("level", span), ast.NewIntType(span), span),
+			}, span), true, true
+		}
+		return nil, true, false
 	}
 	return nil, false, false
 }
