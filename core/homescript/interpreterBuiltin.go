@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-ping/ping"
+	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	"github.com/smarthome-go/homescript/v3/homescript/interpreter/value"
 	"github.com/smarthome-go/smarthome/core/database"
@@ -22,6 +23,7 @@ type interpreterExecutor struct {
 	ioWriter          io.Writer
 	args              map[string]string
 	automationContext *AutomationContext
+	cancelCtxFunc     context.CancelFunc
 }
 
 func (self interpreterExecutor) GetUser() string {
@@ -33,12 +35,14 @@ func newInterpreterExecutor(
 	writer io.Writer,
 	args map[string]string,
 	automationContext *AutomationContext,
+	cancelCtxFunc context.CancelFunc,
 ) interpreterExecutor {
 	return interpreterExecutor{
 		username:          username,
 		ioWriter:          writer,
 		args:              args,
 		automationContext: automationContext,
+		cancelCtxFunc:     cancelCtxFunc,
 	}
 }
 
@@ -51,6 +55,74 @@ func parseDate(year, month, day int) (time.Time, bool) {
 // if it exists, returns a value which is part of the host builtin modules
 func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport string) (val value.Value, found bool) {
 	switch moduleName {
+	case "hms":
+		switch toImport {
+		case "exec":
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+				hmsId := args[0].(value.ValueString).Inner
+				argOpt := args[1].(value.ValueOption)
+
+				arguments := make(map[string]string)
+
+				if argOpt.IsSome() {
+					argFields := (*argOpt.Inner).(value.ValueAnyObject).FieldsInternal
+					for key, value := range argFields {
+						disp, i := (*value).Display()
+						if i != nil {
+							return nil, i
+						}
+						arguments[key] = disp
+					}
+				}
+
+				res, err := HmsManager.RunById(
+					hmsId,
+					self.username,
+					InitiatorExec,
+					*cancelCtx,
+					self.cancelCtxFunc,
+					nil,
+					arguments,
+					self.ioWriter,
+					nil,
+				)
+
+				if err != nil {
+					return nil, value.NewRuntimeErr(
+						err.Error(),
+						value.HostErrorKind,
+						span,
+					)
+				}
+
+				if !res.Success {
+					message := ""
+
+					for _, err := range res.Errors {
+						if err.SyntaxError != nil {
+							message = err.SyntaxError.Message
+							break
+						}
+						if err.DiagnosticError != nil && err.DiagnosticError.Level == diagnostic.DiagnosticLevelError {
+							message = err.DiagnosticError.Message
+							break
+						}
+						if err.RuntimeInterrupt != nil {
+							message = err.RuntimeInterrupt.Message
+							break
+						}
+					}
+
+					return nil, value.NewThrowInterrupt(
+						span,
+						message,
+					)
+				}
+
+				return value.NewValueNull(), nil
+			}), true
+		}
+		return nil, false
 	case "location":
 		switch toImport {
 		case "sun_times":

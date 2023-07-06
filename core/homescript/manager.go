@@ -277,6 +277,7 @@ func (m *Manager) Run(
 			outputWriter,
 			args,
 			automationContext,
+			cancelCtxFunc,
 		),
 		interpreterScopeAdditions(),
 		&cancelCtx,

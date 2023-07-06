@@ -22,6 +22,20 @@ func newAnalyzerHost(username string) analyzerHost {
 
 func (self analyzerHost) GetBuiltinImport(moduleName string, valueName string, span errors.Span) (valueType ast.Type, moduleFound bool, valueFound bool) {
 	switch moduleName {
+	case "hms":
+		switch valueName {
+		case "exec":
+			return ast.NewFunctionType(
+				ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("script_id", span), ast.NewStringType(span)),
+					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("arguments", span), ast.NewOptionType(ast.NewAnyObjectType(span), span)),
+				}),
+				span,
+				ast.NewNullType(span),
+				span,
+			), true, true
+		}
+		return nil, true, false
 	case "location":
 		switch valueName {
 		case "sun_times":
