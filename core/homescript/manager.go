@@ -284,33 +284,63 @@ func (m *Manager) Run(
 	); i != nil {
 		span := errors.Span{}
 
-		switch (*i).Kind() {
+		i := *i
+
+		errors := make([]HmsError, 0)
+
+		addErr := false
+		isErr := true
+
+		switch i.Kind() {
+		case value.ExitInterruptKind: // ignore this
+			exitI := i.(value.ExitInterrupt)
+			if exitI.Code != 0 {
+				errors = append(errors, HmsError{
+					RuntimeInterrupt: &HmsRuntimeInterrupt{
+						Kind:    "Exit",
+						Message: fmt.Sprintf("Terminated using exit-code: %d", exitI.Code),
+					},
+					Span: exitI.Span,
+				})
+			} else {
+				isErr = false
+			}
+			addErr = true
 		case value.TerminateInterruptKind:
-			termI := (*i).(value.TerminationInterrupt)
+			termI := i.(value.TerminationInterrupt)
 			span = termI.Span
 		case value.RuntimeErrorInterruptKind:
-			runtimeI := (*i).(value.RuntimeErr)
+			runtimeI := i.(value.RuntimeErr)
 			span = runtimeI.Span
 		default:
-			panic("Another fatal interrupt was added without updating this code")
+			panic(fmt.Sprintf("Another fatal interrupt was added without updating this code: %s", i.Kind()))
 		}
 
-		errors := []HmsError{{
-			RuntimeInterrupt: &HmsRuntimeInterrupt{
-				Kind:    (*i).Kind().String(),
-				Message: (*i).Message(),
-			},
-			Span: span,
-		}}
-		fileContents, err := resolveFileContentsOfErrors(username, internalFilename, code, errors)
-		if err != nil {
-			return HmsRes{}, err
+		fileContents := make(map[string]string)
+
+		if !addErr {
+			errors = append(errors, HmsError{
+				RuntimeInterrupt: &HmsRuntimeInterrupt{
+					Kind:    i.Kind().String(),
+					Message: i.Message(),
+				},
+				Span: span,
+			})
 		}
 
-		log.Debug(fmt.Sprintf("Homescript '%s' of user '%s' failed: %s", internalFilename, username, errors[0]))
+		if isErr {
+			fileContentsTemp, err := resolveFileContentsOfErrors(username, internalFilename, code, errors)
+			if err != nil {
+				return HmsRes{}, err
+			}
+
+			fileContents = fileContentsTemp
+
+			log.Debug(fmt.Sprintf("Homescript '%s' of user '%s' failed: %s", internalFilename, username, errors[0]))
+		}
 
 		return HmsRes{
-			Success:      false,
+			Success:      isErr,
 			Errors:       errors,
 			FileContents: fileContents,
 		}, nil

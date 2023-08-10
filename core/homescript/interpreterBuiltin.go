@@ -835,7 +835,8 @@ func interpreterScopeAdditions() map[string]value.Value {
 	// TODO: fill this
 	return map[string]value.Value{
 		"exit": *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
-			return nil, value.NewExitInterrupt(args[0].(value.ValueInt).Inner)
+			code := args[0].(value.ValueInt).Inner
+			return nil, value.NewExitInterrupt(code, span)
 		}),
 		"fmt": *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
 			displays := make([]any, 0)
