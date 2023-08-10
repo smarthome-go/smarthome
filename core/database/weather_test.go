@@ -15,7 +15,7 @@ func TestWeatherData(t *testing.T) {
 	// Add a dummy weather record
 	id, err := AddWeatherDataRecord(
 		"cloudy",
-		time.Now(),
+		time.Now().Local(),
 		"some clouds",
 		42.1,
 		3.1415926,

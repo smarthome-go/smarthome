@@ -453,9 +453,10 @@ func createCacheDataInDatabase(cacheData config.SetupCacheData) error {
 			log.Trace("Importing weather data...")
 			defer func() { wg.Done() }()
 			for _, weatherEntry := range cacheData.WeatherHistory {
+				timestamp := time.UnixMilli(int64(weatherEntry.Time)).Local()
 				if _, err := database.AddWeatherDataRecord(
 					weatherEntry.WeatherTitle,
-					time.UnixMilli(int64(weatherEntry.Time)),
+					&timestamp,
 					weatherEntry.WeatherDescription,
 					weatherEntry.Temperature,
 					weatherEntry.FeelsLike,

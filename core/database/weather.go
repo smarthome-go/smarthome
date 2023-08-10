@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
 )
 
@@ -46,7 +47,7 @@ func GetWeatherDataRecords(maxAgeMinutes int) ([]WeatherMeasurement, error) {
 		Temperature,
 		FeelsLike,
 		Humidity
-	From weather
+	FROM weather
 	`
 
 	if maxAgeMinutes >= 0 {
@@ -100,13 +101,18 @@ func GetWeatherDataRecords(maxAgeMinutes int) ([]WeatherMeasurement, error) {
 
 func AddWeatherDataRecord(
 	weatherTitle string,
-	weatherTime time.Time,
+	weatherTime *time.Time,
 	weatherDescription string,
 	temperature float32,
 	feelsLike float32,
 	humidity uint8,
 ) (uint64, error) {
-	query, err := db.Prepare(`
+	defaultOrQuestionMark := "DEFAULT"
+	if weatherTime != nil {
+		defaultOrQuestionMark = "?"
+	}
+
+	query, err := db.Prepare(fmt.Sprintf(`
 	INSERT INTO
 	weather(
 		Id,
@@ -117,21 +123,35 @@ func AddWeatherDataRecord(
 		FeelsLike,
 		Humidity
 	)
-	VALUES(DEFAULT, ?, ?, ?, ?, ?, ?)
-	`)
+	VALUES(DEFAULT, %s, ?, ?, ?, ?, ?)
+	`, defaultOrQuestionMark))
 	if err != nil {
 		log.Error("Failed to add weather measurement: preparing query failed: ", err.Error())
 		return 0, err
 	}
 	defer query.Close()
-	res, err := query.Exec(
-		weatherTime,
-		weatherTitle,
-		weatherDescription,
-		temperature,
-		feelsLike,
-		humidity,
-	)
+
+	var res sql.Result
+
+	if weatherTime != nil {
+		res, err = query.Exec(
+			weatherTime,
+			weatherTitle,
+			weatherDescription,
+			temperature,
+			feelsLike,
+			humidity,
+		)
+	} else {
+		res, err = query.Exec(
+			weatherTitle,
+			weatherDescription,
+			temperature,
+			feelsLike,
+			humidity,
+		)
+	}
+
 	if err != nil {
 		log.Error("Failed to add weather measurement: executing query failed: ", err.Error())
 		return 0, err

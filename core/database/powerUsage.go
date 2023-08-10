@@ -44,7 +44,7 @@ func createPowerUsageTable() error {
 }
 
 // Inserts a new data point into the power usage time record table
-func AddPowerUsagePoint(onData PowerDrawData, offData PowerDrawData, entryTime time.Time) (uint, error) {
+func AddPowerUsagePoint(onData PowerDrawData, offData PowerDrawData, entryTime time.Time) (uint64, error) {
 	query, err := db.Prepare(`
 	INSERT INTO
 	powerUsage(
@@ -86,7 +86,7 @@ func AddPowerUsagePoint(onData PowerDrawData, offData PowerDrawData, entryTime t
 		log.Error("Failed to add power usage point: obtaining id failed: ", err.Error())
 		return 0, err
 	}
-	return uint(newId), nil
+	return uint64(newId), nil
 }
 
 // Returns records from the power usage records

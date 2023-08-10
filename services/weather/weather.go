@@ -97,7 +97,7 @@ func GetCurrentWeather() (WeatherMeasurement, error) {
 	// Insert the new record into the database
 	id, err := database.AddWeatherDataRecord(
 		newLabel,
-		time.Now(),
+		nil,
 		newDescription,
 		float32(freshData.Main.Temp),
 		float32(freshData.Main.FeelsLike),
