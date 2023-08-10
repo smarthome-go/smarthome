@@ -8,7 +8,7 @@ import (
 
 // For an API-friendly version of this struct, visit the hardware module
 type PowerDataPoint struct {
-	Id   uint
+	Id   uint64
 	Time time.Time
 	On   PowerDrawData
 	Off  PowerDrawData
@@ -195,7 +195,7 @@ func FlushPowerUsageRecords(olderThanHours uint) (uint, error) {
 }
 
 // Deletes a power usage data point given its id
-func DeletePowerUsagePointById(id uint) error {
+func DeletePowerUsagePointById(id uint64) error {
 	query, err := db.Prepare(`
 	DELETE FROM powerUsage
 	WHERE Id=?

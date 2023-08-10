@@ -14,21 +14,21 @@ import (
 // Just like the equivalent in the database module
 // except the time is represented using Unix-millis
 type PowerDrawDataPointUnixMillis struct {
-	Id   uint                   `json:"id"`
-	Time uint                   `json:"time"` // Is represented as Unix-millis
+	Id   uint64                 `json:"id"`
+	Time uint64                 `json:"time"` // Is represented as Unix-millis
 	On   database.PowerDrawData `json:"on"`
 	Off  database.PowerDrawData `json:"off"`
 }
 
 // Takes a slice of power data points as an input and outputs it whilst filtering the data for semantic and visual imperfections, such as redundant measurements
-func filterPowerData(input []database.PowerDataPoint) (newData []database.PowerDataPoint, iDsToBeDeleted []uint) {
+func filterPowerData(input []database.PowerDataPoint) (newData []database.PowerDataPoint, iDsToBeDeleted []uint64) {
 	// Step 1: filter out redundant measurements
 	// Calculate the length once (for performance)
 	dataPoints := len(input)
 	// Contains the final, filtered data
 	newData = make([]database.PowerDataPoint, 0)
 	// Specifies which ids can be safely deleted from the data set (the filtered out data)
-	iDsToBeDeleted = make([]uint, 0)
+	iDsToBeDeleted = make([]uint64, 0)
 	// Filter out the data
 	for pointIndex, point := range input {
 		// Check if one lookback and one lookahead is possible
@@ -151,7 +151,7 @@ func GetPowerUsageRecordsUnixMillis(maxAgeHours int) ([]PowerDrawDataPointUnixMi
 	for _, record := range dbData {
 		returnValue = append(returnValue, PowerDrawDataPointUnixMillis{
 			Id:   record.Id,
-			Time: uint(record.Time.UnixMilli()),
+			Time: uint64(record.Time.UnixMilli()),
 			On:   record.On,
 			Off:  record.Off,
 		})

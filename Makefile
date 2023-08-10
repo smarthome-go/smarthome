@@ -110,12 +110,21 @@ build: setup web all linux clean
 # Mostly copies precompiled dependencies to the docker cache directory
 # compiles the Go backend to an AMD64 binary and copies the
 # pre generated web output to a docker cache directory
-docker-prepare: web
-	CGO_ENABLED=0 GOOS=linux go build -v -installsuffix cgo -ldflags '-s -w' -o smarthome
+docker-prepare: web build
+
 	mkdir -p docker/container/cache/web
 	cp -r resources docker/container/cache/
 	cp -r web/dist docker/container/cache/web/
-	cp smarthome docker/container/cache/
+
+	$(call build,linux,amd64, -ldflags '-s -w -extldflags "-fno-PIC -static"' -buildmode pie -tags 'osusergo netgo static_build')
+	cp smarthome docker/container/smarthome_amd64
+
+	$(call build,linux,arm,)
+	cp smarthome docker/container/smarthome_arm
+
+	$(call build,linux,arm64,)
+	cp smarthome docker/container/smarthome_arm64
+
 	$(info "docker-prepare: build context has been written to ./docker/cache")
 
 # Is used after `release` in order to publish the built
@@ -128,7 +137,11 @@ docker-push:
 # Builds the Docker image using the pre compiled
 # and setup build cache
 docker: cleanall web docker-prepare
-	cd docker/container && docker build . -t mikmuellerdev/smarthome:$(version) -t mikmuellerdev/smarthome:latest --network=host
+	docker build docker/container \
+		-t mikmuellerdev/smarthome:$(version) \
+		-t mikmuellerdev/smarthome:latest --network=host
+
+		# docker buildx build  -t mikmuellerdev/smarthome:version-arm -t docker-registry.box/smarthome-go:latest-arm --network=host -f Dockerfile.arm --platform=linux/arm64 .
 
 # Similar to `docker`, just for users who require `sudo` in order
 # to interact with the Docker daemon

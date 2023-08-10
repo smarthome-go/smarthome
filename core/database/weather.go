@@ -6,7 +6,7 @@ import (
 )
 
 type WeatherMeasurement struct {
-	Id                 uint      `json:"id"`
+	Id                 uint64    `json:"id"`
 	Time               time.Time `json:"time"`
 	WeatherTitle       string    `json:"weatherTitle"`
 	WeatherDescription string    `json:"weatherDescription"`
@@ -105,7 +105,7 @@ func AddWeatherDataRecord(
 	temperature float32,
 	feelsLike float32,
 	humidity uint8,
-) (uint, error) {
+) (uint64, error) {
 	query, err := db.Prepare(`
 	INSERT INTO
 	weather(
@@ -141,7 +141,7 @@ func AddWeatherDataRecord(
 		log.Error("Failed to add weather measurement: retrieving newly inserted id failed: ", err.Error())
 		return 0, err
 	}
-	return uint(newId), nil
+	return uint64(newId), nil
 }
 
 func PurgeWeatherData() error {

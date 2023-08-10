@@ -1,5 +1,4 @@
-FROM alpine:3
-
+FROM --platform=$BUILDPLATFORM alpine:3
 LABEL author="MikMuellerDev"
 LABEL version="0.8.0"
 
@@ -36,5 +35,8 @@ USER smarthome:smarthome
 ENV SMARTHOME_PORT=80
 ENV SMARTHOME_LOG_LEVEL=INFO
 ENV SMARTHOME_ENV_PRODUCTION=TRUE
+
+ARG TARGETARCH
+COPY ./smarthome_${TARGETARCH} /app/smarthome
 
 ENTRYPOINT ["/app/smarthome"]

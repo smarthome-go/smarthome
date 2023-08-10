@@ -129,8 +129,8 @@ type SetupCacheData struct {
 }
 
 type SetupWeatherMeasurement struct {
-	Id                 uint    `json:"id"`
-	Time               uint    `json:"time"` // unix millis
+	Id                 uint64  `json:"id"`
+	Time               uint64  `json:"time"` // unix millis
 	WeatherTitle       string  `json:"weatherTitle"`
 	WeatherDescription string  `json:"weatherDescription"`
 	Temperature        float32 `json:"temperature"`
@@ -381,7 +381,7 @@ func Export(
 		for _, measurement := range weatherHistory {
 			weatherHistoryOut = append(weatherHistoryOut, SetupWeatherMeasurement{
 				Id:                 measurement.Id,
-				Time:               uint(measurement.Time.UnixMilli()),
+				Time:               uint64(measurement.Time.UnixMilli()),
 				WeatherTitle:       measurement.WeatherTitle,
 				WeatherDescription: measurement.WeatherDescription,
 				Temperature:        measurement.Temperature,

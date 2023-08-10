@@ -10,8 +10,8 @@ import (
 )
 
 type WeatherMeasurement struct {
-	Id                 uint    `json:"id"`
-	Time               uint    `json:"time"` // Time as Unix-millis
+	Id                 uint64  `json:"id"`
+	Time               uint64  `json:"time"` // Time as Unix-millis
 	WeatherTitle       string  `json:"weatherTitle"`
 	WeatherDescription string  `json:"weatherDescription"`
 	Temperature        float32 `json:"temperature"`
@@ -110,7 +110,7 @@ func GetCurrentWeather() (WeatherMeasurement, error) {
 	// Return a final version
 	return WeatherMeasurement{
 		Id:                 id,
-		Time:               uint(time.Now().UnixMilli()),
+		Time:               uint64(time.Now().UnixMilli()),
 		WeatherTitle:       newLabel,
 		WeatherDescription: newDescription,
 		Temperature:        float32(freshData.Main.Temp),
@@ -126,7 +126,7 @@ func GetCurrentWeather() (WeatherMeasurement, error) {
 func transformWeatherStruct(input database.WeatherMeasurement) WeatherMeasurement {
 	return WeatherMeasurement{
 		Id:                 input.Id,
-		Time:               uint(input.Time.UnixMilli()),
+		Time:               uint64(input.Time.UnixMilli()),
 		WeatherTitle:       input.WeatherTitle,
 		WeatherDescription: input.WeatherDescription,
 		Temperature:        input.Temperature,
