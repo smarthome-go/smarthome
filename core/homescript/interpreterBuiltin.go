@@ -16,6 +16,7 @@ import (
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/hardware"
 	"github.com/smarthome-go/smarthome/core/homescript/automation"
+	"github.com/smarthome-go/smarthome/services/weather"
 )
 
 type interpreterExecutor struct {
@@ -148,6 +149,25 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 						"hour":   value.NewValueInt(int64(set.Hour)),
 						"minute": value.NewValueInt(int64(set.Minute)),
 					}),
+				}), nil
+			}), true
+		case "weather":
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+				weather, err := weather.GetCurrentWeather()
+				if err != nil {
+					return nil, value.NewRuntimeErr(
+						fmt.Sprintf("Could not load weather: %s", err.Error()),
+						value.HostErrorKind,
+						span,
+					)
+				}
+
+				return value.NewValueObject(map[string]*value.Value{
+					"title":       value.NewValueString(weather.WeatherTitle),
+					"description": value.NewValueString(weather.WeatherDescription),
+					"temperature": value.NewValueFloat(float64(weather.Temperature)),
+					"feels_like":  value.NewValueFloat(float64(weather.FeelsLike)),
+					"humidity":    value.NewValueInt(int64(weather.Humidity)),
 				}), nil
 			}), true
 		}
@@ -630,6 +650,152 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				"level":       value.NewValueInt(int64(self.automationContext.NotificationContext.Level)),
 			}), true
 		}
+	case "scheduler":
+		switch toImport {
+		case "create_schedule":
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+				data := args[0].(value.ValueObject).FieldsInternal
+
+				hour := (*data["hour"]).(value.ValueInt).Inner
+				minute := (*data["minute"]).(value.ValueInt).Inner
+
+				if hour < 0 || minute < 0 {
+					return nil, value.NewThrowInterrupt(span, "Fields `hour` and `minute` have to be >= 0")
+				}
+
+				newId, err := CreateNewSchedule(database.ScheduleData{
+					Name:           (*data["name"]).(value.ValueString).Inner,
+					Hour:           uint(hour),
+					Minute:         uint(minute),
+					TargetMode:     database.ScheduleTargetModeCode,
+					HomescriptCode: (*data["code"]).(value.ValueString).Inner,
+				}, executor.GetUser())
+
+				if err != nil {
+					return nil, value.NewRuntimeErr(fmt.Sprintf("Backend error: %s", err.Error()), value.HostErrorKind, span)
+				}
+
+				return value.NewValueInt(int64(newId)), nil
+			}), true
+		case "delete_schedule":
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+				id := args[0].(value.ValueInt).Inner
+
+				if id < 0 {
+					return nil, value.NewThrowInterrupt(span, fmt.Sprintf("IDs must be > 0, got %d", id))
+				}
+
+				_, found, err := GetUserScheduleById(executor.GetUser(), uint(id))
+				if err != nil {
+					return nil, value.NewRuntimeErr(
+						fmt.Sprintf("Could not delete schedule: %s", err.Error()),
+						value.HostErrorKind,
+						span,
+					)
+				}
+
+				if !found {
+					return nil, value.NewThrowInterrupt(span, fmt.Sprintf("No schedule with ID %d exists", id))
+				}
+
+				if err := RemoveScheduleById(uint(id)); err != nil {
+					return nil, value.NewRuntimeErr(
+						fmt.Sprintf("Could not delete schedule: %s", err.Error()),
+						value.HostErrorKind,
+						span,
+					)
+				}
+
+				return nil, nil
+			}), true
+		case "list_schedules":
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+				schedules, err := database.GetUserSchedules(executor.GetUser())
+				if err != nil {
+					return nil, value.NewRuntimeErr(
+						fmt.Sprintf("Could not list schedules: %s", err.Error()),
+						value.HostErrorKind,
+						span,
+					)
+				}
+
+				list := make([]*value.Value, 0)
+
+				for _, sched := range schedules {
+
+					hmsId := value.NewNoneOption()
+					switches := value.NewNoneOption()
+
+					switch sched.Data.TargetMode {
+					case database.ScheduleTargetModeSwitches:
+						innerValues := make([]*value.Value, 0)
+
+						for _, job := range sched.Data.SwitchJobs {
+							innerValues = append(innerValues, value.NewValueObject(map[string]*value.Value{
+								"switch": value.NewValueString(job.SwitchId),
+								"power":  value.NewValueBool(job.PowerOn),
+							}))
+						}
+
+						switches = value.NewValueOption(value.NewValueList(innerValues))
+					case database.ScheduleTargetModeHMS:
+						hmsId = value.NewValueOption(value.NewValueString(sched.Data.HomescriptTargetId))
+					}
+
+					schedule := value.NewValueObject(map[string]*value.Value{
+						"id":          value.NewValueInt(int64(sched.Id)),
+						"name":        value.NewValueString(sched.Data.Name),
+						"hour":        value.NewValueInt(int64(sched.Data.Hour)),
+						"minute":      value.NewValueInt(int64(sched.Data.Minute)),
+						"target_mode": value.NewValueString(string(sched.Data.TargetMode)),
+						"hms_id":      hmsId,
+						"switches":    switches,
+					})
+					list = append(list, schedule)
+				}
+
+				return value.NewValueList(list), nil
+			}), true
+
+			// ast.NewObjectTypeField(pAst.NewSpannedIdent("id", span), ast.NewIntType(span), span),
+			// ast.NewObjectTypeField(pAst.NewSpannedIdent("name", span), ast.NewStringType(span), span),
+			// ast.NewObjectTypeField(pAst.NewSpannedIdent("hour", span), ast.NewIntType(span), span),
+			// ast.NewObjectTypeField(pAst.NewSpannedIdent("minute", span), ast.NewIntType(span), span),
+			// ast.NewObjectTypeField(pAst.NewSpannedIdent("target_mode", span), ast.NewStringType(span), span),
+		}
+	case "notification":
+		switch toImport {
+		case "notify":
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+				title := args[0].(value.ValueString).Inner
+				description := args[1].(value.ValueString).Inner
+				level := args[2].(value.ValueInt).Inner
+
+				hmsExecutor := executor.(interpreterExecutor)
+
+				// only run notification hooks if this homescript was NOT triggered due to a notification
+				// this avoids unconditional recursion and thus prevents a crash
+				runHooks := hmsExecutor.automationContext == nil || hmsExecutor.automationContext.NotificationContext == nil
+
+				newId, err := Notify(
+					executor.GetUser(),
+					title,
+					description,
+					NotificationLevel(level),
+					runHooks,
+				)
+
+				if err != nil {
+					return nil, value.NewRuntimeErr(
+						fmt.Sprintf("Could not add notification: %s", err.Error()),
+						value.HostErrorKind,
+						span,
+					)
+				}
+
+				return value.NewValueInt(int64(newId)), nil
+			}), true
+		}
 	}
 	return nil, false
 }
@@ -751,6 +917,16 @@ func interpreterScopeAdditions() map[string]value.Value {
 				base := createTimeStructFromObject(args[0])
 				days := args[1].(value.ValueInt).Inner
 				return createTimeObject(base.Add(time.Hour * 24 * time.Duration(days))), nil
+			}),
+			"add_hours": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+				base := createTimeStructFromObject(args[0])
+				hours := args[1].(value.ValueInt).Inner
+				return createTimeObject(base.Add(time.Hour * time.Duration(hours))), nil
+			}),
+			"add_minutes": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+				base := createTimeStructFromObject(args[0])
+				minutes := args[1].(value.ValueInt).Inner
+				return createTimeObject(base.Add(time.Minute * time.Duration(minutes))), nil
 			}),
 			"now": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
 				now := time.Now()

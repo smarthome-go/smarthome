@@ -55,6 +55,26 @@ func (self analyzerHost) GetBuiltinImport(moduleName string, valueName string, s
 				}, span),
 				span,
 			), true, true
+		case "weather":
+			return ast.NewFunctionType(
+				ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)),
+				span,
+
+				// WeatherTitle       string  `json:"weatherTitle"`
+				// WeatherDescription string  `json:"weatherDescription"`
+				// Temperature        float32 `json:"temperature"`
+				// FeelsLike          float32 `json:"feelsLike"`
+				// Humidity           uint8   `json:"humidity"`
+
+				ast.NewObjectType([]ast.ObjectTypeField{
+					ast.NewObjectTypeField(pAst.NewSpannedIdent("title", span), ast.NewStringType(span), span),
+					ast.NewObjectTypeField(pAst.NewSpannedIdent("description", span), ast.NewStringType(span), span),
+					ast.NewObjectTypeField(pAst.NewSpannedIdent("temperature", span), ast.NewFloatType(span), span),
+					ast.NewObjectTypeField(pAst.NewSpannedIdent("feels_like", span), ast.NewFloatType(span), span),
+					ast.NewObjectTypeField(pAst.NewSpannedIdent("humidity", span), ast.NewIntType(span), span),
+				}, span),
+				span,
+			), true, true
 		}
 		return nil, true, false
 	case "switch":
@@ -294,6 +314,79 @@ func (self analyzerHost) GetBuiltinImport(moduleName string, valueName string, s
 			}, span), true, true
 		}
 		return nil, true, false
+	case "scheduler":
+		switch valueName {
+		case "create_schedule":
+			return ast.NewFunctionType(
+				ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("schedule", span),
+						ast.NewObjectType(
+							[]ast.ObjectTypeField{
+								ast.NewObjectTypeField(pAst.NewSpannedIdent("name", span), ast.NewStringType(span), span),
+								ast.NewObjectTypeField(pAst.NewSpannedIdent("hour", span), ast.NewIntType(span), span),
+								ast.NewObjectTypeField(pAst.NewSpannedIdent("minute", span), ast.NewIntType(span), span),
+								ast.NewObjectTypeField(pAst.NewSpannedIdent("code", span), ast.NewStringType(span), span),
+							},
+							span,
+						),
+					),
+				}),
+				span,
+				ast.NewIntType(span),
+				span,
+			), true, true
+
+		case "delete_schedule":
+			return ast.NewFunctionType(
+				ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("id", span), ast.NewIntType(span)),
+				}),
+				span,
+				ast.NewNullType(span),
+				span,
+			), true, true
+		case "list_schedules":
+			return ast.NewFunctionType(
+				ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)),
+				span,
+				ast.NewListType(
+					ast.NewObjectType(
+						[]ast.ObjectTypeField{
+							ast.NewObjectTypeField(pAst.NewSpannedIdent("id", span), ast.NewIntType(span), span),
+							ast.NewObjectTypeField(pAst.NewSpannedIdent("name", span), ast.NewStringType(span), span),
+							ast.NewObjectTypeField(pAst.NewSpannedIdent("hour", span), ast.NewIntType(span), span),
+							ast.NewObjectTypeField(pAst.NewSpannedIdent("minute", span), ast.NewIntType(span), span),
+							ast.NewObjectTypeField(pAst.NewSpannedIdent("target_mode", span), ast.NewStringType(span), span),
+							ast.NewObjectTypeField(pAst.NewSpannedIdent("hms_id", span), ast.NewOptionType(ast.NewStringType(span), span), span),
+							ast.NewObjectTypeField(pAst.NewSpannedIdent("switches", span), ast.NewOptionType(ast.NewListType(
+								ast.NewObjectType([]ast.ObjectTypeField{
+									ast.NewObjectTypeField(pAst.NewSpannedIdent("switch", span), ast.NewStringType(span), span),
+									ast.NewObjectTypeField(pAst.NewSpannedIdent("power", span), ast.NewBoolType(span), span),
+								}, span), span,
+							), span), span),
+						},
+						span,
+					),
+					span,
+				),
+				span,
+			), true, true
+		}
+		return nil, true, false
+	case "notification":
+		switch valueName {
+		case "notify":
+			return ast.NewFunctionType(
+				ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("title", span), ast.NewStringType(span)),
+					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("description", span), ast.NewStringType(span)),
+					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("level", span), ast.NewIntType(span)),
+				}),
+				span,
+				ast.NewIntType(span),
+				span,
+			), true, true
+		}
 	}
 	return nil, false, false
 }
@@ -379,6 +472,32 @@ func analyzerScopeAdditions() map[string]analyzer.Variable {
 						ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
 							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("time", errors.Span{}), timeObjType(errors.Span{})),
 							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("days", errors.Span{}), ast.NewIntType(errors.Span{})),
+						}),
+						errors.Span{},
+						timeObjType(errors.Span{}),
+						errors.Span{},
+					),
+					errors.Span{},
+				),
+				ast.NewObjectTypeField(
+					pAst.NewSpannedIdent("add_hours", errors.Span{}),
+					ast.NewFunctionType(
+						ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("time", errors.Span{}), timeObjType(errors.Span{})),
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("hours", errors.Span{}), ast.NewIntType(errors.Span{})),
+						}),
+						errors.Span{},
+						timeObjType(errors.Span{}),
+						errors.Span{},
+					),
+					errors.Span{},
+				),
+				ast.NewObjectTypeField(
+					pAst.NewSpannedIdent("add_minutes", errors.Span{}),
+					ast.NewFunctionType(
+						ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("time", errors.Span{}), timeObjType(errors.Span{})),
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("hours", errors.Span{}), ast.NewIntType(errors.Span{})),
 						}),
 						errors.Span{},
 						timeObjType(errors.Span{}),
