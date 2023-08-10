@@ -117,6 +117,8 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		nil,
 	)
 
+	// TODO: check error
+
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
 			Success:      res.Success,
@@ -226,6 +228,8 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 	// if len(output) > 100_000 {
 	// 	output = "Output too large"
 	// } TODO: maybe re-introduce such a limit
+
+	// TODO: check error
 
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
