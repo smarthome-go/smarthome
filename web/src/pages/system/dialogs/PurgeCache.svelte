@@ -1,43 +1,30 @@
 <script lang="ts">
-    import Button, { Label } from "@smui/button";
+    import Button, { Label } from '@smui/button'
 
-    import Dialog, {
-        Actions,
-        Content,
-        Header,
-        InitialFocus,
-        Title,
-    } from "@smui/dialog";
+    import Dialog, { Actions, Content, Header, InitialFocus, Title } from '@smui/dialog'
 
-    import { createSnackbar } from "../../../global";
+    import { createSnackbar } from '../../../global'
 
-    export let open = false;
+    export let open = false
 
     async function purgeCache() {
         try {
             // Weather cache
             let res = await (
-                await fetch("/api/weather/cache", {
-                    method: "DELETE",
+                await fetch('/api/weather/cache', {
+                    method: 'DELETE',
                 })
-            ).json();
-            if (!res.success) throw Error(res.error);
+            ).json()
+            if (!res.success) throw Error(res.error)
             // Power data cache
             res = await (
-                await fetch("/api/power/cache", {
-                    method: "DELETE",
+                await fetch('/api/power/cache', {
+                    method: 'DELETE',
                 })
-            ).json();
-            if (!res.success) throw Error(res.error);
-            // Homescript URL cache
-            res = await (
-                await fetch("/api/homescript/cache", {
-                    method: "DELETE",
-                })
-            ).json();
-            if (!res.success) throw Error(res.error);
+            ).json()
+            if (!res.success) throw Error(res.error)
         } catch (err) {
-            $createSnackbar(`Failed to flush cache: ${err}`);
+            $createSnackbar(`Failed to flush cache: ${err}`)
         }
     }
 </script>

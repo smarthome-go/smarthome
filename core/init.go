@@ -13,11 +13,6 @@ func Init(config database.ServerConfig) error {
 	// Homescript Manager initialization
 	homescript.InitManager()
 
-	// Initialize Homescript URL cache flushing scheduler
-	if err := homescript.StartUrlCacheGC(); err != nil {
-		return fmt.Errorf("Failed to start Homescript URL cache GC: %s", err.Error())
-	}
-
 	// Schedulers
 	if err := homescript.InitAutomations(config); err != nil { // Initializes the automation scheduler
 		return fmt.Errorf("Failed to activate automation system: %s", err.Error())

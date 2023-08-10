@@ -202,13 +202,11 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/weather/cached", mdl.ApiAuth(api.GetCachedWeather)).Methods("GET")
 
 	// Cache Purging
-	r.HandleFunc("/api/homescript/cache", mdl.ApiAuth(mdl.Perm(api.PurgeHomescriptUrlCache, database.PermissionSystemConfig))).Methods("DELETE")
 	r.HandleFunc("/api/weather/cache", mdl.ApiAuth(mdl.Perm(api.PurgeWeatherCache, database.PermissionSystemConfig))).Methods("DELETE")
 	r.HandleFunc("/api/power/cache", mdl.ApiAuth(mdl.Perm(api.PurgePowerRecords, database.PermissionSystemConfig))).Methods("DELETE")
 
 	// System Configuration
 	r.HandleFunc("/api/automation/state/global", mdl.ApiAuth(mdl.Perm(api.ChangeActivationAutomation, database.PermissionSystemConfig))).Methods("PUT")
-	r.HandleFunc("/api/homescript/cache/flush", mdl.ApiAuth(mdl.Perm(api.ClearHomescriptURLCache, database.PermissionSystemConfig))).Methods("DELETE")
 
 	r.HandleFunc("/api/system/config", mdl.ApiAuth(mdl.Perm(api.GetSystemConfig, database.PermissionSystemConfig))).Methods("GET")
 	r.HandleFunc("/api/system/location/modify", mdl.ApiAuth(mdl.Perm(api.UpdateLocation, database.PermissionSystemConfig))).Methods("PUT")

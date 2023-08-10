@@ -90,9 +90,6 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 	if err := createReminderTable(); err != nil {
 		return err
 	}
-	if err := createHomescriptUrlCacheTable(); err != nil {
-		return err
-	}
 	if err := createHomescriptStorageTable(); err != nil {
 		return err
 	}
