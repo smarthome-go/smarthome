@@ -31,9 +31,6 @@ smarthome
 data/avatar
 log
 
-# docker build files
-docker/container/cache
-
 # Setup files
 data/config/setup.json
 data/config/setup.json.old

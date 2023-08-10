@@ -1,0 +1,5 @@
+# intermediate smarthome builds
+smarthome*
+
+# docker build files
+cache
