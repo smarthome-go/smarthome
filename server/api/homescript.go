@@ -258,6 +258,7 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
+
 	// Fill the arguments using the request
 	args := make(map[string]string, 0)
 	for _, arg := range request.Args {
