@@ -10,7 +10,7 @@ import type { GenericResponse } from './global'
 export interface homescriptJob {
     id: number
     initiator: string
-    homescriptId: string
+    hmsId: string
 }
 
 // A Homescript with its arguments

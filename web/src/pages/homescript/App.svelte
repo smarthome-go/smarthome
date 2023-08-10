@@ -447,7 +447,7 @@
                             <Label>Code</Label>
                             <Icon class="material-icons">code</Icon>
                         </Button>
-                        {#if $jobs.filter(j => j.homescriptId === selection).length > 0}
+                        {#if $jobs.filter(j => j.hmsId === selection).length > 0}
                             <Button
                                 on:click={async function () {
                                     await killAllJobsById(selection)

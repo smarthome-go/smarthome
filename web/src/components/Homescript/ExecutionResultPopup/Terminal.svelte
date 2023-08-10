@@ -11,11 +11,11 @@
 
     function replaceWithHTMLCharacterCodes(input: string): string {
         return input
-            .replaceAll('\t', '&#09;')
-            .replaceAll(' ', '&nbsp;')
-            .replaceAll('\n', '&#10')
             .replaceAll('<', '&lt;')
             .replaceAll('>', '&gt;')
+            .replaceAll(' ', '&nbsp;')
+            .replaceAll('\t', '&#09;')
+            .replaceAll('\n', '<br>')
     }
 
     function errToHtml(err: homescriptError, data: hmsResWrapper): string {

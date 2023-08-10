@@ -43,7 +43,7 @@
                 selected={selection === item.data.data.id}
             >
                 <Graphic>
-                    {#if $jobs.filter((j) => j.homescriptId === item.data.data.id).length > 0}
+                    {#if $jobs.filter((j) => j.hmsId === item.data.data.id).length > 0}
                         <Progress type="circular" loading />
                     {:else}
                         <Icon class="material-icons">
