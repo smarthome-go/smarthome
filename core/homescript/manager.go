@@ -340,7 +340,7 @@ func (m *Manager) Run(
 		}
 
 		return HmsRes{
-			Success:      isErr,
+			Success:      !isErr,
 			Errors:       errors,
 			FileContents: fileContents,
 		}, nil
