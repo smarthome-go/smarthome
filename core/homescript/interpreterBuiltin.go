@@ -320,9 +320,9 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				dueDateMonth := (*fields["due_date_month"]).(value.ValueInt).Inner
 				dueDateYear := (*fields["due_date_year"]).(value.ValueInt).Inner
 
-				if priority < 1.0 || priority > 5.0 {
+				if priority < 0.0 || priority > 4.0 || float64(int64(priority)) != float64(priority) {
 					return nil, value.NewRuntimeErr(
-						fmt.Sprintf("Reminder urgency has to be 0 < and < 6, got %d", int(priority)),
+						fmt.Sprintf("Reminder urgency has to an integer ( where 0 <= urgency <= 4 ), got %d", int(priority)),
 						value.ValueErrorKind,
 						span,
 					)
