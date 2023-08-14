@@ -3,6 +3,7 @@
     import { data, fetchData } from "../global";
     import NavBarButton from "./NavBarButton.svelte";
     import NotificationDrawer from "./NotificationDrawer.svelte";
+    import { get } from "svelte/store";
 
     export let closed = true;
     const toggleClosed = () => (closed = !closed);
@@ -20,6 +21,8 @@
         },
         true
     );
+
+    let avatar: HTMLDivElement;
 
     interface Page {
         label: string;
@@ -124,6 +127,8 @@
                 p.permission == "" ||
                 $data.userData.permissions.includes("*")
         );
+
+        avatar.style.backgroundImage = `url(/api/user/avatar/personal?urscache=${get(data).userData.user.username}`
     });
 </script>
 
@@ -137,7 +142,7 @@
         <i class="material-icons">chevron_right</i>
     </div>
     <div id="header">
-        <div id="header__avatar" />
+        <div bind:this={avatar} id="header__avatar"/>
         <div id="header__texts">
             <strong
                 >{$data.userData.user.forename}
@@ -304,7 +309,7 @@
             border-radius: 50%;
             aspect-ratio: 1;
             height: 2.5rem;
-            background-image: url("/api/user/avatar/personal");
+            // background-image: url("/api/user/avatar/personal");
         }
         &__texts {
             display: flex;
