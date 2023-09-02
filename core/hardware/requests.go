@@ -177,7 +177,7 @@ func setPowerOnNodesWrapper(switchItem database.Switch, powerOn bool) error {
 		}
 
 		if !actionPerformed {
-			log.Warn("No power action performed since switch target node is disabled")
+			log.Warn("No power action performed since switch target node is disabled or offline")
 		}
 
 		// Update the switch power-state in the database
@@ -199,7 +199,7 @@ func setPowerOnNode(node database.HardwareNode, powerOn bool, switchItem databas
 		go checkNodeOnlineWrapper(node)
 
 		log.Warn(fmt.Sprintf("Skipping node: '%s' because it is currently marked as offline", node.Name))
-
+		return false, nil
 	}
 
 	// If the node is not enabled, skip the request

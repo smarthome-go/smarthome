@@ -80,7 +80,6 @@ func addJobToQueue(switchItem database.Switch, turnOn bool, id int64) {
 		daemonRunning.Store(true)
 		ch := make(chan bool)
 		go jobDaemon(ch)
-		// TODO: Evaluate whether to replace with waitgroup
 		for {
 			select {
 			case <-ch:
