@@ -145,6 +145,7 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/user/token/list/personal", mdl.ApiAuth(api.ListUserTokens)).Methods("GET")
 
 	// Notifications
+	r.HandleFunc("/api/user/notification/notify", mdl.ApiAuth(api.NotifyUser)).Methods("POST")
 	r.HandleFunc("/api/user/notification/count", mdl.ApiAuth(api.GetNotificationCount)).Methods("GET")
 	r.HandleFunc("/api/user/notification/delete", mdl.ApiAuth(api.DeleteUserNotificationById)).Methods("DELETE")
 	r.HandleFunc("/api/user/notification/delete/all", mdl.ApiAuth(api.DeleteAllUserNotifications)).Methods("DELETE")
