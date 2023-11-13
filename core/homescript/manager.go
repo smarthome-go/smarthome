@@ -42,11 +42,14 @@ type Manager struct {
 }
 
 type Job struct {
-	Username  string
-	JobId     uint64
-	HmsId     *string
-	Initiator HomescriptInitiator
-	CancelCtx context.CancelFunc
+	Username        string
+	JobId           uint64
+	HmsId           *string
+	Initiator       HomescriptInitiator
+	CancelCtx       context.CancelFunc
+	Interpreter     interpreter.Interpreter
+	EntryModuleName string
+	SupportsKill    bool
 }
 
 // For external usage (can be marshaled)
@@ -113,15 +116,21 @@ func (m *Manager) PushJob(
 	initiator HomescriptInitiator,
 	cancelCtxFunc context.CancelFunc,
 	hmsId *string,
+	interpreter *interpreter.Interpreter,
+	entryModuleName string,
+	supportsKill bool,
 ) uint64 {
 	m.Lock.Lock()
 	id := uint64(len(m.Jobs))
 	m.Jobs = append(m.Jobs, Job{
-		Username:  username,
-		JobId:     id,
-		HmsId:     hmsId,
-		Initiator: initiator,
-		CancelCtx: cancelCtxFunc,
+		Username:        username,
+		JobId:           id,
+		HmsId:           hmsId,
+		Initiator:       initiator,
+		CancelCtx:       cancelCtxFunc,
+		Interpreter:     *interpreter,
+		EntryModuleName: entryModuleName,
+		SupportsKill:    supportsKill,
 	})
 	m.Lock.Unlock()
 	return id
@@ -248,15 +257,14 @@ func (m *Manager) Run(
 ) (HmsRes, error) {
 	// TODO: handle arguments
 
-	id := m.PushJob(username, initiator, cancelCtxFunc, filename)
-	defer m.removeJob(id)
-
-	internalFilename := fmt.Sprintf("live@%d", id) // TODO: the @ symbol cannot be used in IDs?
+	// TODO: the @ symbol cannot be used in IDs?
+	// FIX: implement this uniqueness properly
+	entryModuleName := fmt.Sprintf("live@%d", time.Now().Nanosecond())
 	if filename != nil {
-		internalFilename = *filename
+		entryModuleName = *filename
 	}
 
-	modules, res, err := m.Analyze(username, internalFilename, code)
+	modules, res, err := m.Analyze(username, entryModuleName, code)
 	if err != nil {
 		return HmsRes{}, err
 	}
@@ -264,16 +272,10 @@ func (m *Manager) Run(
 		return res, nil
 	}
 
-	// send the id to the id channel (only if it exists)
-	if idChan != nil {
-		*idChan <- id
-	}
+	log.Debug(fmt.Sprintf("Homescript '%s' of user '%s' is executing...", entryModuleName, username))
 
-	log.Debug(fmt.Sprintf("Homescript '%s' of user '%s' is executing...", internalFilename, username))
-	if i := homescript.Run(
+	interpreter := interpreter.NewInterpreter(
 		CALL_STACK_LIMIT_SIZE,
-		modules,
-		internalFilename,
 		newInterpreterExecutor(
 			username,
 			outputWriter,
@@ -281,9 +283,22 @@ func (m *Manager) Run(
 			automationContext,
 			cancelCtxFunc,
 		),
+		modules,
 		interpreterScopeAdditions(),
 		&cancelCtx,
-	); i != nil {
+	)
+
+	supportsKill := modules[entryModuleName].SupportsEvent("kill")
+
+	id := m.PushJob(username, initiator, cancelCtxFunc, filename, &interpreter, entryModuleName, supportsKill)
+	defer m.removeJob(id)
+
+	// send the id to the id channel (only if it exists)
+	if idChan != nil {
+		*idChan <- id
+	}
+
+	if i := interpreter.Execute(entryModuleName); i != nil {
 		span := errors.Span{}
 
 		i := *i
@@ -331,14 +346,14 @@ func (m *Manager) Run(
 		}
 
 		if isErr {
-			fileContentsTemp, err := resolveFileContentsOfErrors(username, internalFilename, code, errors)
+			fileContentsTemp, err := resolveFileContentsOfErrors(username, entryModuleName, code, errors)
 			if err != nil {
 				return HmsRes{}, err
 			}
 
 			fileContents = fileContentsTemp
 
-			log.Debug(fmt.Sprintf("Homescript '%s' of user '%s' failed: %s", internalFilename, username, errors[0]))
+			log.Debug(fmt.Sprintf("Homescript '%s' of user '%s' failed: %s", entryModuleName, username, errors[0]))
 		}
 
 		return HmsRes{
@@ -348,7 +363,7 @@ func (m *Manager) Run(
 		}, nil
 	}
 
-	log.Debug(fmt.Sprintf("Homescript '%s' of user '%s' executed successfully", internalFilename, username))
+	log.Debug(fmt.Sprintf("Homescript '%s' of user '%s' executed successfully", entryModuleName, username))
 
 	return HmsRes{Success: true, Errors: make([]HmsError, 0), FileContents: make(map[string]string)}, nil
 }
@@ -426,9 +441,7 @@ func (m *Manager) Kill(jobId uint64) bool {
 	defer m.Lock.Unlock()
 	for _, job := range m.Jobs {
 		if job.JobId == jobId {
-			log.Trace("Dispatching sigTerm to HMS interpreter channel")
-			job.CancelCtx()
-			log.Trace("Successfully dispatched sigTerm to HMS interpreter channel")
+			m.killJob(job)
 			return true
 		}
 	}
@@ -446,14 +459,18 @@ func (m *Manager) KillAllId(hmsId string) (count uint64, success bool) {
 		}
 
 		// Only standalone scripts may be terminated (callstack validation) | TODO: implement this
-		log.Trace("Dispatching sigTerm to HMS interpreter channel")
-		job.CancelCtx()
-		log.Trace("Successfully dispatched sigTerm to HMS interpreter channel")
+		m.killJob(job)
 
 		success = true
 		count++
 	}
 	return count, success
+}
+
+func (m *Manager) killJob(job Job) {
+	log.Trace("Dispatching sigTerm to HMS interpreter channel")
+	job.CancelCtx()
+	log.Trace("Successfully dispatched sigTerm to HMS interpreter channel")
 }
 
 // Can be used to access the manager's jobs from the outside in a safe manner

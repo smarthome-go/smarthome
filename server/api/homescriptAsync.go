@@ -123,16 +123,19 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 
 	// Start running the code
 	res := make(chan homescript.HmsRes)
-	ctx, cancel := context.WithCancel(context.Background())
 
-	go func(writer io.Writer, results *chan homescript.HmsRes, ctx context.Context, cancel context.CancelFunc) {
+	idChan := make(chan uint64)
+
+	go func(writer io.Writer, results *chan homescript.HmsRes, idChan *chan uint64) {
+		ctx, cancel := context.WithCancel(context.Background())
+
 		res, err := homescript.HmsManager.RunById(
 			request.Payload,
 			username,
 			homescript.InitiatorAPI,
 			ctx,
 			cancel,
-			nil,
+			idChan,
 			args,
 			outWriter,
 			nil,
@@ -152,7 +155,9 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 		outWriter.Close()
 
 		*results <- res
-	}(outWriter, &res, ctx, cancel)
+	}(outWriter, &res, &idChan)
+
+	jobId := <-idChan
 
 	go func() {
 		// Check if the script should be killed
@@ -185,7 +190,8 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 		}
 		// Kill the Homescript
 		log.Trace("Killing script via Websocket")
-		cancel()
+		// cancel()
+		homescript.HmsManager.Kill(jobId)
 		log.Trace("Killed script via Websocket")
 	}()
 
