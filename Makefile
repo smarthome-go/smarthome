@@ -4,7 +4,7 @@ workingdir := smarthome
 sources := $(wildcard *.go)
 # Do not edit manually, use the `version` target to change the
 # version programmatically in all places
-version := 0.8.0
+version := 0.9.0-beta
 
 build = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -ldflags "-s -w" -v -o $(appname) $(4)
 # TODO: eliminate usage of workingdir
@@ -130,23 +130,43 @@ docker-prepare: web build
 # Is used after `release` in order to publish the built
 # Docker image to Docker-Hub
 docker-push:
-	docker push mikmuellerdev/smarthome:$(version)
-	docker push mikmuellerdev/smarthome:latest
+	docker push mikmuellerdev/smarthome:$(version)-arm
+	docker push mikmuellerdev/smarthome:latest-arm
+	docker push mikmuellerdev/smarthome:$(version)-arm64
+	docker push mikmuellerdev/smarthome:latest-arm64
+	docker push mikmuellerdev/smarthome:$(version)-amd64
+	docker push mikmuellerdev/smarthome:latest-amd64
+
 	$(info "docker-push: successfully pushed to remote repository")
 
 # Builds the Docker image using the pre compiled
 # and setup build cache
 docker: cleanall web docker-prepare
-	docker build docker/container \
-		-t mikmuellerdev/smarthome:$(version) \
-		-t mikmuellerdev/smarthome:latest --network=host
+	docker buildx create --use
 
-		# docker buildx build  -t mikmuellerdev/smarthome:version-arm -t docker-registry.box/smarthome-go:latest-arm --network=host -f Dockerfile.arm --platform=linux/arm64 .
+	sudo docker buildx build \
+		-t mikmuellerdev/smarthome:$(version)-arm \
+		-t mikmuellerdev/smarthome:latest-arm \
+		--platform=linux/arm \
+		--load \
+		-f ./docker/container/Dockerfile \
+		./docker/container/
 
-# Similar to `docker`, just for users who require `sudo` in order
-# to interact with the Docker daemon
-sudo-docker: cleanall web docker-prepare
-	cd docker/container && sudo docker build . -t mikmuellerdev/smarthome:$(version) -t mikmuellerdev/smarthome:latest --network=host
+	sudo docker buildx build \
+		-t mikmuellerdev/smarthome:$(version)-arm64 \
+		-t mikmuellerdev/smarthome:latest-arm64 \
+		--platform=linux/arm64 \
+		--load \
+		-f ./docker/container/Dockerfile \
+		./docker/container/
+
+	docker buildx build \
+		-t mikmuellerdev/smarthome:$(version)-amd64 \
+		-t mikmuellerdev/smarthome:latest-amd64 \
+		--platform=linux/amd64 \
+		--load \
+		-f ./docker/container/Dockerfile \
+		./docker/container/
 
 # Generates the output files for the frontend web interface
 web: cleanweb

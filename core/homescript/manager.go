@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"time"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/smarthome-go/homescript/v3/homescript"
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
 	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
+	"github.com/smarthome-go/homescript/v3/homescript/interpreter"
 	"github.com/smarthome-go/homescript/v3/homescript/interpreter/value"
 	"github.com/smarthome-go/smarthome/core/database"
 )
