@@ -10,10 +10,11 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/smarthome-go/homescript/v3/homescript"
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
+	"github.com/smarthome-go/homescript/v3/homescript/compiler"
 	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
-	"github.com/smarthome-go/homescript/v3/homescript/interpreter"
 	"github.com/smarthome-go/homescript/v3/homescript/interpreter/value"
+	"github.com/smarthome-go/homescript/v3/homescript/runtime"
 	"github.com/smarthome-go/smarthome/core/database"
 )
 
@@ -47,7 +48,7 @@ type Job struct {
 	HmsId           *string
 	Initiator       HomescriptInitiator
 	CancelCtx       context.CancelFunc
-	Interpreter     interpreter.Interpreter
+	Vm              *runtime.VM
 	EntryModuleName string
 	SupportsKill    bool
 }
@@ -116,7 +117,7 @@ func (m *Manager) PushJob(
 	initiator HomescriptInitiator,
 	cancelCtxFunc context.CancelFunc,
 	hmsId *string,
-	interpreter *interpreter.Interpreter,
+	vm *runtime.VM,
 	entryModuleName string,
 	supportsKill bool,
 ) uint64 {
@@ -128,7 +129,7 @@ func (m *Manager) PushJob(
 		HmsId:           hmsId,
 		Initiator:       initiator,
 		CancelCtx:       cancelCtxFunc,
-		Interpreter:     *interpreter,
+		Vm:              vm,
 		EntryModuleName: entryModuleName,
 		SupportsKill:    supportsKill,
 	})
@@ -274,8 +275,35 @@ func (m *Manager) Run(
 
 	log.Debug(fmt.Sprintf("Homescript '%s' of user '%s' is executing...", entryModuleName, username))
 
-	interpreter := interpreter.NewInterpreter(
-		CALL_STACK_LIMIT_SIZE,
+	// interpreter := interpreter.NewInterpreter(
+	// 	CALL_STACK_LIMIT_SIZE,
+	// 	newInterpreterExecutor(
+	// 		username,
+	// 		outputWriter,
+	// 		args,
+	// 		automationContext,
+	// 		cancelCtxFunc,
+	// 	),
+	// 	modules,
+	// 	interpreterScopeAdditions(),
+	// 	&cancelCtx,
+	// )
+
+	comp := compiler.NewCompiler()
+	prog := comp.Compile(modules[entryModuleName]) // TODO: fix this
+
+	i := 0
+	for name, function := range prog.Functions {
+		fmt.Printf("%03d ===> func: %s\n", i, name)
+
+		for idx, inst := range function {
+			fmt.Printf("%03d | %s\n", idx, inst)
+		}
+
+		i++
+	}
+
+	vm := runtime.NewVM(prog,
 		newInterpreterExecutor(
 			username,
 			outputWriter,
@@ -283,14 +311,12 @@ func (m *Manager) Run(
 			automationContext,
 			cancelCtxFunc,
 		),
-		modules,
-		interpreterScopeAdditions(),
-		&cancelCtx,
+		true,
 	)
 
-	supportsKill := modules[entryModuleName].SupportsEvent("kill")
+	// supportsKill := modules[entryModuleName].SupportsEvent("kill")
 
-	id := m.PushJob(username, initiator, cancelCtxFunc, filename, &interpreter, entryModuleName, supportsKill)
+	id := m.PushJob(username, initiator, cancelCtxFunc, filename, &vm, entryModuleName, true)
 	defer m.removeJob(id)
 
 	// send the id to the id channel (only if it exists)
@@ -298,7 +324,9 @@ func (m *Manager) Run(
 		*idChan <- id
 	}
 
-	if i := interpreter.Execute(entryModuleName); i != nil {
+	vm.Spawn("@init0", false)
+
+	if i := vm.Wait(); i != nil {
 		span := errors.Span{}
 
 		i := *i
