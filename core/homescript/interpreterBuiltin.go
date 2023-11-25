@@ -907,9 +907,13 @@ func interpreterScopeAdditions() map[string]value.Value {
 					time.Sleep(time.Millisecond * 10)
 				}
 
-				return nil, nil
+				return value.NewValueNull(), nil
 			}),
 			"since": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+				if args[0].Kind() != value.ObjectValueKind {
+					fmt.Printf("illegal input: %v, %v\n", args, span)
+				}
+
 				milliObj := args[0].(value.ValueObject).FieldsInternal["unix_milli"]
 				then := time.UnixMilli((*milliObj).(value.ValueInt).Inner)
 				return createDurationObject(time.Since(then)), nil

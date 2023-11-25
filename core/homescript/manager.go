@@ -38,8 +38,21 @@ const (
 //
 
 type Manager struct {
-	Lock sync.RWMutex
-	Jobs []Job
+	Lock         sync.RWMutex
+	Jobs         []Job
+	CompileCache ManagerCompileCache
+}
+
+type ManagerCompileCache struct {
+	Cache map[string]compiler.Program
+	Lock  sync.RWMutex
+}
+
+func newManagerCompileCache() ManagerCompileCache {
+	return ManagerCompileCache{
+		Cache: make(map[string]compiler.Program),
+		Lock:  sync.RWMutex{},
+	}
 }
 
 type Job struct {
@@ -63,9 +76,14 @@ var HmsManager Manager
 
 func InitManager() {
 	HmsManager = Manager{
-		Lock: sync.RWMutex{},
-		Jobs: make([]Job, 0),
+		Lock:         sync.RWMutex{},
+		Jobs:         make([]Job, 0),
+		CompileCache: newManagerCompileCache(),
 	}
+}
+
+func (self *Manager) ClearCompileCache() {
+
 }
 
 //
@@ -255,6 +273,7 @@ func (m *Manager) Run(
 	args map[string]string,
 	outputWriter io.Writer,
 	automationContext *AutomationContext,
+	allowCache bool,
 ) (HmsRes, error) {
 	// TODO: handle arguments
 
@@ -265,12 +284,44 @@ func (m *Manager) Run(
 		entryModuleName = *filename
 	}
 
-	modules, res, err := m.Analyze(username, entryModuleName, code)
-	if err != nil {
-		return HmsRes{}, err
-	}
-	if !res.Success {
-		return res, nil
+	m.CompileCache.Lock.RLock()
+	cached, found := m.CompileCache.Cache[code]
+	m.CompileCache.Lock.RUnlock()
+
+	var program compiler.Program
+
+	if found && allowCache {
+		fmt.Println("Using cache")
+		program = cached
+	} else {
+		modules, res, err := m.Analyze(username, entryModuleName, code)
+		if err != nil {
+			return HmsRes{}, err
+		}
+
+		if !res.Success {
+			return res, nil
+		}
+
+		comp := compiler.NewCompiler()
+		prog := comp.Compile(modules)
+
+		// TODO: remove this debug output
+		// i := 0
+		// for name, function := range prog.Functions {
+		// 	fmt.Printf("%03d ===> func: %s\n", i, name)
+		//
+		// 	for idx, inst := range function {
+		// 		fmt.Printf("%03d | %s\n", idx, inst)
+		// 	}
+		//
+		// 	i++
+		// }
+		//
+		m.CompileCache.Lock.Lock()
+		m.CompileCache.Cache[code] = prog
+		m.CompileCache.Lock.Unlock()
+		program = prog
 	}
 
 	log.Debug(fmt.Sprintf("Homescript '%s' of user '%s' is executing...", entryModuleName, username))
@@ -289,21 +340,8 @@ func (m *Manager) Run(
 	// 	&cancelCtx,
 	// )
 
-	comp := compiler.NewCompiler()
-	prog := comp.Compile(modules[entryModuleName]) // TODO: fix this
-
-	i := 0
-	for name, function := range prog.Functions {
-		fmt.Printf("%03d ===> func: %s\n", i, name)
-
-		for idx, inst := range function {
-			fmt.Printf("%03d | %s\n", idx, inst)
-		}
-
-		i++
-	}
-
-	vm := runtime.NewVM(prog,
+	vm := runtime.NewVM(
+		program,
 		newInterpreterExecutor(
 			username,
 			outputWriter,
@@ -312,6 +350,8 @@ func (m *Manager) Run(
 			cancelCtxFunc,
 		),
 		true,
+		&cancelCtx,
+		interpreterScopeAdditions(),
 	)
 
 	// supportsKill := modules[entryModuleName].SupportsEvent("kill")
@@ -324,7 +364,7 @@ func (m *Manager) Run(
 		*idChan <- id
 	}
 
-	vm.Spawn("@init0", false)
+	vm.Spawn(fmt.Sprintf("@%s_@init0", entryModuleName), false)
 
 	if i := vm.Wait(); i != nil {
 		span := errors.Span{}
@@ -407,6 +447,7 @@ func (m *Manager) RunById(
 	args map[string]string,
 	outputWriter io.Writer,
 	automationContext *AutomationContext,
+	allowCache bool,
 ) (HmsRes, error) {
 	script, found, err := database.GetUserHomescriptById(hmsId, username)
 	if err != nil {
@@ -427,6 +468,7 @@ func (m *Manager) RunById(
 		args,
 		outputWriter,
 		automationContext,
+		allowCache,
 	)
 }
 
@@ -496,8 +538,29 @@ func (m *Manager) KillAllId(hmsId string) (count uint64, success bool) {
 }
 
 func (m *Manager) killJob(job Job) {
+	killFn := fmt.Sprintf("@%s_@event_kill0", job.EntryModuleName)
+	job.Vm.Spawn(killFn, true)
+
+	canceled := false
+	cancelMtx := sync.Mutex{}
+
+	go func() {
+		time.Sleep(10 * time.Second) // TODO: allow customization
+		job.CancelCtx()
+		cancelMtx.Lock()
+		defer cancelMtx.Unlock()
+		canceled = true
+	}()
+
+	// give timeout of 10 secs
+	job.Vm.Wait()
+
 	log.Trace("Dispatching sigTerm to HMS interpreter channel")
-	job.CancelCtx()
+	cancelMtx.Lock()
+	if !canceled {
+		job.CancelCtx()
+	}
+	cancelMtx.Unlock()
 	log.Trace("Successfully dispatched sigTerm to HMS interpreter channel")
 }
 
