@@ -273,7 +273,6 @@ func (m *Manager) Run(
 	args map[string]string,
 	outputWriter io.Writer,
 	automationContext *AutomationContext,
-	allowCache bool,
 ) (HmsRes, error) {
 	// TODO: handle arguments
 
@@ -284,45 +283,34 @@ func (m *Manager) Run(
 		entryModuleName = *filename
 	}
 
-	m.CompileCache.Lock.RLock()
-	cached, found := m.CompileCache.Cache[code]
-	m.CompileCache.Lock.RUnlock()
+	log.Trace(fmt.Sprintf("Homescript '%s' of user '%s' is being analyzed...", entryModuleName, username))
 
-	var program compiler.Program
-
-	if found && allowCache {
-		fmt.Println("Using cache")
-		program = cached
-	} else {
-		modules, res, err := m.Analyze(username, entryModuleName, code)
-		if err != nil {
-			return HmsRes{}, err
-		}
-
-		if !res.Success {
-			return res, nil
-		}
-
-		comp := compiler.NewCompiler()
-		prog := comp.Compile(modules)
-
-		// TODO: remove this debug output
-		// i := 0
-		// for name, function := range prog.Functions {
-		// 	fmt.Printf("%03d ===> func: %s\n", i, name)
-		//
-		// 	for idx, inst := range function {
-		// 		fmt.Printf("%03d | %s\n", idx, inst)
-		// 	}
-		//
-		// 	i++
-		// }
-		//
-		m.CompileCache.Lock.Lock()
-		m.CompileCache.Cache[code] = prog
-		m.CompileCache.Lock.Unlock()
-		program = prog
+	modules, res, err := m.Analyze(username, entryModuleName, code)
+	if err != nil {
+		return HmsRes{}, err
 	}
+
+	if !res.Success {
+		return res, nil
+	}
+
+	log.Trace(fmt.Sprintf("Homescript '%s' of user '%s' is being compiled...", entryModuleName, username))
+
+	comp := compiler.NewCompiler()
+	prog := comp.Compile(modules)
+
+	// TODO: remove this debug output
+	// i := 0
+	// for name, function := range prog.Functions {
+	// 	fmt.Printf("%03d ===> func: %s\n", i, name)
+	//
+	// 	for idx, inst := range function {
+	// 		fmt.Printf("%03d | %s\n", idx, inst)
+	// 	}
+	//
+	// 	i++
+	// }
+	//
 
 	log.Debug(fmt.Sprintf("Homescript '%s' of user '%s' is executing...", entryModuleName, username))
 
@@ -341,7 +329,7 @@ func (m *Manager) Run(
 	// )
 
 	vm := runtime.NewVM(
-		program,
+		prog,
 		newInterpreterExecutor(
 			username,
 			outputWriter,
@@ -349,8 +337,9 @@ func (m *Manager) Run(
 			automationContext,
 			cancelCtxFunc,
 		),
-		true,
+		false,
 		&cancelCtx,
+		&cancelCtxFunc,
 		interpreterScopeAdditions(),
 	)
 
@@ -366,10 +355,10 @@ func (m *Manager) Run(
 
 	vm.Spawn(fmt.Sprintf("@%s_@init0", entryModuleName), false)
 
-	if i := vm.Wait(); i != nil {
-		span := errors.Span{}
-
+	if coreNum, i := vm.Wait(); i != nil {
 		i := *i
+
+		span := errors.Span{}
 
 		errors := make([]HmsError, 0)
 
@@ -383,7 +372,7 @@ func (m *Manager) Run(
 				errors = append(errors, HmsError{
 					RuntimeInterrupt: &HmsRuntimeInterrupt{
 						Kind:    "Exit",
-						Message: fmt.Sprintf("Terminated using exit-code: %d", exitI.Code),
+						Message: fmt.Sprintf("Core %d terminated with exit-code: %d", coreNum, exitI.Code),
 					},
 					Span: exitI.Span,
 				})
@@ -447,7 +436,6 @@ func (m *Manager) RunById(
 	args map[string]string,
 	outputWriter io.Writer,
 	automationContext *AutomationContext,
-	allowCache bool,
 ) (HmsRes, error) {
 	script, found, err := database.GetUserHomescriptById(hmsId, username)
 	if err != nil {
@@ -468,7 +456,6 @@ func (m *Manager) RunById(
 		args,
 		outputWriter,
 		automationContext,
-		allowCache,
 	)
 }
 
@@ -545,21 +532,24 @@ func (m *Manager) killJob(job Job) {
 	cancelMtx := sync.Mutex{}
 
 	go func() {
-		time.Sleep(10 * time.Second) // TODO: allow customization
-		job.CancelCtx()
-		cancelMtx.Lock()
 		defer cancelMtx.Unlock()
-		canceled = true
+		time.Sleep(10 * time.Second) // TODO: allow customization
+
+		cancelMtx.Lock()
+
+		if !canceled {
+			job.CancelCtx()
+		}
+
 	}()
 
-	// give timeout of 10 secs
-	job.Vm.Wait()
-
 	log.Trace("Dispatching sigTerm to HMS interpreter channel")
+
+	// give timeout of 10 secs
+	job.Vm.WaitNonConsuming()
+
 	cancelMtx.Lock()
-	if !canceled {
-		job.CancelCtx()
-	}
+	canceled = true
 	cancelMtx.Unlock()
 	log.Trace("Successfully dispatched sigTerm to HMS interpreter channel")
 }
