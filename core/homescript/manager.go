@@ -300,17 +300,16 @@ func (m *Manager) Run(
 	prog := comp.Compile(modules)
 
 	// TODO: remove this debug output
-	// i := 0
-	// for name, function := range prog.Functions {
-	// 	fmt.Printf("%03d ===> func: %s\n", i, name)
-	//
-	// 	for idx, inst := range function {
-	// 		fmt.Printf("%03d | %s\n", idx, inst)
-	// 	}
-	//
-	// 	i++
-	// }
-	//
+	i := 0
+	for name, function := range prog.Functions {
+		fmt.Printf("%03d ===> func: %s\n", i, name)
+
+		for idx, inst := range function {
+			fmt.Printf("%03d | %s\n", idx, inst)
+		}
+
+		i++
+	}
 
 	log.Debug(fmt.Sprintf("Homescript '%s' of user '%s' is executing...", entryModuleName, username))
 
@@ -337,7 +336,7 @@ func (m *Manager) Run(
 			automationContext,
 			cancelCtxFunc,
 		),
-		false,
+		!false,
 		&cancelCtx,
 		&cancelCtxFunc,
 		interpreterScopeAdditions(),
@@ -353,7 +352,10 @@ func (m *Manager) Run(
 		*idChan <- id
 	}
 
-	vm.Spawn(fmt.Sprintf("@%s_@init0", entryModuleName), false)
+	entryFunc := prog.EntryPoints[entryModuleName]
+	fmt.Printf("Calling entry function `%s`\n", entryFunc)
+
+	vm.Spawn(entryFunc, false)
 
 	if coreNum, i := vm.Wait(); i != nil {
 		i := *i
