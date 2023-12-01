@@ -355,7 +355,7 @@ func (m *Manager) Run(
 	entryFunc := prog.EntryPoints[entryModuleName]
 	fmt.Printf("Calling entry function `%s`\n", entryFunc)
 
-	vm.Spawn(entryFunc, false)
+	vm.Spawn(entryFunc)
 
 	if coreNum, i := vm.Wait(); i != nil {
 		i := *i
@@ -528,7 +528,7 @@ func (m *Manager) KillAllId(hmsId string) (count uint64, success bool) {
 
 func (m *Manager) killJob(job Job) {
 	killFn := fmt.Sprintf("@%s_@event_kill0", job.EntryModuleName)
-	job.Vm.Spawn(killFn, true)
+	job.Vm.Spawn(killFn)
 
 	canceled := false
 	cancelMtx := sync.Mutex{}
