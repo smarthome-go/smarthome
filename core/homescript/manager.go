@@ -297,7 +297,7 @@ func (m *Manager) Run(
 	log.Trace(fmt.Sprintf("Homescript '%s' of user '%s' is being compiled...", entryModuleName, username))
 
 	comp := compiler.NewCompiler()
-	prog := comp.Compile(modules)
+	prog := comp.Compile(modules, entryModuleName)
 
 	// TODO: remove this debug output
 	i := 0
@@ -357,10 +357,9 @@ func (m *Manager) Run(
 		*idChan <- id
 	}
 
-	entryFunc := prog.EntryPoints[entryModuleName]
-	fmt.Printf("Calling entry function `%s`\n", entryFunc)
+	fmt.Printf("Calling entry function `%s`\n", prog.EntryPoint)
 
-	vm.Spawn(entryFunc)
+	vm.Spawn(prog.EntryPoint)
 
 	if coreNum, i := vm.Wait(); i != nil {
 		i := *i
