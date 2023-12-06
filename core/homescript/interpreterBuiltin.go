@@ -11,7 +11,7 @@ import (
 	"github.com/go-ping/ping"
 	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
-	"github.com/smarthome-go/homescript/v3/homescript/interpreter/value"
+	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/hardware"
@@ -59,7 +59,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 	case "hms":
 		switch toImport {
 		case "exec":
-			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 				hmsId := args[0].(value.ValueString).Inner
 				argOpt := args[1].(value.ValueOption)
 
@@ -89,10 +89,9 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				)
 
 				if err != nil {
-					return nil, value.NewRuntimeErr(
-						err.Error(),
-						value.HostErrorKind,
+					return nil, value.NewVMThrowInterrupt(
 						span,
+						err.Error(),
 					)
 				}
 
@@ -114,7 +113,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 						}
 					}
 
-					return nil, value.NewThrowInterrupt(
+					return nil, value.NewVMThrowInterrupt(
 						span,
 						message,
 					)
@@ -127,13 +126,13 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 	case "location":
 		switch toImport {
 		case "sun_times":
-			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 
 				serverConfig, found, err := database.GetServerConfiguration()
 				if err != nil || !found {
-					return nil, value.NewRuntimeErr(
+					return nil, value.NewVMFatalException(
 						"Could not retrieve system configuration",
-						value.HostErrorKind,
+						value.Vm_HostErrorKind,
 						span,
 					)
 				}
@@ -152,13 +151,12 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				}), nil
 			}), true
 		case "weather":
-			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 				weather, err := weather.GetCurrentWeather()
 				if err != nil {
-					return nil, value.NewRuntimeErr(
-						fmt.Sprintf("Could not load weather: %s", err.Error()),
-						value.HostErrorKind,
+					return nil, value.NewVMThrowInterrupt(
 						span,
+						fmt.Sprintf("Could not load weather: %s", err.Error()),
 					)
 				}
 
@@ -174,12 +172,12 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 	case "switch":
 		switch toImport {
 		case "get_switch":
-			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 				sw, found, err := database.GetSwitchById(args[0].(value.ValueString).Inner)
 				if err != nil {
-					return nil, value.NewRuntimeErr(
+					return nil, value.NewVMFatalException(
 						err.Error(),
-						value.HostErrorKind,
+						value.Vm_HostErrorKind,
 						span,
 					)
 				}
@@ -203,13 +201,13 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				})), nil
 			}), true
 		case "power":
-			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 				switchId := args[0].(value.ValueString).Inner
 				powerOn := args[1].(value.ValueBool).Inner
 
 				err := hardware.SetSwitchPowerAll(switchId, powerOn, self.username)
 				if err != nil {
-					return nil, value.NewRuntimeErr(err.Error(), value.HostErrorKind, span)
+					return nil, value.NewVMThrowInterrupt(span, err.Error())
 				}
 
 				return value.NewValueNull(), nil
@@ -219,15 +217,15 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 		}
 	case "widget":
 		switch toImport {
-		case "on_click_js":
-			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+		case "on_click_js": // TODO: remove these: it can be implemented better
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 				targetCode := strings.ReplaceAll(args[0].(value.ValueString).Inner, "\"", "\\\"")
 				inner := args[1].(value.ValueString).Inner
 				wrapper := fmt.Sprintf("<span onclick=\"%s\">%s</span>", targetCode, inner)
 				return value.NewValueString(wrapper), nil
 			}), true
 		case "on_click_hms":
-			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 				targetCode := strings.ReplaceAll(args[0].(value.ValueString).Inner, "'", "\\'")
 				targetCode = strings.ReplaceAll(targetCode, "\"", "\\\"")
 				inner := args[1].(value.ValueString).Inner
@@ -241,7 +239,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 	case "testing":
 		switch toImport {
 		case "assert_eq":
-			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 				lhsDisp, i := args[0].Display()
 				if i != nil {
 					return nil, i
@@ -252,7 +250,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				}
 
 				if args[0].Kind() != args[1].Kind() {
-					return nil, value.NewThrowInterrupt(span, fmt.Sprintf("`%s` is not equal to `%s`", lhsDisp, rhsDisp))
+					return nil, value.NewVMThrowInterrupt(span, fmt.Sprintf("`%s` is not equal to `%s`", lhsDisp, rhsDisp))
 				}
 
 				isEqual, i := args[0].IsEqual(args[1])
@@ -261,7 +259,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				}
 
 				if !isEqual {
-					return nil, value.NewThrowInterrupt(span, fmt.Sprintf("`%s` is not equal to `%s`", lhsDisp, rhsDisp))
+					return nil, value.NewVMThrowInterrupt(span, fmt.Sprintf("`%s` is not equal to `%s`", lhsDisp, rhsDisp))
 				}
 
 				return value.NewValueNull(), nil
@@ -270,7 +268,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 	case "storage":
 		switch toImport {
 		case "set_storage":
-			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 				key := args[0].(value.ValueString).Inner
 				disp, i := args[1].Display()
 				if i != nil {
@@ -278,9 +276,9 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				}
 
 				if err := database.InsertHmsStorageEntry(executor.GetUser(), key, disp); err != nil {
-					return nil, value.NewRuntimeErr(
+					return nil, value.NewVMFatalException(
 						fmt.Sprintf("Could not set storage: %s", err.Error()),
-						value.HostErrorKind,
+						value.Vm_HostErrorKind,
 						span,
 					)
 				}
@@ -288,14 +286,14 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				return value.NewValueNull(), nil
 			}), true
 		case "get_storage":
-			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 				key := args[0].(value.ValueString).Inner
 
 				val, err := database.GetHmsStorageEntry(executor.GetUser(), key)
 				if err != nil {
-					return nil, value.NewRuntimeErr(
+					return nil, value.NewVMFatalException(
 						fmt.Sprintf("Could not set storage: %s", err.Error()),
-						value.HostErrorKind,
+						value.Vm_HostErrorKind,
 						span,
 					)
 				}
@@ -310,7 +308,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 	case "reminder":
 		switch toImport {
 		case "remind":
-			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 				fields := args[0].(value.ValueObject).FieldsInternal
 
 				title := (*fields["title"]).(value.ValueString).Inner
@@ -321,19 +319,17 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				dueDateYear := (*fields["due_date_year"]).(value.ValueInt).Inner
 
 				if priority < 0.0 || priority > 4.0 || float64(int64(priority)) != float64(priority) {
-					return nil, value.NewRuntimeErr(
-						fmt.Sprintf("Reminder urgency has to an integer ( where 0 <= urgency <= 4 ), got %d", int(priority)),
-						value.ValueErrorKind,
+					return nil, value.NewVMThrowInterrupt(
 						span,
+						fmt.Sprintf("Reminder urgency has to an integer ( where 0 <= urgency <= 4 ), got %d", int(priority)),
 					)
 				}
 
 				dueDate, valid := parseDate(int(dueDateYear), int(dueDateMonth), int(dueDateDay))
 				if !valid {
-					return nil, value.NewRuntimeErr(
-						"Invalid due date provided",
-						value.ValueErrorKind,
+					return nil, value.NewVMThrowInterrupt(
 						span,
+						"Invalid due date provided",
 					)
 				}
 
@@ -345,9 +341,9 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 					database.ReminderPriority(priority),
 				)
 				if err != nil {
-					return nil, value.NewRuntimeErr(
+					return nil, value.NewVMFatalException(
 						fmt.Sprintf("Could not create reminder: %s", err.Error()),
-						value.HostErrorKind,
+						value.Vm_HostErrorKind,
 						span,
 					)
 				}
@@ -358,15 +354,16 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 	case "net":
 		switch toImport {
 		case "ping":
-			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 				ip := args[0].(value.ValueString).Inner
 				timeout := args[1].(value.ValueFloat).Inner
 
 				pinger, err := ping.NewPinger(ip)
 				if err != nil {
-					return nil, value.NewThrowInterrupt(
-						span,
+					return nil, value.NewVMFatalException(
 						err.Error(),
+						value.Vm_HostErrorKind,
+						span,
 					)
 				}
 
@@ -375,7 +372,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				pinger.Timeout = time.Millisecond * time.Duration(timeout*1000)
 				err = pinger.Run() // blocks until the ping is finished or timed-out
 				if err != nil {
-					return nil, value.NewThrowInterrupt(
+					return nil, value.NewVMThrowInterrupt(
 						span,
 						err.Error(),
 					)
@@ -385,19 +382,19 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 			}), true
 		case "http":
 			return *value.NewValueObject(map[string]*value.Value{
-				"get": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+				"get": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 					hasPermission, err := database.UserHasPermission(self.username, database.PermissionHomescriptNetwork)
 					if err != nil {
-						return nil, value.NewRuntimeErr(
+						return nil, value.NewVMFatalException(
 							fmt.Sprintf("Could not send GET request: failed to validate user's permissions: %s", err.Error()),
-							value.HostErrorKind,
+							value.Vm_HostErrorKind,
 							span,
 						)
 					}
 					if !hasPermission {
-						return nil, value.NewRuntimeErr(
+						return nil, value.NewVMFatalException(
 							fmt.Sprintf("will not send GET request: you lack permission to access the network via homescript. If this is unintentional, contact your administrator"),
-							value.HostErrorKind,
+							value.Vm_HostErrorKind,
 							span,
 						)
 					}
@@ -411,7 +408,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 						nil,
 					)
 					if err != nil {
-						return nil, value.NewRuntimeErr(err.Error(), value.HostErrorKind, span)
+						return nil, value.NewVMThrowInterrupt(span, err.Error())
 					}
 					// Set the user agent to the Smarthome HMS client
 					req.Header.Set("User-Agent", "Smarthome-Homescript")
@@ -430,14 +427,14 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 
 					// Evaluate the request's outcome
 					if err != nil {
-						return nil, value.NewRuntimeErr(err.Error(), value.HostErrorKind, span)
+						return nil, value.NewVMThrowInterrupt(span, err.Error())
 					}
 
 					// Read request response body
 					defer res.Body.Close()
 					resBody, err := io.ReadAll(res.Body)
 					if err != nil {
-						return nil, value.NewRuntimeErr(err.Error(), value.HostErrorKind, span)
+						return nil, value.NewVMThrowInterrupt(span, err.Error())
 					}
 
 					outCookies := make(map[string]*value.Value)
@@ -452,20 +449,20 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 						"cookies":     value.NewValueAnyObject(outCookies),
 					}), nil
 				}),
-				"generic": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+				"generic": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 					// Check permissions and request building beforehand
 					hasPermission, err := database.UserHasPermission(executor.GetUser(), database.PermissionHomescriptNetwork)
 					if err != nil {
-						return nil, value.NewRuntimeErr(
+						return nil, value.NewVMFatalException(
 							fmt.Sprintf("Could not perform request: failed to validate your permissions: %s", err.Error()),
-							value.HostErrorKind,
+							value.Vm_HostErrorKind,
 							span,
 						)
 					}
 					if !hasPermission {
-						return nil, value.NewRuntimeErr(
+						return nil, value.NewVMFatalException(
 							fmt.Sprintf("Will not perform request: lacking permission to access the network via Homescript. If this is unintentional, contact your administrator"),
-							value.HostErrorKind,
+							value.Vm_HostErrorKind,
 							span,
 						)
 					}
@@ -488,7 +485,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 						strings.NewReader(bodyStr),
 					)
 					if err != nil {
-						return nil, value.NewThrowInterrupt(
+						return nil, value.NewVMThrowInterrupt(
 							span,
 							err.Error(),
 						)
@@ -531,7 +528,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 					res, err := client.Do(req)
 					// Evaluate the request's outcome
 					if err != nil {
-						return nil, value.NewThrowInterrupt(
+						return nil, value.NewVMThrowInterrupt(
 							span,
 							err.Error(),
 						)
@@ -541,7 +538,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 					defer res.Body.Close()
 					resBody, err := io.ReadAll(res.Body)
 					if err != nil {
-						return nil, value.NewThrowInterrupt(
+						return nil, value.NewVMThrowInterrupt(
 							span,
 							err.Error(),
 						)
@@ -566,19 +563,19 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 	case "log":
 		switch toImport {
 		case "logger":
-			testPermissions := func(username string, span errors.Span) *value.Interrupt {
+			testPermissions := func(username string, span errors.Span) *value.VmInterrupt {
 				hasPermission, err := database.UserHasPermission(self.GetUser(), database.PermissionLogging)
 				if err != nil {
-					return value.NewRuntimeErr(err.Error(), value.HostErrorKind, span)
+					return value.NewVMFatalException(err.Error(), value.Vm_HostErrorKind, span)
 				}
 				if !hasPermission {
-					return value.NewRuntimeErr(fmt.Sprintf("Failed to add log event: lacking permission to add records to the internal logging system."), value.HostErrorKind, span)
+					return value.NewVMFatalException(fmt.Sprintf("Failed to add log event: lacking permission to add records to the internal logging system."), value.Vm_HostErrorKind, span)
 				}
 				return nil
 			}
 
 			return *value.NewValueObject(map[string]*value.Value{
-				"trace": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+				"trace": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 					title := args[0].(value.ValueString).Inner
 					description := args[1].(value.ValueString).Inner
 					if i := testPermissions(executor.GetUser(), span); i != nil {
@@ -587,7 +584,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 					event.Trace(title, description)
 					return value.NewValueNull(), nil
 				}),
-				"debug": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+				"debug": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 					title := args[0].(value.ValueString).Inner
 					description := args[1].(value.ValueString).Inner
 					if i := testPermissions(executor.GetUser(), span); i != nil {
@@ -596,7 +593,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 					event.Debug(title, description)
 					return value.NewValueNull(), nil
 				}),
-				"info": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+				"info": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 					title := args[0].(value.ValueString).Inner
 					description := args[1].(value.ValueString).Inner
 					if i := testPermissions(executor.GetUser(), span); i != nil {
@@ -605,7 +602,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 					event.Info(title, description)
 					return value.NewValueNull(), nil
 				}),
-				"warn": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+				"warn": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 					title := args[0].(value.ValueString).Inner
 					description := args[1].(value.ValueString).Inner
 					if i := testPermissions(executor.GetUser(), span); i != nil {
@@ -614,7 +611,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 					event.Warn(title, description)
 					return value.NewValueNull(), nil
 				}),
-				"error": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+				"error": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 					title := args[0].(value.ValueString).Inner
 					description := args[1].(value.ValueString).Inner
 					if i := testPermissions(executor.GetUser(), span); i != nil {
@@ -623,7 +620,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 					event.Error(title, description)
 					return value.NewValueNull(), nil
 				}),
-				"fatal": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+				"fatal": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 					title := args[0].(value.ValueString).Inner
 					description := args[1].(value.ValueString).Inner
 					if i := testPermissions(executor.GetUser(), span); i != nil {
@@ -653,14 +650,14 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 	case "scheduler":
 		switch toImport {
 		case "create_schedule":
-			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 				data := args[0].(value.ValueObject).FieldsInternal
 
 				hour := (*data["hour"]).(value.ValueInt).Inner
 				minute := (*data["minute"]).(value.ValueInt).Inner
 
 				if hour < 0 || minute < 0 {
-					return nil, value.NewThrowInterrupt(span, "Fields `hour` and `minute` have to be >= 0")
+					return nil, value.NewVMThrowInterrupt(span, "Fields `hour` and `minute` have to be >= 0")
 				}
 
 				newId, err := CreateNewSchedule(database.ScheduleData{
@@ -672,36 +669,36 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				}, executor.GetUser())
 
 				if err != nil {
-					return nil, value.NewRuntimeErr(fmt.Sprintf("Backend error: %s", err.Error()), value.HostErrorKind, span)
+					return nil, value.NewVMFatalException(fmt.Sprintf("Backend error: %s", err.Error()), value.Vm_HostErrorKind, span)
 				}
 
 				return value.NewValueInt(int64(newId)), nil
 			}), true
 		case "delete_schedule":
-			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 				id := args[0].(value.ValueInt).Inner
 
 				if id < 0 {
-					return nil, value.NewThrowInterrupt(span, fmt.Sprintf("IDs must be > 0, got %d", id))
+					return nil, value.NewVMThrowInterrupt(span, fmt.Sprintf("IDs must be > 0, got %d", id))
 				}
 
 				_, found, err := GetUserScheduleById(executor.GetUser(), uint(id))
 				if err != nil {
-					return nil, value.NewRuntimeErr(
+					return nil, value.NewVMFatalException(
 						fmt.Sprintf("Could not delete schedule: %s", err.Error()),
-						value.HostErrorKind,
+						value.Vm_HostErrorKind,
 						span,
 					)
 				}
 
 				if !found {
-					return nil, value.NewThrowInterrupt(span, fmt.Sprintf("No schedule with ID %d exists", id))
+					return nil, value.NewVMThrowInterrupt(span, fmt.Sprintf("No schedule with ID %d exists", id))
 				}
 
 				if err := RemoveScheduleById(uint(id)); err != nil {
-					return nil, value.NewRuntimeErr(
+					return nil, value.NewVMFatalException(
 						fmt.Sprintf("Could not delete schedule: %s", err.Error()),
-						value.HostErrorKind,
+						value.Vm_HostErrorKind,
 						span,
 					)
 				}
@@ -709,12 +706,12 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				return nil, nil
 			}), true
 		case "list_schedules":
-			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 				schedules, err := database.GetUserSchedules(executor.GetUser())
 				if err != nil {
-					return nil, value.NewRuntimeErr(
+					return nil, value.NewVMFatalException(
 						fmt.Sprintf("Could not list schedules: %s", err.Error()),
-						value.HostErrorKind,
+						value.Vm_HostErrorKind,
 						span,
 					)
 				}
@@ -766,7 +763,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 	case "notification":
 		switch toImport {
 		case "notify":
-			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 				title := args[0].(value.ValueString).Inner
 				description := args[1].(value.ValueString).Inner
 				level := args[2].(value.ValueInt).Inner
@@ -786,9 +783,9 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				)
 
 				if err != nil {
-					return nil, value.NewRuntimeErr(
+					return nil, value.NewVMFatalException(
 						fmt.Sprintf("Could not add notification: %s", err.Error()),
-						value.HostErrorKind,
+						value.Vm_HostErrorKind,
 						span,
 					)
 				}
@@ -821,10 +818,10 @@ func (self interpreterExecutor) WriteStringTo(input string) error {
 	return nil
 }
 
-func checkCancelation(ctx *context.Context, span errors.Span) *value.Interrupt {
+func checkCancelation(ctx *context.Context, span errors.Span) *value.VmInterrupt {
 	select {
 	case <-(*ctx).Done():
-		return value.NewTerminationInterrupt((*ctx).Err().Error(), span)
+		return value.NewVMTerminationInterrupt((*ctx).Err().Error(), span)
 	default:
 		// do nothing, this should not block the entire interpreter
 		return nil
@@ -834,11 +831,11 @@ func checkCancelation(ctx *context.Context, span errors.Span) *value.Interrupt {
 func interpreterScopeAdditions() map[string]value.Value {
 	// TODO: fill this
 	return map[string]value.Value{
-		"exit": *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+		"exit": *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 			code := args[0].(value.ValueInt).Inner
-			return nil, value.NewExitInterrupt(code, span)
+			return nil, value.NewVMExitInterrupt(code, span)
 		}),
-		"fmt": *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+		"fmt": *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 			displays := make([]any, 0)
 
 			for idx, arg := range args {
@@ -874,7 +871,7 @@ func interpreterScopeAdditions() map[string]value.Value {
 
 			return value.NewValueString(out), nil
 		}),
-		"println": *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+		"println": *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 			output := make([]string, 0)
 			for _, arg := range args {
 				disp, i := arg.Display()
@@ -887,9 +884,9 @@ func interpreterScopeAdditions() map[string]value.Value {
 			outStr := strings.Join(output, " ") + "\n"
 
 			if err := executor.WriteStringTo(outStr); err != nil {
-				return nil, value.NewRuntimeErr(
+				return nil, value.NewVMFatalException(
 					err.Error(),
-					value.HostErrorKind,
+					value.Vm_HostErrorKind,
 					span,
 				)
 			}
@@ -897,7 +894,7 @@ func interpreterScopeAdditions() map[string]value.Value {
 			return value.NewValueNull(), nil
 		}),
 		"time": *value.NewValueObject(map[string]*value.Value{
-			"sleep": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+			"sleep": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 				durationSecs := args[0].(value.ValueFloat).Inner
 
 				for i := 0; i < int(durationSecs*1000); i += 10 {
@@ -909,7 +906,7 @@ func interpreterScopeAdditions() map[string]value.Value {
 
 				return value.NewValueNull(), nil
 			}),
-			"since": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+			"since": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 				if args[0].Kind() != value.ObjectValueKind {
 					fmt.Printf("illegal input: %v, %v\n", args, span)
 				}
@@ -918,22 +915,22 @@ func interpreterScopeAdditions() map[string]value.Value {
 				then := time.UnixMilli((*milliObj).(value.ValueInt).Inner)
 				return createDurationObject(time.Since(then)), nil
 			}),
-			"add_days": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+			"add_days": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 				base := createTimeStructFromObject(args[0])
 				days := args[1].(value.ValueInt).Inner
 				return createTimeObject(base.Add(time.Hour * 24 * time.Duration(days))), nil
 			}),
-			"add_hours": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+			"add_hours": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 				base := createTimeStructFromObject(args[0])
 				hours := args[1].(value.ValueInt).Inner
 				return createTimeObject(base.Add(time.Hour * time.Duration(hours))), nil
 			}),
-			"add_minutes": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+			"add_minutes": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 				base := createTimeStructFromObject(args[0])
 				minutes := args[1].(value.ValueInt).Inner
 				return createTimeObject(base.Add(time.Minute * time.Duration(minutes))), nil
 			}),
-			"now": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+			"now": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 				now := time.Now()
 
 				return createTimeObject(now), nil
@@ -948,7 +945,7 @@ func createDurationObject(t time.Duration) *value.Value {
 		"minutes": value.NewValueFloat(t.Minutes()),
 		"seconds": value.NewValueFloat(t.Seconds()),
 		"millis":  value.NewValueInt(t.Milliseconds()),
-		"display": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.Interrupt) {
+		"display": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 			return value.NewValueString(t.String()), nil
 		}),
 	})

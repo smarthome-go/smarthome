@@ -13,8 +13,8 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/compiler"
 	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
-	"github.com/smarthome-go/homescript/v3/homescript/interpreter/value"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime"
+	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
 )
 
@@ -340,6 +340,11 @@ func (m *Manager) Run(
 		&cancelCtx,
 		&cancelCtxFunc,
 		interpreterScopeAdditions(),
+		runtime.CoreLimits{
+			CallStackMaxSize: 10000, // TODO: Make limits dynamic?
+			StackMaxSize:     10000,
+			MaxMemorySize:    10000,
+		},
 	)
 
 	// supportsKill := modules[entryModuleName].SupportsEvent("kill")
@@ -368,8 +373,8 @@ func (m *Manager) Run(
 		isErr := true
 
 		switch i.Kind() {
-		case value.ExitInterruptKind: // ignore this
-			exitI := i.(value.ExitInterrupt)
+		case value.Vm_ExitInterruptKind: // ignore this
+			exitI := i.(value.Vm_ExitInterrupt)
 			if exitI.Code != 0 {
 				errors = append(errors, HmsError{
 					RuntimeInterrupt: &HmsRuntimeInterrupt{
@@ -382,11 +387,11 @@ func (m *Manager) Run(
 				isErr = false
 			}
 			addErr = true
-		case value.TerminateInterruptKind:
-			termI := i.(value.TerminationInterrupt)
+		case value.Vm_TerminateInterruptKind:
+			termI := i.(value.VmTerminationInterrupt)
 			span = termI.Span
-		case value.RuntimeErrorInterruptKind:
-			runtimeI := i.(value.RuntimeErr)
+		case value.Vm_FatalExceptionInterruptKind:
+			runtimeI := i.(value.VmFatalException)
 			span = runtimeI.Span
 		default:
 			panic(fmt.Sprintf("Another fatal interrupt was added without updating this code: %s", i.Kind()))
