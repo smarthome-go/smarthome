@@ -336,7 +336,6 @@ func (m *Manager) Run(
 			automationContext,
 			cancelCtxFunc,
 		),
-		!false,
 		&cancelCtx,
 		&cancelCtxFunc,
 		interpreterScopeAdditions(),
@@ -359,7 +358,8 @@ func (m *Manager) Run(
 
 	fmt.Printf("Calling entry function `%s`\n", prog.EntryPoint)
 
-	vm.Spawn(prog.EntryPoint)
+	// TODO: maybe add debugger support anytime
+	vm.Spawn(prog.EntryPoint, nil)
 
 	if coreNum, i := vm.Wait(); i != nil {
 		i := *i
@@ -532,7 +532,7 @@ func (m *Manager) KillAllId(hmsId string) (count uint64, success bool) {
 
 func (m *Manager) killJob(job Job) {
 	killFn := fmt.Sprintf("@%s_@event_kill0", job.EntryModuleName)
-	job.Vm.Spawn(killFn)
+	job.Vm.Spawn(killFn, nil)
 
 	canceled := false
 	cancelMtx := sync.Mutex{}
