@@ -9,6 +9,8 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+const DEFAULT_ADMIN_USERNAME = "admin"
+
 func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 	log.Trace("Initializing database connection...")
 	config = databaseConfig
@@ -76,6 +78,9 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 		return err
 	}
 	if err := createHomescriptArgTable(); err != nil {
+		return err
+	}
+	if err := createDeviceDriverTable(); err != nil {
 		return err
 	}
 	if err := createAutomationTable(); err != nil {
@@ -165,7 +170,7 @@ func initAdminUser(password string) error {
 	}
 
 	if err := AddUser(FullUser{
-		Username:          "admin",
+		Username:          DEFAULT_ADMIN_USERNAME,
 		Forename:          "Admin",
 		Surname:           "User",
 		PrimaryColorDark:  "#88FF70",

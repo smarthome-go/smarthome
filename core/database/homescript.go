@@ -1,5 +1,9 @@
 package database
 
+import "fmt"
+
+const HOMESCRIPT_ID_LEN = 150
+
 type Homescript struct {
 	Owner string         `json:"owner"`
 	Data  HomescriptData `json:"data"`
@@ -20,11 +24,11 @@ type HomescriptData struct {
 // Creates the table containing Homescript code and metadata
 // If the database fails, this function returns an error
 func createHomescriptTable() error {
-	query := `
+	_, err := db.Exec(fmt.Sprintf(`
 	CREATE TABLE
 	IF NOT EXISTS
 	homescript(
-		Id					VARCHAR(30),
+		Id					VARCHAR(%d),
 		Owner				VARCHAR(20),
 		Name				VARCHAR(30),
 		Description			TEXT,
@@ -40,12 +44,16 @@ func createHomescriptTable() error {
 		FOREIGN KEY (Owner)
 		REFERENCES user(Username)
 	)
-	`
-	_, err := db.Exec(query)
+	`, HOMESCRIPT_ID_LEN))
 	if err != nil {
 		log.Error("Failed to create Homescript Table: Executing query failed: ", err.Error())
 		return err
 	}
+
+	// if _, err = query.Exec(HOMESCRIPT_ID_LEN); err != nil {
+	// 	log.Error("Failed to create Homescript Table: Executing query failed: ", err.Error())
+	// 	return err
+	// }
 	return nil
 }
 

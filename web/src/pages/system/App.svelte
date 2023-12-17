@@ -1,10 +1,11 @@
 <script lang="ts">
     import IconButton from "@smui/icon-button";
-
+    import Tab, { Label } from '@smui/tab'
+    import TabBar from '@smui/tab-bar'
     import Page from "../../Page.svelte";
     import Logs from "./Logs.svelte";
     import Progress from "../../components/Progress.svelte";
-    import Button, { Icon, Label } from "@smui/button";
+    import Button, { Icon } from "@smui/button";
     import Textfield from "@smui/textfield";
     import type { systemConfig } from "./main";
     import { onMount } from "svelte";
@@ -15,7 +16,8 @@
     import Switch from "@smui/switch";
     import ExportImport from "./ExportImport.svelte";
     import Hardware from "./hardware/Hardware.svelte";
-import PurgeCache from "./dialogs/PurgeCache.svelte";
+    import PurgeCache from "./dialogs/PurgeCache.svelte";
+    import Drivers from "./hardware/Drivers.svelte";
 
     let loading = false;
 
@@ -148,6 +150,11 @@ import PurgeCache from "./dialogs/PurgeCache.svelte";
         }
     }
 
+
+    type Activity = 'general' | 'devices'
+    let currentActivity: Activity = 'general'
+    let activities: Activity[] = ['general', 'devices']
+
     // As soon as the component is mounted, fetch the configuration
     onMount(fetchConfig);
 </script>
@@ -164,7 +171,12 @@ import PurgeCache from "./dialogs/PurgeCache.svelte";
 
 <Page>
     <div id="header" class="mdc-elevation--z4">
-        <h6>System Configuration</h6>
+        <TabBar tabs={activities} let:tab bind:active={currentActivity}>
+            <Tab {tab} minWidth>
+                <Label>{tab}</Label>
+            </Tab>
+        </TabBar>
+
         <div id="header__buttons">
             <IconButton
                 title="Purge Cache"
@@ -181,7 +193,8 @@ import PurgeCache from "./dialogs/PurgeCache.svelte";
     </div>
     <Progress bind:loading />
     <div id="content">
-        <div id="left" class="mdc-elevation--z1">
+        {#if currentActivity == 'general'}
+        <div id="general" class="mdc-elevation--z1">
             <div class="geo">
                 <div class="geo__title">
                     <h6>Geolocation</h6>
@@ -313,9 +326,16 @@ import PurgeCache from "./dialogs/PurgeCache.svelte";
             </div>
             <ExportImport />
         </div>
-        <div id="hardware" class="mdc-elevation--z1">
-            <Hardware />
-        </div>
+        {:else if currentActivity == 'devices'}
+            <div id="hardware-left" class="mdc-elevation--z1">
+                <Hardware />
+            </div>
+            <div id="hardware-right" class="mdc-elevation--z1">
+                <Drivers />
+            </div>
+        {:else}
+            Unsupported activity
+        {/if}
     </div></Page
 >
 
@@ -326,7 +346,6 @@ import PurgeCache from "./dialogs/PurgeCache.svelte";
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0.1rem 1.3rem;
         box-sizing: border-box;
         background-color: var(--clr-height-1-4);
         min-height: 3.5rem;
@@ -334,14 +353,6 @@ import PurgeCache from "./dialogs/PurgeCache.svelte";
         &__buttons {
             display: flex;
             align-items: center;
-        }
-
-        h6 {
-            margin: 0.5em 0;
-            @include mobile {
-                // Hide title on mobile due to space limitations
-                display: none;
-            }
         }
     }
 
@@ -361,7 +372,7 @@ import PurgeCache from "./dialogs/PurgeCache.svelte";
             padding: 1rem;
         }
 
-        #left {
+        #general {
             background-color: var(--clr-height-0-1);
             border-radius: 0.4rem;
             height: 65%;
@@ -441,7 +452,7 @@ import PurgeCache from "./dialogs/PurgeCache.svelte";
             }
         }
 
-        #hardware {
+        #hardware-left, #hardware-right {
             background-color: var(--clr-height-0-1);
             border-radius: 0.4rem;
             width: 100%;
@@ -450,7 +461,7 @@ import PurgeCache from "./dialogs/PurgeCache.svelte";
 
             @include widescreen {
                 height: 100%;
-                width: 40%;
+                width: 50%;
                 padding-bottom: 0;
             }
 

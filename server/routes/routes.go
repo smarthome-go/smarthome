@@ -225,6 +225,12 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/system/hardware/node/modify", mdl.ApiAuth(mdl.Perm(api.ModifyHardwareNode, database.PermissionSystemConfig))).Methods("PUT")
 	r.HandleFunc("/api/system/hardware/node/delete", mdl.ApiAuth(mdl.Perm(api.DeleteHardwareNode, database.PermissionSystemConfig))).Methods("DELETE")
 
+	// Hardware driver management
+	r.HandleFunc("/api/system/hardware/drivers/list", mdl.ApiAuth(mdl.Perm(api.ListDeviceDrivers, database.PermissionSystemConfig))).Methods("GET")
+	r.HandleFunc("/api/system/hardware/drivers/add", mdl.ApiAuth(mdl.Perm(api.CreateDeviceDriver, database.PermissionSystemConfig))).Methods("GET")
+	// r.HandleFunc("/api/system/hardware/drivers/modify", mdl.ApiAuth(mdl.Perm(api.ListDeviceDrivers, database.PermissionSystemConfig))).Methods("GET")
+	// r.HandleFunc("/api/system/hardware/drivers/delete", mdl.ApiAuth(mdl.Perm(api.DeleteDeviceDriver, database.PermissionSystemConfig))).Methods("GET")
+
 	// Logging
 	r.HandleFunc("/api/logs/delete/old", mdl.ApiAuth(mdl.Perm(api.FlushOldLogs, database.PermissionSystemConfig))).Methods("DELETE")
 	r.HandleFunc("/api/logs/delete/all", mdl.ApiAuth(mdl.Perm(api.FlushAllLogs, database.PermissionSystemConfig))).Methods("DELETE")

@@ -364,9 +364,9 @@ func CreateNewHomescript(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to add Homescript", Error: fmt.Sprintf("the id: '%s' is already present in the database, use another one", request.Id)})
 		return
 	}
-	if strings.Contains(request.Id, " ") || utf8.RuneCountInString(request.Id) > 30 {
+	if strings.Contains(request.Id, " ") || utf8.RuneCountInString(request.Id) > database.HOMESCRIPT_ID_LEN {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		Res(w, Response{Success: false, Message: "failed to add Homescript", Error: fmt.Sprintf("the id: '%s' must not exceed 30 characters and must not include any whitespaces", request.Id)})
+		Res(w, Response{Success: false, Message: "failed to add Homescript", Error: fmt.Sprintf("the id: '%s' must not exceed %d characters and must not include any whitespaces", request.Id, database.HOMESCRIPT_ID_LEN)})
 		return
 	}
 	if utf8.RuneCountInString(request.Workspace) > 50 {

@@ -1,6 +1,9 @@
 package database
 
-import "database/sql"
+import (
+	"database/sql"
+	"fmt"
+)
 
 type HmsArgInputType string
 
@@ -40,13 +43,13 @@ type HomescriptArgData struct {
 
 // Used for creating the table which contains the arguments of Homescripts
 func createHomescriptArgTable() error {
-	if _, err := db.Exec(`
+	_, err := db.Exec(fmt.Sprintf(`
 	CREATE TABLE
 	IF NOT EXISTS
 	homescriptArg(
 		Id INT AUTO_INCREMENT,
 		ArgKey VARCHAR(100),
-		HomescriptId VARCHAR(30),
+		HomescriptId VARCHAR(%d),
 		Prompt TEXT,
 		MDIcon VARCHAR(100),
 		InputType ENUM(
@@ -66,10 +69,13 @@ func createHomescriptArgTable() error {
 		FOREIGN KEY (HomescriptId)
 		REFERENCES homescript(Id)
 	)
-	`); err != nil {
+	`, HOMESCRIPT_ID_LEN))
+
+	if err != nil {
 		log.Error("Could not create HomescriptArgs table: executing query failed: ", err.Error())
 		return err
 	}
+
 	return nil
 }
 
