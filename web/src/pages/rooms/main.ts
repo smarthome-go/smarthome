@@ -17,6 +17,8 @@ export interface SwitchResponse {
     powerOn: boolean
     watts: number
     targetNode: string
+    driverVendorId: string,
+    driverModelId: string,
 }
 
 export interface Camera {

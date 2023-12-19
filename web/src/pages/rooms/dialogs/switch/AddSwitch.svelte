@@ -6,7 +6,15 @@
     import Select, { Option } from '@smui/select'
     import Progress from '../../../../../src/components/Progress.svelte'
     import type { SwitchResponse } from '../../main'
-    import { fetchHardwareNodes, loading, hardwareNodesLoaded, hardwareNodes } from './main'
+    import type { DriverData } from '../../../system/driver.ts'
+    import { drivers, driversLoaded, fetchHardwareNodes, loading, hardwareNodesLoaded, hardwareNodes, fetchDrivers } from './main'
+
+    let selectedDriver: DriverData = {
+        vendorId: "",
+        modelId: "",
+        name: "",
+        version: "",
+    }
 
     let open = false
     export let switches: SwitchResponse[] = []
@@ -30,6 +38,7 @@
 
         if (!$hardwareNodesLoaded) {
             fetchHardwareNodes()
+            fetchDrivers()
         }
     }
 
@@ -38,6 +47,7 @@
         _name: string,
         _watts: number,
         _targetNodeUrl: string,
+        _selectedDriver: DriverData,
     ) => Promise<void>
 
     let idInvalid = false
@@ -63,6 +73,17 @@
         {/if}
         <br />
         <br />
+        {#if $driversLoaded}
+            <Select bind:value={selectedDriver} label="Select Driver">
+                {#each $drivers as driver}
+                    <Option value={driver}>{driver.name} <code>{driver.vendorId}: {driver.modelId}</code> </Option>
+                {/each}
+            </Select>
+        {:else}
+            <Progress bind:loading={$loading} />
+        {/if}
+        <br>
+        <br>
         <Textfield
             bind:value={id}
             bind:dirty={idDirty}
@@ -96,7 +117,7 @@
             disabled={idInvalid || id === '' || name === ''}
             use={[InitialFocus]}
             on:click={() => {
-                onAdd(id, name, watts, targetNodeUrl === 'none' ? null : targetNodeUrl)
+                onAdd(id, name, watts, targetNodeUrl === 'none' ? null : targetNodeUrl, selectedDriver)
             }}
         >
             <Label>Create</Label>

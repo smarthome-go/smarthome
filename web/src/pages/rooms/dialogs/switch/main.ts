@@ -1,6 +1,7 @@
 import { get, writable } from 'svelte/store'
 import type { Writable } from 'svelte/store'
 import { createSnackbar } from '../../../../global'
+import { fetchDrivers as fetchDriversInternal, type FetchedDriver } from '../../../system/driver'
 
 export const loading: Writable<boolean> = writable(true)
 export const hardwareNodes: Writable<HardwareNode[]> = writable([])
@@ -24,5 +25,24 @@ export async function fetchHardwareNodes() {
     } catch (err) {
         get(createSnackbar)(`Failed to load hardware nodes: ${err}`)
     }
+    loading.set(false)
+}
+
+export const drivers: Writable<FetchedDriver[]> = writable([])
+export const driversLoaded: Writable<boolean> = writable(false)
+
+export interface HardwareNode {
+    url: string
+    name: string
+    token: string
+    enabled: boolean
+    online: boolean
+}
+
+export async function fetchDrivers() {
+    loading.set(true)
+    let driversTemp =  await fetchDriversInternal()
+    drivers.set(driversTemp)
+    driversLoaded.set(true)
     loading.set(false)
 }

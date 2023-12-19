@@ -91,7 +91,7 @@ func CreateNewDeviceDriver(driverData DeviceDriverData, homescriptCode string) (
 		ModelId,
 		Name,
 		Version,
-		HomescriptId,
+		HomescriptId
 	)
 	VALUES(?, ?, ?, ?, ?)
 	`)
@@ -207,7 +207,10 @@ func GetDeviceDriver(vendorId string, modelId string) (DeviceDriverData, bool, e
 
 	var driver DeviceDriverData
 
-	if err := query.QueryRow().Scan(
+	if err := query.QueryRow(
+		driver.VendorId,
+		driver.ModelId,
+	).Scan(
 		&driver.VendorId,
 		&driver.ModelId,
 		&driver.Name,

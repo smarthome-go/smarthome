@@ -8,7 +8,8 @@
     import Fab from "@smui/fab";
     import CreateDriver from "./CreateDriver.svelte";
     import IconButton from "@smui/icon-button";
-    import type { homescript } from "src/homescript";
+    import type { FetchedDriver } from "../driver"
+    import { fetchDrivers, createDriver } from "../driver"
 
     // Specifies whether the loading indicator should be shown or hidden
     let loading = true;
@@ -18,75 +19,15 @@
 
     // Contains all hardware nodes
     let driversLoaded = false;
-    let drivers: DeviceDriver[] = []
+    let drivers: FetchedDriver[] = []
 
-    interface DeviceDriver {
-        driver: DriverData,
-        homescript: homescript
-    }
-
-    interface DriverData {
-        vendorId: string,
-        modelId: string,
-        name: string,
-        version: string,
-    }
-
-    interface CreateDriver {
-        data: DriverData,
-        code: string,
-    }
-
-    async function fetchDrivers() {
-        loading = true;
-        try {
-            const res = await (
-                await fetch("/api/system/hardware/drivers/list")
-            ).json();
-            if (res.success !== undefined && !res.success)
-                throw Error(res.error);
-            drivers = res;
-            driversLoaded = true;
-        } catch (err) {
-            $createSnackbar(`Failed to load hardware drivers: ${err}`);
-        }
-        loading = false;
-    }
-
-    // Creates a new hardware node
-    async function createDriver(
-        data: CreateDriver
-    ) {
-        loading = true;
-        try {
-            const res = await (
-                await fetch("/api/system/hardware/drivers/add", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(data),
-                })
-            ).json();
-            if (res.success !== undefined && !res.success)
-                throw Error(res.error);
-            drivers = [
-                ...drivers,
-                {
-                    driver: data.data,
-                    homescript: res as homescript
-                },
-            ];
-        } catch (err) {
-            $createSnackbar(`Failed to create hardware driver node: ${err}`);
-        }
-        loading = false;
-    }
 
     onMount(() => fetchDrivers());
 </script>
 
 <CreateDriver
     bind:open={createDriverOpen}
-    on:create={(e) => /*TODO: create driver*/ console.log(e)}
+    on:create={(e) => createDriver(e.detail)}
 />
 
 <div class="hardware">
@@ -128,7 +69,10 @@
                 <span class="text-hint"> No installed drivers </span>
             {:else}
                 {#each drivers as driver}
-                    {driver}
+                    <code>
+                        {driver.vendorId}: {driver.modelId}
+                    </code>
+                    <br>
                 {/each}
             {/if}
         </div>

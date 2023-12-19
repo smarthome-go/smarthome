@@ -15,6 +15,7 @@
     import AddSwitch from './dialogs/switch/AddSwitch.svelte'
     import { loading, powerCamReloadEnabled, type Room } from './main'
     import PowerSwitch from './PowerSwitch.svelte'
+    import type { DriverData } from '../system/driver'
 
     // If set to true, a camera-reload is triggered
     let reloadCameras = false
@@ -119,7 +120,7 @@
     }
 
     // Adds a switch
-    async function addSwitch(id: string, name: string, watts: number, targetNode: string) {
+    async function addSwitch(id: string, name: string, watts: number, targetNode: string, selectedDriver: DriverData) {
         $loading = true
         try {
             const res = await (
@@ -132,6 +133,8 @@
                         watts,
                         roomId: currentRoom.data.id,
                         targetNode,
+                        selectedDriverVendor: selectedDriver.vendorId,
+                        selectedDriverModel: selectedDriver.modelId,
                     }),
                 })
             ).json()
@@ -140,7 +143,7 @@
 
             currentRoom.switches = [
                 ...currentRoom.switches,
-                { id, name, powerOn: false, watts, targetNode },
+                { id, name, powerOn: false, watts, targetNode, driverVendorId: selectedDriver.vendorId, driverModelId: selectedDriver.modelId },
             ]
             rooms[currentRoomIndex] = currentRoom
         } catch (err) {

@@ -6,8 +6,6 @@
         InitialFocus,
         Title,
     } from "@smui/dialog";
-    import FormField from "@smui/form-field";
-    import Switch from "@smui/switch";
     import Textfield from "@smui/textfield";
     import CharacterCounter from "@smui/textfield/character-counter";
     import HelperText from "@smui/textfield/helper-text";
