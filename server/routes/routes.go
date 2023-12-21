@@ -81,12 +81,12 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/room/modify", mdl.ApiAuth(mdl.Perm(api.ModifyRoomData, database.PermissionModifyRooms))).Methods("PUT")
 	r.HandleFunc("/api/room/delete", mdl.ApiAuth(mdl.Perm(api.DeleteRoom, database.PermissionModifyRooms))).Methods("DELETE")
 
-	// Switches
-	r.HandleFunc("/api/switch/list/all", api.GetAllSwitches).Methods("GET")
-	r.HandleFunc("/api/switch/list/personal", mdl.ApiAuth(api.GetUserSwitches)).Methods("GET")
-	r.HandleFunc("/api/switch/add", mdl.ApiAuth(mdl.Perm(api.CreateSwitch, database.PermissionModifyRooms))).Methods("POST")
-	r.HandleFunc("/api/switch/modify", mdl.ApiAuth(mdl.Perm(api.ModifySwitch, database.PermissionModifyRooms))).Methods("PUT")
-	r.HandleFunc("/api/switch/delete", mdl.ApiAuth(mdl.Perm(api.DeleteSwitch, database.PermissionModifyRooms))).Methods("DELETE")
+	// Devices
+	r.HandleFunc("/api/devices/list/all", api.GetAllDevices).Methods("GET")
+	r.HandleFunc("/api/devices/list/personal", mdl.ApiAuth(api.GetUserDevices)).Methods("GET")
+	r.HandleFunc("/api/devices/add", mdl.ApiAuth(mdl.Perm(api.CreateDevice, database.PermissionModifyRooms))).Methods("POST")
+	r.HandleFunc("/api/devices/modify", mdl.ApiAuth(mdl.Perm(api.ModifyDevice, database.PermissionModifyRooms))).Methods("PUT")
+	r.HandleFunc("/api/devices/delete", mdl.ApiAuth(mdl.Perm(api.DeleteDevice, database.PermissionModifyRooms))).Methods("DELETE")
 
 	// Cameras
 	r.HandleFunc("/api/camera/add", mdl.ApiAuth(mdl.Perm(api.CreateCamera, database.PermissionModifyRooms))).Methods("POST")

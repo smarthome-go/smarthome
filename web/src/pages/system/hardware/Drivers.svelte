@@ -21,8 +21,13 @@
     let driversLoaded = false;
     let drivers: FetchedDriver[] = []
 
+    async function init() {
+        loading = true
+        drivers = await fetchDrivers()
+        loading = false
+    }
 
-    onMount(() => fetchDrivers());
+    onMount(init);
 </script>
 
 <CreateDriver

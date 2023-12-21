@@ -68,7 +68,7 @@ func TestSwitches(t *testing.T) {
 	}
 	for _, test := range table {
 		t.Run(fmt.Sprintf("create switch/%s", test.Switch.Id), func(t *testing.T) {
-			if err := CreateSwitch(
+			if err := CreateDevice(
 				test.Switch.Id,
 				test.Switch.Name,
 				test.Switch.RoomId,
@@ -193,7 +193,7 @@ func TestUserSwitches(t *testing.T) {
 	t.Run("create switches", func(t *testing.T) {
 		for _, switchItem := range switches {
 			t.Run(fmt.Sprintf("create switches/%s", switchItem.Id), func(t *testing.T) {
-				if err := CreateSwitch(
+				if err := CreateDevice(
 					switchItem.Id,
 					switchItem.Name,
 					switchItem.RoomId,
@@ -308,7 +308,7 @@ func TestDoesSwitchExist(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
-	if err := CreateSwitch(
+	if err := CreateDevice(
 		"test1",
 		"test1",
 		"test",
@@ -411,7 +411,7 @@ func TestModifySwitch(t *testing.T) {
 	}
 	for _, test := range table {
 		// Create Switch
-		if err := CreateSwitch(
+		if err := CreateDevice(
 			test.Origin.Id,
 			test.Origin.Name,
 			test.Origin.RoomId,

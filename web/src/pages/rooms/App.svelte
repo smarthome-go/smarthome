@@ -120,7 +120,7 @@
     }
 
     // Adds a switch
-    async function addSwitch(id: string, name: string, watts: number, targetNode: string, selectedDriver: DriverData) {
+    async function addSwitch(id: string, name: string, watts: number, targetNode: string, selectedDriverVendorId: string, selectedDriverModelId: string) {
         $loading = true
         try {
             const res = await (
@@ -133,8 +133,8 @@
                         watts,
                         roomId: currentRoom.data.id,
                         targetNode,
-                        selectedDriverVendor: selectedDriver.vendorId,
-                        selectedDriverModel: selectedDriver.modelId,
+                        selectedDriverVendor: selectedDriverVendorId,
+                        selectedDriverModel: selectedDriverModelId,
                     }),
                 })
             ).json()

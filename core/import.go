@@ -376,7 +376,7 @@ func createRoomsInDatabase(rooms []config.SetupRoom) error {
 			return err
 		}
 		for _, switchItem := range room.Switches {
-			if err := database.CreateSwitch(
+			if err := database.CreateDevice(
 				switchItem.Id,
 				switchItem.Name,
 				room.Data.Id,

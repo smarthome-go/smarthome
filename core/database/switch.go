@@ -73,7 +73,14 @@ func createSwitchTargetNodeTable() error {
 
 // Creates a new switch
 // Will return an error if the database fails
-func CreateSwitch(id string, name string, roomId string, watts uint16, targetNode *string) error {
+func CreateDevice(
+	id string,
+	name string,
+	roomId string,
+	watts uint16,
+	driverVendorId string,
+	driverModelId string,
+) error {
 	query, err := db.Prepare(`
 	INSERT INTO
 	switch(
@@ -81,14 +88,18 @@ func CreateSwitch(id string, name string, roomId string, watts uint16, targetNod
 		Name,
 		Power,
 		RoomId,
-		Watts
+		Watts,
+		DriverVendorId,
+		DriverModelId
 	)
-	VALUES(?, ?, DEFAULT, ?, ?)
+	VALUES(?, ?, DEFAULT, ?, ?, ?, ?)
 	ON DUPLICATE KEY
 		UPDATE
 		Name=VALUES(Name),
 		RoomId=VALUES(RoomId),
-		Watts=VALUES(Watts)
+		Watts=VALUES(Watts),
+		DriverVendorId=VALUES(DriverVendorId),
+		DriverModelId=VALUES(DriverModelId)
 	`)
 	if err != nil {
 		log.Error("Failed to add switch: preparing query failed: ", err.Error())
@@ -101,12 +112,14 @@ func CreateSwitch(id string, name string, roomId string, watts uint16, targetNod
 		return err
 	}
 
+	// TODO: handle drivers
+
 	// create target node entry if required
-	if targetNode != nil {
-		if err := setSwitchTargetNode(id, *targetNode); err != nil {
-			return err
-		}
-	}
+	// if targetNode != nil {
+	// 	if err := setSwitchTargetNode(id, *targetNode); err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {

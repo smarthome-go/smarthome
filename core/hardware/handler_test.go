@@ -46,7 +46,7 @@ func TestSetPower(t *testing.T) {
 		return
 	}
 	for _, req := range table {
-		if err := database.CreateSwitch(req.Switch, req.Switch, "test", 0, nil); err != nil {
+		if err := database.CreateDevice(req.Switch, req.Switch, "test", 0, nil); err != nil {
 			t.Error(err.Error())
 			return
 		}
@@ -177,7 +177,7 @@ func TestSetPowerAsync(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if err := database.CreateSwitch(req.Switch, req.Switch, "test", 0, nil); err != nil {
+			if err := database.CreateDevice(req.Switch, req.Switch, "test", 0, nil); err != nil {
 				t.Error(err.Error())
 				return
 			}

@@ -13,18 +13,23 @@ import (
 )
 
 type AddSwitchRequest struct {
-	Id         string  `json:"id"`
-	Name       string  `json:"name"`
-	RoomId     string  `json:"roomId"`
-	Watts      uint16  `json:"watts"`
-	TargetNode *string `json:"targetNode"`
+	Id     string `json:"id"`
+	Name   string `json:"name"`
+	RoomId string `json:"roomId"`
+	Watts  uint16 `json:"watts"`
+	//TargetNode     *string `json:"targetNode"`
+	DriverVendorId string `json:"driverVendorId"`
+	DriverModelId  string `json:"driverModelId"`
 }
 
 type ModifySwitchRequest struct {
-	Id         string  `json:"id"`
-	Name       string  `json:"name"`
-	Watts      uint16  `json:"watts"`
-	TargetNode *string `json:"targetNode"`
+	Id    string `json:"id"`
+	Name  string `json:"name"`
+	Watts uint16 `json:"watts"`
+	//TargetNode *string `json:"targetNode"`
+
+	DriverVendorId string `json:"driverVendorId"`
+	DriverModelId  string `json:"driverModelId"`
 }
 
 type DeleteSwitchRequest struct {
@@ -32,7 +37,7 @@ type DeleteSwitchRequest struct {
 }
 
 // Returns a list of available switches as JSON to the user, no authentication required
-func GetAllSwitches(w http.ResponseWriter, r *http.Request) {
+func GetAllDevices(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	switches, err := database.ListSwitches()
 	if err != nil {
@@ -49,7 +54,7 @@ func GetAllSwitches(w http.ResponseWriter, r *http.Request) {
 }
 
 // Only returns switches which the user has access to, authentication required
-func GetUserSwitches(w http.ResponseWriter, r *http.Request) {
+func GetUserDevices(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(w, r)
 	if err != nil {
@@ -68,7 +73,7 @@ func GetUserSwitches(w http.ResponseWriter, r *http.Request) {
 }
 
 // Creates a switch in the database
-func CreateSwitch(w http.ResponseWriter, r *http.Request) {
+func CreateDevice(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
@@ -114,21 +119,23 @@ func CreateSwitch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if request.TargetNode != nil {
-		_, found, err := database.GetHardwareNodeByUrl(*request.TargetNode)
-		if err != nil {
-			w.WriteHeader(http.StatusServiceUnavailable)
-			Res(w, Response{Success: false, Message: "failed to modify switch", Error: "database failure"})
-			return
-		}
-		if !found {
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			Res(w, Response{Success: false, Message: "failed to modify switch", Error: "no hardware node with URL exists"})
-			return
-		}
-	}
+	// if request.TargetNode != nil {
+	// 	_, found, err := database.GetHardwareNodeByUrl(*request.TargetNode)
+	// 	if err != nil {
+	// 		w.WriteHeader(http.StatusServiceUnavailable)
+	// 		Res(w, Response{Success: false, Message: "failed to modify switch", Error: "database failure"})
+	// 		return
+	// 	}
+	// 	if !found {
+	// 		w.WriteHeader(http.StatusUnprocessableEntity)
+	// 		Res(w, Response{Success: false, Message: "failed to modify switch", Error: "no hardware node with URL exists"})
+	// 		return
+	// 	}
+	// }
 
-	if err := database.CreateSwitch(
+	// TODO: Validate drivers
+
+	if err := database.CreateDevice(
 		request.Id,
 		request.Name,
 		request.RoomId,
@@ -142,7 +149,7 @@ func CreateSwitch(w http.ResponseWriter, r *http.Request) {
 	Res(w, Response{Success: true, Message: "successfully created switch"})
 }
 
-func ModifySwitch(w http.ResponseWriter, r *http.Request) {
+func ModifyDevice(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
@@ -193,7 +200,7 @@ func ModifySwitch(w http.ResponseWriter, r *http.Request) {
 	Res(w, Response{Success: true, Message: "successfully modified switch"})
 }
 
-func DeleteSwitch(w http.ResponseWriter, r *http.Request) {
+func DeleteDevice(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()

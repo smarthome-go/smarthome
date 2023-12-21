@@ -50,14 +50,14 @@ func TestExportGeneration(t *testing.T) {
 		Description: "Where the people live...",
 	}))
 	// Create switches
-	assert.NoError(t, database.CreateSwitch(
+	assert.NoError(t, database.CreateDevice(
 		"big_lamp",
 		"Big Lamp",
 		"living_room",
 		42,
 		nil,
 	))
-	assert.NoError(t, database.CreateSwitch(
+	assert.NoError(t, database.CreateDevice(
 		"desk_lamp",
 		"Desk Lamp",
 		"living_room",

@@ -25,16 +25,16 @@ func createMockData() error {
 	if err := database.CreateRoom(database.RoomData{Id: "test_room"}); err != nil {
 		panic(err.Error())
 	}
-	if err := database.CreateSwitch("test_switch", "", "test_room", 0, nil); err != nil {
+	if err := database.CreateDevice("test_switch", "", "test_room", 0, nil); err != nil {
 		panic(err.Error())
 	}
-	if err := database.CreateSwitch("test_switch_modify", "", "test_room", 0, nil); err != nil {
+	if err := database.CreateDevice("test_switch_modify", "", "test_room", 0, nil); err != nil {
 		panic(err.Error())
 	}
-	if err := database.CreateSwitch("test_switch_inactive", "", "test_room", 0, nil); err != nil {
+	if err := database.CreateDevice("test_switch_inactive", "", "test_room", 0, nil); err != nil {
 		panic(err.Error())
 	}
-	if err := database.CreateSwitch("test_switch_abort", "", "test_room", 0, nil); err != nil {
+	if err := database.CreateDevice("test_switch_abort", "", "test_room", 0, nil); err != nil {
 		panic(err.Error())
 	}
 	_, doesExists, err := database.GetUserHomescriptById("test", "admin")

@@ -70,7 +70,7 @@ func TestPower(t *testing.T) {
 		{"6", false},
 	}
 	for _, item := range table {
-		if err := database.CreateSwitch(item.Switch, item.Switch, "testing", 0, nil); err != nil {
+		if err := database.CreateDevice(item.Switch, item.Switch, "testing", 0, nil); err != nil {
 			t.Error(err.Error())
 			return
 		}

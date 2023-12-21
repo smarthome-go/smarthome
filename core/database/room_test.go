@@ -81,7 +81,7 @@ func TestListRooms(t *testing.T) {
 		},
 	}
 	for _, switchItem := range switches {
-		if err := CreateSwitch(
+		if err := CreateDevice(
 			switchItem.Id,
 			switchItem.Name,
 			switchItem.RoomId,

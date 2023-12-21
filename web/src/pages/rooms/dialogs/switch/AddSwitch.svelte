@@ -6,7 +6,7 @@
     import Select, { Option } from '@smui/select'
     import Progress from '../../../../../src/components/Progress.svelte'
     import type { SwitchResponse } from '../../main'
-    import type { DriverData } from '../../../system/driver.ts'
+    import type { DriverData } from '../../../system/driver'
     import { drivers, driversLoaded, fetchHardwareNodes, loading, hardwareNodesLoaded, hardwareNodes, fetchDrivers } from './main'
 
     let selectedDriver: DriverData = {
@@ -24,6 +24,9 @@
     let watts = 0
     let targetNodeUrl = 'none'
 
+    let driverVendorId = ""
+    let driverModelId = ""
+
     let idDirty = false
     let nameDirty = false
 
@@ -35,6 +38,8 @@
         idDirty = false
         nameDirty = false
         targetNodeUrl = 'none'
+        driverVendorId = ""
+        driverModelId = ""
 
         if (!$hardwareNodesLoaded) {
             fetchHardwareNodes()
@@ -47,7 +52,8 @@
         _name: string,
         _watts: number,
         _targetNodeUrl: string,
-        _selectedDriver: DriverData,
+        _selectedDriverVendorId: string,
+        _selectedDriverModelId: string,
     ) => Promise<void>
 
     let idInvalid = false
