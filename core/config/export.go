@@ -27,11 +27,12 @@ type SetupRoom struct {
 }
 
 type SetupSwitch struct {
-	Id         string  `json:"id"`
-	Name       string  `json:"name"`
-	PowerOn    bool    `json:"powerOn"`
-	Watts      uint16  `json:"watts"`
-	TargetNode *string `json:"targetNode"`
+	Id       string `json:"id"`
+	Name     string `json:"name"`
+	PowerOn  bool   `json:"powerOn"`
+	Watts    uint16 `json:"watts"`
+	VendorId string `json:"vendorId"`
+	ModelId  string `json:"modelId"`
 }
 
 type SetupCamera struct {
@@ -160,11 +161,12 @@ func Export(
 		roomSwitches := make([]SetupSwitch, 0)
 		for _, sw := range room.Switches {
 			roomSwitches = append(roomSwitches, SetupSwitch{
-				Id:         sw.Id,
-				Name:       sw.Name,
-				PowerOn:    sw.PowerOn,
-				Watts:      sw.Watts,
-				TargetNode: sw.TargetNode,
+				Id:       sw.Id,
+				Name:     sw.Name,
+				PowerOn:  sw.PowerOn,
+				Watts:    sw.Watts,
+				VendorId: sw.VendorId,
+				ModelId:  sw.ModelId,
 			})
 		}
 		roomCameras := make([]SetupCamera, 0)

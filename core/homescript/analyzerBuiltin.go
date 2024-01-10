@@ -20,22 +20,27 @@ func newAnalyzerHost(username string) analyzerHost {
 	}
 }
 
-func (self analyzerHost) GetBuiltinImport(moduleName string, valueName string, span errors.Span) (valueType ast.Type, moduleFound bool, valueFound bool) {
+func (self analyzerHost) GetBuiltinImport(moduleName string, valueName string, span errors.Span, kind pAst.IMPORT_KIND) (result analyzer.BuiltinImport, moduleFound bool, valueFound bool) {
+	// TODO: handle import kind
+
 	switch moduleName {
 	case "hms":
 		switch valueName {
 		case "exec":
-			return ast.NewFunctionType(
-				ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("script_id", span), ast.NewStringType(span)),
-					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("arguments", span), ast.NewOptionType(ast.NewAnyObjectType(span), span)),
-				}),
-				span,
-				ast.NewNullType(span),
-				span,
-			), true, true
+			return analyzer.BuiltinImport{
+				Type: ast.NewFunctionType(
+					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("script_id", span), ast.NewStringType(span), nil),
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("arguments", span), ast.NewOptionType(ast.NewAnyObjectType(span), span), nil),
+					}),
+					span,
+					ast.NewNullType(span),
+					span,
+				),
+				Template: &ast.TemplateSpec{},
+			}, true, true
 		}
-		return nil, true, false
+		return analyzer.BuiltinImport{}, true, false
 	case "location":
 		switch valueName {
 		case "sun_times":
@@ -46,146 +51,173 @@ func (self analyzerHost) GetBuiltinImport(moduleName string, valueName string, s
 				}, span)
 			}
 
-			return ast.NewFunctionType(
-				ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)),
-				span,
-				ast.NewObjectType([]ast.ObjectTypeField{
-					ast.NewObjectTypeField(pAst.NewSpannedIdent("sunrise", span), timeObjType(span), span),
-					ast.NewObjectTypeField(pAst.NewSpannedIdent("sunset", span), timeObjType(span), span),
-				}, span),
-				span,
-			), true, true
+			return analyzer.BuiltinImport{
+				Type: ast.NewFunctionType(
+					ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)),
+					span,
+					ast.NewObjectType([]ast.ObjectTypeField{
+						ast.NewObjectTypeField(pAst.NewSpannedIdent("sunrise", span), timeObjType(span), span),
+						ast.NewObjectTypeField(pAst.NewSpannedIdent("sunset", span), timeObjType(span), span),
+					}, span),
+					span,
+				),
+				Template: &ast.TemplateSpec{},
+			}, true, true
 		case "weather":
-			return ast.NewFunctionType(
-				ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)),
-				span,
+			return analyzer.BuiltinImport{
+				Type: ast.NewFunctionType(
+					ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)),
+					span,
 
-				// WeatherTitle       string  `json:"weatherTitle"`
-				// WeatherDescription string  `json:"weatherDescription"`
-				// Temperature        float32 `json:"temperature"`
-				// FeelsLike          float32 `json:"feelsLike"`
-				// Humidity           uint8   `json:"humidity"`
+					// WeatherTitle       string  `json:"weatherTitle"`
+					// WeatherDescription string  `json:"weatherDescription"`
+					// Temperature        float32 `json:"temperature"`
+					// FeelsLike          float32 `json:"feelsLike"`
+					// Humidity           uint8   `json:"humidity"`
 
-				ast.NewObjectType([]ast.ObjectTypeField{
-					ast.NewObjectTypeField(pAst.NewSpannedIdent("title", span), ast.NewStringType(span), span),
-					ast.NewObjectTypeField(pAst.NewSpannedIdent("description", span), ast.NewStringType(span), span),
-					ast.NewObjectTypeField(pAst.NewSpannedIdent("temperature", span), ast.NewFloatType(span), span),
-					ast.NewObjectTypeField(pAst.NewSpannedIdent("feels_like", span), ast.NewFloatType(span), span),
-					ast.NewObjectTypeField(pAst.NewSpannedIdent("humidity", span), ast.NewIntType(span), span),
-				}, span),
-				span,
-			), true, true
+					ast.NewObjectType([]ast.ObjectTypeField{
+						ast.NewObjectTypeField(pAst.NewSpannedIdent("title", span), ast.NewStringType(span), span),
+						ast.NewObjectTypeField(pAst.NewSpannedIdent("description", span), ast.NewStringType(span), span),
+						ast.NewObjectTypeField(pAst.NewSpannedIdent("temperature", span), ast.NewFloatType(span), span),
+						ast.NewObjectTypeField(pAst.NewSpannedIdent("feels_like", span), ast.NewFloatType(span), span),
+						ast.NewObjectTypeField(pAst.NewSpannedIdent("humidity", span), ast.NewIntType(span), span),
+					}, span),
+					span,
+				),
+				Template: &ast.TemplateSpec{},
+			}, true, true
 		}
-		return nil, true, false
+		return analyzer.BuiltinImport{}, true, false
 	case "switch":
 		switch valueName {
 		case "get_switch":
-			return ast.NewFunctionType(
-				ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("id", span), ast.NewStringType(span)),
-				}),
-				span,
-				ast.NewOptionType(
-					ast.NewObjectType(
-						[]ast.ObjectTypeField{
-							ast.NewObjectTypeField(pAst.NewSpannedIdent("name", span), ast.NewStringType(span), span),
-							ast.NewObjectTypeField(pAst.NewSpannedIdent("room_id", span), ast.NewStringType(span), span),
-							ast.NewObjectTypeField(pAst.NewSpannedIdent("power", span), ast.NewBoolType(span), span),
-							ast.NewObjectTypeField(pAst.NewSpannedIdent("watts", span), ast.NewIntType(span), span),
-							ast.NewObjectTypeField(pAst.NewSpannedIdent("target_node", span), ast.NewOptionType(ast.NewStringType(span), span), span),
-						},
+			return analyzer.BuiltinImport{
+				Type: ast.NewFunctionType(
+					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("id", span), ast.NewStringType(span), nil),
+					}),
+					span,
+					ast.NewOptionType(
+						ast.NewObjectType(
+							[]ast.ObjectTypeField{
+								ast.NewObjectTypeField(pAst.NewSpannedIdent("name", span), ast.NewStringType(span), span),
+								ast.NewObjectTypeField(pAst.NewSpannedIdent("room_id", span), ast.NewStringType(span), span),
+								ast.NewObjectTypeField(pAst.NewSpannedIdent("power", span), ast.NewBoolType(span), span),
+								ast.NewObjectTypeField(pAst.NewSpannedIdent("watts", span), ast.NewIntType(span), span),
+								ast.NewObjectTypeField(pAst.NewSpannedIdent("target_node", span), ast.NewOptionType(ast.NewStringType(span), span), span),
+							},
+							span),
 						span),
-					span),
-				span,
-			), true, true
+					span,
+				),
+				Template: &ast.TemplateSpec{},
+			}, true, true
 		case "power":
-			return ast.NewFunctionType(
-				ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("switch_id", span), ast.NewStringType(span)),
-					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("power", span), ast.NewBoolType(span)),
-				}),
-				span,
-				ast.NewNullType(span),
-				span,
-			), true, true
+			return analyzer.BuiltinImport{
+				Type: ast.NewFunctionType(
+					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("switch_id", span), ast.NewStringType(span), nil),
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("power", span), ast.NewBoolType(span), nil),
+					}),
+					span,
+					ast.NewNullType(span),
+					span,
+				),
+				Template: &ast.TemplateSpec{},
+			}, true, true
 		default:
-			return nil, true, false
+			return analyzer.BuiltinImport{}, true, false
 		}
 	case "widget":
 		switch valueName {
 		case "on_click_js", "on_click_hms":
-			return ast.NewFunctionType(
-				ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("base", span), ast.NewStringType(span)),
-					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("js", span), ast.NewStringType(span)),
-				}),
-				span, ast.NewStringType(span), span,
-			), true, true
+			return analyzer.BuiltinImport{
+				Type: ast.NewFunctionType(
+					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("base", span), ast.NewStringType(span), nil),
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("js", span), ast.NewStringType(span), nil),
+					}),
+					span, ast.NewStringType(span), span,
+				),
+				Template: &ast.TemplateSpec{},
+			}, true, true
 		default:
-			return nil, true, false
+			return analyzer.BuiltinImport{}, true, false
 		}
 	case "testing":
 		switch valueName {
 		case "assert_eq":
-			return ast.NewFunctionType(
-				ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("lhs", errors.Span{}), ast.NewUnknownType()),
-					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("rhs", errors.Span{}), ast.NewUnknownType()),
-				}),
-				errors.Span{},
-				ast.NewNullType(errors.Span{}),
-				errors.Span{},
-			), true, true
+			return analyzer.BuiltinImport{
+				Type: ast.NewFunctionType(
+					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("lhs", errors.Span{}), ast.NewUnknownType(), nil),
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("rhs", errors.Span{}), ast.NewUnknownType(), nil),
+					}),
+					errors.Span{},
+					ast.NewNullType(errors.Span{}),
+					errors.Span{},
+				),
+				Template: &ast.TemplateSpec{},
+			}, true, true
 		default:
-			return nil, true, false
+			return analyzer.BuiltinImport{}, true, false
 		}
 	case "storage":
 		switch valueName {
 		case "set_storage":
-			return ast.NewFunctionType(ast.NewNormalFunctionTypeParamKind(
-				[]ast.FunctionTypeParam{
-					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("key", span), ast.NewStringType(span)),
-					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("value", span), ast.NewUnknownType()),
-				},
-			),
-				span,
-				ast.NewNullType(span),
-				span,
-			), true, true
+			return analyzer.BuiltinImport{
+				Type: ast.NewFunctionType(ast.NewNormalFunctionTypeParamKind(
+					[]ast.FunctionTypeParam{
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("key", span), ast.NewStringType(span), nil),
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("value", span), ast.NewUnknownType(), nil),
+					},
+				),
+					span,
+					ast.NewNullType(span),
+					span,
+				),
+				Template: &ast.TemplateSpec{},
+			}, true, true
 		case "get_storage":
-			return ast.NewFunctionType(ast.NewNormalFunctionTypeParamKind(
-				[]ast.FunctionTypeParam{
-					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("key", span), ast.NewStringType(span)),
-				},
-			),
-				span,
-				ast.NewOptionType(ast.NewStringType(span), span),
-				span,
-			), true, true
+			return analyzer.BuiltinImport{
+				Type: ast.NewFunctionType(ast.NewNormalFunctionTypeParamKind(
+					[]ast.FunctionTypeParam{
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("key", span), ast.NewStringType(span), nil),
+					},
+				),
+					span,
+					ast.NewOptionType(ast.NewStringType(span), span),
+					span,
+				),
+				Template: &ast.TemplateSpec{},
+			}, true, true
 		default:
-			return nil, true, false
+			return analyzer.BuiltinImport{}, true, false
 		}
 	case "reminder":
 		switch valueName {
 		case "remind":
-			return ast.NewFunctionType(
-				ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("reminder", span),
-						ast.NewObjectType([]ast.ObjectTypeField{
-							ast.NewObjectTypeField(pAst.NewSpannedIdent("title", span), ast.NewStringType(span), span),
-							ast.NewObjectTypeField(pAst.NewSpannedIdent("description", span), ast.NewStringType(span), span),
-							ast.NewObjectTypeField(pAst.NewSpannedIdent("priority", span), ast.NewIntType(span), span),
-							ast.NewObjectTypeField(pAst.NewSpannedIdent("due_date_day", span), ast.NewIntType(span), span),
-							ast.NewObjectTypeField(pAst.NewSpannedIdent("due_date_month", span), ast.NewIntType(span), span),
-							ast.NewObjectTypeField(pAst.NewSpannedIdent("due_date_year", span), ast.NewIntType(span), span),
-						}, span)),
-				}),
-				span,
-				ast.NewIntType(span),
-				span,
-			), true, true
+			return analyzer.BuiltinImport{
+				Type: ast.NewFunctionType(
+					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("reminder", span),
+							ast.NewObjectType([]ast.ObjectTypeField{
+								ast.NewObjectTypeField(pAst.NewSpannedIdent("title", span), ast.NewStringType(span), span),
+								ast.NewObjectTypeField(pAst.NewSpannedIdent("description", span), ast.NewStringType(span), span),
+								ast.NewObjectTypeField(pAst.NewSpannedIdent("priority", span), ast.NewIntType(span), span),
+								ast.NewObjectTypeField(pAst.NewSpannedIdent("due_date_day", span), ast.NewIntType(span), span),
+								ast.NewObjectTypeField(pAst.NewSpannedIdent("due_date_month", span), ast.NewIntType(span), span),
+								ast.NewObjectTypeField(pAst.NewSpannedIdent("due_date_year", span), ast.NewIntType(span), span),
+							}, span), nil),
+					}),
+					span,
+					ast.NewIntType(span),
+					span,
+				),
+				Template: &ast.TemplateSpec{},
+			}, true, true
 		default:
-			return nil, true, false
+			return analyzer.BuiltinImport{}, true, false
 		}
 	case "net":
 		newHttpResponse := func() ast.Type {
@@ -202,193 +234,223 @@ func (self analyzerHost) GetBuiltinImport(moduleName string, valueName string, s
 
 		switch valueName {
 		case "ping":
-			return ast.NewFunctionType(
-				ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("ip", span), ast.NewStringType(span)),
-					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("timeout", span), ast.NewFloatType(span)),
-				}),
-				span,
-				ast.NewBoolType(span),
-				span,
-			), true, true
+			return analyzer.BuiltinImport{
+				Type: ast.NewFunctionType(
+					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("ip", span), ast.NewStringType(span), nil),
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("timeout", span), ast.NewFloatType(span), nil),
+					}),
+					span,
+					ast.NewBoolType(span),
+					span,
+				),
+				Template: &ast.TemplateSpec{},
+			}, true, true
 		case "HttpResponse":
-			return newHttpResponse(), true, true
+			return analyzer.BuiltinImport{
+				Type:     newHttpResponse(),
+				Template: &ast.TemplateSpec{},
+			}, true, true
 		case "http":
-			return ast.NewObjectType([]ast.ObjectTypeField{
-				ast.NewObjectTypeField(pAst.NewSpannedIdent("get", span), ast.NewFunctionType(
-					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{ast.NewFunctionTypeParam(pAst.NewSpannedIdent("url", span), ast.NewStringType(span))}),
-					span,
-					newHttpResponse(),
-					span,
-				), span),
-				ast.NewObjectTypeField(pAst.NewSpannedIdent("generic", span), ast.NewFunctionType(
-					ast.NewNormalFunctionTypeParamKind(
-						[]ast.FunctionTypeParam{
-							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("url", span), ast.NewStringType(span)),
-							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("method", span), ast.NewStringType(span)),
-							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("body", span), ast.NewOptionType(ast.NewStringType(span), span)),
-							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("headers", span), ast.NewAnyObjectType(span)),
-							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("cookies", span), ast.NewAnyObjectType(span)),
-						},
-					),
-					span,
-					newHttpResponse(),
-					span,
-				), span),
-			}, span), true, true
+			return analyzer.BuiltinImport{
+				Type: ast.NewObjectType([]ast.ObjectTypeField{
+					ast.NewObjectTypeField(pAst.NewSpannedIdent("get", span), ast.NewFunctionType(
+						ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{ast.NewFunctionTypeParam(pAst.NewSpannedIdent("url", span), ast.NewStringType(span), nil)}),
+						span,
+						newHttpResponse(),
+						span,
+					), span),
+					ast.NewObjectTypeField(pAst.NewSpannedIdent("generic", span), ast.NewFunctionType(
+						ast.NewNormalFunctionTypeParamKind(
+							[]ast.FunctionTypeParam{
+								ast.NewFunctionTypeParam(pAst.NewSpannedIdent("url", span), ast.NewStringType(span), nil),
+								ast.NewFunctionTypeParam(pAst.NewSpannedIdent("method", span), ast.NewStringType(span), nil),
+								ast.NewFunctionTypeParam(pAst.NewSpannedIdent("body", span), ast.NewOptionType(ast.NewStringType(span), span), nil),
+								ast.NewFunctionTypeParam(pAst.NewSpannedIdent("headers", span), ast.NewAnyObjectType(span), nil),
+								ast.NewFunctionTypeParam(pAst.NewSpannedIdent("cookies", span), ast.NewAnyObjectType(span), nil),
+							},
+						),
+						span,
+						newHttpResponse(),
+						span,
+					), span),
+				}, span),
+				Template: &ast.TemplateSpec{},
+			}, true, true
 		default:
-			return nil, true, false
+			return analyzer.BuiltinImport{}, true, false
 		}
 	case "log":
 		switch valueName {
 		case "logger":
-			return ast.NewObjectType([]ast.ObjectTypeField{
-				ast.NewObjectTypeField(pAst.NewSpannedIdent("trace", span), ast.NewFunctionType(
-					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("title", span), ast.NewStringType(span)),
-						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("description", span), ast.NewStringType(span)),
-					}),
-					span,
-					ast.NewNullType(span),
-					span,
-				), span),
-				ast.NewObjectTypeField(pAst.NewSpannedIdent("debug", span), ast.NewFunctionType(
-					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("title", span), ast.NewStringType(span)),
-						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("description", span), ast.NewStringType(span)),
-					}),
-					span,
-					ast.NewNullType(span),
-					span,
-				), span),
-				ast.NewObjectTypeField(pAst.NewSpannedIdent("info", span), ast.NewFunctionType(
-					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("title", span), ast.NewStringType(span)),
-						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("description", span), ast.NewStringType(span)),
-					}),
-					span,
-					ast.NewNullType(span),
-					span,
-				), span),
-				ast.NewObjectTypeField(pAst.NewSpannedIdent("warn", span), ast.NewFunctionType(
-					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("title", span), ast.NewStringType(span)),
-						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("description", span), ast.NewStringType(span)),
-					}),
-					span,
-					ast.NewNullType(span),
-					span,
-				), span),
-				ast.NewObjectTypeField(pAst.NewSpannedIdent("error", span), ast.NewFunctionType(
-					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("title", span), ast.NewStringType(span)),
-						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("description", span), ast.NewStringType(span)),
-					}),
-					span,
-					ast.NewNullType(span),
-					span,
-				), span),
-				ast.NewObjectTypeField(pAst.NewSpannedIdent("fatal", span), ast.NewFunctionType(
-					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("title", span), ast.NewStringType(span)),
-						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("description", span), ast.NewStringType(span)),
-					}),
-					span,
-					ast.NewNullType(span),
-					span,
-				), span),
-			}, span), true, true
+			return analyzer.BuiltinImport{
+				Type: ast.NewObjectType([]ast.ObjectTypeField{
+					ast.NewObjectTypeField(pAst.NewSpannedIdent("trace", span), ast.NewFunctionType(
+						ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("title", span), ast.NewStringType(span), nil),
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("description", span), ast.NewStringType(span), nil),
+						}),
+						span,
+						ast.NewNullType(span),
+						span,
+					), span),
+					ast.NewObjectTypeField(pAst.NewSpannedIdent("debug", span), ast.NewFunctionType(
+						ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("title", span), ast.NewStringType(span), nil),
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("description", span), ast.NewStringType(span), nil),
+						}),
+						span,
+						ast.NewNullType(span),
+						span,
+					), span),
+					ast.NewObjectTypeField(pAst.NewSpannedIdent("info", span), ast.NewFunctionType(
+						ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("title", span), ast.NewStringType(span), nil),
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("description", span), ast.NewStringType(span), nil),
+						}),
+						span,
+						ast.NewNullType(span),
+						span,
+					), span),
+					ast.NewObjectTypeField(pAst.NewSpannedIdent("warn", span), ast.NewFunctionType(
+						ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("title", span), ast.NewStringType(span), nil),
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("description", span), ast.NewStringType(span), nil),
+						}),
+						span,
+						ast.NewNullType(span),
+						span,
+					), span),
+					ast.NewObjectTypeField(pAst.NewSpannedIdent("error", span), ast.NewFunctionType(
+						ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("title", span), ast.NewStringType(span), nil),
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("description", span), ast.NewStringType(span), nil),
+						}),
+						span,
+						ast.NewNullType(span),
+						span,
+					), span),
+					ast.NewObjectTypeField(pAst.NewSpannedIdent("fatal", span), ast.NewFunctionType(
+						ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("title", span), ast.NewStringType(span), nil),
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("description", span), ast.NewStringType(span), nil),
+						}),
+						span,
+						ast.NewNullType(span),
+						span,
+					), span),
+				}, span),
+				Template: &ast.TemplateSpec{},
+			}, true, true
 		default:
-			return nil, true, false
+			return analyzer.BuiltinImport{}, true, false
 		}
 	case "context":
 		switch valueName {
 		case "args":
-			return ast.NewAnyObjectType(span), true, true
+			return analyzer.BuiltinImport{
+				Type:     ast.NewAnyObjectType(span),
+				Template: &ast.TemplateSpec{},
+			}, true, true
 		case "notification":
-			return ast.NewObjectType([]ast.ObjectTypeField{
-				ast.NewObjectTypeField(pAst.NewSpannedIdent("id", span), ast.NewIntType(span), span),
-				ast.NewObjectTypeField(pAst.NewSpannedIdent("title", span), ast.NewStringType(span), span),
-				ast.NewObjectTypeField(pAst.NewSpannedIdent("description", span), ast.NewStringType(span), span),
-				ast.NewObjectTypeField(pAst.NewSpannedIdent("level", span), ast.NewIntType(span), span),
-			}, span), true, true
+			return analyzer.BuiltinImport{
+				Type: ast.NewObjectType([]ast.ObjectTypeField{
+					ast.NewObjectTypeField(pAst.NewSpannedIdent("id", span), ast.NewIntType(span), span),
+					ast.NewObjectTypeField(pAst.NewSpannedIdent("title", span), ast.NewStringType(span), span),
+					ast.NewObjectTypeField(pAst.NewSpannedIdent("description", span), ast.NewStringType(span), span),
+					ast.NewObjectTypeField(pAst.NewSpannedIdent("level", span), ast.NewIntType(span), span),
+				}, span),
+				Template: &ast.TemplateSpec{},
+			}, true, true
 		}
-		return nil, true, false
+		return analyzer.BuiltinImport{}, true, false
 	case "scheduler":
 		switch valueName {
 		case "create_schedule":
-			return ast.NewFunctionType(
-				ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("schedule", span),
+			return analyzer.BuiltinImport{
+				Type: ast.NewFunctionType(
+					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("schedule", span),
+							ast.NewObjectType(
+								[]ast.ObjectTypeField{
+									ast.NewObjectTypeField(pAst.NewSpannedIdent("name", span), ast.NewStringType(span), span),
+									ast.NewObjectTypeField(pAst.NewSpannedIdent("hour", span), ast.NewIntType(span), span),
+									ast.NewObjectTypeField(pAst.NewSpannedIdent("minute", span), ast.NewIntType(span), span),
+									ast.NewObjectTypeField(pAst.NewSpannedIdent("code", span), ast.NewStringType(span), span),
+								},
+								span,
+							),
+							nil,
+						),
+					}),
+					span,
+					ast.NewIntType(span),
+					span,
+				),
+				Template: &ast.TemplateSpec{},
+			}, true, true
+		case "delete_schedule":
+			return analyzer.BuiltinImport{
+				Type: ast.NewFunctionType(
+					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("id", span), ast.NewIntType(span), nil),
+					}),
+					span,
+					ast.NewNullType(span),
+					span,
+				),
+				Template: &ast.TemplateSpec{},
+			}, true, true
+		case "list_schedules":
+			return analyzer.BuiltinImport{
+				Type: ast.NewFunctionType(
+					ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)),
+					span,
+					ast.NewListType(
 						ast.NewObjectType(
 							[]ast.ObjectTypeField{
+								ast.NewObjectTypeField(pAst.NewSpannedIdent("id", span), ast.NewIntType(span), span),
 								ast.NewObjectTypeField(pAst.NewSpannedIdent("name", span), ast.NewStringType(span), span),
 								ast.NewObjectTypeField(pAst.NewSpannedIdent("hour", span), ast.NewIntType(span), span),
 								ast.NewObjectTypeField(pAst.NewSpannedIdent("minute", span), ast.NewIntType(span), span),
-								ast.NewObjectTypeField(pAst.NewSpannedIdent("code", span), ast.NewStringType(span), span),
+								ast.NewObjectTypeField(pAst.NewSpannedIdent("target_mode", span), ast.NewStringType(span), span),
+								ast.NewObjectTypeField(pAst.NewSpannedIdent("hms_id", span), ast.NewOptionType(ast.NewStringType(span), span), span),
+								ast.NewObjectTypeField(pAst.NewSpannedIdent("switches", span), ast.NewOptionType(ast.NewListType(
+									ast.NewObjectType([]ast.ObjectTypeField{
+										ast.NewObjectTypeField(pAst.NewSpannedIdent("switch", span), ast.NewStringType(span), span),
+										ast.NewObjectTypeField(pAst.NewSpannedIdent("power", span), ast.NewBoolType(span), span),
+									}, span), span,
+								), span), span),
 							},
 							span,
 						),
-					),
-				}),
-				span,
-				ast.NewIntType(span),
-				span,
-			), true, true
-
-		case "delete_schedule":
-			return ast.NewFunctionType(
-				ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("id", span), ast.NewIntType(span)),
-				}),
-				span,
-				ast.NewNullType(span),
-				span,
-			), true, true
-		case "list_schedules":
-			return ast.NewFunctionType(
-				ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)),
-				span,
-				ast.NewListType(
-					ast.NewObjectType(
-						[]ast.ObjectTypeField{
-							ast.NewObjectTypeField(pAst.NewSpannedIdent("id", span), ast.NewIntType(span), span),
-							ast.NewObjectTypeField(pAst.NewSpannedIdent("name", span), ast.NewStringType(span), span),
-							ast.NewObjectTypeField(pAst.NewSpannedIdent("hour", span), ast.NewIntType(span), span),
-							ast.NewObjectTypeField(pAst.NewSpannedIdent("minute", span), ast.NewIntType(span), span),
-							ast.NewObjectTypeField(pAst.NewSpannedIdent("target_mode", span), ast.NewStringType(span), span),
-							ast.NewObjectTypeField(pAst.NewSpannedIdent("hms_id", span), ast.NewOptionType(ast.NewStringType(span), span), span),
-							ast.NewObjectTypeField(pAst.NewSpannedIdent("switches", span), ast.NewOptionType(ast.NewListType(
-								ast.NewObjectType([]ast.ObjectTypeField{
-									ast.NewObjectTypeField(pAst.NewSpannedIdent("switch", span), ast.NewStringType(span), span),
-									ast.NewObjectTypeField(pAst.NewSpannedIdent("power", span), ast.NewBoolType(span), span),
-								}, span), span,
-							), span), span),
-						},
 						span,
 					),
 					span,
 				),
-				span,
-			), true, true
+				Template: &ast.TemplateSpec{},
+			}, true, true
 		}
-		return nil, true, false
+		return analyzer.BuiltinImport{}, true, false
 	case "notification":
 		switch valueName {
 		case "notify":
-			return ast.NewFunctionType(
-				ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("title", span), ast.NewStringType(span)),
-					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("description", span), ast.NewStringType(span)),
-					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("level", span), ast.NewIntType(span)),
-				}),
-				span,
-				ast.NewIntType(span),
-				span,
-			), true, true
+			return analyzer.BuiltinImport{
+				Type: ast.NewFunctionType(
+					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("title", span), ast.NewStringType(span), nil),
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("description", span), ast.NewStringType(span), nil),
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("level", span), ast.NewIntType(span), nil),
+					}),
+					span,
+					ast.NewIntType(span),
+					span,
+				),
+				Template: &ast.TemplateSpec{},
+			}, true, true
 		}
 	}
-	return nil, false, false
+	return analyzer.BuiltinImport{}, false, false
 }
 
 func (self analyzerHost) ResolveCodeModule(moduleName string) (code string, moduleFound bool, err error) {
@@ -406,7 +468,7 @@ func analyzerScopeAdditions() map[string]analyzer.Variable {
 		"exit": analyzer.NewBuiltinVar(
 			ast.NewFunctionType(
 				ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("code", errors.Span{}), ast.NewIntType(errors.Span{})),
+					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("code", errors.Span{}), ast.NewIntType(errors.Span{}), nil),
 				}),
 				errors.Span{},
 				ast.NewNeverType(),
@@ -435,7 +497,7 @@ func analyzerScopeAdditions() map[string]analyzer.Variable {
 					pAst.NewSpannedIdent("sleep", errors.Span{}),
 					ast.NewFunctionType(
 						ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("seconds", errors.Span{}), ast.NewFloatType(errors.Span{})),
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("seconds", errors.Span{}), ast.NewFloatType(errors.Span{}), nil),
 						}),
 						errors.Span{},
 						ast.NewNullType(errors.Span{}),
@@ -449,7 +511,7 @@ func analyzerScopeAdditions() map[string]analyzer.Variable {
 						ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
 							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("when", errors.Span{}),
 								timeObjType(errors.Span{}),
-							)}),
+								nil)}),
 						errors.Span{},
 						durationObjType(errors.Span{}),
 						errors.Span{},
@@ -470,8 +532,8 @@ func analyzerScopeAdditions() map[string]analyzer.Variable {
 					pAst.NewSpannedIdent("add_days", errors.Span{}),
 					ast.NewFunctionType(
 						ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("time", errors.Span{}), timeObjType(errors.Span{})),
-							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("days", errors.Span{}), ast.NewIntType(errors.Span{})),
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("time", errors.Span{}), timeObjType(errors.Span{}), nil),
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("days", errors.Span{}), ast.NewIntType(errors.Span{}), nil),
 						}),
 						errors.Span{},
 						timeObjType(errors.Span{}),
@@ -483,8 +545,8 @@ func analyzerScopeAdditions() map[string]analyzer.Variable {
 					pAst.NewSpannedIdent("add_hours", errors.Span{}),
 					ast.NewFunctionType(
 						ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("time", errors.Span{}), timeObjType(errors.Span{})),
-							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("hours", errors.Span{}), ast.NewIntType(errors.Span{})),
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("time", errors.Span{}), timeObjType(errors.Span{}), nil),
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("hours", errors.Span{}), ast.NewIntType(errors.Span{}), nil),
 						}),
 						errors.Span{},
 						timeObjType(errors.Span{}),
@@ -496,8 +558,8 @@ func analyzerScopeAdditions() map[string]analyzer.Variable {
 					pAst.NewSpannedIdent("add_minutes", errors.Span{}),
 					ast.NewFunctionType(
 						ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("time", errors.Span{}), timeObjType(errors.Span{})),
-							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("hours", errors.Span{}), ast.NewIntType(errors.Span{})),
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("time", errors.Span{}), timeObjType(errors.Span{}), nil),
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("hours", errors.Span{}), ast.NewIntType(errors.Span{}), nil),
 						}),
 						errors.Span{},
 						timeObjType(errors.Span{}),

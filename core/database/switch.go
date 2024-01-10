@@ -7,12 +7,13 @@ import (
 
 // Identified by a Switch Id, has a name and belongs to a room
 type Switch struct {
-	Id         string  `json:"id"`
-	Name       string  `json:"name"`
-	RoomId     string  `json:"roomId"`
-	PowerOn    bool    `json:"powerOn"`
-	Watts      uint16  `json:"watts"`
-	TargetNode *string `json:"targetNode"`
+	Id       string `json:"id"`
+	Name     string `json:"name"`
+	RoomId   string `json:"roomId"`
+	PowerOn  bool   `json:"powerOn"`
+	Watts    uint16 `json:"watts"`
+	VendorId string `json:"vendorId"`
+	ModelId  string `json:"modelId"`
 }
 
 // Contains the switch id and a matching boolean which indicates whether the switch is on or off
