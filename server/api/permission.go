@@ -95,7 +95,7 @@ func GetForeignUserSwitchPermissions(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to get user permissions", Error: "invalid username"})
 		return
 	}
-	permissions, err := database.GetUserSwitchPermissions(username)
+	permissions, err := database.GetUserDevicePermissions(username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "database error", Error: "database error"})

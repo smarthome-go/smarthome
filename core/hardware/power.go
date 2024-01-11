@@ -49,12 +49,14 @@ func filterPowerData(input []database.PowerDataPoint) (newData []database.PowerD
 
 // Takes a snapshot of the current power states and transforms them into a power data point
 // Returns `onData`, `offData` and an `error`
+// TODO: account for real power reporting of a device
 func generateSnapshot() (database.PowerDrawData, database.PowerDrawData, error) {
 	// Get the current power states
-	powerStates, err := database.GetPowerStates()
-	if err != nil {
-		return database.PowerDrawData{}, database.PowerDrawData{}, err
-	}
+	// powerStates, err := database.GetPowerStates()
+	// if err != nil {
+	// 	return database.PowerDrawData{}, database.PowerDrawData{}, err
+	// }
+
 	// Will hold the sum off the power draw of all switches, regardless of whether they are active or disabled
 	var totalWatts uint16 = 0
 	// Collects information about the active switches
@@ -70,18 +72,18 @@ func generateSnapshot() (database.PowerDrawData, database.PowerDrawData, error) 
 		Percent:     0,
 	}
 	// Loop over all switches
-	for _, sw := range powerStates {
-		// If the current switch is active, account for in int the `onData`
-		if sw.PowerOn {
-			onData.SwitchCount++           // Increment the switch count of all active switches by one
-			onData.Watts += uint(sw.Watts) // Add the power draw of the current switch to the total of the active switches
-		} else {
-			offData.SwitchCount++           // Increment the switch count of all passive switches by one
-			offData.Watts += uint(sw.Watts) // Add the power draw of the current switch to the total of the passive switches
-		}
-		// Regardless of the power state, increment the total watt count
-		totalWatts += sw.Watts
-	}
+	// for _, sw := range powerStates {
+	// 	// If the current switch is active, account for in int the `onData`
+	// 	if sw.PowerOn {
+	// 		onData.SwitchCount++           // Increment the switch count of all active switches by one
+	// 		onData.Watts += uint(sw.Watts) // Add the power draw of the current switch to the total of the active switches
+	// 	} else {
+	// 		offData.SwitchCount++           // Increment the switch count of all passive switches by one
+	// 		offData.Watts += uint(sw.Watts) // Add the power draw of the current switch to the total of the passive switches
+	// 	}
+	// 	// Regardless of the power state, increment the total watt count
+	// 	totalWatts += sw.Watts
+	// }
 
 	// NOTE: If the total watts are equal to 0, stop here and do not calculate the percent (it will lead to errors)
 	if totalWatts == 0 {

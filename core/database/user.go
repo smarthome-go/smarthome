@@ -156,7 +156,7 @@ func DeleteUser(username string) error {
 	if err := RemoveAllPermissionsOfUser(username); err != nil {
 		return err
 	}
-	if err := RemoveAllSwitchPermissionsOfUser(username); err != nil {
+	if err := RemoveAllDevicePermissionsOfUser(username); err != nil {
 		return err
 	}
 	if err := DeleteAllNotificationsFromUser(username); err != nil {

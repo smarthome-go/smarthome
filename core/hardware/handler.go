@@ -21,7 +21,7 @@ Time to complete:
 */
 
 type jobQueueType struct {
-	JobQueue []PowerJob
+	JobQueue []DeviceOutputJob
 	m        sync.RWMutex
 }
 
@@ -31,7 +31,7 @@ type resultQueueType struct {
 }
 
 var jobQueue = jobQueueType{
-	JobQueue: make([]PowerJob, 0),
+	JobQueue: make([]DeviceOutputJob, 0),
 }
 var jobResults = resultQueueType{
 	JobResults: make([]JobResult, 0),
@@ -52,19 +52,22 @@ var jobsWithErrorInHandlerCount atomic.Value
 const cooldown = 500
 
 // Main interface for interacting with the queuing system
-// Usage: SetPower("s1", true)
 // Waits until all jobs are completed, can return an error
-func setPower(switchItem database.Switch, powerOn bool) error {
+func sendDeviceData(device database.Device, data DeviceJobData) error {
 	uniqueId := time.Now().UnixNano()
-	addJobToQueue(switchItem, powerOn, uniqueId)
+	addJobToQueue(device, data, uniqueId)
 	result := consumeResult(uniqueId)
 	return result.Error
 }
 
 // Used for adding a job to a queue, keeps track of daemons and spawns them if needed
 // Waits until the daemon quits, waiting for all (and the new) job(s) to be completed.
-func addJobToQueue(switchItem database.Switch, turnOn bool, id int64) {
-	item := PowerJob{Switch: switchItem, Power: turnOn, Id: id}
+func addJobToQueue(device database.Device, data DeviceJobData, id int64) {
+	item := DeviceOutputJob{
+		Id:     id,
+		Device: device,
+		Data:   data,
+	}
 
 	jobQueue.m.Lock()
 	jobQueue.JobQueue = append(jobQueue.JobQueue, item)
@@ -118,7 +121,10 @@ func jobDaemon(ch chan bool) {
 		jobQueue.m.RUnlock()
 
 		// Call the function which interacts with the hardware
-		err := setPowerOnNodesWrapper(currentJob.Switch, currentJob.Power)
+		// err := setPowerOnNodesWrapper(currentJob.Switch, currentJob.Power)
+
+		// BUG: this is not OK
+		var err error = nil
 
 		jobResults.m.Lock()
 		jobResults.JobResults = append(jobResults.JobResults, JobResult{Id: currentJob.Id, Error: err})
@@ -129,7 +135,7 @@ func jobDaemon(ch chan bool) {
 			jobsWithErrorInHandlerCount.Store(jobsWithErrorInHandlerCount.Load().(int) + 1)
 		}
 		// Removes the first value in the queue, in this case the freshly completed job
-		var tempQueue []PowerJob = make([]PowerJob, 0)
+		var tempQueue []DeviceOutputJob = make([]DeviceOutputJob, 0)
 
 		jobQueue.m.RLock() // Lock while loop is iterating
 		for i, item := range jobQueue.JobQueue {
@@ -206,7 +212,7 @@ func GetJobsWithErrorInHandler() uint16 {
 }
 
 // Returns the current state of the job queue
-func GetPendingJobs() []PowerJob {
+func GetPendingJobs() []DeviceOutputJob {
 	jobQueue.m.RLock()
 	defer jobQueue.m.RUnlock()
 	return jobQueue.JobQueue

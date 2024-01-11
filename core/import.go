@@ -230,6 +230,7 @@ func createUsersInDatabase(users []config.SetupUser) error {
 				return err
 			}
 		}
+
 		// Setup the user's permissions
 		for _, permission := range usr.Permissions {
 			valid := false
@@ -248,22 +249,24 @@ func createUsersInDatabase(users []config.SetupUser) error {
 				return err
 			}
 		}
+
 		// Setup the user's switch permissions
-		for _, swPermission := range usr.SwitchPermissions {
-			_, found, err := database.GetSwitchById(swPermission)
+		for _, devPermission := range usr.DevicePermissions {
+			_, found, err := database.GetDeviceById(devPermission)
 			if err != nil {
 				return err
 			}
 			if !found {
-				return fmt.Errorf("cannot grant invalid switch permission `%s` to user `%s`", swPermission, usr.Data.Username)
+				return fmt.Errorf("cannot grant invalid device permission `%s` to user `%s`", devPermission, usr.Data.Username)
 			}
-			if _, err := database.AddUserSwitchPermission(
+			if _, err := database.AddUserDevicePermission(
 				usr.Data.Username,
-				swPermission,
+				devPermission,
 			); err != nil {
 				return err
 			}
 		}
+
 		// Setup the user's camera permissions
 		for _, camPermission := range usr.CameraPermissions {
 			_, found, err := database.GetCameraById(camPermission)
@@ -280,12 +283,14 @@ func createUsersInDatabase(users []config.SetupUser) error {
 				return err
 			}
 		}
+
 		// Setup the user's Homescripts
 		// Current arguments are being used for checking preexistence of arguments
 		argsDB, err := database.ListAllHomescriptArgsOfUser(usr.Data.Username)
 		if err != nil {
 			return err
 		}
+
 		for _, homescript := range usr.Homescripts {
 			_, found, err := database.GetUserHomescriptById(
 				homescript.Data.Id,
@@ -303,6 +308,7 @@ func createUsersInDatabase(users []config.SetupUser) error {
 			}); err != nil {
 				return err
 			}
+
 			// Create arguments of Homecript
 			for _, arg := range homescript.Arguments {
 				// Check if the argument to be inserted already exists
@@ -312,9 +318,11 @@ func createUsersInDatabase(users []config.SetupUser) error {
 						argAlreadyExists = true
 					}
 				}
+
 				if argAlreadyExists {
 					return fmt.Errorf("cannot create HMS arg: key `%s` is already taken for script `%s`", arg.ArgKey, homescript.Data.Id)
 				}
+
 				if _, err := database.AddHomescriptArg(database.HomescriptArgData{
 					ArgKey:       arg.ArgKey,
 					HomescriptId: homescript.Data.Id,
@@ -326,6 +334,7 @@ func createUsersInDatabase(users []config.SetupUser) error {
 					return err
 				}
 			}
+
 			// Create automations using this Homescript
 			for _, autom := range homescript.Automations {
 				if _, err := database.CreateNewAutomation(database.Automation{
@@ -365,6 +374,7 @@ func createUsersInDatabase(users []config.SetupUser) error {
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -375,18 +385,21 @@ func createRoomsInDatabase(rooms []config.SetupRoom) error {
 			log.Error("Could not create rooms from setup file: ", err.Error())
 			return err
 		}
-		for _, switchItem := range room.Switches {
+
+		for _, device := range room.Devices {
 			if err := database.CreateDevice(
-				switchItem.Id,
-				switchItem.Name,
+				device.DeviceType,
+				device.Id,
+				device.Name,
 				room.Data.Id,
-				switchItem.Watts,
-				switchItem.TargetNode,
+				device.VendorId,
+				device.ModelId,
 			); err != nil {
-				log.Error("Could not create switches from setup file: ", err.Error())
+				log.Error("Could not create devices from setup file: ", err.Error())
 				return err
 			}
 		}
+
 		for _, camera := range room.Cameras {
 			// Override the (possible) empty room-id to match the current room
 			if err := database.CreateCamera(database.Camera{
@@ -400,6 +413,7 @@ func createRoomsInDatabase(rooms []config.SetupRoom) error {
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -500,17 +514,6 @@ func createCacheDataInDatabase(cacheData config.SetupCacheData) error {
 			}
 			log.Debug("Successfully imported power data")
 		}()
-	}
-
-	// Insert power state data
-	if len(cacheData.PowerStates) > 0 {
-		log.Trace("Importing power state data...")
-		for _, state := range cacheData.PowerStates {
-			if _, err := database.SetPowerState(state.Switch, state.PowerOn); err != nil {
-				return err
-			}
-		}
-		log.Debug("Successfully imported power state data")
 	}
 
 	wg.Wait()

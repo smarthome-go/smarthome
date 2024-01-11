@@ -75,7 +75,7 @@ func TestPower(t *testing.T) {
 			return
 		}
 
-		switchItem, found, err := database.GetSwitchById(item.Switch)
+		switchItem, found, err := database.GetDeviceById(item.Switch)
 		if err != nil {
 			t.Error(err.Error())
 			return

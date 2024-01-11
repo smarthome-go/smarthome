@@ -51,7 +51,7 @@ func TestSetPower(t *testing.T) {
 			return
 		}
 
-		switchItem, found, err := database.GetSwitchById(req.Switch)
+		switchItem, found, err := database.GetDeviceById(req.Switch)
 		if err != nil {
 			t.Error(err.Error())
 			return
@@ -96,7 +96,7 @@ func TestSetPower(t *testing.T) {
 		return
 	}
 
-	switchItem, found, err := database.GetSwitchById("test")
+	switchItem, found, err := database.GetDeviceById("test")
 	if err != nil {
 		t.Error(err.Error())
 		return
@@ -182,7 +182,7 @@ func TestSetPowerAsync(t *testing.T) {
 				return
 			}
 
-			switchItem, found, err := database.GetSwitchById(req.Switch)
+			switchItem, found, err := database.GetDeviceById(req.Switch)
 			if err != nil {
 				t.Error(err.Error())
 				return
@@ -209,7 +209,7 @@ func TestSetPowerAsync(t *testing.T) {
 		}()
 		wg.Wait()
 
-		switchItem, found, err := database.GetSwitchById(req.Switch)
+		switchItem, found, err := database.GetDeviceById(req.Switch)
 		if err != nil {
 			t.Error(err.Error())
 			return

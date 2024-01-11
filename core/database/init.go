@@ -44,13 +44,16 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 	if err := createRoomTable(); err != nil {
 		return err
 	}
-	if err := createSwitchTable(); err != nil {
+	if err := createDeviceDriverTable(); err != nil {
+		return err
+	}
+	if err := createDeviceTable(); err != nil {
 		return err
 	}
 	if err := createPowerUsageTable(); err != nil {
 		return err
 	}
-	if err := createHasSwitchPermissionTable(); err != nil {
+	if err := createHasDevicePermissionTable(); err != nil {
 		return err
 	}
 	if err := createNotificationTable(); err != nil {
@@ -71,16 +74,10 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 	if err := createHardwareNodeTable(); err != nil {
 		return err
 	}
-	if err := createSwitchTargetNodeTable(); err != nil {
-		return err
-	}
 	if err := createHomescriptTable(); err != nil {
 		return err
 	}
 	if err := createHomescriptArgTable(); err != nil {
-		return err
-	}
-	if err := createDeviceDriverTable(); err != nil {
 		return err
 	}
 	if err := createAutomationTable(); err != nil {

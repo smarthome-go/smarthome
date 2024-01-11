@@ -109,7 +109,7 @@ func TestExportGeneration(t *testing.T) {
 		assert.NoError(t, err)
 	}
 	// Grant the user one switch permission
-	_, err = database.AddUserSwitchPermission("test", "big_lamp")
+	_, err = database.AddUserDevicePermission("test", "big_lamp")
 	assert.NoError(t, err)
 	// Grant the user one camera permission
 	_, err = database.AddUserCameraPermission("test", "lvr_shelf")

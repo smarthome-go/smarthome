@@ -10,23 +10,23 @@ import (
 )
 
 type DebugInfo struct {
-	ServerVersion          string                  `json:"version"`
-	DatabaseOnline         bool                    `json:"databaseOnline"`
-	DatabaseStats          database.DBStatus       `json:"databaseStats"`
-	CpuCores               uint8                   `json:"cpuCores"`
-	Goroutines             uint16                  `json:"goroutines"`
-	GoVersion              string                  `json:"goVersion"`
-	MemoryUsage            uint16                  `json:"memoryUsage"`
-	PowerJobCount          uint16                  `json:"powerJobCount"`
-	PowerJobWithErrorCount uint16                  `json:"lastPowerJobErrorCount"`
-	PowerJobs              []hardware.PowerJob     `json:"powerJobs"`
-	PowerJobResults        []hardware.JobResult    `json:"powerJobResults"`
-	HardwareNodesCount     uint8                   `json:"hardwareNodesCount"`
-	HardwareNodesOnline    uint8                   `json:"hardwareNodesOnline"`
-	HardwareNodesEnabled   uint8                   `json:"hardwareNodesEnabled"`
-	Nodes                  []database.HardwareNode `json:"hardwareNodes"`
-	HomescriptJobCount     uint                    `json:"homescriptJobCount"`
-	Time                   serverTime              `json:"time"`
+	ServerVersion          string                     `json:"version"`
+	DatabaseOnline         bool                       `json:"databaseOnline"`
+	DatabaseStats          database.DBStatus          `json:"databaseStats"`
+	CpuCores               uint8                      `json:"cpuCores"`
+	Goroutines             uint16                     `json:"goroutines"`
+	GoVersion              string                     `json:"goVersion"`
+	MemoryUsage            uint16                     `json:"memoryUsage"`
+	PowerJobCount          uint16                     `json:"powerJobCount"`
+	PowerJobWithErrorCount uint16                     `json:"lastPowerJobErrorCount"`
+	PowerJobs              []hardware.DeviceOutputJob `json:"powerJobs"`
+	PowerJobResults        []hardware.JobResult       `json:"powerJobResults"`
+	HardwareNodesCount     uint8                      `json:"hardwareNodesCount"`
+	HardwareNodesOnline    uint8                      `json:"hardwareNodesOnline"`
+	HardwareNodesEnabled   uint8                      `json:"hardwareNodesEnabled"`
+	Nodes                  []database.HardwareNode    `json:"hardwareNodes"`
+	HomescriptJobCount     uint                       `json:"homescriptJobCount"`
+	Time                   serverTime                 `json:"time"`
 }
 
 type serverTime struct {
@@ -40,9 +40,11 @@ func SysInfo() DebugInfo {
 	var memoryStats runtime.MemStats
 	runtime.ReadMemStats(&memoryStats)
 
-	if err := hardware.RunNodeCheck(); err != nil {
-		log.Error("Failed to run node check: ", err.Error())
-	}
+	// TODO: also include driver health check if supported
+
+	// if err := hardware.RunNodeCheck(); err != nil {
+	// 	log.Error("Failed to run node check: ", err.Error())
+	// }
 
 	nodes, err := database.GetHardwareNodes()
 	if err != nil {

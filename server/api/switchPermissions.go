@@ -19,7 +19,7 @@ func AddSwitchPermission(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	_, switchExists, err := database.GetSwitchById(request.Switch)
+	_, switchExists, err := database.GetDeviceById(request.Switch)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to add switch permission", Error: "database failure"})
@@ -41,7 +41,7 @@ func AddSwitchPermission(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "could not add switch permission from user", Error: "invalid user"})
 		return
 	}
-	modified, err := database.AddUserSwitchPermission(request.Username, request.Switch)
+	modified, err := database.AddUserDevicePermission(request.Username, request.Switch)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to add switch permission", Error: "database failure"})
@@ -68,7 +68,7 @@ func RemoveSwitchPermission(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	_, switchExists, err := database.GetSwitchById(request.Switch)
+	_, switchExists, err := database.GetDeviceById(request.Switch)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to remove switch permission", Error: "database failure"})
@@ -90,7 +90,7 @@ func RemoveSwitchPermission(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "could not remove switch permission from user", Error: "invalid user"})
 		return
 	}
-	modified, err := database.RemoveUserSwitchPermission(request.Username, request.Switch)
+	modified, err := database.RemoveUserDevicePermission(request.Username, request.Switch)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to remove switch permission", Error: "database failure"})

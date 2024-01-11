@@ -14,7 +14,6 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
-	"github.com/smarthome-go/smarthome/core/hardware"
 	"github.com/smarthome-go/smarthome/core/homescript/automation"
 	"github.com/smarthome-go/smarthome/services/weather"
 )
@@ -173,7 +172,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 		switch toImport {
 		case "get_switch":
 			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
-				sw, found, err := database.GetSwitchById(args[0].(value.ValueString).Inner)
+				sw, found, err := database.GetDeviceById(args[0].(value.ValueString).Inner)
 				if err != nil {
 					return nil, value.NewVMFatalException(
 						err.Error(),
@@ -186,29 +185,17 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 					return value.NewNoneOption(), nil
 				}
 
-				targetNode := value.NewNoneOption()
-
-				if sw.TargetNode != nil {
-					targetNode = value.NewValueOption(value.NewValueString(*sw.TargetNode))
-				}
-
 				return value.NewValueOption(value.NewValueObject(map[string]*value.Value{
-					"name":        value.NewValueString(sw.Name),
-					"room_id":     value.NewValueString(sw.RoomId),
-					"power":       value.NewValueBool(sw.PowerOn),
-					"watts":       value.NewValueInt(int64(sw.Watts)),
-					"target_node": targetNode,
+					"name":      value.NewValueString(sw.Name),
+					"room_id":   value.NewValueString(sw.RoomId),
+					"vendor_id": value.NewValueString(sw.VendorId),
+					"model_id":  value.NewValueString(sw.VendorId),
 				})), nil
 			}), true
 		case "power":
 			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
-				switchId := args[0].(value.ValueString).Inner
-				powerOn := args[1].(value.ValueBool).Inner
-
-				err := hardware.SetSwitchPowerAll(switchId, powerOn, self.username)
-				if err != nil {
-					return nil, value.NewVMThrowInterrupt(span, err.Error())
-				}
+				// switchId := args[0].(value.ValueString).Inner
+				// powerOn := args[1].(value.ValueBool).Inner
 
 				return value.NewValueNull(), nil
 			}), true

@@ -8,7 +8,6 @@ import (
 
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
-	"github.com/smarthome-go/smarthome/core/hardware"
 )
 
 const SCHEDULE_MAXIMUM_RUNTIME = time.Minute * 10
@@ -176,7 +175,7 @@ func scheduleRunnerFunc(id uint) {
 	case database.ScheduleTargetModeSwitches:
 		for _, switchJob := range job.Data.SwitchJobs {
 			// Validate if the user still has permission to perform this power job
-			hasPermission, err := database.UserHasSwitchPermission(job.Owner, switchJob.SwitchId)
+			hasPermission, err := database.UserHasDevicePermission(job.Owner, switchJob.SwitchId)
 			if err != nil {
 				log.Error("Executing schedule's switch jobs failed: ", err.Error())
 				if _, err := Notify(
@@ -212,10 +211,12 @@ func scheduleRunnerFunc(id uint) {
 				)
 			}
 
-			if err := hardware.SetSwitchPowerAll(switchJob.SwitchId, switchJob.PowerOn, owner.Username); err != nil {
-				log.Error(fmt.Sprintf("Failed to set schedule power: `%s`", err.Error()))
-				return
-			}
+			// if err := hardware.SetSwitchPowerAll(switchJob.SwitchId, switchJob.PowerOn, owner.Username); err != nil {
+			// 	log.Error(fmt.Sprintf("Failed to set schedule power: `%s`", err.Error()))
+			// 	return
+			// }
+
+			// BUG: complete schedule action
 		}
 	default:
 		log.Error("Unimplemented schedule mode")

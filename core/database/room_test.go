@@ -90,7 +90,7 @@ func TestListRooms(t *testing.T) {
 		); err != nil {
 			t.Error(err.Error())
 		}
-		if _, err := AddUserSwitchPermission("admin", switchItem.Id); err != nil {
+		if _, err := AddUserDevicePermission("admin", switchItem.Id); err != nil {
 			t.Error(err.Error())
 		}
 	}

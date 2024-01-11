@@ -85,7 +85,7 @@ func TestSwitches(t *testing.T) {
 			}
 		})
 		t.Run(fmt.Sprintf("get switch/%s", test.Switch.Id), func(t *testing.T) {
-			switches, err := ListSwitches()
+			switches, err := ListAllDevices()
 			if err != nil {
 				t.Errorf("Could not list switches: %s", err.Error())
 				return
@@ -106,11 +106,11 @@ func TestSwitches(t *testing.T) {
 			}
 		})
 		t.Run(fmt.Sprintf("delete switch/%s", test.Switch.Id), func(t *testing.T) {
-			if err := DeleteSwitch(test.Switch.Id); err != nil {
+			if err := DeleteDevice(test.Switch.Id); err != nil {
 				t.Error(err.Error())
 				return
 			}
-			switches, err := ListSwitches()
+			switches, err := ListAllDevices()
 			if err != nil {
 				t.Errorf("Could not list switches: %s", err.Error())
 				return
@@ -209,7 +209,7 @@ func TestUserSwitches(t *testing.T) {
 		t.Run("add switch permissions", func(t *testing.T) {
 			for switchId, test := range hasSwitchPermissionTable {
 				t.Run(fmt.Sprintf("add switch permissions/%s", switchId), func(t *testing.T) {
-					if _, err := AddUserSwitchPermission(test.User, switchId); err != nil {
+					if _, err := AddUserDevicePermission(test.User, switchId); err != nil {
 						if !strings.Contains(err.Error(), test.Error) || test.Error == "" {
 							t.Errorf("Unexpected error for %s:%v: want: %s got: %s", switchId, test, test.Error, err.Error())
 							return
@@ -225,7 +225,7 @@ func TestUserSwitches(t *testing.T) {
 		t.Run("query user switches", func(t *testing.T) {
 			for switchId, test := range hasSwitchPermissionTable {
 				t.Run(fmt.Sprintf("query user switches/%s", switchId), func(t *testing.T) {
-					hasPermission, err := UserHasSwitchPermission(test.User, switchId)
+					hasPermission, err := UserHasDevicePermission(test.User, switchId)
 					if err != nil {
 						t.Error(err.Error())
 						return
@@ -249,7 +249,7 @@ func TestUserSwitches(t *testing.T) {
 						t.Errorf("Switch %s not found in user switches", switchId)
 						return
 					}
-					hasPermission, err = UserHasSwitchPermission("__invalid__", switchId)
+					hasPermission, err = UserHasDevicePermission("__invalid__", switchId)
 					if err != nil {
 						t.Error(err.Error())
 						return
@@ -264,7 +264,7 @@ func TestUserSwitches(t *testing.T) {
 
 		t.Run("test power states", func(t *testing.T) {
 			for _, switchTest := range switches {
-				switchPrev, found, err := GetSwitchById(switchTest.Id)
+				switchPrev, found, err := GetDeviceById(switchTest.Id)
 				if err != nil {
 					t.Error(err.Error())
 				}
@@ -273,7 +273,7 @@ func TestUserSwitches(t *testing.T) {
 					t.Error(err.Error())
 					return
 				}
-				switchItem, found, err := GetSwitchById(switchTest.Id)
+				switchItem, found, err := GetDeviceById(switchTest.Id)
 				if err != nil {
 					t.Error(err.Error())
 					return
@@ -318,13 +318,13 @@ func TestDoesSwitchExist(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
-	_, switchExists, err := GetSwitchById("test1")
+	_, switchExists, err := GetDeviceById("test1")
 	if err != nil {
 		t.Error(err.Error())
 		return
 	}
 	assert.True(t, switchExists, "Switch 'test1' does not exist after creation")
-	_, switchExists, err = GetSwitchById("invalid")
+	_, switchExists, err = GetDeviceById("invalid")
 	if err != nil {
 		t.Error(err.Error())
 		return
@@ -422,7 +422,7 @@ func TestModifySwitch(t *testing.T) {
 		}
 
 		// Validate Creation
-		switchDb, found, err := GetSwitchById(test.Origin.Id)
+		switchDb, found, err := GetDeviceById(test.Origin.Id)
 		if err != nil {
 			t.Error(err.Error())
 		}
@@ -440,14 +440,14 @@ func TestModifySwitch(t *testing.T) {
 		}
 
 		// Validate Modification
-		switchDb, found, err = GetSwitchById(test.Origin.Id)
+		switchDb, found, err = GetDeviceById(test.Origin.Id)
 		if err != nil {
 			t.Error(err.Error())
 		}
 		assert.True(t, found)
 		assert.Equal(t, test.Modified, switchDb, "Modified switch does not match")
 	}
-	invalidSwitch, found, err := GetSwitchById(fmt.Sprint(time.Now().Unix()))
+	invalidSwitch, found, err := GetDeviceById(fmt.Sprint(time.Now().Unix()))
 	if err != nil {
 		t.Error(err.Error())
 	}

@@ -6,9 +6,9 @@ import (
 )
 
 type Room struct {
-	Data     RoomData `json:"data"`
-	Switches []Switch `json:"switches"`
-	Cameras  []Camera `json:"cameras"`
+	Data    RoomData `json:"data"`
+	Devices []Device `json:"devices"`
+	Cameras []Camera `json:"cameras"`
 }
 
 type RoomData struct {
@@ -146,7 +146,7 @@ func GetRoomDataById(id string) (RoomData, bool, error) {
 	return room, true, nil
 }
 
-// Returns a list containing room data of rooms which contain switches the user is allowed to use
+// Returns a list containing room data of rooms which contain devices that the user is allowed to use
 func listPersonalRoomData(username string) ([]RoomData, error) {
 	query, err := db.Prepare(`
 	SELECT
@@ -156,10 +156,10 @@ func listPersonalRoomData(username string) ([]RoomData, error) {
 	FROM room
 		WHERE (
 			SELECT COUNT(*)
-			FROM switch
-			JOIN hasSwitchPermission
-				ON switch.Id = hasSwitchPermission.Switch
-			WHERE hasSwitchPermission.Username=? AND switch.RoomId=room.Id
+			FROM device
+			JOIN hasDevicePermission
+				ON device.Id = hasDevicePermission.Device
+			WHERE hasDevicePermission.Username=? AND device.RoomId=room.Id
 		) > 0
 		OR (
 			SELECT COUNT(*)
@@ -211,17 +211,19 @@ func DeleteRoomQuery(id string) error {
 	return nil
 }
 
-// Returns a complete list of rooms to which a user has access to, includes its metadata like switches and cameras
+// Returns a complete list of rooms to which a user has access to, includes its metadata like devices and cameras
 func ListPersonalRoomsWithData(username string) ([]Room, error) {
 	rooms, err := listPersonalRoomData(username)
 	if err != nil {
 		return nil, err
 	}
-	// Get the user's switches
-	switches, err := ListUserSwitches(username)
+
+	// Get the user's devices
+	devices, err := ListUserDevices(username)
 	if err != nil {
 		return nil, err
 	}
+
 	// Get the user's cameras
 	cameras, err := ListUserCameras(username)
 	if err != nil {
@@ -230,56 +232,65 @@ func ListPersonalRoomsWithData(username string) ([]Room, error) {
 
 	outputRooms := make([]Room, 0)
 	for _, room := range rooms {
-		switchesTemp := make([]Switch, 0)
+		devicesTemp := make([]Device, 0)
 		camerasTemp := make([]Camera, 0)
-		// Add every switch which is in the current room
-		for _, switchItem := range switches {
-			if switchItem.RoomId == room.Id {
-				switchesTemp = append(switchesTemp, switchItem)
+
+		// Add every device which is in the current room
+		for _, device := range devices {
+			if device.RoomId == room.Id {
+				devicesTemp = append(devicesTemp, device)
 			}
 		}
+
 		// Add every camera which is in the current room
 		for _, camera := range cameras {
 			if camera.RoomId == room.Id {
 				camerasTemp = append(camerasTemp, camera)
 			}
 		}
+
 		// Append to the output rooms
 		outputRooms = append(outputRooms, Room{
-			Data:     room,
-			Switches: switchesTemp,
-			Cameras:  camerasTemp,
+			Data:    room,
+			Devices: devicesTemp,
+			Cameras: camerasTemp,
 		})
 	}
+
 	return outputRooms, nil
 }
 
-// Returns a complete list of rooms, includes its metadata like switches and cameras
+// Returns a complete list of rooms, includes its metadata like devices and cameras
 func ListAllRoomsWithData(redactCameraUrl bool) ([]Room, error) {
 	rooms, err := ListRooms()
 	if err != nil {
 		return nil, err
 	}
-	// Get all switches
-	switches, err := ListSwitches()
+
+	// Get all devices
+	devices, err := ListAllDevices()
 	if err != nil {
 		return nil, err
 	}
+
 	// Get all cameras
 	cameras, err := ListCameras()
 	if err != nil {
 		return nil, err
 	}
+
 	outputRooms := make([]Room, 0)
 	for _, room := range rooms {
-		switchesTemp := make([]Switch, 0)
+		devicesTemp := make([]Device, 0)
 		camerasTemp := make([]Camera, 0)
-		// Add all switches of the current room
-		for _, switchItem := range switches {
-			if switchItem.RoomId == room.Id {
-				switchesTemp = append(switchesTemp, switchItem)
+
+		// Add all devices of the current room
+		for _, device := range devices {
+			if device.RoomId == room.Id {
+				devicesTemp = append(devicesTemp, device)
 			}
 		}
+
 		// Add all cameras of the current room
 		for _, camera := range cameras {
 			if redactCameraUrl {
@@ -289,17 +300,19 @@ func ListAllRoomsWithData(redactCameraUrl bool) ([]Room, error) {
 				camerasTemp = append(camerasTemp, camera)
 			}
 		}
+
 		outputRooms = append(outputRooms, Room{
-			Data:     room,
-			Switches: switchesTemp,
-			Cameras:  camerasTemp,
+			Data:    room,
+			Devices: devicesTemp,
+			Cameras: camerasTemp,
 		})
 	}
+
 	return outputRooms, nil
 }
 
 func DeleteRoom(id string) error {
-	if err := DeleteRoomSwitches(id); err != nil {
+	if err := DeleteRoomDevices(id); err != nil {
 		return err
 	}
 	if err := DeleteRoomCameras(id); err != nil {

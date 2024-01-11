@@ -69,10 +69,12 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/login/token", tokenLoginHandler).Methods("POST")
 
 	// Power
-	r.HandleFunc("/api/power/states", api.GetPowerStates).Methods("GET")
-	r.HandleFunc("/api/power/usage/day", api.GetPowerDrawFrom24Hours).Methods("GET")
-	r.HandleFunc("/api/power/usage/all", mdl.ApiAuth(api.GetPowerDrawAll)).Methods("GET")
-	r.HandleFunc("/api/power/set", mdl.ApiAuth(mdl.Perm(api.PowerPostHandler, database.PermissionPower))).Methods("POST")
+	// TODO: implement this using the power API that is implemented later
+	// TODO: also implement a sensor / input API
+	// r.HandleFunc("/api/power/states", api.GetPowerStates).Methods("GET")
+	// r.HandleFunc("/api/power/usage/day", api.GetPowerDrawFrom24Hours).Methods("GET")
+	// r.HandleFunc("/api/power/usage/all", mdl.ApiAuth(api.GetPowerDrawAll)).Methods("GET")
+	// r.HandleFunc("/api/power/set", mdl.ApiAuth(mdl.Perm(api.PowerPostHandler, database.PermissionPower))).Methods("POST")
 
 	// Rooms
 	r.HandleFunc("/api/room/list/all", mdl.ApiAuth(api.ListAllRoomsWithData)).Methods("GET")
@@ -204,7 +206,8 @@ func NewRouter() *mux.Router {
 
 	// Cache Purging
 	r.HandleFunc("/api/weather/cache", mdl.ApiAuth(mdl.Perm(api.PurgeWeatherCache, database.PermissionSystemConfig))).Methods("DELETE")
-	r.HandleFunc("/api/power/cache", mdl.ApiAuth(mdl.Perm(api.PurgePowerRecords, database.PermissionSystemConfig))).Methods("DELETE")
+	// TODO: what is up with cache purging?
+	// r.HandleFunc("/api/power/cache", mdl.ApiAuth(mdl.Perm(api.PurgePowerRecords, database.PermissionSystemConfig))).Methods("DELETE")
 
 	// System Configuration
 	r.HandleFunc("/api/automation/state/global", mdl.ApiAuth(mdl.Perm(api.ChangeActivationAutomation, database.PermissionSystemConfig))).Methods("PUT")
@@ -218,18 +221,20 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/system/config/factory", mdl.ApiAuth(mdl.Perm(api.FactoryReset, database.PermissionSystemConfig))).Methods("DELETE")
 
 	// Hardware node management
-	r.HandleFunc("/api/system/hardware/node/list", mdl.ApiAuth(mdl.Perm(api.ListHardwareNodes, database.PermissionSystemConfig))).Methods("GET")
-	r.HandleFunc("/api/system/hardware/node/list/nopriv", mdl.ApiAuth(mdl.Perm(api.ListHardwareNodesNoPriv, database.PermissionPower))).Methods("GET")
-	r.HandleFunc("/api/system/hardware/node/check", mdl.ApiAuth(mdl.Perm(api.ListHardwareNodesWithCheck, database.PermissionSystemConfig))).Methods("GET")
-	r.HandleFunc("/api/system/hardware/node/add", mdl.ApiAuth(mdl.Perm(api.CreateHardwareNode, database.PermissionSystemConfig))).Methods("POST")
-	r.HandleFunc("/api/system/hardware/node/modify", mdl.ApiAuth(mdl.Perm(api.ModifyHardwareNode, database.PermissionSystemConfig))).Methods("PUT")
-	r.HandleFunc("/api/system/hardware/node/delete", mdl.ApiAuth(mdl.Perm(api.DeleteHardwareNode, database.PermissionSystemConfig))).Methods("DELETE")
+	// r.HandleFunc("/api/system/hardware/node/list", mdl.ApiAuth(mdl.Perm(api.ListHardwareNodes, database.PermissionSystemConfig))).Methods("GET")
+	// r.HandleFunc("/api/system/hardware/node/list/nopriv", mdl.ApiAuth(mdl.Perm(api.ListHardwareNodesNoPriv, database.PermissionPower))).Methods("GET")
+	// r.HandleFunc("/api/system/hardware/node/check", mdl.ApiAuth(mdl.Perm(api.ListHardwareNodesWithCheck, database.PermissionSystemConfig))).Methods("GET")
+	// r.HandleFunc("/api/system/hardware/node/add", mdl.ApiAuth(mdl.Perm(api.CreateHardwareNode, database.PermissionSystemConfig))).Methods("POST")
+	// r.HandleFunc("/api/system/hardware/node/modify", mdl.ApiAuth(mdl.Perm(api.ModifyHardwareNode, database.PermissionSystemConfig))).Methods("PUT")
+	// r.HandleFunc("/api/system/hardware/node/delete", mdl.ApiAuth(mdl.Perm(api.DeleteHardwareNode, database.PermissionSystemConfig))).Methods("DELETE")
+	// TODO: what to do with hardware nodes?
 
 	// Hardware driver management
 	r.HandleFunc("/api/system/hardware/drivers/list", mdl.ApiAuth(mdl.Perm(api.ListDeviceDrivers, database.PermissionSystemConfig))).Methods("GET")
 	r.HandleFunc("/api/system/hardware/drivers/add", mdl.ApiAuth(mdl.Perm(api.CreateDeviceDriver, database.PermissionSystemConfig))).Methods("POST")
 	// r.HandleFunc("/api/system/hardware/drivers/modify", mdl.ApiAuth(mdl.Perm(api.ListDeviceDrivers, database.PermissionSystemConfig))).Methods("GET")
 	// r.HandleFunc("/api/system/hardware/drivers/delete", mdl.ApiAuth(mdl.Perm(api.DeleteDeviceDriver, database.PermissionSystemConfig))).Methods("GET")
+	// TODO: add driver support
 
 	// Logging
 	r.HandleFunc("/api/logs/delete/old", mdl.ApiAuth(mdl.Perm(api.FlushOldLogs, database.PermissionSystemConfig))).Methods("DELETE")

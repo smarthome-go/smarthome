@@ -21,18 +21,17 @@ type SetupStruct struct {
 }
 
 type SetupRoom struct {
-	Data     database.RoomData `json:"data"`
-	Switches []SetupSwitch     `json:"switches"`
-	Cameras  []SetupCamera     `json:"cameras"`
+	Data    database.RoomData `json:"data"`
+	Devices []SetupDevice     `json:"devices"`
+	Cameras []SetupCamera     `json:"cameras"`
 }
 
-type SetupSwitch struct {
-	Id       string `json:"id"`
-	Name     string `json:"name"`
-	PowerOn  bool   `json:"powerOn"`
-	Watts    uint16 `json:"watts"`
-	VendorId string `json:"vendorId"`
-	ModelId  string `json:"modelId"`
+type SetupDevice struct {
+	DeviceType database.DEVICE_TYPE `json:"deviceType"`
+	Id         string               `json:"id"`
+	Name       string               `json:"name"`
+	VendorId   string               `json:"vendorId"`
+	ModelId    string               `json:"modelId"`
 }
 
 type SetupCamera struct {
@@ -53,7 +52,7 @@ type SetupUser struct {
 
 	// Permissions
 	Permissions       []string `json:"permissions"`
-	SwitchPermissions []string `json:"switchPermissions"`
+	DevicePermissions []string `json:"devicePermissions"`
 	CameraPermissions []string `json:"cameraPermissions"`
 }
 
@@ -126,7 +125,6 @@ type SetupUserData struct {
 type SetupCacheData struct {
 	WeatherHistory []SetupWeatherMeasurement               `json:"weatherHistory"`
 	PowerUsageData []hardware.PowerDrawDataPointUnixMillis `json:"powerUsageData"`
-	PowerStates    []database.PowerState                   `json:"powerStates"`
 }
 
 type SetupWeatherMeasurement struct {
@@ -158,17 +156,17 @@ func Export(
 	}
 	rooms := make([]SetupRoom, 0)
 	for _, room := range roomsDB {
-		roomSwitches := make([]SetupSwitch, 0)
-		for _, sw := range room.Switches {
-			roomSwitches = append(roomSwitches, SetupSwitch{
-				Id:       sw.Id,
-				Name:     sw.Name,
-				PowerOn:  sw.PowerOn,
-				Watts:    sw.Watts,
-				VendorId: sw.VendorId,
-				ModelId:  sw.ModelId,
+		roomDevices := make([]SetupDevice, 0)
+		for _, sw := range room.Devices {
+			roomDevices = append(roomDevices, SetupDevice{
+				DeviceType: sw.DeviceType,
+				Id:         sw.Id,
+				Name:       sw.Name,
+				VendorId:   sw.VendorId,
+				ModelId:    sw.ModelId,
 			})
 		}
+
 		roomCameras := make([]SetupCamera, 0)
 		for _, cam := range room.Cameras {
 			roomCameras = append(roomCameras, SetupCamera{
@@ -177,14 +175,15 @@ func Export(
 				Url:  cam.Url,
 			})
 		}
+
 		rooms = append(rooms, SetupRoom{
 			Data: database.RoomData{
 				Id:          room.Data.Id,
 				Name:        room.Data.Name,
 				Description: room.Data.Description,
 			},
-			Switches: roomSwitches,
-			Cameras:  roomCameras,
+			Devices: roomDevices,
+			Cameras: roomCameras,
 		})
 	}
 
@@ -311,7 +310,7 @@ func Export(
 		}
 
 		// Switch p0ermissionws
-		swPermissions, err := database.GetUserSwitchPermissions(userData.Username)
+		devPermissions, err := database.GetUserDevicePermissions(userData.Username)
 		if err != nil {
 			return SetupStruct{}, err
 		}
@@ -361,7 +360,7 @@ func Export(
 			HomescriptStorage: storageOutput,
 			Reminders:         reminders,
 			Permissions:       permissions,
-			SwitchPermissions: swPermissions,
+			DevicePermissions: devPermissions,
 			CameraPermissions: camPermissions,
 		})
 	}
@@ -399,13 +398,6 @@ func Export(
 			return SetupStruct{}, err
 		}
 		cacheData.PowerUsageData = powerData
-
-		// Power state data
-		powerStates, err := database.GetPowerStates()
-		if err != nil {
-			return SetupStruct{}, err
-		}
-		cacheData.PowerStates = powerStates
 	}
 
 	return SetupStruct{

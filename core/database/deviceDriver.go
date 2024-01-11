@@ -36,10 +36,7 @@ func createDeviceDriverTable() error {
 		Name				TEXT,
 		Version				VARCHAR(%d),
 		HomescriptCode		TEXT,
-		PRIMARY KEY (VendorId, ModelId),
-		CONSTRAINT HomescriptId
-		FOREIGN KEY (HomescriptId)
-		REFERENCES homescript(Id)
+		PRIMARY KEY (VendorId, ModelId)
 	)
 	`,
 		DEVICE_DRIVER_MODVEN_ID_LEN,

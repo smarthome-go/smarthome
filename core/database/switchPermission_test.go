@@ -3,7 +3,7 @@ package database
 import "testing"
 
 func TestCreateHasSwitchPermissionTable(t *testing.T) {
-	if err := createHasSwitchPermissionTable(); err != nil {
+	if err := createHasDevicePermissionTable(); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -40,7 +40,7 @@ func TestAddUserSwitchPermission(t *testing.T) {
 			t.Error(err.Error())
 			return
 		}
-		removed, err := RemoveUserSwitchPermission("permissions_switch", test.Switch)
+		removed, err := RemoveUserDevicePermission("permissions_switch", test.Switch)
 		if err != nil {
 			t.Error(err.Error())
 			return
@@ -50,7 +50,7 @@ func TestAddUserSwitchPermission(t *testing.T) {
 			return
 		}
 		if test.Add {
-			added, err := AddUserSwitchPermission("permissions_switch", test.Switch)
+			added, err := AddUserDevicePermission("permissions_switch", test.Switch)
 			if err != nil {
 				t.Error(err.Error())
 				return
@@ -60,7 +60,7 @@ func TestAddUserSwitchPermission(t *testing.T) {
 				return
 			}
 		}
-		hasPermission, err := UserHasSwitchPermission("permissions_switch", test.Switch)
+		hasPermission, err := UserHasDevicePermission("permissions_switch", test.Switch)
 		if err != nil {
 			t.Error(err.Error())
 			return
@@ -72,7 +72,7 @@ func TestAddUserSwitchPermission(t *testing.T) {
 	}
 	// Add permissions again, this time for all switches
 	for _, test := range table {
-		added, err := AddUserSwitchPermission("permissions_switch", test.Switch)
+		added, err := AddUserDevicePermission("permissions_switch", test.Switch)
 		if err != nil {
 			t.Error(err.Error())
 			return
@@ -82,7 +82,7 @@ func TestAddUserSwitchPermission(t *testing.T) {
 			return
 		}
 		// Remove switch permission
-		removed, err := RemoveUserSwitchPermission("permissions_switch", test.Switch)
+		removed, err := RemoveUserDevicePermission("permissions_switch", test.Switch)
 		if err != nil {
 			t.Error(err.Error())
 			return

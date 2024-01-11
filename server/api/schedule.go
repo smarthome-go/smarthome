@@ -99,7 +99,7 @@ func CreateNewSchedule(w http.ResponseWriter, r *http.Request) {
 
 		for _, switchItem := range request.SwitchJobs {
 			// Validate that the switch is valid and accessible
-			found, err := database.UserHasSwitchPermission(username, switchItem.SwitchId)
+			found, err := database.UserHasDevicePermission(username, switchItem.SwitchId)
 			if err != nil {
 				w.WriteHeader(http.StatusServiceUnavailable)
 				Res(w, Response{Success: false, Message: "failed to validate `switchJobs`", Error: "database failure"})
@@ -203,7 +203,7 @@ func ModifySchedule(w http.ResponseWriter, r *http.Request) {
 
 		for _, switchItem := range request.Data.SwitchJobs {
 			// Validate that the switch is valid and accessible
-			found, err := database.UserHasSwitchPermission(username, switchItem.SwitchId)
+			found, err := database.UserHasDevicePermission(username, switchItem.SwitchId)
 			if err != nil {
 				w.WriteHeader(http.StatusServiceUnavailable)
 				Res(w, Response{Success: false, Message: "failed to validate `switchJobs`", Error: "database failure"})

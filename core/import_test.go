@@ -109,7 +109,7 @@ func TestRunSetup(t *testing.T) {
 					Name:        "Living Room",
 					Description: "This is the room where people live in",
 				},
-				Switches: []config.SetupSwitch{
+				Switches: []config.SetupDevice{
 					{
 						Id:      "lvr_big_lamp",
 						Name:    "Big Lamp",
@@ -155,7 +155,7 @@ func TestRunSetup(t *testing.T) {
 	}
 
 	for _, switchItem := range setup.Rooms[0].Switches {
-		_, exists, err := database.GetSwitchById(switchItem.Id)
+		_, exists, err := database.GetDeviceById(switchItem.Id)
 		if err != nil {
 			t.Error(err.Error())
 			return

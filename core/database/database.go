@@ -57,7 +57,7 @@ func DeleteTables() error {
 		"DROP TABLE IF EXISTS hardware",
 		"DROP TABLE IF EXISTS hasCameraPermission",
 		"DROP TABLE IF EXISTS hasPermission",
-		"DROP TABLE IF EXISTS hasSwitchPermission",
+		"DROP TABLE IF EXISTS hasDevicePermission",
 		"DROP TABLE IF EXISTS homescript",
 		"DROP TABLE IF EXISTS homescriptArg",
 		"DROP TABLE IF EXISTS homescriptStorage",

@@ -34,7 +34,7 @@ func createUserMockData() error {
 		return err
 	}
 	// Give the user switch permission
-	if _, err := AddUserSwitchPermission("delete_me", "delete_me"); err != nil {
+	if _, err := AddUserDevicePermission("delete_me", "delete_me"); err != nil {
 		return err
 	}
 	// Create a homescript
