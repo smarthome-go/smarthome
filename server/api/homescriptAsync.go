@@ -130,6 +130,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithCancel(context.Background())
 
 		res, err := homescript.HmsManager.RunById(
+			homescript.HMS_PROGRAM_KIND_NORMAL,
 			request.Payload,
 			username,
 			homescript.InitiatorAPI,

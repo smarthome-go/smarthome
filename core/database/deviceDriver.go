@@ -12,11 +12,6 @@ const DEVICE_DRIVER_DEFAULT_ICON = "developer_board"
 // TODO: change this so that there is no user owning the device driver script
 
 type DeviceDriver struct {
-	Driver     DeviceDriverData `json:"driver"`
-	Homescript Homescript       `json:"homescript"`
-}
-
-type DeviceDriverData struct {
 	VendorId       string `json:"vendorId"`
 	ModelId        string `json:"modelId"`
 	Name           string `json:"name"`
@@ -61,26 +56,7 @@ func createDeviceDriverTable() error {
 
 // Creates a new device driver entry
 // Returns the ID of the newly internally used Homescript
-func CreateNewDeviceDriver(driverData DeviceDriverData, homescriptCode string) (string, error) {
-	// driverHmsCode := generateHmsIdForDriver(driverData.VendorId, driverData.ModelId)
-
-	// Create new Homescript for this driver
-	// if err := CreateNewHomescript(Homescript{
-	// 	Owner: DEFAULT_ADMIN_USERNAME,
-	// 	Data: HomescriptData{
-	// 		Id:                  driverHmsCode,
-	// 		Name:                fmt.Sprintf("%s Driver", driverData.Name),
-	// 		Description:         fmt.Sprintf("%s:%s", driverData.VendorId, driverData.ModelId),
-	// 		QuickActionsEnabled: false,
-	// 		IsWidget:            false,
-	// 		SchedulerEnabled:    false,
-	// 		Code:                homescriptCode,
-	// 		MDIcon:              DEVICE_DRIVER_DEFAULT_ICON,
-	// 	},
-	// }); err != nil {
-	// 	return "", nil
-	// }
-
+func CreateNewDeviceDriver(driverData DeviceDriver) error {
 	query, err := db.Prepare(`
 	INSERT INTO
 	deviceDriver(
@@ -94,7 +70,7 @@ func CreateNewDeviceDriver(driverData DeviceDriverData, homescriptCode string) (
 	`)
 	if err != nil {
 		log.Error("Failed to create new device driver: preparing query failed: ", err.Error())
-		return "", err
+		return err
 	}
 	defer query.Close()
 
@@ -107,10 +83,10 @@ func CreateNewDeviceDriver(driverData DeviceDriverData, homescriptCode string) (
 		driverData.HomescriptCode,
 	); err != nil {
 		log.Error("Failed to create new device driver: executing query failed: ", err.Error())
-		return "", err
+		return err
 	}
 
-	return driverData.HomescriptCode, nil
+	return nil
 }
 
 // Modifies the metadata of a given homescript
@@ -121,7 +97,7 @@ func ModifyDeviceDriver(newData DeviceDriver) error {
 	SET
 		Name=?,
 		Version=?,
-		HomescriptId=?
+		HomescriptCode=?
 	WHERE VendorId=? AND ModelId=?
 	`)
 	if err != nil {
@@ -130,11 +106,11 @@ func ModifyDeviceDriver(newData DeviceDriver) error {
 	}
 	defer query.Close()
 	_, err = query.Exec(
-		newData.Driver.Name,
-		newData.Driver.Version,
-		newData.Homescript.Data.Id,
-		newData.Driver.VendorId,
-		newData.Driver.ModelId,
+		newData.Name,
+		newData.Version,
+		newData.HomescriptCode,
+		newData.VendorId,
+		newData.ModelId,
 	)
 	if err != nil {
 		log.Error("Failed to update device driver: executing query failed: ", err.Error())
@@ -144,7 +120,7 @@ func ModifyDeviceDriver(newData DeviceDriver) error {
 }
 
 // Returns a list of homescripts owned by a given user
-func ListDeviceDrivers() ([]DeviceDriverData, error) {
+func ListDeviceDrivers() ([]DeviceDriver, error) {
 	query, err := db.Prepare(`
 	SELECT
 		deviceDriver.VendorId,
@@ -165,9 +141,9 @@ func ListDeviceDrivers() ([]DeviceDriverData, error) {
 		return nil, err
 	}
 	defer res.Close()
-	var drivers []DeviceDriverData = make([]DeviceDriverData, 0)
+	var drivers []DeviceDriver = make([]DeviceDriver, 0)
 	for res.Next() {
-		var driver DeviceDriverData
+		var driver DeviceDriver
 		err := res.Scan(
 			&driver.VendorId,
 			&driver.ModelId,
@@ -184,7 +160,7 @@ func ListDeviceDrivers() ([]DeviceDriverData, error) {
 	return drivers, nil
 }
 
-func GetDeviceDriver(vendorId string, modelId string) (DeviceDriverData, bool, error) {
+func GetDeviceDriver(vendorId string, modelId string) (DeviceDriver, bool, error) {
 	query, err := db.Prepare(`
 	SELECT
 		deviceDriver.VendorId,
@@ -198,11 +174,11 @@ func GetDeviceDriver(vendorId string, modelId string) (DeviceDriverData, bool, e
 	`)
 	if err != nil {
 		log.Error("Failed to get device driver: preparing query failed: ", err.Error())
-		return DeviceDriverData{}, false, err
+		return DeviceDriver{}, false, err
 	}
 	defer query.Close()
 
-	var driver DeviceDriverData
+	var driver DeviceDriver
 
 	if err := query.QueryRow(
 		driver.VendorId,
@@ -215,10 +191,10 @@ func GetDeviceDriver(vendorId string, modelId string) (DeviceDriverData, bool, e
 		&driver.HomescriptCode,
 	); err != nil {
 		if err == sql.ErrNoRows {
-			return DeviceDriverData{}, false, nil
+			return DeviceDriver{}, false, nil
 		}
 		log.Error("Failed to get device driver: executing query failed: ", err.Error())
-		return DeviceDriverData{}, false, err
+		return DeviceDriver{}, false, err
 	}
 
 	return driver, true, nil
@@ -239,4 +215,20 @@ func DeleteDeviceDriver(vendorId string, modelId string) error {
 
 	_, err = query.Exec()
 	return err
+}
+
+// Used when deleting a device driver
+func DriverHasDependentDevices(vendorId string, modelId string) (bool, error) {
+	devices, err := ListDeviceDrivers()
+	if err != nil {
+		return false, err
+	}
+
+	for _, dev := range devices {
+		if dev.VendorId == vendorId && dev.ModelId == modelId {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }

@@ -12,10 +12,20 @@ const (
 	DEVICE_TYPE_OUTPUT             = "OUTPUT"
 )
 
+var DEVICE_TYPE_MAP = map[string]DEVICE_TYPE{
+	"INPUT":  DEVICE_TYPE_INPUT,
+	"OUTPUT": DEVICE_TYPE_OUTPUT,
+}
+
+func ParseDeviceType(from string) (DEVICE_TYPE, bool) {
+	type_, valid := DEVICE_TYPE_MAP[from]
+	return type_, valid
+}
+
 // Identified by a device ID, has a name and belongs to one room
 // Each device can either be an input device or an output device
 type Device struct {
-	DeviceType DEVICE_TYPE `json:"deviceType"`
+	DeviceType DEVICE_TYPE `json:"type"`
 	Id         string      `json:"id"`
 	Name       string      `json:"name"`
 	RoomId     string      `json:"roomId"`

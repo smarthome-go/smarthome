@@ -187,6 +187,7 @@ func (m *Manager) Analyze(
 	username string,
 	filename string,
 	code string,
+	programKind HMS_PROGRAM_KIND,
 ) (map[string]ast.AnalyzedProgram, HmsRes, error) {
 	analyzedModules, diagnostics, syntaxErrors := homescript.Analyze(
 		homescript.InputProgram{
@@ -194,7 +195,7 @@ func (m *Manager) Analyze(
 			ProgramText: code,
 		},
 		analyzerScopeAdditions(),
-		newAnalyzerHost(username),
+		newAnalyzerHost(username, programKind),
 	)
 
 	errors := make([]HmsError, 0)
@@ -250,6 +251,7 @@ func (m *Manager) Analyze(
 func (m *Manager) AnalyzeById(
 	id string,
 	username string,
+	programKind HMS_PROGRAM_KIND,
 ) (map[string]ast.AnalyzedProgram, HmsRes, error) {
 	hms, found, err := database.GetUserHomescriptById(id, username)
 	if err != nil {
@@ -259,10 +261,11 @@ func (m *Manager) AnalyzeById(
 		panic(fmt.Sprintf("Homescript with ID %s owned by user %s was not found", id, username)) // TODO: no panic
 	}
 
-	return m.Analyze(username, id, hms.Data.Code)
+	return m.Analyze(username, id, hms.Data.Code, programKind)
 }
 
 func (m *Manager) Run(
+	programKind HMS_PROGRAM_KIND,
 	username string,
 	filename *string,
 	code string,
@@ -285,7 +288,7 @@ func (m *Manager) Run(
 
 	log.Trace(fmt.Sprintf("Homescript '%s' of user '%s' is being analyzed...", entryModuleName, username))
 
-	modules, res, err := m.Analyze(username, entryModuleName, code)
+	modules, res, err := m.Analyze(username, entryModuleName, code, programKind)
 	if err != nil {
 		return HmsRes{}, err
 	}
@@ -433,6 +436,7 @@ func (m *Manager) Run(
 
 // Executes a given Homescript from the database and returns its output, exit-code and possible error
 func (m *Manager) RunById(
+	programKind HMS_PROGRAM_KIND,
 	hmsId string,
 	username string,
 	initiator HomescriptInitiator,
@@ -452,6 +456,7 @@ func (m *Manager) RunById(
 	}
 
 	return m.Run(
+		programKind,
 		username,
 		&hmsId,
 		script.Data.Code,

@@ -76,6 +76,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				}
 
 				res, err := HmsManager.RunById(
+					HMS_PROGRAM_KIND_NORMAL,
 					hmsId,
 					self.username,
 					InitiatorExec,

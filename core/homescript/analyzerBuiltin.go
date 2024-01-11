@@ -5,19 +5,46 @@ import (
 
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer"
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
+	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	pAst "github.com/smarthome-go/homescript/v3/homescript/parser/ast"
 	"github.com/smarthome-go/smarthome/core/database"
 )
 
+type HMS_PROGRAM_KIND uint8
+
+const (
+	HMS_PROGRAM_KIND_NORMAL HMS_PROGRAM_KIND = iota
+	HMS_PROGRAM_KIND_DEVICE_DRIVER
+)
+
 type analyzerHost struct {
 	username string
+	// Depending on the program kind, the post-validation hook performs specific validations.
+	programKind HMS_PROGRAM_KIND
 }
 
-func newAnalyzerHost(username string) analyzerHost {
+func newAnalyzerHost(
+	username string,
+	programKind HMS_PROGRAM_KIND,
+) analyzerHost {
 	return analyzerHost{
-		username: username,
+		username:    username,
+		programKind: programKind,
 	}
+}
+
+func (self analyzerHost) PostValidationHook(analyzedModules map[string]ast.AnalyzedProgram, mainModule string) []diagnostic.Diagnostic {
+	switch self.programKind {
+	case HMS_PROGRAM_KIND_DEVICE_DRIVER:
+		// TODO: analyze drivers here
+		panic("TODO")
+	case HMS_PROGRAM_KIND_NORMAL:
+		// TODO: implement this
+		panic("TODO")
+	}
+
+	return nil
 }
 
 func (self analyzerHost) GetBuiltinImport(moduleName string, valueName string, span errors.Span, kind pAst.IMPORT_KIND) (result analyzer.BuiltinImport, moduleFound bool, valueFound bool) {

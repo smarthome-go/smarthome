@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"unicode/utf8"
@@ -78,17 +79,27 @@ func CreateDevice(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
+
 	// Validate length and encoding
 	if strings.Contains(request.Id, " ") || !utf8string.NewString(request.Id).IsASCII() {
 		w.WriteHeader(http.StatusBadRequest)
 		Res(w, Response{Success: false, Message: "bad request", Error: "id should only include ASCII characters and must not have whitespaces"})
 		return
 	}
-	if utf8.RuneCountInString(request.Id) > 20 || utf8.RuneCountInString(r.RequestURI) > 30 {
+	if utf8.RuneCountInString(request.Id) > 20 || utf8.RuneCountInString(request.Name) > 30 {
 		w.WriteHeader(http.StatusBadRequest)
 		Res(w, Response{Success: false, Message: "bad request", Error: "maximum lengths for id and name are 20 and 30"})
 		return
 	}
+
+	// Validate that the device type is legal
+	parsedType, valid := database.ParseDeviceType(string(request.Type))
+	if !valid {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to create device", Error: fmt.Sprintf("illegal device type: `%s`", request.Type)})
+		return
+	}
+
 	// Validate that no conflicts are present
 	_, alreadyExists, err := database.GetDeviceById(request.Id)
 	if err != nil {
@@ -117,7 +128,7 @@ func CreateDevice(w http.ResponseWriter, r *http.Request) {
 	// TODO: Validate drivers + add correct implementation of this thing
 	// TODO: validata that the device type is a correct enum
 	if err := database.CreateDevice(
-		request.Type,
+		parsedType,
 		request.Id,
 		request.Name,
 		request.RoomId,

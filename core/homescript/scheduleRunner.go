@@ -75,6 +75,7 @@ func scheduleRunnerFunc(id uint) {
 		ctx, cancel := context.WithTimeout(context.Background(), SCHEDULE_MAXIMUM_RUNTIME)
 
 		res, err := HmsManager.Run(
+			HMS_PROGRAM_KIND_NORMAL,
 			owner.Username,
 			nil,
 			job.Data.HomescriptCode,
@@ -86,6 +87,7 @@ func scheduleRunnerFunc(id uint) {
 			&bytes.Buffer{},
 			nil,
 		)
+
 		if err != nil {
 			log.Error("Executing schedule's Homescript failed: ", err.Error())
 			if _, err := Notify(
@@ -104,6 +106,7 @@ func scheduleRunnerFunc(id uint) {
 			)
 			return
 		}
+
 		if !res.Success {
 			log.Error("Executing schedule's Homescript failed: ", res.Errors[0])
 			if _, err := Notify(
@@ -126,6 +129,7 @@ func scheduleRunnerFunc(id uint) {
 		ctx, cancel := context.WithTimeout(context.Background(), SCHEDULE_MAXIMUM_RUNTIME)
 
 		res, err := HmsManager.RunById(
+			HMS_PROGRAM_KIND_NORMAL,
 			job.Data.HomescriptTargetId,
 			owner.Username,
 			InitiatorSchedule,
@@ -136,6 +140,7 @@ func scheduleRunnerFunc(id uint) {
 			&bytes.Buffer{},
 			nil,
 		)
+
 		if err != nil {
 			log.Error("Executing schedule's Homescript failed: ", err.Error())
 			if _, err := Notify(
