@@ -89,9 +89,9 @@ func CreateNewDeviceDriver(driverData DeviceDriver) error {
 	return nil
 }
 
-// Modifies the metadata of a given homescript
-// Does not check the validity of the homescript's id
-func ModifyDeviceDriver(newData DeviceDriver) error {
+// Modifies the metadata of a given device driver
+// Returns `true` if the driver was found and modified
+func ModifyDeviceDriver(newData DeviceDriver) (bool, error) {
 	query, err := db.Prepare(`
 	UPDATE deviceDriver
 	SET
@@ -102,10 +102,11 @@ func ModifyDeviceDriver(newData DeviceDriver) error {
 	`)
 	if err != nil {
 		log.Error("Failed to update device driver: preparing query failed: ", err.Error())
-		return err
+		return false, err
 	}
 	defer query.Close()
-	_, err = query.Exec(
+
+	res, err := query.Exec(
 		newData.Name,
 		newData.Version,
 		newData.HomescriptCode,
@@ -114,9 +115,16 @@ func ModifyDeviceDriver(newData DeviceDriver) error {
 	)
 	if err != nil {
 		log.Error("Failed to update device driver: executing query failed: ", err.Error())
-		return err
+		return false, err
 	}
-	return nil
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		log.Error("Failed to update device driver: getting rows affected failed: ", err.Error())
+		return false, err
+	}
+
+	return rows > 0, nil
 }
 
 // Returns a list of homescripts owned by a given user
@@ -163,8 +171,6 @@ func ListDeviceDrivers() ([]DeviceDriver, error) {
 func GetDeviceDriver(vendorId string, modelId string) (DeviceDriver, bool, error) {
 	query, err := db.Prepare(`
 	SELECT
-		deviceDriver.VendorId,
-		deviceDriver.ModelId,
 		deviceDriver.Name,
 		deviceDriver.Version,
 		deviceDriver.HomescriptCode
@@ -179,13 +185,13 @@ func GetDeviceDriver(vendorId string, modelId string) (DeviceDriver, bool, error
 	defer query.Close()
 
 	var driver DeviceDriver
+	driver.VendorId = vendorId
+	driver.ModelId = modelId
 
 	if err := query.QueryRow(
 		driver.VendorId,
 		driver.ModelId,
 	).Scan(
-		&driver.VendorId,
-		&driver.ModelId,
 		&driver.Name,
 		&driver.Version,
 		&driver.HomescriptCode,

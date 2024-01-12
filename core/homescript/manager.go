@@ -106,11 +106,11 @@ type HmsError struct {
 func (self HmsError) String() string {
 	spanDisplay := fmt.Sprintf("%s:%d:%d", self.Span.Filename, self.Span.Start.Line, self.Span.Start.Column)
 	if self.SyntaxError != nil {
-		return fmt.Sprintf("Syntax error at %s: %s", spanDisplay, self.SyntaxError.Message)
+		return fmt.Sprintf("Syntax error at %s: `%s`", spanDisplay, self.SyntaxError.Message)
 	} else if self.DiagnosticError != nil {
-		return "Semantic error"
+		return fmt.Sprintf("Semantic error at %s: `%s`", spanDisplay, self.DiagnosticError.Message)
 	} else if self.RuntimeInterrupt != nil {
-		return fmt.Sprintf("%s at %s: %s", self.RuntimeInterrupt.Kind, spanDisplay, self.RuntimeInterrupt.Message)
+		return fmt.Sprintf("%s at %s: `%s`", self.RuntimeInterrupt.Kind, spanDisplay, self.RuntimeInterrupt.Message)
 	}
 	panic("Illegal HmsError")
 }
@@ -188,6 +188,7 @@ func (m *Manager) Analyze(
 	filename string,
 	code string,
 	programKind HMS_PROGRAM_KIND,
+	driverData *AnalyzerDriverMetadata,
 ) (map[string]ast.AnalyzedProgram, HmsRes, error) {
 	analyzedModules, diagnostics, syntaxErrors := homescript.Analyze(
 		homescript.InputProgram{
@@ -195,7 +196,7 @@ func (m *Manager) Analyze(
 			ProgramText: code,
 		},
 		analyzerScopeAdditions(),
-		newAnalyzerHost(username, programKind),
+		newAnalyzerHost(username, programKind, driverData),
 	)
 
 	errors := make([]HmsError, 0)
@@ -252,6 +253,7 @@ func (m *Manager) AnalyzeById(
 	id string,
 	username string,
 	programKind HMS_PROGRAM_KIND,
+	driverData *AnalyzerDriverMetadata,
 ) (map[string]ast.AnalyzedProgram, HmsRes, error) {
 	hms, found, err := database.GetUserHomescriptById(id, username)
 	if err != nil {
@@ -261,11 +263,12 @@ func (m *Manager) AnalyzeById(
 		panic(fmt.Sprintf("Homescript with ID %s owned by user %s was not found", id, username)) // TODO: no panic
 	}
 
-	return m.Analyze(username, id, hms.Data.Code, programKind)
+	return m.Analyze(username, id, hms.Data.Code, programKind, driverData)
 }
 
 func (m *Manager) Run(
 	programKind HMS_PROGRAM_KIND,
+	driverData *AnalyzerDriverMetadata,
 	username string,
 	filename *string,
 	code string,
@@ -288,7 +291,7 @@ func (m *Manager) Run(
 
 	log.Trace(fmt.Sprintf("Homescript '%s' of user '%s' is being analyzed...", entryModuleName, username))
 
-	modules, res, err := m.Analyze(username, entryModuleName, code, programKind)
+	modules, res, err := m.Analyze(username, entryModuleName, code, programKind, driverData)
 	if err != nil {
 		return HmsRes{}, err
 	}
@@ -437,6 +440,7 @@ func (m *Manager) Run(
 // Executes a given Homescript from the database and returns its output, exit-code and possible error
 func (m *Manager) RunById(
 	programKind HMS_PROGRAM_KIND,
+	driverData *AnalyzerDriverMetadata,
 	hmsId string,
 	username string,
 	initiator HomescriptInitiator,
@@ -457,6 +461,7 @@ func (m *Manager) RunById(
 
 	return m.Run(
 		programKind,
+		driverData,
 		username,
 		&hmsId,
 		script.Data.Code,

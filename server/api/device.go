@@ -112,6 +112,7 @@ func CreateDevice(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to create device", Error: "id already exists"})
 		return
 	}
+
 	// Validate that the room exists
 	_, roomExists, err := database.GetRoomDataById(request.RoomId)
 	if err != nil {
@@ -122,6 +123,19 @@ func CreateDevice(w http.ResponseWriter, r *http.Request) {
 	if !roomExists {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		Res(w, Response{Success: false, Message: "failed to create device", Error: "invalid room id"})
+		return
+	}
+
+	// Validate that there is a driver for this `vendorId` and `modelId`
+	_, driverExists, err := database.GetDeviceDriver(request.DriverVendorId, request.DriverModelId)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to create device", Error: "database failure"})
+		return
+	}
+	if !driverExists {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to create device", Error: fmt.Sprintf("this device model is not supported: no such driver for modelID `%s` of vendorID `%s`", request.DriverModelId, request.DriverVendorId)})
 		return
 	}
 

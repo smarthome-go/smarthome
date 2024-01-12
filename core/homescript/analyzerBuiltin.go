@@ -18,30 +18,58 @@ const (
 	HMS_PROGRAM_KIND_DEVICE_DRIVER
 )
 
+type AnalyzerDriverMetadata struct {
+	VendorId string
+	ModelId  string
+}
+
 type analyzerHost struct {
 	username string
 	// Depending on the program kind, the post-validation hook performs specific validations.
 	programKind HMS_PROGRAM_KIND
+
+	driverData *AnalyzerDriverMetadata
 }
 
 func newAnalyzerHost(
 	username string,
 	programKind HMS_PROGRAM_KIND,
+	driverData *AnalyzerDriverMetadata,
 ) analyzerHost {
 	return analyzerHost{
 		username:    username,
 		programKind: programKind,
+		driverData:  driverData,
 	}
 }
 
 func (self analyzerHost) PostValidationHook(analyzedModules map[string]ast.AnalyzedProgram, mainModule string) []diagnostic.Diagnostic {
 	switch self.programKind {
 	case HMS_PROGRAM_KIND_DEVICE_DRIVER:
-		// TODO: analyze drivers here
-		panic("TODO")
+		driver, found, err := database.GetDeviceDriver(self.driverData.VendorId, self.driverData.ModelId)
+		if err != nil {
+			return []diagnostic.Diagnostic{{
+				Level:   diagnostic.DiagnosticLevelError,
+				Message: fmt.Sprintf("Could not get driver: %s", err.Error()),
+				Span: errors.Span{
+					Start:    errors.Location{},
+					End:      errors.Location{},
+					Filename: mainModule,
+				},
+			}}
+		}
+		if !found {
+			panic(fmt.Sprintf("Driver `%s:%s` was not found in the database", self.driverData.VendorId, self.driverData.ModelId))
+		}
+
+		info, diagnosticErr := ExtractDriverInfo(driver, analyzedModules, mainModule)
+		if err != nil {
+			return []diagnostic.Diagnostic{*diagnosticErr}
+		}
+
+		fmt.Printf("INFO: %v\n", info)
 	case HMS_PROGRAM_KIND_NORMAL:
-		// TODO: implement this
-		panic("TODO")
+		// TODO: is there something to implement?
 	}
 
 	return nil

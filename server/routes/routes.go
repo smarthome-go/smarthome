@@ -232,7 +232,7 @@ func NewRouter() *mux.Router {
 	// Hardware driver management
 	r.HandleFunc("/api/system/hardware/drivers/list", mdl.ApiAuth(mdl.Perm(api.ListDeviceDrivers, database.PermissionSystemConfig))).Methods("GET")
 	r.HandleFunc("/api/system/hardware/drivers/add", mdl.ApiAuth(mdl.Perm(api.CreateDeviceDriver, database.PermissionSystemConfig))).Methods("POST")
-	// r.HandleFunc("/api/system/hardware/drivers/modify", mdl.ApiAuth(mdl.Perm(api.ListDeviceDrivers, database.PermissionSystemConfig))).Methods("GET")
+	r.HandleFunc("/api/system/hardware/drivers/modify", mdl.ApiAuth(mdl.Perm(api.ModifyDeviceDriver, database.PermissionSystemConfig))).Methods("PUT")
 	r.HandleFunc("/api/system/hardware/drivers/delete", mdl.ApiAuth(mdl.Perm(api.DeleteDeviceDriver, database.PermissionSystemConfig))).Methods("DELETE")
 	// TODO: add driver support
 

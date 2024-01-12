@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/homescript"
 )
@@ -16,8 +17,10 @@ type SemanticVersion struct {
 }
 
 type RichDriver struct {
-	Driver        database.DeviceDriver
-	ExtractedInfo homescript.DriverInfo
+	Driver           database.DeviceDriver   `json:"driver"`
+	ExtractedInfo    homescript.DriverInfo   `json:"info"`
+	IsValid          bool                    `json:"isValid"`
+	ValidationErrors []diagnostic.Diagnostic `json:"validationErrors"`
 }
 
 func ParseDriverVersion(source string) (SemanticVersion, error) {
@@ -49,15 +52,26 @@ func List() ([]RichDriver, error) {
 
 	richDrivers := make([]RichDriver, len(defaultDrivers))
 	for idx, driver := range defaultDrivers {
-		driverInfo, err := homescript.ExtractDriverInfo(driver)
+		richDriver := RichDriver{
+			Driver:           driver,
+			IsValid:          true,
+			ValidationErrors: make([]diagnostic.Diagnostic, 0),
+		}
+
+		driverInfo, hmsErrors, err := homescript.ExtractDriverInfoTotal(driver)
 		if err != nil {
 			return nil, err
 		}
 
-		richDrivers[idx] = RichDriver{
-			Driver:        driver,
-			ExtractedInfo: driverInfo,
+		if len(hmsErrors) > 0 {
+			richDriver.IsValid = false
+			richDriver.ValidationErrors = hmsErrors
+
+			log.Tracef("Driver `%s:%s` is not working: `%s`", driver.VendorId, driver.ModelId, hmsErrors[0].Message)
 		}
+
+		richDriver.ExtractedInfo = driverInfo
+		richDrivers[idx] = richDriver
 	}
 
 	return richDrivers, nil

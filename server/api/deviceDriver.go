@@ -21,7 +21,7 @@ func ListDeviceDrivers(w http.ResponseWriter, r *http.Request) {
 	drivers, err := drivers.List()
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Success: false, Message: "failed to list device drivers", Error: "database failure"})
+		Res(w, Response{Success: false, Message: "failed to list device drivers", Error: "database error"})
 		return
 	}
 	if err := json.NewEncoder(w).Encode(drivers); err != nil {
@@ -104,7 +104,58 @@ func CreateDeviceDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	Res(w, Response{Success: false, Message: "failed to create new device driver", Error: "could not marshal or send result"})
+	Res(w, Response{Success: true, Message: "successfully created device driver"})
+}
+
+func ModifyDeviceDriver(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request database.DeviceDriver
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+
+	// Check that the new version is not too long
+	if utf8.RuneCountInString(request.Version) > database.DEVICE_DRIVER_VERSION_LEN {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{
+			Success: false,
+			Message: "failed to modify device driver", Error: fmt.Sprintf("the version: '%s' must not exceed %d characters", request.Version, database.DEVICE_DRIVER_VERSION_LEN),
+		})
+		return
+	}
+
+	_, err := drivers.ParseDriverVersion(request.Version)
+	if err != nil {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{
+			Success: false,
+			Message: "failed to modify device driver", Error: fmt.Sprintf("the version: '%s' is not valid: %s", request.Version, err.Error()),
+		})
+		return
+	}
+
+	wasFound, err := database.ModifyDeviceDriver(request)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to modify device driver", Error: "database failure"})
+		return
+	}
+
+	if !wasFound {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{
+			Success: false,
+			Message: "failed to modify device driver",
+			Error:   fmt.Sprintf("the device driver `%s:%s` does not exist", request.ModelId, request.VendorId),
+		})
+		return
+	}
+
+	Res(w, Response{Success: true, Message: "successfully modified device driver"})
 }
 
 // Deletes a Homescript by its Id, checks if it exists and if the user has permission to delete it

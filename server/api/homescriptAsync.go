@@ -131,6 +131,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 
 		res, err := homescript.HmsManager.RunById(
 			homescript.HMS_PROGRAM_KIND_NORMAL,
+			nil,
 			request.Payload,
 			username,
 			homescript.InitiatorAPI,

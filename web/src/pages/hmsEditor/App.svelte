@@ -71,6 +71,42 @@
         otherLoading = false
     }
 
+    async function loadDrivers() {
+        otherLoading = true
+        try {
+            const res = await (await fetch(`/api/system/hardware/drivers/list`)).json()
+            if (res.success !== undefined && !res.success) throw Error(res.error)
+
+            for (let driver of res) {
+                homescripts = [...homescripts, {
+                    data: {
+                        owner: "",
+                        data: {
+                            id: `${driver.vendorId}:${driver.modelId}`,
+                            name: driver.name,
+                            description: `Driver "${driver.name}"`,
+                            mdIcon: "code", // TODO: change this to something nice
+                            quickActionsEnabled: false,
+                            isWidget: false,
+                            code: driver.homescriptCode,
+                            schedulerEnabled: false,
+                            workspace: "drivers",
+                        }
+                    },
+                    arguments: [],
+                }]
+            }
+
+            homescripts = res
+            homescriptsLoaded = true
+            if (homescripts.length > 0) currentScript = homescripts[0].data.data.id
+        } catch (err) {
+            $createSnackbar(`Failed to load editor for driver '${currentScript}': ${err}`)
+        }
+        otherLoading = false
+    }
+
+
     /*
        Current script management
        Saves which script is currently being edited
@@ -329,9 +365,23 @@
 
     // Load the Homescript-list at the beginning
     onMount(async () => {
-        await loadHomescript()
         // Used for initially setting the active script via URL query
         const selectedFromQuery = new URLSearchParams(window.location.search).get('id')
+        const isDriver = new URLSearchParams(window.location.search).get('driver') === 'true'
+
+        // If the script to be edited is a driver, validation can be skipped entirely
+        if (isDriver) {
+            await loadDrivers()
+            currentScript = selectedFromQuery
+            return
+
+            // TODO: remove this, actually
+            // Instead, also save the Homescript data of every driver in the Homescript table and add another table named `homescriptAccessPermission`
+            // | user | permission_type: 'read-execute'| 'modify'
+        }
+
+        await loadHomescript()
+
         if (homescripts.find(h => h.data.data.id === selectedFromQuery) === undefined) {
             err404 = true
             return

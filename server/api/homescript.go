@@ -106,6 +106,7 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 	var outputBuffer bytes.Buffer
 	res, err := homescript.HmsManager.Run(
 		homescript.HMS_PROGRAM_KIND_NORMAL,
+		nil,
 		username,
 		&request.Id,
 		hmsData.Data.Code,
@@ -169,6 +170,7 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 		request.Id,
 		hmsData.Data.Code,
 		homescript.HMS_PROGRAM_KIND_NORMAL,
+		nil,
 	)
 
 	if err != nil {
@@ -216,6 +218,7 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 	var outputBuffer bytes.Buffer
 	res, err := homescript.HmsManager.Run(
 		homescript.HMS_PROGRAM_KIND_NORMAL,
+		nil,
 		username,
 		nil,
 		request.Code,
@@ -274,6 +277,7 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 		request.ModuleName,
 		request.Code,
 		homescript.HMS_PROGRAM_KIND_NORMAL,
+		nil,
 	)
 
 	if err != nil {

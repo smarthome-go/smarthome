@@ -76,6 +76,7 @@ func scheduleRunnerFunc(id uint) {
 
 		res, err := HmsManager.Run(
 			HMS_PROGRAM_KIND_NORMAL,
+			nil,
 			owner.Username,
 			nil,
 			job.Data.HomescriptCode,
@@ -130,6 +131,7 @@ func scheduleRunnerFunc(id uint) {
 
 		res, err := HmsManager.RunById(
 			HMS_PROGRAM_KIND_NORMAL,
+			nil,
 			job.Data.HomescriptTargetId,
 			owner.Username,
 			InitiatorSchedule,

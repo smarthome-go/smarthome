@@ -204,6 +204,7 @@ func AutomationRunnerFunc(id uint, automationCtx AutomationContext) {
 
 	res, err := HmsManager.RunById(
 		HMS_PROGRAM_KIND_NORMAL,
+		nil,
 		job.Data.HomescriptId,
 		job.Owner,
 		initiator,
