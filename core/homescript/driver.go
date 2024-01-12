@@ -46,15 +46,15 @@ func ExtractDriverInfoTotal(driver database.DeviceDriver) (info DriverInfo, hmsE
 		return DriverInfo{}, diagnostics, nil
 	}
 
-	info, diagnosticErr := ExtractDriverInfo(driver, analyzed, filename)
-	if diagnosticErr != nil {
-		return DriverInfo{}, []diagnostic.Diagnostic{*diagnosticErr}, nil
+	info, diagnostics := ExtractDriverInfo(driver, analyzed, filename)
+	if len(diagnostics) != 0 {
+		return DriverInfo{}, diagnostics, nil
 	}
 
 	return info, nil, nil
 }
 
-func ExtractDriverInfo(driver database.DeviceDriver, analyzed map[string]ast.AnalyzedProgram, mainModule string) (DriverInfo, *diagnostic.Diagnostic) {
+func ExtractDriverInfo(driver database.DeviceDriver, analyzed map[string]ast.AnalyzedProgram, mainModule string) (DriverInfo, []diagnostic.Diagnostic) {
 	driverSingleton, driverSingletonFound := ast.AnalyzedSingletonTypeDefinition{}, false
 	deviceSingleton, deviceSingletonFound := ast.AnalyzedSingletonTypeDefinition{}, false
 
@@ -74,7 +74,7 @@ func ExtractDriverInfo(driver database.DeviceDriver, analyzed map[string]ast.Ana
 	}
 
 	if !driverSingletonFound {
-		return DriverInfo{}, &diagnostic.Diagnostic{
+		return DriverInfo{}, []diagnostic.Diagnostic{{
 			Level:   diagnostic.DiagnosticLevelError,
 			Message: fmt.Sprintf("Singleton `%s` not found", DRIVER_SINGLETON_IDENT),
 			Notes: []string{
@@ -86,11 +86,12 @@ func ExtractDriverInfo(driver database.DeviceDriver, analyzed map[string]ast.Ana
 				End:      herrors.Location{},
 				Filename: mainModule,
 			},
+		},
 		}
 	}
 
 	if !deviceSingletonFound {
-		return DriverInfo{}, &diagnostic.Diagnostic{
+		return DriverInfo{}, []diagnostic.Diagnostic{{
 			Level:   diagnostic.DiagnosticLevelError,
 			Message: fmt.Sprintf("Singleton `%s` not found", DRIVER_DEVICE_SINGLETON_IDENT),
 			Notes: []string{
@@ -102,33 +103,58 @@ func ExtractDriverInfo(driver database.DeviceDriver, analyzed map[string]ast.Ana
 				End:      herrors.Location{},
 				Filename: mainModule,
 			},
+		},
 		}
 	}
 
 	driverConfig, err := singletonAsConfigField(driverSingleton)
 	if err != nil {
-		return DriverInfo{}, &diagnostic.Diagnostic{
+		return DriverInfo{}, []diagnostic.Diagnostic{{
 			Level:   diagnostic.DiagnosticLevelError,
 			Message: fmt.Sprintf("Cannot generate configuration interface from this type: %s", err.Error()),
 			Notes: []string{
 				"This type is not supported in the configuration of drivers",
 			},
 			Span: driverSingleton.TypeDef.Range,
+		},
 		}
 	}
 
+	containsDriverImpl := false
+
+	const DRIVER_TEMPLATE_IDENT = "Driver"
+
 	// TODO: validate that the driver implements all required templates
+	for _, implementedTempl := range driverSingleton.ImplementsTemplates {
+		if implementedTempl.Template.Ident() == DRIVER_TEMPLATE_IDENT {
+			containsDriverImpl = true
+		}
+	}
+
+	if !containsDriverImpl {
+
+		return DriverInfo{}, []diagnostic.Diagnostic{{
+			Level:   diagnostic.DiagnosticLevelError,
+			Message: fmt.Sprintf("Template `%s` is not implemented for this Singleton", DRIVER_TEMPLATE_IDENT),
+			Notes: []string{
+				fmt.Sprintf("In order to register this singleton as a driver, it must implement the template `%s` with at least default capabilities", DRIVER_TEMPLATE_IDENT),
+				fmt.Sprintf("It can be implemented like this: `impl %s for %s with { ... } { ... }`", DRIVER_TEMPLATE_IDENT, driverSingleton.Ident),
+			},
+			Span: driverSingleton.TypeDef.Range,
+		},
+		}
+	}
 
 	deviceConfig, err := singletonAsConfigField(deviceSingleton)
 	if err != nil {
-		return DriverInfo{}, &diagnostic.Diagnostic{
+		return DriverInfo{}, []diagnostic.Diagnostic{{
 			Level:   diagnostic.DiagnosticLevelError,
 			Message: fmt.Sprintf("Cannot generate configuration interface from this type: %s", err.Error()),
 			Notes: []string{
 				"This type is not supported in the configuration of drivers",
 			},
 			Span: deviceSingleton.TypeDef.Range,
-		}
+		}}
 	}
 
 	// TODO: validate that the device implements all required templates

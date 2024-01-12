@@ -64,9 +64,9 @@ func (self analyzerHost) PostValidationHook(analyzedModules map[string]ast.Analy
 			panic(fmt.Sprintf("Driver `%s:%s` was not found in the database", self.driverData.VendorId, self.driverData.ModelId))
 		}
 
-		info, diagnosticErr := ExtractDriverInfo(driver, analyzedModules, mainModule)
-		if diagnosticErr != nil {
-			return []diagnostic.Diagnostic{*diagnosticErr}
+		info, diagnosticErrs := ExtractDriverInfo(driver, analyzedModules, mainModule)
+		if len(diagnosticErrs) != 0 {
+			return diagnosticErrs
 		}
 
 		fmt.Printf("INFO: %v\n", info)
