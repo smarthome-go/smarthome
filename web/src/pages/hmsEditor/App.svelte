@@ -21,6 +21,8 @@
        General variables
        Includes varialbes such as layout-management and loading indicators
      */
+     // Whether the current script is a driver or a normal script
+
     // Specifies whether the argument prompt dialog should be open or closed
     let argumentsPromptOpen = false
 
@@ -71,40 +73,40 @@
         otherLoading = false
     }
 
-    async function loadDrivers() {
-        otherLoading = true
-        try {
-            const res = await (await fetch(`/api/system/hardware/drivers/list`)).json()
-            if (res.success !== undefined && !res.success) throw Error(res.error)
-
-            for (let driver of res) {
-                homescripts = [...homescripts, {
-                    data: {
-                        owner: "",
-                        data: {
-                            id: `${driver.vendorId}:${driver.modelId}`,
-                            name: driver.name,
-                            description: `Driver "${driver.name}"`,
-                            mdIcon: "code", // TODO: change this to something nice
-                            quickActionsEnabled: false,
-                            isWidget: false,
-                            code: driver.homescriptCode,
-                            schedulerEnabled: false,
-                            workspace: "drivers",
-                        }
-                    },
-                    arguments: [],
-                }]
-            }
-
-            homescripts = res
-            homescriptsLoaded = true
-            if (homescripts.length > 0) currentScript = homescripts[0].data.data.id
-        } catch (err) {
-            $createSnackbar(`Failed to load editor for driver '${currentScript}': ${err}`)
-        }
-        otherLoading = false
-    }
+    // async function loadDrivers() {
+    //     otherLoading = true
+    //     try {
+    //         const res = await (await fetch(`/api/system/hardware/drivers/list`)).json()
+    //         if (res.success !== undefined && !res.success) throw Error(res.error)
+    //
+    //         for (let driver of res) {
+    //             homescripts = [...homescripts, {
+    //                 data: {
+    //                     owner: "",
+    //                     data: {
+    //                         id: `${driver.vendorId}:${driver.modelId}`,
+    //                         name: driver.name,
+    //                         description: `Driver "${driver.name}"`,
+    //                         mdIcon: "code", // TODO: change this to something nice
+    //                         quickActionsEnabled: false,
+    //                         isWidget: false,
+    //                         code: driver.homescriptCode,
+    //                         schedulerEnabled: false,
+    //                         workspace: "drivers",
+    //                     }
+    //                 },
+    //                 arguments: [],
+    //             }]
+    //         }
+    //
+    //         homescripts = res
+    //         homescriptsLoaded = true
+    //         if (homescripts.length > 0) currentScript = homescripts[0].data.data.id
+    //     } catch (err) {
+    //         $createSnackbar(`Failed to load editor for driver '${currentScript}': ${err}`)
+    //     }
+    //     otherLoading = false
+    // }
 
 
     /*
@@ -127,6 +129,7 @@
             schedulerEnabled: false,
             isWidget: false,
             workspace: 'default',
+            type: 'NORMAL'
         },
     }
 
@@ -136,6 +139,7 @@
     // Is used to update the currently shown script
     function setCurrentScript() {
         currentData = homescripts.find(h => h.data.data.id === currentScript).data
+        console.log(`set current data`, currentData)
         savedCode = currentData.data.code
     }
 
@@ -179,12 +183,16 @@
         otherLoading = true
         try {
             const res = await (
-                await fetch(`/api/homescript/modify`, {
+                await fetch(`/api/homescript/modify/code`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...currentData.data }),
+                    body: JSON.stringify({
+                        id: currentData.data.id,
+                        code: currentData.data.code,
+                    }),
                 })
             ).json()
+
             if (res.success !== undefined && !res.success) throw Error(res.error)
             savedCode = currentData.data.code
         } catch (err) {
@@ -247,6 +255,7 @@
                 currentData.data.code,
                 [],
                 currentData.data.id,
+                currentData.data.type == 'DRIVER',
             )
             let errs = currentExecResTemp.errors
 
@@ -367,18 +376,6 @@
     onMount(async () => {
         // Used for initially setting the active script via URL query
         const selectedFromQuery = new URLSearchParams(window.location.search).get('id')
-        const isDriver = new URLSearchParams(window.location.search).get('driver') === 'true'
-
-        // If the script to be edited is a driver, validation can be skipped entirely
-        if (isDriver) {
-            await loadDrivers()
-            currentScript = selectedFromQuery
-            return
-
-            // TODO: remove this, actually
-            // Instead, also save the Homescript data of every driver in the Homescript table and add another table named `homescriptAccessPermission`
-            // | user | permission_type: 'read-execute'| 'modify'
-        }
 
         await loadHomescript()
 
@@ -386,6 +383,7 @@
             err404 = true
             return
         }
+
         currentScript = selectedFromQuery
     })
 </script>
@@ -455,11 +453,14 @@
         </div>
         <div class="container">
             <div class="container__editor" class:alt={layoutAlt}>
+                {#if homescriptsLoaded}
                 <HmsEditor
                     bind:moduleName={currentData.data.id}
                     bind:code={currentData.data.code}
                     {showLintInfo}
+                    isDriver={currentData.data.type === 'DRIVER'}
                 />
+                {/if}
             </div>
             <div class="container__terminal" class:alt={layoutAlt}>
                 <div class="container__terminal__header mdc-elevation--z2">

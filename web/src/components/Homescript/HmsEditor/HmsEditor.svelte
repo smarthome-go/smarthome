@@ -19,6 +19,9 @@
     // However, the catcher also emits a change event when the key combination is pressed
     export let registerCtrlSCatcher = false
 
+    // Specifies whether this program is a hardware device driver or a normal program
+    export let isDriver = false
+
     // Represents the editor's value
     export let code = ''
     $: setCode(code)
@@ -63,11 +66,13 @@
         let diagnostics: Diagnostic[] = []
 
         try {
-            const result = await lintHomescriptCode(code, [], moduleName)
+            const result = await lintHomescriptCode(code, [], moduleName, isDriver)
             diagnostics = result.errors.map(e => {
                 let severity = 'error'
                 let message = 'error: unknown'
                 let kind = 'error: unknown'
+
+                let notes = []
 
                 // everything except diagnostics will be a standard `error`
                 if (e.syntaxError !== null) {
@@ -93,6 +98,10 @@
                             severity = 'error'
                             break
                     }
+
+                    for (let note of e.diagnosticError.notes) {
+                        notes.push(`- note: ${note}`)
+                    }
                 } else if (e.runtimeError) {
                     throw 'A runtime error cannot occur during analysis'
                 }
@@ -104,7 +113,7 @@
                             ? e.span.end.index + 1
                             : e.span.end.index,
                     severity: severity,
-                    message: `${kind}: ${message}`,
+                    message: `${kind}: ${message}\n${notes.join('\n')}`,
                     source: 'Homescript analyzer',
                 })
             })

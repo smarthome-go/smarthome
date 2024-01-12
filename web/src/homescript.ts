@@ -36,6 +36,7 @@ export interface homescriptData {
     isWidget: boolean
     schedulerEnabled: boolean
     workspace: string
+    type: 'NORMAL' | 'DRIVER',
 }
 
 /* Homescript run request response */
@@ -204,11 +205,12 @@ export async function lintHomescriptCode(
     code: string,
     args: homescriptArgSubmit[],
     moduleName: string,
+    isDriver: boolean,
 ): Promise<homescriptResponse> {
     const res = await fetch(`/api/homescript/lint/live`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, args, moduleName }),
+        body: JSON.stringify({ code, args, moduleName, isDriver }),
     })
     if (res.status !== 200 && res.status !== 500) throw Error(await (res.json()))
     return await (res.json())
