@@ -86,7 +86,7 @@ func CreateNewAutomation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Check if the provided HomescriptId is valid
-	hmsData, homescriptValid, err := database.GetUserHomescriptById(request.HomescriptId, username)
+	hmsData, homescriptValid, err := homescript.GetPersonalScriptById(request.HomescriptId, username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to create new automation", Error: "database failure"})
@@ -267,7 +267,7 @@ func ModifyAutomation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Check if the provided HomescriptId is valid
-	hmsData, homescriptValid, err := database.GetUserHomescriptById(request.HomescriptId, username)
+	hmsData, homescriptValid, err := homescript.GetPersonalScriptById(request.HomescriptId, username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to modify automation", Error: "database failure"})

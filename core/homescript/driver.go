@@ -13,7 +13,7 @@ const DRIVER_SINGLETON_IDENT = "@Driver"
 const DRIVER_DEVICE_SINGLETON_IDENT = "@Device"
 
 func ExtractDriverInfoTotal(driver database.DeviceDriver) (info DriverInfo, hmsErrors []diagnostic.Diagnostic, err error) {
-	filename := fmt.Sprintf("@driver_%s:%s", driver.VendorId, driver.ModelId)
+	filename := fmt.Sprintf("@%s:%s", driver.VendorId, driver.ModelId)
 
 	analyzed, res, err := HmsManager.Analyze(
 		"", // TODO: what to do with this field??
@@ -109,7 +109,7 @@ func ExtractDriverInfo(driver database.DeviceDriver, analyzed map[string]ast.Ana
 	if err != nil {
 		return DriverInfo{}, &diagnostic.Diagnostic{
 			Level:   diagnostic.DiagnosticLevelError,
-			Message: fmt.Sprintf("Cannot generate configuration interface from this type: ", err.Error()),
+			Message: fmt.Sprintf("Cannot generate configuration interface from this type: %s", err.Error()),
 			Notes: []string{
 				"This type is not supported in the configuration of drivers",
 			},
@@ -117,17 +117,21 @@ func ExtractDriverInfo(driver database.DeviceDriver, analyzed map[string]ast.Ana
 		}
 	}
 
+	// TODO: validate that the driver implements all required templates
+
 	deviceConfig, err := singletonAsConfigField(deviceSingleton)
 	if err != nil {
 		return DriverInfo{}, &diagnostic.Diagnostic{
 			Level:   diagnostic.DiagnosticLevelError,
-			Message: fmt.Sprintf("Cannot generate configuration interface from this type: ", err.Error()),
+			Message: fmt.Sprintf("Cannot generate configuration interface from this type: %s", err.Error()),
 			Notes: []string{
 				"This type is not supported in the configuration of drivers",
 			},
 			Span: deviceSingleton.TypeDef.Range,
 		}
 	}
+
+	// TODO: validate that the device implements all required templates
 
 	return DriverInfo{
 		DriverConfig: driverConfig.(ConfigFieldDescriptorStruct),
@@ -136,7 +140,7 @@ func ExtractDriverInfo(driver database.DeviceDriver, analyzed map[string]ast.Ana
 }
 
 func singletonAsConfigField(from ast.AnalyzedSingletonTypeDefinition) (ConfigFieldDescriptor, error) {
-	return typeToConfigField(from.Type())
+	return typeToConfigField(from.TypeDef.RhsType)
 }
 
 func typeToConfigField(from ast.Type) (ConfigFieldDescriptor, error) {

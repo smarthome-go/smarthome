@@ -46,6 +46,8 @@ func newAnalyzerHost(
 func (self analyzerHost) PostValidationHook(analyzedModules map[string]ast.AnalyzedProgram, mainModule string) []diagnostic.Diagnostic {
 	switch self.programKind {
 	case HMS_PROGRAM_KIND_DEVICE_DRIVER:
+		fmt.Printf("post validation driver hook: %s: %s\n", self.driverData.VendorId, self.driverData.ModelId)
+
 		driver, found, err := database.GetDeviceDriver(self.driverData.VendorId, self.driverData.ModelId)
 		if err != nil {
 			return []diagnostic.Diagnostic{{
@@ -63,7 +65,7 @@ func (self analyzerHost) PostValidationHook(analyzedModules map[string]ast.Analy
 		}
 
 		info, diagnosticErr := ExtractDriverInfo(driver, analyzedModules, mainModule)
-		if err != nil {
+		if diagnosticErr != nil {
 			return []diagnostic.Diagnostic{*diagnosticErr}
 		}
 
@@ -510,7 +512,7 @@ func (self analyzerHost) GetBuiltinImport(moduleName string, valueName string, s
 
 func (self analyzerHost) ResolveCodeModule(moduleName string) (code string, moduleFound bool, err error) {
 	log.Trace(fmt.Sprintf("Resolving module `%s` by user `%s`", moduleName, self.username))
-	script, found, err := database.GetUserHomescriptById(moduleName, self.username)
+	script, found, err := GetPersonalScriptById(moduleName, self.username)
 	if err != nil || !found {
 		return "", found, err
 	}

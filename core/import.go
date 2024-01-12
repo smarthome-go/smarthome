@@ -292,7 +292,8 @@ func createUsersInDatabase(users []config.SetupUser) error {
 		}
 
 		for _, homescript := range usr.Homescripts {
-			_, found, err := database.GetUserHomescriptById(
+			// This function is used as drivers and other types of script should not be included
+			_, found, err := database.GetPersonalHomescriptById(
 				homescript.Data.Id,
 				usr.Data.Username,
 			)

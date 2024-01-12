@@ -15,7 +15,6 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
-	"github.com/smarthome-go/smarthome/core/database"
 )
 
 // this can be decremented if a script uses too many ressources
@@ -168,7 +167,7 @@ func resolveFileContentsOfErrors(
 			continue
 		}
 
-		script, found, dbErr := database.GetUserHomescriptById(err.Span.Filename, username)
+		script, found, dbErr := GetPersonalScriptById(err.Span.Filename, username)
 		if dbErr != nil {
 			return nil, dbErr
 		}
@@ -255,7 +254,7 @@ func (m *Manager) AnalyzeById(
 	programKind HMS_PROGRAM_KIND,
 	driverData *AnalyzerDriverMetadata,
 ) (map[string]ast.AnalyzedProgram, HmsRes, error) {
-	hms, found, err := database.GetUserHomescriptById(id, username)
+	hms, found, err := GetPersonalScriptById(id, username)
 	if err != nil {
 		return nil, HmsRes{}, err
 	}
@@ -451,7 +450,7 @@ func (m *Manager) RunById(
 	outputWriter io.Writer,
 	automationContext *AutomationContext,
 ) (HmsRes, error) {
-	script, found, err := database.GetUserHomescriptById(hmsId, username)
+	script, found, err := GetPersonalScriptById(hmsId, username)
 	if err != nil {
 		return HmsRes{}, err
 	}

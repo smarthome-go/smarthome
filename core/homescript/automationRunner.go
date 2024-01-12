@@ -150,7 +150,7 @@ func AutomationRunnerFunc(id uint, automationCtx AutomationContext) {
 	}
 
 	log.Debug(fmt.Sprintf("Automation '%d' is running", id))
-	_, scriptExists, err := database.GetUserHomescriptById(job.Data.HomescriptId, job.Owner)
+	_, scriptExists, err := GetPersonalScriptById(job.Data.HomescriptId, job.Owner)
 	if err != nil {
 		log.Error(fmt.Sprintf("Automation '%s' failed because its Homescript Id could not be retrieved from the database: %s", job.Data.Name, err.Error()))
 		event.Error(

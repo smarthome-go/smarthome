@@ -14,8 +14,8 @@ type HomescriptWithArguments struct {
 func ListPersonalHomescriptWithArgs(username string) ([]HomescriptWithArguments, error) {
 	outputData := make([]HomescriptWithArguments, 0)
 
-	// Retrieve Homescripts from the database
-	homescripts, err := database.ListHomescriptOfUser(username)
+	// Retrieve Homescripts from the database, including virtual ones (drivers)
+	homescripts, err := ListPersonal(username)
 	if err != nil {
 		return nil, err
 	}

@@ -36,6 +36,11 @@ type CreateHomescriptRequest struct {
 	Workspace           string `json:"workspace"`
 }
 
+type ModifyCodeRequest struct {
+	Id   string `json:"id"`
+	Code string `json:"code"`
+}
+
 type HomescriptArg struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
@@ -50,6 +55,7 @@ type LintHomescriptStringRequest struct {
 	Code       string          `json:"code"`
 	Args       []HomescriptArg `json:"args"`
 	ModuleName string          `json:"moduleName"`
+	IsDriver   bool            `json:"isDriver"`
 }
 
 type HomescriptIdRunRequest struct {
@@ -83,7 +89,7 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		args[arg.Key] = arg.Value
 	}
 
-	hmsData, found, err := database.GetUserHomescriptById(request.Id, username)
+	hmsData, found, err := homescript.GetPersonalScriptById(request.Id, username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "could not retrieve Homescript from database", Error: "database failure"})
@@ -153,7 +159,7 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 	for _, arg := range request.Args {
 		args[arg.Key] = arg.Value
 	}
-	hmsData, found, err := database.GetUserHomescriptById(request.Id, username)
+	hmsData, found, err := homescript.GetPersonalScriptById(request.Id, username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "Could not retrieve Homescript from database", Error: "database failure"})
@@ -164,12 +170,18 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "Homescript not found", Error: "no data associated with id"})
 		return
 	}
+
+	programKind := homescript.HMS_PROGRAM_KIND_NORMAL
+	if hmsData.Data.Type == database.HOMESCRIPT_TYPE_DRIVER {
+		programKind = homescript.HMS_PROGRAM_KIND_DEVICE_DRIVER
+	}
+
 	// Lint the Homescript
 	_, res, err := homescript.HmsManager.Analyze(
 		username,
 		request.Id,
 		hmsData.Data.Code,
-		homescript.HMS_PROGRAM_KIND_NORMAL,
+		programKind,
 		nil,
 	)
 
@@ -235,7 +247,11 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 	// 	output = "Output too large"
 	// } TODO: maybe re-introduce such a limit
 
-	// TODO: check error
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "could not run Homescript", Error: "database failure"})
+		return
+	}
 
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
@@ -271,13 +287,34 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 		args[arg.Key] = arg.Value
 	}
 
+	programKind := homescript.HMS_PROGRAM_KIND_NORMAL
+	if request.IsDriver {
+		programKind = homescript.HMS_PROGRAM_KIND_DEVICE_DRIVER
+	}
+
+	driverData, validationErr, databaseErr := homescript.DriverFromHmsId(request.ModuleName)
+	if databaseErr != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "could not lint Homescript string", Error: "database error"})
+		return
+	}
+
+	if validationErr != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "could not lint Homescript string", Error: fmt.Sprintf("validation error: %s", validationErr.Error())})
+		return
+	}
+
 	// Lint the Homescript
 	_, res, err := homescript.HmsManager.Analyze(
 		username,
 		request.ModuleName,
 		request.Code,
-		homescript.HMS_PROGRAM_KIND_NORMAL,
-		nil,
+		programKind,
+		&homescript.AnalyzerDriverMetadata{
+			VendorId: driverData.VendorId,
+			ModelId:  driverData.ModelId,
+		},
 	)
 
 	if err != nil {
@@ -304,7 +341,7 @@ func ListPersonalHomescripts(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	homescriptList, err := database.ListHomescriptOfUser(username)
+	homescriptList, err := homescript.ListPersonal(username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to list personal Homescripts", Error: "database failure"})
@@ -434,7 +471,7 @@ func DeleteHomescriptById(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	_, exists, err := database.GetUserHomescriptById(request.Id, username)
+	_, exists, err := homescript.GetPersonalScriptById(request.Id, username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to delete Homescript: could not validate existence", Error: "database failure"})
@@ -479,7 +516,7 @@ func ModifyHomescript(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	_, exists, err := database.GetUserHomescriptById(request.Id, username)
+	_, exists, err := homescript.GetPersonalScriptById(request.Id, username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to modify Homescript: could not validate existence", Error: "database failure"})
@@ -512,6 +549,42 @@ func ModifyHomescript(w http.ResponseWriter, r *http.Request) {
 	Res(w, Response{Success: true, Message: "successfully modified Homescript"})
 }
 
+// Modifies the code of a given Homescript
+func ModifyHomescriptCode(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(w, r)
+	if err != nil {
+		return
+	}
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request ModifyCodeRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+
+	found, err := homescript.ModifyHomescriptCode(
+		request.Id,
+		username,
+		request.Code,
+	)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to modify Homescript code", Error: "database failure"})
+		return
+	}
+
+	if !found {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to modify Homescript code", Error: "no such script found"})
+		return
+	}
+
+	Res(w, Response{Success: true, Message: "successfully modified Homescript code"})
+}
+
 // Returns the metadata of an arbitrary Homescript-id to which the user has access to
 func GetUserHomescriptById(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -526,7 +599,7 @@ func GetUserHomescriptById(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to get Homescript by id", Error: "no id provided"})
 		return
 	}
-	homescript, exists, err := database.GetUserHomescriptById(id, username)
+	homescript, exists, err := homescript.GetPersonalScriptById(id, username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to get Homescript by id", Error: "database failure"})
@@ -592,7 +665,7 @@ func KillAllHMSIdJobs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Validate that the user is allowed to kill the requested script id
-	_, valid, err := database.GetUserHomescriptById(id, username)
+	_, valid, err := homescript.GetPersonalScriptById(id, username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "could not retrieve Homescript validation from database", Error: "database failure"})

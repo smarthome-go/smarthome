@@ -50,13 +50,32 @@ func createDeviceDriverTable() error {
 	return nil
 }
 
-// func generateHmsIdForDriver(vendorId string, modelId string) string {
-// 	return fmt.Sprintf("@driver_%s:%s", vendorId, modelId)
-// }
+func generateHmsIdForDriver(vendorId string, modelId string) string {
+	return fmt.Sprintf("@%s:%s", vendorId, modelId)
+}
 
 // Creates a new device driver entry
 // Returns the ID of the newly internally used Homescript
 func CreateNewDeviceDriver(driverData DeviceDriver) error {
+	// driverHmsId := generateHmsIdForDriver(driverData.VendorId, driverData.ModelId)
+
+	// Create new Homescript for this driver
+	// if err := CreateNewHomescript(Homescript{
+	// 	// Owners: DEFAULT_ADMIN_USERNAME,
+	// 	Data: HomescriptData{
+	// 		Id:                  driverHmsId,
+	// 		Name:                fmt.Sprintf("%s Driver", driverData.Name),
+	// 		Description:         fmt.Sprintf("%s:%s", driverData.VendorId, driverData.ModelId),
+	// 		QuickActionsEnabled: false,
+	// 		IsWidget:            false,
+	// 		SchedulerEnabled:    false,
+	// 		Code:                homescriptCode,
+	// 		MDIcon:              DEVICE_DRIVER_DEFAULT_ICON,
+	// 	},
+	// }); err != nil {
+	// 	return "", nil
+	// }
+
 	query, err := db.Prepare(`
 	INSERT INTO
 	deviceDriver(
@@ -121,6 +140,40 @@ func ModifyDeviceDriver(newData DeviceDriver) (bool, error) {
 	rows, err := res.RowsAffected()
 	if err != nil {
 		log.Error("Failed to update device driver: getting rows affected failed: ", err.Error())
+		return false, err
+	}
+
+	return rows > 0, nil
+}
+
+// Modifies the code of a given device driver
+// Returns `true` if the driver was found and modified
+func ModifyDeviceDriverCode(vendorId string, modelId string, newCode string) (bool, error) {
+	query, err := db.Prepare(`
+	UPDATE deviceDriver
+	SET
+		HomescriptCode=?
+	WHERE VendorId=? AND ModelId=?
+	`)
+	if err != nil {
+		log.Error("Failed to update device driver code: preparing query failed: ", err.Error())
+		return false, err
+	}
+	defer query.Close()
+
+	res, err := query.Exec(
+		newCode,
+		vendorId,
+		modelId,
+	)
+	if err != nil {
+		log.Error("Failed to update device driver code: executing query failed: ", err.Error())
+		return false, err
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		log.Error("Failed to update device driver code: getting rows affected failed: ", err.Error())
 		return false, err
 	}
 

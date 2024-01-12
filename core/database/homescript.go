@@ -1,6 +1,15 @@
 package database
 
-import "fmt"
+import (
+	"fmt"
+)
+
+type HOMESCRIPT_TYPE string
+
+const (
+	HOMESCRIPT_TYPE_NORMAL HOMESCRIPT_TYPE = "NORMAL"
+	HOMESCRIPT_TYPE_DRIVER                 = "DRIVER"
+)
 
 const HOMESCRIPT_ID_LEN = 150
 
@@ -10,15 +19,16 @@ type Homescript struct {
 }
 
 type HomescriptData struct {
-	Id                  string `json:"id"`
-	Name                string `json:"name"`
-	Description         string `json:"description"`
-	QuickActionsEnabled bool   `json:"quickActionsEnabled"`
-	IsWidget            bool   `json:"isWidget"`
-	SchedulerEnabled    bool   `json:"schedulerEnabled"`
-	Code                string `json:"code"`
-	MDIcon              string `json:"mdIcon"`
-	Workspace           string `json:"workspace"`
+	Id                  string          `json:"id"`
+	Name                string          `json:"name"`
+	Description         string          `json:"description"`
+	QuickActionsEnabled bool            `json:"quickActionsEnabled"`
+	IsWidget            bool            `json:"isWidget"`
+	SchedulerEnabled    bool            `json:"schedulerEnabled"`
+	Code                string          `json:"code"`
+	MDIcon              string          `json:"mdIcon"`
+	Workspace           string          `json:"workspace"`
+	Type                HOMESCRIPT_TYPE `json:"type"`
 }
 
 // Creates the table containing Homescript code and metadata
@@ -38,22 +48,18 @@ func createHomescriptTable() error {
 		Code				TEXT,
 		MDIcon				VARCHAR(100),
 		Workspace			VARCHAR(50),
-
 		PRIMARY KEY (Id, Owner),
-		CONSTRAINT HomescriptOwner
 		FOREIGN KEY (Owner)
 		REFERENCES user(Username)
 	)
 	`, HOMESCRIPT_ID_LEN))
+
+	// TODO: add owner foreign key
 	if err != nil {
 		log.Error("Failed to create Homescript Table: Executing query failed: ", err.Error())
 		return err
 	}
 
-	// if _, err = query.Exec(HOMESCRIPT_ID_LEN); err != nil {
-	// 	log.Error("Failed to create Homescript Table: Executing query failed: ", err.Error())
-	// 	return err
-	// }
 	return nil
 }
 
@@ -73,7 +79,7 @@ func CreateNewHomescript(homescript Homescript) error {
 		MDIcon,
 		Workspace
 	)
-	VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		log.Error("Failed to create new Homescript: preparing query failed: ", err.Error())
@@ -138,10 +144,35 @@ func ModifyHomescriptById(id string, owner string, newData HomescriptData) error
 		newData.MDIcon,
 		newData.Workspace,
 		id,
-		owner,
 	)
 	if err != nil {
 		log.Error("Failed to update Homescript: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}
+
+// Modifies the code of a given homescript
+// Does not check the validity of the Homescript's id
+func ModifyHomescriptCode(id string, owner string, newCode string) error {
+	query, err := db.Prepare(`
+	UPDATE homescript
+	SET
+		Code=?
+	WHERE Id=? AND Owner=?
+	`)
+	if err != nil {
+		log.Error("Failed to update Homescript code: preparing query failed: ", err.Error())
+		return err
+	}
+	defer query.Close()
+	_, err = query.Exec(
+		newCode,
+		id,
+		owner,
+	)
+	if err != nil {
+		log.Error("Failed to update Homescript code: executing query failed: ", err.Error())
 		return err
 	}
 	return nil
@@ -190,6 +221,10 @@ func ListHomescriptOfUser(username string) ([]Homescript, error) {
 			&homescript.Data.MDIcon,
 			&homescript.Data.Workspace,
 		)
+
+		// If the homescript is saved in this table, it is normal
+		homescript.Data.Type = HOMESCRIPT_TYPE_NORMAL
+
 		if err != nil {
 			log.Error("Failed to list Homescript of user: scanning results failed: ", err.Error())
 			return nil, err
@@ -241,6 +276,10 @@ func ListAllHomescripts() ([]Homescript, error) {
 			&homescript.Data.MDIcon,
 			&homescript.Data.Workspace,
 		)
+
+		// If the script is in this table, it is normal
+		homescript.Data.Type = HOMESCRIPT_TYPE_NORMAL
+
 		if err != nil {
 			log.Error("Failed to list Homescript: scanning results failed: ", err.Error())
 			return nil, err
@@ -250,10 +289,9 @@ func ListAllHomescripts() ([]Homescript, error) {
 	return homescriptList, nil
 }
 
-// Returns a Homescript given its id
-// Returns Homescript, has been found, error
-// TODO: replace with query row
-func GetUserHomescriptById(homescriptId string, username string) (Homescript, bool, error) {
+// Checks whether a homescript exists in the list of normal Homescripts
+// This does not include other types of Homescript, like drivers.
+func GetPersonalHomescriptById(homescriptId string, username string) (Homescript, bool, error) {
 	homescripts, err := ListHomescriptOfUser(username)
 	if err != nil {
 		log.Error("Failed to get Homescript by id: ", err.Error())
