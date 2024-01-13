@@ -58,16 +58,24 @@ func List() ([]RichDriver, error) {
 			ValidationErrors: make([]diagnostic.Diagnostic, 0),
 		}
 
-		driverInfo, hmsErrors, err := homescript.ExtractDriverInfoTotal(driver)
+		driverInfo, diagnostics, err := homescript.ExtractDriverInfoTotal(driver)
 		if err != nil {
 			return nil, err
 		}
 
-		if len(hmsErrors) > 0 {
-			richDriver.IsValid = false
-			richDriver.ValidationErrors = hmsErrors
+		// Filter step: only include actual errors, not warnings and infos
+		filtered := make([]diagnostic.Diagnostic, 0)
+		for _, diag := range diagnostics {
+			if diag.Level == diagnostic.DiagnosticLevelError {
+				filtered = append(filtered, diag)
+			}
+		}
 
-			log.Tracef("Driver `%s:%s` is not working: `%s`", driver.VendorId, driver.ModelId, hmsErrors[0].Message)
+		if len(filtered) > 0 {
+			richDriver.IsValid = false
+			richDriver.ValidationErrors = filtered
+
+			log.Tracef("Driver `%s:%s` is not working: `%s`", driver.VendorId, driver.ModelId, filtered[0].Message)
 		}
 
 		richDriver.ExtractedInfo = driverInfo
