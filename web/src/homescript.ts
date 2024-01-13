@@ -212,7 +212,10 @@ export async function lintHomescriptCode(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code, args, moduleName, isDriver }),
     })
-    if (res.status !== 200 && res.status !== 500) throw Error(await (res.json()))
+    if (res.status !== 200 && res.status !== 500) {
+        const resJson = await (res.json())
+        throw `${resJson.message}: ${resJson.error}`
+    }
     return await (res.json())
 }
 

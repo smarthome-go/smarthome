@@ -87,8 +87,8 @@ func ListPersonal(username string) ([]database.Homescript, error) {
 					IsWidget:            false,
 					SchedulerEnabled:    false,
 					Code:                driver.HomescriptCode,
-					MDIcon:              "code", // TODO: what to do here
-					Workspace:           "",
+					MDIcon:              "code",     // TODO: what to do here
+					Workspace:           "@drivers", // TODO: maybe just name it `Drivers` but disallow this id when changing a workspace
 					Type:                database.HOMESCRIPT_TYPE_DRIVER,
 				},
 			})
@@ -112,14 +112,12 @@ func ModifyHomescriptCode(id string, owner string, newCode string) (found bool, 
 		return false, nil
 	}
 
-	// TODO: something is buggy in here
-
 	switch script.Data.Type {
 	case database.HOMESCRIPT_TYPE_NORMAL:
 		if err := database.ModifyHomescriptCode(id, owner, newCode); err != nil {
 			return false, err
 		}
-		return false, nil
+		return true, nil
 	case database.HOMESCRIPT_TYPE_DRIVER:
 		driver, validationErr, dbErr := DriverFromHmsId(id)
 		if dbErr != nil {

@@ -272,13 +272,18 @@ func DeleteDeviceDriver(vendorId string, modelId string) error {
 	}
 	defer query.Close()
 
-	_, err = query.Exec()
-	return err
+	_, err = query.Exec(vendorId, modelId)
+	if err != nil {
+		log.Error("Failed to delete device driver: executing query failed: ", err.Error())
+		return err
+	}
+
+	return nil
 }
 
 // Used when deleting a device driver
 func DriverHasDependentDevices(vendorId string, modelId string) (bool, error) {
-	devices, err := ListDeviceDrivers()
+	devices, err := ListAllDevices()
 	if err != nil {
 		return false, err
 	}

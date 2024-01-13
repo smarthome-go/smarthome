@@ -4,6 +4,7 @@
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { EditorView } from '@codemirror/view'
 import { tags as t } from '@lezer/highlight'
+import "@fontsource/jetbrains-mono"
 
 const highlightBackground = '#2c313a',
     tooltipBackground = '#353a42',

@@ -191,7 +191,7 @@ func DeleteDeviceDriver(w http.ResponseWriter, r *http.Request) {
 	}
 	if hasDependentDevices {
 		w.WriteHeader(http.StatusConflict)
-		Res(w, Response{Success: false, Message: "can not delete driver: safety violation", Error: "driver controls one or more devices"})
+		Res(w, Response{Success: false, Message: "cannot delete driver: safety violation", Error: "driver controls one or more devices"})
 		return
 	}
 

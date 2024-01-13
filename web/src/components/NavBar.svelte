@@ -1,20 +1,24 @@
 <script lang="ts">
-    import { onMount } from "svelte";
     import { data, fetchData } from "../global";
     import NavBarButton from "./NavBarButton.svelte";
     import NotificationDrawer from "./NotificationDrawer.svelte";
     import { get } from "svelte/store";
+    import { onMount } from 'svelte'
 
+    export let persistentClose: boolean = true
     export let closed = true;
-    const toggleClosed = () => (closed = !closed);
+
+    const toggleClosed = () => {
+        closed = !closed
+    };
 
     let drawerClosed = true;
 
-    let nav: HTMLElement;
+    let nav: HTMLElement | null;
     document.addEventListener(
         "click",
         (event) => {
-            if (!nav.contains(event.target as Node)) {
+            if (nav === null || !nav.contains(event.target as Node)) {
                 closed = true;
                 drawerClosed = true;
             }
@@ -132,13 +136,13 @@
     });
 </script>
 
-<nav bind:this={nav} class:closed>
+<nav bind:this={nav} class:closed class:persistentClose={persistentClose && closed}>
     <div
         id="bg"
         class:mdc-elevation--z16={drawerClosed}
         class:mdc-elevation--z8={!drawerClosed}
     />
-    <div id="toggle" on:click={toggleClosed} on:keydown={toggleClosed}>
+    <div id="toggle" class:visible={persistentClose} on:click={toggleClosed} on:keydown={toggleClosed}>
         <i class="material-icons">chevron_right</i>
     </div>
     <div id="header">
@@ -212,11 +216,20 @@
         z-index: 100;
 
         // Hide visible overflow when closed
-        &.closed {
+        &.closed, &.persistentClose {
             #menubar {
                 @include mobile {
                     overflow: hidden;
                 }
+            }
+        }
+
+        &.persistentClose {
+            width: 5.125rem;
+
+            @include mobile {
+                width: auto;
+                height: 3.5rem;
             }
         }
 
@@ -271,9 +284,12 @@
             left: 5rem;
             transform: translateY(-50%) rotate(90deg);
         }
-        @include widescreen {
-            opacity: 0;
-            pointer-events: none;
+
+        &:not(.visible) {
+            @include widescreen {
+                opacity: 0;
+                pointer-events: none;
+            }
         }
 
         i {

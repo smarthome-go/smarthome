@@ -288,21 +288,28 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 	}
 
 	programKind := homescript.HMS_PROGRAM_KIND_NORMAL
+	var driverMetadata *homescript.AnalyzerDriverMetadata = nil
+
 	if request.IsDriver {
 		programKind = homescript.HMS_PROGRAM_KIND_DEVICE_DRIVER
-	}
 
-	driverData, validationErr, databaseErr := homescript.DriverFromHmsId(request.ModuleName)
-	if databaseErr != nil {
-		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Success: false, Message: "could not lint Homescript string", Error: "database error"})
-		return
-	}
+		driverData, validationErr, databaseErr := homescript.DriverFromHmsId(request.ModuleName)
+		if databaseErr != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			Res(w, Response{Success: false, Message: "could not lint Homescript string", Error: "database error"})
+			return
+		}
 
-	if validationErr != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		Res(w, Response{Success: false, Message: "could not lint Homescript string", Error: fmt.Sprintf("validation error: %s", validationErr.Error())})
-		return
+		if validationErr != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			Res(w, Response{Success: false, Message: "could not lint Homescript string", Error: fmt.Sprintf("validation error: %s", validationErr.Error())})
+			return
+		}
+
+		driverMetadata = &homescript.AnalyzerDriverMetadata{
+			VendorId: driverData.VendorId,
+			ModelId:  driverData.ModelId,
+		}
 	}
 
 	// Lint the Homescript
@@ -311,10 +318,7 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 		request.ModuleName,
 		request.Code,
 		programKind,
-		&homescript.AnalyzerDriverMetadata{
-			VendorId: driverData.VendorId,
-			ModelId:  driverData.ModelId,
-		},
+		driverMetadata,
 	)
 
 	if err != nil {

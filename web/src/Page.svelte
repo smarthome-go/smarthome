@@ -4,6 +4,10 @@
     import type { ConfigAction } from "@smui/snackbar/kitchen";
     import NavBar from "./components/NavBar.svelte";
     import { contrast, createSnackbar, data } from "./global";
+    import { onMount } from "svelte";
+
+    export let persistentSlimNav = false
+    let slimNav = persistentSlimNav
 
     $: document.documentElement.classList.toggle(
         "light-theme",
@@ -40,6 +44,10 @@
             actions,
         });
     };
+
+    onMount(() => {
+        slimNav = persistentSlimNav
+    })
 </script>
 
 <svelte:head>
@@ -47,10 +55,13 @@
         <link rel="stylesheet" href="/assets/theme-light.css" />
     {/if}
 </svelte:head>
-<NavBar />
-<main>
+
+<NavBar persistentClose={persistentSlimNav} />
+
+<main class:slimNav={slimNav}>
     <slot />
 </main>
+
 <Kitchen bind:this={kitchen} dismiss$class="material-icons" />
 
 <style lang="scss">
@@ -59,12 +70,19 @@
     main {
         margin-left: 5.125rem;
         transition: margin-left 0.3s;
+
         @include mobile {
             margin-left: 0;
             margin-top: 3.5rem;
         }
+
         @include widescreen {
             margin-left: 13rem;
+        }
+
+        &.slimNav {
+            margin-left: 5.125rem;
+            transition: margin-left 0.3s;
         }
     }
 </style>

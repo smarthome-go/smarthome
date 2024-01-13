@@ -79,7 +79,7 @@ func CreateNewHomescript(homescript Homescript) error {
 		MDIcon,
 		Workspace
 	)
-	VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		log.Error("Failed to create new Homescript: preparing query failed: ", err.Error())

@@ -16,6 +16,8 @@
     import type { hmsResWrapper } from './websocket'
     import Checkbox from '@smui/checkbox'
     import FormField from '@smui/form-field'
+    import HmsFileExplorer from './HmsFileExplorer.svelte';
+    import type { EditorHms } from './types';
 
     /*
        General variables
@@ -53,7 +55,7 @@
        Script management
        Variables and functions required to save all scripts
      */
-    let homescripts: homescriptWithArgs[] = []
+    let homescripts: EditorHms[] = []
 
     // Is set to true as soon as the scripts are loaded
     // Required in the dynamic update of the current script (due to the list being empty when loaded=false)
@@ -64,9 +66,24 @@
         try {
             const res = await (await fetch(`/api/homescript/list/personal/complete`)).json()
             if (res.success !== undefined && !res.success) throw Error(res.error)
-            homescripts = res
+
+            for (let script of res) {
+                homescripts = [...homescripts, {
+                    unsaved: false,
+                    data: script,
+                }]
+            }
+
             homescriptsLoaded = true
-            if (homescripts.length > 0) currentScript = homescripts[0].data.data.id
+            if (homescripts.length > 0) currentScript = homescripts[0].data.data.data.id
+
+            // Populate the `savedCode` map so that for every script, there is already an entry in the map.
+            // If this was not the case, changing a file will cause the UI to display an erronous `unsaved`.
+            let savedCodeTemp: Map<string, string> = new Map()
+            for (let script of homescripts) {
+                savedCodeTemp.set(script.data.data.data.id, script.data.data.data.code)
+            }
+            savedCode = savedCodeTemp
         } catch (err) {
             $createSnackbar(`Failed to load editor for '${currentScript}': ${err}`)
         }
@@ -117,20 +134,39 @@
     // Saves the metadata of the current script (specified by URL query)
     let currentScript = ''
 
-    let currentData: homescript = {
-        owner: '',
+    let currentData: EditorHms = {
+        unsaved: false,
         data: {
-            id: currentScript,
-            name: '',
-            description: '',
-            mdIcon: '',
-            code: '',
-            quickActionsEnabled: false,
-            schedulerEnabled: false,
-            isWidget: false,
-            workspace: 'default',
-            type: 'NORMAL'
-        },
+            data: {
+                owner: '',
+                data: {
+                    id: currentScript,
+                    name: '',
+                    description: '',
+                    mdIcon: '',
+                    code: '',
+                    quickActionsEnabled: false,
+                    schedulerEnabled: false,
+                    isWidget: false,
+                    workspace: 'default',
+                    type: 'NORMAL'
+                },
+            },
+            arguments: [],
+        }
+    }
+
+    $: if (currentData.data.data.data.code) {
+        const savedCodeStr = savedCode.get(currentData.data.data.data.id)
+        const currCodeStr = currentData.data.data.data.code
+        const unsaved = savedCodeStr !== currCodeStr
+
+        console.log(`saved=${savedCodeStr}, curr=${currCodeStr}`)
+
+        if (unsaved != currentData.unsaved) {
+            // This function produces a lot of runtime overhead, so be careful when calling it
+            setUnsaved(unsaved)
+        }
     }
 
     // Is called every time the `currentScript` variable changes
@@ -138,9 +174,9 @@
 
     // Is used to update the currently shown script
     function setCurrentScript() {
-        currentData = homescripts.find(h => h.data.data.id === currentScript).data
+        currentData = homescripts.find(h => h.data.data.data.id === currentScript)
         console.log(`set current data`, currentData)
-        savedCode = currentData.data.code
+        savedCode.set(currentData.data.data.data.id, currentData.data.data.data.code)
     }
 
     /*
@@ -148,7 +184,7 @@
        Variables and functions responsible for saving the code which is currently being edited
     */
     // Specifies whether there are unsaved changes or if the code is up-to-date
-    let savedCode = ''
+    let savedCode: Map<string, string> = new Map()
 
     // KEY BINDS
     // CTRL + S => Save current script
@@ -161,7 +197,7 @@
             saveCurrent()
         } else if (e.key === 'F8') {
             if (currentExecutionHandles > 0) return
-            if (savedCode !== currentData.data.code) {
+            if (currentData.unsaved) {
                 $createSnackbar('This document contains unsaved changes')
                 return
             }
@@ -177,9 +213,31 @@
         }
     })
 
+    // PREVENT the user from leaving the page if there are any unsaved changes
+    window.addEventListener('beforeunload', e => {
+        // Determine whether there are any unsaved changes
+        let isAllSaved = true
+        for (let script of homescripts) {
+            if (script.unsaved) {
+                isAllSaved = false
+                break
+            }
+        }
+
+        // If everything is saved, the user might safely navigate away from this page
+        if (isAllSaved) {
+            return
+        }
+
+        e.preventDefault();
+        // https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event
+        // Included for legacy support, e.g. Chrome/Edge < 119
+        e.returnValue = true;
+    })
+
     // Sends a `save` request to the server, also updates the GUI display of unsaved changes to saved
     async function saveCurrent() {
-        if (savedCode === currentData.data.code) return
+        if (!currentData.unsaved) return
         otherLoading = true
         try {
             const res = await (
@@ -187,18 +245,38 @@
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        id: currentData.data.id,
-                        code: currentData.data.code,
+                        id: currentData.data.data.data.id,
+                        code: currentData.data.data.data.code,
                     }),
                 })
             ).json()
 
             if (res.success !== undefined && !res.success) throw Error(res.error)
-            savedCode = currentData.data.code
+
+            savedCode.set(currentData.data.data.data.id, currentData.data.data.data.code)
+            savedCode = savedCode
+            // HACK: can this be implemented in a better way
+            // this is required so that svelte triggers a refresh of the other variables
+
+            // Commit this change
+            setUnsaved(false)
         } catch (err) {
             $createSnackbar(`Failed to save '${currentScript}': ${err}`)
         }
         otherLoading = false
+    }
+
+    function setUnsaved(value: boolean) {
+            currentData.unsaved = false
+
+            // This part of the code is required to update the value in the list of homescripts.
+            // It is required so that the file explorer also reports the correct save-state of its files.
+            const index = homescripts.findIndex(h => h.data.data.data.id === currentData.data.data.data.id)
+            if (index === -1) {
+                throw "BUG warning: current homescript is not in the list of all homescripts"
+            }
+
+            homescripts[index].unsaved = value
     }
 
     /*
@@ -222,7 +300,7 @@
     // If the current Homescript contains arguments, the function triggers the argument-prompt dialog opening
     // Ported from `src/pages/homescript/App.svelte`
     function initCurrentRun() {
-        if (homescripts.find(h => h.data.data.id === currentScript).arguments.length === 0) {
+        if (homescripts.find(h => h.data.data.data.id === currentScript).data.arguments.length === 0) {
             runCurrentCode([])
             return
         }
@@ -236,8 +314,11 @@
         try {
             output = ''
             currentExecRes = undefined
-            if (currentData.data.code === '') output = 'Nothing to run.'
-            else runCodeWS(args)
+            if (currentData.data.data.data.code === '') {
+                output = 'Nothing to run.'
+            } else {
+                runCodeWS(args)
+            }
         } catch (err) {
             $createSnackbar(`Failed to run '${currentScript}': ${err}`)
         }
@@ -252,10 +333,10 @@
         currentExecutionHandles++
         try {
             const currentExecResTemp = await lintHomescriptCode(
-                currentData.data.code,
+                currentData.data.data.data.code,
                 [],
-                currentData.data.id,
-                currentData.data.type == 'DRIVER',
+                currentData.data.data.data.id,
+                currentData.data.data.data.type == 'DRIVER',
             )
             let errs = currentExecResTemp.errors
 
@@ -271,7 +352,7 @@
                 })
 
             currentExecRes = {
-                code: currentData.data.code,
+                code: currentData.data.data.data.code,
                 modeRun: false,
                 errors: errs,
                 fileContents: currentExecResTemp.fileContents,
@@ -328,7 +409,7 @@
             currentExecutionCount++
             currentExecutionHandles++
             // Send the code to execute
-            conn.send(JSON.stringify({ kind: 'init', payload: currentData.data.id, args }))
+            conn.send(JSON.stringify({ kind: 'init', payload: currentData.data.data.data.id, args }))
         }
 
         conn.onclose = () => {
@@ -348,7 +429,7 @@
                 if (message.kind !== undefined && message.kind === 'out') output += message.payload
                 else if (message.kind !== undefined && message.kind === 'res') {
                     currentExecRes = {
-                        code: currentData.data.code,
+                        code: currentData.data.data.data.code,
                         modeRun: true,
                         errors: message.errors,
                         fileContents: message.fileContents,
@@ -379,7 +460,7 @@
 
         await loadHomescript()
 
-        if (homescripts.find(h => h.data.data.id === selectedFromQuery) === undefined) {
+        if (homescripts.find(h => h.data.data.data.id === selectedFromQuery) === undefined) {
             err404 = true
             return
         }
@@ -388,7 +469,7 @@
     })
 </script>
 
-{#if argumentsPromptOpen && homescripts.find(h => h.data.data.id === currentScript).arguments.length > 0}
+{#if argumentsPromptOpen && homescripts.find(h => h.data.data.data.id === currentScript).data.arguments.length > 0}
     <HmsArgumentPrompts
         on:submit={event => {
             // Handle the decision between lint and run here
@@ -397,11 +478,11 @@
             } else runCurrentCode(event.detail)
         }}
         bind:open={argumentsPromptOpen}
-        args={homescripts.find(h => h.data.data.id === currentScript).arguments.map(a => a.data)}
+        args={homescripts.find(h => h.data.data.data.id === currentScript).data.arguments.map(a => a.data)}
     />
 {/if}
 
-<Page>
+<Page persistentSlimNav={true}>
     {#if err404}
         <div id="error404">
             <i class="material-icons" id="no-automations-icon">edit_off</i>
@@ -413,12 +494,12 @@
     {:else}
         <div id="header" class="mdc-elevation--z4">
             <div id="header__left">
-                <span>Editing {currentData.data.name} </span>
-                <div id="header__left__save" class:unsaved={savedCode !== currentData.data.code}>
+                <span>Editing {currentData.data.data.data.name} </span>
+                <div id="header__left__save" class:unsaved={currentData.unsaved}>
                     <i class="material-icons"
-                        >{savedCode === currentData.data.code ? 'cloud_done' : 'backup'}</i
+                        >{currentData.unsaved ? 'backup' : 'cloud_done'}</i
                     >
-                    {savedCode === currentData.data.code ? 'saved' : 'unsaved'}
+                    {currentData.unsaved ? 'unsaved' : 'saved'}
                 </div>
                 {#if currentExecRes !== undefined}
                     <div
@@ -431,34 +512,63 @@
                 {/if}
             </div>
             <div id="header__buttons">
-                <Select
-                    bind:value={currentScript}
-                    label="Select current script"
-                    disabled={currentExecutionHandles !== 0}
-                >
-                    {#each homescripts as hms}
-                        <Option value={hms.data.data.id}>{hms.data.data.id}</Option>
-                    {/each}
-                </Select>
                 <IconButton class="material-icons" on:click={() => (layoutAlt = !layoutAlt)}
                     >vertical_split</IconButton
                 >
                 <IconButton
                     class="material-icons"
                     on:click={saveCurrent}
-                    disabled={savedCode === currentData.data.code}>save</IconButton
+                    disabled={currentData.unsaved}>save</IconButton
                 >
                 <Progress type="circular" bind:loading={otherLoading} />
             </div>
         </div>
         <div class="container">
+            <div class="container__left">
+                <div class="container__left__files">
+                    <span class="text-hint mdc-elevation--z2 container__left__files__title">Files</span>
+                    <HmsFileExplorer
+                        bind:homescripts
+                        bind:currentScript={currentData}
+                    ></HmsFileExplorer>
+                </div>
+
+                <div class="container__left__diagnostics">
+                    <div class="container__left__diagnostics__list">
+                        {#if currentExecRes !== undefined}
+                            <div class="container__left__diagnostics__list__item">
+                                <span class='icon-info'></span>
+                                <span>
+                                {currentExecRes.errors.map(e => e.diagnosticError !== null ? (e.diagnosticError.kind === 1 ? 1 : 0) : 0).reduce((acc, i) => acc + i, 0)}
+                                </span>
+                            </div>
+                            <div class="container__left__diagnostics__list__item">
+                                <span class='icon-warn'></span>
+                                <span>
+                                {currentExecRes.errors.map(e => e.diagnosticError !== null ? (e.diagnosticError.kind === 2 ? 1 : 0) : 0).reduce((acc, i) => acc + i, 0)}
+                                </span>
+                            </div>
+                            <div class="container__left__diagnostics__list__item">
+                                <span class='icon-error'></span>
+                                <span>
+                                {currentExecRes.errors.map(e => e.diagnosticError !== null ? (e.diagnosticError.kind === 3 ? 1 : 0) : (e.syntaxError !== null ? 1 : 0)).reduce((acc, i) => acc + i, 0)}
+                                </span>
+                            </div>
+                        {:else}
+                            <span class='text-disabled'>
+                                No diagnostics available
+                            </span>
+                        {/if}
+                    </div>
+                </div>
+            </div>
             <div class="container__editor" class:alt={layoutAlt}>
                 {#if homescriptsLoaded}
                 <HmsEditor
-                    bind:moduleName={currentData.data.id}
-                    bind:code={currentData.data.code}
+                    bind:moduleName={currentData.data.data.data.id}
+                    bind:code={currentData.data.data.data.code}
                     {showLintInfo}
-                    isDriver={currentData.data.type === 'DRIVER'}
+                    isDriver={currentData.data.data.data.type === 'DRIVER'}
                 />
                 {/if}
             </div>
@@ -468,7 +578,7 @@
                         <IconButton
                             class="material-icons"
                             on:click={initCurrentRun}
-                            disabled={savedCode !== currentData.data.code ||
+                            disabled={currentData.unsaved ||
                                 currentExecutionHandles > 0}>play_arrow</IconButton
                         >
                         <IconButton
@@ -517,6 +627,7 @@
 
 <style lang="scss">
     @use '../../mixins' as *;
+    @use '../../components/Homescript/HmsEditor/icons.scss' as *;
 
     #error404 {
         display: flex;
@@ -602,6 +713,54 @@
 
         @include widescreen {
             flex-direction: row;
+        }
+
+        &__left {
+            display: flex;
+            flex-direction: column;
+
+            &__files {
+                width: 20rem;
+                display: flex;
+                flex-direction: column;
+
+                &__title {
+                    padding: .3rem .8rem;
+                }
+            }
+
+            &__diagnostics {
+                margin-top: auto;
+
+                &__list {
+                    display: flex;
+                    gap: .6rem;
+                    background-color: var(--clr-height-1-4);
+                    padding: .2rem .5rem;
+
+                    &__item {
+                        display: flex;
+                        align-items: center;
+                        gap: .2rem;
+                        color: var(--clr-text-hint);
+
+                        .icon-info {
+                           content: url($info-icon-svg);
+                           height: 1rem;
+                        }
+
+                        .icon-warn {
+                           content: url($warn-icon-svg);
+                           height: 1rem;
+                        }
+
+                        .icon-error {
+                           content: url($error-icon-svg);
+                           height: 1rem;
+                        }
+                    }
+                }
+            }
         }
 
         &__editor {
