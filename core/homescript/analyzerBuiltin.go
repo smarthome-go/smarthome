@@ -81,6 +81,59 @@ func (self analyzerHost) GetBuiltinImport(moduleName string, valueName string, s
 	// TODO: handle import kind
 
 	switch moduleName {
+	case "driver":
+		if kind != pAst.IMPORT_KIND_TEMPLATE {
+			return analyzer.BuiltinImport{}, true, false
+		}
+
+		switch valueName {
+		case "Driver":
+			return analyzer.BuiltinImport{
+				Type: nil,
+				Template: &ast.TemplateSpec{
+					BaseMethods: map[string]ast.TemplateMethod{
+						"validate_driver": {
+							Signature: ast.NewFunctionType(
+								ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)), span, ast.NewNullType(span), span,
+							).(ast.FunctionType),
+							Modifier: pAst.FN_MODIFIER_PUB,
+						},
+					},
+					Capabilities: map[string]ast.TemplateCapability{
+						"base": {
+							RequiresMethods:           []string{"validate_driver"},
+							ConflictsWithCapabilities: []ast.TemplateConflict{},
+						},
+					},
+					DefaultCapabilities: []string{"base"},
+					Span:                span,
+				},
+			}, true, true
+		case "Device":
+			return analyzer.BuiltinImport{
+				Type: nil,
+				Template: &ast.TemplateSpec{
+					BaseMethods: map[string]ast.TemplateMethod{
+						"validate_device": {
+							Signature: ast.NewFunctionType(
+								ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)), span, ast.NewNullType(span), span,
+							).(ast.FunctionType),
+							Modifier: pAst.FN_MODIFIER_PUB,
+						},
+					},
+					Capabilities: map[string]ast.TemplateCapability{
+						"base": {
+							RequiresMethods:           []string{"validate_device"},
+							ConflictsWithCapabilities: []ast.TemplateConflict{},
+						},
+					},
+					DefaultCapabilities: []string{"base"},
+					Span:                span,
+				},
+			}, true, true
+		default:
+			return analyzer.BuiltinImport{}, true, false
+		}
 	case "hms":
 		switch valueName {
 		case "exec":
