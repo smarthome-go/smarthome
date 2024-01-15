@@ -6,11 +6,12 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
 	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	herrors "github.com/smarthome-go/homescript/v3/homescript/errors"
+	"github.com/smarthome-go/homescript/v3/homescript/parser"
 	"github.com/smarthome-go/smarthome/core/database"
 )
 
-const DRIVER_SINGLETON_IDENT = "@Driver"
-const DRIVER_DEVICE_SINGLETON_IDENT = "@Device"
+var DRIVER_SINGLETON_IDENT = fmt.Sprintf("%sDriver", parser.SINGLETON_TOKEN)
+var DRIVER_DEVICE_SINGLETON_IDENT = fmt.Sprintf("%sDevice", parser.SINGLETON_TOKEN)
 
 func ExtractDriverInfoTotal(driver database.DeviceDriver) (info DriverInfo, hmsErrors []diagnostic.Diagnostic, err error) {
 	filename := fmt.Sprintf("@%s:%s", driver.VendorId, driver.ModelId)
@@ -139,9 +140,9 @@ func ExtractDriverInfo(driver database.DeviceDriver, analyzed map[string]ast.Ana
 			Level:   diagnostic.DiagnosticLevelError,
 			Message: fmt.Sprintf("Cannot generate configuration interface from this type: %s", err.Error()),
 			Notes: []string{
-				"This type is not supported in the configuration of drivers",
+				"This type does not support driver implementation",
 			},
-			Span: driverSingleton.TypeDef.Range,
+			Span: driverSingleton.Type().Span(),
 		},
 		}
 	}
@@ -164,9 +165,9 @@ func ExtractDriverInfo(driver database.DeviceDriver, analyzed map[string]ast.Ana
 			Level:   diagnostic.DiagnosticLevelError,
 			Message: fmt.Sprintf("Cannot generate configuration interface from this type: %s", err.Error()),
 			Notes: []string{
-				"This type is not supported in the configuration of drivers",
+				"This type does not support driver implementation",
 			},
-			Span: deviceSingleton.TypeDef.Range,
+			Span: deviceSingleton.Type().Span(),
 		})
 	}
 
@@ -179,7 +180,7 @@ func ExtractDriverInfo(driver database.DeviceDriver, analyzed map[string]ast.Ana
 }
 
 func requireTemplateImplementation(singleton ast.AnalyzedSingletonTypeDefinition, templateIdent string, usecase string) *diagnostic.Diagnostic {
-	fmt.Printf("Checking singleton `%s`: %v\n", singleton.ImplementsTemplates, singleton.Ident)
+	fmt.Printf("Checking singleton `%s`: %v\n", singleton.Ident, singleton.ImplementsTemplates)
 
 	containsImpl := false
 	for _, implementedTempl := range singleton.ImplementsTemplates {
@@ -198,7 +199,7 @@ func requireTemplateImplementation(singleton ast.AnalyzedSingletonTypeDefinition
 				fmt.Sprintf("In order to use this singleton as a %s, it must implement the template `%s` with at least default capabilities", usecase, templateIdent),
 				fmt.Sprintf("It can be implemented like this: `impl %s for %s with { ... } { ... }`", templateIdent, singleton.Ident),
 			},
-			Span: singleton.TypeDef.Range,
+			Span: singleton.Type().Span(),
 		}
 	}
 
@@ -206,7 +207,7 @@ func requireTemplateImplementation(singleton ast.AnalyzedSingletonTypeDefinition
 }
 
 func singletonAsConfigField(from ast.AnalyzedSingletonTypeDefinition) (ConfigFieldDescriptor, error) {
-	return typeToConfigField(from.TypeDef.RhsType)
+	return typeToConfigField(from.Type())
 }
 
 func typeToConfigField(from ast.Type) (ConfigFieldDescriptor, error) {
@@ -231,31 +232,34 @@ func typeToConfigField(from ast.Type) (ConfigFieldDescriptor, error) {
 		list := from.(ast.ListType)
 		inner, err := typeToConfigField(list.Inner)
 		return ConfigFieldDescriptorWithInner{
-			Self:  CONFIG_FIELD_TYPE_LIST,
+			Type:  CONFIG_FIELD_TYPE_LIST,
 			Inner: inner,
 		}, err
 	case ast.ObjectTypeKind:
 		obj := from.(ast.ObjectType)
-		fields := make(map[string]ConfigFieldDescriptor)
+		fields := make([]ConfigFieldItem, len(obj.ObjFields))
 
-		for _, field := range obj.ObjFields {
+		for idx, field := range obj.ObjFields {
 			fieldNew, err := typeToConfigField(field.Type)
 			if err != nil {
 				return nil, err
 			}
 
-			fields[field.FieldName.Ident()] = fieldNew
+			fields[idx] = ConfigFieldItem{
+				Name: field.FieldName.Ident(),
+				Type: fieldNew,
+			}
 		}
 
 		return ConfigFieldDescriptorStruct{
-			Self:   CONFIG_FIELD_TYPE_STRUCT,
+			Type:   CONFIG_FIELD_TYPE_STRUCT,
 			Fields: fields,
 		}, nil
 	case ast.OptionTypeKind:
 		option := from.(ast.OptionType)
 		inner, err := typeToConfigField(option.Inner)
 		return ConfigFieldDescriptorWithInner{
-			Self:  CONFIG_FIELD_TYPE_OPTION,
+			Type:  CONFIG_FIELD_TYPE_OPTION,
 			Inner: inner,
 		}, err
 	default:

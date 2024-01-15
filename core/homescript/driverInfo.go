@@ -26,7 +26,7 @@ type ConfigFieldDescriptor interface {
 //
 
 type ConfigFieldDescriptorAtom struct {
-	Type CONFIG_FIELD_TYPE
+	Type CONFIG_FIELD_TYPE `json:"type"`
 }
 
 func (self ConfigFieldDescriptorAtom) Kind() CONFIG_FIELD_TYPE {
@@ -74,8 +74,8 @@ func (self ConfigFieldDescriptorAtom) Kind() CONFIG_FIELD_TYPE {
 //
 
 type ConfigFieldDescriptorWithInner struct {
-	Self  CONFIG_FIELD_TYPE
-	Inner ConfigFieldDescriptor
+	Type  CONFIG_FIELD_TYPE     `json:"type"`
+	Inner ConfigFieldDescriptor `json:"inner"`
 }
 
 func (self ConfigFieldDescriptorWithInner) Kind() CONFIG_FIELD_TYPE {
@@ -87,8 +87,13 @@ func (self ConfigFieldDescriptorWithInner) Kind() CONFIG_FIELD_TYPE {
 //
 
 type ConfigFieldDescriptorStruct struct {
-	Self   CONFIG_FIELD_TYPE
-	Fields map[string]ConfigFieldDescriptor
+	Type   CONFIG_FIELD_TYPE `json:"type"`
+	Fields []ConfigFieldItem `json:"fields"`
+}
+
+type ConfigFieldItem struct {
+	Name string                `json:"name"`
+	Type ConfigFieldDescriptor `json:"type"`
 }
 
 func (self ConfigFieldDescriptorStruct) Kind() CONFIG_FIELD_TYPE {
