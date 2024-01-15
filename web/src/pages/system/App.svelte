@@ -327,9 +327,10 @@
             <ExportImport />
         </div>
         {:else if currentActivity == 'devices'}
-            <div id="hardware-left" class="mdc-elevation--z1">
-                <Hardware />
-            </div>
+            <!-- TODO: is being replaced by generic drivers -->
+            <!-- <div id="hardware-left" class="mdc-elevation--z1"> -->
+            <!--     <Hardware /> -->
+            <!-- </div> -->
             <div id="hardware-right" class="mdc-elevation--z1">
                 <Drivers />
             </div>

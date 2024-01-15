@@ -1,28 +1,75 @@
 import { createSnackbar } from "../../global";
 import { get } from "svelte/store";
 
-export interface DriverData {
-    vendorId: string,
-    modelId: string,
-    name: string,
-    version: string,
-}
-
 export interface CreateDriver {
     data: DriverData,
     code: string,
 }
 
 export interface FetchedDriver {
-    vendorId: string,
-    modelId	: string,
-    name: string,
-    version: string,
-    homescriptId: string,
+    driver:           DriverData;
+    info:             DriverInfoCollection;
+    isValid:          boolean;
+    validationErrors: ValidationError[];
+}
+
+export interface DriverData {
+    vendorId:       string;
+    modelId:        string;
+    name:           string;
+    version:        string;
+    homescriptCode: string;
+}
+
+export interface DriverInfoCollection {
+    driver: ConfigSpec;
+    device: ConfigSpec;
+}
+
+export type ConfigSpec = ConfigSpecAtom | ConfigSpecInner | ConfigSpecStruct | null;
+
+export type ConfigSpecType = 'INT' | 'FLOAT' | 'BOOL' | 'STRING' | 'LIST' | 'STRUCT' | 'OPTION'
+
+export interface ConfigSpecAtom {
+    type:   ConfigSpecType;
+}
+
+export interface ConfigSpecInner {
+    type:   ConfigSpecType;
+    inner: ConfigSpec;
+}
+
+export interface ConfigSpecStruct {
+    type: ConfigSpecType;
+    fields: ConfigSpecStructField[];
+}
+
+export interface ConfigSpecStructField {
+    name: ConfigSpecType;
+    type: ConfigSpec;
+}
+
+export interface ValidationError {
+    level:   number;
+    message: string;
+    notes:   string[];
+    span:    Span;
+}
+
+export interface Span {
+    start:    Location;
+    end:      Location;
+    filename: string;
+}
+
+export interface Location {
+    line:   number;
+    column: number;
+    index:  number;
 }
 
 
-export async function fetchDrivers() {
+export async function fetchDrivers(): Promise<FetchedDriver[]> {
     try {
         const res = await (
             await fetch("/api/system/hardware/drivers/list")

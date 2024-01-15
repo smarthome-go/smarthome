@@ -10,6 +10,7 @@
     import IconButton from "@smui/icon-button";
     import type { FetchedDriver } from "../driver"
     import { fetchDrivers, createDriver } from "../driver"
+    import DriverComponent from "./DriverComponent.svelte";
 
     // Specifies whether the loading indicator should be shown or hidden
     let loading = true;
@@ -20,14 +21,15 @@
     // Contains all hardware nodes
     let driversLoaded = false;
     let drivers: FetchedDriver[] = []
+    $: if (drivers) console.log('updated drivers')
 
-    async function init() {
+    async function refresh() {
         loading = true
         drivers = await fetchDrivers()
         loading = false
     }
 
-    onMount(init);
+    onMount(refresh);
 </script>
 
 <CreateDriver
@@ -53,7 +55,7 @@
                 <IconButton
                     disabled={loading}
                     class="material-icons"
-                    on:click={() => fetchDrivers()}
+                    on:click={refresh}
                     title="Refresh">refresh</IconButton
                 >
                 <Fab
@@ -71,14 +73,17 @@
         <div class="hardware__nodes">
             {#if drivers.length === 0 && driversLoaded}
                 <i class="material-icons text-disabled">dns</i>
-                <span class="text-hint"> No installed drivers </span>
+                <span class="text-hint">No installed drivers </span>
             {:else}
+                <ul>
                 {#each drivers as driver}
-                    <code>
-                        {driver.vendorId}: {driver.modelId}
-                    </code>
-                    <br>
+                    <li>
+                        <code>
+                            <DriverComponent bind:driver />
+                        </code>
+                    </li>
                 {/each}
+                </ul>
             {/if}
         </div>
     </div>
