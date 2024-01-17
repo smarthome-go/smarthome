@@ -5,13 +5,23 @@ import (
 
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
 	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
+	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	herrors "github.com/smarthome-go/homescript/v3/homescript/errors"
 	"github.com/smarthome-go/homescript/v3/homescript/parser"
 	"github.com/smarthome-go/smarthome/core/database"
 )
 
-var DRIVER_SINGLETON_IDENT = fmt.Sprintf("%sDriver", parser.SINGLETON_TOKEN)
-var DRIVER_DEVICE_SINGLETON_IDENT = fmt.Sprintf("%sDevice", parser.SINGLETON_TOKEN)
+const DRIVER_TEMPLATE_IDENT = "Driver"
+const DEVICE_TEMPLATE_IDENT = "Device"
+
+const DRIVER_SINGLETON_IDENT = "Driver"
+const DRIVER_DEVICE_SINGLETON_IDENT = "Device"
+
+const DRIVER_FIELD_REQUIRED_ANNOTATION = "setting"
+
+var driverSingletonIdent = fmt.Sprintf("%s%s", parser.SINGLETON_TOKEN, DRIVER_SINGLETON_IDENT)
+var driverDeviceSingletonIdent = fmt.Sprintf("%s%s", parser.SINGLETON_TOKEN, DRIVER_DEVICE_SINGLETON_IDENT)
+var driverFieldRequiredAnnotation = fmt.Sprintf("%s%s", parser.TYPE_ANNOTATION_TOKEN, DRIVER_FIELD_REQUIRED_ANNOTATION)
 
 func ExtractDriverInfoTotal(driver database.DeviceDriver) (info DriverInfo, hmsErrors []diagnostic.Diagnostic, err error) {
 	filename := fmt.Sprintf("@%s:%s", driver.VendorId, driver.ModelId)
@@ -30,12 +40,19 @@ func ExtractDriverInfoTotal(driver database.DeviceDriver) (info DriverInfo, hmsE
 		return DriverInfo{}, nil, err
 	}
 
-	if len(res.Errors) != 0 {
-		err0 := res.Errors[0]
-		log.Debugf("Could not extract driver info: %s", err0.String())
+	// Only include actual errors, not other diagnostic messages
+	errors := make([]HmsError, 0)
+	for _, err := range res.Errors {
+		if err.DiagnosticError != nil && err.DiagnosticError.Level != diagnostic.DiagnosticLevelError {
+			continue
+		}
+		errors = append(errors, err)
+	}
 
-		diagnostics := make([]diagnostic.Diagnostic, len(res.Errors))
-		for idx, err := range res.Errors {
+	if len(errors) != 0 {
+		log.Debugf("Could not extract driver info: %s", errors[0].String())
+		diagnostics := make([]diagnostic.Diagnostic, len(errors))
+		for idx, err := range errors {
 			if err.SyntaxError != nil {
 				diagnostics[idx] = diagnostic.Diagnostic{
 					Level:   diagnostic.DiagnosticLevelError,
@@ -58,7 +75,7 @@ func ExtractDriverInfoTotal(driver database.DeviceDriver) (info DriverInfo, hmsE
 		return DriverInfo{}, diagnostics, nil
 	}
 
-	info, diagnostics := ExtractDriverInfo(driver, analyzed, filename)
+	info, diagnostics := ExtractDriverInfo(driver, analyzed, filename, false)
 	if len(diagnostics) != 0 {
 		return DriverInfo{}, diagnostics, nil
 	}
@@ -66,15 +83,20 @@ func ExtractDriverInfoTotal(driver database.DeviceDriver) (info DriverInfo, hmsE
 	return info, nil, nil
 }
 
-func ExtractDriverInfo(driver database.DeviceDriver, analyzed map[string]ast.AnalyzedProgram, mainModule string) (DriverInfo, []diagnostic.Diagnostic) {
-	diagnonstics := make([]diagnostic.Diagnostic, 0)
+func ExtractDriverInfo(
+	driver database.DeviceDriver,
+	analyzed map[string]ast.AnalyzedProgram,
+	mainModule string,
+	emitWarnings bool,
+) (DriverInfo, []diagnostic.Diagnostic) {
+	diagnostics := make([]diagnostic.Diagnostic, 0)
 
 	driverSingleton, driverSingletonFound := ast.AnalyzedSingletonTypeDefinition{}, false
 	deviceSingleton, deviceSingletonFound := ast.AnalyzedSingletonTypeDefinition{}, false
 
 	// Iterate over singletons, assert that there is a `driver` singleton
 	for _, singleton := range analyzed[mainModule].Singletons {
-		if singleton.Ident.Ident() == DRIVER_SINGLETON_IDENT {
+		if singleton.Ident.Ident() == driverSingletonIdent {
 			driverSingleton = singleton
 			driverSingletonFound = true
 
@@ -85,7 +107,7 @@ func ExtractDriverInfo(driver database.DeviceDriver, analyzed map[string]ast.Ana
 			continue
 		}
 
-		if singleton.Ident.Ident() == DRIVER_DEVICE_SINGLETON_IDENT {
+		if singleton.Ident.Ident() == driverDeviceSingletonIdent {
 			deviceSingleton = singleton
 			deviceSingletonFound = true
 
@@ -98,11 +120,11 @@ func ExtractDriverInfo(driver database.DeviceDriver, analyzed map[string]ast.Ana
 	}
 
 	if !driverSingletonFound {
-		diagnonstics = append(diagnonstics, diagnostic.Diagnostic{
+		diagnostics = append(diagnostics, diagnostic.Diagnostic{
 			Level:   diagnostic.DiagnosticLevelError,
-			Message: fmt.Sprintf("Singleton `%s` not found", DRIVER_SINGLETON_IDENT),
+			Message: fmt.Sprintf("Singleton `%s` not found", driverSingletonIdent),
 			Notes: []string{
-				fmt.Sprintf("A singleton named `%s` is required for every driver implementation", DRIVER_DEVICE_SINGLETON_IDENT),
+				fmt.Sprintf("A singleton named `%s` is required for every driver implementation", driverDeviceSingletonIdent),
 				fmt.Sprintf("This singleton can be declared like this: `TODO, add final syntax`"),
 			},
 			Span: herrors.Span{
@@ -114,11 +136,11 @@ func ExtractDriverInfo(driver database.DeviceDriver, analyzed map[string]ast.Ana
 	}
 
 	if !deviceSingletonFound {
-		diagnonstics = append(diagnonstics, diagnostic.Diagnostic{
+		diagnostics = append(diagnostics, diagnostic.Diagnostic{
 			Level:   diagnostic.DiagnosticLevelError,
-			Message: fmt.Sprintf("Singleton `%s` not found", DRIVER_DEVICE_SINGLETON_IDENT),
+			Message: fmt.Sprintf("Singleton `%s` not found", driverDeviceSingletonIdent),
 			Notes: []string{
-				fmt.Sprintf("A singleton named `%s` is required for every driver implementation", DRIVER_DEVICE_SINGLETON_IDENT),
+				fmt.Sprintf("A singleton named `%s` is required for every driver implementation", driverDeviceSingletonIdent),
 				fmt.Sprintf("This singleton can be declared like this: `TODO, add final syntax`"),
 			},
 			Span: herrors.Span{
@@ -131,10 +153,10 @@ func ExtractDriverInfo(driver database.DeviceDriver, analyzed map[string]ast.Ana
 
 	// If one of the required singletons was not found, report the errors
 	if !driverSingletonFound || !deviceSingletonFound {
-		return DriverInfo{}, diagnonstics
+		return DriverInfo{}, diagnostics
 	}
 
-	driverConfig, err := singletonAsConfigField(driverSingleton)
+	driverConfig, diagnosticsExtraction, err := typeToConfigField(driverSingleton.SingletonType, true, driverSingleton.Range)
 	if err != nil {
 		return DriverInfo{}, []diagnostic.Diagnostic{{
 			Level:   diagnostic.DiagnosticLevelError,
@@ -147,21 +169,22 @@ func ExtractDriverInfo(driver database.DeviceDriver, analyzed map[string]ast.Ana
 		}
 	}
 
-	const DRIVER_TEMPLATE_IDENT = "Driver"
-	const DEVICE_TEMPLATE_IDENT = "Device"
+	if diagnosticsExtraction != nil && emitWarnings {
+		diagnostics = append(diagnostics, diagnosticsExtraction...)
+	}
 
 	// TODO: validate that the driver implements all required templates
 	if d := requireTemplateImplementation(driverSingleton, DRIVER_TEMPLATE_IDENT, "hardware driver"); d != nil {
-		diagnonstics = append(diagnonstics, *d)
+		diagnostics = append(diagnostics, *d)
 	}
 
 	if d := requireTemplateImplementation(deviceSingleton, DEVICE_TEMPLATE_IDENT, "device"); d != nil {
-		diagnonstics = append(diagnonstics, *d)
+		diagnostics = append(diagnostics, *d)
 	}
 
-	deviceConfig, err := singletonAsConfigField(deviceSingleton)
+	deviceConfig, diagnosticsExtraction, err := typeToConfigField(deviceSingleton.SingletonType, true, deviceSingleton.Range)
 	if err != nil {
-		diagnonstics = append(diagnonstics, diagnostic.Diagnostic{
+		diagnostics = append(diagnostics, diagnostic.Diagnostic{
 			Level:   diagnostic.DiagnosticLevelError,
 			Message: fmt.Sprintf("Cannot generate configuration interface from this type: %s", err.Error()),
 			Notes: []string{
@@ -171,12 +194,47 @@ func ExtractDriverInfo(driver database.DeviceDriver, analyzed map[string]ast.Ana
 		})
 	}
 
+	if diagnosticsExtraction != nil && emitWarnings {
+		diagnostics = append(diagnostics, diagnosticsExtraction...)
+	}
+
 	// TODO: validate that the device implements all required templates
+
+	incompatibleType := false
+	if driverConfig.Kind() != CONFIG_FIELD_TYPE_STRUCT {
+		diagnostics = append(diagnostics, diagnostic.Diagnostic{
+			Level:   diagnostic.DiagnosticLevelError,
+			Message: fmt.Sprintf("Cannot generate configuration interface from this type: %s", err.Error()),
+			Notes: []string{
+				"This type does not support driver implementation",
+			},
+			Span: deviceSingleton.Type().Span(),
+		})
+		incompatibleType = true
+	}
+	if deviceConfig.Kind() != CONFIG_FIELD_TYPE_STRUCT {
+		diagnostics = append(diagnostics, diagnostic.Diagnostic{
+			Level:   diagnostic.DiagnosticLevelError,
+			Message: fmt.Sprintf("Cannot generate configuration interface from this type: %s", err.Error()),
+			Notes: []string{
+				"This type does not support driver implementation",
+			},
+			Span: deviceSingleton.Type().Span(),
+		})
+		incompatibleType = true
+	}
+
+	if incompatibleType {
+		return DriverInfo{
+			DriverConfig: ConfigFieldDescriptorStruct{},
+			DeviceConfig: ConfigFieldDescriptorStruct{},
+		}, diagnostics
+	}
 
 	return DriverInfo{
 		DriverConfig: driverConfig.(ConfigFieldDescriptorStruct),
 		DeviceConfig: deviceConfig.(ConfigFieldDescriptorStruct),
-	}, diagnonstics
+	}, diagnostics
 }
 
 func requireTemplateImplementation(singleton ast.AnalyzedSingletonTypeDefinition, templateIdent string, usecase string) *diagnostic.Diagnostic {
@@ -206,63 +264,108 @@ func requireTemplateImplementation(singleton ast.AnalyzedSingletonTypeDefinition
 	return nil
 }
 
-func singletonAsConfigField(from ast.AnalyzedSingletonTypeDefinition) (ConfigFieldDescriptor, error) {
-	return typeToConfigField(from.Type())
-}
+func typeToConfigField(from ast.Type, topLevel bool, contextSpan errors.Span) (ConfigFieldDescriptor, []diagnostic.Diagnostic, error) {
+	if topLevel && from.Kind() != ast.ObjectTypeKind {
+		panic(fmt.Sprintf("BUG warning: expected object type, found `%s`", from.Kind()))
+	}
 
-func typeToConfigField(from ast.Type) (ConfigFieldDescriptor, error) {
 	switch from.Kind() {
 	case ast.IntTypeKind:
 		return ConfigFieldDescriptorAtom{
 			Type: CONFIG_FIELD_TYPE_INT,
-		}, nil
+		}, nil, nil
 	case ast.FloatTypeKind:
 		return ConfigFieldDescriptorAtom{
 			Type: CONFIG_FIELD_TYPE_FLOAT,
-		}, nil
+		}, nil, nil
 	case ast.BoolTypeKind:
 		return ConfigFieldDescriptorAtom{
 			Type: CONFIG_FIELD_TYPE_BOOL,
-		}, nil
+		}, nil, nil
 	case ast.StringTypeKind:
 		return ConfigFieldDescriptorAtom{
 			Type: CONFIG_FIELD_TYPE_STRING,
-		}, nil
+		}, nil, nil
 	case ast.ListTypeKind:
 		list := from.(ast.ListType)
-		inner, err := typeToConfigField(list.Inner)
+		inner, diagnostics, err := typeToConfigField(list.Inner, false, from.Span())
 		return ConfigFieldDescriptorWithInner{
 			Type:  CONFIG_FIELD_TYPE_LIST,
 			Inner: inner,
-		}, err
+		}, diagnostics, err
 	case ast.ObjectTypeKind:
+		diagnostics := make([]diagnostic.Diagnostic, 0)
 		obj := from.(ast.ObjectType)
-		fields := make([]ConfigFieldItem, len(obj.ObjFields))
+		fields := make([]ConfigFieldItem, 0)
 
-		for idx, field := range obj.ObjFields {
-			fieldNew, err := typeToConfigField(field.Type)
-			if err != nil {
-				return nil, err
+		fmt.Printf("object top level: %v\n", topLevel)
+
+		for _, field := range obj.ObjFields {
+			// If this field does not have the required annotation, do not add it
+			// NOTE: this is only done if this is a top-level call.
+			// For nested structures, all fields are taken into account.
+			if topLevel && (field.Annotation == nil || field.Annotation.Ident() != driverFieldRequiredAnnotation) {
+				continue
 			}
 
-			fields[idx] = ConfigFieldItem{
+			fieldNew, diagnosticsRec, err := typeToConfigField(field.Type, false, field.Span)
+			if err != nil {
+				return nil, diagnosticsRec, err
+			}
+			diagnostics = append(diagnostics, diagnosticsRec...)
+
+			fields = append(fields, ConfigFieldItem{
 				Name: field.FieldName.Ident(),
 				Type: fieldNew,
-			}
+			})
+		}
+
+		// Guard case: do not enter error / warning handling code
+		if len(fields) > 0 {
+			return ConfigFieldDescriptorStruct{
+				Type:   CONFIG_FIELD_TYPE_STRUCT,
+				Fields: fields,
+			}, diagnostics, nil
+		}
+
+		if topLevel {
+			// For top-level structs (the whole driver / device), this is just a warning
+			diagnostics = append(diagnostics, diagnostic.Diagnostic{
+				Level:   diagnostic.DiagnosticLevelWarning,
+				Message: "Cannot apply settings-based configuration on this singleton",
+				Notes: []string{
+					fmt.Sprintf("A field can be used as a setting by prefixing it with the `%s%s` directive", parser.TYPE_ANNOTATION_TOKEN, DRIVER_FIELD_REQUIRED_ANNOTATION),
+				},
+				Span: contextSpan,
+				// In this case, the context span will be the span of the entire singleton, not just its type.
+			})
+		} else {
+			// For nested elements of settings parameters, this is an error as this makes no sense
+			diagnostics = append(diagnostics, diagnostic.Diagnostic{
+				Level:   diagnostic.DiagnosticLevelError,
+				Message: "Empty object type in a configuration parameter",
+				Notes: []string{
+					"This field is redundant and can be deleted",
+				},
+				Span: contextSpan,
+				// The context span is used as this will be the span of the `current` parameter.
+				// Therefore, the error span will include the whole parameter and not just its type.
+			})
 		}
 
 		return ConfigFieldDescriptorStruct{
 			Type:   CONFIG_FIELD_TYPE_STRUCT,
 			Fields: fields,
-		}, nil
+		}, diagnostics, nil
 	case ast.OptionTypeKind:
 		option := from.(ast.OptionType)
-		inner, err := typeToConfigField(option.Inner)
+		// NOTE: recursive calls do not return diagnostics
+		inner, _, err := typeToConfigField(option.Inner, false, from.Span())
 		return ConfigFieldDescriptorWithInner{
 			Type:  CONFIG_FIELD_TYPE_OPTION,
 			Inner: inner,
-		}, err
+		}, nil, err
 	default:
-		return nil, fmt.Errorf("Cannot derive user configuration from type `%s`", from)
+		return nil, nil, fmt.Errorf("Cannot derive user configuration from type `%s`", from)
 	}
 }

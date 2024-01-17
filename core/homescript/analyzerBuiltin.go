@@ -11,6 +11,10 @@ import (
 	"github.com/smarthome-go/smarthome/core/database"
 )
 
+// A list of `known` object type annotations
+// The analyzer uses these in order to sanity-check every annotation
+var knownObjectTypeAnnotations = []string{DRIVER_FIELD_REQUIRED_ANNOTATION}
+
 type HMS_PROGRAM_KIND uint8
 
 const (
@@ -31,6 +35,10 @@ type analyzerHost struct {
 	driverData *AnalyzerDriverMetadata
 }
 
+func (analyzerHost) GetKnownObjectTypeFieldAnnotations() []string {
+	return knownObjectTypeAnnotations
+}
+
 func newAnalyzerHost(
 	username string,
 	programKind HMS_PROGRAM_KIND,
@@ -43,7 +51,11 @@ func newAnalyzerHost(
 	}
 }
 
-func (self analyzerHost) PostValidationHook(analyzedModules map[string]ast.AnalyzedProgram, mainModule string) []diagnostic.Diagnostic {
+func (self analyzerHost) PostValidationHook(
+	analyzedModules map[string]ast.AnalyzedProgram,
+	mainModule string,
+	analyzer *analyzer.Analyzer,
+) []diagnostic.Diagnostic {
 	switch self.programKind {
 	case HMS_PROGRAM_KIND_DEVICE_DRIVER:
 		fmt.Printf("post validation driver hook: %s: %s\n", self.driverData.VendorId, self.driverData.ModelId)
@@ -64,12 +76,9 @@ func (self analyzerHost) PostValidationHook(analyzedModules map[string]ast.Analy
 			panic(fmt.Sprintf("Driver `%s:%s` was not found in the database", self.driverData.VendorId, self.driverData.ModelId))
 		}
 
-		info, diagnosticErrs := ExtractDriverInfo(driver, analyzedModules, mainModule)
-		if len(diagnosticErrs) != 0 {
-			return diagnosticErrs
-		}
-
-		fmt.Printf("INFO: %v\n", info)
+		info, diagnostics := ExtractDriverInfo(driver, analyzedModules, mainModule, true)
+		fmt.Printf("post-validation: INFO: %v\n", info)
+		return diagnostics
 	case HMS_PROGRAM_KIND_NORMAL:
 		// TODO: is there something to implement?
 	}
