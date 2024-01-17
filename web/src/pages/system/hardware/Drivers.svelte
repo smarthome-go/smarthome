@@ -70,20 +70,14 @@
         </div>
 
         <!-->vendor starts here</-->
-        <div class="hardware__nodes">
+        <div class="hardware__drivers">
             {#if drivers.length === 0 && driversLoaded}
                 <i class="material-icons text-disabled">dns</i>
                 <span class="text-hint">No installed drivers </span>
             {:else}
-                <ul>
                 {#each drivers as driver}
-                    <li>
-                        <code>
-                            <DriverComponent bind:driver />
-                        </code>
-                    </li>
+                    <DriverComponent bind:driver />
                 {/each}
-                </ul>
             {/if}
         </div>
     </div>
@@ -131,8 +125,8 @@
            Vendor-specific styles start here
         */
 
-        // The default hardware node device type
-        &__nodes {
+        // Driver list
+        &__drivers {
             display: flex;
             flex-wrap: wrap;
             gap: 1rem;

@@ -1,9 +1,16 @@
 <script lang="ts">
-    import type { ConfigSpec, ConfigSpecStruct } from "../driver";
+    import type { ConfigSpec, ConfigSpecInner, ConfigSpecStruct } from "../driver";
     import { MDCTextField } from '@material/textfield';
+    // import '@material/web/icon/icon.js';
+    // import '@material/web/iconbutton/filled-icon-button.js';
+    // import '@material/web/iconbutton/filled-tonal-icon-button.js';
+    // import '@material/web/iconbutton/icon-button.js';
+    // import '@material/web/iconbutton/outlined-icon-button.js';
+    import {MDCRipple} from '@material/ripple';
 
     type HtmlInputType = 'number' | 'text';
 
+    export let topLevelLabel: string | null = null
     export let spec: ConfigSpec = null;
     let dom: HTMLDivElement = null
 
@@ -11,6 +18,72 @@
         html: HTMLElement
         handle: MDCTextField | null
         source: ConfigSpec
+    }
+
+    function deleteListElement(element: HTMLElement) {
+        element.remove()
+    }
+
+    function createListElement(spec: ConfigSpec): HTMLElement {
+        const tree = specToHtml(spec, null);
+        return tree.html
+    }
+
+    function createIconButton(mdIcon: string, callback: () => void): HTMLElement {
+        let buttonOuter = document.createElement('button')
+        buttonOuter.classList.add('mdc-icon-button', 'material-icons')
+
+        let buttonRippleInner = document.createElement('div')
+        buttonRippleInner.classList.add('mdc-icon-button__ripple')
+        buttonOuter.appendChild(buttonRippleInner)
+
+        buttonOuter.append(mdIcon)
+
+        const iconButtonRipple = new MDCRipple(buttonOuter);
+        iconButtonRipple.unbounded = true;
+
+        buttonOuter.onclick = callback
+
+        return buttonOuter
+    }
+
+    function createListConfigurator(nestedSpec: ConfigSpec, label: string | null): HTMLElement {
+        let listContainer = document.createElement('div')
+        listContainer.classList.add("config-option__list", "mdc-elevation--z6")
+
+        // Create heading
+        if (label !== null) {
+            let listFieldName = document.createElement('span')
+            listFieldName.classList.add("config-option__list__heading", "text-hint")
+            listFieldName.innerText = label
+            listContainer.appendChild(listFieldName)
+        }
+
+        // Create main body which contains the individual fields
+        let listBody = document.createElement("li")
+        listBody.classList.add("config-option__list__body")
+        listContainer.appendChild(listBody)
+
+        // Create footer button to add elements
+        listContainer.appendChild(createIconButton('add', () => {
+            let listElementWrapper = document.createElement('li')
+            listElementWrapper.classList.add('config-option__list__body__item')
+
+            let listElementDeleteWrapper = document.createElement('div')
+            listElementDeleteWrapper.classList.add('config-option__list__body__item__delete')
+
+            let listElementDelete = createIconButton('delete', () => {
+                deleteListElement(listElementWrapper)
+            })
+
+            listElementDeleteWrapper.appendChild(listElementDelete)
+            listElementWrapper.appendChild(listElementDeleteWrapper)
+
+            listElementWrapper.appendChild(createListElement(nestedSpec))
+            listBody.appendChild(listElementWrapper)
+        }))
+
+        return listContainer
     }
 
     function specToHtml(spec: ConfigSpec, label: string | null): HtmlTree {
@@ -38,13 +111,16 @@
                 }
             }
             case 'LIST': {
+                const listSpec = spec as ConfigSpecInner
                 console.error("TODO", spec.type)
 
-                const [html, handle] = newTextField('foobar', 'number', label)
+                let listHtml = createListConfigurator(listSpec.inner, label)
+
+                // const [html, handle] = newTextField('foobar', 'number', label)
 
                 return {
-                    html,
-                    handle,
+                    html: listHtml,
+                    handle: null,
                     source: spec,
                 }
             }
@@ -67,8 +143,18 @@
                 }
             }
             case 'STRUCT':
+                let structParent = document.createElement('div')
+                structParent.classList.add('config-option__struct', 'mdc-elevation--z6')
+
+                if (label !== null) {
+                    let labelSpan = document.createElement('span')
+                    labelSpan.classList.add("config-option__struct__label", "text-hint")
+                    labelSpan.innerText = label
+                    structParent.appendChild(labelSpan)
+                }
+
                 let fieldListHtml: HTMLUListElement = document.createElement('ul')
-                fieldListHtml.classList.add("config-option__field-list") // TODO: deal with these classes
+                fieldListHtml.classList.add("config-option__struct__fields") // TODO: deal with these classes
 
                 let fields = (spec as ConfigSpecStruct).fields
 
@@ -89,13 +175,17 @@
                 for (let field of fields) {
                     const subTree = specToHtml(field.type, field.name)
                     let listElement = document.createElement('li')
+                    listElement.classList.add('config-option__struct__fields__field')
+
                     listElement.appendChild(subTree.html)
                     fieldListHtml.appendChild(listElement)
                 }
 
+                structParent.appendChild(fieldListHtml)
+
                 // TODO: how to deal with mdc handles???
                 return {
-                    html: fieldListHtml,
+                    html: structParent,
                     handle: null,
                     source: spec,
                 }
@@ -140,14 +230,14 @@
         return [outerLabel, textField]
     }
 
-    function generateInputs(data: ConfigSpec | null) {
+    function generateInputs(data: ConfigSpec | null, topLevelLabel: string | null) {
         console.log('hi')
 
         if (data === null || dom === null) {
             return
         }
 
-        const generatedTree = specToHtml(data, "TODO: label")
+        const generatedTree = specToHtml(data, topLevelLabel)
 
         // TODO: use mdc component to customize it
         console.dir(generatedTree)
@@ -159,7 +249,7 @@
         dom.appendChild(generatedTree.html)
     }
 
-    $: if (spec !== null) generateInputs(spec)
+    $: if (spec !== null) generateInputs(spec, topLevelLabel)
 </script>
 
 <div class="configurator">
@@ -175,4 +265,39 @@
     @use "@material/textfield";
     @include textfield.core-styles;
 
+    :global(ul) {
+        list-style-type: none;
+
+        :global(li:not(:last-child)) {
+            margin-bottom: .5rem;
+        }
+    }
+
+    :global(.config-option__list) {
+        background-color: var(--clr-height-3-6);
+        padding: .5rem .8rem;
+        border-radius: .3rem;
+        border: .125rem solid var(--clr-height-6-12);
+
+        :global(&__body) {
+            background-color: red;
+
+            :global(&__item) {
+                background-color: red;
+            }
+        }
+    }
+
+    :global(.config-option__struct) {
+        background-color: var(--clr-height-3-6);
+        padding: .5rem .8rem;
+        border-radius: .3rem;
+        border: .125rem solid var(--clr-height-6-12);
+
+        :global(&__fields) {
+            :global(&__field) {
+
+            }
+        }
+    }
 </style>
