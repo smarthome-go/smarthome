@@ -70,7 +70,23 @@
                 let fieldListHtml: HTMLUListElement = document.createElement('ul')
                 fieldListHtml.classList.add("config-option__field-list") // TODO: deal with these classes
 
-                for (let field of (spec as ConfigSpecStruct).fields) {
+                let fields = (spec as ConfigSpecStruct).fields
+
+                // Display a special message if there are no fields
+                if (fields.length === 0) {
+                    // The only case where this message is ever shown is if the driver has no configration parameters.
+                    let isEmptyMessage = document.createElement('span')
+                    isEmptyMessage.classList.add("driver-no-configuration")
+                    isEmptyMessage.innerText = "Driver does not have any configuration parameters."
+
+                    return {
+                        html: isEmptyMessage,
+                        handle: null,
+                        source: spec,
+                    }
+                }
+
+                for (let field of fields) {
                     const subTree = specToHtml(field.type, field.name)
                     let listElement = document.createElement('li')
                     listElement.appendChild(subTree.html)
@@ -86,6 +102,7 @@
             case 'OPTION':
                 break
             default:
+                console.dir(spec)
                 console.error(`BUG warning: a new spec type (${spec.type}) was introduced without updating this code`)
                 return {
                     html: document.createElement('span'),

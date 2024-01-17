@@ -11,6 +11,7 @@
         <div class="driver__header">
             {driver.driver.vendorId}: {driver.driver.modelId}
         </div>
+        {#if driver.validationErrors.length === 0}
         <div class="driver__config">
             <div class="driver__config__driver">
                 <h6>Driver Configuration</h6>
@@ -21,9 +22,17 @@
                 <DynamicConfigurator bind:spec={driver.info.device} />
             </div>
         </div>
+        {:else}
+            <h6>Driver is broken: TODO</h6>
+        {/if}
     {/if}
 </div>
 
 <style lang="scss">
-
+    .driver {
+        background-color: gray;
+        margin-bottom: 1rem;
+        padding: 1rem 2rem;
+        border-radius: .3rem;
+    }
 </style>
