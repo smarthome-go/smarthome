@@ -1,14 +1,14 @@
 <script lang="ts">
     import type { ConfigSpec, ConfigSpecInner, ConfigSpecStruct } from "../driver";
     import { MDCTextField } from '@material/textfield';
-    // import '@material/web/icon/icon.js';
-    // import '@material/web/iconbutton/filled-icon-button.js';
-    // import '@material/web/iconbutton/filled-tonal-icon-button.js';
-    // import '@material/web/iconbutton/icon-button.js';
-    // import '@material/web/iconbutton/outlined-icon-button.js';
     import {MDCRipple} from '@material/ripple';
 
+    // NOTE: the output data is synced through the use of svelte events.
+    // The data format is structured as primitive json, as if it was serialized from Homescript directly.
+
     type HtmlInputType = 'number' | 'text';
+
+    export let data: any = {}
 
     export let topLevelLabel: string | null = null
     export let spec: ConfigSpec = null;
@@ -20,13 +20,12 @@
         source: ConfigSpec
     }
 
-    function deleteListElement(element: HTMLElement) {
-        element.remove()
-    }
-
-    function createListElement(spec: ConfigSpec): HTMLElement {
-        const tree = specToHtml(spec, null);
-        return tree.html
+    // Returns the index of the element that was removed
+    function deleteListElement(childElement: HTMLElement, parentList: HTMLElement): number {
+        // Determine the index of the element to be removed
+        const index = getChildNodePositionInParent(childElement, parentList)
+        childElement.remove()
+        return index
     }
 
     function createIconButton(mdIcon: string, callback: () => void): HTMLElement {
@@ -47,7 +46,17 @@
         return buttonOuter
     }
 
-    function createListConfigurator(nestedSpec: ConfigSpec, label: string | null): HTMLElement {
+    const LIST_BODY_CLASS_NAME = "config-option__list__body"
+    const LIST_BODY_ITEM_CLASS_NAME = `${LIST_BODY_CLASS_NAME}__item`
+    const STRUCT_FIELD_LIST_CLASS_NAME = "config-option__struct__fields"
+
+    // TODO: patch event listeners and ids when an element is removed
+    // OR: use a map which matches a parent-uri + a DOM node to a list-index
+    // NOTE: For removal of elements: multiple things need to happen:
+    // A new URI must be assigned to EVERY existing HTML element
+    // This includes modifying the callback function, the input ID and the descriptor ID
+    // Furthermore, the data object must be modified accordingly
+    function createListConfigurator(nestedSpec: ConfigSpec, label: string | null, listURI: JsonUri): HTMLElement {
         let listContainer = document.createElement('div')
         listContainer.classList.add("config-option__list", "mdc-elevation--z6")
 
@@ -60,38 +69,287 @@
         }
 
         // Create main body which contains the individual fields
-        let listBody = document.createElement("li")
-        listBody.classList.add("config-option__list__body")
+        let listBody = document.createElement("ul")
+        listBody.classList.add(LIST_BODY_CLASS_NAME)
         listContainer.appendChild(listBody)
 
         // Create footer button to add elements
         listContainer.appendChild(createIconButton('add', () => {
-            let listElementWrapper = document.createElement('li')
-            listElementWrapper.classList.add('config-option__list__body__item')
-
-            let listElementDeleteWrapper = document.createElement('div')
-            listElementDeleteWrapper.classList.add('config-option__list__body__item__delete')
-
-            let listElementDelete = createIconButton('delete', () => {
-                deleteListElement(listElementWrapper)
-            })
-
-            listElementDeleteWrapper.appendChild(listElementDelete)
-            listElementWrapper.appendChild(listElementDeleteWrapper)
-
-            listElementWrapper.appendChild(createListElement(nestedSpec))
-            listBody.appendChild(listElementWrapper)
+            addListElement(listBody, listURI, nestedSpec)
         }))
 
         return listContainer
     }
 
-    function specToHtml(spec: ConfigSpec, label: string | null): HtmlTree {
+    function addListElement(listBody: HTMLElement, listURI: JsonUri, nestedSpec: ConfigSpec) {
+        // When an element is added, an URI change must be emitted as well.
+        // Furthermore, the URIs for every list element must be recomputed.
+        let listElementWrapper = document.createElement('li')
+        listElementWrapper.classList.add(LIST_BODY_ITEM_CLASS_NAME)
+
+        let listElementDeleteWrapper = document.createElement('div')
+        listElementDeleteWrapper.classList.add(`${LIST_BODY_ITEM_CLASS_NAME}__delete`)
+
+        let listElementDelete = createIconButton('delete', () => {
+            // TODO: removal is going to be very expensive
+            deleteListElement(listElementWrapper, listBody)
+
+            patchListURIs(listBody, nestedSpec, listURI)
+        })
+
+        listElementDeleteWrapper.appendChild(listElementDelete)
+        listElementWrapper.appendChild(listElementDeleteWrapper)
+
+        // Compute the URI index for this element (used by creating a temporary replacement)
+        let temporaryDiv = document.createElement('div')
+        listBody.appendChild(temporaryDiv)
+        const uriIndex = getChildNodePositionInParent(temporaryDiv, listBody)
+        temporaryDiv.remove()
+
+        let newUri = listURI.clone()
+        newUri.push({
+            type: 'index',
+            listIndex: uriIndex,
+            fieldName: null,
+        })
+
+        let listElementInputWrapper = document.createElement('div')
+        listElementInputWrapper.classList.add(`${LIST_BODY_ITEM_CLASS_NAME}__input`)
+
+        let listElement = specToHtml(nestedSpec, null, newUri)
+        listElementInputWrapper.appendChild(listElement.html)
+
+        listElementWrapper.appendChild(listElementInputWrapper)
+        listBody.appendChild(listElementWrapper)
+    }
+
+    // TODO: remove this
+    // This function uses the nested spec to traverse the children of the list recursively,
+    // updating the URIs to use the correct indices.
+    // This function is only used when a list element is removed.
+    // function patchListChildURIs(
+    //     bodyNode: HTMLElement,
+    //     nestedSpec: ConfigSpec,
+    //     listURI: JsonUri,
+    // ) {
+    //     for (let child of bodyNode.children) {
+    //         patchElementURI(child as HTMLElement, nestedSpec, listURI)
+    //     }
+    // }
+
+    //
+    // URI DOM node patching
+    //
+
+    function patchElementURI(thisNode: HTMLElement, typeSpec: ConfigSpec, parentURI: JsonUri) {
+        switch (typeSpec.type) {
+            case 'INT':
+            case 'FLOAT':
+            case 'BOOL':
+            case 'STRING':
+                patchTextField(thisNode, parentURI)
+                break
+            case 'LIST':
+                const listSpec = typeSpec as ConfigSpecInner
+                patchListURIs(thisNode, listSpec.inner, parentURI)
+                break
+            case 'STRUCT':
+                const structSpec = typeSpec as ConfigSpecStruct
+                patchStructURIs(thisNode, structSpec, parentURI)
+                break
+            case 'OPTION':
+                // TODO: handle wrapper element?
+                const optionSpec = typeSpec as ConfigSpecInner
+                patchOptionUri(thisNode, optionSpec.inner, parentURI)
+                break
+            default:
+                console.dir(spec)
+                console.error(`BUG warning: a new spec type (${spec.type}) was introduced without updating this code`)
+                break
+        }
+    }
+
+    function patchListURIs(listParent: HTMLElement, listInnerTypeSpec: ConfigSpec, parentURI: JsonUri) {
+        console.log('patching list uris...')
+        console.dir(listParent)
+
+        let listChildren = listParent.children
+        if (listChildren.length === 0) {
+            // No children => no work todo
+            return
+        }
+
+        for (let idx = 0; idx < listChildren.length; idx++) {
+            let listChild = listChildren[idx]
+            const query = `.${LIST_BODY_ITEM_CLASS_NAME}__input`
+            let inputNode = listChild.querySelector(query)
+            if (inputNode === null) {
+                console.dir(listChild)
+                throw(`Cannot get input element of list element with query ${query}`)
+            }
+
+            let newUri = parentURI.clone()
+            newUri.push({
+                type: 'index',
+                fieldName: null,
+                listIndex: idx,
+            })
+
+            console.log(`Assigned new uri: ${newUri.string()}`)
+
+            patchElementURI(inputNode as HTMLElement, listInnerTypeSpec, newUri)
+            console.log(`patched idx: ${idx}`)
+        }
+    }
+
+    function patchStructURIs(structParent: HTMLElement, structTypeSpec: ConfigSpecStruct, parentURI: JsonUri) {
+        let fieldListHtml = structParent.querySelector(`.${STRUCT_FIELD_LIST_CLASS_NAME}`)
+
+        let fieldList = fieldListHtml.children
+        if (fieldList.length === 0) {
+            // No fields => bug
+            throw("Struct contains no fields")
+        }
+
+        for (let idx = 0; idx < fieldList.length; idx++) {
+            let fieldType = structTypeSpec.fields[idx]
+
+            let liElement = fieldList[idx] as HTMLElement
+
+            let inputNode = liElement.firstChild
+            if (inputNode === null) {
+                throw("Cannot get input node in list children")
+            }
+
+            patchElementURI(inputNode as HTMLElement, fieldType.type, parentURI)
+        }
+
+    }
+
+    function patchOptionUri(optionParent: HTMLElement, innerTypeSpec: ConfigSpec, parentURI: JsonUri) {
+        throw("Option patching is not implemented yet")
+    }
+
+    //
+    // END URI patching
+    //
+
+    function getChildNodePositionInParent(child: HTMLElement, parent: HTMLElement) : number {
+        for (let idx = 0; idx < parent.children.length; idx ++) {
+            // Test for equality
+            if (child.isEqualNode(parent.children.item(idx))) {
+                return idx
+            }
+        }
+
+        throw "Passed child node parameter is not an actal child of the parent parameter"
+    }
+
+    interface JsonUriComponent {
+        type: 'field' | 'index'
+        fieldName: string | null
+        listIndex: number | null
+    }
+
+    class JsonUri {
+        fields: JsonUriComponent[]
+
+        constructor(fromStr?: string) {
+            this.fields = []
+
+            if (!fromStr) {
+                return
+            }
+
+            // Split at `::`
+            let chunks = fromStr.split("::")
+
+            for (let chunk of chunks) {
+                let chunkSplit = chunk.split("@")
+                switch (chunkSplit[0]) {
+                    case "field":
+                        this.fields.push({
+                            type: 'field',
+                            fieldName: chunkSplit[1],
+                            listIndex: null,
+                        })
+                        break
+                    case "idx":
+                        this.fields.push({
+                            type: 'index',
+                            fieldName: null,
+                            listIndex: parseInt(chunkSplit[1]),
+                        })
+                        break
+                    default:
+                        throw(`Unsupported ID encoding chunk: ${chunk}`)
+                }
+            }
+        }
+
+        push(newComponent: JsonUriComponent) {
+            this.fields.push(newComponent)
+        }
+
+        pop(): JsonUriComponent {
+            return this.fields.pop()
+        }
+
+        parent(): JsonUri {
+            let cloned = this.clone()
+            cloned.pop()
+            return cloned
+        }
+
+        // If parent is n segments long, the first n segments of this URI will be changed to the one of the parent.
+        overrideStart(parent: JsonUri) {
+            let parentCloned = parent.clone()
+
+            // Overwrite the first n segments
+            for (let idx = 0; idx < parentCloned.fields.length; idx++) {
+                this.fields[idx] = parentCloned.fields[idx]
+            }
+        }
+
+        clone(): JsonUri {
+            let newUri = new JsonUri()
+
+            for (let field of this.fields) {
+                newUri.push({
+                    type: field.type,
+                    fieldName: field.fieldName,
+                    listIndex: field.listIndex,
+                })
+            }
+
+            return newUri
+        }
+
+        string(): string {
+            return this.fields.map((field) => {
+                switch (field.type) {
+                    case "field":
+                        // TODO: sanitize field name: base64 encoding?
+                        return `field@${field.fieldName}`
+                    case "index":
+                        return `idx@${field.listIndex}`
+                    default:
+                        throw(`BUG warning: a new URI component type was added without updating this code (${field.type})`)
+                }
+            }).join("::")
+        }
+    }
+
+    function maniplateUriValue(uri: JsonUri, data: any) {
+
+    }
+
+    function specToHtml(spec: ConfigSpec, label: string | null, uri: JsonUri): HtmlTree {
         console.log('specToHtml: ', spec, label)
 
         switch (spec.type) {
             case 'INT': {
-                const [html, handle] = newTextField('foobar', 'number', label)
+                const [html, handle] = newTextField(uri, 'number', label)
 
                 return {
                     html,
@@ -102,7 +360,7 @@
             case 'BOOL': {
                 console.error("TODO", spec.type)
 
-                const [html, handle] = newTextField('foobar', 'number', label)
+                const [html, handle] = newTextField(uri, 'number', label)
 
                 return {
                     html,
@@ -114,9 +372,7 @@
                 const listSpec = spec as ConfigSpecInner
                 console.error("TODO", spec.type)
 
-                let listHtml = createListConfigurator(listSpec.inner, label)
-
-                // const [html, handle] = newTextField('foobar', 'number', label)
+                let listHtml = createListConfigurator(listSpec.inner, label, uri)
 
                 return {
                     html: listHtml,
@@ -125,7 +381,7 @@
                 }
             }
             case 'FLOAT': {
-                const [html, handle] = newTextField('foobar', 'number', label)
+                const [html, handle] = newTextField(uri, 'number', label)
 
                 return {
                     html,
@@ -134,7 +390,7 @@
                 }
             }
             case 'STRING': {
-                const [html, handle] = newTextField('foobar', 'text', label)
+                const [html, handle] = newTextField(uri, 'text', label)
 
                 return {
                     html,
@@ -173,7 +429,15 @@
                 }
 
                 for (let field of fields) {
-                    const subTree = specToHtml(field.type, field.name)
+                    // Add the name to the text element URI
+                    let newURI = uri.clone()
+                    newURI.push({
+                        type: 'field',
+                        fieldName: field.name,
+                        listIndex: null,
+                    })
+
+                    const subTree = specToHtml(field.type, field.name, newURI)
                     let listElement = document.createElement('li')
                     listElement.classList.add('config-option__struct__fields__field')
 
@@ -202,7 +466,13 @@
         }
     }
 
-    function newTextField(labelId: string, inputType: HtmlInputType, labelText: string | null): [HTMLElement, MDCTextField] {
+    function onInputHook(uri: JsonUri, inputElement: HTMLInputElement){
+            console.log(`input "${uri.string()}" changed to ${inputElement.value}`)
+    }
+
+    function newTextField(uri: JsonUri, inputType: HtmlInputType, labelText: string | null): [HTMLElement, MDCTextField] {
+        const labelId = uri.string()
+
         let inputInnerLabel = document.createElement('span')
         inputInnerLabel.classList.add("mdc-floating-label")
         inputInnerLabel.id = labelId
@@ -214,6 +484,10 @@
         inputElement.type = inputType
         inputElement.classList.add("mdc-text-field__input")
         inputElement.setAttribute('aria-labelledby', labelId)
+
+        // Listen to update events
+        // TODO: persist these changes via URI addressing
+        inputElement.oninput = (_) => { onInputHook(uri, inputElement) }
 
         let rippleSpan = document.createElement('span')
         rippleSpan.classList.add('mdc-text-field__ripple')
@@ -230,6 +504,37 @@
         return [outerLabel, textField]
     }
 
+    function patchTextField(textFieldParent: HTMLElement, parentURI: JsonUri) {
+        let inputInnerLabel = textFieldParent.querySelector('.mdc-floating-label')
+        if (inputInnerLabel === null) {
+            throw("Input inner label of textfield not found")
+        }
+
+        // Parse old URI
+        const oldUri = new JsonUri(inputInnerLabel.id)
+        // Create new URI
+        let newUri = oldUri.clone()
+        newUri.overrideStart(parentURI)
+
+        console.log(`old uri: ${oldUri.string()} | new uri: ${newUri.string()} | patch fragment: ${parentURI.string()}`)
+
+        const newUriId = newUri.string()
+        // Update id of label
+        inputInnerLabel.id = newUriId
+
+        let inputElement: HTMLInputElement = textFieldParent.querySelector(".mdc-text-field__input")
+        if (inputElement === null) {
+            throw("Input element of textfield not found")
+        }
+        // Update reference to label id
+        inputElement.setAttribute('aria-labelledby', newUriId)
+
+        // Update on-input hook
+        inputElement.oninput = (_) => { onInputHook(newUri, inputElement) }
+
+        console.log("patched text field")
+    }
+
     function generateInputs(data: ConfigSpec | null, topLevelLabel: string | null) {
         console.log('hi')
 
@@ -237,7 +542,7 @@
             return
         }
 
-        const generatedTree = specToHtml(data, topLevelLabel)
+        const generatedTree = specToHtml(data, topLevelLabel, new JsonUri())
 
         // TODO: use mdc component to customize it
         console.dir(generatedTree)
