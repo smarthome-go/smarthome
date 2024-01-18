@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { ConfigSpec, ConfigSpecInner, ConfigSpecStruct } from "../driver";
+    import type { ConfigSpec, ConfigSpecInner, ConfigSpecStruct, ConfigSpecType } from "../driver";
     import { MDCTextField } from '@material/textfield';
     import {MDCRipple} from '@material/ripple';
 
@@ -9,6 +9,7 @@
     type HtmlInputType = 'number' | 'text';
 
     export let data: any = {}
+    $: console.dir(data)
 
     export let topLevelLabel: string | null = null
     export let spec: ConfigSpec = null;
@@ -95,6 +96,8 @@
             deleteListElement(listElementWrapper, listBody)
 
             patchListURIs(listBody, nestedSpec, listURI)
+
+            // TODO: delete data element from data object
         })
 
         listElementDeleteWrapper.appendChild(listElementDelete)
@@ -121,6 +124,23 @@
 
         listElementWrapper.appendChild(listElementInputWrapper)
         listBody.appendChild(listElementWrapper)
+        
+        let thisListValue = getUriValue(listURI) as []
+        thisListValue.push(createDefaultDataFromSpec(spec))
+    }
+
+    function createDefaultDataFromSpec(spec: ConfigSpec): any {
+        switch (spec.type) {
+            case 'INT':
+            case 'FLOAT':
+            case 'BOOL':
+            case 'STRING':
+            case 'LIST':
+            case 'STRUCT':
+            case 'OPTION':
+            default:
+                throw(`A new config spec was introduced without updating this code: ${spec.type}`)
+        }
     }
 
     // TODO: remove this
@@ -295,6 +315,14 @@
             return this.fields.pop()
         }
 
+        popFront(): JsonUriComponent {
+            return this.fields.shift()
+        }
+
+        isEmpty(): boolean {
+            return this.fields.length === 0
+        }
+
         parent(): JsonUri {
             let cloned = this.clone()
             cloned.pop()
@@ -340,8 +368,113 @@
         }
     }
 
-    function maniplateUriValue(uri: JsonUri, data: any) {
+    function getUriValue(uri: JsonUri): any {
+        console.log(`Getting data from ${uri}...`)
 
+        // Traverse and manipulate
+        let addressableData = data
+
+        let lastSegment = null
+
+        while (1) {
+            lastSegment = uri.pop()
+
+            if (uri.fields.length === 0) {
+                // Perform assignment, address has been reached
+
+                switch (lastSegment.type) {
+                    case 'field':
+                        return addressableData[lastSegment.fieldName]
+                    case 'index':
+                        return addressableData[lastSegment.listIndex]
+                    default:
+                        throw(`A new segment type was introduced without updating this code`)
+                }
+            }
+
+            switch (lastSegment.type) {
+                case 'field':
+                    addressableData = addressableData[lastSegment.fieldName]
+
+                    if (addressableData !== null) {
+                        throw(`field ${lastSegment.fieldName} is undefined`)
+                    }
+
+                    break
+                case 'index':
+                    addressableData = addressableData[lastSegment.listIndex]
+
+                    if (addressableData !== null) {
+                        throw(`index ${lastSegment.listIndex} is undefined`)
+                    }
+
+                    break
+                default:
+                    throw(`A new segment type was introduced without updating this code`)
+            }
+        }
+
+        return addressableData
+    }
+
+    function maniplateUriValue(uri: JsonUri, newData: any) {
+        console.log(`Manipulating ${uri} to ${newData}`)
+
+        let targetData = getUriValue(uri)
+        targetData = newData
+
+        return
+
+        // Traverse and manipulate
+        let addressableData = data
+
+        let lastSegment = null
+
+        while (1) {
+            lastSegment = uri.pop()
+
+            if (uri.fields.length === 0) {
+                // Perform assignment, address has been reached
+
+                switch (lastSegment.type) {
+                    case 'field':
+                        addressableData[lastSegment.fieldName] = newData
+                        break
+                    case 'index':
+                        addressableData[lastSegment.listIndex] = newData
+                        break
+                    default:
+                        throw(`A new segment type was introduced without updating this code`)
+                }
+
+                break
+            }
+
+            switch (lastSegment.type) {
+                case 'field':
+                    addressableData = addressableData[lastSegment.fieldName]
+
+                    if (addressableData !== null) {
+                        throw(`field ${lastSegment.fieldName} is undefined`)
+                    }
+
+                    break
+                case 'index':
+                    addressableData = addressableData[lastSegment.listIndex]
+
+                    if (addressableData !== null) {
+                        throw(`index ${lastSegment.listIndex} is undefined`)
+                    }
+
+                    break
+                default:
+                    throw(`A new segment type was introduced without updating this code`)
+            }
+        }
+
+        // if (lastSegment === null) {
+        //     throw(`Cannot manipulate URI value: last segment is null`)
+        // }
     }
 
     function specToHtml(spec: ConfigSpec, label: string | null, uri: JsonUri): HtmlTree {
@@ -468,6 +601,9 @@
 
     function onInputHook(uri: JsonUri, inputElement: HTMLInputElement){
             console.log(`input "${uri.string()}" changed to ${inputElement.value}`)
+
+            // TODO: implement string / bool -> string parsing
+            maniplateUriValue(uri, inputElement.value)
     }
 
     function newTextField(uri: JsonUri, inputType: HtmlInputType, labelText: string | null): [HTMLElement, MDCTextField] {
