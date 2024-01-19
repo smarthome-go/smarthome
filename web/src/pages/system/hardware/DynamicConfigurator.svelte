@@ -4,12 +4,16 @@
     import {MDCRipple} from '@material/ripple';
     import { createEventDispatcher } from 'svelte'
 
+    const dispatch = createEventDispatcher()
 
     type HtmlInputType = 'number' | 'text';
 
-    // NOTE: the output data is synced through the use of Svelte's reactive change detection.
-    // This data structure is structured as primitive JSON object, as if it was serialized from Homescript directly.
-    export let data: any = {}
+    // TODO: write comment
+    export let inputData: any = null
+
+    $: if (inputData !== null) drawUi(inputData)
+
+    // TODO: if data changes externally, the contents of the inputs should also be redrawn
 
     // Any UI inputs will first be commited to this data structure.
     // Afterwards, the changes are synced to the external data object in order to trigger Svelte's reactive update.
@@ -61,7 +65,12 @@
     // A new URI must be assigned to EVERY existing HTML element
     // This includes modifying the callback function, the input ID and the descriptor ID
     // Furthermore, the data object must be modified accordingly
-    function createListConfigurator(nestedSpec: ConfigSpec, label: string | null, listURI: JsonUri): HTMLElement {
+    function createListConfigurator(
+        nestedSpec: ConfigSpec,
+        label: string | null,
+        listURI: JsonUri,
+        currentValues: any[],
+    ): HTMLElement {
         let listContainer = document.createElement('div')
         listContainer.classList.add("config-option__list", "mdc-elevation--z6")
 
@@ -78,15 +87,24 @@
         listBody.classList.add(LIST_BODY_CLASS_NAME)
         listContainer.appendChild(listBody)
 
+        for (let element of currentValues) {
+            addListElement(listBody, listURI, nestedSpec, element)
+        }
+
         // Create footer button to add elements
         listContainer.appendChild(createIconButton('add', () => {
-            addListElement(listBody, listURI, nestedSpec)
+            addListElement(listBody, listURI, nestedSpec, createDefaultDataFromSpec(nestedSpec))
         }))
 
         return listContainer
     }
 
-    function addListElement(listBody: HTMLElement, listURI: JsonUri, nestedSpec: ConfigSpec) {
+    function addListElement(
+        listBody: HTMLElement,
+        listURI: JsonUri,
+        nestedSpec: ConfigSpec,
+        currentValue: any,
+    ) {
         // When an element is added, an URI change must be emitted as well.
         // Furthermore, the URIs for every list element must be recomputed.
         let listElementWrapper = document.createElement('li')
@@ -125,7 +143,7 @@
         let listElementInputWrapper = document.createElement('div')
         listElementInputWrapper.classList.add(`${LIST_BODY_ITEM_CLASS_NAME}__input`)
 
-        let listElement = specToHtml(nestedSpec, null, newUri)
+        let listElement = specToHtml(nestedSpec, null, newUri, createDefaultDataFromSpec(nestedSpec))
         listElementInputWrapper.appendChild(listElement.html)
 
         listElementWrapper.appendChild(listElementInputWrapper)
@@ -543,12 +561,17 @@
         // }
     }
 
-    function specToHtml(spec: ConfigSpec, label: string | null, uri: JsonUri): HtmlTree {
-        console.log('specToHtml: ', spec, label)
+    function specToHtml(
+        spec: ConfigSpec,
+        label: string | null,
+        uri: JsonUri,
+        currentValue: any,
+    ): HtmlTree {
+        console.log('specToHtml: ', spec, label, currentValue)
 
         switch (spec.type) {
             case 'INT': {
-                const [html, handle] = newTextField(uri, 'number', label)
+                const [html, handle] = newTextField(uri, 'number', label, currentValue)
 
                 return {
                     html,
@@ -559,7 +582,7 @@
             case 'BOOL': {
                 console.error("TODO", spec.type)
 
-                const [html, handle] = newTextField(uri, 'number', label)
+                const [html, handle] = newTextField(uri, 'number', label, currentValue)
 
                 return {
                     html,
@@ -571,7 +594,7 @@
                 const listSpec = spec as ConfigSpecInner
                 console.error("TODO", spec.type)
 
-                let listHtml = createListConfigurator(listSpec.inner, label, uri)
+                let listHtml = createListConfigurator(listSpec.inner, label, uri, currentValue)
 
                 return {
                     html: listHtml,
@@ -580,7 +603,7 @@
                 }
             }
             case 'FLOAT': {
-                const [html, handle] = newTextField(uri, 'number', label)
+                const [html, handle] = newTextField(uri, 'number', label, currentValue)
 
                 return {
                     html,
@@ -589,7 +612,7 @@
                 }
             }
             case 'STRING': {
-                const [html, handle] = newTextField(uri, 'text', label)
+                const [html, handle] = newTextField(uri, 'text', label, currentValue)
 
                 return {
                     html,
@@ -598,6 +621,7 @@
                 }
             }
             case 'STRUCT':
+                // TODO: handle current value
                 let structParent = document.createElement('div')
                 structParent.classList.add('config-option__struct', 'mdc-elevation--z6')
 
@@ -636,7 +660,7 @@
                         listIndex: null,
                     })
 
-                    const subTree = specToHtml(field.type, field.name, newURI)
+                    const subTree = specToHtml(field.type, field.name, newURI, currentValue[field.name])
                     let listElement = document.createElement('li')
                     listElement.classList.add('config-option__struct__fields__field')
 
@@ -667,9 +691,7 @@
 
     // TODO: deprecate this in favor of a second, proxy data object
     function commitState() {
-        // dispatch('change', data)
-
-        data = dataInternal
+        dispatch('change', dataInternal)
     }
 
     function onInputHook(uri: JsonUri, inputElement: HTMLInputElement){
@@ -680,7 +702,12 @@
             commitState()
     }
 
-    function newTextField(uri: JsonUri, inputType: HtmlInputType, labelText: string | null): [HTMLElement, MDCTextField] {
+    function newTextField(
+        uri: JsonUri,
+        inputType: HtmlInputType,
+        labelText: string | null,
+        currentValue: any,
+    ): [HTMLElement, MDCTextField] {
         const labelId = uri.string()
 
         let inputInnerLabel = document.createElement('span')
@@ -697,7 +724,13 @@
 
         // Listen to update events
         // TODO: persist these changes via URI addressing
+        // TODO: validate input type
         inputElement.oninput = (_) => { onInputHook(uri, inputElement) }
+
+        // TODO: add different values depending on the type?
+        if (currentValue !== null) {
+            inputElement.value = currentValue
+        }
 
         let rippleSpan = document.createElement('span')
         rippleSpan.classList.add('mdc-text-field__ripple')
@@ -745,14 +778,14 @@
         console.log("patched text field")
     }
 
-    function generateInputs(data: ConfigSpec | null, topLevelLabel: string | null) {
-        console.log('hi')
+    function generateInputs(spec: ConfigSpec | null, topLevelLabel: string | null, currentData: any) {
+        console.log('Building input dom...')
 
-        if (data === null || dom === null) {
+        if (spec === null || dom === null) {
             return
         }
 
-        const generatedTree = specToHtml(data, topLevelLabel, new JsonUri())
+        const generatedTree = specToHtml(spec, topLevelLabel, new JsonUri(), currentData)
 
         // TODO: use mdc component to customize it
         console.dir(generatedTree)
@@ -764,9 +797,18 @@
         dom.appendChild(generatedTree.html)
     }
 
+    function drawUi(currentData: any) {
+        generateInputs(spec, topLevelLabel, currentData)
+    }
+
     $: if (spec !== null) {
         dataInternal = createDefaultDataFromSpec(spec)
-        generateInputs(spec, topLevelLabel)
+
+        if (inputData === null) {
+            inputData = createDefaultDataFromSpec(spec)
+        }
+
+        drawUi(inputData)
         commitState()
     }
 </script>

@@ -5,7 +5,40 @@
     export let driver: FetchedDriver = null
     $: if (driver) console.log('driver changed')
 
-    let configuratorData: any = {}
+    // <!--     jsonValue = `\n${JSON.stringify(configuratorOutputData, null, 2).replace('\t', '')}` -->
+
+    let textareaContent = ""
+
+    let preventReacttoOutput = false
+
+    function reactToInput() {
+        textareaContent = textarea.value
+        console.log(`TEXTAREA CONTENT: ${textareaContent}`)
+
+        try {
+            let parsedTemp = JSON.parse(textareaContent)
+            inputData = parsedTemp
+
+            if (!preventReacttoOutput) {
+                preventReacttoOutput = true
+                setTimeout(() => preventReacttoOutput = false, 10)
+            }
+        } catch (err) {
+            console.error(`JSON parse error: `, err)
+        }
+    }
+
+    let textarea: HTMLTextAreaElement = null
+
+    function reactToOutput(data: any) {
+        if (textarea.isEqualNode(document.activeElement) || preventReacttoOutput) {
+            console.warn("is active element, prevent cycle")
+            return
+        }
+        textareaContent = `\n${JSON.stringify(data, null, 2)}`
+    }
+
+    let inputData = null
 </script>
 
 <div class="driver mdc-elevation--z3">
@@ -20,7 +53,8 @@
             <div class="driver__config">
                 <DynamicConfigurator
                     bind:spec={driver.info.driver}
-                    bind:data={configuratorData}
+                    on:change={ (e) => reactToOutput(e.detail) }
+                    bind:inputData
                     topLevelLabel={`Driver-wide configuration`}
                 />
             </div>
@@ -32,9 +66,7 @@
         </div>
 
         <h6>JSON configuration output</h6>
-        <textarea rows="10" cols="40">
-            { `\n${JSON.stringify(configuratorData, null, 2).replace('\t', '')}` }
-        </textarea>
+            <textarea bind:this={textarea} on:input={(_) => reactToInput()} rows="10" cols="40" value={textareaContent}></textarea>
         {:else}
             <h6>Driver is broken: TODO</h6>
         {/if}
