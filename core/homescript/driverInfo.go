@@ -1,8 +1,15 @@
 package homescript
 
+import "github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
+
 type DriverInfo struct {
-	DriverConfig ConfigFieldDescriptorStruct `json:"driver"`
-	DeviceConfig ConfigFieldDescriptorStruct `json:"device"`
+	DriverConfig ConfigInfoWrapper `json:"driver"`
+	DeviceConfig ConfigInfoWrapper `json:"device"`
+}
+
+type ConfigInfoWrapper struct {
+	Config  ConfigFieldDescriptorStruct
+	HmsType ast.Type
 }
 
 type CONFIG_FIELD_TYPE string

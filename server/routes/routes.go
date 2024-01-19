@@ -231,10 +231,11 @@ func NewRouter() *mux.Router {
 	// TODO: what to do with hardware nodes?
 
 	// Hardware driver management
-	r.HandleFunc("/api/system/hardware/drivers/list", mdl.ApiAuth(mdl.Perm(api.ListDeviceDrivers, database.PermissionSystemConfig))).Methods("GET")
-	r.HandleFunc("/api/system/hardware/drivers/add", mdl.ApiAuth(mdl.Perm(api.CreateDeviceDriver, database.PermissionSystemConfig))).Methods("POST")
-	r.HandleFunc("/api/system/hardware/drivers/modify", mdl.ApiAuth(mdl.Perm(api.ModifyDeviceDriver, database.PermissionSystemConfig))).Methods("PUT")
-	r.HandleFunc("/api/system/hardware/drivers/delete", mdl.ApiAuth(mdl.Perm(api.DeleteDeviceDriver, database.PermissionSystemConfig))).Methods("DELETE")
+	r.HandleFunc("/api/system/hardware/driver/list", mdl.ApiAuth(mdl.Perm(api.ListDeviceDrivers, database.PermissionSystemConfig))).Methods("GET")
+	r.HandleFunc("/api/system/hardware/driver/add", mdl.ApiAuth(mdl.Perm(api.CreateDeviceDriver, database.PermissionSystemConfig))).Methods("POST")
+	r.HandleFunc("/api/system/hardware/driver/modify", mdl.ApiAuth(mdl.Perm(api.ModifyDeviceDriver, database.PermissionSystemConfig))).Methods("PUT")
+	r.HandleFunc("/api/system/hardware/driver/configure", mdl.ApiAuth(mdl.Perm(api.ConfigureDeviceDriver, database.PermissionSystemConfig))).Methods("PUT")
+	r.HandleFunc("/api/system/hardware/driver/delete", mdl.ApiAuth(mdl.Perm(api.DeleteDeviceDriver, database.PermissionSystemConfig))).Methods("DELETE")
 	// TODO: add driver support
 
 	// Logging

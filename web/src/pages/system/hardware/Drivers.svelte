@@ -29,6 +29,34 @@
         loading = false
     }
 
+    async function saveDriverConifig(driverVendorId: string, driverModelId: string, configuredData: any) {
+        loading = true
+
+        try {
+            let res = await fetch(
+                '/api/system/hardware/driver/configure', {
+                    method: "PUT",
+                    body: JSON.stringify({
+                        driver: {
+                            vendorId: driverVendorId,
+                            modelId: driverModelId,
+                        },
+                        data: configuredData
+                    })
+                }
+            )
+
+            if (res.status !== 200) {
+                let msg  = await res.json()
+                throw `${msg.message}: ${msg.error}`
+            }
+        } catch (err) {
+            $createSnackbar(`Saving driver configuration failed: ${err}`)
+        }
+
+        loading = false
+    }
+
     onMount(refresh);
 </script>
 
@@ -76,7 +104,7 @@
                 <span class="text-hint">No installed drivers </span>
             {:else}
                 {#each drivers as driver}
-                    <DriverComponent bind:driver />
+                    <DriverComponent bind:driver on:save={(e) => saveDriverConifig(e.detail)} />
                 {/each}
             {/if}
         </div>
