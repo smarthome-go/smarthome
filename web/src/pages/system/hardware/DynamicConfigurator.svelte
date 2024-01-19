@@ -2,6 +2,9 @@
     import type { ConfigSpec, ConfigSpecInner, ConfigSpecStruct, ConfigSpecType } from "../driver";
     import { MDCTextField } from '@material/textfield';
     import {MDCRipple} from '@material/ripple';
+    import { createEventDispatcher } from 'svelte'
+
+    const dispatch = createEventDispatcher()
 
     // NOTE: the output data is synced through the use of svelte events.
     // The data format is structured as primitive json, as if it was serialized from Homescript directly.
@@ -9,7 +12,6 @@
     type HtmlInputType = 'number' | 'text';
 
     export let data: any = {}
-    $: console.dir(data)
 
     export let topLevelLabel: string | null = null
     export let spec: ConfigSpec = null;
@@ -93,11 +95,14 @@
 
         let listElementDelete = createIconButton('delete', () => {
             // TODO: removal is going to be very expensive
-            deleteListElement(listElementWrapper, listBody)
+            const removalIndex = deleteListElement(listElementWrapper, listBody)
 
             patchListURIs(listBody, nestedSpec, listURI)
 
             // TODO: delete data element from data object
+
+            getUriValue(listURI.clone()).splice(removalIndex, 1)
+            emitChange()
         })
 
         listElementDeleteWrapper.appendChild(listElementDelete)
@@ -124,20 +129,41 @@
 
         listElementWrapper.appendChild(listElementInputWrapper)
         listBody.appendChild(listElementWrapper)
-        
-        let thisListValue = getUriValue(listURI) as []
-        thisListValue.push(createDefaultDataFromSpec(spec))
+
+        // NOTE: this code updates the underlying data representation to reflect the addition of an element
+        // Furthermore, a change event is emitted so that parent component can react reactively
+        getUriValue(listURI.clone()).push(createDefaultDataFromSpec(nestedSpec))
+        emitChange()
+
+        console.log(`list grow: ${getUriValue(listURI.clone())} | new spec: `)
+        console.dir(nestedSpec)
+        console.dir(data)
     }
 
     function createDefaultDataFromSpec(spec: ConfigSpec): any {
         switch (spec.type) {
             case 'INT':
+                return 0
             case 'FLOAT':
+                return 0.1
             case 'BOOL':
+                return false
             case 'STRING':
+                return ""
             case 'LIST':
+                return []
             case 'STRUCT':
+                let structSpec = spec as ConfigSpecStruct
+                let dataObj = {}
+
+                for (let field of structSpec.fields) {
+                    dataObj[field.name] = createDefaultDataFromSpec(field.type)
+                }
+
+                return dataObj
             case 'OPTION':
+                throw(`TODO: option`)
+                return null
             default:
                 throw(`A new config spec was introduced without updating this code: ${spec.type}`)
         }
@@ -183,8 +209,8 @@
                 patchOptionUri(thisNode, optionSpec.inner, parentURI)
                 break
             default:
-                console.dir(spec)
-                console.error(`BUG warning: a new spec type (${spec.type}) was introduced without updating this code`)
+                console.dir(typeSpec)
+                console.error(`BUG warning: a new spec type (${typeSpec.type}) was introduced without updating this code`)
                 break
         }
     }
@@ -368,60 +394,99 @@
         }
     }
 
-    function getUriValue(uri: JsonUri): any {
-        console.log(`Getting data from ${uri}...`)
+    function getUriValue(uriIn: JsonUri): any {
+        let uri = uriIn.clone()
+        console.log(`Getting data from ${uri.string()}...`)
 
         // Traverse and manipulate
         let addressableData = data
 
-        let lastSegment = null
+        let firstSegment = null
 
         while (1) {
-            lastSegment = uri.pop()
+            console.log(`URI: `, uri.string(), `CURR DATA: `, addressableData)
 
             if (uri.fields.length === 0) {
                 // Perform assignment, address has been reached
 
-                switch (lastSegment.type) {
-                    case 'field':
-                        return addressableData[lastSegment.fieldName]
-                    case 'index':
-                        return addressableData[lastSegment.listIndex]
-                    default:
-                        throw(`A new segment type was introduced without updating this code`)
-                }
+                // switch (lastSegment.type) {
+                //     case 'field': {
+                //         const val = addressableData[lastSegment.fieldName]
+                //         if (val === undefined) {
+                //             throw(`Field "${lastSegment.fieldName}" of value is undefined`)
+                //         }
+                //         return val
+                //     }
+                //     case 'index': {
+                //         const val = addressableData[lastSegment.listIndex]
+                //         if (val === undefined) {
+                //             throw(`Index "${lastSegment.listIndex}" of value is undefined`)
+                //         }
+                //         return val
+                //     }
+                //     default:
+                //         throw(`A new segment type was introduced without updating this code`)
+                // }
+
+                console.log("returning addressableData: ", addressableData)
+                return addressableData
             }
 
-            switch (lastSegment.type) {
-                case 'field':
-                    addressableData = addressableData[lastSegment.fieldName]
+            firstSegment = uri.popFront()
 
-                    if (addressableData !== null) {
-                        throw(`field ${lastSegment.fieldName} is undefined`)
+            switch (firstSegment.type) {
+                case 'field':
+                    addressableData = addressableData[firstSegment.fieldName]
+
+                    if (addressableData === undefined) {
+                        throw(`field ${firstSegment.fieldName} is undefined`)
                     }
 
                     break
                 case 'index':
-                    addressableData = addressableData[lastSegment.listIndex]
+                    const old = addressableData
+                    addressableData = old[firstSegment.listIndex]
 
-                    if (addressableData !== null) {
-                        throw(`index ${lastSegment.listIndex} is undefined`)
+                    if (addressableData === undefined) {
+                        console.dir(old)
+                        throw(`index ${firstSegment.listIndex} is undefined`)
                     }
 
                     break
                 default:
                     throw(`A new segment type was introduced without updating this code`)
             }
+
+            console.log("updated addressableData in this iteration: ", addressableData)
         }
 
         return addressableData
     }
 
-    function maniplateUriValue(uri: JsonUri, newData: any) {
-        console.log(`Manipulating ${uri} to ${newData}`)
+    function maniplateUriValue(uriIn: JsonUri, newData: any) {
+        let uri = uriIn.clone()
+        console.log(`Manipulating ${uri.string()} to ${newData}`)
 
-        let targetData = getUriValue(uri)
-        targetData = newData
+        // Pop the back from the uri as we need the parent of the field, not the field itself.
+        // If we would assign to the field itself, it would be a literal, making this assignment redundant.
+        // => We need a object / list reference
+        const literalUri = uri.pop()
+        let targetDataParent = getUriValue(uri)
+
+        // Perform field access via the parent
+        switch (literalUri.type) {
+            case 'field':
+                targetDataParent[literalUri.fieldName] = newData
+                break
+            case 'index':
+                targetDataParent[literalUri.listIndex] = newData
+                break
+            default:
+                throw("A new uri kind was introduced without updating this code")
+        }
+
+        // TODO: field access
+        // targetDataParent = newData
 
         return
 
@@ -599,11 +664,17 @@
         }
     }
 
+    // TODO: deprecate this in favor of a second, proxy data object
+    function emitChange() {
+        dispatch('change', data)
+    }
+
     function onInputHook(uri: JsonUri, inputElement: HTMLInputElement){
             console.log(`input "${uri.string()}" changed to ${inputElement.value}`)
 
             // TODO: implement string / bool -> string parsing
             maniplateUriValue(uri, inputElement.value)
+            emitChange()
     }
 
     function newTextField(uri: JsonUri, inputType: HtmlInputType, labelText: string | null): [HTMLElement, MDCTextField] {
@@ -690,7 +761,11 @@
         dom.appendChild(generatedTree.html)
     }
 
-    $: if (spec !== null) generateInputs(spec, topLevelLabel)
+    $: if (spec !== null) {
+        data = createDefaultDataFromSpec(spec)
+        generateInputs(spec, topLevelLabel)
+        emitChange()
+    }
 </script>
 
 <div class="configurator">
@@ -700,12 +775,6 @@
 </div>
 
 <style lang="scss">
-    @use "@material/floating-label/mdc-floating-label";
-    @use "@material/line-ripple/mdc-line-ripple";
-    @use "@material/notched-outline/mdc-notched-outline";
-    @use "@material/textfield";
-    @include textfield.core-styles;
-
     :global(ul) {
         list-style-type: none;
 

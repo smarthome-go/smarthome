@@ -4,6 +4,8 @@
 
     export let driver: FetchedDriver = null
     $: if (driver) console.log('driver changed')
+
+    let configuratorData: any = {}
 </script>
 
 <div class="driver mdc-elevation--z3">
@@ -16,7 +18,11 @@
         {#if driver.validationErrors.length === 0}
         <div class="driver__config">
             <div class="driver__config">
-                <DynamicConfigurator bind:spec={driver.info.driver} topLevelLabel={`Driver-wide configuration`} />
+                <DynamicConfigurator
+                    bind:spec={driver.info.driver}
+                    on:change={(e) => {configuratorData = e.detail; console.dir(e.detail)}}
+                    topLevelLabel={`Driver-wide configuration`}
+                />
             </div>
 
             <!-- <div class="driver__config__device"> -->
@@ -24,6 +30,11 @@
             <!--     <DynamicConfigurator bind:spec={driver.info.device} topLevelLabel={"PER-DEVICE"} /> -->
             <!-- </div> -->
         </div>
+
+        <h6>JSON configuration output</h6>
+        <textarea rows="10" cols="40">
+            { `\n${JSON.stringify(configuratorData, null, 2).replace('\t', '')}` }
+        </textarea>
         {:else}
             <h6>Driver is broken: TODO</h6>
         {/if}
