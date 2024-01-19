@@ -4,14 +4,16 @@
     import {MDCRipple} from '@material/ripple';
     import { createEventDispatcher } from 'svelte'
 
-    const dispatch = createEventDispatcher()
-
-    // NOTE: the output data is synced through the use of svelte events.
-    // The data format is structured as primitive json, as if it was serialized from Homescript directly.
 
     type HtmlInputType = 'number' | 'text';
 
+    // NOTE: the output data is synced through the use of Svelte's reactive change detection.
+    // This data structure is structured as primitive JSON object, as if it was serialized from Homescript directly.
     export let data: any = {}
+
+    // Any UI inputs will first be commited to this data structure.
+    // Afterwards, the changes are synced to the external data object in order to trigger Svelte's reactive update.
+    let dataInternal: any = {}
 
     export let topLevelLabel: string | null = null
     export let spec: ConfigSpec = null;
@@ -94,15 +96,14 @@
         listElementDeleteWrapper.classList.add(`${LIST_BODY_ITEM_CLASS_NAME}__delete`)
 
         let listElementDelete = createIconButton('delete', () => {
-            // TODO: removal is going to be very expensive
+            // NOTE: removal is quite expensive
             const removalIndex = deleteListElement(listElementWrapper, listBody)
 
             patchListURIs(listBody, nestedSpec, listURI)
 
-            // TODO: delete data element from data object
-
+            // Deleting this list element from the underlying data object
             getUriValue(listURI.clone()).splice(removalIndex, 1)
-            emitChange()
+            commitState()
         })
 
         listElementDeleteWrapper.appendChild(listElementDelete)
@@ -133,11 +134,11 @@
         // NOTE: this code updates the underlying data representation to reflect the addition of an element
         // Furthermore, a change event is emitted so that parent component can react reactively
         getUriValue(listURI.clone()).push(createDefaultDataFromSpec(nestedSpec))
-        emitChange()
+        commitState()
 
         console.log(`list grow: ${getUriValue(listURI.clone())} | new spec: `)
         console.dir(nestedSpec)
-        console.dir(data)
+        console.dir(dataInternal)
     }
 
     function createDefaultDataFromSpec(spec: ConfigSpec): any {
@@ -399,7 +400,7 @@
         console.log(`Getting data from ${uri.string()}...`)
 
         // Traverse and manipulate
-        let addressableData = data
+        let addressableData = dataInternal
 
         let firstSegment = null
 
@@ -491,7 +492,7 @@
         return
 
         // Traverse and manipulate
-        let addressableData = data
+        let addressableData = dataInternal
 
         let lastSegment = null
 
@@ -665,8 +666,10 @@
     }
 
     // TODO: deprecate this in favor of a second, proxy data object
-    function emitChange() {
-        dispatch('change', data)
+    function commitState() {
+        // dispatch('change', data)
+
+        data = dataInternal
     }
 
     function onInputHook(uri: JsonUri, inputElement: HTMLInputElement){
@@ -674,7 +677,7 @@
 
             // TODO: implement string / bool -> string parsing
             maniplateUriValue(uri, inputElement.value)
-            emitChange()
+            commitState()
     }
 
     function newTextField(uri: JsonUri, inputType: HtmlInputType, labelText: string | null): [HTMLElement, MDCTextField] {
@@ -762,9 +765,9 @@
     }
 
     $: if (spec !== null) {
-        data = createDefaultDataFromSpec(spec)
+        dataInternal = createDefaultDataFromSpec(spec)
         generateInputs(spec, topLevelLabel)
-        emitChange()
+        commitState()
     }
 </script>
 
