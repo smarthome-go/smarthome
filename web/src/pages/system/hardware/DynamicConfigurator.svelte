@@ -15,7 +15,7 @@
 
     // TODO: if data changes externally, the contents of the inputs should also be redrawn
 
-    // Any UI inputs will first be commited to this data structure.
+    // Any UI inputs will first be committed to this data structure.
     // Afterwards, the changes are synced to the external data object in order to trigger Svelte's reactive update.
     let dataInternal: any = {}
 
@@ -307,7 +307,7 @@
             }
         }
 
-        throw "Passed child node parameter is not an actal child of the parent parameter"
+        throw "Passed child node parameter is not an actual child of the parent parameter"
     }
 
     interface JsonUriComponent {
@@ -639,7 +639,7 @@
 
                 // Display a special message if there are no fields
                 if (fields.length === 0) {
-                    // The only case where this message is ever shown is if the driver has no configration parameters.
+                    // The only case where this message is ever shown is if the driver has no configuration parameters.
                     let isEmptyMessage = document.createElement('span')
                     isEmptyMessage.classList.add("driver-no-configuration")
                     isEmptyMessage.innerText = "Driver does not have any configuration parameters."

@@ -18,7 +18,7 @@ import (
 // `SMARTHOME_DB_PASSWORD`   : (String) Sets the database user's password
 // `SMARTHOME_DB_USER`       : (String) Sets the database user
 func scanEnv(configStruct *config.Config) string {
-	// Admin passord
+	// Admin password
 	newAdminPassword := "admin"
 	if adminPassword, adminPasswordOk := os.LookupEnv("SMARTHOME_ADMIN_PASSWORD"); adminPasswordOk {
 		newAdminPassword = adminPassword

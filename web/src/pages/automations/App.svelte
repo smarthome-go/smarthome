@@ -144,7 +144,7 @@
         createAutomation(data).then()
     }
 
-    // Load everyting as soon as the component is mounted
+    // Load everything as soon as the component is mounted
     onMount(async () => {
         await loadAutomations()
         await loadHomescript()

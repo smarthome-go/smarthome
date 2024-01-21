@@ -17,7 +17,7 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 )
 
-// this can be decremented if a script uses too many ressources
+// this can be decremented if a script uses too many resources
 const CALL_STACK_LIMIT_SIZE = 2048
 
 type HomescriptInitiator uint8

@@ -60,7 +60,7 @@
     // eslint-disable-next-line no-undef
     let timer: NodeJS.Timeout
 
-    // TODO: check filenames + syntaax erorrs in imported module
+    // TODO: check filenames + syntax errors in imported module
 
     const HMSlinter = linter(async () => {
         let diagnostics: Diagnostic[] = []

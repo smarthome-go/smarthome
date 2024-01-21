@@ -20,7 +20,7 @@
         updateImage()
     }
 
-    // Reloads the image every 10 secons
+    // Reloads the image every 10 seconds
     // Only loads the image if the user has activated this function
     async function constantReload() {
         // Only load the image if the user has activated it

@@ -140,7 +140,7 @@ func CreateDevice(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Validate drivers + add correct implementation of this thing
-	// TODO: validata that the device type is a correct enum
+	// TODO: validate that the device type is a correct enum
 	if err := database.CreateDevice(
 		parsedType,
 		request.Id,

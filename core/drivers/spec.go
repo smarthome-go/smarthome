@@ -10,7 +10,7 @@ type ConfigSpec struct {
 	Fields     []ConfigField `json:"fields"`
 }
 
-// This type specifiec each configurable field of the driver
+// This type specific each configurable field of the driver
 // TODO: figure out how to serialize the type?
 type ConfigField struct {
 	Name string   `json:"name"`

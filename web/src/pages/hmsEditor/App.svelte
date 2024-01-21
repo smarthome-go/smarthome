@@ -21,7 +21,7 @@
 
     /*
        General variables
-       Includes varialbes such as layout-management and loading indicators
+       Includes variables such as layout-management and loading indicators
      */
      // Whether the current script is a driver or a normal script
 
@@ -78,7 +78,7 @@
             if (homescripts.length > 0) currentScript = homescripts[0].data.data.data.id
 
             // Populate the `savedCode` map so that for every script, there is already an entry in the map.
-            // If this was not the case, changing a file will cause the UI to display an erronous `unsaved`.
+            // If this was not the case, changing a file will cause the UI to display an erroneous `unsaved`.
             let savedCodeTemp: Map<string, string> = new Map()
             for (let script of homescripts) {
                 savedCodeTemp.set(script.data.data.data.id, script.data.data.data.code)

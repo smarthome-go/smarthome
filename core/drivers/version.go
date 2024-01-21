@@ -24,9 +24,9 @@ type RichDriver struct {
 }
 
 func ParseDriverVersion(source string) (SemanticVersion, error) {
-	delimeter := "."
+	delimiter := "."
 
-	split := strings.Split(source, delimeter)
+	split := strings.Split(source, delimiter)
 	if len(split) != 3 {
 		return SemanticVersion{}, fmt.Errorf("Expected exactly 3 version components, got %d", len(split))
 	}

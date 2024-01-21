@@ -14,11 +14,11 @@ func CreateDriverHmsId(driver database.DeviceDriver) string {
 }
 
 func DriverFromHmsId(id string) (driver database.DeviceDriver, validationErr error, databaseErr error) {
-	delimeter := ":"
-	split := strings.Split(id, delimeter)
+	delimiter := ":"
+	split := strings.Split(id, delimiter)
 
 	if len(split) != 3 {
-		return database.DeviceDriver{}, fmt.Errorf("Expected 3 segments split by `%s`, found %d", delimeter, len(split)), nil
+		return database.DeviceDriver{}, fmt.Errorf("Expected 3 segments split by `%s`, found %d", delimiter, len(split)), nil
 	}
 
 	if split[0] != DRIVER_ID_PREFIX {

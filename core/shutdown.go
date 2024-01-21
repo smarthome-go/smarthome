@@ -16,7 +16,7 @@ type shutdownJob struct {
 	name    string
 }
 
-// Maximum time to wait until everyting is shutdown
+// Maximum time to wait until everything is shutdown
 const SHUTDOWN_TIMEOUT = time.Second * 20
 
 // Maximum allowed runtime for each boot automations

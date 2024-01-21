@@ -71,7 +71,7 @@ func CreateCamera(data Camera) error {
 	return nil
 }
 
-// Modifies a cameras name annd URL
+// Modifies a cameras name and URL
 // Does not modify other metadata due to it being used immutably
 func ModifyCamera(id string, newName string, newUrl string) error {
 	query, err := db.Prepare(`
