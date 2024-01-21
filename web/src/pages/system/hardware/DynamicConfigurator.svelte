@@ -143,7 +143,7 @@
         let listElementInputWrapper = document.createElement('div')
         listElementInputWrapper.classList.add(`${LIST_BODY_ITEM_CLASS_NAME}__input`)
 
-        let listElement = specToHtml(nestedSpec, null, newUri, createDefaultDataFromSpec(nestedSpec))
+        let listElement = specToHtml(nestedSpec, null, newUri, currentValue)
         listElementInputWrapper.appendChild(listElement.html)
 
         listElementWrapper.appendChild(listElementInputWrapper)

@@ -226,14 +226,20 @@ func ExtractDriverInfo(
 
 	if incompatibleType {
 		return DriverInfo{
-			DriverConfig: ConfigFieldDescriptorStruct{},
-			DeviceConfig: ConfigFieldDescriptorStruct{},
+			DriverConfig: ConfigInfoWrapper{},
+			DeviceConfig: ConfigInfoWrapper{},
 		}, diagnostics
 	}
 
 	return DriverInfo{
-		DriverConfig: driverConfig.(ConfigFieldDescriptorStruct),
-		DeviceConfig: deviceConfig.(ConfigFieldDescriptorStruct),
+		DriverConfig: ConfigInfoWrapper{
+			Config:  driverConfig.(ConfigFieldDescriptorStruct),
+			HmsType: driverSingleton.SingletonType,
+		},
+		DeviceConfig: ConfigInfoWrapper{
+			Config:  deviceConfig.(ConfigFieldDescriptorStruct),
+			HmsType: driverSingleton.SingletonType,
+		},
 	}, diagnostics
 }
 

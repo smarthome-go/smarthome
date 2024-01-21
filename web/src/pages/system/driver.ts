@@ -72,7 +72,7 @@ export interface Location {
 export async function fetchDrivers(): Promise<FetchedDriver[]> {
     try {
         const res = await (
-            await fetch("/api/system/hardware/drivers/list")
+            await fetch("/api/system/hardware/driver/list")
         ).json();
         if (res.success !== undefined && !res.success)
             throw Error(res.error);
@@ -88,7 +88,7 @@ export async function createDriver(
 ) {
     try {
         const res = await (
-            await fetch("/api/system/hardware/drivers/add", {
+            await fetch("/api/system/hardware/driver/add", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

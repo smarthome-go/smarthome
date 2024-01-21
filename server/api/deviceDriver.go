@@ -16,6 +16,11 @@ type DeviceDriverRequest struct {
 	ModelId  string `json:"modelId"`
 }
 
+type ConfigureDriverRequest struct {
+	Driver drivers.DriverTuple `json:"driver"`
+	Data   any                 `json:"data"`
+}
+
 func ListDeviceDrivers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	drivers, err := drivers.List()
@@ -156,6 +161,47 @@ func ModifyDeviceDriver(w http.ResponseWriter, r *http.Request) {
 	}
 
 	Res(w, Response{Success: true, Message: "successfully modified device driver"})
+}
+
+func ConfigureDeviceDriver(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields() // TODO: is this the right way?
+
+	var request ConfigureDriverRequest
+
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+
+	_, wasFound, err := database.GetDeviceDriver(request.Driver.VendorId, request.Driver.ModelId)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to configure device driver", Error: "database failure"})
+		return
+	}
+
+	if !wasFound {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{
+			Success: false,
+			Message: "failed to configure device driver",
+			Error:   fmt.Sprintf("the device driver `%s:%s` does not exist", request.Driver.ModelId, request.Driver.VendorId),
+		})
+		return
+	}
+
+	// TODO: perform validation
+
+	drivers.StoreValueInSingleton(
+		request.Driver,
+		drivers.DRIVER_SINGLETON_KIND_DRIVER,
+		request.Data,
+	)
+
+	Res(w, Response{Success: true, Message: "successfully configured device driver"})
 }
 
 // Deletes a Homescript by its Id, checks if it exists and if the user has permission to delete it
