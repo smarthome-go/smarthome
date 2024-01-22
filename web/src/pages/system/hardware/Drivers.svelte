@@ -1,6 +1,4 @@
 <script lang="ts">
-    import Nodes from "./nodes/Nodes.svelte";
-    import type { hardwareNode } from "./types";
     import { createSnackbar } from "../../../global";
     import { onMount } from "svelte";
     import Progress from "../../../components/Progress.svelte";
@@ -29,7 +27,7 @@
         loading = false
     }
 
-    async function saveDriverConifig(driverVendorId: string, driverModelId: string, configuredData: any) {
+    async function saveDriverConfig(driverVendorId: string, driverModelId: string, configuredData: any) {
         loading = true
 
         try {
@@ -104,7 +102,7 @@
                 <span class="text-hint">No installed drivers </span>
             {:else}
                 {#each drivers as driver}
-                    <DriverComponent bind:driver on:save={(e) => saveDriverConifig(e.detail)} />
+                    <DriverComponent bind:driver on:save={(e) => saveDriverConfig(driver.driver.vendorId, driver.driver.modelId, e.detail)} />
                 {/each}
             {/if}
         </div>

@@ -61,7 +61,7 @@
             <div class="driver__config">
                 <div class="driver__config">
                     <DynamicConfigurator
-                        bind:spec={driver.info.driver}
+                        bind:spec={driver.info.driver.config}
                         on:change={ (e) => reactToOutput(e.detail) }
                         bind:inputData
                         topLevelLabel={`Driver-wide configuration`}

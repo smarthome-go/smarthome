@@ -22,8 +22,13 @@ export interface DriverData {
 }
 
 export interface DriverInfoCollection {
-    driver: ConfigSpec;
-    device: ConfigSpec;
+    driver: ConfigSpecWrapper;
+    device: ConfigSpecWrapper;
+}
+
+export interface ConfigSpecWrapper {
+    config: ConfigSpec
+    // NOTE: hms type from backend ignored here, would add unnessecary bloat and is not needed here.
 }
 
 export type ConfigSpec = ConfigSpecAtom | ConfigSpecInner | ConfigSpecStruct | null;

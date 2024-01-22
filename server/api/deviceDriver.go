@@ -21,6 +21,25 @@ type ConfigureDriverRequest struct {
 	Data   any                 `json:"data"`
 }
 
+// This type is required because it does not contain the HMS type.
+// Serializing the HMS type would blot
+// type DriverResponseInfo struct {
+// 	DriverConfig homescript.ConfigFieldDescriptorStruct `json:"driver"`
+// 	DeviceConfig homescript.ConfigFieldDescriptorStruct `json:"device"`
+// }
+//
+// type DriverResponse struct {
+// 	Driver           database.DeviceDriver   `json:"driver"`
+// 	ExtractedInfo    DriverResponseInfo      `json:"info"`
+// 	IsValid          bool                    `json:"isValid"`
+// 	ValidationErrors []diagnostic.Diagnostic `json:"validationErrors"`
+// }
+//
+
+// func listDeviceDriversHelper() ([]DriverResponse, error) {
+//
+// }
+
 func ListDeviceDrivers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	drivers, err := drivers.List()
