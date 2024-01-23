@@ -12,8 +12,8 @@ import (
 )
 
 type DeviceDriverRequest struct {
-	VendorId string `json:"vendorId"`
-	ModelId  string `json:"modelId"`
+	VendorID string `json:"vendorId"`
+	ModelID  string `json:"modelId"`
 }
 
 type ConfigureDriverRequest struct {
@@ -21,28 +21,9 @@ type ConfigureDriverRequest struct {
 	Data   any                 `json:"data"`
 }
 
-// This type is required because it does not contain the HMS type.
-// Serializing the HMS type would blot
-// type DriverResponseInfo struct {
-// 	DriverConfig homescript.ConfigFieldDescriptorStruct `json:"driver"`
-// 	DeviceConfig homescript.ConfigFieldDescriptorStruct `json:"device"`
-// }
-//
-// type DriverResponse struct {
-// 	Driver           database.DeviceDriver   `json:"driver"`
-// 	ExtractedInfo    DriverResponseInfo      `json:"info"`
-// 	IsValid          bool                    `json:"isValid"`
-// 	ValidationErrors []diagnostic.Diagnostic `json:"validationErrors"`
-// }
-//
-
-// func listDeviceDriversHelper() ([]DriverResponse, error) {
-//
-// }
-
 func ListDeviceDrivers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	drivers, err := drivers.List()
+	drivers, err := drivers.ListWithStoredConfig()
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to list device drivers", Error: "database error"})
@@ -195,7 +176,7 @@ func ConfigureDeviceDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, wasFound, err := database.GetDeviceDriver(request.Driver.VendorId, request.Driver.ModelId)
+	_, wasFound, err := database.GetDeviceDriver(request.Driver.VendorID, request.Driver.ModelID)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to configure device driver", Error: "database failure"})
@@ -207,7 +188,7 @@ func ConfigureDeviceDriver(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{
 			Success: false,
 			Message: "failed to configure device driver",
-			Error:   fmt.Sprintf("the device driver `%s:%s` does not exist", request.Driver.ModelId, request.Driver.VendorId),
+			Error:   fmt.Sprintf("the device driver `%s:%s` does not exist", request.Driver.ModelID, request.Driver.VendorID),
 		})
 		return
 	}
@@ -216,7 +197,7 @@ func ConfigureDeviceDriver(w http.ResponseWriter, r *http.Request) {
 
 	drivers.StoreValueInSingleton(
 		request.Driver,
-		drivers.DRIVER_SINGLETON_KIND_DRIVER,
+		drivers.SingletonKindDriver,
 		request.Data,
 	)
 
@@ -235,7 +216,7 @@ func DeleteDeviceDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, exists, err := database.GetDeviceDriver(request.VendorId, request.ModelId)
+	_, exists, err := database.GetDeviceDriver(request.VendorID, request.ModelID)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to delete driver: could not validate existence", Error: "database failure"})
@@ -248,7 +229,7 @@ func DeleteDeviceDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hasDependentDevices, err := database.DriverHasDependentDevices(request.VendorId, request.ModelId)
+	hasDependentDevices, err := database.DriverHasDependentDevices(request.VendorID, request.ModelID)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to delete driver: could not validate deletion safety", Error: "database failure"})
@@ -260,7 +241,7 @@ func DeleteDeviceDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := database.DeleteDeviceDriver(request.VendorId, request.ModelId); err != nil {
+	if err := database.DeleteDeviceDriver(request.VendorID, request.ModelID); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to delete driver", Error: "database failure"})
 		return

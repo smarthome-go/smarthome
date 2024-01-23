@@ -30,7 +30,7 @@ func (self interpreterExecutor) GetUser() string {
 	return self.username
 }
 
-func newInterpreterExecutor(
+func NewInterpreterExecutor(
 	username string,
 	writer io.Writer,
 	args map[string]string,

@@ -334,7 +334,7 @@ func (m *Manager) Run(
 
 	vm := runtime.NewVM(
 		prog,
-		newInterpreterExecutor(
+		NewInterpreterExecutor(
 			username,
 			outputWriter,
 			args,

@@ -10,7 +10,7 @@ type DriverInfo struct {
 type ConfigInfoWrapper struct {
 	Config ConfigFieldDescriptorStruct `json:"config"`
 	// This field is ignored as it would add redundant bloat to HTTP responses
-	HmsType ast.Type `json:"-"`
+	HmsType ast.ObjectType `json:"-"`
 }
 
 type CONFIG_FIELD_TYPE string

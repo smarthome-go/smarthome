@@ -19,9 +19,9 @@ const DRIVER_DEVICE_SINGLETON_IDENT = "Device"
 
 const DRIVER_FIELD_REQUIRED_ANNOTATION = "setting"
 
-var driverSingletonIdent = fmt.Sprintf("%s%s", parser.SINGLETON_TOKEN, DRIVER_SINGLETON_IDENT)
-var driverDeviceSingletonIdent = fmt.Sprintf("%s%s", parser.SINGLETON_TOKEN, DRIVER_DEVICE_SINGLETON_IDENT)
-var driverFieldRequiredAnnotation = fmt.Sprintf("%s%s", parser.TYPE_ANNOTATION_TOKEN, DRIVER_FIELD_REQUIRED_ANNOTATION)
+var DriverSingletonIdent = fmt.Sprintf("%s%s", parser.SINGLETON_TOKEN, DRIVER_SINGLETON_IDENT)
+var DriverDeviceSingletonIdent = fmt.Sprintf("%s%s", parser.SINGLETON_TOKEN, DRIVER_DEVICE_SINGLETON_IDENT)
+var DriverFieldRequiredAnnotation = fmt.Sprintf("%s%s", parser.TYPE_ANNOTATION_TOKEN, DRIVER_FIELD_REQUIRED_ANNOTATION)
 
 func ExtractDriverInfoTotal(driver database.DeviceDriver) (info DriverInfo, hmsErrors []diagnostic.Diagnostic, err error) {
 	filename := fmt.Sprintf("@%s:%s", driver.VendorId, driver.ModelId)
@@ -96,7 +96,7 @@ func ExtractDriverInfo(
 
 	// Iterate over singletons, assert that there is a `driver` singleton
 	for _, singleton := range analyzed[mainModule].Singletons {
-		if singleton.Ident.Ident() == driverSingletonIdent {
+		if singleton.Ident.Ident() == DriverSingletonIdent {
 			driverSingleton = singleton
 			driverSingletonFound = true
 
@@ -107,7 +107,7 @@ func ExtractDriverInfo(
 			continue
 		}
 
-		if singleton.Ident.Ident() == driverDeviceSingletonIdent {
+		if singleton.Ident.Ident() == DriverDeviceSingletonIdent {
 			deviceSingleton = singleton
 			deviceSingletonFound = true
 
@@ -122,9 +122,9 @@ func ExtractDriverInfo(
 	if !driverSingletonFound {
 		diagnostics = append(diagnostics, diagnostic.Diagnostic{
 			Level:   diagnostic.DiagnosticLevelError,
-			Message: fmt.Sprintf("Singleton `%s` not found", driverSingletonIdent),
+			Message: fmt.Sprintf("Singleton `%s` not found", DriverSingletonIdent),
 			Notes: []string{
-				fmt.Sprintf("A singleton named `%s` is required for every driver implementation", driverDeviceSingletonIdent),
+				fmt.Sprintf("A singleton named `%s` is required for every driver implementation", DriverDeviceSingletonIdent),
 				fmt.Sprintf("This singleton can be declared like this: `TODO, add final syntax`"),
 			},
 			Span: herrors.Span{
@@ -138,9 +138,9 @@ func ExtractDriverInfo(
 	if !deviceSingletonFound {
 		diagnostics = append(diagnostics, diagnostic.Diagnostic{
 			Level:   diagnostic.DiagnosticLevelError,
-			Message: fmt.Sprintf("Singleton `%s` not found", driverDeviceSingletonIdent),
+			Message: fmt.Sprintf("Singleton `%s` not found", DriverDeviceSingletonIdent),
 			Notes: []string{
-				fmt.Sprintf("A singleton named `%s` is required for every driver implementation", driverDeviceSingletonIdent),
+				fmt.Sprintf("A singleton named `%s` is required for every driver implementation", DriverDeviceSingletonIdent),
 				fmt.Sprintf("This singleton can be declared like this: `TODO, add final syntax`"),
 			},
 			Span: herrors.Span{
@@ -234,11 +234,11 @@ func ExtractDriverInfo(
 	return DriverInfo{
 		DriverConfig: ConfigInfoWrapper{
 			Config:  driverConfig.(ConfigFieldDescriptorStruct),
-			HmsType: driverSingleton.SingletonType,
+			HmsType: driverSingleton.SingletonType.(ast.ObjectType),
 		},
 		DeviceConfig: ConfigInfoWrapper{
 			Config:  deviceConfig.(ConfigFieldDescriptorStruct),
-			HmsType: driverSingleton.SingletonType,
+			HmsType: driverSingleton.SingletonType.(ast.ObjectType),
 		},
 	}, diagnostics
 }
@@ -310,7 +310,7 @@ func typeToConfigField(from ast.Type, topLevel bool, contextSpan errors.Span) (C
 			// If this field does not have the required annotation, do not add it
 			// NOTE: this is only done if this is a top-level call.
 			// For nested structures, all fields are taken into account.
-			if topLevel && (field.Annotation == nil || field.Annotation.Ident() != driverFieldRequiredAnnotation) {
+			if topLevel && (field.Annotation == nil || field.Annotation.Ident() != DriverFieldRequiredAnnotation) {
 				continue
 			}
 
