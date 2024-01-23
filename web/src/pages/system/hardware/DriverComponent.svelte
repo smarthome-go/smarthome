@@ -2,7 +2,7 @@
     import Button from "@smui/button";
     import type { FetchedDriver } from "../driver";
     import DynamicConfigurator from "./DynamicConfigurator.svelte";
-    import { createEventDispatcher } from "svelte";
+    import { createEventDispatcher, onMount } from "svelte";
 
     export let driver: FetchedDriver = null
     $: if (driver) console.log('driver changed')
@@ -13,7 +13,6 @@
 
     let textareaContent = ""
     let preventReacttoOutput = false
-    let inputData = null
     let textarea: HTMLTextAreaElement = null
 
     let lastOutput = null
@@ -24,7 +23,7 @@
 
         try {
             let parsedTemp = JSON.parse(textareaContent)
-            inputData = parsedTemp
+            driver.configuration = parsedTemp
 
             if (!preventReacttoOutput) {
                 preventReacttoOutput = true
@@ -63,7 +62,7 @@
                     <DynamicConfigurator
                         bind:spec={driver.info.driver.config}
                         on:change={ (e) => reactToOutput(e.detail) }
-                        bind:inputData
+                        bind:inputData={driver.configuration}
                         topLevelLabel={`Driver-wide configuration`}
                     />
                 </div>

@@ -9,6 +9,7 @@ export interface CreateDriver {
 export interface FetchedDriver {
     driver:           DriverData;
     info:             DriverInfoCollection;
+    configuration:    {},
     isValid:          boolean;
     validationErrors: ValidationError[];
 }
