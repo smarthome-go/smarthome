@@ -101,8 +101,8 @@ linters-settings:
     # List of regular expressions to exclude struct packages and their names from checks.
     # Regular expressions must match complete canonical struct package/name/structname.
     # Default: []
-    #exclude:
-      #- '.+/cobra\.Command$'
+    exclude:
+      - '.+/errors\.Span$'
   decorder:
     # Required order of `type`, `const`, `var` and `func` declarations inside a file.
     # Default: types before constants before variables before functions.
@@ -142,7 +142,8 @@ linters-settings:
     ignore-calls: false
     # Exclude strings matching the given regular expression.
     # Default: ""
-    #ignore-strings: 'foo.+'
+    # Is ignored due to panics in switch-blocks
+    ignore-strings: 'A new .* was added without updating this code'
   godot:
     # Comments to be checked: `declarations`, `toplevel`, or `all`.
     # Default: declarations
