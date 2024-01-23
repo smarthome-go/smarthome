@@ -28,7 +28,7 @@ const (
 var DeviceStore map[DriverTuple]value.ValueObject = make(map[DriverTuple]value.ValueObject)
 var DriverStore map[DriverTuple]value.ValueObject = make(map[DriverTuple]value.ValueObject)
 
-// This package contains the storage backend implementation for per-driver / per-devicec configuration data.
+// This package contains the storage backend implementation for per-driver / per-device configuration data.
 //
 //	1. The user sends a JSON configuration string
 //	2. The HTTP layer parses this request and passes it into this module
