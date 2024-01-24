@@ -19,7 +19,7 @@
     // Contains all hardware nodes
     let driversLoaded = false;
     let drivers: FetchedDriver[] = []
-    $: if (drivers) console.log('updated drivers')
+    // $: if (drivers) console.log('updated drivers')
 
     async function refresh() {
         loading = true

@@ -5,11 +5,8 @@
     import { createEventDispatcher, onMount } from "svelte";
 
     export let driver: FetchedDriver = null
-    $: if (driver) console.log('driver changed')
 
     const dispatch = createEventDispatcher()
-
-    // <!--     jsonValue = `\n${JSON.stringify(configuratorOutputData, null, 2).replace('\t', '')}` -->
 
     let textareaContent = ""
     let preventReacttoOutput = false
@@ -19,11 +16,9 @@
 
     function reactToInput() {
         textareaContent = textarea.value
-        console.log(`TEXTAREA CONTENT: ${textareaContent}`)
-
         try {
-            let parsedTemp = JSON.parse(textareaContent)
-            driver.configuration = parsedTemp
+            driver.configuration = JSON.parse(textareaContent)
+            lastOutput = JSON.parse(textareaContent)
 
             if (!preventReacttoOutput) {
                 preventReacttoOutput = true
@@ -36,7 +31,8 @@
 
     function reactToOutput(data: any) {
         if (textarea.isEqualNode(document.activeElement) || preventReacttoOutput) {
-            console.warn("is active element, prevent cycle")
+            // TODO: is this even triggered?
+            console.warn("Is active element, prevent cycle")
             return
         }
         textareaContent = `\n${JSON.stringify(data, null, 2)}`
@@ -74,6 +70,7 @@
             </div>
 
             <h6>JSON configuration output</h6>
+            <!-- <textarea bind:this={textarea} on:input={(_) => {}} rows="10" cols="40" value={textareaContent}></textarea> -->
             <textarea bind:this={textarea} on:input={(_) => reactToInput()} rows="10" cols="40" value={textareaContent}></textarea>
 
             <Button

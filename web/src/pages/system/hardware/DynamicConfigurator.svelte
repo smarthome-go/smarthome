@@ -2,7 +2,7 @@
     import type { ConfigSpec, ConfigSpecInner, ConfigSpecStruct, ConfigSpecType } from "../driver";
     import { MDCTextField } from '@material/textfield';
     import {MDCRipple} from '@material/ripple';
-    import { createEventDispatcher } from 'svelte'
+    import { createEventDispatcher, onMount } from 'svelte'
 
     const dispatch = createEventDispatcher()
 
@@ -10,8 +10,6 @@
 
     // TODO: write comment
     export let inputData: any = null
-
-    $: if (inputData !== null) drawUi(inputData)
 
     // TODO: if data changes externally, the contents of the inputs should also be redrawn
 
@@ -88,12 +86,12 @@
         listContainer.appendChild(listBody)
 
         for (let element of currentValues) {
-            addListElement(listBody, listURI, nestedSpec, element)
+            addListElement(listBody, listURI, nestedSpec, element, false)
         }
 
         // Create footer button to add elements
         listContainer.appendChild(createIconButton('add', () => {
-            addListElement(listBody, listURI, nestedSpec, createDefaultDataFromSpec(nestedSpec))
+            addListElement(listBody, listURI, nestedSpec, createDefaultDataFromSpec(nestedSpec), true)
         }))
 
         return listContainer
@@ -104,6 +102,8 @@
         listURI: JsonUri,
         nestedSpec: ConfigSpec,
         currentValue: any,
+        // NOTE: this is required so that a default value is not added by accident
+        userClickedButton: boolean,
     ) {
         // When an element is added, an URI change must be emitted as well.
         // Furthermore, the URIs for every list element must be recomputed.
@@ -149,14 +149,15 @@
         listElementWrapper.appendChild(listElementInputWrapper)
         listBody.appendChild(listElementWrapper)
 
+        // NOTE: this is required to prevent the addition of an erroneous default value to the internal data representation.
+        if (!userClickedButton) {
+            return
+        }
+
         // NOTE: this code updates the underlying data representation to reflect the addition of an element
         // Furthermore, a change event is emitted so that parent component can react reactively
-        getUriValue(listURI.clone()).push(createDefaultDataFromSpec(nestedSpec))
+        getUriValue(listURI.clone()).push(createDefaultDataFromSpec(nestedSpec)) // THIS IS A BUG!
         commitState()
-
-        console.log(`list grow: ${getUriValue(listURI.clone())} | new spec: `)
-        console.dir(nestedSpec)
-        console.dir(dataInternal)
     }
 
     function createDefaultDataFromSpec(spec: ConfigSpec): any {
@@ -235,12 +236,9 @@
     }
 
     function patchListURIs(listParent: HTMLElement, listInnerTypeSpec: ConfigSpec, parentURI: JsonUri) {
-        console.log('patching list uris...')
-        console.dir(listParent)
-
         let listChildren = listParent.children
         if (listChildren.length === 0) {
-            // No children => no work todo
+            // No children => no work todo.
             return
         }
 
@@ -260,10 +258,7 @@
                 listIndex: idx,
             })
 
-            console.log(`Assigned new uri: ${newUri.string()}`)
-
             patchElementURI(inputNode as HTMLElement, listInnerTypeSpec, newUri)
-            console.log(`patched idx: ${idx}`)
         }
     }
 
@@ -415,39 +410,14 @@
 
     function getUriValue(uriIn: JsonUri): any {
         let uri = uriIn.clone()
-        console.log(`Getting data from ${uri.string()}...`)
 
-        // Traverse and manipulate
+        // Iteratively traverse recursive data structure.
         let addressableData = dataInternal
 
         let firstSegment = null
 
         while (1) {
-            console.log(`URI: `, uri.string(), `CURR DATA: `, addressableData)
-
             if (uri.fields.length === 0) {
-                // Perform assignment, address has been reached
-
-                // switch (lastSegment.type) {
-                //     case 'field': {
-                //         const val = addressableData[lastSegment.fieldName]
-                //         if (val === undefined) {
-                //             throw(`Field "${lastSegment.fieldName}" of value is undefined`)
-                //         }
-                //         return val
-                //     }
-                //     case 'index': {
-                //         const val = addressableData[lastSegment.listIndex]
-                //         if (val === undefined) {
-                //             throw(`Index "${lastSegment.listIndex}" of value is undefined`)
-                //         }
-                //         return val
-                //     }
-                //     default:
-                //         throw(`A new segment type was introduced without updating this code`)
-                // }
-
-                console.log("returning addressableData: ", addressableData)
                 return addressableData
             }
 
@@ -468,15 +438,13 @@
 
                     if (addressableData === undefined) {
                         console.dir(old)
-                        throw(`index ${firstSegment.listIndex} is undefined`)
+                        throw(`Index ${firstSegment.listIndex} is undefined`)
                     }
 
                     break
                 default:
                     throw(`A new segment type was introduced without updating this code`)
             }
-
-            console.log("updated addressableData in this iteration: ", addressableData)
         }
 
         return addressableData
@@ -484,8 +452,6 @@
 
     function maniplateUriValue(uriIn: JsonUri, newData: any) {
         let uri = uriIn.clone()
-        console.log(`Manipulating ${uri.string()} to ${newData}`)
-
         // Pop the back from the uri as we need the parent of the field, not the field itself.
         // If we would assign to the field itself, it would be a literal, making this assignment redundant.
         // => We need a object / list reference
@@ -503,62 +469,6 @@
             default:
                 throw("A new uri kind was introduced without updating this code")
         }
-
-        // TODO: field access
-        // targetDataParent = newData
-
-        return
-
-        // Traverse and manipulate
-        let addressableData = dataInternal
-
-        let lastSegment = null
-
-        while (1) {
-            lastSegment = uri.pop()
-
-            if (uri.fields.length === 0) {
-                // Perform assignment, address has been reached
-
-                switch (lastSegment.type) {
-                    case 'field':
-                        addressableData[lastSegment.fieldName] = newData
-                        break
-                    case 'index':
-                        addressableData[lastSegment.listIndex] = newData
-                        break
-                    default:
-                        throw(`A new segment type was introduced without updating this code`)
-                }
-
-                break
-            }
-
-            switch (lastSegment.type) {
-                case 'field':
-                    addressableData = addressableData[lastSegment.fieldName]
-
-                    if (addressableData !== null) {
-                        throw(`field ${lastSegment.fieldName} is undefined`)
-                    }
-
-                    break
-                case 'index':
-                    addressableData = addressableData[lastSegment.listIndex]
-
-                    if (addressableData !== null) {
-                        throw(`index ${lastSegment.listIndex} is undefined`)
-                    }
-
-                    break
-                default:
-                    throw(`A new segment type was introduced without updating this code`)
-            }
-        }
-
-        // if (lastSegment === null) {
-        //     throw(`Cannot manipulate URI value: last segment is null`)
-        // }
     }
 
     function specToHtml(
@@ -567,12 +477,9 @@
         uri: JsonUri,
         currentValue: any,
     ): HtmlTree {
-        console.log('specToHtml: ', spec, label, currentValue)
-
         switch (spec.type) {
             case 'INT': {
                 const [html, handle] = newTextField(uri, 'number', label, currentValue)
-
                 return {
                     html,
                     handle,
@@ -580,10 +487,7 @@
                 }
             }
             case 'BOOL': {
-                console.error("TODO", spec.type)
-
                 const [html, handle] = newTextField(uri, 'number', label, currentValue)
-
                 return {
                     html,
                     handle,
@@ -592,10 +496,7 @@
             }
             case 'LIST': {
                 const listSpec = spec as ConfigSpecInner
-                console.error("TODO", spec.type)
-
                 let listHtml = createListConfigurator(listSpec.inner, label, uri, currentValue)
-
                 return {
                     html: listHtml,
                     handle: null,
@@ -604,7 +505,6 @@
             }
             case 'FLOAT': {
                 const [html, handle] = newTextField(uri, 'number', label, currentValue)
-
                 return {
                     html,
                     handle,
@@ -613,7 +513,6 @@
             }
             case 'STRING': {
                 const [html, handle] = newTextField(uri, 'text', label, currentValue)
-
                 return {
                     html,
                     handle,
@@ -621,7 +520,6 @@
                 }
             }
             case 'STRUCT':
-                // TODO: handle current value
                 let structParent = document.createElement('div')
                 structParent.classList.add('config-option__struct', 'mdc-elevation--z6')
 
@@ -637,7 +535,7 @@
 
                 let fields = (spec as ConfigSpecStruct).fields
 
-                // Display a special message if there are no fields
+                // Display a special message if there are no fields.
                 if (fields.length === 0) {
                     // The only case where this message is ever shown is if the driver has no configuration parameters.
                     let isEmptyMessage = document.createElement('span')
@@ -652,7 +550,7 @@
                 }
 
                 for (let field of fields) {
-                    // Add the name to the text element URI
+                    // Add the name to the text element URI.
                     let newURI = uri.clone()
                     newURI.push({
                         type: 'field',
@@ -695,9 +593,6 @@
     }
 
     function onInputHook(uri: JsonUri, inputElement: HTMLInputElement){
-            console.log(`input "${uri.string()}" changed to ${inputElement.value}`)
-
-            // TODO: implement string / bool -> string parsing
             maniplateUriValue(uri, inputElement.value)
             commitState()
     }
@@ -759,8 +654,6 @@
         let newUri = oldUri.clone()
         newUri.overrideStart(parentURI)
 
-        console.log(`old uri: ${oldUri.string()} | new uri: ${newUri.string()} | patch fragment: ${parentURI.string()}`)
-
         const newUriId = newUri.string()
         // Update id of label
         inputInnerLabel.id = newUriId
@@ -774,21 +667,14 @@
 
         // Update on-input hook
         inputElement.oninput = (_) => { onInputHook(newUri, inputElement) }
-
-        console.log("patched text field")
     }
 
     function generateInputs(spec: ConfigSpec | null, topLevelLabel: string | null, currentData: any) {
-        console.log('Building input dom...')
-
         if (spec === null || dom === null) {
             return
         }
 
         const generatedTree = specToHtml(spec, topLevelLabel, new JsonUri(), currentData)
-
-        // TODO: use mdc component to customize it
-        console.dir(generatedTree)
 
         // NOTE: Container must be cleared since reactive updates would cause repeated appensions which then causes
         // the configuration elements to be displayed multiple times.
@@ -801,16 +687,19 @@
         generateInputs(spec, topLevelLabel, currentData)
     }
 
-    $: if (spec !== null) {
-        dataInternal = createDefaultDataFromSpec(spec)
-
-        if (inputData === null) {
-            inputData = createDefaultDataFromSpec(spec)
-        }
-
-        drawUi(inputData)
+    // https://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-deep-clone-an-object-in-javascript#122704
+    function reactToNewInput(inp: any) {
+        // TODO: what to do if schema is incompatible, check using version tag?, Enforce in backend?
+        dataInternal = JSON.parse(JSON.stringify(inp)) // TODO: can we omit any of these clones?
+        drawUi(JSON.parse(JSON.stringify(inp)))
         commitState()
     }
+
+    let loaded = false
+    $: if(loaded) reactToNewInput(inputData)
+
+    // TODO: is this `loaded` variable required?
+    onMount(() => loaded = true)
 </script>
 
 <div class="configurator">
