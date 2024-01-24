@@ -17,6 +17,7 @@ type DeviceDriver struct {
 	Name           string `json:"name"`
 	Version        string `json:"version"`
 	HomescriptCode string `json:"homescriptCode"`
+	ConfigJson     string `json:"configJson"`
 }
 
 // Creates the table containing device driver code and metadata
@@ -30,14 +31,14 @@ func createDeviceDriverTable() error {
 		ModelId				VARCHAR(%d),
 		Name				TEXT,
 		Version				VARCHAR(%d),
-		HomescriptCode		TEXT,
+		HomescriptCode		LONGTEXT,
+		ConfigJson			JSON,
 		PRIMARY KEY (VendorId, ModelId)
 	)
 	`,
 		DEVICE_DRIVER_MODVEN_ID_LEN,
 		DEVICE_DRIVER_MODVEN_ID_LEN,
 		DEVICE_DRIVER_VERSION_LEN,
-		// HOMESCRIPT_ID_LEN,
 	))
 	if err != nil {
 		return err
@@ -57,25 +58,6 @@ func generateHmsIdForDriver(vendorId string, modelId string) string {
 // Creates a new device driver entry
 // Returns the ID of the newly internally used Homescript
 func CreateNewDeviceDriver(driverData DeviceDriver) error {
-	// driverHmsId := generateHmsIdForDriver(driverData.VendorId, driverData.ModelId)
-
-	// Create new Homescript for this driver
-	// if err := CreateNewHomescript(Homescript{
-	// 	// Owners: DEFAULT_ADMIN_USERNAME,
-	// 	Data: HomescriptData{
-	// 		Id:                  driverHmsId,
-	// 		Name:                fmt.Sprintf("%s Driver", driverData.Name),
-	// 		Description:         fmt.Sprintf("%s:%s", driverData.VendorId, driverData.ModelId),
-	// 		QuickActionsEnabled: false,
-	// 		IsWidget:            false,
-	// 		SchedulerEnabled:    false,
-	// 		Code:                homescriptCode,
-	// 		MDIcon:              DEVICE_DRIVER_DEFAULT_ICON,
-	// 	},
-	// }); err != nil {
-	// 	return "", nil
-	// }
-
 	query, err := db.Prepare(`
 	INSERT INTO
 	deviceDriver(
@@ -83,9 +65,10 @@ func CreateNewDeviceDriver(driverData DeviceDriver) error {
 		ModelId,
 		Name,
 		Version,
-		HomescriptCode
+		HomescriptCode,
+		ConfigJson
 	)
-	VALUES(?, ?, ?, ?, ?)
+	VALUES(?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		log.Error("Failed to create new device driver: preparing query failed: ", err.Error())
@@ -100,6 +83,7 @@ func CreateNewDeviceDriver(driverData DeviceDriver) error {
 		driverData.Name,
 		driverData.Version,
 		driverData.HomescriptCode,
+		driverData.ConfigJson,
 	); err != nil {
 		log.Error("Failed to create new device driver: executing query failed: ", err.Error())
 		return err
@@ -116,7 +100,8 @@ func ModifyDeviceDriver(newData DeviceDriver) (bool, error) {
 	SET
 		Name=?,
 		Version=?,
-		HomescriptCode=?
+		HomescriptCode=?,
+		ConfigJson=?
 	WHERE VendorId=? AND ModelId=?
 	`)
 	if err != nil {
@@ -129,6 +114,7 @@ func ModifyDeviceDriver(newData DeviceDriver) (bool, error) {
 		newData.Name,
 		newData.Version,
 		newData.HomescriptCode,
+		newData.ConfigJson,
 		newData.VendorId,
 		newData.ModelId,
 	)
@@ -188,7 +174,8 @@ func ListDeviceDrivers() ([]DeviceDriver, error) {
 		deviceDriver.ModelId,
 		deviceDriver.Name,
 		deviceDriver.Version,
-		deviceDriver.HomescriptCode
+		deviceDriver.HomescriptCode,
+		deviceDriver.ConfigJson
 	FROM deviceDriver
 	`)
 	if err != nil {
@@ -211,6 +198,7 @@ func ListDeviceDrivers() ([]DeviceDriver, error) {
 			&driver.Name,
 			&driver.Version,
 			&driver.HomescriptCode,
+			&driver.ConfigJson,
 		)
 		if err != nil {
 			log.Error("Failed to list Homescript of user: scanning results failed: ", err.Error())
@@ -226,7 +214,8 @@ func GetDeviceDriver(vendorId string, modelId string) (DeviceDriver, bool, error
 	SELECT
 		deviceDriver.Name,
 		deviceDriver.Version,
-		deviceDriver.HomescriptCode
+		deviceDriver.HomescriptCode,
+		deviceDriver.ConfigJson
 	FROM deviceDriver
 	WHERE deviceDriver.VendorId=?
 	AND deviceDriver.ModelId=?
@@ -248,6 +237,7 @@ func GetDeviceDriver(vendorId string, modelId string) (DeviceDriver, bool, error
 		&driver.Name,
 		&driver.Version,
 		&driver.HomescriptCode,
+		&driver.ConfigJson,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return DeviceDriver{}, false, nil

@@ -64,7 +64,7 @@ func StoreValueInSingleton(
 			nil
 	}
 
-	fmt.Printf("storing: %v in target singleton %d in file %s:%s...\n", fromJson, targetSingleton, file.VendorID, file.ModelID)
+	fmt.Printf("storing: %v in target singleton %d in file %s:%s...\n", spew.Sdump(fromJson), targetSingleton, file.VendorID, file.ModelID)
 
 	val, i := value.UnmarshalValue(errors.Span{}, fromJson)
 	if i != nil {
@@ -160,35 +160,3 @@ func PopulateValueCache() error {
 
 	return nil
 }
-
-// TODO: remove this.
-// func createDefaultConfigurationFromSpec(spec homescript.ConfigFieldDescriptor) value.Value {
-// 	switch spec.Kind() {
-// 	case homescript.CONFIG_FIELD_TYPE_INT:
-// 		return *value.NewValueInt(0)
-// 	case homescript.CONFIG_FIELD_TYPE_FLOAT:
-// 		return *value.NewValueFloat(0.0)
-// 	case homescript.CONFIG_FIELD_TYPE_BOOL:
-// 		return *value.NewValueBool(false)
-// 	case homescript.CONFIG_FIELD_TYPE_STRING:
-// 		return *value.NewValueString("")
-// 	case homescript.CONFIG_FIELD_TYPE_LIST:
-// 		return *value.NewValueList(make([]*value.Value, 0))
-// 	case homescript.CONFIG_FIELD_TYPE_STRUCT:
-// 		// nolint:forcetypeassert
-// 		structSpec := spec.(homescript.ConfigFieldDescriptorStruct)
-//
-// 		fields := make(map[string]*value.Value)
-//
-// 		for _, field := range structSpec.Fields {
-// 			v := createDefaultConfigurationFromSpec(field.Type)
-// 			fields[field.Name] = &v
-// 		}
-//
-// 		return *value.NewValueObject(fields)
-// 	case homescript.CONFIG_FIELD_TYPE_OPTION:
-// 		return *value.NewValueNull()
-// 	}
-//
-// 	panic(fmt.Sprintf("A new config spec was added without updating this code: %s", spec.Kind()))
-// }

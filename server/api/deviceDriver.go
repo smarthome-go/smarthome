@@ -21,6 +21,14 @@ type ConfigureDriverRequest struct {
 	Data   any                 `json:"data"`
 }
 
+type DeviceDriverAddRequest struct {
+	VendorId       string `json:"vendorId"`
+	ModelId        string `json:"modelId"`
+	Name           string `json:"name"`
+	Version        string `json:"version"`
+	HomescriptCode string `json:"homescriptCode"`
+}
+
 func ListDeviceDrivers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	drivers, err := drivers.ListWithStoredConfig()
@@ -39,7 +47,7 @@ func CreateDeviceDriver(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
-	var request database.DeviceDriver
+	var request DeviceDriverAddRequest
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
@@ -103,6 +111,7 @@ func CreateDeviceDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO
 	if err := database.CreateNewDeviceDriver(request); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to create new device driver", Error: "database failure"})
@@ -194,6 +203,7 @@ func ConfigureDeviceDriver(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: perform validation
+	a
 
 	drivers.StoreValueInSingleton(
 		request.Driver,
