@@ -23,8 +23,12 @@ const (
 )
 
 type AnalyzerDriverMetadata struct {
-	VendorId string
-	ModelId  string
+	data           database.DeviceDriver
+	VendorID       string
+	ModelID        string
+	Name           string
+	Version        string
+	HomescriptCode string
 }
 
 type analyzerHost struct {
@@ -58,25 +62,9 @@ func (self analyzerHost) PostValidationHook(
 ) []diagnostic.Diagnostic {
 	switch self.programKind {
 	case HMS_PROGRAM_KIND_DEVICE_DRIVER:
-		fmt.Printf("post validation driver hook: %s: %s\n", self.driverData.VendorId, self.driverData.ModelId)
+		// fmt.Printf("post validation driver hook: %s: %s\n", self.driverData.VendorId, self.driverData.ModelId)
 
-		driver, found, err := database.GetDeviceDriver(self.driverData.VendorId, self.driverData.ModelId)
-		if err != nil {
-			return []diagnostic.Diagnostic{{
-				Level:   diagnostic.DiagnosticLevelError,
-				Message: fmt.Sprintf("Could not get driver: %s", err.Error()),
-				Span: errors.Span{
-					Start:    errors.Location{},
-					End:      errors.Location{},
-					Filename: mainModule,
-				},
-			}}
-		}
-		if !found {
-			panic(fmt.Sprintf("Driver `%s:%s` was not found in the database", self.driverData.VendorId, self.driverData.ModelId))
-		}
-
-		info, diagnostics := ExtractDriverInfo(driver, analyzedModules, mainModule, true)
+		info, diagnostics := ExtractDriverInfo(analyzedModules, mainModule, true)
 		fmt.Printf("post-validation: INFO: %v\n", info)
 		return diagnostics
 	case HMS_PROGRAM_KIND_NORMAL:

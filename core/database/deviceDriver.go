@@ -12,12 +12,12 @@ const DEVICE_DRIVER_DEFAULT_ICON = "developer_board"
 // TODO: change this so that there is no user owning the device driver script
 
 type DeviceDriver struct {
-	VendorId       string `json:"vendorId"`
-	ModelId        string `json:"modelId"`
-	Name           string `json:"name"`
-	Version        string `json:"version"`
-	HomescriptCode string `json:"homescriptCode"`
-	ConfigJson     string `json:"configJson"`
+	VendorId       string  `json:"vendorId"`
+	ModelId        string  `json:"modelId"`
+	Name           string  `json:"name"`
+	Version        string  `json:"version"`
+	HomescriptCode string  `json:"homescriptCode"`
+	ConfigJson     *string `json:"configJson"`
 }
 
 // Creates the table containing device driver code and metadata
@@ -27,11 +27,11 @@ func createDeviceDriverTable() error {
 	CREATE TABLE
 	IF NOT EXISTS
 	deviceDriver(
-		VendorId			VARCHAR(%d),
-		ModelId				VARCHAR(%d),
-		Name				TEXT,
-		Version				VARCHAR(%d),
-		HomescriptCode		LONGTEXT,
+		VendorId			VARCHAR(%d) NULL,
+		ModelId				VARCHAR(%d) NULL,
+		Name				TEXT NOT NULL,
+		Version				VARCHAR(%d) NOT NULL,
+		HomescriptCode		LONGTEXT NOT NULL,
 		ConfigJson			JSON,
 		PRIMARY KEY (VendorId, ModelId)
 	)
@@ -92,6 +92,8 @@ func CreateNewDeviceDriver(driverData DeviceDriver) error {
 	return nil
 }
 
+// TODO: implement modify for config json only
+
 // Modifies the metadata of a given device driver
 // Returns `true` if the driver was found and modified
 func ModifyDeviceDriver(newData DeviceDriver) (bool, error) {
@@ -126,6 +128,40 @@ func ModifyDeviceDriver(newData DeviceDriver) (bool, error) {
 	rows, err := res.RowsAffected()
 	if err != nil {
 		log.Error("Failed to update device driver: getting rows affected failed: ", err.Error())
+		return false, err
+	}
+
+	return rows > 0, nil
+}
+
+// Modifies only the JSON column, returns if the driver was found.
+// TODO: remove `found` parameter
+func ModifyDeviceDriverConfigJSON(vendorId string, modelId string, newJson *string) (bool, error) {
+	query, err := db.Prepare(`
+	UPDATE deviceDriver
+	SET
+		ConfigJson=?
+	WHERE VendorId=? AND ModelId=?
+	`)
+	if err != nil {
+		log.Error("Failed to update device driver JSON: preparing query failed: ", err.Error())
+		return false, err
+	}
+	defer query.Close()
+
+	res, err := query.Exec(
+		newJson,
+		vendorId,
+		modelId,
+	)
+	if err != nil {
+		log.Error("Failed to update device driver JSON: executing query failed: ", err.Error())
+		return false, err
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		log.Error("Failed to update device driver JSON: getting rows affected failed: ", err.Error())
 		return false, err
 	}
 

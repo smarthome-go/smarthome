@@ -18,7 +18,7 @@ type DeviceDriverRequest struct {
 
 type ConfigureDriverRequest struct {
 	Driver drivers.DriverTuple `json:"driver"`
-	Data   any                 `json:"data"`
+	Data   interface{}         `json:"data"`
 }
 
 type DeviceDriverAddRequest struct {
@@ -55,8 +55,8 @@ func CreateDeviceDriver(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if the combination of vendor ID and model ID is already used
-	_, alreadyExists, err := database.GetDeviceDriver(request.VendorId, request.ModelId)
-	if err != nil {
+	_, alreadyExists, dbErr := database.GetDeviceDriver(request.VendorId, request.ModelId)
+	if dbErr != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to add device driver", Error: "database failure"})
 		return
@@ -101,20 +101,33 @@ func CreateDeviceDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = drivers.ParseDriverVersion(request.Version)
-	if err != nil {
+	_, dbErr = drivers.ParseDriverVersion(request.Version)
+	if dbErr != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		Res(w, Response{
 			Success: false,
-			Message: "failed to add device driver", Error: fmt.Sprintf("the version: '%s' is not valid: %s", request.Version, err.Error()),
+			Message: "failed to add device driver", Error: fmt.Sprintf("the version: '%s' is not valid: %s", request.Version, dbErr.Error()),
 		})
 		return
 	}
 
-	// TODO
-	if err := database.CreateNewDeviceDriver(request); err != nil {
+	hmsErr, dbErr := drivers.Create(
+		request.VendorId,
+		request.ModelId,
+		request.Name,
+		request.Version,
+		request.HomescriptCode,
+	)
+
+	if dbErr != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to create new device driver", Error: "database failure"})
+		return
+	}
+
+	if hmsErr != nil {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "schema validation failed", Error: hmsErr.Error()})
 		return
 	}
 
@@ -185,14 +198,29 @@ func ConfigureDeviceDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, wasFound, err := database.GetDeviceDriver(request.Driver.VendorID, request.Driver.ModelID)
-	if err != nil {
+	// _, wasFound, err := database.GetDeviceDriver(request.Driver.VendorID, request.Driver.ModelID)
+
+	// TODO: perform validation
+
+	found, validationErr, dbErr := drivers.ValidateDriverConfigurationChange(
+		request.Driver.VendorID,
+		request.Driver.ModelID,
+		request.Data,
+	)
+
+	if dbErr != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to configure device driver", Error: "database failure"})
 		return
 	}
 
-	if !wasFound {
+	if validationErr != nil {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "driver schema validation failed", Error: validationErr.Error()})
+		return
+	}
+
+	if !found {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		Res(w, Response{
 			Success: false,
@@ -202,14 +230,15 @@ func ConfigureDeviceDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: perform validation
-	a
-
-	drivers.StoreValueInSingleton(
-		request.Driver,
-		drivers.SingletonKindDriver,
+	if dbErr = drivers.StoreDriverSingleton(
+		request.Driver.VendorID,
+		request.Driver.ModelID,
 		request.Data,
-	)
+	); dbErr != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to configure device driver", Error: "database failure"})
+		return
+	}
 
 	Res(w, Response{Success: true, Message: "successfully configured device driver"})
 }

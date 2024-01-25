@@ -12,6 +12,7 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"github.com/smarthome-go/smarthome/core"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/server/middleware"
@@ -293,7 +294,7 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 	if request.IsDriver {
 		programKind = homescript.HMS_PROGRAM_KIND_DEVICE_DRIVER
 
-		driverData, validationErr, databaseErr := homescript.DriverFromHmsId(request.ModuleName)
+		_, validationErr, databaseErr := homescript.DriverFromHmsId(request.ModuleName)
 		if databaseErr != nil {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			Res(w, Response{Success: false, Message: "could not lint Homescript string", Error: "database error"})
@@ -307,8 +308,8 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 		}
 
 		driverMetadata = &homescript.AnalyzerDriverMetadata{
-			VendorId: driverData.VendorId,
-			ModelId:  driverData.ModelId,
+			// VendorId: driverData.VendorId,
+			// ModelId:  driverData.ModelId,
 		}
 	}
 
@@ -569,7 +570,7 @@ func ModifyHomescriptCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	found, err := homescript.ModifyHomescriptCode(
+	found, err := core.ModifyHomescriptCode(
 		request.Id,
 		username,
 		request.Code,

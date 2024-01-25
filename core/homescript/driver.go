@@ -8,7 +8,6 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	herrors "github.com/smarthome-go/homescript/v3/homescript/errors"
 	"github.com/smarthome-go/homescript/v3/homescript/parser"
-	"github.com/smarthome-go/smarthome/core/database"
 )
 
 const DRIVER_TEMPLATE_IDENT = "Driver"
@@ -23,17 +22,21 @@ var DriverSingletonIdent = fmt.Sprintf("%s%s", parser.SINGLETON_TOKEN, DRIVER_SI
 var DriverDeviceSingletonIdent = fmt.Sprintf("%s%s", parser.SINGLETON_TOKEN, DRIVER_DEVICE_SINGLETON_IDENT)
 var DriverFieldRequiredAnnotation = fmt.Sprintf("%s%s", parser.TYPE_ANNOTATION_TOKEN, DRIVER_FIELD_REQUIRED_ANNOTATION)
 
-func ExtractDriverInfoTotal(driver database.DeviceDriver) (info DriverInfo, hmsErrors []diagnostic.Diagnostic, err error) {
-	filename := fmt.Sprintf("@%s:%s", driver.VendorId, driver.ModelId)
+func ExtractDriverInfoTotal(
+	vendorID string,
+	modelID string,
+	homescriptCode string,
+) (info DriverInfo, hmsErrors []diagnostic.Diagnostic, err error) {
+	filename := fmt.Sprintf("@%s:%s", vendorID, modelID)
 
 	analyzed, res, err := HmsManager.Analyze(
 		"", // TODO: what to do with this field??
 		filename,
-		driver.HomescriptCode,
+		homescriptCode,
 		HMS_PROGRAM_KIND_DEVICE_DRIVER,
 		&AnalyzerDriverMetadata{
-			VendorId: driver.VendorId,
-			ModelId:  driver.ModelId,
+			// VendorId: driver.VendorId,
+			// ModelId:  driver.ModelId,
 		},
 	)
 	if err != nil {
@@ -75,7 +78,7 @@ func ExtractDriverInfoTotal(driver database.DeviceDriver) (info DriverInfo, hmsE
 		return DriverInfo{}, diagnostics, nil
 	}
 
-	info, diagnostics := ExtractDriverInfo(driver, analyzed, filename, false)
+	info, diagnostics := ExtractDriverInfo(analyzed, filename, false)
 	if len(diagnostics) != 0 {
 		return DriverInfo{}, diagnostics, nil
 	}
@@ -84,7 +87,6 @@ func ExtractDriverInfoTotal(driver database.DeviceDriver) (info DriverInfo, hmsE
 }
 
 func ExtractDriverInfo(
-	driver database.DeviceDriver,
 	analyzed map[string]ast.AnalyzedProgram,
 	mainModule string,
 	emitWarnings bool,

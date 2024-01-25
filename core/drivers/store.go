@@ -1,6 +1,7 @@
 package drivers
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/davecgh/go-spew/spew"
@@ -36,54 +37,62 @@ var DriverStore map[DriverTuple]value.ValueObject = make(map[DriverTuple]value.V
 //		- Here, the schema / type of the according singleton must be used to validate that the JSON has a valid schema.
 //	4. If the parsing succeeded, store the data in: TODO any kind of database
 
-func StoreValueInSingleton(
-	file DriverTuple,
-	targetSingleton DriverSingletonKind,
+func StoreDriverSingleton(
+	vendorID string,
+	modelID string,
 	fromJson any,
-) (found bool, softErr error, dbErr error) {
-	driver, found, err := database.GetDeviceDriver(file.VendorID, file.ModelID)
+) error {
+	marshaled, err := json.Marshal(fromJson)
 	if err != nil {
-		return false, nil, err
+		panic(fmt.Sprintf("Impossible marshal error: %s", err.Error()))
+	}
+	marshaledStr := string(marshaled)
+
+	if _, err = database.ModifyDeviceDriverConfigJSON(
+		vendorID,
+		modelID,
+		&marshaledStr,
+	); err != nil {
+		return err
 	}
 
-	if !found {
-		return false, nil, nil
-	}
-
-	_, hmsErrs, err := extractInfoFromDriver(driver)
-	if err != nil {
-		return false, nil, err
-	}
-
-	if len(hmsErrs) > 0 {
-		return false,
-			fmt.Errorf(
-				"Could not extract driver information for sanity check: %s",
-				hmsErrs[0].Display(driver.HomescriptCode),
-			),
-			nil
-	}
-
-	fmt.Printf("storing: %v in target singleton %d in file %s:%s...\n", spew.Sdump(fromJson), targetSingleton, file.VendorID, file.ModelID)
+	fmt.Printf(
+		"storing: %v in target singleton in file %s:%s...\n",
+		spew.Sdump(fromJson),
+		vendorID,
+		modelID,
+	)
 
 	val, i := value.UnmarshalValue(errors.Span{}, fromJson)
 	if i != nil {
 		panic(fmt.Sprintf("Parsing / validation error: %s", (*i).Message()))
 	}
 
-	switch targetSingleton {
-	case SingletonKindDevice:
-		DeviceStore[file] = (*val).(value.ValueObject)
-	case SingletonKindDriver:
-		DriverStore[file] = (*val).(value.ValueObject)
-	default:
-		panic(fmt.Sprintf("A new target singleton kind (%d) was added without updating this code", targetSingleton))
-	}
+	// storeSingletonInternal(SingletonKindDriver, DriverTuple{
+	// 	VendorID: vendorID,
+	// 	ModelID:  modelID,
+	// }, (*val).(value.ValueObject))
+
+	DriverStore[DriverTuple{
+		VendorID: vendorID,
+		ModelID:  modelID,
+	}] = (*val).(value.ValueObject)
 
 	spew.Dump(DriverStore)
 	spew.Dump(DeviceStore)
 
-	return true, nil, nil
+	return nil
+}
+
+func storeSingletonInternal(targetSingleton DriverSingletonKind, file DriverTuple, value value.ValueObject) {
+	switch targetSingleton {
+	case SingletonKindDevice:
+		DeviceStore[file] = value
+	case SingletonKindDriver:
+		DriverStore[file] = value
+	default:
+		panic(fmt.Sprintf("A new target singleton kind (%d) was added without updating this code", targetSingleton))
+	}
 }
 
 func retrieveValueOfSingleton(file DriverTuple, targetSingleton DriverSingletonKind) (res value.ValueObject, found bool) {
@@ -139,7 +148,7 @@ func PopulateValueCache() error {
 		}
 
 		// Load type information for this driver.
-		information, hmsErrs, err := extractInfoFromDriver(driver)
+		information, hmsErrs, err := extractInfoFromDriver(driver.VendorId, driver.ModelId, driver.HomescriptCode)
 		if err != nil {
 			return err
 		}
@@ -150,10 +159,10 @@ func PopulateValueCache() error {
 			continue
 		}
 
-		DriverStore[DriverTuple{
+		storeSingletonInternal(SingletonKindDriver, DriverTuple{
 			VendorID: driver.VendorId,
 			ModelID:  driver.ModelId,
-		}] = value.ObjectZeroValue(information.DriverConfig.HmsType)
+		}, value.ObjectZeroValue(information.DriverConfig.HmsType))
 
 		log.Tracef("Populated driver store line `%s:%s` with default value", driver.VendorId, driver.ModelId)
 	}
