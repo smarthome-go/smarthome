@@ -1,12 +1,16 @@
 <script lang="ts">
     import type { ConfigSpec, ConfigSpecInner, ConfigSpecStruct, ConfigSpecType } from "../driver";
     import { MDCTextField } from '@material/textfield';
-    import {MDCRipple} from '@material/ripple';
+    import { MDCRipple } from '@material/ripple';
+    // import { MDCMenu } from '@material/menu';
+    import { MDCSelect } from '@material/select';
+
     import { createEventDispatcher, onMount } from 'svelte'
 
     const dispatch = createEventDispatcher()
 
-    type HtmlInputType = 'number' | 'text';
+    type HtmlInputType = TextInputType | 'boolean';
+    type TextInputType = 'number' | 'text';
 
     // TODO: write comment
     export let inputData: any = null
@@ -23,14 +27,23 @@
 
     interface HtmlTree {
         html: HTMLElement
-        handle: MDCTextField | null
+        handle: MDCTextField | MDCSelect | null
         source: ConfigSpec
     }
+
+    interface MDCSelectWrapper {
+        select: MDCSelect,
+        listener: () => void,
+        uri: JsonUri,
+    }
+
+    let boolDropDownStore: MDCSelectWrapper[] = []
 
     // Returns the index of the element that was removed
     function deleteListElement(childElement: HTMLElement, parentList: HTMLElement): number {
         // Determine the index of the element to be removed
         const index = getChildNodePositionInParent(childElement, parentList)
+        console.log(`Removing index ${index} from list`)
         childElement.remove()
         return index
     }
@@ -207,26 +220,33 @@
     // URI DOM node patching
     //
 
-    function patchElementURI(thisNode: HTMLElement, typeSpec: ConfigSpec, parentURI: JsonUri) {
+    function patchElementURI(thisNode: HTMLElement, typeSpec: ConfigSpec, newParentURI: JsonUri) {
         switch (typeSpec.type) {
             case 'INT':
+                // TODO: add additional constraint for `nummber`
+                patchTextField(thisNode, newParentURI, 'number')
+                break
             case 'FLOAT':
-            case 'BOOL':
+                patchTextField(thisNode, newParentURI, 'number')
+                break
             case 'STRING':
-                patchTextField(thisNode, parentURI)
+                patchTextField(thisNode, newParentURI, 'text')
+                break
+            case 'BOOL':
+                patchDropDown(thisNode, newParentURI)
                 break
             case 'LIST':
                 const listSpec = typeSpec as ConfigSpecInner
-                patchListURIs(thisNode, listSpec.inner, parentURI)
+                patchListURIs(thisNode, listSpec.inner, newParentURI)
                 break
             case 'STRUCT':
                 const structSpec = typeSpec as ConfigSpecStruct
-                patchStructURIs(thisNode, structSpec, parentURI)
+                patchStructURIs(thisNode, structSpec, newParentURI)
                 break
             case 'OPTION':
                 // TODO: handle wrapper element?
                 const optionSpec = typeSpec as ConfigSpecInner
-                patchOptionUri(thisNode, optionSpec.inner, parentURI)
+                patchOptionUri(thisNode, optionSpec.inner, newParentURI)
                 break
             default:
                 console.dir(typeSpec)
@@ -244,6 +264,7 @@
 
         for (let idx = 0; idx < listChildren.length; idx++) {
             let listChild = listChildren[idx]
+
             const query = `.${LIST_BODY_ITEM_CLASS_NAME}__input`
             let inputNode = listChild.querySelector(query)
             if (inputNode === null) {
@@ -257,6 +278,8 @@
                 fieldName: null,
                 listIndex: idx,
             })
+
+            // console.dir(inputNode)
 
             patchElementURI(inputNode as HTMLElement, listInnerTypeSpec, newUri)
         }
@@ -276,10 +299,31 @@
 
             let liElement = fieldList[idx] as HTMLElement
 
-            let inputNode = liElement.firstChild
+
+            let inputNode = null
+
+            let children = liElement.children
+            for (let child of children) {
+                // NOTE: this is a boolean dropdown, extract it specially.
+                if (child.classList.contains('mdc-select')) {
+                    // Get correct element
+                    inputNode = liElement
+                    console.log("found it")
+                    console.dir(inputNode)
+                    break
+                }
+            }
+
+            // Otherwise, use the first child
+            if (inputNode === null) {
+                inputNode = liElement.firstChild
+            }
+
             if (inputNode === null) {
                 throw("Cannot get input node in list children")
             }
+
+            console.dir(inputNode)
 
             patchElementURI(inputNode as HTMLElement, fieldType.type, parentURI)
         }
@@ -367,6 +411,31 @@
             let cloned = this.clone()
             cloned.pop()
             return cloned
+        }
+
+        equals(other: JsonUri): boolean {
+            if (this.fields.length != other.fields.length) {
+                return false
+            }
+
+            for (let i = 0; i < this.fields.length; i++) {
+                const thisE = this.fields[i]
+                const otherE = other.fields[i]
+
+                if (thisE.type != otherE.type) {
+                    return false
+                }
+
+                if (thisE.fieldName != otherE.fieldName) {
+                    return false
+                }
+
+                if (thisE.listIndex != otherE.listIndex) {
+                    return false
+                }
+            }
+
+            return true
         }
 
         // If parent is n segments long, the first n segments of this URI will be changed to the one of the parent.
@@ -487,7 +556,9 @@
                 }
             }
             case 'BOOL': {
-                const [html, handle] = newTextField(uri, 'number', label, currentValue)
+                const [html, handle] = newDropDown(uri, label, currentValue)
+
+                // const [html, handle] = newTextField(uri, 'number', label, currentValue)
                 return {
                     html,
                     handle,
@@ -592,9 +663,197 @@
         dispatch('change', dataInternal)
     }
 
-    function onInputHook(uri: JsonUri, inputElement: HTMLInputElement){
-            maniplateUriValue(uri, inputElement.value)
+    function onInputHook(uri: JsonUri, inputElement: HTMLInputElement, type: HtmlInputType) {
+            const strValue = inputElement.value
+            let outputValue: any = null
+
+            switch (type) {
+                case "text":
+                    outputValue = strValue
+                    break
+                case "number":
+                    outputValue = parseInt(strValue)
+                    break
+                default:
+                    console.error(type)
+            }
+
+            maniplateUriValue(uri, outputValue)
             commitState()
+    }
+
+    // function newAtomField(
+    //     uri: JsonUri,
+    //     inputType: HtmlInputType,
+    //     labelText: string | null,
+    //     currentValue: any,
+    // ) {
+    //     switch (inputType) {
+    //         case 'number':
+    //         case 'text':
+    //             newTextField(uri, inputType, labelText, currentValue)
+    //             break
+    //         case 'boolean':
+    //             console.error("TODO: add boolean")
+    //             break
+    //     }
+    // }
+
+        // let innerUl = document.createElement("ul")
+        // innerUl.classList.add("mdc-menu__selection-group")
+
+        // let innerLi = document.createElement("li")
+        // innerLi.classList.add("mdc-list-item")
+        // innerLi.role = "menuitem"
+        //
+        // let innerLiRippleSpan = document.createElement("span")
+        // innerLiRippleSpan.classList.add("mdc-list-item__ripple")
+        //
+        // let innerLiIcon = document.createElement("span")
+        // innerLiIcon.classList.add("mdc-list-item__graphic", "mdc-menu__selection-group-icon")
+        // innerLiIcon.innerText = "code"
+        //
+        // let innerLiContent = document.createElement("span")
+        // innerLiContent.classList.add("mdc-list-item__text")
+        // innerLiContent.innerText = "OPTION X"
+        //
+        // let mdcListDivider = document.createElement("li")
+        // mdcListDivider.classList.add("mdc-list-divider")
+        // mdcListDivider.role = "separator"
+        //
+        // innerLi.appendChild(innerLiRippleSpan)
+        // innerLi.appendChild(innerLiIcon)
+        // innerLi.appendChild(innerLiContent)
+        // innerUl.appendChild(innerLi)
+        // liElement.appendChild(innerUl)
+        // mdcUlList.appendChild(liElement)
+        // mdcUlList.appendChild(mdcListDivider)
+
+
+// <div class="mdc-menu mdc-menu-surface" id="demo-menu">
+//   <ul class="mdc-list" role="menu" aria-hidden="true" aria-orientation="vertical" tabindex="-1">
+//     <li>
+//       <ul class="mdc-menu__selection-group">
+//         <li class="mdc-list-item" role="menuitem">
+//           <span class="mdc-list-item__ripple"></span>
+//           <span class="mdc-list-item__graphic mdc-menu__selection-group-icon">
+//             ...
+//           </span>
+//           <span class="mdc-list-item__text">Single</span>
+//         </li>
+//         <li class="mdc-list-item" role="menuitem">
+//           <span class="mdc-list-item__ripple"></span>
+//           <span class="mdc-list-item__graphic mdc-menu__selection-group-icon">
+//            ...
+//           </span>
+//           <span class="mdc-list-item__text">1.15</span>
+//         </li>
+//       </ul>
+//     </li>
+//     <li class="mdc-list-divider" role="separator"></li>
+//     <li class="mdc-list-item" role="menuitem">
+//       <span class="mdc-list-item__ripple"></span>
+//       <span class="mdc-list-item__text">Add space before paragraph</span>
+//     </li>
+//     ...
+//   </ul>
+// </div>
+
+    // https://github.com/hperrin/svelte-material-ui/tree/v7/packages/select
+    function newDropDown(
+        uri: JsonUri,
+        labelText: string | null,
+        currentValue: boolean,
+    ): [HTMLElement, MDCSelect] {
+        let body = document.createElement('div')
+        body.classList.add("mdc-select", "mdc-select--filled", "mdc-select")
+        body.id = uri.string()
+
+        body.innerHTML = `
+        <div class="mdc-select__anchor">
+            <span class="mdc-select__ripple"></span>
+            <span class="mdc-floating-label mdc-floating-label--float-above">${labelText !== null ? labelText : ""}</span>
+            <span class="mdc-select__selected-text-container">
+            <span class="mdc-select__selected-text">${labelText !== null ? labelText : ""}</span>
+            </span>
+            <span class="mdc-select__dropdown-icon">
+                <svg
+                    class="mdc-select__dropdown-icon-graphic"
+                    viewBox="7 10 10 5" focusable="false">
+                    <polygon
+                        class="mdc-select__dropdown-icon-inactive"
+                        stroke="none"
+                        fill-rule="evenodd"
+                        points="7 10 12 15 17 10">
+                    </polygon>
+                    <polygon
+                        class="mdc-select__dropdown-icon-active"
+                        stroke="none"
+                        fill-rule="evenodd"
+                        points="7 15 12 10 17 15">
+                    </polygon>
+                </svg>
+            </span>
+            <span class="mdc-line-ripple"></span>
+        </div>
+
+        <div class="mdc-select__menu mdc-menu mdc-menu-surface">
+            <ul class="mdc-deprecated-list">
+                <li class="mdc-deprecated-list-item" data-value="true">
+                    <span class="mdc-deprecated-list-item__ripple"></span>
+                    <span class="mdc-deprecated-list-item__text">True</span>
+                </li>
+                <li class="mdc-deprecated-list-item mdc-deprecated-list-item--selected" data-value="false" aria-selected="true">
+                    <span class="mdc-deprecated-list-item__ripple"></span>
+                    <span class="mdc-deprecated-list-item__text">False</span>
+                </li>
+            </ul>
+        </div>`
+
+        const select = new MDCSelect(body);
+        const listener = registerMDCSelectOnChange(select, uri.clone(), null)
+        boolDropDownStore = [...boolDropDownStore, {
+            select,
+            uri: uri.clone(),
+            listener,
+        }]
+
+        select.setValue(`${currentValue}`, true)
+
+        return [body, select]
+    }
+
+    function registerMDCSelectOnChange(select: MDCSelect, uri: JsonUri, oldClosure: (() => void) | null): () => void {
+        const newClosure = () => {
+            console.log(`Selected option at index ${select.selectedIndex} with value "${select.value} | URI: ${uri.string()}"`);
+
+            let boolOut = null
+
+            switch (select.value) {
+                case "true":
+                    boolOut = true
+                    break
+                case "false":
+                    boolOut = false
+                    break
+                default:
+                    throw(`Illegal value: ${select.value}`)
+            }
+
+            maniplateUriValue(uri, boolOut)
+            commitState()
+        }
+
+        console.log(`Listening on URI ${uri.string()}`)
+
+        const event = 'MDCSelect:change'
+
+        if (oldClosure !== null) {
+            select.unlisten(event, oldClosure)
+        }
+
+        select.listen(event, newClosure);
+        return newClosure
     }
 
     function newTextField(
@@ -620,7 +879,7 @@
         // Listen to update events
         // TODO: persist these changes via URI addressing
         // TODO: validate input type
-        inputElement.oninput = (_) => { onInputHook(uri, inputElement) }
+        inputElement.oninput = (_) => { onInputHook(uri, inputElement, inputType) }
 
         // TODO: add different values depending on the type?
         if (currentValue !== null) {
@@ -642,7 +901,7 @@
         return [outerLabel, textField]
     }
 
-    function patchTextField(textFieldParent: HTMLElement, parentURI: JsonUri) {
+    function patchTextField(textFieldParent: HTMLElement, parentURI: JsonUri, inputType: HtmlInputType) {
         let inputInnerLabel = textFieldParent.querySelector('.mdc-floating-label')
         if (inputInnerLabel === null) {
             throw("Input inner label of textfield not found")
@@ -666,7 +925,41 @@
         inputElement.setAttribute('aria-labelledby', newUriId)
 
         // Update on-input hook
-        inputElement.oninput = (_) => { onInputHook(newUri, inputElement) }
+        inputElement.oninput = (_) => { onInputHook(newUri, inputElement, inputType) }
+    }
+
+    function patchDropDown(dropDownParent: HTMLElement, parentURI: JsonUri) {
+        let selectRoot = dropDownParent.querySelector('.mdc-select')
+        if (selectRoot === null) {
+            // console.dir(dropDownParent)
+            throw(`Inner dropdown not found of dropdown component`)
+        }
+
+        // Parse old URI
+        const oldURI = new JsonUri(selectRoot.id)
+
+        // Create new URI
+        let newUri = oldURI.clone()
+        newUri.overrideStart(parentURI)
+
+        const newUriId = newUri.string()
+        // Update id of label
+        selectRoot.id = newUriId
+
+        // Update on-input hook.
+
+        for (let registered of boolDropDownStore) {
+            if (registered.uri.equals(oldURI)) {
+                const newListener = registerMDCSelectOnChange(registered.select, newUri.clone(), registered.listener)
+                registered.listener = newListener
+                registered.uri = newUri.clone()
+
+                console.log(`Successfully patched dropdown with ID ${oldURI.string()} to ${newUriId}`)
+                return
+            }
+        }
+
+        throw(`Boolean input ${oldURI.string()} was not found in the list of registered inputs`)
     }
 
     function generateInputs(spec: ConfigSpec | null, topLevelLabel: string | null, currentData: any) {
@@ -699,7 +992,9 @@
     $: if(loaded) reactToNewInput(inputData)
 
     // TODO: is this `loaded` variable required?
-    onMount(() => loaded = true)
+    onMount(() => {
+        loaded = true
+    })
 </script>
 
 <div class="configurator">
@@ -709,10 +1004,10 @@
 </div>
 
 <style lang="scss">
-    :global(ul) {
+    :global(.config-option__list__body), :global(.config-option__struct__fields) {
         list-style-type: none;
 
-        :global(li:not(:last-child)) {
+        & > :global(li:not(:last-child)) {
             margin-bottom: .5rem;
         }
     }

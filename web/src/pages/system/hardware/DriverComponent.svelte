@@ -71,7 +71,7 @@
 
             <h6>JSON configuration output</h6>
             <!-- <textarea bind:this={textarea} on:input={(_) => {}} rows="10" cols="40" value={textareaContent}></textarea> -->
-            <textarea bind:this={textarea} on:input={(_) => reactToInput()} rows="10" cols="40" value={textareaContent}></textarea>
+            <textarea bind:this={textarea} on:input={(_) => reactToInput()} rows="20" cols="40" value={textareaContent}></textarea>
 
             <Button
                 variant="outlined"
