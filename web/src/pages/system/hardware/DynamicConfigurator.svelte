@@ -223,7 +223,7 @@
     function patchElementURI(thisNode: HTMLElement, typeSpec: ConfigSpec, newParentURI: JsonUri) {
         switch (typeSpec.type) {
             case 'INT':
-                // TODO: add additional constraint for `nummber`
+                // TODO: add additional constraint for `number`
                 patchTextField(thisNode, newParentURI, 'number')
                 break
             case 'FLOAT':
