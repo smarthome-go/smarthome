@@ -90,6 +90,10 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/devices/modify", mdl.ApiAuth(mdl.Perm(api.ModifyDevice, database.PermissionModifyRooms))).Methods("PUT")
 	r.HandleFunc("/api/devices/delete", mdl.ApiAuth(mdl.Perm(api.DeleteDevice, database.PermissionModifyRooms))).Methods("DELETE")
 
+	// TODO: Device actions???
+	r.HandleFunc("/api/devices/action", mdl.ApiAuth(mdl.Perm(api.DeviceAction, database.PermissionPower))).Methods("POST")
+	// TODO: add route for listing all the actions of one device.
+
 	// Cameras
 	r.HandleFunc("/api/camera/add", mdl.ApiAuth(mdl.Perm(api.CreateCamera, database.PermissionModifyRooms))).Methods("POST")
 	r.HandleFunc("/api/camera/modify", mdl.ApiAuth(mdl.Perm(api.ModifyCamera, database.PermissionModifyRooms))).Methods("PUT")

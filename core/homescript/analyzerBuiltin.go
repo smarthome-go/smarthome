@@ -8,7 +8,6 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	pAst "github.com/smarthome-go/homescript/v3/homescript/parser/ast"
-	"github.com/smarthome-go/smarthome/core/database"
 )
 
 // A list of `known` object type annotations
@@ -23,12 +22,8 @@ const (
 )
 
 type AnalyzerDriverMetadata struct {
-	data           database.DeviceDriver
-	VendorID       string
-	ModelID        string
-	Name           string
-	Version        string
-	HomescriptCode string
+	VendorID string
+	ModelID  string
 }
 
 type analyzerHost struct {

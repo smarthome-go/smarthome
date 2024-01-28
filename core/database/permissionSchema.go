@@ -11,6 +11,7 @@ type PermissionType string
 
 // Different types of permissions
 const (
+	// TODO: rename into `interactWithDevices`.
 	PermissionPower             PermissionType = "setPower"
 	PermissionViewCameras       PermissionType = "viewCameras"
 	PermissionManageUsers       PermissionType = "manageUsers"
