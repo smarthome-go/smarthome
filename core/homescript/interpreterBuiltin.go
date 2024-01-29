@@ -52,6 +52,11 @@ func parseDate(year, month, day int) (time.Time, bool) {
 	return t, y == year && int(m) == month && d == day
 }
 
+func (self interpreterExecutor) LoadSingleton(singletonIdent, moduleName string) (val value.Value, valid bool, err error) {
+	// TODO: implement singleton loading
+	return nil, false, nil
+}
+
 // if it exists, returns a value which is part of the host builtin modules
 func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport string) (val value.Value, found bool) {
 	switch moduleName {
@@ -439,21 +444,24 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 					}), nil
 				}),
 				"generic": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
-					// Check permissions and request building beforehand
-					hasPermission, err := database.UserHasPermission(executor.GetUser(), database.PermissionHomescriptNetwork)
-					if err != nil {
-						return nil, value.NewVMFatalException(
-							fmt.Sprintf("Could not perform request: failed to validate your permissions: %s", err.Error()),
-							value.Vm_HostErrorKind,
-							span,
-						)
-					}
-					if !hasPermission {
-						return nil, value.NewVMFatalException(
-							fmt.Sprintf("Will not perform request: lacking permission to access the network via Homescript. If this is unintentional, contact your administrator"),
-							value.Vm_HostErrorKind,
-							span,
-						)
+					// TODO: fix this by running drivers without a user tag.
+					if executor.GetUser() != "" {
+						// Check permissions and request building beforehand
+						hasPermission, err := database.UserHasPermission(executor.GetUser(), database.PermissionHomescriptNetwork)
+						if err != nil {
+							return nil, value.NewVMFatalException(
+								fmt.Sprintf("Could not perform request: failed to validate your permissions: %s", err.Error()),
+								value.Vm_HostErrorKind,
+								span,
+							)
+						}
+						if !hasPermission {
+							return nil, value.NewVMFatalException(
+								fmt.Sprintf("Will not perform request: lacking permission to access the network via Homescript. If this is unintentional, contact your administrator"),
+								value.Vm_HostErrorKind,
+								span,
+							)
+						}
 					}
 
 					url := args[0].(value.ValueString).Inner
