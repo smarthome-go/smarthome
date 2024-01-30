@@ -139,7 +139,7 @@ func Create(vendorID, modelID, name, version, hmsCode string) (hmsErr error, dbE
 		Name:           name,
 		Version:        version,
 		HomescriptCode: hmsCode,
-		ConfigJson:     nil,
+		SingletonJSON:  nil,
 	}
 
 	// Try to create default JSON from schema.

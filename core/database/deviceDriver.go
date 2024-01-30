@@ -17,7 +17,7 @@ type DeviceDriver struct {
 	Name           string  `json:"name"`
 	Version        string  `json:"version"`
 	HomescriptCode string  `json:"homescriptCode"`
-	ConfigJson     *string `json:"configJson"`
+	SingletonJSON  *string `json:"singletonJson"`
 }
 
 // Creates the table containing device driver code and metadata
@@ -32,7 +32,7 @@ func createDeviceDriverTable() error {
 		Name				TEXT NOT NULL,
 		Version				VARCHAR(%d) NOT NULL,
 		HomescriptCode		LONGTEXT NOT NULL,
-		ConfigJson			JSON,
+		SingletonJson		JSON,
 		PRIMARY KEY (VendorId, ModelId)
 	)
 	`,
@@ -66,7 +66,7 @@ func CreateNewDeviceDriver(driverData DeviceDriver) error {
 		Name,
 		Version,
 		HomescriptCode,
-		ConfigJson
+		SingletonJson
 	)
 	VALUES(?, ?, ?, ?, ?, ?)
 	`)
@@ -83,7 +83,7 @@ func CreateNewDeviceDriver(driverData DeviceDriver) error {
 		driverData.Name,
 		driverData.Version,
 		driverData.HomescriptCode,
-		driverData.ConfigJson,
+		driverData.SingletonJSON,
 	); err != nil {
 		log.Error("Failed to create new device driver: executing query failed: ", err.Error())
 		return err
@@ -103,7 +103,7 @@ func ModifyDeviceDriver(newData DeviceDriver) (bool, error) {
 		Name=?,
 		Version=?,
 		HomescriptCode=?,
-		ConfigJson=?
+		SingletonJson=?
 	WHERE VendorId=? AND ModelId=?
 	`)
 	if err != nil {
@@ -116,7 +116,7 @@ func ModifyDeviceDriver(newData DeviceDriver) (bool, error) {
 		newData.Name,
 		newData.Version,
 		newData.HomescriptCode,
-		newData.ConfigJson,
+		newData.SingletonJSON,
 		newData.VendorId,
 		newData.ModelId,
 	)
@@ -136,11 +136,11 @@ func ModifyDeviceDriver(newData DeviceDriver) (bool, error) {
 
 // Modifies only the JSON column, returns if the driver was found.
 // TODO: remove `found` parameter
-func ModifyDeviceDriverConfigJSON(vendorId string, modelId string, newJson *string) (bool, error) {
+func ModifyDeviceDriverSingletonJSON(vendorId string, modelId string, newJson *string) (bool, error) {
 	query, err := db.Prepare(`
 	UPDATE deviceDriver
 	SET
-		ConfigJson=?
+		SingletonJson=?
 	WHERE VendorId=? AND ModelId=?
 	`)
 	if err != nil {
@@ -211,7 +211,7 @@ func ListDeviceDrivers() ([]DeviceDriver, error) {
 		deviceDriver.Name,
 		deviceDriver.Version,
 		deviceDriver.HomescriptCode,
-		deviceDriver.ConfigJson
+		deviceDriver.SingletonJSON
 	FROM deviceDriver
 	`)
 	if err != nil {
@@ -234,7 +234,7 @@ func ListDeviceDrivers() ([]DeviceDriver, error) {
 			&driver.Name,
 			&driver.Version,
 			&driver.HomescriptCode,
-			&driver.ConfigJson,
+			&driver.SingletonJSON,
 		)
 		if err != nil {
 			log.Error("Failed to list Homescript of user: scanning results failed: ", err.Error())
@@ -251,7 +251,7 @@ func GetDeviceDriver(vendorId string, modelId string) (DeviceDriver, bool, error
 		deviceDriver.Name,
 		deviceDriver.Version,
 		deviceDriver.HomescriptCode,
-		deviceDriver.ConfigJson
+		deviceDriver.SingletonJSON
 	FROM deviceDriver
 	WHERE deviceDriver.VendorId=?
 	AND deviceDriver.ModelId=?
@@ -273,7 +273,7 @@ func GetDeviceDriver(vendorId string, modelId string) (DeviceDriver, bool, error
 		&driver.Name,
 		&driver.Version,
 		&driver.HomescriptCode,
-		&driver.ConfigJson,
+		&driver.SingletonJSON,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return DeviceDriver{}, false, nil

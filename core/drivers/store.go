@@ -48,7 +48,7 @@ func StoreDriverSingleton(
 	}
 	marshaledStr := string(marshaled)
 
-	if _, err = database.ModifyDeviceDriverConfigJSON(
+	if _, err = database.ModifyDeviceDriverSingletonJSON(
 		vendorID,
 		modelID,
 		&marshaledStr,

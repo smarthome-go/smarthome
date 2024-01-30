@@ -27,11 +27,12 @@ type SetupRoom struct {
 }
 
 type SetupDevice struct {
-	DeviceType database.DEVICE_TYPE `json:"deviceType"`
-	Id         string               `json:"id"`
-	Name       string               `json:"name"`
-	VendorId   string               `json:"vendorId"`
-	ModelId    string               `json:"modelId"`
+	DeviceType    database.DEVICE_TYPE `json:"deviceType"`
+	Id            string               `json:"id"`
+	Name          string               `json:"name"`
+	VendorId      string               `json:"vendorId"`
+	ModelId       string               `json:"modelId"`
+	SingletonJSON string               `json:"SingletonJson"`
 }
 
 type SetupCamera struct {

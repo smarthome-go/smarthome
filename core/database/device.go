@@ -25,12 +25,13 @@ func ParseDeviceType(from string) (DEVICE_TYPE, bool) {
 // Identified by a device ID, has a name and belongs to one room
 // Each device can either be an input device or an output device
 type Device struct {
-	DeviceType DEVICE_TYPE `json:"type"`
-	Id         string      `json:"id"`
-	Name       string      `json:"name"`
-	RoomId     string      `json:"roomId"`
-	VendorId   string      `json:"vendorId"`
-	ModelId    string      `json:"modelId"`
+	DeviceType    DEVICE_TYPE `json:"type"`
+	Id            string      `json:"id"`
+	Name          string      `json:"name"`
+	RoomId        string      `json:"roomId"`
+	VendorId      string      `json:"vendorId"`
+	ModelId       string      `json:"modelId"`
+	SingletonJSON string      `json:"singletonJson"`
 }
 
 // Creates the table containing devices
@@ -49,6 +50,7 @@ func createDeviceTable() error {
 		RoomId VARCHAR(30),
 		DriverVendorId VARCHAR(%d),
 		DriverModelId VARCHAR(%d),
+		SingletonJson JSON,
 
 		PRIMARY KEY(Id),
 		FOREIGN KEY (RoomId)
@@ -68,14 +70,7 @@ func createDeviceTable() error {
 
 // Creates a new device
 // Will return an error if the database fails
-func CreateDevice(
-	devType DEVICE_TYPE,
-	id string,
-	name string,
-	roomId string,
-	driverVendorId string,
-	driverModelId string,
-) error {
+func CreateDevice(data Device) error {
 	query, err := db.Prepare(`
 	INSERT INTO
 	device(
@@ -101,7 +96,14 @@ func CreateDevice(
 		return err
 	}
 	defer query.Close()
-	res, err := query.Exec(devType, id, name, roomId, driverVendorId, driverModelId)
+	res, err := query.Exec(
+		data.DeviceType,
+		data.Id,
+		data.Name,
+		data.RoomId,
+		data.VendorId,
+		data.ModelId,
+	)
 	if err != nil {
 		log.Error("Failed to add device: executing query failed: ", err.Error())
 		return err
@@ -115,13 +117,13 @@ func CreateDevice(
 		return err
 	}
 	if rowsAffected > 0 {
-		log.Debug(fmt.Sprintf("Added device `%s` with name `%s`", id, name))
+		log.Debug(fmt.Sprintf("Added device `%s` with name `%s`", data.Id, data.Name))
 	}
 	return nil
 }
 
-// Modifies the metadata of a given device
-func ModifyDevice(id string, name string) error {
+// Modifies the name of a given device.
+func ModifyDeviceName(id string, name string) error {
 	query, err := db.Prepare(`
 	UPDATE device
 	SET
@@ -129,14 +131,37 @@ func ModifyDevice(id string, name string) error {
 	WHERE Id=?
 	`)
 	if err != nil {
-		log.Error("Failed to modify device: preparing query failed: ", err.Error())
+		log.Error("Failed to modify device name: preparing query failed: ", err.Error())
 		return err
 	}
 
 	defer query.Close()
 
 	if _, err := query.Exec(name, id); err != nil {
-		log.Error("Failed to modify device: executing query failed: ", err.Error())
+		log.Error("Failed to modify device name: executing query failed: ", err.Error())
+		return err
+	}
+
+	return nil
+}
+
+// Modifies the singleton JSON of a given device.
+func ModifyDeviceSingletonJSON(id string, newJson string) error {
+	query, err := db.Prepare(`
+	UPDATE device
+	SET
+		SingletonJson=?
+	WHERE Id=?
+	`)
+	if err != nil {
+		log.Error("Failed to modify device singleton JSON: preparing query failed: ", err.Error())
+		return err
+	}
+
+	defer query.Close()
+
+	if _, err := query.Exec(newJson, id); err != nil {
+		log.Error("Failed to modify device singleton JSON: executing query failed: ", err.Error())
 		return err
 	}
 
@@ -198,7 +223,8 @@ func ListAllDevices() ([]Device, error) {
 		device.Name,
 		device.RoomId,
 		device.DriverVendorId,
-		device.DriverModelId
+		device.DriverModelId,
+		device.SingletonJson
 	FROM device
 	`)
 	if err != nil {
@@ -217,6 +243,7 @@ func ListAllDevices() ([]Device, error) {
 			&device.RoomId,
 			&device.VendorId,
 			&device.ModelId,
+			&device.SingletonJSON,
 		); err != nil {
 			log.Error("Could not list devices: Failed to scan results: ", err.Error())
 			return nil, err
@@ -238,7 +265,8 @@ func ListUserDevicesQuery(username string) ([]Device, error) {
 		device.Name,
 		device.RoomId,
 		device.DriverVendorId,
-		device.DriverModelId
+		device.DriverModelId,
+		device.SingletonJson
 	FROM device
 	JOIN hasDevicePermission
 		ON hasDevicePermission.Device=device.Id
@@ -267,6 +295,7 @@ func ListUserDevicesQuery(username string) ([]Device, error) {
 			&device.RoomId,
 			&device.VendorId,
 			&device.ModelId,
+			&device.SingletonJSON,
 		); err != nil {
 			log.Error("Could not list user devices: Failed to scan results: ", err.Error())
 			return nil, err
@@ -298,7 +327,8 @@ func GetDeviceById(id string) (dev Device, found bool, err error) {
 		device.Name,
 		device.RoomId,
 		device.DriverVendorId,
-		device.DriverModelId
+		device.DriverModelId,
+		device.SingletonJson
 	FROM device
 	WHERE Id=?
 	`)
@@ -316,6 +346,7 @@ func GetDeviceById(id string) (dev Device, found bool, err error) {
 		&device.RoomId,
 		&device.VendorId,
 		&device.ModelId,
+		&device.SingletonJSON,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return Device{}, false, nil

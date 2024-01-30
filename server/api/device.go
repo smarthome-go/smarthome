@@ -141,14 +141,15 @@ func CreateDevice(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: Validate drivers + add correct implementation of this thing
 	// TODO: validate that the device type is a correct enum
-	if err := database.CreateDevice(
-		parsedType,
-		request.Id,
-		request.Name,
-		request.RoomId,
-		request.DriverVendorId,
-		request.DriverModelId,
-	); err != nil {
+	if err := database.CreateDevice(database.Device{
+		DeviceType:    parsedType,
+		Id:            request.Id,
+		Name:          request.Name,
+		RoomId:        request.RoomId,
+		VendorId:      request.DriverVendorId,
+		ModelId:       request.DriverModelId,
+		SingletonJSON: "TODO", // TODO: how is this handled?
+	}); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to create device", Error: "database failure"})
 		return
@@ -185,7 +186,7 @@ func ModifyDevice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := database.ModifyDevice(request.Id, request.Name); err != nil {
+	if err := database.ModifyDeviceName(request.Id, request.Name); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to modify device", Error: "database failure"})
 		return

@@ -388,14 +388,15 @@ func createRoomsInDatabase(rooms []config.SetupRoom) error {
 		}
 
 		for _, device := range room.Devices {
-			if err := database.CreateDevice(
-				device.DeviceType,
-				device.Id,
-				device.Name,
-				room.Data.Id,
-				device.VendorId,
-				device.ModelId,
-			); err != nil {
+			if err := database.CreateDevice(database.Device{
+				DeviceType:    device.DeviceType,
+				Id:            device.Id,
+				Name:          device.Name,
+				RoomId:        room.Data.Id,
+				VendorId:      device.VendorId,
+				ModelId:       device.ModelId,
+				SingletonJSON: device.SingletonJSON,
+			}); err != nil {
 				log.Error("Could not create devices from setup file: ", err.Error())
 				return err
 			}
