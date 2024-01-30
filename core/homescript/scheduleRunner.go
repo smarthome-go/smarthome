@@ -74,7 +74,7 @@ func scheduleRunnerFunc(id uint) {
 	case database.ScheduleTargetModeCode:
 		ctx, cancel := context.WithTimeout(context.Background(), SCHEDULE_MAXIMUM_RUNTIME)
 
-		res, err := HmsManager.Run(
+		res, _, err := HmsManager.Run(
 			HMS_PROGRAM_KIND_NORMAL,
 			nil,
 			owner.Username,
@@ -88,6 +88,7 @@ func scheduleRunnerFunc(id uint) {
 			&bytes.Buffer{},
 			nil,
 			// Do not use any custom runner func.
+			nil,
 			nil,
 		)
 
@@ -131,7 +132,7 @@ func scheduleRunnerFunc(id uint) {
 	case database.ScheduleTargetModeHMS:
 		ctx, cancel := context.WithTimeout(context.Background(), SCHEDULE_MAXIMUM_RUNTIME)
 
-		res, err := HmsManager.RunById(
+		res, _, err := HmsManager.RunById(
 			HMS_PROGRAM_KIND_NORMAL,
 			nil,
 			job.Data.HomescriptTargetId,
@@ -142,6 +143,7 @@ func scheduleRunnerFunc(id uint) {
 			nil,
 			nil,
 			&bytes.Buffer{},
+			nil,
 			nil,
 		)
 

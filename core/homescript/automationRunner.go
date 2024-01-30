@@ -202,7 +202,7 @@ func AutomationRunnerFunc(id uint, automationCtx AutomationContext) {
 		ctx, cancel = context.WithTimeout(context.Background(), *automationCtx.MaximumHMSRuntime)
 	}
 
-	res, err := HmsManager.RunById(
+	res, _, err := HmsManager.RunById(
 		HMS_PROGRAM_KIND_NORMAL,
 		nil,
 		job.Data.HomescriptId,
@@ -214,6 +214,7 @@ func AutomationRunnerFunc(id uint, automationCtx AutomationContext) {
 		nil,
 		&bytes.Buffer{},
 		&automationCtx,
+		nil,
 	)
 
 	if err != nil {

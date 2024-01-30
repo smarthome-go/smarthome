@@ -111,7 +111,7 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 
 	// Run the Homescript
 	var outputBuffer bytes.Buffer
-	res, err := homescript.HmsManager.Run(
+	res, _, err := homescript.HmsManager.Run(
 		homescript.HMS_PROGRAM_KIND_NORMAL,
 		nil,
 		username,
@@ -123,6 +123,7 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		nil,
 		args,
 		&outputBuffer,
+		nil,
 		nil,
 		nil,
 	)
@@ -231,7 +232,7 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 
 	// Run the Homescript
 	var outputBuffer bytes.Buffer
-	res, err := homescript.HmsManager.Run(
+	res, _, err := homescript.HmsManager.Run(
 		homescript.HMS_PROGRAM_KIND_NORMAL,
 		nil,
 		username,
@@ -243,6 +244,7 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		nil,
 		args,
 		&outputBuffer,
+		nil,
 		nil,
 		nil,
 	)

@@ -129,7 +129,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 	go func(writer io.Writer, results *chan homescript.HmsRes, idChan *chan uint64) {
 		ctx, cancel := context.WithCancel(context.Background())
 
-		res, err := homescript.HmsManager.RunById(
+		res, _, err := homescript.HmsManager.RunById(
 			homescript.HMS_PROGRAM_KIND_NORMAL,
 			nil,
 			request.Payload,
@@ -140,6 +140,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 			idChan,
 			args,
 			outWriter,
+			nil,
 			nil,
 		)
 		if err != nil {

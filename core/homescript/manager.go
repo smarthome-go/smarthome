@@ -265,6 +265,11 @@ func (m *Manager) AnalyzeById(
 	return m.Analyze(username, id, hms.Data.Code, programKind, driverData)
 }
 
+// NOTE: this is primarily required for the driver.
+type HmsResponseContext struct {
+	Singletons map[string]value.Value
+}
+
 func (m *Manager) Run(
 	programKind HMS_PROGRAM_KIND,
 	driverData *AnalyzerDriverMetadata,
@@ -280,7 +285,8 @@ func (m *Manager) Run(
 	automationContext *AutomationContext,
 	// If this is left non-empty, an additional function is called after `init`.
 	functionInvocation *runtime.FunctionInvocation,
-) (HmsRes, error) {
+	singletonsToLoad map[string]value.Value,
+) (HmsRes, HmsResponseContext, error) {
 	// TODO: handle arguments
 
 	// TODO: the @ symbol cannot be used in IDs?
@@ -294,11 +300,11 @@ func (m *Manager) Run(
 
 	modules, res, err := m.Analyze(username, entryModuleName, code, programKind, driverData)
 	if err != nil {
-		return HmsRes{}, err
+		return HmsRes{}, HmsResponseContext{}, err
 	}
 
 	if !res.Success {
-		return res, nil
+		return res, HmsResponseContext{}, nil
 	}
 
 	log.Trace(fmt.Sprintf("Homescript '%s' of user '%s' is being compiled...", entryModuleName, username))
@@ -342,6 +348,7 @@ func (m *Manager) Run(
 			args,
 			automationContext,
 			cancelCtxFunc,
+			singletonsToLoad,
 		),
 		&cancelCtx,
 		&cancelCtxFunc,
@@ -363,7 +370,7 @@ func (m *Manager) Run(
 		*idChan <- id
 	}
 
-	fmt.Printf("Calling entry function `%s`\n", prog.EntryPoint)
+	fmt.Printf("Calling entry function `%s`\n", compiler.EntryPointFunctionIdent)
 
 	// TODO: maybe add debugger support anytime
 	coreNum, interrupt := vm.SpawnSync(runtime.FunctionInvocation{
@@ -425,7 +432,7 @@ func (m *Manager) Run(
 		if isErr {
 			fileContentsTemp, err := resolveFileContentsOfErrors(username, entryModuleName, code, errors)
 			if err != nil {
-				return HmsRes{}, err
+				return HmsRes{}, HmsResponseContext{}, err
 			}
 
 			fileContents = fileContentsTemp
@@ -437,12 +444,26 @@ func (m *Manager) Run(
 			Success:      !isErr,
 			Errors:       errors,
 			FileContents: fileContents,
-		}, nil
+		}, HmsResponseContext{}, nil
 	}
 
 	log.Debug(fmt.Sprintf("Homescript '%s' of user '%s' executed successfully", entryModuleName, username))
 
-	return HmsRes{Success: true, Errors: make([]HmsError, 0), FileContents: make(map[string]string)}, nil
+	// Stores the original (non-mangled) singletons of the entry module.
+	singletons := make(map[string]value.Value)
+	for name, mangled := range prog.Mappings.Singletons {
+		singletons[name] = vm.GetGlobals()[mangled]
+		fmt.Printf("extracted SINGLETON: %s => %s: %v\n", name, mangled, vm.GetGlobals()[mangled])
+	}
+
+	return HmsRes{
+			Success:      true,
+			Errors:       make([]HmsError, 0),
+			FileContents: make(map[string]string),
+		},
+		HmsResponseContext{
+			Singletons: singletons,
+		}, nil
 }
 
 // Executes a given Homescript from the database and returns its output, exit-code and possible error
@@ -458,10 +479,11 @@ func (m *Manager) RunById(
 	args map[string]string,
 	outputWriter io.Writer,
 	automationContext *AutomationContext,
-) (HmsRes, error) {
+	singletonsToLoad map[string]value.Value,
+) (HmsRes, HmsResponseContext, error) {
 	script, found, err := GetPersonalScriptById(hmsId, username)
 	if err != nil {
-		return HmsRes{}, err
+		return HmsRes{}, HmsResponseContext{}, err
 	}
 	if !found {
 		panic(fmt.Sprintf("Homescript with ID %s owned by user %s was not found", hmsId, username)) // TODO: no panic
@@ -482,6 +504,7 @@ func (m *Manager) RunById(
 		automationContext,
 		// Do not use any user-defined entry function.
 		nil,
+		singletonsToLoad,
 	)
 }
 

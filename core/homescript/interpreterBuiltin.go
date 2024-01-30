@@ -24,6 +24,7 @@ type interpreterExecutor struct {
 	args              map[string]string
 	automationContext *AutomationContext
 	cancelCtxFunc     context.CancelFunc
+	singletonsToLoad  map[string]value.Value
 }
 
 func (self interpreterExecutor) GetUser() string {
@@ -36,6 +37,7 @@ func NewInterpreterExecutor(
 	args map[string]string,
 	automationContext *AutomationContext,
 	cancelCtxFunc context.CancelFunc,
+	singletonsToLoad map[string]value.Value,
 ) interpreterExecutor {
 	return interpreterExecutor{
 		username:          username,
@@ -43,6 +45,7 @@ func NewInterpreterExecutor(
 		args:              args,
 		automationContext: automationContext,
 		cancelCtxFunc:     cancelCtxFunc,
+		singletonsToLoad:  singletonsToLoad,
 	}
 }
 
@@ -53,8 +56,15 @@ func parseDate(year, month, day int) (time.Time, bool) {
 }
 
 func (self interpreterExecutor) LoadSingleton(singletonIdent, moduleName string) (val value.Value, valid bool, err error) {
-	// TODO: implement singleton loading
-	return nil, false, nil
+	log.Tracef("Loading singleton `%s` from module `%s`", singletonIdent, moduleName)
+	value, available := self.singletonsToLoad[singletonIdent]
+
+	if !available {
+		log.Warnf("Singleton `%s` could not be loaded from: %v", singletonIdent, self.singletonsToLoad)
+	}
+
+	// TODO: maybe load these on demand?
+	return value, available, nil
 }
 
 // if it exists, returns a value which is part of the host builtin modules
@@ -80,7 +90,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 					}
 				}
 
-				res, err := HmsManager.RunById(
+				res, _, err := HmsManager.RunById(
 					HMS_PROGRAM_KIND_NORMAL,
 					nil,
 					hmsId,
@@ -91,6 +101,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 					nil,
 					arguments,
 					self.ioWriter,
+					nil,
 					nil,
 				)
 

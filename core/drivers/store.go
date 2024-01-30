@@ -40,9 +40,9 @@ var DriverStore map[DriverTuple]value.ValueObject = make(map[DriverTuple]value.V
 func StoreDriverSingleton(
 	vendorID string,
 	modelID string,
-	fromJson any,
+	fromJSON any,
 ) error {
-	marshaled, err := json.Marshal(fromJson)
+	marshaled, err := json.Marshal(fromJSON)
 	if err != nil {
 		panic(fmt.Sprintf("Impossible marshal error: %s", err.Error()))
 	}
@@ -58,12 +58,12 @@ func StoreDriverSingleton(
 
 	fmt.Printf(
 		"storing: %v in target singleton in file %s:%s...\n",
-		spew.Sdump(fromJson),
+		spew.Sdump(fromJSON),
 		vendorID,
 		modelID,
 	)
 
-	val, i := value.UnmarshalValue(errors.Span{}, fromJson)
+	val, i := value.UnmarshalValue(errors.Span{}, fromJSON)
 	if i != nil {
 		panic(fmt.Sprintf("Parsing / validation error: %s", (*i).Message()))
 	}
@@ -82,17 +82,6 @@ func StoreDriverSingleton(
 	spew.Dump(DeviceStore)
 
 	return nil
-}
-
-func storeSingletonInternal(targetSingleton DriverSingletonKind, file DriverTuple, value value.ValueObject) {
-	switch targetSingleton {
-	case SingletonKindDevice:
-		DeviceStore[file] = value
-	case SingletonKindDriver:
-		DriverStore[file] = value
-	default:
-		panic(fmt.Sprintf("A new target singleton kind (%d) was added without updating this code", targetSingleton))
-	}
 }
 
 func retrieveValueOfSingleton(file DriverTuple, targetSingleton DriverSingletonKind) (res value.ValueObject, found bool) {
@@ -159,10 +148,10 @@ func PopulateValueCache() error {
 			continue
 		}
 
-		storeSingletonInternal(SingletonKindDriver, DriverTuple{
+		DriverStore[DriverTuple{
 			VendorID: driver.VendorId,
 			ModelID:  driver.ModelId,
-		}, value.ObjectZeroValue(information.DriverConfig.HmsType))
+		}] = value.ObjectZeroValue(information.DriverConfig.HmsType)
 
 		log.Tracef("Populated driver store line `%s:%s` with default value", driver.VendorId, driver.ModelId)
 	}

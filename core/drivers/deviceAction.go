@@ -94,7 +94,21 @@ func InvokeDriverPower(vendorId, modelId string, action DriverActionPower) (Driv
 
 	const POWER_DRIVER_FUNCTION = "set_power"
 
-	hmsRes, err := homescript.HmsManager.Run(
+	contextSingletons := make(map[string]value.Value)
+
+	// Load driver singleton
+	driverSingleton, found := retrieveValueOfSingleton(DriverTuple{
+		VendorID: vendorId,
+		ModelID:  modelId,
+	}, SingletonKindDriver)
+	if !found {
+		panic(fmt.Sprintf("Driver singleton of driver `%s:%s` not found in store", vendorId, modelId))
+	}
+	contextSingletons[homescript.DriverSingletonIdent] = driverSingleton
+
+	// TODO: load corresponding device singleton.
+
+	hmsRes, finalContext, err := homescript.HmsManager.Run(
 		homescript.HMS_PROGRAM_KIND_DEVICE_DRIVER,
 		&homescript.AnalyzerDriverMetadata{
 			VendorID: vendorId,
@@ -117,6 +131,7 @@ func InvokeDriverPower(vendorId, modelId string, action DriverActionPower) (Driv
 				*value.NewValueBool(action.State),
 			},
 		},
+		contextSingletons,
 	)
 
 	if err != nil {
@@ -137,6 +152,22 @@ func InvokeDriverPower(vendorId, modelId string, action DriverActionPower) (Driv
 		return DriverActionPowerOutput{
 			Changed: false,
 		}, errors, nil
+	}
+
+	for name, val := range finalContext.Singletons {
+		fmt.Printf("FINAL SINGLETON: %s: %v\n", name, val)
+	}
+
+	// Get driver and devicec singleton.
+	driverSingletonAfter, found := finalContext.Singletons[homescript.DriverSingletonIdent]
+	if !found {
+		panic(fmt.Sprintf("Driver singleton (`%s`) not found after driver execution", homescript.DriverSingletonIdent))
+	}
+
+	// Save singleton state after VM has terminated.
+	driverMarshaled, _ := value.MarshalValue(driverSingletonAfter, false)
+	if err := StoreDriverSingleton(driver.VendorId, driver.ModelId, driverMarshaled); err != nil {
+		return DriverActionPowerOutput{}, nil, err
 	}
 
 	//
