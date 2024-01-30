@@ -561,14 +561,20 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 		switch toImport {
 		case "logger":
 			testPermissions := func(username string, span errors.Span) *value.VmInterrupt {
-				hasPermission, err := database.UserHasPermission(self.GetUser(), database.PermissionLogging)
-				if err != nil {
-					return value.NewVMFatalException(err.Error(), value.Vm_HostErrorKind, span)
-				}
-				if !hasPermission {
-					return value.NewVMFatalException(fmt.Sprintf("Failed to add log event: lacking permission to add records to the internal logging system."), value.Vm_HostErrorKind, span)
-				}
 				return nil
+			}
+
+			if self.GetUser() != "" {
+				testPermissions = func(username string, span errors.Span) *value.VmInterrupt {
+					hasPermission, err := database.UserHasPermission(self.GetUser(), database.PermissionLogging)
+					if err != nil {
+						return value.NewVMFatalException(err.Error(), value.Vm_HostErrorKind, span)
+					}
+					if !hasPermission {
+						return value.NewVMFatalException(fmt.Sprintf("Failed to add log event: lacking permission to add records to the internal logging system."), value.Vm_HostErrorKind, span)
+					}
+					return nil
+				}
 			}
 
 			return *value.NewValueObject(map[string]*value.Value{

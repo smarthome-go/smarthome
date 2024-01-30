@@ -87,6 +87,8 @@ func scheduleRunnerFunc(id uint) {
 			nil,
 			&bytes.Buffer{},
 			nil,
+			// Do not use any custom runner func.
+			nil,
 		)
 
 		if err != nil {

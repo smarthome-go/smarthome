@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
+	"github.com/smarthome-go/homescript/v3/homescript/runtime"
+	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/homescript"
 )
@@ -90,6 +92,8 @@ func InvokeDriverPower(vendorId, modelId string, action DriverActionPower) (Driv
 
 	filename := fmt.Sprintf("@driver:%s:%s", vendorId, modelId)
 
+	const POWER_DRIVER_FUNCTION = "set_power"
+
 	hmsRes, err := homescript.HmsManager.Run(
 		homescript.HMS_PROGRAM_KIND_DEVICE_DRIVER,
 		&homescript.AnalyzerDriverMetadata{
@@ -106,6 +110,13 @@ func InvokeDriverPower(vendorId, modelId string, action DriverActionPower) (Driv
 		make(map[string]string),
 		&outputBuffer,
 		nil,
+		&runtime.FunctionInvocation{
+			Function: POWER_DRIVER_FUNCTION,
+			Args: []value.Value{
+				// Use the power state as an argument.
+				*value.NewValueBool(action.State),
+			},
+		},
 	)
 
 	if err != nil {

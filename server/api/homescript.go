@@ -124,6 +124,7 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		args,
 		&outputBuffer,
 		nil,
+		nil,
 	)
 
 	// TODO: check error
@@ -195,6 +196,7 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
 			Success:      res.Success,
+			Output:       "",
 			FileContents: res.FileContents,
 			Errors:       res.Errors,
 		}); err != nil {
@@ -241,6 +243,7 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		nil,
 		args,
 		&outputBuffer,
+		nil,
 		nil,
 	)
 	output := outputBuffer.String()

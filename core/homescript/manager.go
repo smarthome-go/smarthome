@@ -278,6 +278,8 @@ func (m *Manager) Run(
 	args map[string]string,
 	outputWriter io.Writer,
 	automationContext *AutomationContext,
+	// If this is left non-empty, an additional function is called after `init`.
+	functionInvocation *runtime.FunctionInvocation,
 ) (HmsRes, error) {
 	// TODO: handle arguments
 
@@ -364,10 +366,17 @@ func (m *Manager) Run(
 	fmt.Printf("Calling entry function `%s`\n", prog.EntryPoint)
 
 	// TODO: maybe add debugger support anytime
-	vm.Spawn(prog.EntryPoint, nil)
+	coreNum, interrupt := vm.SpawnSync(runtime.FunctionInvocation{
+		Function: "@init", // TODO: do not hardcode this
+		Args:     []value.Value{},
+	}, nil)
 
-	if coreNum, i := vm.Wait(); i != nil {
-		i := *i
+	if interrupt == nil && functionInvocation != nil {
+		coreNum, interrupt = vm.SpawnSync(*functionInvocation, nil)
+	}
+
+	if interrupt != nil {
+		i := *interrupt
 
 		span := errors.Span{}
 
@@ -471,6 +480,8 @@ func (m *Manager) RunById(
 		args,
 		outputWriter,
 		automationContext,
+		// Do not use any user-defined entry function.
+		nil,
 	)
 }
 
@@ -540,8 +551,12 @@ func (m *Manager) KillAllId(hmsId string) (count uint64, success bool) {
 }
 
 func (m *Manager) killJob(job Job) {
+	// BUG: this ad-hoc name mangling is extremely bad.
 	killFn := fmt.Sprintf("@%s_@event_kill0", job.EntryModuleName)
-	job.Vm.Spawn(killFn, nil)
+	job.Vm.SpawnSync(runtime.FunctionInvocation{
+		Function: killFn,
+		Args:     []value.Value{}, // Maybe add a reason for the kill?
+	}, nil)
 
 	canceled := false
 	cancelMtx := sync.Mutex{}

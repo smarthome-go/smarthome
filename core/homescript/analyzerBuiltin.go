@@ -110,6 +110,18 @@ func (self analyzerHost) GetBuiltinImport(moduleName string, valueName string, s
 								).(ast.FunctionType),
 								Modifier: pAst.FN_MODIFIER_PUB,
 							},
+							"set_power": {
+								Signature: ast.NewFunctionType(
+									ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+										ast.NewFunctionTypeParam(
+											pAst.NewSpannedIdent("power_state", span),
+											ast.NewBoolType(span),
+											nil,
+										),
+									}), span, ast.NewBoolType(span), span,
+								).(ast.FunctionType),
+								Modifier: pAst.FN_MODIFIER_PUB,
+							},
 							"dim": {
 								Signature: ast.NewFunctionType(
 									ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
@@ -130,6 +142,10 @@ func (self analyzerHost) GetBuiltinImport(moduleName string, valueName string, s
 							},
 							"dimmable": {
 								RequiresMethods:           []string{"dim"},
+								ConflictsWithCapabilities: []ast.TemplateConflict{},
+							},
+							"power": {
+								RequiresMethods:           []string{"set_power"},
 								ConflictsWithCapabilities: []ast.TemplateConflict{},
 							},
 						},
