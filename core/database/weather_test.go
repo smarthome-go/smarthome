@@ -13,9 +13,11 @@ func TestCreateWeatherTable(t *testing.T) {
 
 func TestWeatherData(t *testing.T) {
 	// Add a dummy weather record
+	now := time.Now().Local()
+
 	id, err := AddWeatherDataRecord(
 		"cloudy",
-		time.Now().Local(),
+		&now,
 		"some clouds",
 		42.1,
 		3.1415926,

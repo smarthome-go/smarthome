@@ -35,8 +35,25 @@ func TestAddUserSwitchPermission(t *testing.T) {
 			Add:    false,
 		},
 	}
+
+	testDriver := DeviceDriver{
+		VendorId:       "golang",
+		ModelId:        "test-1",
+		Name:           "",
+		Version:        "0.0.1",
+		HomescriptCode: "fn main() {}",
+		ConfigJson:     nil,
+	}
+
 	for _, test := range table {
-		if err := CreateDevice(test.Switch, "", "test_permissions", 0, nil); err != nil {
+		if err := CreateDevice(
+			DEVICE_TYPE_OUTPUT,
+			test.Switch,
+			"",
+			"test_permissions",
+			testDriver.VendorId,
+			testDriver.ModelId,
+		); err != nil {
 			t.Error(err.Error())
 			return
 		}

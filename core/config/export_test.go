@@ -35,35 +35,54 @@ func TestExportGeneration(t *testing.T) {
 		Latitude:          3.14159265,
 		Longitude:         3.14159265,
 	}))
-	// Create Hardware nodes
-	testNode := database.HardwareNode{
-		Name:    "Living Room",
-		Url:     "http://10.0.0.1:7000",
-		Token:   "secret_t0ken",
-		Enabled: true,
+
+	testDriver := database.DeviceDriver{
+		VendorId:       "go",
+		ModelId:        "test",
+		Name:           "Golang-Test",
+		Version:        "0.0.1",
+		HomescriptCode: "fn main() {}",
+		ConfigJson:     nil,
 	}
-	assert.NoError(t, database.CreateHardwareNode(testNode))
+
+	assert.NoError(t, database.CreateNewDeviceDriver(testDriver))
+
+	// TODO: remove this.
+	// Create Hardware nodes
+	// testNode := database.HardwareNode{
+	// 	Name:    "Living Room",
+	// 	Url:     "http://10.0.0.1:7000",
+	// 	Token:   "secret_t0ken",
+	// 	Enabled: true,
+	// }
+
+	// assert.NoError(t, database.CreateHardwareNode(testNode))
+
 	// Create a room with contents
 	assert.NoError(t, database.CreateRoom(database.RoomData{
 		Id:          "living_room",
 		Name:        "Living Room",
 		Description: "Where the people live...",
 	}))
+
 	// Create switches
 	assert.NoError(t, database.CreateDevice(
+		database.DEVICE_TYPE_OUTPUT,
 		"big_lamp",
 		"Big Lamp",
 		"living_room",
-		42,
-		nil,
+		testDriver.VendorId,
+		testDriver.ModelId,
 	))
 	assert.NoError(t, database.CreateDevice(
+		database.DEVICE_TYPE_OUTPUT,
 		"desk_lamp",
 		"Desk Lamp",
 		"living_room",
-		24,
-		&testNode.Url,
+		testDriver.VendorId,
+		testDriver.ModelId,
 	))
+
 	// Create cameras
 	assert.NoError(t, database.CreateCamera(database.Camera{
 		Id:     "lvr_main_door",
@@ -77,12 +96,14 @@ func TestExportGeneration(t *testing.T) {
 		RoomId: "living_room",
 		Url:    "http://example.com/2",
 	}))
+
 	// Create an additional, empty room
 	assert.NoError(t, database.CreateRoom(database.RoomData{
 		Id:          "server_room",
 		Name:        "Server Room",
 		Description: "Where the server serves...",
 	}))
+
 	// Create user
 	assert.NoError(t, database.AddUser(
 		database.FullUser{
@@ -93,6 +114,7 @@ func TestExportGeneration(t *testing.T) {
 			PrimaryColorDark:  "#88FF70",
 			PrimaryColorLight: "#2E7D32",
 		}))
+
 	// Grant user some permissions
 	permissions := []database.PermissionType{
 		database.PermissionAutomation,
