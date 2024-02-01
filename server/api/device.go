@@ -10,6 +10,7 @@ import (
 	"golang.org/x/exp/utf8string"
 
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/drivers"
 	"github.com/smarthome-go/smarthome/server/middleware"
 )
 
@@ -139,21 +140,33 @@ func CreateDevice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Validate drivers + add correct implementation of this thing
-	// TODO: validate that the device type is a correct enum
-	if err := database.CreateDevice(database.Device{
-		DeviceType:    parsedType,
-		Id:            request.Id,
-		Name:          request.Name,
-		RoomId:        request.RoomId,
-		VendorId:      request.DriverVendorId,
-		ModelId:       request.DriverModelId,
-		SingletonJSON: "TODO", // TODO: how is this handled?
-	}); err != nil {
+	driverFound, hmsErr, dbErr := drivers.CreateDevice(
+		parsedType,
+		request.Id,
+		request.Name,
+		request.RoomId,
+		request.DriverVendorId,
+		request.DriverModelId,
+	)
+
+	if dbErr != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to create device", Error: "database failure"})
 		return
 	}
+
+	if hmsErr != nil {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to create device", Error: hmsErr.Error()})
+		return
+	}
+
+	if !driverFound {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "failed to create device", Error: "No such driver"})
+		return
+	}
+
 	Res(w, Response{Success: true, Message: "successfully created device"})
 }
 

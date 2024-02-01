@@ -169,10 +169,10 @@ func runSetupStruct(setup config.SetupStruct) error {
 		log.Error("Aborting setup: could not update system configuration in database: ", err.Error())
 		return err
 	}
-	if err := createHardwareNodesInDatabase(setup.HardwareNodes); err != nil {
-		log.Error("Aborting setup: could not create hardware nodes in database: ", err.Error())
-		return err
-	}
+	// if err := createHardwareNodesInDatabase(setup.HardwareNodes); err != nil {
+	// 	log.Error("Aborting setup: could not create hardware nodes in database: ", err.Error())
+	// 	return err
+	// }
 	if err := createRoomsInDatabase(setup.Rooms); err != nil {
 		log.Error("Aborting setup: could not create rooms in database: ", err.Error())
 		return err
@@ -420,22 +420,22 @@ func createRoomsInDatabase(rooms []config.SetupRoom) error {
 }
 
 // Takes the specified `hardwareNodes` and creates according database entries
-func createHardwareNodesInDatabase(nodes []config.SetupHardwareNode) error {
-	for _, node := range nodes {
-		if err := database.CreateHardwareNode(
-			database.HardwareNode{
-				Name:    node.Name,
-				Url:     node.Url,
-				Token:   node.Token,
-				Enabled: node.Enabled,
-			},
-		); err != nil {
-			log.Error("Could not create hardware nodes from setup file: ", err.Error())
-			return err
-		}
-	}
-	return nil
-}
+// func createHardwareNodesInDatabase(nodes []config.SetupHardwareNode) error {
+// 	for _, node := range nodes {
+// 		if err := database.CreateHardwareNode(
+// 			database.HardwareNode{
+// 				Name:    node.Name,
+// 				Url:     node.Url,
+// 				Token:   node.Token,
+// 				Enabled: node.Enabled,
+// 			},
+// 		); err != nil {
+// 			log.Error("Could not create hardware nodes from setup file: ", err.Error())
+// 			return err
+// 		}
+// 	}
+// 	return nil
+// }
 
 // Takes the specified `systemConfig` and modifies an according database entry
 func createSystemConfigInDatabase(systemConfig database.ServerConfig) error {

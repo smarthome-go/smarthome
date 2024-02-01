@@ -62,9 +62,9 @@ func Init(databaseConfig DatabaseConfig, adminPassword string) error {
 	if err := createHasCameraPermissionsTable(); err != nil {
 		return err
 	}
-	if err := createHardwareNodeTable(); err != nil {
-		return err
-	}
+	// if err := createHardwareNodeTable(); err != nil {
+	// 	return err
+	// }
 	if err := createHomescriptTable(); err != nil {
 		return err
 	}

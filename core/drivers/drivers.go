@@ -106,14 +106,10 @@ func ListWithStoredConfig() ([]RichDriver, error) {
 			continue
 		}
 
-		val, found := retrieveValueOfSingleton(
-			DriverTuple{
-				VendorID: driver.Driver.VendorId,
-				ModelID:  driver.Driver.ModelId,
-			},
-			SingletonKindDriver,
-		)
-
+		val, found := DriverStore[DriverTuple{
+			VendorID: driver.Driver.VendorId,
+			ModelID:  driver.Driver.ModelId,
+		}]
 		// This should not happen: a zero value for every driver-spec is created automatically.
 		if !found {
 			panic(fmt.Sprintf("Configuration entry not found for driver `%s:%s`", driver.Driver.VendorId, driver.Driver.ModelId))

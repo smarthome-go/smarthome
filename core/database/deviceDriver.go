@@ -136,7 +136,7 @@ func ModifyDeviceDriver(newData DeviceDriver) (bool, error) {
 
 // Modifies only the JSON column, returns if the driver was found.
 // TODO: remove `found` parameter
-func ModifyDeviceDriverSingletonJSON(vendorId string, modelId string, newJson *string) (bool, error) {
+func ModifyDeviceDriverSingletonJSON(vendorId string, modelId string, newJson *string) error {
 	query, err := db.Prepare(`
 	UPDATE deviceDriver
 	SET
@@ -145,27 +145,21 @@ func ModifyDeviceDriverSingletonJSON(vendorId string, modelId string, newJson *s
 	`)
 	if err != nil {
 		log.Error("Failed to update device driver JSON: preparing query failed: ", err.Error())
-		return false, err
+		return err
 	}
 	defer query.Close()
 
-	res, err := query.Exec(
+	_, err = query.Exec(
 		newJson,
 		vendorId,
 		modelId,
 	)
 	if err != nil {
 		log.Error("Failed to update device driver JSON: executing query failed: ", err.Error())
-		return false, err
+		return err
 	}
 
-	rows, err := res.RowsAffected()
-	if err != nil {
-		log.Error("Failed to update device driver JSON: getting rows affected failed: ", err.Error())
-		return false, err
-	}
-
-	return rows > 0, nil
+	return nil
 }
 
 // Modifies the code of a given device driver

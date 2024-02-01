@@ -24,9 +24,9 @@ type DebugInfo struct {
 	HardwareNodesCount     uint8                      `json:"hardwareNodesCount"`
 	HardwareNodesOnline    uint8                      `json:"hardwareNodesOnline"`
 	HardwareNodesEnabled   uint8                      `json:"hardwareNodesEnabled"`
-	Nodes                  []database.HardwareNode    `json:"hardwareNodes"`
-	HomescriptJobCount     uint                       `json:"homescriptJobCount"`
-	Time                   serverTime                 `json:"time"`
+	// Nodes                  []database.HardwareNode    `json:"hardwareNodes"`
+	HomescriptJobCount uint       `json:"homescriptJobCount"`
+	Time               serverTime `json:"time"`
 }
 
 type serverTime struct {
@@ -46,25 +46,25 @@ func SysInfo() DebugInfo {
 	// 	log.Error("Failed to run node check: ", err.Error())
 	// }
 
-	nodes, err := database.GetHardwareNodes()
-	if err != nil {
-		log.Error("Failed to obtain node information while getting debug info: ", err.Error())
-	}
+	// nodes, err := database.GetHardwareNodes()
+	// if err != nil {
+	// 	log.Error("Failed to obtain node information while getting debug info: ", err.Error())
+	// }
 
-	nodesOnline := 0
-	nodesEnabled := 0
-	for index, node := range nodes {
-		if node.Online {
-			nodesOnline += 1
-		}
-		if node.Enabled {
-			nodesEnabled += 1
-		}
-		// Remove token visibility from debug info
-		nodes[index].Token = "redacted"
-	}
+	// nodesOnline := 0
+	// nodesEnabled := 0
+	// for index, node := range nodes {
+	// 	if node.Online {
+	// 		nodesOnline += 1
+	// 	}
+	// 	if node.Enabled {
+	// 		nodesEnabled += 1
+	// 	}
+	// 	// Remove token visibility from debug info
+	// 	nodes[index].Token = "redacted"
+	// }
 
-	err = database.CheckDatabase()
+	err := database.CheckDatabase()
 	return DebugInfo{
 		ServerVersion:          Version,
 		DatabaseOnline:         err == nil,
@@ -77,11 +77,11 @@ func SysInfo() DebugInfo {
 		PowerJobs:              hardware.GetPendingJobs(),
 		PowerJobResults:        hardware.GetResults(),
 		PowerJobWithErrorCount: hardware.GetJobsWithErrorInHandler(),
-		HardwareNodesCount:     uint8(len(nodes)),
-		HardwareNodesOnline:    uint8(nodesOnline),
-		HardwareNodesEnabled:   uint8(nodesEnabled),
-		Nodes:                  nodes,
-		HomescriptJobCount:     uint(len(homescript.HmsManager.GetJobList())),
+		// HardwareNodesCount:     uint8(len(nodes)),
+		// HardwareNodesOnline:    uint8(nodesOnline),
+		// HardwareNodesEnabled:   uint8(nodesEnabled),
+		// Nodes:                  nodes,
+		HomescriptJobCount: uint(len(homescript.HmsManager.GetJobList())),
 		Time: serverTime{
 			Hours:   uint(time.Now().Hour()),
 			Minutes: uint(time.Now().Minute()),

@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"runtime"
 
@@ -24,21 +23,21 @@ func HealthCheck(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "healthcheck failed: database downtime", Error: err.Error()})
 		return
 	}
-	nodes, err := database.GetHardwareNodes()
-	if err != nil {
-		w.WriteHeader(http.StatusServiceUnavailable)
-		log.Error("Healthcheck failed: ", err.Error())
-		Res(w, Response{Success: false, Message: "healthcheck failed: failed to get node information", Error: err.Error()})
-		return
-	}
-	for _, node := range nodes {
-		if !node.Online && node.Enabled {
-			w.WriteHeader(http.StatusBadGateway)
-			log.Error(fmt.Sprintf("Healthcheck failed: node %s is offline", node.Url))
-			Res(w, Response{Success: false, Message: "healthcheck failed: one or more nodes offline", Error: fmt.Sprintf("Node '%s' %s is offline", node.Name, node.Url)})
-			return
-		}
-	}
+	// nodes, err := database.GetHardwareNodes()
+	// if err != nil {
+	// 	w.WriteHeader(http.StatusServiceUnavailable)
+	// 	log.Error("Healthcheck failed: ", err.Error())
+	// 	Res(w, Response{Success: false, Message: "healthcheck failed: failed to get node information", Error: err.Error()})
+	// 	return
+	// }
+	// for _, node := range nodes {
+	// 	if !node.Online && node.Enabled {
+	// 		w.WriteHeader(http.StatusBadGateway)
+	// 		log.Error(fmt.Sprintf("Healthcheck failed: node %s is offline", node.Url))
+	// 		Res(w, Response{Success: false, Message: "healthcheck failed: one or more nodes offline", Error: fmt.Sprintf("Node '%s' %s is offline", node.Name, node.Url)})
+	// 		return
+	// 	}
+	// }
 	w.WriteHeader(http.StatusOK)
 }
 

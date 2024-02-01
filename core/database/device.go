@@ -79,9 +79,10 @@ func CreateDevice(data Device) error {
 		Name,
 		RoomId,
 		DriverVendorId,
-		DriverModelId
+		DriverModelId,
+		SingletonJson
 	)
-	VALUES(?, ?, ?, ?, ?, ?)
+	VALUES(?, ?, ?, ?, ?, ?, ?)
 	ON DUPLICATE KEY
 		UPDATE
 		DeviceType=VALUES(DeviceType),
@@ -89,7 +90,8 @@ func CreateDevice(data Device) error {
 		Name=VALUES(Name),
 		RoomId=VALUES(RoomId),
 		DriverVendorId=VALUES(DriverVendorId),
-		DriverModelId=VALUES(DriverModelId)
+		DriverModelId=VALUES(DriverModelId),
+		SingletonJson=VALUES(SingletonJson)
 	`)
 	if err != nil {
 		log.Error("Failed to add device: preparing query failed: ", err.Error())
@@ -103,6 +105,7 @@ func CreateDevice(data Device) error {
 		data.RoomId,
 		data.VendorId,
 		data.ModelId,
+		data.SingletonJSON,
 	)
 	if err != nil {
 		log.Error("Failed to add device: executing query failed: ", err.Error())

@@ -13,9 +13,9 @@ import (
 )
 
 type SetupStruct struct {
-	Users               []SetupUser           `json:"users"`
-	Rooms               []SetupRoom           `json:"rooms"`
-	HardwareNodes       []SetupHardwareNode   `json:"hardwareNodes"`
+	Users []SetupUser `json:"users"`
+	Rooms []SetupRoom `json:"rooms"`
+	// HardwareNodes       []SetupHardwareNode   `json:"hardwareNodes"`
 	ServerConfiguration database.ServerConfig `json:"serverConfiguration"`
 	CacheData           SetupCacheData        `json:"cacheData"`
 }
@@ -188,19 +188,20 @@ func Export(
 		})
 	}
 
-	hwNodes, err := database.GetHardwareNodes()
-	if err != nil {
-		return SetupStruct{}, err
-	}
-	hwNodesNew := make([]SetupHardwareNode, 0)
-	for _, node := range hwNodes {
-		hwNodesNew = append(hwNodesNew, SetupHardwareNode{
-			Name:    node.Name,
-			Enabled: node.Enabled,
-			Token:   node.Token,
-			Url:     node.Url,
-		})
-	}
+	// hwNodes, err := database.GetHardwareNodes()
+	// if err != nil {
+	// 	return SetupStruct{}, err
+	// }
+	// hwNodesNew := make([]SetupHardwareNode, 0)
+	// for _, node := range hwNodes {
+	// 	hwNodesNew = append(hwNodesNew, SetupHardwareNode{
+	// 		Name:    node.Name,
+	// 		Enabled: node.Enabled,
+	// 		Token:   node.Token,
+	// 		Url:     node.Url,
+	// 	})
+	// }
+
 	usersTemp, err := database.ListUsers()
 	if err != nil {
 		return SetupStruct{}, nil
@@ -402,9 +403,9 @@ func Export(
 	}
 
 	return SetupStruct{
-		Users:               users,
-		Rooms:               rooms,
-		HardwareNodes:       hwNodesNew,
+		Users: users,
+		Rooms: rooms,
+		// HardwareNodes:       hwNodesNew,
 		ServerConfiguration: serverConfig,
 		CacheData:           cacheData,
 	}, nil

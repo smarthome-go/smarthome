@@ -50,9 +50,14 @@ func DeviceAction(action DeviceActionRequest) (res ActionResponse, deviceFound b
 			panic("Power action field is `nil` even though it is required")
 		}
 
-		out, hmsErrs, err := InvokeDriverPower(device.VendorId, device.ModelId, DriverActionPower{
-			State: action.Power.State,
-		})
+		out, hmsErrs, err := InvokeDriverPower(
+			device.Id,
+			device.VendorId,
+			device.ModelId,
+			DriverActionPower{
+				State: action.Power.State,
+			},
+		)
 
 		if err != nil {
 			return ActionResponse{}, false, err
@@ -76,7 +81,12 @@ func DeviceAction(action DeviceActionRequest) (res ActionResponse, deviceFound b
 //
 //
 
-func InvokeDriverPower(vendorId, modelId string, action DriverActionPower) (DriverActionPowerOutput, []homescript.HmsError, error) {
+func InvokeDriverPower(
+	deviceId,
+	vendorId,
+	modelId string,
+	action DriverActionPower,
+) (DriverActionPowerOutput, []homescript.HmsError, error) {
 	driver, found, err := database.GetDeviceDriver(vendorId, modelId)
 	if err != nil {
 		return DriverActionPowerOutput{}, nil, err
@@ -96,18 +106,24 @@ func InvokeDriverPower(vendorId, modelId string, action DriverActionPower) (Driv
 
 	contextSingletons := make(map[string]value.Value)
 
-	// Load driver singleton
-	driverSingleton, found := retrieveValueOfSingleton(DriverTuple{
+	// Load driver singleton.
+	driverSingleton, found := DriverStore[DriverTuple{
 		VendorID: vendorId,
 		ModelID:  modelId,
-	}, SingletonKindDriver)
+	}]
 	if !found {
 		panic(fmt.Sprintf("Driver singleton of driver `%s:%s` not found in store", vendorId, modelId))
 	}
 	contextSingletons[homescript.DriverSingletonIdent] = driverSingleton
 
-	// TODO: load corresponding device singleton.
+	// Load device singleton.
+	deviceSingleton, found := DeviceStore[deviceId]
+	if !found {
+		panic(fmt.Sprintf("Device singleton of `%s` not found in store", deviceId))
+	}
+	contextSingletons[homescript.DriverDeviceSingletonIdent] = deviceSingleton
 
+	// TODO: load corresponding device singleton.
 	hmsRes, finalContext, err := homescript.HmsManager.Run(
 		homescript.HMS_PROGRAM_KIND_DEVICE_DRIVER,
 		&homescript.AnalyzerDriverMetadata{

@@ -26,7 +26,8 @@ const (
 
 // TODO: add deep clone for retrieval?
 
-var DeviceStore map[DriverTuple]value.ValueObject = make(map[DriverTuple]value.ValueObject)
+// Maps a device-ID to the corresponding saved value.
+var DeviceStore map[string]value.ValueObject = make(map[string]value.ValueObject)
 var DriverStore map[DriverTuple]value.ValueObject = make(map[DriverTuple]value.ValueObject)
 
 // This package contains the storage backend implementation for per-driver / per-device configuration data.
@@ -48,7 +49,7 @@ func StoreDriverSingleton(
 	}
 	marshaledStr := string(marshaled)
 
-	if _, err = database.ModifyDeviceDriverSingletonJSON(
+	if err = database.ModifyDeviceDriverSingletonJSON(
 		vendorID,
 		modelID,
 		&marshaledStr,
@@ -68,33 +69,50 @@ func StoreDriverSingleton(
 		panic(fmt.Sprintf("Parsing / validation error: %s", (*i).Message()))
 	}
 
-	// storeSingletonInternal(SingletonKindDriver, DriverTuple{
-	// 	VendorID: vendorID,
-	// 	ModelID:  modelID,
-	// }, (*val).(value.ValueObject))
-
 	DriverStore[DriverTuple{
 		VendorID: vendorID,
 		ModelID:  modelID,
 	}] = (*val).(value.ValueObject)
 
-	spew.Dump(DriverStore)
-	spew.Dump(DeviceStore)
+	return nil
+}
+
+func StoreDeviceSingleton(
+	deviceID string,
+	fromJSON any,
+) error {
+	marshaled, err := json.Marshal(fromJSON)
+	if err != nil {
+		panic(fmt.Sprintf("Impossible marshal error: %s", err.Error()))
+	}
+	marshaledStr := string(marshaled)
+
+	if err = database.ModifyDeviceSingletonJSON(
+		deviceID,
+		marshaledStr,
+	); err != nil {
+		return err
+	}
+
+	fmt.Printf(
+		"storing: %v in target singleton in file device ID %s...\n",
+		spew.Sdump(fromJSON),
+		deviceID,
+	)
+
+	val, i := value.UnmarshalValue(errors.Span{}, fromJSON)
+	if i != nil {
+		panic(fmt.Sprintf("Parsing / validation error: %s", (*i).Message()))
+	}
+
+	DeviceStore[deviceID] = (*val).(value.ValueObject)
 
 	return nil
 }
 
-func retrieveValueOfSingleton(file DriverTuple, targetSingleton DriverSingletonKind) (res value.ValueObject, found bool) {
-	switch targetSingleton {
-	case SingletonKindDevice:
-		res, found = DeviceStore[file]
-	case SingletonKindDriver:
-		res, found = DriverStore[file]
-	default:
-		panic(fmt.Sprintf("A new target singleton kind (%d) was added without updating this code", targetSingleton))
-	}
-	return res, found
-}
+//
+// Generic, for both.
+//
 
 func filterObjFieldsWithoutSetting(input value.ValueObject, singletonType ast.ObjectType) value.ValueObject {
 	outputFields := make(map[string]*value.Value)
@@ -124,12 +142,43 @@ func filterObjFieldsWithoutSetting(input value.ValueObject, singletonType ast.Ob
 	}
 }
 
+// func addZeroObjFieldsWithoutSettings(input value.ValueObject, singletonType ast.ObjectType) value.ValueObject {
+// 	patched := value.ValueObject{
+// 		FieldsInternal: input.FieldsInternal,
+// 	}
+//
+// 	for _, field := range singletonType.ObjFields {
+// 		// If this field does not exist on the value, fill it.
+// 		fieldExists := false
+// 		for fieldName := range input.FieldsInternal {
+// 			if fieldName == field.FieldName.Ident() {
+// 				fieldExists = true
+// 				break
+// 			}
+// 		}
+//
+// 		if fieldExists {
+// 			continue
+// 		}
+//
+// 		patched.FieldsInternal[field.FieldName.Ident()] = value.ZeroValue(field.Type)
+// 	}
+//
+// 	return patched
+// }
+
 func PopulateValueCache() error {
-	drivers, err := database.ListDeviceDrivers()
+	// Retrieve devices list.
+	devices, err := database.ListAllDevices()
 	if err != nil {
 		return err
 	}
 
+	// Populate driver singleton cache.
+	drivers, err := database.ListDeviceDrivers()
+	if err != nil {
+		return err
+	}
 	for _, driver := range drivers {
 		if false {
 			// TODO: load persistent state from database.
@@ -153,8 +202,49 @@ func PopulateValueCache() error {
 			ModelID:  driver.ModelId,
 		}] = value.ObjectZeroValue(information.DriverConfig.HmsType)
 
+		// Populate each device which uses this driver.
+		for _, device := range devices {
+			if device.VendorId != driver.VendorId || device.ModelId != driver.ModelId {
+				continue
+			}
+
+			val, found, err := RetrieveDeviceSingletonFromDB(device.Id)
+			if err != nil {
+				return err
+			}
+
+			if !found {
+				panic(fmt.Sprintf("Device not found in database: `%s`", device.Id))
+			}
+
+			DeviceStore[device.Id] = val.(value.ValueObject)
+		}
+
 		log.Tracef("Populated driver store line `%s:%s` with default value", driver.VendorId, driver.ModelId)
 	}
 
 	return nil
+}
+
+func RetrieveDeviceSingletonFromDB(deviceId string) (v value.Value, found bool, err error) {
+	device, found, err := database.GetDeviceById(deviceId)
+	if err != nil {
+		return nil, false, err
+	}
+
+	if !found {
+		return nil, false, nil
+	}
+
+	var unmarshaled any
+	if err := json.Unmarshal([]byte(device.SingletonJSON), &unmarshaled); err != nil {
+		return nil, false, err
+	}
+
+	unmarshaledValue, i := value.UnmarshalValue(errors.Span{}, unmarshaled)
+	if i != nil {
+		return nil, false, fmt.Errorf("%s", (*i).Message())
+	}
+
+	return *unmarshaledValue, true, nil
 }

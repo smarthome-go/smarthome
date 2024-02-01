@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/smarthome-go/smarthome/core/drivers"
@@ -30,7 +31,7 @@ func DeviceAction(w http.ResponseWriter, r *http.Request) {
 	}
 	if !found {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		Res(w, Response{Success: false, Message: "failed to execute device action", Error: "no device with id exists"})
+		Res(w, Response{Success: false, Message: "failed to execute device action", Error: fmt.Sprintf("no device with id `%s` exists", request.DeviceID)})
 		return
 	}
 
