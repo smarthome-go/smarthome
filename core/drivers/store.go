@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
@@ -43,6 +42,8 @@ func StoreDriverSingleton(
 	modelID string,
 	fromJSON any,
 ) error {
+	// TODO: need to patch the original value by only applying the changed fields.
+
 	marshaled, err := json.Marshal(fromJSON)
 	if err != nil {
 		panic(fmt.Sprintf("Impossible marshal error: %s", err.Error()))
@@ -56,13 +57,6 @@ func StoreDriverSingleton(
 	); err != nil {
 		return err
 	}
-
-	fmt.Printf(
-		"storing: %v in target singleton in file %s:%s...\n",
-		spew.Sdump(fromJSON),
-		vendorID,
-		modelID,
-	)
 
 	val, i := value.UnmarshalValue(errors.Span{}, fromJSON)
 	if i != nil {
@@ -81,6 +75,8 @@ func StoreDeviceSingleton(
 	deviceID string,
 	fromJSON any,
 ) error {
+	// TODO: need to patch the original value by only applying the changed fields.
+
 	marshaled, err := json.Marshal(fromJSON)
 	if err != nil {
 		panic(fmt.Sprintf("Impossible marshal error: %s", err.Error()))
@@ -93,12 +89,6 @@ func StoreDeviceSingleton(
 	); err != nil {
 		return err
 	}
-
-	fmt.Printf(
-		"storing: %v in target singleton in file device ID %s...\n",
-		spew.Sdump(fromJSON),
-		deviceID,
-	)
 
 	val, i := value.UnmarshalValue(errors.Span{}, fromJSON)
 	if i != nil {
@@ -179,28 +169,41 @@ func PopulateValueCache() error {
 	if err != nil {
 		return err
 	}
+
 	for _, driver := range drivers {
-		if false {
-			// TODO: load persistent state from database.
-			continue
-		}
+		if driver.SingletonJSON != nil {
+			var unmarshaledJSON any
+			if err := json.Unmarshal([]byte(*driver.SingletonJSON), &unmarshaledJSON); err != nil {
+				return fmt.Errorf("Could not parse driver JSON: %s", err.Error())
+			}
 
-		// Load type information for this driver.
-		information, hmsErrs, err := extractInfoFromDriver(driver.VendorId, driver.ModelId, driver.HomescriptCode)
-		if err != nil {
-			return err
-		}
+			unmarshaledValue, i := value.UnmarshalValue(errors.Span{}, unmarshaledJSON)
+			if i != nil {
+				return fmt.Errorf("Could not parse driver JSON to HMS value: %s", (*i).Message())
+			}
 
-		// Just skip this driver, its value will never be required anyways.
-		if len(hmsErrs) > 0 {
-			log.Tracef("Skipping default value instantiation of driver `%s:%s`", driver.VendorId, driver.ModelId)
-			continue
-		}
+			DriverStore[DriverTuple{
+				VendorID: driver.VendorId,
+				ModelID:  driver.ModelId,
+			}] = (*unmarshaledValue).(value.ValueObject)
+		} else {
+			// Load type information for this driver.
+			information, hmsErrs, err := extractInfoFromDriver(driver.VendorId, driver.ModelId, driver.HomescriptCode)
+			if err != nil {
+				return err
+			}
 
-		DriverStore[DriverTuple{
-			VendorID: driver.VendorId,
-			ModelID:  driver.ModelId,
-		}] = value.ObjectZeroValue(information.DriverConfig.HmsType)
+			// Just skip this driver, its value will never be required anyways.
+			if len(hmsErrs) > 0 {
+				log.Tracef("Skipping default value instantiation of driver `%s:%s`", driver.VendorId, driver.ModelId)
+				continue
+			}
+
+			DriverStore[DriverTuple{
+				VendorID: driver.VendorId,
+				ModelID:  driver.ModelId,
+			}] = value.ObjectZeroValue(information.DriverConfig.HmsType)
+		}
 
 		// Populate each device which uses this driver.
 		for _, device := range devices {
@@ -219,8 +222,6 @@ func PopulateValueCache() error {
 
 			DeviceStore[device.Id] = val.(value.ValueObject)
 		}
-
-		log.Tracef("Populated driver store line `%s:%s` with default value", driver.VendorId, driver.ModelId)
 	}
 
 	return nil

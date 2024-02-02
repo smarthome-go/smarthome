@@ -170,19 +170,21 @@ func InvokeDriverPower(
 		}, errors, nil
 	}
 
-	for name, val := range finalContext.Singletons {
-		fmt.Printf("FINAL SINGLETON: %s: %v\n", name, val)
-	}
-
 	// Get driver and devicec singleton.
 	driverSingletonAfter, found := finalContext.Singletons[homescript.DriverSingletonIdent]
 	if !found {
 		panic(fmt.Sprintf("Driver singleton (`%s`) not found after driver execution", homescript.DriverSingletonIdent))
 	}
 
-	// Save singleton state after VM has terminated.
+	// Save driver & device singleton state after VM has terminated.
 	driverMarshaled, _ := value.MarshalValue(driverSingletonAfter, false)
 	if err := StoreDriverSingleton(driver.VendorId, driver.ModelId, driverMarshaled); err != nil {
+		return DriverActionPowerOutput{}, nil, err
+	}
+
+	// Save device singleton state after VM has terminated.
+	deviceMarshaled, _ := value.MarshalValue(deviceSingleton, false)
+	if err := StoreDeviceSingleton(deviceId, deviceMarshaled); err != nil {
 		return DriverActionPowerOutput{}, nil, err
 	}
 

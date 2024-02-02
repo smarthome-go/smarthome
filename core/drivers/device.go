@@ -57,6 +57,9 @@ func CreateDevice(
 		return false, fmt.Errorf("Failed to create JSON from configuration: %s", err.Error()), nil
 	}
 
+	// Create an entry in the store.
+	DeviceStore[id] = defaultDevice
+
 	// Create device in database.
 	if err := database.CreateDevice(database.Device{
 		DeviceType:    type_,

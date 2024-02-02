@@ -198,10 +198,6 @@ func ConfigureDeviceDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// _, wasFound, err := database.GetDeviceDriver(request.Driver.VendorID, request.Driver.ModelID)
-
-	// TODO: perform validation
-
 	found, validationErr, dbErr := drivers.ValidateDriverConfigurationChange(
 		request.Driver.VendorID,
 		request.Driver.ModelID,

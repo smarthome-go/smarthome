@@ -240,7 +240,7 @@ func ExtractDriverInfo(
 		},
 		DeviceConfig: ConfigInfoWrapper{
 			Config:  deviceConfig.(ConfigFieldDescriptorStruct),
-			HmsType: driverSingleton.SingletonType.(ast.ObjectType),
+			HmsType: deviceSingleton.SingletonType.(ast.ObjectType),
 		},
 	}, diagnostics
 }

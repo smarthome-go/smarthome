@@ -453,7 +453,6 @@ func (m *Manager) Run(
 	singletons := make(map[string]value.Value)
 	for name, mangled := range prog.Mappings.Singletons {
 		singletons[name] = vm.GetGlobals()[mangled]
-		fmt.Printf("extracted SINGLETON: %s => %s: %v\n", name, mangled, vm.GetGlobals()[mangled])
 	}
 
 	return HmsRes{

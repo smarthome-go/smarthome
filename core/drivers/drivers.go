@@ -226,6 +226,58 @@ func ModifyCode(vendorID, modelID, newCode string) (found bool, dbErr error) {
 	return true, nil
 }
 
+// TODO: a lot of overlapping code!
+func ValidateDeviceConfigurationChange(deviceId string, newConfig interface{}) (found bool, validateErr error, dbErr error) {
+	device, found, err := database.GetDeviceById(deviceId)
+	if err != nil {
+		return false, nil, err
+	}
+
+	if !found {
+		return false, nil, nil
+	}
+
+	// Retrieve driver in order to perform validation
+	driver, found, err := database.GetDeviceDriver(device.VendorId, device.ModelId)
+	if err != nil {
+		return false, nil, err
+	}
+
+	if !found {
+		panic(fmt.Sprintf("Driver `%s:%s` was not found in DB", device.VendorId, device.ModelId))
+	}
+
+	oldInfo, validationErrors, err := extractInfoFromDriver(device.VendorId, device.ModelId, driver.HomescriptCode)
+	if err != nil {
+		return false, nil, err
+	}
+
+	if len(validationErrors) > 0 {
+		return false, fmt.Errorf("%s", validationErrors[0].Message), nil
+	}
+
+	valid, stack, msg := valueMatchesSpec(newConfig, oldInfo.DeviceConfig.Config, make([]FieldAccess, 0))
+
+	stackStr := make([]string, 0)
+	for _, elem := range stack {
+		elemStr := ""
+		switch elem.Type {
+		case FieldAccessMember:
+			elemStr = fmt.Sprintf(".%s", elem.Member)
+		case FieldAccessIndex:
+			elemStr = fmt.Sprintf("[%d]", elem.Index)
+		}
+
+		stackStr = append(stackStr, elemStr)
+	}
+
+	if !valid {
+		return false, fmt.Errorf("Invalid new configuration: field `%s`: %s", strings.Join(stackStr, ""), msg), nil
+	}
+
+	return true, nil, nil
+}
+
 func ValidateDriverConfigurationChange(vendorID, modelID string, newConfig interface{}) (found bool, validateErr error, dbErr error) {
 	driver, found, err := database.GetDeviceDriver(vendorID, modelID)
 	if err != nil {

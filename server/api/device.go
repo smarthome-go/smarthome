@@ -26,7 +26,11 @@ type AddDeviceRequest struct {
 type ModifyDeviceRequest struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
-	// TODO: can only the name be modified?
+}
+
+type ConfigureDeviceRequest struct {
+	ID   string      `json:"id"`
+	Data interface{} `json:"data"`
 }
 
 type DeleteDeviceRequest struct {
@@ -205,6 +209,49 @@ func ModifyDevice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	Res(w, Response{Success: true, Message: "successfully modified device"})
+}
+
+func ConfigureDevice(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request ConfigureDeviceRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+
+	found, validateErr, dbErr := drivers.ValidateDeviceConfigurationChange(request.ID, request.Data)
+	if dbErr != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to modify device", Error: "database failure"})
+		return
+	}
+
+	if validateErr != nil {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "device configuration schema validation failed", Error: validateErr.Error()})
+		return
+	}
+
+	if !found {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{
+			Success: false,
+			Message: "failed to configure device",
+			Error:   fmt.Sprintf("the device `%s` does not exist", request.ID),
+		})
+		return
+	}
+
+	if err := drivers.StoreDeviceSingleton(request.ID, request.Data); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to configure device", Error: "database failure"})
+		return
+	}
+
+	Res(w, Response{Success: true, Message: "successfully configured device"})
 }
 
 func DeleteDevice(w http.ResponseWriter, r *http.Request) {
