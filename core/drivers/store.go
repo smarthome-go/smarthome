@@ -43,12 +43,42 @@ func StoreDriverSingleton(
 	fromJSON any,
 ) error {
 	// TODO: need to patch the original value by only applying the changed fields.
+	driver, found, err := GetDriverWithInfos(vendorID, modelID)
+	if err != nil {
+		return err
+	}
 
-	marshaled, err := json.Marshal(fromJSON)
+	if !found {
+		panic(fmt.Sprintf("Driver `%s:%s` to be stored not found", vendorID, modelID))
+	}
+
+	oldValue := DriverStore[DriverTuple{
+		VendorID: vendorID,
+		ModelID:  modelID,
+	}]
+
+	fromJSONhms, i := value.UnmarshalValue(errors.Span{}, fromJSON)
+	if i != nil {
+		panic(fmt.Sprintf("Parsing / validation error: %s", (*i).Message()))
+	}
+
+	withOldValues := ApplyTransactionOnStored(
+		oldValue,
+		(*fromJSONhms).(value.ValueObject),
+		driver.ExtractedInfo.DriverConfig.HmsType,
+	)
+
+	marshaledInterface, _ := value.MarshalValue(withOldValues, false)
 	if err != nil {
 		panic(fmt.Sprintf("Impossible marshal error: %s", err.Error()))
 	}
-	marshaledStr := string(marshaled)
+
+	marshaledBytes, err := json.Marshal(marshaledInterface)
+	if err != nil {
+		panic(fmt.Sprintf("Impossible marshal error: %s", err.Error()))
+	}
+
+	marshaledStr := string(marshaledBytes)
 
 	if err = database.ModifyDeviceDriverSingletonJSON(
 		vendorID,
@@ -58,15 +88,10 @@ func StoreDriverSingleton(
 		return err
 	}
 
-	val, i := value.UnmarshalValue(errors.Span{}, fromJSON)
-	if i != nil {
-		panic(fmt.Sprintf("Parsing / validation error: %s", (*i).Message()))
-	}
-
 	DriverStore[DriverTuple{
 		VendorID: vendorID,
 		ModelID:  modelID,
-	}] = (*val).(value.ValueObject)
+	}] = withOldValues
 
 	return nil
 }
@@ -103,6 +128,29 @@ func StoreDeviceSingleton(
 //
 // Generic, for both.
 //
+
+// This function patches the `old` value using the `new` fields whilst respecting the annotated `@setting` fields.
+// It is required as otherwise, just the `new` value would be saved in the DB,
+// causing a VM runtime crash due to possibly missing fields.
+func ApplyTransactionOnStored(
+	oldVal value.ValueObject,
+	newVal value.ValueObject,
+	singletonType ast.ObjectType,
+) value.ValueObject {
+	// Use the old value as a starting point.
+	transformed := oldVal
+
+	for _, field := range singletonType.ObjFields {
+		if field.Annotation.Ident() != homescript.DriverFieldRequiredAnnotation {
+			// If this field is not a `@setting`, it can never be changed from the outside.
+			continue
+		}
+
+		transformed.FieldsInternal[field.FieldName.Ident()] = newVal.FieldsInternal[field.FieldName.Ident()]
+	}
+
+	return transformed
+}
 
 func filterObjFieldsWithoutSetting(input value.ValueObject, singletonType ast.ObjectType) value.ValueObject {
 	outputFields := make(map[string]*value.Value)

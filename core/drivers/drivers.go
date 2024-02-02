@@ -59,6 +59,37 @@ func extractInfoFromDriver(
 	return driverInfo, make([]diagnostic.Diagnostic, 0), nil
 }
 
+func GetDriverWithInfos(vendorID, modelID string) (RichDriver, bool, error) {
+	rawDriver, found, err := database.GetDeviceDriver(vendorID, modelID)
+	if err != nil {
+		return RichDriver{}, false, err
+	}
+
+	if !found {
+		return RichDriver{}, false, nil
+	}
+
+	driverInfo, diagnostics, err := extractInfoFromDriver(vendorID, modelID, rawDriver.HomescriptCode)
+	if err != nil {
+		return RichDriver{}, false, err
+	}
+
+	configuration := DriverStore[DriverTuple{
+		VendorID: vendorID,
+		ModelID:  modelID,
+	}]
+
+	marshaled, _ := value.MarshalValue(configuration, false)
+
+	return RichDriver{
+		Driver:           rawDriver,
+		ExtractedInfo:    driverInfo,
+		Configuration:    marshaled,
+		IsValid:          len(diagnostics) == 0,
+		ValidationErrors: diagnostics,
+	}, true, nil
+}
+
 func ListWithoutStoredValues() ([]RichDriver, error) {
 	defaultDrivers, err := database.ListDeviceDrivers()
 	if err != nil {
@@ -110,6 +141,7 @@ func ListWithStoredConfig() ([]RichDriver, error) {
 			VendorID: driver.Driver.VendorId,
 			ModelID:  driver.Driver.ModelId,
 		}]
+
 		// This should not happen: a zero value for every driver-spec is created automatically.
 		if !found {
 			panic(fmt.Sprintf("Configuration entry not found for driver `%s:%s`", driver.Driver.VendorId, driver.Driver.ModelId))

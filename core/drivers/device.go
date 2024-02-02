@@ -18,6 +18,47 @@ type Device struct {
 	SingletonJSON  any                  `json:"singletonJson"`
 }
 
+func ListAllDevices() ([]Device, error) {
+	raw, err := database.ListAllDevices()
+	if err != nil {
+		return nil, err
+	}
+
+	return ParseSingletonListJSON(raw)
+}
+
+func ListPersonalDevices(username string) ([]Device, error) {
+	raw, err := database.ListUserDevices(username)
+	if err != nil {
+		return nil, err
+	}
+
+	return ParseSingletonListJSON(raw)
+}
+
+func ParseSingletonListJSON(input []database.Device) ([]Device, error) {
+	output := make([]Device, len(input))
+	for i, elem := range input {
+		var parsed any
+
+		if err := json.Unmarshal([]byte(elem.SingletonJSON), &parsed); err != nil {
+			log.Errorf("Could not parse singleton of device `%s` JSON: %s", elem.Id, err.Error())
+			return nil, fmt.Errorf("Could not parse singleton of device `%s` JSON: %s", elem.Id, err.Error())
+		}
+
+		output[i] = Device{
+			DeviceType:     elem.DeviceType,
+			ID:             elem.Id,
+			Name:           elem.Name,
+			RoomID:         elem.RoomId,
+			DriverVendorID: elem.VendorId,
+			DriverModelID:  elem.ModelId,
+			SingletonJSON:  parsed,
+		}
+	}
+	return output, nil
+}
+
 // 1. Fetch the corresponding driver from the DB
 // 2. Generate a default JSON from the driver device singleton
 // 3. Create the new device.

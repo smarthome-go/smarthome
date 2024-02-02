@@ -56,7 +56,7 @@ type DriverActionPower struct {
 }
 
 type DriverActionPowerOutput struct {
-	Changed bool
+	Changed bool `json:"changed"`
 }
 
 func (self DriverActionPower) Kind() DriverActionKind {

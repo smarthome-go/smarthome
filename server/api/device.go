@@ -40,7 +40,7 @@ type DeleteDeviceRequest struct {
 // Returns a list of available devices as JSON to the user, no authentication required
 func GetAllDevices(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	devices, err := database.ListAllDevices()
+	devices, err := drivers.ListAllDevices()
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "database error", Error: "database failure"})
@@ -61,7 +61,7 @@ func GetUserDevices(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	devices, err := database.ListUserDevices(username)
+	devices, err := drivers.ListPersonalDevices(username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "database error", Error: "database error"})
