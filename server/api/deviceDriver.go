@@ -31,7 +31,7 @@ type DeviceDriverAddRequest struct {
 
 func ListDeviceDrivers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	drivers, err := drivers.ListWithStoredConfig()
+	drivers, err := drivers.ListDriversWithStoredConfig()
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to list device drivers", Error: "database error"})

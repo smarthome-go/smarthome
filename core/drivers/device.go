@@ -6,16 +6,18 @@ import (
 
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/homescript"
 )
 
 type Device struct {
-	DeviceType     database.DEVICE_TYPE `json:"type"`
-	ID             string               `json:"id"`
-	Name           string               `json:"name"`
-	RoomID         string               `json:"roomId"`
-	DriverVendorID string               `json:"vendorId"`
-	DriverModelID  string               `json:"modelId"`
-	SingletonJSON  any                  `json:"singletonJson"`
+	DeviceType     database.DEVICE_TYPE         `json:"type"`
+	ID             string                       `json:"id"`
+	Name           string                       `json:"name"`
+	RoomID         string                       `json:"roomId"`
+	DriverVendorID string                       `json:"vendorId"`
+	DriverModelID  string                       `json:"modelId"`
+	SingletonJSON  any                          `json:"singletonJson"`
+	ConfigSchema   homescript.ConfigInfoWrapper `json:"config"`
 }
 
 func ListAllDevices() ([]Device, error) {
@@ -24,7 +26,7 @@ func ListAllDevices() ([]Device, error) {
 		return nil, err
 	}
 
-	return ParseSingletonListJSON(raw)
+	return EnrichDevicesList(raw)
 }
 
 func ListPersonalDevices(username string) ([]Device, error) {
@@ -33,29 +35,46 @@ func ListPersonalDevices(username string) ([]Device, error) {
 		return nil, err
 	}
 
-	return ParseSingletonListJSON(raw)
+	return EnrichDevicesList(raw)
 }
 
-func ParseSingletonListJSON(input []database.Device) ([]Device, error) {
-	output := make([]Device, len(input))
-	for i, elem := range input {
-		var parsed any
+func EnrichDevicesList(input []database.Device) ([]Device, error) {
+	drivers, err := ListDriversWithoutStoredValues()
+	if err != nil {
+		return nil, err
+	}
 
-		if err := json.Unmarshal([]byte(elem.SingletonJSON), &parsed); err != nil {
-			log.Errorf("Could not parse singleton of device `%s` JSON: %s", elem.Id, err.Error())
-			return nil, fmt.Errorf("Could not parse singleton of device `%s` JSON: %s", elem.Id, err.Error())
+	output := make([]Device, len(input))
+	for index, device := range input {
+		// Find correct driver.
+		var fittingDriver RichDriver
+
+		for _, driver := range drivers {
+			if driver.Driver.VendorId == device.VendorId && driver.Driver.ModelId == device.ModelId {
+				fittingDriver = driver
+				break
+			}
 		}
 
-		output[i] = Device{
-			DeviceType:     elem.DeviceType,
-			ID:             elem.Id,
-			Name:           elem.Name,
-			RoomID:         elem.RoomId,
-			DriverVendorID: elem.VendorId,
-			DriverModelID:  elem.ModelId,
-			SingletonJSON:  parsed,
+		val := DeviceStore[device.Id]
+
+		savedConfig, _ := value.MarshalValue(
+			filterObjFieldsWithoutSetting(val, fittingDriver.ExtractedInfo.DeviceConfig.HmsType),
+			false,
+		)
+
+		output[index] = Device{
+			DeviceType:     device.DeviceType,
+			ID:             device.Id,
+			Name:           device.Name,
+			RoomID:         device.RoomId,
+			DriverVendorID: device.VendorId,
+			DriverModelID:  device.ModelId,
+			SingletonJSON:  savedConfig,
+			ConfigSchema:   fittingDriver.ExtractedInfo.DeviceConfig,
 		}
 	}
+
 	return output, nil
 }
 

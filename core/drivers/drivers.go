@@ -91,7 +91,7 @@ func GetDriverWithInfos(vendorID, modelID string) (RichDriver, bool, error) {
 	}, true, nil
 }
 
-func ListWithoutStoredValues() ([]RichDriver, error) {
+func ListDriversWithoutStoredValues() ([]RichDriver, error) {
 	defaultDrivers, err := database.ListDeviceDrivers()
 	if err != nil {
 		return nil, err
@@ -126,8 +126,8 @@ func ListWithoutStoredValues() ([]RichDriver, error) {
 	return richDrivers, nil
 }
 
-func ListWithStoredConfig() ([]RichDriver, error) {
-	drivers, err := ListWithoutStoredValues()
+func ListDriversWithStoredConfig() ([]RichDriver, error) {
+	drivers, err := ListDriversWithoutStoredValues()
 	if err != nil {
 		return nil, err
 	}
