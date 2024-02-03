@@ -37,7 +37,10 @@ var DriverStore map[DriverTuple]value.ValueObject = make(map[DriverTuple]value.V
 //		- Here, the schema / type of the according singleton must be used to validate that the JSON has a valid schema.
 //	4. If the parsing succeeded, store the data in: TODO any kind of database
 
-func StoreDriverSingleton(
+// This function exists alongside its backend because invoking this function BEFORE new HMS code is saved in the DB
+// would revert the schema changes that it is intented to write, as it pulls data from the DB
+// which at this point resides in an outdated state.
+func StoreDriverSingletonConfigUpdate(
 	vendorID string,
 	modelID string,
 	fromJSON any,
@@ -68,10 +71,12 @@ func StoreDriverSingleton(
 		driver.ExtractedInfo.DriverConfig.HmsType,
 	)
 
-	marshaledInterface, _ := value.MarshalValue(withOldValues, false)
-	if err != nil {
-		panic(fmt.Sprintf("Impossible marshal error: %s", err.Error()))
-	}
+	return StoreDriverSingletonBackend(vendorID, modelID, withOldValues)
+}
+
+// This function just stores a value in the store backend without applying transformations on it.
+func StoreDriverSingletonBackend(vendorID, modelID string, val value.ValueObject) error {
+	marshaledInterface, _ := value.MarshalValue(val, false)
 
 	marshaledBytes, err := json.Marshal(marshaledInterface)
 	if err != nil {
@@ -91,22 +96,62 @@ func StoreDriverSingleton(
 	DriverStore[DriverTuple{
 		VendorID: vendorID,
 		ModelID:  modelID,
-	}] = withOldValues
+	}] = val
 
 	return nil
 }
 
-func StoreDeviceSingleton(
+// This function exists alongside its backend because invoking this function BEFORE new HMS code is saved in the DB
+// would revert the schema changes that it is intented to write, as it pulls data from the DB
+// which at this point resides in an outdated state.
+func StoreDeviceSingletonConfigUpdate(
 	deviceID string,
 	fromJSON any,
 ) error {
-	// TODO: need to patch the original value by only applying the changed fields.
+	device, found, err := database.GetDeviceById(deviceID)
+	if err != nil {
+		return err
+	}
 
-	marshaled, err := json.Marshal(fromJSON)
+	if !found {
+		panic(fmt.Sprintf("Device `%s` to be stored not found", deviceID))
+	}
+
+	driver, found, err := GetDriverWithInfos(device.VendorId, device.ModelId)
+	if err != nil {
+		return err
+	}
+
+	if !found {
+		panic(fmt.Sprintf("Driver `%s:%s` to be stored not found", device.VendorId, device.ModelId))
+	}
+
+	oldValue := DeviceStore[deviceID]
+
+	fromJSONhms, i := value.UnmarshalValue(errors.Span{}, fromJSON)
+	if i != nil {
+		panic(fmt.Sprintf("Parsing / validation error: %s", (*i).Message()))
+	}
+
+	withOldValues := ApplyTransactionOnStored(
+		oldValue,
+		(*fromJSONhms).(value.ValueObject),
+		driver.ExtractedInfo.DeviceConfig.HmsType,
+	)
+
+	return StoreDeviceSingletonBackend(deviceID, withOldValues)
+}
+
+// This function just stores a value in the store backend without applying transformations on it.
+func StoreDeviceSingletonBackend(deviceID string, val value.ValueObject) error {
+	marshaledInterface, _ := value.MarshalValue(val, false)
+
+	marshaledBytes, err := json.Marshal(marshaledInterface)
 	if err != nil {
 		panic(fmt.Sprintf("Impossible marshal error: %s", err.Error()))
 	}
-	marshaledStr := string(marshaled)
+
+	marshaledStr := string(marshaledBytes)
 
 	if err = database.ModifyDeviceSingletonJSON(
 		deviceID,
@@ -115,13 +160,7 @@ func StoreDeviceSingleton(
 		return err
 	}
 
-	val, i := value.UnmarshalValue(errors.Span{}, fromJSON)
-	if i != nil {
-		panic(fmt.Sprintf("Parsing / validation error: %s", (*i).Message()))
-	}
-
-	DeviceStore[deviceID] = (*val).(value.ValueObject)
-
+	DeviceStore[deviceID] = val
 	return nil
 }
 
@@ -141,7 +180,7 @@ func ApplyTransactionOnStored(
 	transformed := oldVal
 
 	for _, field := range singletonType.ObjFields {
-		if field.Annotation.Ident() != homescript.DriverFieldRequiredAnnotation {
+		if field.Annotation == nil || field.Annotation.Ident() != homescript.DriverFieldRequiredAnnotation {
 			// If this field is not a `@setting`, it can never be changed from the outside.
 			continue
 		}

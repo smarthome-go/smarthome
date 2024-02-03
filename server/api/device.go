@@ -245,7 +245,7 @@ func ConfigureDevice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := drivers.StoreDeviceSingleton(request.ID, request.Data); err != nil {
+	if err := drivers.StoreDeviceSingletonConfigUpdate(request.ID, request.Data); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to configure device", Error: "database failure"})
 		return

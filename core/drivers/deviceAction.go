@@ -178,13 +178,13 @@ func InvokeDriverPower(
 
 	// Save driver & device singleton state after VM has terminated.
 	driverMarshaled, _ := value.MarshalValue(driverSingletonAfter, false)
-	if err := StoreDriverSingleton(driver.VendorId, driver.ModelId, driverMarshaled); err != nil {
+	if err := StoreDriverSingletonConfigUpdate(driver.VendorId, driver.ModelId, driverMarshaled); err != nil {
 		return DriverActionPowerOutput{}, nil, err
 	}
 
 	// Save device singleton state after VM has terminated.
 	deviceMarshaled, _ := value.MarshalValue(deviceSingleton, false)
-	if err := StoreDeviceSingleton(deviceId, deviceMarshaled); err != nil {
+	if err := StoreDeviceSingletonConfigUpdate(deviceId, deviceMarshaled); err != nil {
 		return DriverActionPowerOutput{}, nil, err
 	}
 

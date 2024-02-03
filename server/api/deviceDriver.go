@@ -226,7 +226,7 @@ func ConfigureDeviceDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if dbErr = drivers.StoreDriverSingleton(
+	if dbErr = drivers.StoreDriverSingletonConfigUpdate(
 		request.Driver.VendorID,
 		request.Driver.ModelID,
 		request.Data,

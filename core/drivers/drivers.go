@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
+	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
 	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
@@ -198,6 +199,85 @@ func Create(vendorID, modelID, name, version, hmsCode string) (hmsErr error, dbE
 	return nil, nil
 }
 
+func ApplyNewSchemaOnData(oldData value.Value, newSchema ast.Type) (newData *value.Value) {
+	switch newSchema.Kind() {
+	case ast.UnknownTypeKind, ast.NeverTypeKind, ast.AnyTypeKind, ast.NullTypeKind,
+		ast.IdentTypeKind, ast.FnTypeKind, ast.RangeTypeKind, ast.AnyObjectTypeKind:
+		panic(fmt.Sprintf("Unsupported type: `%s`", newSchema.Kind()))
+	case ast.IntTypeKind:
+		fallthrough
+	case ast.FloatTypeKind:
+		fallthrough
+	case ast.BoolTypeKind:
+		fallthrough
+	case ast.StringTypeKind:
+		// If there is a type mismatch, create a zero value.
+		if oldData.Kind().TypeKind() != newSchema.Kind() {
+			return value.ZeroValue(newSchema)
+		}
+
+		// Otherwise, return the original value.
+		return &oldData
+	case ast.ListTypeKind:
+		valList := oldData.(value.ValueList)
+		if len(*valList.Values) == 0 {
+			return value.NewValueList(make([]*value.Value, 0))
+		}
+
+		// If the first list element differs from the new schema, return an empty list.
+		first := *(*valList.Values)[0]
+		listType := newSchema.(ast.ListType)
+		if first.Kind().TypeKind() != listType.Inner.Kind() {
+			return value.NewValueList(make([]*value.Value, 0))
+		}
+
+		return value.NewValueList(*valList.Values)
+	case ast.ObjectTypeKind:
+		return ApplyNewSchemaOnObjData(oldData.(value.ValueObject), newSchema.(ast.ObjectType))
+	case ast.OptionTypeKind:
+		oldOption := oldData.(value.ValueOption)
+		if oldOption.Inner == nil {
+			return value.NewNoneOption()
+		}
+
+		// If the inner type differs, also return a `none` option.
+		optionType := newSchema.(ast.OptionType)
+		if (*oldOption.Inner).Kind().TypeKind() != optionType.Inner.Kind() {
+			return value.NewNoneOption()
+		}
+
+		return value.NewValueOption(oldOption.Inner)
+	default:
+		panic(fmt.Sprintf("A new data type was added without updating this code: `%s`", newSchema.Kind()))
+	}
+}
+
+// Tries to transform old data into a new schema without loosing too much information.
+// TODO: return a bool that indicates whether a field was removed or that its data was invalidated.
+// This will be useful for a warning that informs the user that 'committing' change will likely result in data loss.
+func ApplyNewSchemaOnObjData(oldData value.ValueObject, newSchema ast.ObjectType) (newData *value.Value) {
+	newFields := make(map[string]*value.Value)
+
+outer:
+	// By iterating over the new fields whilst ignoring any old ones, removed fields are deleted automatically.
+	for _, field := range newSchema.ObjFields {
+		// If this field already exists, apply schema recursively on this field.
+		for objFieldName, objField := range oldData.FieldsInternal {
+			if objFieldName == field.FieldName.Ident() {
+				newFields[field.FieldName.Ident()] = ApplyNewSchemaOnData(*objField, field.Type)
+				continue outer
+			}
+		}
+
+		// Other case: this field does not currently exist: create a zero value.
+		newFields[field.FieldName.Ident()] = value.ZeroValue(field.Type)
+	}
+
+	return value.NewValueObject(newFields)
+}
+
+// Apart from actually modifying the code of the driver in the DB,
+// the saved singleton state of this driver and all dependent devices must be rebuilt.
 func ModifyCode(vendorID, modelID, newCode string) (found bool, dbErr error) {
 	// Try to create default JSON from schema.
 	// This can fail if the Homescript code is invalid.
@@ -206,21 +286,39 @@ func ModifyCode(vendorID, modelID, newCode string) (found bool, dbErr error) {
 		return false, err
 	}
 
+	objVal := value.ValueObject{FieldsInternal: make(map[string]*value.Value)}
+	// Do not overwrite everything, calculate a new stored value.
 	if hmsErrs != nil {
-		DriverStore[DriverTuple{
+		old := DriverStore[DriverTuple{
 			VendorID: vendorID,
 			ModelID:  modelID,
-		}] = value.ObjectZeroValue(configInfo.DriverConfig.HmsType)
-	} else {
-		DriverStore[DriverTuple{
-			VendorID: vendorID,
-			ModelID:  modelID,
-		}] = value.ValueObject{
-			FieldsInternal: make(map[string]*value.Value),
-		}
+		}]
+		objVal = (*ApplyNewSchemaOnObjData(old, configInfo.DriverConfig.HmsType)).(value.ValueObject)
 	}
 
-	// TODO: detect if fields need to be removed, create a `delta` function in order to prevent overwriting EVERYTHING stored.
+	if err := StoreDriverSingletonBackend(vendorID, modelID, objVal); err != nil {
+		return false, err
+	}
+
+	// Also patch every device that uses this driver.
+	// TODO: add a separate device-list that only lists devices of a certain driver.
+
+	// TODO: what to do on HMS errors?
+
+	devices, err := database.ListAllDevices()
+	if err != nil {
+		return false, err
+	}
+	for _, device := range devices {
+		if device.VendorId != vendorID || device.ModelId != modelID {
+			continue
+		}
+		oldDeviceData := DeviceStore[device.Id]
+		newDeviceData := (*ApplyNewSchemaOnObjData(oldDeviceData, configInfo.DeviceConfig.HmsType)).(value.ValueObject)
+		if err := StoreDeviceSingletonBackend(device.Id, newDeviceData); err != nil {
+			return false, err
+		}
+	}
 
 	found, err = database.ModifyDeviceDriverCode(
 		vendorID,
@@ -232,27 +330,6 @@ func ModifyCode(vendorID, modelID, newCode string) (found bool, dbErr error) {
 	}
 	if !found {
 		return false, nil
-	}
-
-	// Try to extract a schema.
-	schema, hmsErrs, err := extractInfoFromDriver(vendorID, modelID, newCode)
-	if err != nil {
-		return false, err
-	}
-
-	if len(hmsErrs) != 0 {
-		return true, nil
-	}
-
-	// Create default value for extracted schema.
-	if err != nil {
-		panic(fmt.Sprintf("JSON marshaling failed: %s", err.Error()))
-	}
-
-	marshaled, _ := value.MarshalValue(value.ObjectZeroValue(schema.DriverConfig.HmsType), false)
-	err = StoreDriverSingleton(vendorID, modelID, marshaled)
-	if err != nil {
-		return false, err
 	}
 
 	return true, nil
@@ -304,7 +381,11 @@ func ValidateDeviceConfigurationChange(deviceId string, newConfig interface{}) (
 	}
 
 	if !valid {
-		return false, fmt.Errorf("Invalid new configuration: field `%s`: %s", strings.Join(stackStr, ""), msg), nil
+		stackDisp := ""
+		if len(stackStr) > 0 {
+			stackDisp = fmt.Sprintf("field `%s`: ", strings.Join(stackStr, ""))
+		}
+		return false, fmt.Errorf("Invalid new configuration: %s%s", stackDisp, msg), nil
 	}
 
 	return true, nil, nil
@@ -345,7 +426,11 @@ func ValidateDriverConfigurationChange(vendorID, modelID string, newConfig inter
 	}
 
 	if !valid {
-		return false, fmt.Errorf("Invalid new configuration: field `%s`: %s", strings.Join(stackStr, ""), msg), nil
+		stackDisp := ""
+		if len(stackStr) > 0 {
+			stackDisp = fmt.Sprintf("field `%s`: ", strings.Join(stackStr, ""))
+		}
+		return false, fmt.Errorf("Invalid new configuration: %s%s", stackDisp, msg), nil
 	}
 
 	return true, nil, nil
@@ -406,10 +491,7 @@ func valueMatchesSpec(
 
 		structSpec := spec.(homescript.ConfigFieldDescriptorStruct)
 
-		if len(structSpec.Fields) != len(self) {
-			return false, fieldAccessStack, fmt.Sprintf("Expected %d object fields, got %d", len(structSpec.Fields), len(self))
-		}
-
+		// Check that all struct fields are satisfied.
 		for _, field := range structSpec.Fields {
 			item, found := self[field.Name]
 			if !found {
@@ -423,6 +505,18 @@ func valueMatchesSpec(
 			})); !valid {
 				return false, stack, msg
 			}
+		}
+
+		// Check that there are no new fields which do not exist on the struct.
+	outer:
+		for name := range self {
+			for _, field := range structSpec.Fields {
+				if field.Name == name {
+					continue outer
+				}
+			}
+
+			return false, fieldAccessStack, fmt.Sprintf("Illegal additional field `%s`", name)
 		}
 
 		return true, nil, ""
