@@ -38,7 +38,7 @@ var DriverStore map[DriverTuple]value.ValueObject = make(map[DriverTuple]value.V
 //	4. If the parsing succeeded, store the data in: TODO any kind of database
 
 // This function exists alongside its backend because invoking this function BEFORE new HMS code is saved in the DB
-// would revert the schema changes that it is intented to write, as it pulls data from the DB
+// would revert the schema changes that it is intended to write, as it pulls data from the DB
 // which at this point resides in an outdated state.
 func StoreDriverSingletonConfigUpdate(
 	vendorID string,
@@ -102,7 +102,7 @@ func StoreDriverSingletonBackend(vendorID, modelID string, val value.ValueObject
 }
 
 // This function exists alongside its backend because invoking this function BEFORE new HMS code is saved in the DB
-// would revert the schema changes that it is intented to write, as it pulls data from the DB
+// would revert the schema changes that it is intended  to write, as it pulls data from the DB
 // which at this point resides in an outdated state.
 func StoreDeviceSingletonConfigUpdate(
 	deviceID string,

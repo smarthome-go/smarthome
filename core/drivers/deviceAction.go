@@ -76,7 +76,7 @@ func DeviceAction(action DeviceActionRequest) (res ActionResponse, deviceFound b
 //
 //
 //
-// Specialized driver action invokations.
+// Specialized driver action invocations.
 //
 //
 //
@@ -170,7 +170,7 @@ func InvokeDriverPower(
 		}, errors, nil
 	}
 
-	// Get driver and devicec singleton.
+	// Get driver and device singleton.
 	driverSingletonAfter, found := finalContext.Singletons[homescript.DriverSingletonIdent]
 	if !found {
 		panic(fmt.Sprintf("Driver singleton (`%s`) not found after driver execution", homescript.DriverSingletonIdent))
