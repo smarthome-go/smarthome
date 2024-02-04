@@ -68,7 +68,7 @@ func StoreDriverSingletonConfigUpdate(
 	withOldValues := ApplyTransactionOnStored(
 		oldValue,
 		(*fromJSONhms).(value.ValueObject),
-		driver.ExtractedInfo.DriverConfig.HmsType,
+		driver.ExtractedInfo.DriverConfig.Info.HmsType,
 	)
 
 	return StoreDriverSingletonBackend(vendorID, modelID, withOldValues)
@@ -136,7 +136,7 @@ func StoreDeviceSingletonConfigUpdate(
 	withOldValues := ApplyTransactionOnStored(
 		oldValue,
 		(*fromJSONhms).(value.ValueObject),
-		driver.ExtractedInfo.DeviceConfig.HmsType,
+		driver.ExtractedInfo.DeviceConfig.Info.HmsType,
 	)
 
 	return StoreDeviceSingletonBackend(deviceID, withOldValues)
@@ -289,7 +289,7 @@ func PopulateValueCache() error {
 			DriverStore[DriverTuple{
 				VendorID: driver.VendorId,
 				ModelID:  driver.ModelId,
-			}] = value.ObjectZeroValue(information.DriverConfig.HmsType)
+			}] = value.ObjectZeroValue(information.DriverConfig.Info.HmsType)
 		}
 
 		// Populate each device which uses this driver.

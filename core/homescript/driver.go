@@ -94,12 +94,39 @@ func ExtractDriverInfo(
 	diagnostics := make([]diagnostic.Diagnostic, 0)
 
 	driverSingleton, driverSingletonFound := ast.AnalyzedSingletonTypeDefinition{}, false
-	deviceSingleton, deviceSingletonFound := ast.AnalyzedSingletonTypeDefinition{}, false
+	driverCapabilities := make([]DriverCapability, 0)
 
-	// Iterate over singletons, assert that there is a `driver` singleton
+	deviceSingleton, deviceSingletonFound := ast.AnalyzedSingletonTypeDefinition{}, false
+	deviceCapabilities := make([]DeviceCapability, 0)
+
+	// Iterate over singletons, assert that there is a `driver` and a `device` singleton.
 	for _, singleton := range analyzed[mainModule].Singletons {
 		if singleton.Ident.Ident() == DriverSingletonIdent {
 			driverSingleton = singleton
+
+			// Find driver template implementation.
+			for _, templ := range singleton.ImplementsTemplates {
+				templ, found := Templates(singleton.Range)[ImportKey{
+					ModuleName: DriverModuleIdent,
+					ValueName:  templ.Template.Ident(),
+				}]
+
+				if !found {
+					continue
+				}
+
+				if templ.Kind() != TemplateKindDriver {
+					continue
+				}
+
+				// driverTempl := templ.(DriverTemplate)
+
+				// TODO: add expansion to HMS so that implemented capabilities are available here.
+				for name, _ := range templ.GetSpec().Capabilities {
+					fmt.Printf("===========> Driver Capability: %s\n", name)
+				}
+			}
+
 			driverSingletonFound = true
 
 			if deviceSingletonFound && driverSingletonFound {
@@ -113,11 +140,32 @@ func ExtractDriverInfo(
 			deviceSingleton = singleton
 			deviceSingletonFound = true
 
+			// Find device template implementation.
+			for _, templ := range singleton.ImplementsTemplates {
+				templ, found := Templates(singleton.Range)[ImportKey{
+					ModuleName: DriverModuleIdent,
+					ValueName:  templ.Template.Ident(),
+				}]
+
+				if !found {
+					continue
+				}
+
+				if templ.Kind() != TemplateKindDevice {
+					continue
+				}
+
+				// driverTempl := templ.(DriverTemplate)
+
+				// TODO: add expansion to HMS so that implemented capabilities are available here.
+				for name, _ := range templ.GetSpec().Capabilities {
+					fmt.Printf("===========> Device Capability: %s\n", name)
+				}
+			}
+
 			if deviceSingletonFound && driverSingletonFound {
 				break
 			}
-
-			continue
 		}
 	}
 
@@ -228,19 +276,25 @@ func ExtractDriverInfo(
 
 	if incompatibleType {
 		return DriverInfo{
-			DriverConfig: ConfigInfoWrapper{},
-			DeviceConfig: ConfigInfoWrapper{},
+			DriverConfig: ConfigInfoWrapperDriver{},
+			DeviceConfig: ConfigInfoWrapperDevice{},
 		}, diagnostics
 	}
 
 	return DriverInfo{
-		DriverConfig: ConfigInfoWrapper{
-			Config:  driverConfig.(ConfigFieldDescriptorStruct),
-			HmsType: driverSingleton.SingletonType.(ast.ObjectType),
+		DriverConfig: ConfigInfoWrapperDriver{
+			Capabilities: driverCapabilities,
+			Info: ConfigInfoWrapper{
+				Config:  driverConfig.(ConfigFieldDescriptorStruct),
+				HmsType: driverSingleton.SingletonType.(ast.ObjectType),
+			},
 		},
-		DeviceConfig: ConfigInfoWrapper{
-			Config:  deviceConfig.(ConfigFieldDescriptorStruct),
-			HmsType: deviceSingleton.SingletonType.(ast.ObjectType),
+		DeviceConfig: ConfigInfoWrapperDevice{
+			Capabilities: deviceCapabilities,
+			Info: ConfigInfoWrapper{
+				Config:  deviceConfig.(ConfigFieldDescriptorStruct),
+				HmsType: deviceSingleton.SingletonType.(ast.ObjectType),
+			},
 		},
 	}, diagnostics
 }

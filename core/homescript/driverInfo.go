@@ -2,9 +2,32 @@ package homescript
 
 import "github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
 
+type DeviceCapability string
+
+const (
+	DeviceCapabilityPower DeviceCapability = "power"
+)
+
+type DriverCapability string
+
+const (
+	// TODO: remove this
+	DriverCapabilityfoo DriverCapability = "foo"
+)
+
 type DriverInfo struct {
-	DriverConfig ConfigInfoWrapper `json:"driver"`
-	DeviceConfig ConfigInfoWrapper `json:"device"`
+	DriverConfig ConfigInfoWrapperDriver `json:"driver"`
+	DeviceConfig ConfigInfoWrapperDevice `json:"device"`
+}
+
+type ConfigInfoWrapperDevice struct {
+	Capabilities []DeviceCapability `json:"capabilities"`
+	Info         ConfigInfoWrapper  `json:"info"`
+}
+
+type ConfigInfoWrapperDriver struct {
+	Capabilities []DriverCapability `json:"capabilities"`
+	Info         ConfigInfoWrapper  `json:"info"`
 }
 
 type ConfigInfoWrapper struct {

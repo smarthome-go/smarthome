@@ -151,7 +151,7 @@ func ListDriversWithStoredConfig() ([]RichDriver, error) {
 		// TODO: deal with non-settings fields.
 
 		configuration, _ := value.MarshalValue(
-			filterObjFieldsWithoutSetting(val, driver.ExtractedInfo.DriverConfig.HmsType),
+			filterObjFieldsWithoutSetting(val, driver.ExtractedInfo.DriverConfig.Info.HmsType),
 			false,
 		)
 
@@ -182,7 +182,7 @@ func Create(vendorID, modelID, name, version, hmsCode string) (hmsErr error, dbE
 		DriverStore[DriverTuple{
 			VendorID: vendorID,
 			ModelID:  modelID,
-		}] = value.ObjectZeroValue(configInfo.DriverConfig.HmsType)
+		}] = value.ObjectZeroValue(configInfo.DriverConfig.Info.HmsType)
 	} else {
 		DriverStore[DriverTuple{
 			VendorID: vendorID,
@@ -293,7 +293,7 @@ func ModifyCode(vendorID, modelID, newCode string) (found bool, dbErr error) {
 			VendorID: vendorID,
 			ModelID:  modelID,
 		}]
-		objVal = (*ApplyNewSchemaOnObjData(old, configInfo.DriverConfig.HmsType)).(value.ValueObject)
+		objVal = (*ApplyNewSchemaOnObjData(old, configInfo.DriverConfig.Info.HmsType)).(value.ValueObject)
 	}
 
 	if err := StoreDriverSingletonBackend(vendorID, modelID, objVal); err != nil {
@@ -314,7 +314,7 @@ func ModifyCode(vendorID, modelID, newCode string) (found bool, dbErr error) {
 			continue
 		}
 		oldDeviceData := DeviceStore[device.Id]
-		newDeviceData := (*ApplyNewSchemaOnObjData(oldDeviceData, configInfo.DeviceConfig.HmsType)).(value.ValueObject)
+		newDeviceData := (*ApplyNewSchemaOnObjData(oldDeviceData, configInfo.DeviceConfig.Info.HmsType)).(value.ValueObject)
 		if err := StoreDeviceSingletonBackend(device.Id, newDeviceData); err != nil {
 			return false, err
 		}
@@ -365,7 +365,7 @@ func ValidateDeviceConfigurationChange(deviceId string, newConfig interface{}) (
 		return false, fmt.Errorf("%s", validationErrors[0].Message), nil
 	}
 
-	valid, stack, msg := valueMatchesSpec(newConfig, oldInfo.DeviceConfig.Config, make([]FieldAccess, 0))
+	valid, stack, msg := valueMatchesSpec(newConfig, oldInfo.DeviceConfig.Info.Config, make([]FieldAccess, 0))
 
 	stackStr := make([]string, 0)
 	for _, elem := range stack {
@@ -410,7 +410,7 @@ func ValidateDriverConfigurationChange(vendorID, modelID string, newConfig inter
 		return false, fmt.Errorf("%s", validationErrors[0].Message), nil
 	}
 
-	valid, stack, msg := valueMatchesSpec(newConfig, oldInfo.DriverConfig.Config, make([]FieldAccess, 0))
+	valid, stack, msg := valueMatchesSpec(newConfig, oldInfo.DriverConfig.Info.Config, make([]FieldAccess, 0))
 
 	stackStr := make([]string, 0)
 	for _, elem := range stack {

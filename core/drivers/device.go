@@ -7,17 +7,27 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/homescript"
 )
 
 type Device struct {
-	DeviceType       database.DEVICE_TYPE    `json:"type"`
-	ID               string                  `json:"id"`
-	Name             string                  `json:"name"`
-	RoomID           string                  `json:"roomId"`
-	DriverVendorID   string                  `json:"vendorId"`
-	DriverModelID    string                  `json:"modelId"`
-	SingletonJSON    any                     `json:"singletonJson"`
-	ValidationErrors []diagnostic.Diagnostic `json:"validationErrors"`
+	DeviceType       database.DEVICE_TYPE               `json:"type"`
+	ID               string                             `json:"id"`
+	Name             string                             `json:"name"`
+	RoomID           string                             `json:"roomId"`
+	DriverVendorID   string                             `json:"vendorId"`
+	DriverModelID    string                             `json:"modelId"`
+	SingletonJSON    any                                `json:"singletonJson"`
+	ValidationErrors []diagnostic.Diagnostic            `json:"validationErrors"`
+	Config           homescript.ConfigInfoWrapperDevice `json:"config"`
+
+	// Device-specific information.
+	PowerInformation DevicePowerInformation `json:"powerInformation"`
+}
+
+type DevicePowerInformation struct {
+	State          bool `json:"state"`
+	PowerDrawWatts uint `json:"powerDrawWatts"`
 }
 
 func ListAllDevices() ([]Device, error) {
@@ -59,9 +69,12 @@ func EnrichDevicesList(input []database.Device) ([]Device, error) {
 		val := DeviceStore[device.Id]
 
 		savedConfig, _ := value.MarshalValue(
-			filterObjFieldsWithoutSetting(val, fittingDriver.ExtractedInfo.DeviceConfig.HmsType),
+			filterObjFieldsWithoutSetting(val, fittingDriver.ExtractedInfo.DeviceConfig.Info.HmsType),
 			false,
 		)
+
+		// Extract additional information by invoking driver function code.
+		// TODO: a hot / ready / precompiled VM instance would lead to additional performance gains here.
 
 		output[index] = Device{
 			DeviceType:       device.DeviceType,
@@ -72,6 +85,8 @@ func EnrichDevicesList(input []database.Device) ([]Device, error) {
 			DriverModelID:    device.ModelId,
 			SingletonJSON:    savedConfig,
 			ValidationErrors: fittingDriver.ValidationErrors,
+			Config:           fittingDriver.ExtractedInfo.DeviceConfig,
+			PowerInformation: DevicePowerInformation{},
 		}
 	}
 
@@ -109,7 +124,7 @@ func CreateDevice(
 	}
 
 	// Generate default JSON from driver info.
-	defaultDevice := value.ObjectZeroValue(driverInfo.DeviceConfig.HmsType)
+	defaultDevice := value.ObjectZeroValue(driverInfo.DeviceConfig.Info.HmsType)
 	defaultDeviceInterface, _ := value.MarshalValue(defaultDevice, false)
 
 	marshaled, err := json.Marshal(defaultDeviceInterface)

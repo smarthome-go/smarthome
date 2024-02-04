@@ -69,8 +69,168 @@ func (self analyzerHost) PostValidationHook(
 	return nil
 }
 
-func (self analyzerHost) GetBuiltinImport(moduleName string, valueName string, span errors.Span, kind pAst.IMPORT_KIND) (result analyzer.BuiltinImport, moduleFound bool, valueFound bool) {
-	// TODO: handle import kind
+type TemplateKind uint8
+
+const (
+	TemplateKindDriver TemplateKind = iota
+	TemplateKindDevice
+)
+
+type Template interface {
+	Kind() TemplateKind
+	GetSpec() ast.TemplateSpec
+}
+
+type DeviceTemplate struct {
+	Spec ast.TemplateSpec
+	// Maks the HMS capability identifier to a `DriverCapability`.
+	Capabilities map[string]DeviceCapability
+}
+
+func (self DeviceTemplate) Kind() TemplateKind {
+	return TemplateKindDevice
+}
+
+func (self DeviceTemplate) GetSpec() ast.TemplateSpec {
+	return self.Spec
+}
+
+type DriverTemplate struct {
+	Spec ast.TemplateSpec
+	// Maks the HMS capability identifier to a `DriverCapability`.
+	Capabilities map[string]DriverCapability
+}
+
+func (self DriverTemplate) Kind() TemplateKind {
+	return TemplateKindDriver
+}
+
+func (self DriverTemplate) GetSpec() ast.TemplateSpec {
+	return self.Spec
+}
+
+type ImportKey struct {
+	ModuleName string
+	ValueName  string
+}
+
+//
+// Templates and co.
+//
+
+const DriverModuleIdent = "driver"
+
+// NOTE: here, all important templates are defined so that additional information can be attached to it.
+func Templates(span errors.Span) map[ImportKey]Template {
+	return map[ImportKey]Template{
+		{
+			ModuleName: DriverModuleIdent,
+			ValueName:  "Driver",
+		}: DriverTemplate{
+			Spec: ast.TemplateSpec{
+				BaseMethods: map[string]ast.TemplateMethod{
+					"validate_driver": {
+						Signature: ast.NewFunctionType(
+							ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)), span, ast.NewNullType(span), span,
+						).(ast.FunctionType),
+						Modifier: pAst.FN_MODIFIER_PUB,
+					},
+				},
+				Capabilities: map[string]ast.TemplateCapability{
+					"base": {
+						RequiresMethods:           []string{"validate_driver"},
+						ConflictsWithCapabilities: []ast.TemplateConflict{},
+					},
+				},
+				DefaultCapabilities: []string{"base"},
+				Span:                span,
+			},
+			// TODO: implement this
+			Capabilities: map[string]DriverCapability{},
+		},
+		{
+			ModuleName: DriverModuleIdent,
+			ValueName:  "Device",
+		}: DeviceTemplate{
+			Spec: ast.TemplateSpec{
+				BaseMethods: map[string]ast.TemplateMethod{
+					"validate_device": {
+						Signature: ast.NewFunctionType(
+							ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)), span, ast.NewNullType(span), span,
+						).(ast.FunctionType),
+						Modifier: pAst.FN_MODIFIER_PUB,
+					},
+					"set_power": {
+						Signature: ast.NewFunctionType(
+							ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+								ast.NewFunctionTypeParam(
+									pAst.NewSpannedIdent("power_state", span),
+									ast.NewBoolType(span),
+									nil,
+								),
+							}), span, ast.NewBoolType(span), span,
+						).(ast.FunctionType),
+						Modifier: pAst.FN_MODIFIER_PUB,
+					},
+					"dim": {
+						Signature: ast.NewFunctionType(
+							ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+								ast.NewFunctionTypeParam(
+									pAst.NewSpannedIdent("percent", span),
+									ast.NewIntType(span),
+									nil,
+								),
+							}), span, ast.NewNullType(span), span,
+						).(ast.FunctionType),
+						Modifier: pAst.FN_MODIFIER_PUB,
+					},
+				},
+				Capabilities: map[string]ast.TemplateCapability{
+					"base": {
+						RequiresMethods:           []string{"validate_device"},
+						ConflictsWithCapabilities: []ast.TemplateConflict{},
+					},
+					"dimmable": {
+						RequiresMethods:           []string{"dim"},
+						ConflictsWithCapabilities: []ast.TemplateConflict{},
+					},
+					"power": {
+						RequiresMethods:           []string{"set_power"},
+						ConflictsWithCapabilities: []ast.TemplateConflict{},
+					},
+				},
+				DefaultCapabilities: []string{"base"},
+				Span:                span,
+			},
+			// TODO: implement this
+			Capabilities: map[string]DeviceCapability{},
+		},
+	}
+}
+
+func (self analyzerHost) GetBuiltinImport(
+	moduleName string,
+	valueName string,
+	span errors.Span,
+	kind pAst.IMPORT_KIND,
+) (result analyzer.BuiltinImport, moduleFound bool, valueFound bool) {
+	// TODO: differentiate between no such module and no such value?
+	if kind == pAst.IMPORT_KIND_TEMPLATE {
+		templ, found := Templates(span)[ImportKey{
+			ModuleName: moduleName,
+			ValueName:  valueName,
+		}]
+
+		if !found {
+			return analyzer.BuiltinImport{}, false, false
+		}
+
+		spec := templ.GetSpec()
+		return analyzer.BuiltinImport{
+			Type:     nil,
+			Template: &spec,
+		}, true, true
+	}
 
 	switch moduleName {
 	case "driver":
@@ -79,79 +239,13 @@ func (self analyzerHost) GetBuiltinImport(moduleName string, valueName string, s
 			switch valueName {
 			case "Driver":
 				return analyzer.BuiltinImport{
-					Type: nil,
-					Template: &ast.TemplateSpec{
-						BaseMethods: map[string]ast.TemplateMethod{
-							"validate_driver": {
-								Signature: ast.NewFunctionType(
-									ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)), span, ast.NewNullType(span), span,
-								).(ast.FunctionType),
-								Modifier: pAst.FN_MODIFIER_PUB,
-							},
-						},
-						Capabilities: map[string]ast.TemplateCapability{
-							"base": {
-								RequiresMethods:           []string{"validate_driver"},
-								ConflictsWithCapabilities: []ast.TemplateConflict{},
-							},
-						},
-						DefaultCapabilities: []string{"base"},
-						Span:                span,
-					},
+					Type:     nil,
+					Template: nil,
 				}, true, true
 			case "Device":
 				return analyzer.BuiltinImport{
-					Type: nil,
-					Template: &ast.TemplateSpec{
-						BaseMethods: map[string]ast.TemplateMethod{
-							"validate_device": {
-								Signature: ast.NewFunctionType(
-									ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)), span, ast.NewNullType(span), span,
-								).(ast.FunctionType),
-								Modifier: pAst.FN_MODIFIER_PUB,
-							},
-							"set_power": {
-								Signature: ast.NewFunctionType(
-									ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-										ast.NewFunctionTypeParam(
-											pAst.NewSpannedIdent("power_state", span),
-											ast.NewBoolType(span),
-											nil,
-										),
-									}), span, ast.NewBoolType(span), span,
-								).(ast.FunctionType),
-								Modifier: pAst.FN_MODIFIER_PUB,
-							},
-							"dim": {
-								Signature: ast.NewFunctionType(
-									ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-										ast.NewFunctionTypeParam(
-											pAst.NewSpannedIdent("percent", span),
-											ast.NewIntType(span),
-											nil,
-										),
-									}), span, ast.NewNullType(span), span,
-								).(ast.FunctionType),
-								Modifier: pAst.FN_MODIFIER_PUB,
-							},
-						},
-						Capabilities: map[string]ast.TemplateCapability{
-							"base": {
-								RequiresMethods:           []string{"validate_device"},
-								ConflictsWithCapabilities: []ast.TemplateConflict{},
-							},
-							"dimmable": {
-								RequiresMethods:           []string{"dim"},
-								ConflictsWithCapabilities: []ast.TemplateConflict{},
-							},
-							"power": {
-								RequiresMethods:           []string{"set_power"},
-								ConflictsWithCapabilities: []ast.TemplateConflict{},
-							},
-						},
-						DefaultCapabilities: []string{"base"},
-						Span:                span,
-					},
+					Type:     nil,
+					Template: &ast.TemplateSpec{},
 				}, true, true
 			default:
 				return analyzer.BuiltinImport{}, true, false
