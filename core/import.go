@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/smarthome-go/smarthome/core/config"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/hardware"
 	"github.com/smarthome-go/smarthome/core/user"
@@ -19,12 +18,12 @@ import (
 var SetupPath = "./data/config/setup.json"
 
 // Returns the setup struct, a bool that indicates that a setup file has been read and an error
-func readSetupFile() (config.SetupStruct, bool, error) {
+func readSetupFile() (SetupStruct, bool, error) {
 	log.Trace(fmt.Sprintf("Looking for setup file at `%s`", SetupPath))
 	// Read file from `setupPath` on disk
 	content, err := os.ReadFile(SetupPath)
 	if err != nil {
-		return config.SetupStruct{}, false, nil
+		return SetupStruct{}, false, nil
 	}
 	// Move the file after a successful read
 	if err := os.WriteFile(
@@ -32,18 +31,18 @@ func readSetupFile() (config.SetupStruct, bool, error) {
 		content,
 		0755,
 	); err != nil {
-		return config.SetupStruct{}, false, err
+		return SetupStruct{}, false, err
 	}
 	if err := os.Remove(SetupPath); err != nil {
-		return config.SetupStruct{}, false, err
+		return SetupStruct{}, false, err
 	}
 	// Parse setup file to struct `Setup`
-	var setupTemp config.SetupStruct
+	var setupTemp SetupStruct
 	decoder := json.NewDecoder(bytes.NewReader(content))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&setupTemp); err != nil {
 		log.Error(fmt.Sprintf("Failed to parse setup file at `%s` into setup struct: %s", SetupPath, err.Error()))
-		return config.SetupStruct{}, false, err
+		return SetupStruct{}, false, err
 	}
 	return setupTemp, true, nil
 }
@@ -86,7 +85,7 @@ func abortSetup() error {
 	}
 	// Initialize database (fresh setup)
 	if err := database.Init(
-		config.GetConfig().Database,
+		GetConfig().Database,
 		"rescue",
 	); err != nil {
 		return err
@@ -113,7 +112,7 @@ func FactoryReset() error {
 	}
 	// Initialize database (fresh setup)
 	if err := database.Init(
-		config.GetConfig().Database,
+		GetConfig().Database,
 		"admin",
 	); err != nil {
 		return err
@@ -133,7 +132,7 @@ func getServerConfiguration() (database.ServerConfig, error) {
 	return config, nil
 }
 
-func RunSetupStruct(setup config.SetupStruct) error {
+func RunSetupStruct(setup SetupStruct) error {
 	if err := FactoryReset(); err != nil {
 		return err
 	}
@@ -163,7 +162,7 @@ func RunSetupStruct(setup config.SetupStruct) error {
 	return nil
 }
 
-func runSetupStruct(setup config.SetupStruct) error {
+func runSetupStruct(setup SetupStruct) error {
 	log.Info("Running configuration setup...")
 	if err := createSystemConfigInDatabase(setup.ServerConfiguration); err != nil {
 		log.Error("Aborting setup: could not update system configuration in database: ", err.Error())
@@ -190,7 +189,7 @@ func runSetupStruct(setup config.SetupStruct) error {
 }
 
 // Takes the `users` slice and createas according database entries
-func createUsersInDatabase(users []config.SetupUser) error {
+func createUsersInDatabase(users []SetupUser) error {
 	for _, usr := range users {
 		_, alreadyExists, err := database.GetUserByUsername(usr.Data.Username)
 		if err != nil {
@@ -380,7 +379,7 @@ func createUsersInDatabase(users []config.SetupUser) error {
 }
 
 // Takes the specified `rooms` and creates according database entries
-func createRoomsInDatabase(rooms []config.SetupRoom) error {
+func createRoomsInDatabase(rooms []SetupRoom) error {
 	for _, room := range rooms {
 		if err := database.CreateRoom(room.Data); err != nil {
 			log.Error("Could not create rooms from setup file: ", err.Error())
@@ -452,7 +451,7 @@ func createSystemConfigInDatabase(systemConfig database.ServerConfig) error {
 	return nil
 }
 
-func createCacheDataInDatabase(cacheData config.SetupCacheData) error {
+func createCacheDataInDatabase(cacheData SetupCacheData) error {
 	var wg sync.WaitGroup
 	error := struct {
 		err  error

@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/smarthome-go/smarthome/core/config"
+	"github.com/smarthome-go/smarthome/core"
 )
 
 // Scans environment variables
@@ -17,7 +17,7 @@ import (
 // `SMARTHOME_DB_PORT`       : (Int   ) Sets the database port
 // `SMARTHOME_DB_PASSWORD`   : (String) Sets the database user's password
 // `SMARTHOME_DB_USER`       : (String) Sets the database user
-func scanEnv(configStruct *config.Config) string {
+func scanEnv(configStruct *core.Config) string {
 	// Admin password
 	newAdminPassword := "admin"
 	if adminPassword, adminPasswordOk := os.LookupEnv("SMARTHOME_ADMIN_PASSWORD"); adminPasswordOk {

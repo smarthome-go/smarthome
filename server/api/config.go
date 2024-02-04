@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/smarthome-go/smarthome/core"
-	"github.com/smarthome-go/smarthome/core/config"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/homescript/automation"
 	"github.com/smarthome-go/smarthome/server/middleware"
@@ -128,7 +127,7 @@ func ExportConfiguration(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	export, err := config.Export(request.IncludeProfilePictures, request.IncludeCacheData)
+	export, err := core.ExportConfig(request.IncludeProfilePictures, request.IncludeCacheData)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		Res(w, Response{Success: false, Message: "failed to perform configuration export", Error: "internal server error"})
@@ -144,7 +143,7 @@ func ImportConfiguration(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
-	var request config.SetupStruct
+	var request core.SetupStruct
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		Res(w, Response{Success: false, Message: "bad request", Error: err.Error()})

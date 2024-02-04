@@ -7,6 +7,7 @@ import (
 
 	"golang.org/x/exp/utf8string"
 
+	"github.com/smarthome-go/smarthome/core"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/server/middleware"
 )
@@ -28,7 +29,7 @@ func ListUserRoomsWithData(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	rooms, err := database.ListPersonalRoomsWithData(username)
+	rooms, err := core.ListPersonalRoomsWithData(username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "could not list personal rooms", Error: "database failure"})
@@ -57,7 +58,7 @@ func ListAllRoomsWithData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// camera URLs shall be redacted if the user has no sufficient permissions
-	rooms, err := database.ListAllRoomsWithData(!hasPermission)
+	rooms, err := core.ListAllRoomsWithData(!hasPermission)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "could not list all rooms", Error: "database failure"})

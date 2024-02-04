@@ -1,12 +1,10 @@
-package config
+package core
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
-
-	"github.com/sirupsen/logrus"
 
 	"github.com/smarthome-go/smarthome/core/database"
 )
@@ -27,12 +25,6 @@ var config Config
 // The actual file will always be `config.json`
 // must be a var in order to be overridden by the unit test
 var configPath = "./data/config"
-
-var log *logrus.Logger
-
-func InitLogger(logger *logrus.Logger) {
-	log = logger
-}
 
 func ReadConfigFile() error {
 	// Read file from <configPath> on disk

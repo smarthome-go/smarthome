@@ -1,4 +1,4 @@
-package config
+package core
 
 import (
 	"fmt"
@@ -201,6 +201,6 @@ func TestExportGeneration(t *testing.T) {
 	///
 	/// Part 2: Export testing
 	///
-	_, err = Export(false, true)
+	_, err = ExportConfig(false, true)
 	assert.NoError(t, err)
 }

@@ -4,20 +4,20 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/homescript"
 )
 
 type Device struct {
-	DeviceType     database.DEVICE_TYPE         `json:"type"`
-	ID             string                       `json:"id"`
-	Name           string                       `json:"name"`
-	RoomID         string                       `json:"roomId"`
-	DriverVendorID string                       `json:"vendorId"`
-	DriverModelID  string                       `json:"modelId"`
-	SingletonJSON  any                          `json:"singletonJson"`
-	ConfigSchema   homescript.ConfigInfoWrapper `json:"config"`
+	DeviceType       database.DEVICE_TYPE    `json:"type"`
+	ID               string                  `json:"id"`
+	Name             string                  `json:"name"`
+	RoomID           string                  `json:"roomId"`
+	DriverVendorID   string                  `json:"vendorId"`
+	DriverModelID    string                  `json:"modelId"`
+	SingletonJSON    any                     `json:"singletonJson"`
+	ValidationErrors []diagnostic.Diagnostic `json:"validationErrors"`
 }
 
 func ListAllDevices() ([]Device, error) {
@@ -64,14 +64,14 @@ func EnrichDevicesList(input []database.Device) ([]Device, error) {
 		)
 
 		output[index] = Device{
-			DeviceType:     device.DeviceType,
-			ID:             device.Id,
-			Name:           device.Name,
-			RoomID:         device.RoomId,
-			DriverVendorID: device.VendorId,
-			DriverModelID:  device.ModelId,
-			SingletonJSON:  savedConfig,
-			ConfigSchema:   fittingDriver.ExtractedInfo.DeviceConfig,
+			DeviceType:       device.DeviceType,
+			ID:               device.Id,
+			Name:             device.Name,
+			RoomID:           device.RoomId,
+			DriverVendorID:   device.VendorId,
+			DriverModelID:    device.ModelId,
+			SingletonJSON:    savedConfig,
+			ValidationErrors: fittingDriver.ValidationErrors,
 		}
 	}
 

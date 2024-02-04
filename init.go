@@ -11,7 +11,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/smarthome-go/smarthome/core"
-	"github.com/smarthome-go/smarthome/core/config"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/utils"
@@ -60,7 +59,7 @@ func initLoggers() {
 	reminder.InitLogger(log)
 }
 
-func runWebServer(configStruct config.Config, serverConfig database.ServerConfig) {
+func runWebServer(configStruct core.Config, serverConfig database.ServerConfig) {
 	// Server, middleware and routes
 	r := routes.NewRouter()
 	if !configStruct.Server.Production {

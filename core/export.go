@@ -1,4 +1,4 @@
-package config
+package core
 
 import (
 	"encoding/base64"
@@ -138,7 +138,7 @@ type SetupWeatherMeasurement struct {
 	Humidity           uint8   `json:"humidity"`
 }
 
-func Export(
+func ExportConfig(
 	includeProfilePictures bool, // The user's profile pictures in base64
 	includedCacheData bool, // Weather history and power data
 ) (SetupStruct, error) {
@@ -151,7 +151,7 @@ func Export(
 		return SetupStruct{}, fmt.Errorf("No configuration could be found")
 	}
 	// Rooms configuration
-	roomsDB, err := database.ListAllRoomsWithData(false) // camera URLs shall not be redacted
+	roomsDB, err := ListAllRoomsWithData(false) // camera URLs shall not be redacted
 	if err != nil {
 		return SetupStruct{}, err
 	}
@@ -161,10 +161,10 @@ func Export(
 		for _, sw := range room.Devices {
 			roomDevices = append(roomDevices, SetupDevice{
 				DeviceType: sw.DeviceType,
-				Id:         sw.Id,
+				Id:         sw.ID,
 				Name:       sw.Name,
-				VendorId:   sw.VendorId,
-				ModelId:    sw.ModelId,
+				VendorId:   sw.DriverVendorID,
+				ModelId:    sw.DriverModelID,
 			})
 		}
 

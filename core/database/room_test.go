@@ -126,7 +126,7 @@ func TestListRooms(t *testing.T) {
 	}
 
 	for _, test := range table {
-		rooms, err := listPersonalRoomData("admin")
+		rooms, err := ListPersonalRoomData("admin")
 		if err != nil {
 			t.Error(err.Error())
 		}

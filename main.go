@@ -10,7 +10,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/smarthome-go/smarthome/core"
-	"github.com/smarthome-go/smarthome/core/config"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/utils"
 )
@@ -35,10 +34,10 @@ func main() {
 	initLoggers()
 
 	// Read configuration file
-	if err := config.ReadConfigFile(); err != nil {
+	if err := core.ReadConfigFile(); err != nil {
 		log.Fatal("Failed to read config file: startup halted: ", err.Error())
 	}
-	configStruct := config.GetConfig()
+	configStruct := core.GetConfig()
 	if configStruct.Server.Port != 0 {
 		port = configStruct.Server.Port
 	}
