@@ -4,8 +4,8 @@
     import { createEventDispatcher, onMount } from 'svelte/internal'
     import Progress from '../../components/Progress.svelte'
     import { createSnackbar, hasPermission, sleep } from '../../global'
-    import EditSwitch from './dialogs/switch/EditSwitch.svelte'
-    import SwitchInfo from './dialogs/switch/SwitchInfo.svelte'
+    import EditDevice from './dialogs/device/EditDevice.svelte'
+    import DeviceInfo from './dialogs/device/DeviceInfo.svelte'
     import Ripple from '@smui/ripple'
 
     // Event dispatcher
@@ -60,23 +60,23 @@
     }
 </script>
 
-<EditSwitch
-    on:delete={() => dispatch('delete', null)}
-    on:modify={event => {
-        name = event.detail.name
-        watts = event.detail.watts
-        targetNode = event.detail.targetNode
-        event.detail.id = id
-        dispatch('modify', event.detail)
-    }}
-    {id}
-    {name}
-    {watts}
-    {targetNode}
-    bind:show={showEditSwitch}
-/>
+<!-- <EditSwitch -->
+<!--     on:delete={() => dispatch('delete', null)} -->
+<!--     on:modify={event => { -->
+<!--         name = event.detail.name -->
+<!--         watts = event.detail.watts -->
+<!--         targetNode = event.detail.targetNode -->
+<!--         event.detail.id = id -->
+<!--         dispatch('modify', event.detail) -->
+<!--     }} -->
+<!--     {id} -->
+<!--     {name} -->
+<!--     {watts} -->
+<!--     {targetNode} -->
+<!--     bind:show={showEditSwitch} -->
+<!-- /> -->
 
-<SwitchInfo bind:show={showSwitchInfo} {id} {name} {watts} {targetNode} />
+<!-- <SwitchInfo bind:show={showSwitchInfo} {id} {name} {watts} {targetNode} /> -->
 
 <div class="switch mdc-elevation--z3" class:wide={hasEditPermission}>
     <div class="switch__left">

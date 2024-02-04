@@ -1,5 +1,6 @@
 import { type Writable, writable } from 'svelte/store'
 import App from './App.svelte'
+import type { ConfigSpecWrapper, ValidationError } from '../../driver'
 
 export interface Room {
     data: {
@@ -7,18 +8,30 @@ export interface Room {
         name: string
         description: string
     }
-    switches: SwitchResponse[]
+    devices: DeviceResponse[]
     cameras: Camera[]
 }
 
-export interface SwitchResponse {
+export type DeviceType = 'INPUT' |'OUTPUT'
+
+export interface DeviceResponse {
+    type: DeviceType
     id: string
     name: string
-    powerOn: boolean
-    watts: number
-    targetNode: string
-    driverVendorId: string,
-    driverModelId: string,
+    roomId: string
+    vendorId: string,
+    modelId: string,
+    singletonJson: {},
+    validationErrors: ValidationError[];
+}
+
+export interface CreateDeviceRequest {
+    type: DeviceType
+    id: string
+    name: string
+    roomId: string
+    vendorId: string,
+    modelId: string,
 }
 
 export interface Camera {

@@ -5,7 +5,7 @@
     import CharacterCounter from '@smui/textfield/character-counter'
     import Select, { Option } from '@smui/select'
     import Progress from '../../../../../src/components/Progress.svelte'
-    import type { SwitchResponse } from '../../main'
+    import type { CreateDeviceRequest, DeviceResponse } from '../../main'
     import type { DriverData } from '../../../system/driver'
     import { drivers, driversLoaded, fetchHardwareNodes, loading, hardwareNodesLoaded, hardwareNodes, fetchDrivers } from './main'
 
@@ -14,32 +14,31 @@
         modelId: "",
         name: "",
         version: "",
+        homescriptCode: ""
     }
 
     let open = false
-    export let switches: SwitchResponse[] = []
+    export let devices: DeviceResponse[] = []
 
-    let id = ''
-    let name = ''
-    let watts = 0
-    let targetNodeUrl = 'none'
+    let dataToAdd: CreateDeviceRequest = createEmptyDevice()
+    let dataDirty = {
+        id: false,
+        name: false,
+    }
 
-    let driverVendorId = ""
-    let driverModelId = ""
-
-    let idDirty = false
-    let nameDirty = false
+    function createEmptyDevice(): CreateDeviceRequest {
+        return {
+            type: "INPUT",
+            id: "",
+            name: "",
+            vendorId: "",
+            modelId: "",
+            roomId: ""
+        }
+    }
 
     export function show() {
         open = true
-        id = ''
-        name = ''
-        watts = 0
-        idDirty = false
-        nameDirty = false
-        targetNodeUrl = 'none'
-        driverVendorId = ""
-        driverModelId = ""
 
         if (!$hardwareNodesLoaded) {
             fetchHardwareNodes()
@@ -57,32 +56,20 @@
     ) => Promise<void>
 
     let idInvalid = false
-    $: idInvalid =
-        (idDirty && id === '') || id.includes(' ') || switches.find(s => s.id === id) !== undefined
+    $: idInvalid = (dataDirty.id && dataToAdd.id === '')
+    || dataToAdd.id.includes(' ')
+    || devices.find(d => d.id === dataToAdd.id) !== undefined
 </script>
 
 <Dialog bind:open aria-labelledby="title" aria-describedby="content">
     <Title id="title">Add Switch</Title>
     <Content id="content">
-        {#if $hardwareNodesLoaded}
-            <Select bind:value={targetNodeUrl} label="Target Node">
-                {#each $hardwareNodes as node}
-                    {#if node === null}
-                        <Option value={'none'}>None</Option>
-                    {:else}
-                        <Option value={node.url}>{node.name}</Option>
-                    {/if}
-                {/each}
-            </Select>
-        {:else}
-            <Progress bind:loading={$loading} />
-        {/if}
-        <br />
-        <br />
         {#if $driversLoaded}
             <Select bind:value={selectedDriver} label="Select Driver">
                 {#each $drivers as driver}
-                    <Option value={driver}>{driver.name} <code>{driver.vendorId}: {driver.modelId}</code> </Option>
+                    <Option value={driver}>
+                        {driver.driver.name} <code>{driver.driver.vendorId}: {driver.driver.modelId}</code>
+                    </Option>
                 {/each}
             </Select>
         {:else}
@@ -91,8 +78,8 @@
         <br>
         <br>
         <Textfield
-            bind:value={id}
-            bind:dirty={idDirty}
+            bind:value={dataToAdd.id}
+            bind:dirty={dataDirty.id}
             bind:invalid={idInvalid}
             input$maxlength={20}
             label="Switch Id"
@@ -103,8 +90,8 @@
             </svelte:fragment>
         </Textfield>
         <Textfield
-            bind:value={name}
-            bind:dirty={nameDirty}
+            bind:value={dataToAdd.name}
+            bind:dirty={dataDirty.name}
             input$maxlength={30}
             label="Name"
             required
@@ -113,20 +100,28 @@
                 <CharacterCounter>0 / 30</CharacterCounter>
             </svelte:fragment>
         </Textfield>
-        <Textfield bind:value={watts} label="Watts" type="number" />
     </Content>
     <Actions>
         <Button>
             <Label>Cancel</Label>
         </Button>
-        <Button
-            disabled={idInvalid || id === '' || name === ''}
-            use={[InitialFocus]}
-            on:click={() => {
-                onAdd(id, name, watts, targetNodeUrl === 'none' ? null : targetNodeUrl, selectedDriver)
-            }}
-        >
-            <Label>Create</Label>
-        </Button>
+
+        <!-- TODO: implement `create` button properly -->
+
+        <!-- <Button -->
+        <!--     disabled={idInvalid || dataToAdd.id.replaceAll(' ', '') === '' || dataToAdd.name.replaceAll(' ', '') === ''} -->
+        <!--     use={[InitialFocus]} -->
+        <!--     on:click={() => { -->
+        <!--         onAdd( -->
+        <!--             { -->
+        <!--             id, name, -->
+        <!--             watts, -->
+        <!--             targetNodeUrl === 'none' ? null : targetNodeUrl, -->
+        <!--             selectedDriver} -->
+        <!--         ) -->
+        <!--     }} -->
+        <!-- > -->
+        <!--     <Label>Create</Label> -->
+        <!-- </Button> -->
     </Actions>
 </Dialog>

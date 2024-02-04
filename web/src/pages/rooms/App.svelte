@@ -12,10 +12,9 @@
     import AddRoom from './dialogs/room/AddRoom.svelte'
     import EditRoom from './dialogs/room/EditRoom.svelte'
     import LocalSettings from './dialogs/room/LocalSettings.svelte'
-    import AddSwitch from './dialogs/switch/AddSwitch.svelte'
-    import { loading, powerCamReloadEnabled, type Room } from './main'
-    import PowerSwitch from './PowerSwitch.svelte'
-    import type { DriverData } from '../system/driver'
+    import AddDevice from './dialogs/device/AddDevice.svelte'
+    import { loading, powerCamReloadEnabled, type DeviceType, type Room } from './main'
+    import Device from './Device.svelte'
 
     // If set to true, a camera-reload is triggered
     let reloadCameras = false
@@ -33,7 +32,7 @@
 
     // Are bound backwards to pass the `open` event to the children
     let addRoomShow: () => void
-    let addSwitchShow: () => void
+    let addDeviceShow: () => void
     let addCameraShow: () => void
 
     let currentRoom: Room
@@ -55,21 +54,20 @@
         hasViewCamerasPermission = await hasPermission('viewCameras')
     })
 
-    // Fetches the available rooms
+    // Fetches the available rooms.
     async function loadRooms(updateExisting = false) {
         $loading = true
         try {
-            const res = await (
-                await fetch(
-                    `/api/room/list/${(await hasPermission('modifyRooms')) ? 'all' : 'personal'}`,
-                )
-            ).json()
+            const personalOrAllSegment = (await hasPermission('modifyRooms')) ? 'all' : 'personal'
+            const res = await ( await fetch( `/api/room/list/${personalOrAllSegment}`)).json()
             if (res.success === false) throw Error()
             if (updateExisting) {
                 for (const room of rooms) {
-                    room.switches = (res as Room[]).find(r => r.data.id === room.data.id).switches
+                    room.devices = (res as Room[]).find(r => r.data.id === room.data.id).devices
                 }
-            } else rooms = res
+            } else {
+                rooms = res
+            }
             const roomId = window.localStorage.getItem('current_room')
             const room = roomId === null ? undefined : rooms.find(r => r.data.id === roomId)
             currentRoom = room === undefined ? rooms[0] : room
@@ -106,7 +104,7 @@
                         name,
                         description,
                     },
-                    switches: [],
+                    devices: [],
                     cameras: [],
                 },
             ]
@@ -119,12 +117,21 @@
         $loading = false
     }
 
-    // Adds a switch
-    async function addSwitch(id: string, name: string, watts: number, targetNode: string, selectedDriverVendorId: string, selectedDriverModelId: string) {
+    // Adds a device.
+    async function addDevice(
+        type: DeviceType,
+        id: string,
+        name: string,
+        watts: number,
+        targetNode: string,
+        selectedDriverVendorId: string,
+        selectedDriverModelId: string,
+        singletonJson: {},
+    ) {
         $loading = true
         try {
             const res = await (
-                await fetch('/api/switch/add', {
+                await fetch('/api/devices/add', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -141,13 +148,23 @@
             if (!res.success) throw Error(res.error)
             const currentRoomIndex = rooms.findIndex(r => r.data.id == currentRoom.data.id)
 
-            currentRoom.switches = [
-                ...currentRoom.switches,
-                { id, name, powerOn: false, watts, targetNode, driverVendorId: selectedDriver.vendorId, driverModelId: selectedDriver.modelId },
+            currentRoom.devices = [
+                ...currentRoom.devices,
+                {
+                    type,
+                    id,
+                    name,
+                    vendorId: selectedDriverVendorId,
+                    modelId: selectedDriverModelId,
+                    roomId: currentRoom.data.id,
+                    singletonJson,
+                    validationErrors: [],
+                    config: { config: null } // TODO: get config from http-response
+                },
             ]
             rooms[currentRoomIndex] = currentRoom
         } catch (err) {
-            $createSnackbar(`Could not create switch: ${err}`)
+            $createSnackbar(`Could not create device: ${err}`)
         }
         $loading = false
     }
@@ -200,44 +217,44 @@
         $loading = false
     }
 
-    // Deletes a switch
-    async function deleteSwitch(id: string) {
+    // Deletes a device.
+    async function deleteDevice(id: string) {
         $loading = true
         try {
             const res = await (
-                await fetch('/api/switch/delete', {
+                await fetch('/api/devices/delete', {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id }),
                 })
             ).json()
             if (!res.success) throw Error(res.error)
-            currentRoom.switches = currentRoom.switches.filter(s => s.id !== id)
+            currentRoom.devices = currentRoom.devices.filter(s => s.id !== id)
         } catch (err) {
-            $createSnackbar(`Could not delete this switch: ${err}`)
+            $createSnackbar(`Could not delete device: ${err}`)
         }
         $loading = false
     }
 
-    async function modifySwitch(event) {
+    async function modifyDevice(event) {
         const data = event.detail
         $loading = true
         try {
             const res = await (
-                await fetch('/api/switch/modify', {
+                await fetch('/api/devices/modify', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data),
                 })
             ).json()
             if (!res.success) throw Error(res.error)
-            // Would be reset on power change if not updated in `currentRoom`
-            let switchInCurrentRoom = currentRoom.switches.find(s => s.id == data.id)
-            switchInCurrentRoom.name = data.name
-            switchInCurrentRoom.watts = data.watts
-            switchInCurrentRoom.targetNode = data.targetNode
+            // TODO: make this generic: Would be reset on power change if not updated in `currentRoom`.
+            let deviceInCurrentRoom = currentRoom.devices.find(s => s.id == data.id)
+            deviceInCurrentRoom.name = data.name
+
+            // TODO: add more?
         } catch (err) {
-            $createSnackbar(`Could not edit this switch: ${err}`)
+            $createSnackbar(`Could not edit device: ${err}`)
         }
         $loading = false
     }
@@ -255,7 +272,7 @@
             bind:rooms
         />
         <AddCamera cameras={currentRoom.cameras} bind:show={addCameraShow} onAdd={addCamera} />
-        <AddSwitch switches={currentRoom.switches} bind:show={addSwitchShow} onAdd={addSwitch} />
+        <AddDevice devices={currentRoom.devices} bind:show={addDeviceShow} onAdd={addDevice} />
     {/if}
     <div id="tabs" class="mdc-elevation--z8">
         {#await loadRooms() then}
@@ -295,7 +312,7 @@
     </div>
 
     <div id="content">
-        <div id="switches" class="mdc-elevation--z1">
+        <div id="devices" class="mdc-elevation--z1">
             {#if currentRoom == undefined && loadedData}
                 <div id="no-rooms">
                     <i class="material-icons">no_meeting_room</i>
@@ -310,28 +327,31 @@
                     {/if}
                 </div>
             {:else}
-                {#each currentRoom !== undefined ? currentRoom.switches : [] as sw (sw.id)}
-                    <PowerSwitch
-                        bind:checked={sw.powerOn}
-                        on:delete={() => deleteSwitch(sw.id)}
-                        on:modify={modifySwitch}
-                        on:powerChange={() => (reloadCameras = $powerCamReloadEnabled)}
-                        on:powerChangeDone={() => (reloadCameras = false)}
-                        id={sw.id}
-                        name={sw.name}
-                        watts={sw.watts}
-                        targetNode={sw.targetNode}
-                    />
+                {#each currentRoom !== undefined ? currentRoom.devices : [] as device (device.id)}
+                    <!-- <Device -->
+                    <!--     bind:checked={sw.powerOn} -->
+                    <!--     on:delete={() => deleteDevice(sw.id)} -->
+                    <!--     on:modify={modifyDevice} -->
+                    <!--     on:powerChange={() => (reloadCameras = $powerCamReloadEnabled)} -->
+                    <!--     on:powerChangeDone={() => (reloadCameras = false)} -->
+                    <!--     id={sw.id} -->
+                    <!--     name={sw.name} -->
+                    <!--     watts={sw.watts} -->
+                    <!--     targetNode={sw.targetNode} -->
+                    <!-- /> -->
+
+                    Device here:
+                    {device.id}: {device.name}
                 {/each}
                 {#if hasEditPermission}
-                    <div id="add-switch" class="switch mdc-elevation--z3">
-                        <span>Add Switch</span>
-                        <IconButton class="material-icons" on:click={addSwitchShow}>add</IconButton>
+                    <div id="add-device" class="switch mdc-elevation--z3">
+                        <span>Add Device</span>
+                        <IconButton class="material-icons" on:click={addDeviceShow}>add</IconButton>
                     </div>
-                {:else if currentRoom !== undefined && currentRoom.switches.length == 0 && loadedData}
-                    <div id="no-switches">
+                {:else if currentRoom !== undefined && currentRoom.devices.length == 0 && loadedData}
+                    <div id="no-devices">
                         <i class="material-icons">power_off</i>
-                        <h6>No Switches</h6>
+                        <h6>No Devices</h6>
                     </div>
                 {/if}
             {/if}
@@ -372,7 +392,7 @@
     @use '../../mixins' as *;
 
     #no-rooms,
-    #no-switches {
+    #no-devices {
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -440,7 +460,7 @@
             min-height: calc(100vh - 48px - 3.5rem);
         }
     }
-    #switches {
+    #devices {
         background-color: var(--clr-height-0-1);
         padding: 1.5rem;
         border-radius: 0.4rem;
@@ -499,7 +519,7 @@
             align-items: flex-start;
         }
     }
-    #add-switch,
+    #add-device,
     #add-camera {
         background-color: var(--clr-height-1-3);
         border-radius: 0.3rem;
