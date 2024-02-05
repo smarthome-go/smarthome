@@ -105,25 +105,41 @@ func ExtractDriverInfo(
 			driverSingleton = singleton
 
 			// Find driver template implementation.
-			for _, templ := range singleton.ImplementsTemplates {
-				templ, found := Templates(singleton.Range)[ImportKey{
-					ModuleName: DriverModuleIdent,
-					ValueName:  templ.Template.Ident(),
-				}]
+			// for _, templ := range singleton.ImplementsTemplates {
+			// 	templ, found := Templates(singleton.Range)[ImportKey{
+			// 		ModuleName: DriverModuleIdent,
+			// 		ValueName:  templ.Template.Ident(),
+			// 	}]
+			//
+			// 	if !found {
+			// 		continue
+			// 	}
+			//
+			// 	if templ.Kind() != TemplateKindDriver {
+			// 		continue
+			// 	}
+			//
+			// 	// driverTempl := templ.(DriverTemplate)
+			//
+			// 	for _, impl := range analyzed[mainModule].ImplBlocks {
+			// 		if impl.SingletonIdent.Ident() == DriverSingletonIdent {
+			// 			for _, name := range impl.UsingTemplate.Capabilities.List {
+			// 				fmt.Printf("===========> Driver Capability: %s\n", name.Ident())
+			// 			}
+			// 		}
+			// 	}
+			//
+			// 	// TODO: add expansion to HMS so that implemented capabilities are available here.
+			// 	// for name, _ := range templ.GetSpec().Capabilities {
+			// 	// }
+			// }
 
-				if !found {
-					continue
-				}
+			for _, impl := range analyzed[mainModule].ImplBlocks {
+				if impl.SingletonIdent.Ident() == DriverSingletonIdent {
+					for name := range impl.FinalCapabilities {
+						fmt.Printf("===========> $$$ Driver Capability: %s maps to %s\n", name, driverTemplate(herrors.Span{}).Capabilities[name])
+					}
 
-				if templ.Kind() != TemplateKindDriver {
-					continue
-				}
-
-				// driverTempl := templ.(DriverTemplate)
-
-				// TODO: add expansion to HMS so that implemented capabilities are available here.
-				for name, _ := range templ.GetSpec().Capabilities {
-					fmt.Printf("===========> Driver Capability: %s\n", name)
 				}
 			}
 
@@ -158,8 +174,13 @@ func ExtractDriverInfo(
 				// driverTempl := templ.(DriverTemplate)
 
 				// TODO: add expansion to HMS so that implemented capabilities are available here.
-				for name, _ := range templ.GetSpec().Capabilities {
-					fmt.Printf("===========> Device Capability: %s\n", name)
+				for _, impl := range analyzed[mainModule].ImplBlocks {
+					if impl.SingletonIdent.Ident() == DriverDeviceSingletonIdent {
+						for name := range impl.FinalCapabilities {
+							fmt.Printf("===========> @@@ Device Capability: %s maps to %s\n", name, deviceTemplate(herrors.Span{}).Capabilities[name])
+						}
+
+					}
 				}
 			}
 

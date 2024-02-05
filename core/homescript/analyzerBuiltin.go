@@ -120,91 +120,107 @@ type ImportKey struct {
 
 const DriverModuleIdent = "driver"
 
+func driverTemplate(span errors.Span) DriverTemplate {
+	return DriverTemplate{
+		Spec: ast.TemplateSpec{
+			BaseMethods: map[string]ast.TemplateMethod{
+				"validate_driver": {
+					Signature: ast.NewFunctionType(
+						ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)), span, ast.NewNullType(span), span,
+					).(ast.FunctionType),
+					Modifier: pAst.FN_MODIFIER_PUB,
+				},
+			},
+			Capabilities: map[string]ast.TemplateCapability{
+				"base": {
+					RequiresMethods:           []string{"validate_driver"},
+					ConflictsWithCapabilities: []ast.TemplateConflict{},
+				},
+			},
+			DefaultCapabilities: []string{"base"},
+			Span:                span,
+		},
+		// TODO: implement this
+		Capabilities: map[string]DriverCapability{
+			"base": DriverCapabilityBase,
+		},
+	}
+
+}
+
+func deviceTemplate(span errors.Span) DeviceTemplate {
+	return DeviceTemplate{
+		Spec: ast.TemplateSpec{
+			BaseMethods: map[string]ast.TemplateMethod{
+				"validate_device": {
+					Signature: ast.NewFunctionType(
+						ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)), span, ast.NewNullType(span), span,
+					).(ast.FunctionType),
+					Modifier: pAst.FN_MODIFIER_PUB,
+				},
+				"set_power": {
+					Signature: ast.NewFunctionType(
+						ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+							ast.NewFunctionTypeParam(
+								pAst.NewSpannedIdent("power_state", span),
+								ast.NewBoolType(span),
+								nil,
+							),
+						}), span, ast.NewBoolType(span), span,
+					).(ast.FunctionType),
+					Modifier: pAst.FN_MODIFIER_PUB,
+				},
+				"dim": {
+					Signature: ast.NewFunctionType(
+						ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+							ast.NewFunctionTypeParam(
+								pAst.NewSpannedIdent("percent", span),
+								ast.NewIntType(span),
+								nil,
+							),
+						}), span, ast.NewNullType(span), span,
+					).(ast.FunctionType),
+					Modifier: pAst.FN_MODIFIER_PUB,
+				},
+			},
+			Capabilities: map[string]ast.TemplateCapability{
+				"base": {
+					RequiresMethods:           []string{"validate_device"},
+					ConflictsWithCapabilities: []ast.TemplateConflict{},
+				},
+				"dimmable": {
+					RequiresMethods:           []string{"dim"},
+					ConflictsWithCapabilities: []ast.TemplateConflict{},
+				},
+				"power": {
+					RequiresMethods:           []string{"set_power"},
+					ConflictsWithCapabilities: []ast.TemplateConflict{},
+				},
+			},
+			DefaultCapabilities: []string{"base"},
+			Span:                span,
+		},
+		// TODO: implement this
+		Capabilities: map[string]DeviceCapability{
+			"base":     DeviceCapabilityBase,
+			"power":    DeviceCapabilityPower,
+			"dimmable": DeviceCapabilityDimmable,
+		},
+	}
+}
+
 // NOTE: here, all important templates are defined so that additional information can be attached to it.
+// TODO: add integration tests for checking if all HMS template capabilities have a mapping.
 func Templates(span errors.Span) map[ImportKey]Template {
 	return map[ImportKey]Template{
 		{
 			ModuleName: DriverModuleIdent,
 			ValueName:  "Driver",
-		}: DriverTemplate{
-			Spec: ast.TemplateSpec{
-				BaseMethods: map[string]ast.TemplateMethod{
-					"validate_driver": {
-						Signature: ast.NewFunctionType(
-							ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)), span, ast.NewNullType(span), span,
-						).(ast.FunctionType),
-						Modifier: pAst.FN_MODIFIER_PUB,
-					},
-				},
-				Capabilities: map[string]ast.TemplateCapability{
-					"base": {
-						RequiresMethods:           []string{"validate_driver"},
-						ConflictsWithCapabilities: []ast.TemplateConflict{},
-					},
-				},
-				DefaultCapabilities: []string{"base"},
-				Span:                span,
-			},
-			// TODO: implement this
-			Capabilities: map[string]DriverCapability{},
-		},
+		}: driverTemplate(span),
 		{
 			ModuleName: DriverModuleIdent,
 			ValueName:  "Device",
-		}: DeviceTemplate{
-			Spec: ast.TemplateSpec{
-				BaseMethods: map[string]ast.TemplateMethod{
-					"validate_device": {
-						Signature: ast.NewFunctionType(
-							ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)), span, ast.NewNullType(span), span,
-						).(ast.FunctionType),
-						Modifier: pAst.FN_MODIFIER_PUB,
-					},
-					"set_power": {
-						Signature: ast.NewFunctionType(
-							ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-								ast.NewFunctionTypeParam(
-									pAst.NewSpannedIdent("power_state", span),
-									ast.NewBoolType(span),
-									nil,
-								),
-							}), span, ast.NewBoolType(span), span,
-						).(ast.FunctionType),
-						Modifier: pAst.FN_MODIFIER_PUB,
-					},
-					"dim": {
-						Signature: ast.NewFunctionType(
-							ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-								ast.NewFunctionTypeParam(
-									pAst.NewSpannedIdent("percent", span),
-									ast.NewIntType(span),
-									nil,
-								),
-							}), span, ast.NewNullType(span), span,
-						).(ast.FunctionType),
-						Modifier: pAst.FN_MODIFIER_PUB,
-					},
-				},
-				Capabilities: map[string]ast.TemplateCapability{
-					"base": {
-						RequiresMethods:           []string{"validate_device"},
-						ConflictsWithCapabilities: []ast.TemplateConflict{},
-					},
-					"dimmable": {
-						RequiresMethods:           []string{"dim"},
-						ConflictsWithCapabilities: []ast.TemplateConflict{},
-					},
-					"power": {
-						RequiresMethods:           []string{"set_power"},
-						ConflictsWithCapabilities: []ast.TemplateConflict{},
-					},
-				},
-				DefaultCapabilities: []string{"base"},
-				Span:                span,
-			},
-			// TODO: implement this
-			Capabilities: map[string]DeviceCapability{},
-		},
+		}: deviceTemplate(span),
 	}
 }
 

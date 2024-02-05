@@ -5,14 +5,16 @@ import "github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
 type DeviceCapability string
 
 const (
-	DeviceCapabilityPower DeviceCapability = "power"
+	DeviceCapabilityBase     DeviceCapability = "base"
+	DeviceCapabilityPower                     = "power"
+	DeviceCapabilityDimmable                  = "dimmable"
 )
 
 type DriverCapability string
 
 const (
-	// TODO: remove this
-	DriverCapabilityfoo DriverCapability = "foo"
+	// TODO: Add more
+	DriverCapabilityBase DriverCapability = "base"
 )
 
 type DriverInfo struct {
