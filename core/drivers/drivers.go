@@ -54,6 +54,7 @@ func extractInfoFromDriver(
 
 	if len(filtered) > 0 {
 		log.Tracef("Driver `%s:%s` is not working: `%s`", vendorID, modelID, filtered[0].Message)
+		// nolint:exhaustruct
 		return homescript.DriverInfo{}, filtered, nil
 	}
 

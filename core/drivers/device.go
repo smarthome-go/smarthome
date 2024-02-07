@@ -4,22 +4,21 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/homescript"
 )
 
 type Device struct {
-	DeviceType       database.DEVICE_TYPE               `json:"type"`
-	ID               string                             `json:"id"`
-	Name             string                             `json:"name"`
-	RoomID           string                             `json:"roomId"`
-	DriverVendorID   string                             `json:"vendorId"`
-	DriverModelID    string                             `json:"modelId"`
-	SingletonJSON    any                                `json:"singletonJson"`
-	ValidationErrors []diagnostic.Diagnostic            `json:"validationErrors"`
-	Config           homescript.ConfigInfoWrapperDevice `json:"config"`
+	DeviceType     database.DEVICE_TYPE               `json:"type"`
+	ID             string                             `json:"id"`
+	Name           string                             `json:"name"`
+	RoomID         string                             `json:"roomId"`
+	DriverVendorID string                             `json:"vendorId"`
+	DriverModelID  string                             `json:"modelId"`
+	SingletonJSON  any                                `json:"singletonJson"`
+	HmsErrors      []homescript.HmsError              `json:"hmsErrors"`
+	Config         homescript.ConfigInfoWrapperDevice `json:"config"`
 
 	// Device-specific information.
 	PowerInformation DevicePowerInformation `json:"powerInformation"`
@@ -66,27 +65,58 @@ func EnrichDevicesList(input []database.Device) ([]Device, error) {
 			}
 		}
 
-		val := DeviceStore[device.Id]
+		hmsErrors := homescript.HmsErrorsFromDiagnostics(fittingDriver.ValidationErrors)
+		storedDeviceValue := DeviceStore[device.Id]
 
 		savedConfig, _ := value.MarshalValue(
-			filterObjFieldsWithoutSetting(val, fittingDriver.ExtractedInfo.DeviceConfig.Info.HmsType),
+			filterObjFieldsWithoutSetting(storedDeviceValue, fittingDriver.ExtractedInfo.DeviceConfig.Info.HmsType),
 			false,
 		)
 
 		// Extract additional information by invoking driver function code.
 		// TODO: a hot / ready / precompiled VM instance would lead to additional performance gains here.
 
+		// TODO: fuse these
+		powerDraw, hmsErrs, err := InvokeDriverReportPowerDraw(
+			DriverInvocationIDs{
+				deviceID: device.Id, vendorID: device.VendorId, modelID: device.ModelId,
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+		if hmsErrs != nil {
+			hmsErrors = append(hmsErrors, hmsErrs...)
+		}
+
+		powerState, hmsErrs, err := InvokeDriverReportPowerState(
+			DriverInvocationIDs{
+				deviceID: device.Id,
+				vendorID: device.VendorId,
+				modelID:  device.ModelId,
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+		if hmsErrs != nil {
+			hmsErrors = append(hmsErrors, hmsErrs...)
+		}
+
 		output[index] = Device{
-			DeviceType:       device.DeviceType,
-			ID:               device.Id,
-			Name:             device.Name,
-			RoomID:           device.RoomId,
-			DriverVendorID:   device.VendorId,
-			DriverModelID:    device.ModelId,
-			SingletonJSON:    savedConfig,
-			ValidationErrors: fittingDriver.ValidationErrors,
-			Config:           fittingDriver.ExtractedInfo.DeviceConfig,
-			PowerInformation: DevicePowerInformation{},
+			DeviceType:     device.DeviceType,
+			ID:             device.Id,
+			Name:           device.Name,
+			RoomID:         device.RoomId,
+			DriverVendorID: device.VendorId,
+			DriverModelID:  device.ModelId,
+			SingletonJSON:  savedConfig,
+			HmsErrors:      hmsErrs,
+			Config:         fittingDriver.ExtractedInfo.DeviceConfig,
+			PowerInformation: DevicePowerInformation{
+				State:          powerState.State,
+				PowerDrawWatts: powerDraw.Watts,
+			},
 		}
 	}
 
