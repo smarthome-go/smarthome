@@ -102,6 +102,29 @@ type HmsError struct {
 	Span             errors.Span          `json:"span"`
 }
 
+func HmsErrorsFromDiagnostics(input []diagnostic.Diagnostic) []HmsError {
+	output := make([]HmsError, 0)
+
+	for _, diagnosticMsg := range input {
+		if diagnosticMsg.Level != diagnostic.DiagnosticLevelError {
+			continue
+		}
+
+		output = append(output, HmsError{
+			SyntaxError: nil,
+			DiagnosticError: &HmsDiagnosticError{
+				Level:   diagnostic.DiagnosticLevelError,
+				Message: diagnosticMsg.Message,
+				Notes:   diagnosticMsg.Notes,
+			},
+			RuntimeInterrupt: nil,
+			Span:             diagnosticMsg.Span,
+		})
+	}
+
+	return output
+}
+
 func (self HmsError) String() string {
 	spanDisplay := fmt.Sprintf("%s:%d:%d", self.Span.Filename, self.Span.Start.Line, self.Span.Start.Column)
 	if self.SyntaxError != nil {
@@ -266,8 +289,12 @@ func (m *Manager) AnalyzeById(
 }
 
 // NOTE: this is primarily required for the driver.
-type HmsResponseContext struct {
+type HmsRunResultContext struct {
 	Singletons map[string]value.Value
+	// This is `nil` if no additional function was invoced or the called function did not return a value.
+	ReturnValue value.Value
+	// This is non zero-valued if an additional function is called.
+	CalledFunctionSpan errors.Span
 }
 
 func (m *Manager) Run(
@@ -286,7 +313,7 @@ func (m *Manager) Run(
 	// If this is left non-empty, an additional function is called after `init`.
 	functionInvocation *runtime.FunctionInvocation,
 	singletonsToLoad map[string]value.Value,
-) (HmsRes, HmsResponseContext, error) {
+) (HmsRes, HmsRunResultContext, error) {
 	// TODO: handle arguments
 
 	// TODO: the @ symbol cannot be used in IDs?
@@ -300,11 +327,11 @@ func (m *Manager) Run(
 
 	modules, res, err := m.Analyze(username, entryModuleName, code, programKind, driverData)
 	if err != nil {
-		return HmsRes{}, HmsResponseContext{}, err
+		return HmsRes{}, HmsRunResultContext{}, err
 	}
 
 	if !res.Success {
-		return res, HmsResponseContext{}, nil
+		return res, HmsRunResultContext{}, nil
 	}
 
 	log.Trace(fmt.Sprintf("Homescript '%s' of user '%s' is being compiled...", entryModuleName, username))
@@ -373,17 +400,24 @@ func (m *Manager) Run(
 	fmt.Printf("Calling entry function `%s`\n", compiler.EntryPointFunctionIdent)
 
 	// TODO: maybe add debugger support anytime
-	coreNum, interrupt := vm.SpawnSync(runtime.FunctionInvocation{
-		Function: "@init", // TODO: do not hardcode this
+
+	// First, spawn the `@init` function.
+	spawnResult := vm.SpawnSync(runtime.FunctionInvocation{
+		Function: "@init",
 		Args:     []value.Value{},
+		FunctionSignature: runtime.FunctionInvocationSignature{
+			Params:     map[string]ast.Type{},
+			ReturnType: ast.NewNullType(errors.Span{}),
+		},
 	}, nil)
 
-	if interrupt == nil && functionInvocation != nil {
-		coreNum, interrupt = vm.SpawnSync(*functionInvocation, nil)
+	// If the `@init` function completed successfully, run the optional function routing.
+	if spawnResult.Exception == nil && functionInvocation != nil {
+		spawnResult = vm.SpawnSync(*functionInvocation, nil)
 	}
 
-	if interrupt != nil {
-		i := *interrupt
+	if spawnResult.Exception != nil {
+		i := spawnResult.Exception.Interrupt
 
 		span := errors.Span{}
 
@@ -398,8 +432,12 @@ func (m *Manager) Run(
 			if exitI.Code != 0 {
 				errors = append(errors, HmsError{
 					RuntimeInterrupt: &HmsRuntimeInterrupt{
-						Kind:    "Exit",
-						Message: fmt.Sprintf("Core %d terminated with exit-code: %d", coreNum, exitI.Code),
+						Kind: "Exit",
+						Message: fmt.Sprintf(
+							"Core %d terminated with exit-code: %d",
+							spawnResult.Exception.CoreNum,
+							exitI.Code,
+						),
 					},
 					Span: exitI.Span,
 				})
@@ -432,7 +470,7 @@ func (m *Manager) Run(
 		if isErr {
 			fileContentsTemp, err := resolveFileContentsOfErrors(username, entryModuleName, code, errors)
 			if err != nil {
-				return HmsRes{}, HmsResponseContext{}, err
+				return HmsRes{}, HmsRunResultContext{}, err
 			}
 
 			fileContents = fileContentsTemp
@@ -444,7 +482,7 @@ func (m *Manager) Run(
 			Success:      !isErr,
 			Errors:       errors,
 			FileContents: fileContents,
-		}, HmsResponseContext{}, nil
+		}, HmsRunResultContext{}, nil
 	}
 
 	log.Debug(fmt.Sprintf("Homescript '%s' of user '%s' executed successfully", entryModuleName, username))
@@ -455,13 +493,23 @@ func (m *Manager) Run(
 		singletons[name] = vm.GetGlobals()[mangled]
 	}
 
+	calledFunctionSpan := errors.Span{}
+	if functionInvocation != nil {
+		calledFunctionSpan = vm.SourceMap(runtime.CallFrame{
+			Function:           vm.Program.Mappings.Functions[functionInvocation.Function],
+			InstructionPointer: 0,
+		})
+	}
+
 	return HmsRes{
 			Success:      true,
 			Errors:       make([]HmsError, 0),
 			FileContents: make(map[string]string),
 		},
-		HmsResponseContext{
-			Singletons: singletons,
+		HmsRunResultContext{
+			Singletons:         singletons,
+			ReturnValue:        spawnResult.ReturnValue,
+			CalledFunctionSpan: calledFunctionSpan,
 		}, nil
 }
 
@@ -479,10 +527,10 @@ func (m *Manager) RunById(
 	outputWriter io.Writer,
 	automationContext *AutomationContext,
 	singletonsToLoad map[string]value.Value,
-) (HmsRes, HmsResponseContext, error) {
+) (HmsRes, HmsRunResultContext, error) {
 	script, found, err := GetPersonalScriptById(hmsId, username)
 	if err != nil {
-		return HmsRes{}, HmsResponseContext{}, err
+		return HmsRes{}, HmsRunResultContext{}, err
 	}
 	if !found {
 		panic(fmt.Sprintf("Homescript with ID %s owned by user %s was not found", hmsId, username)) // TODO: no panic
