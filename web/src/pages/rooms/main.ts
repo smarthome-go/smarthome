@@ -22,7 +22,14 @@ export interface DeviceResponse {
     vendorId: string,
     modelId: string,
     singletonJson: {},
-    validationErrors: ValidationError[];
+    hmsErrors: ValidationError[];
+    config: ConfigSpecWrapper,
+    powerInformation: DevicePowerInformation,
+}
+
+export interface DevicePowerInformation {
+    state: boolean,
+    powerDrawWatts: number,
 }
 
 export interface CreateDeviceRequest {

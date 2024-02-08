@@ -7,15 +7,29 @@
     import EditDevice from './dialogs/device/EditDevice.svelte'
     import DeviceInfo from './dialogs/device/DeviceInfo.svelte'
     import Ripple from '@smui/ripple'
+    import type { DeviceResponse } from './main';
 
     // Event dispatcher
     const dispatch = createEventDispatcher()
 
-    export let id: string
-    export let name: string
-    export let watts: number
-    export let targetNode: string
-    export let checked: boolean
+    export let data: DeviceResponse = {
+        type: 'INPUT',
+        id: '',
+        name: '',
+        vendorId: '',
+        modelId: '',
+        roomId: '',
+        singletonJson: {},
+        hmsErrors: [],
+        config: {
+            capabilities: [],
+            info: null
+        },
+        powerInformation: {
+            state: false,
+            powerDrawWatts: 0
+        }
+    }
 
     let requests = 0
     let loading = false
@@ -39,12 +53,14 @@
         requests++
         try {
             const res = await (
-                await fetch('/api/power/set', {
+                await fetch('/api/devices/action/power', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        switch: id,
-                        powerOn: event.detail.selected,
+                        deviceId: data.id,
+                        power: {
+                            state: event.detail.selected,
+                        },
                     }),
                 })
             ).json()
@@ -79,26 +95,31 @@
 <!-- <SwitchInfo bind:show={showSwitchInfo} {id} {name} {watts} {targetNode} /> -->
 
 <div class="switch mdc-elevation--z3" class:wide={hasEditPermission}>
-    <div class="switch__left">
-        <Switch icons={false} bind:checked on:SMUISwitch:change={toggle} />
-        <div
-            class="switch__name__box"
-            use:Ripple={{ surface: true }}
-            on:click={() => showSwitchInfo()}
-        >
-            <span class="switch__name"> {name}</span>
-        </div>
-    </div>
-    <div class="switch__right">
-        <div>
-            <Progress type="circular" bind:loading />
-        </div>
-        {#if hasEditPermission}
-            <IconButton class="material-icons" title="Edit Switch" on:click={showEditSwitch}
-                >edit</IconButton
+    {#if data.config.capabilities.includes('power')}
+        <div class="switch__left">
+            <Switch icons={false} bind:checked={data.powerInformation.state} on:SMUISwitch:change={toggle} />
+            <div
+                class="switch__name__box"
+                use:Ripple={{ surface: true }}
+                on:click={() => showSwitchInfo()}
+                on:keydown={() => showSwitchInfo()}
             >
-        {/if}
-    </div>
+                <span class="switch__name"> {data.name}</span>
+            </div>
+        </div>
+        <div class="switch__right">
+            <div>
+                <Progress type="circular" bind:loading />
+            </div>
+            {#if hasEditPermission}
+                <IconButton class="material-icons" title="Edit Switch" on:click={showEditSwitch}
+                    >edit</IconButton
+                >
+            {/if}
+        </div>
+    {:else}
+        Other device type
+    {/if}
 </div>
 
 <style lang="scss">

@@ -1,6 +1,13 @@
+export type DeviceCapability = 'base' | 'power' | 'dimmable'
+
 export interface ConfigSpecWrapper {
-    config: ConfigSpec
+    capabilities: DeviceCapability[]
+    info: ConfigSpecWrapperInner
     // NOTE: hms type from backend ignored here, would add unnecessary bloat and is not needed here.
+}
+
+export interface ConfigSpecWrapperInner {
+    config: ConfigSpec
 }
 
 export type ConfigSpec = ConfigSpecAtom | ConfigSpecInner | ConfigSpecStruct | null;

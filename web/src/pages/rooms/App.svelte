@@ -328,20 +328,13 @@
                 </div>
             {:else}
                 {#each currentRoom !== undefined ? currentRoom.devices : [] as device (device.id)}
-                    <!-- <Device -->
-                    <!--     bind:checked={sw.powerOn} -->
-                    <!--     on:delete={() => deleteDevice(sw.id)} -->
-                    <!--     on:modify={modifyDevice} -->
-                    <!--     on:powerChange={() => (reloadCameras = $powerCamReloadEnabled)} -->
-                    <!--     on:powerChangeDone={() => (reloadCameras = false)} -->
-                    <!--     id={sw.id} -->
-                    <!--     name={sw.name} -->
-                    <!--     watts={sw.watts} -->
-                    <!--     targetNode={sw.targetNode} -->
-                    <!-- /> -->
-
-                    Device here:
-                    {device.id}: {device.name}
+                    <Device
+                        bind:data={device}
+                        on:delete={() => deleteDevice(device.id)}
+                        on:modify={modifyDevice}
+                        on:powerChange={() => (reloadCameras = $powerCamReloadEnabled)}
+                        on:powerChangeDone={() => (reloadCameras = false)}
+                    />
                 {/each}
                 {#if hasEditPermission}
                     <div id="add-device" class="switch mdc-elevation--z3">
