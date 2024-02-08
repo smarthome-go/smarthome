@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
-	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/homescript"
@@ -60,11 +59,7 @@ func StoreDriverSingletonConfigUpdate(
 		ModelID:  modelID,
 	}]
 
-	fromJSONhms, i := value.UnmarshalValue(errors.Span{}, fromJSON)
-	if i != nil {
-		panic(fmt.Sprintf("Parsing / validation error: %s", (*i).Message()))
-	}
-
+	fromJSONhms := value.TypeAwareUnmarshalValue(fromJSON, driver.ExtractedInfo.DriverConfig.Info.HmsType)
 	withOldValues := ApplyTransactionOnStored(
 		oldValue,
 		(*fromJSONhms).(value.ValueObject),
@@ -128,10 +123,7 @@ func StoreDeviceSingletonConfigUpdate(
 
 	oldValue := DeviceStore[deviceID]
 
-	fromJSONhms, i := value.UnmarshalValue(errors.Span{}, fromJSON)
-	if i != nil {
-		panic(fmt.Sprintf("Parsing / validation error: %s", (*i).Message()))
-	}
+	fromJSONhms := value.TypeAwareUnmarshalValue(fromJSON, driver.ExtractedInfo.DeviceConfig.Info.HmsType)
 
 	withOldValues := ApplyTransactionOnStored(
 		oldValue,
@@ -258,34 +250,31 @@ func PopulateValueCache() error {
 	}
 
 	for _, driver := range drivers {
+		// Load type information for this driver.
+		information, hmsErrs, err := extractInfoFromDriver(driver.VendorId, driver.ModelId, driver.HomescriptCode)
+		if err != nil {
+			return err
+		}
+
+		// Just skip this driver, its value will never be required anyways.
+		if len(hmsErrs) > 0 {
+			log.Tracef("Skipping default value instantiation of driver `%s:%s`", driver.VendorId, driver.ModelId)
+			continue
+		}
+
 		if driver.SingletonJSON != nil {
 			var unmarshaledJSON any
 			if err := json.Unmarshal([]byte(*driver.SingletonJSON), &unmarshaledJSON); err != nil {
 				return fmt.Errorf("Could not parse driver JSON: %s", err.Error())
 			}
 
-			unmarshaledValue, i := value.UnmarshalValue(errors.Span{}, unmarshaledJSON)
-			if i != nil {
-				return fmt.Errorf("Could not parse driver JSON to HMS value: %s", (*i).Message())
-			}
+			unmarshaledValue := value.TypeAwareUnmarshalValue(unmarshaledJSON, information.DriverConfig.Info.HmsType)
 
 			DriverStore[DriverTuple{
 				VendorID: driver.VendorId,
 				ModelID:  driver.ModelId,
 			}] = (*unmarshaledValue).(value.ValueObject)
 		} else {
-			// Load type information for this driver.
-			information, hmsErrs, err := extractInfoFromDriver(driver.VendorId, driver.ModelId, driver.HomescriptCode)
-			if err != nil {
-				return err
-			}
-
-			// Just skip this driver, its value will never be required anyways.
-			if len(hmsErrs) > 0 {
-				log.Tracef("Skipping default value instantiation of driver `%s:%s`", driver.VendorId, driver.ModelId)
-				continue
-			}
-
 			DriverStore[DriverTuple{
 				VendorID: driver.VendorId,
 				ModelID:  driver.ModelId,
@@ -298,7 +287,7 @@ func PopulateValueCache() error {
 				continue
 			}
 
-			val, found, err := RetrieveDeviceSingletonFromDB(device.Id)
+			val, found, err := RetrieveDeviceSingletonFromDB(device.Id, information.DeviceConfig.Info.HmsType)
 			if err != nil {
 				return err
 			}
@@ -314,8 +303,8 @@ func PopulateValueCache() error {
 	return nil
 }
 
-func RetrieveDeviceSingletonFromDB(deviceId string) (v value.Value, found bool, err error) {
-	device, found, err := database.GetDeviceById(deviceId)
+func RetrieveDeviceSingletonFromDB(deviceID string, hmsType ast.Type) (v value.Value, found bool, err error) {
+	device, found, err := database.GetDeviceById(deviceID)
 	if err != nil {
 		return nil, false, err
 	}
@@ -329,10 +318,5 @@ func RetrieveDeviceSingletonFromDB(deviceId string) (v value.Value, found bool, 
 		return nil, false, err
 	}
 
-	unmarshaledValue, i := value.UnmarshalValue(errors.Span{}, unmarshaled)
-	if i != nil {
-		return nil, false, fmt.Errorf("%s", (*i).Message())
-	}
-
-	return *unmarshaledValue, true, nil
+	return *value.TypeAwareUnmarshalValue(unmarshaled, hmsType), true, nil
 }
