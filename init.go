@@ -122,7 +122,7 @@ mainLoop:
 
 	// Shutdown
 	{
-		log.Warn("System shutting down...")
+		log.Info("System shutting down...")
 		signal.Reset(os.Interrupt)
 
 		// Shutdown the webserver

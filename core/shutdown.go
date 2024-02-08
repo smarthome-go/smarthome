@@ -11,9 +11,15 @@ import (
 	"github.com/smarthome-go/smarthome/core/homescript"
 )
 
+type shutdownJobName string
+
+const (
+	shutdownJobHMS = "homescript"
+)
+
 type shutdownJob struct {
 	channel chan struct{}
-	name    string
+	name    shutdownJobName
 }
 
 // Maximum time to wait until everything is shutdown
@@ -23,12 +29,31 @@ const SHUTDOWN_TIMEOUT = time.Second * 20
 const BOOT_AUTOMATION_MAX_RUNTIME = time.Second * 20
 
 func waitForHomescripts(ch *chan struct{}) {
+	// Record the start time, if there are still scripts after the half of the shutdown timeout,
+	// then kill all scripts.
+	start := time.Now()
+
 	// Signal that the HMS wait task is finished
 	defer func() {
 		*ch <- struct{}{}
 	}()
+
+	sentKill := false
+
 	for len(homescript.HmsManager.GetJobList()) > 0 {
 		time.Sleep(time.Millisecond * 500)
+
+		jobLen := len(homescript.HmsManager.GetJobList())
+		if !sentKill && (time.Since(start) >= (SHUTDOWN_TIMEOUT-homescript.KillEventMaxRuntime)/2) && jobLen > 0 {
+			log.Infof("Killing remaining %d Homescripts...", jobLen)
+
+			for _, job := range homescript.HmsManager.GetJobList() {
+				go homescript.HmsManager.Kill(job.JobId)
+			}
+
+			sentKill = true
+			continue
+		}
 
 		hmsList := ""
 		for idx, hms := range homescript.HmsManager.GetJobList() {
@@ -42,7 +67,12 @@ func waitForHomescripts(ch *chan struct{}) {
 			hmsList += "`" + id + "`"
 		}
 
-		log.Trace(fmt.Sprintf("Waiting for %d Homescripts [%s] to finish execution...", len(homescript.HmsManager.GetJobList()), hmsList))
+		waitForWhatText := "finish execution"
+		if sentKill {
+			waitForWhatText = "respond to termination"
+		}
+
+		log.Trace(fmt.Sprintf("Waiting for %d Homescripts [%s] to %s...", len(homescript.HmsManager.GetJobList()), hmsList, waitForWhatText))
 	}
 }
 

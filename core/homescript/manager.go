@@ -17,6 +17,9 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 )
 
+const KillEventFunction = "kill"
+const KillEventMaxRuntime = 5 * time.Second
+
 // this can be decremented if a script uses too many resources
 const CALL_STACK_LIMIT_SIZE = 2048
 
@@ -590,15 +593,26 @@ func (m *Manager) GetJobById(jobId uint64) (Job, bool) {
 // This method operates on all types of run-type
 // The returned boolean indicates whether a job was killed or not
 func (m *Manager) Kill(jobId uint64) bool {
-	m.Lock.Lock()
-	defer m.Lock.Unlock()
-	for _, job := range m.Jobs {
+	idx := 0
+
+	for {
+		m.Lock.Lock()
+		jobLen := len(m.Jobs)
+		if idx >= jobLen {
+			m.Lock.Unlock()
+			return false
+		}
+
+		job := m.Jobs[idx]
+		m.Lock.Unlock()
+
 		if job.JobId == jobId {
 			m.killJob(job)
 			return true
 		}
+
+		idx++
 	}
-	return false
 }
 
 // Terminates all jobs which are executing a given Homescript-ID / Homescript-label
@@ -621,36 +635,38 @@ func (m *Manager) KillAllId(hmsId string) (count uint64, success bool) {
 }
 
 func (m *Manager) killJob(job Job) {
-	// BUG: this ad-hoc name mangling is extremely bad.
-	killFn := fmt.Sprintf("@%s_@event_kill0", job.EntryModuleName)
-	job.Vm.SpawnSync(runtime.FunctionInvocation{
-		Function: killFn,
-		Args:     []value.Value{}, // Maybe add a reason for the kill?
-	}, nil)
+	log.Trace("Dispatching sigTerm to HMS interpreter channel...")
 
+	_, killFnExists := job.Vm.Program.Mappings.Functions[KillEventFunction]
 	canceled := false
 	cancelMtx := sync.Mutex{}
+	if killFnExists {
+		// Give timeout of 10 secs
+		go func() {
+			time.Sleep(KillEventMaxRuntime)
 
-	go func() {
-		defer cancelMtx.Unlock()
-		time.Sleep(10 * time.Second) // TODO: allow customization
+			defer cancelMtx.Unlock()
+			cancelMtx.Lock()
+			if !canceled {
+				log.Debugf("Job %d did not quit on time, terminating kill event...", job.JobId)
+				job.CancelCtx()
+			}
+		}()
+
+		job.Vm.SpawnSync(runtime.FunctionInvocation{
+			Function: KillEventFunction,
+			Args:     []value.Value{},
+			FunctionSignature: runtime.FunctionInvocationSignature{
+				Params:     map[string]ast.Type{},
+				ReturnType: ast.NewNullType(errors.Span{}),
+			},
+		}, nil)
 
 		cancelMtx.Lock()
+		canceled = true
+		cancelMtx.Unlock()
+	}
 
-		if !canceled {
-			job.CancelCtx()
-		}
-
-	}()
-
-	log.Trace("Dispatching sigTerm to HMS interpreter channel")
-
-	// give timeout of 10 secs
-	job.Vm.WaitNonConsuming()
-
-	cancelMtx.Lock()
-	canceled = true
-	cancelMtx.Unlock()
 	log.Trace("Successfully dispatched sigTerm to HMS interpreter channel")
 }
 
