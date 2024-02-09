@@ -21,12 +21,17 @@ type Device struct {
 	Config         homescript.ConfigInfoWrapperDevice `json:"config"`
 
 	// Device-specific information.
-	PowerInformation DevicePowerInformation `json:"powerInformation"`
+	PowerInformation    DevicePowerInformation    `json:"powerInformation"`
+	DimmableInformation DeviceDimmableInformation `json:"dimmableInformation"`
 }
 
 type DevicePowerInformation struct {
 	State          bool `json:"state"`
 	PowerDrawWatts uint `json:"powerDrawWatts"`
+}
+
+type DeviceDimmableInformation struct {
+	Percent uint8 `json:"percent"`
 }
 
 func ListAllDevices() ([]Device, error) {
@@ -103,6 +108,20 @@ func EnrichDevicesList(input []database.Device) ([]Device, error) {
 			hmsErrors = append(hmsErrors, hmsErrs...)
 		}
 
+		dimmableInformation, hmsErrs, err := InvokeDriverReportDimmable(
+			DriverInvocationIDs{
+				deviceID: device.Id,
+				vendorID: device.VendorId,
+				modelID:  device.ModelId,
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+		if hmsErrs != nil {
+			hmsErrors = append(hmsErrors, hmsErrs...)
+		}
+
 		output[index] = Device{
 			DeviceType:     device.DeviceType,
 			ID:             device.Id,
@@ -116,6 +135,9 @@ func EnrichDevicesList(input []database.Device) ([]Device, error) {
 			PowerInformation: DevicePowerInformation{
 				State:          powerState.State,
 				PowerDrawWatts: powerDraw.Watts,
+			},
+			DimmableInformation: DeviceDimmableInformation{
+				Percent: dimmableInformation.Percent,
 			},
 		}
 	}

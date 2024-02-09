@@ -72,6 +72,8 @@ const DeviceFunctionReportPowerState = "report_power"
 const DeviceFunctionReportPowerDraw = "report_power_draw"
 const DeviceFuncionSetPower = "set_power"
 const DeviceFuncionSetDim = "dim"
+const DeviceFunctionReportDim = "report_dim"
+const DeviceFunctionDim = "dim"
 
 // TODO: maybe own submodule for templates?
 
@@ -127,7 +129,19 @@ func DeviceSetPowerSignature(span errors.Span) ast.TemplateMethod {
 	}
 }
 
-func deviceDimSignature(span errors.Span) ast.TemplateMethod {
+func DeviceReportDimSignature(span errors.Span) ast.TemplateMethod {
+	return ast.TemplateMethod{
+		Signature: ast.NewFunctionType(
+			ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)),
+			span,
+			ast.NewIntType(span),
+			span,
+		).(ast.FunctionType),
+		Modifier: pAst.FN_MODIFIER_PUB,
+	}
+}
+
+func DeviceDimSignature(span errors.Span) ast.TemplateMethod {
 	return ast.TemplateMethod{
 		Signature: ast.NewFunctionType(
 			ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
@@ -136,7 +150,7 @@ func deviceDimSignature(span errors.Span) ast.TemplateMethod {
 					ast.NewIntType(span),
 					nil,
 				),
-			}), span, ast.NewNullType(span), span,
+			}), span, ast.NewBoolType(span), span,
 		).(ast.FunctionType),
 		Modifier: pAst.FN_MODIFIER_PUB,
 	}
@@ -150,7 +164,8 @@ func deviceTemplate(span errors.Span) DeviceTemplate {
 				DeviceFunctionReportPowerState: DeviceReportPowerStateSignature(span),
 				DeviceFunctionReportPowerDraw:  DeviceReportPowerDrawSignature(span),
 				DeviceFuncionSetPower:          DeviceSetPowerSignature(span),
-				DeviceFuncionSetDim:            deviceDimSignature(span),
+				DeviceFunctionReportDim:        DeviceReportDimSignature(span),
+				DeviceFuncionSetDim:            DeviceDimSignature(span),
 			},
 			Capabilities: map[string]ast.TemplateCapability{
 				DefaultCapabilityName: {
@@ -158,7 +173,10 @@ func deviceTemplate(span errors.Span) DeviceTemplate {
 					ConflictsWithCapabilities: []ast.TemplateConflict{},
 				},
 				"dimmable": {
-					RequiresMethods:           []string{DeviceFuncionSetDim},
+					RequiresMethods: []string{
+						DeviceFunctionReportDim,
+						DeviceFuncionSetDim,
+					},
 					ConflictsWithCapabilities: []ast.TemplateConflict{},
 				},
 				"power": {

@@ -308,3 +308,91 @@ func InvokeDriverSetPower(
 		Changed: runResult.ReturnValue.(value.ValueBool).Inner,
 	}, nil, nil
 }
+
+//
+// Report dimmable percent
+//
+
+func InvokeDriverReportDimmable(
+	ids DriverInvocationIDs,
+) (DeviceDimmableInformation, []homescript.HmsError, error) {
+	ret, hmsErrs, err := InvokeDriverFunc(
+		ids,
+		FunctionCall{
+			Invocation: runtime.FunctionInvocation{
+				Function: homescript.DeviceFunctionReportPowerDraw,
+				Args:     []value.Value{},
+				FunctionSignature: runtime.FunctionInvocationSignatureFromType(
+					homescript.DeviceReportPowerDrawSignature(errors.Span{}).Signature,
+				),
+			},
+		},
+	)
+
+	if err != nil || hmsErrs != nil {
+		return DeviceDimmableInformation{}, hmsErrs, err
+	}
+
+	percent := ret.ReturnValue.(value.ValueInt).Inner
+	if percent < 0 || percent > 100 {
+		return DeviceDimmableInformation{Percent: 0},
+			[]homescript.HmsError{
+				{
+					SyntaxError:     nil,
+					DiagnosticError: nil,
+					RuntimeInterrupt: &homescript.HmsRuntimeInterrupt{
+						Kind: "driver",
+						Message: fmt.Sprintf(
+							"Device function `%s` should return positive dim percent in range (0 <= x <= 100) but returned %d",
+							homescript.DeviceFunctionReportPowerDraw,
+							percent,
+						),
+					},
+					Span: ret.CalledFunctionSpan,
+				},
+			}, nil
+	}
+
+	return DeviceDimmableInformation{
+		Percent: uint8(percent),
+	}, nil, nil
+}
+
+func InvokeDriverDim(
+	deviceID,
+	vendorID,
+	modelID string,
+	dimAction DriverActionDim,
+) (DriverActionPowerOutput, []homescript.HmsError, error) {
+	// TODO: add context support
+	ctx, cancel := context.WithCancel(context.Background())
+
+	runResult, hmsErrs, dbErr := invokeDriverGeneric(
+		ctx,
+		cancel,
+		DriverContext{
+			DeviceId: &deviceID,
+		},
+		vendorID,
+		modelID,
+		FunctionCall{
+			Invocation: runtime.FunctionInvocation{
+				Function: homescript.DeviceFuncionSetPower,
+				Args: []value.Value{
+					*value.NewValueInt(dimAction.Percent), // TODO: test this by providing an int for instance.
+				},
+				FunctionSignature: runtime.FunctionInvocationSignatureFromType(
+					homescript.DeviceDimSignature(errors.Span{}).Signature,
+				),
+			},
+		},
+	)
+
+	if dbErr != nil || hmsErrs != nil {
+		return DriverActionPowerOutput{}, hmsErrs, dbErr
+	}
+
+	return DriverActionPowerOutput{
+		Changed: runResult.ReturnValue.(value.ValueBool).Inner,
+	}, nil, nil
+}

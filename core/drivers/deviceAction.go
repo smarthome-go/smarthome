@@ -18,6 +18,7 @@ type DeviceActionrequestBody struct {
 	// TODO: use dynamic typing here?
 	// Or use separate API endpoint for each intent?
 	Power *DriverSetPowerInput `json:"power"`
+	Dim   *DriverDimInput      `json:"dim"`
 }
 
 //
@@ -26,6 +27,10 @@ type DeviceActionrequestBody struct {
 
 type DriverSetPowerInput struct {
 	State bool `json:"state"`
+}
+
+type DriverDimInput struct {
+	Percent int64 `json:"percent"`
 }
 
 //
@@ -64,11 +69,26 @@ func DeviceAction(action DriverActionKind, body DeviceActionrequestBody) (
 		// TODO: implement this
 		panic("TODO")
 	case DriverActionKindDim:
-		// TODO: implement this
-		panic("TODO")
+		if body.Dim == nil {
+			return ActionResponse{},
+				true,
+				errors.New("Dim action field is missing even though it is required"),
+				nil
+		}
+		out, hmsErrs, err = InvokeDriverDim(
+			device.Id,
+			device.VendorId,
+			device.ModelId,
+			DriverActionDim{
+				Percent: body.Dim.Percent,
+			},
+		)
 	case DriverActionKindSetPower:
 		if body.Power == nil {
-			return ActionResponse{}, true, errors.New("Power action field is missing even though it is required"), nil
+			return ActionResponse{},
+				true,
+				errors.New("Power action field is missing even though it is required"),
+				nil
 		}
 		out, hmsErrs, err = InvokeDriverSetPower(
 			device.Id,

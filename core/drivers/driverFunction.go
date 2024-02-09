@@ -18,6 +18,7 @@ const (
 	DriverActionKindSetPower
 	DriverActionKindReportPowerState
 	DriverActionKindReportPowerDraw
+	DriverActionKindReportDim
 	DriverActionKindDim
 )
 
@@ -103,4 +104,42 @@ type DriverActionPowerOutput struct {
 
 func (self DriverActionPowerOutput) Kind() DriverActionKind {
 	return DriverActionKindSetPower
+}
+
+//
+// Report dimmable percent
+//
+
+type DriverActionReportDim struct{}
+
+func (self DriverActionReportDim) Kind() DriverActionKind {
+	return DriverActionKindReportDim
+}
+
+type DriverActionReportDimOutput struct {
+	Percent uint8 `json:"percent"`
+}
+
+func (self DriverActionReportDimOutput) Kind() DriverActionKind {
+	return DriverActionKindReportDim
+}
+
+//
+// Dim action
+//
+
+type DriverActionDim struct {
+	Percent int64
+}
+
+func (self DriverActionDim) Kind() DriverActionKind {
+	return DriverActionKindDim
+}
+
+type DriverActionDimOutput struct {
+	Changed bool `json:"changed"`
+}
+
+func (self DriverActionDimOutput) Kind() DriverActionKind {
+	return DriverActionKindDim
 }

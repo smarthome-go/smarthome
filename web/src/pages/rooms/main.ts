@@ -25,11 +25,16 @@ export interface DeviceResponse {
     hmsErrors: ValidationError[];
     config: ConfigSpecWrapper,
     powerInformation: DevicePowerInformation,
+    dimmableInformation: DeviceDimmableInformation,
 }
 
 export interface DevicePowerInformation {
     state: boolean,
     powerDrawWatts: number,
+}
+
+export interface DeviceDimmableInformation {
+    percent: number,
 }
 
 export interface CreateDeviceRequest {
