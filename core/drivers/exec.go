@@ -320,10 +320,10 @@ func InvokeDriverReportDimmable(
 		ids,
 		FunctionCall{
 			Invocation: runtime.FunctionInvocation{
-				Function: homescript.DeviceFunctionReportPowerDraw,
+				Function: homescript.DeviceFunctionReportDim,
 				Args:     []value.Value{},
 				FunctionSignature: runtime.FunctionInvocationSignatureFromType(
-					homescript.DeviceReportPowerDrawSignature(errors.Span{}).Signature,
+					homescript.DeviceReportDimSignature(errors.Span{}).Signature,
 				),
 			},
 		},
@@ -344,7 +344,7 @@ func InvokeDriverReportDimmable(
 						Kind: "driver",
 						Message: fmt.Sprintf(
 							"Device function `%s` should return positive dim percent in range (0 <= x <= 100) but returned %d",
-							homescript.DeviceFunctionReportPowerDraw,
+							homescript.DeviceFunctionReportDim,
 							percent,
 						),
 					},
@@ -377,7 +377,7 @@ func InvokeDriverDim(
 		modelID,
 		FunctionCall{
 			Invocation: runtime.FunctionInvocation{
-				Function: homescript.DeviceFuncionSetPower,
+				Function: homescript.DeviceFuncionSetDim,
 				Args: []value.Value{
 					*value.NewValueInt(dimAction.Percent), // TODO: test this by providing an int for instance.
 				},

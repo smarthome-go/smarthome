@@ -81,8 +81,7 @@
         dispatch('powerChangeDone', null)
     }
 
-    $: dim(data.dimmableInformation.percent)
-
+    // TODO: introduce timer to only update if the user has finished their input.
     async function dim(percent: number) {
         // Send a event in order to signal that the cameras should be reloaded
         dispatch('dim', null)
@@ -161,7 +160,11 @@
         <div class="switch__dim">
                 <div class="switch__dim__left">
                     <FormField align="start" style="display: flex;">
-                        <Slider style="flex-grow: 1;" bind:value={data.dimmableInformation.percent} />
+                        <Slider
+                            style="flex-grow: 1;"
+                            bind:value={data.dimmableInformation.percent}
+                            on:SMUISlider:change={(e) => dim(e.detail.value)}
+                        />
                         <span
                             slot="label"
                             style="padding-right: 12px; width: max-content; display: block;"
