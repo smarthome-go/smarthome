@@ -82,7 +82,7 @@
     }
 
     // TODO: introduce timer to only update if the user has finished their input.
-    async function dim(percent: number) {
+    async function dim(percent: number, label: string) {
         // Send a event in order to signal that the cameras should be reloaded
         dispatch('dim', null)
         requests++
@@ -95,6 +95,7 @@
                         deviceId: data.id,
                         dim: {
                             percent,
+                            label,
                         },
                     }),
                 })
@@ -102,7 +103,7 @@
             if (!res.success) throw Error(res.error)
         } catch (err) {
             $createSnackbar(
-                `Failed to set device '${data.name}' brightness to ${data.dimmableInformation}: ${err}`,
+                `Failed to set device '${data.name}' dimmable '${label}' to ${data.dimmableInformation}: ${err}`,
             )
         }
         await sleep(500)
@@ -157,25 +158,28 @@
     {/if}
 
     {#if data.config.capabilities.includes('dimmable')}
-        <div class="switch__dim">
-                <div class="switch__dim__left">
-                    <FormField align="start" style="display: flex;">
-                        <Slider
-                            style="flex-grow: 1;"
-                            bind:value={data.dimmableInformation.percent}
-                            on:SMUISlider:change={(e) => dim(e.detail.value)}
-                        />
-                        <span
-                            slot="label"
-                            style="padding-right: 12px; width: max-content; display: block;"
-                        >
-                        </span>
-                    </FormField>
-                </div>
-                <div class="switch__dim__right">
-                    <span class="status text-hint">{data.dimmableInformation.percent}%</span>
-                </div>
-        </div>
+        {#each data.dimmables as dimmable}
+            <div class="switch__dim">
+                    <div class="switch__dim__left">
+                        <FormField align="start" style="display: flex;">
+                            <!-- TODO: does this also update the value??? -->
+                            <Slider
+                                style="flex-grow: 1;"
+                                bind:value={dimmable.value}
+                                on:SMUISlider:change={(e) => dim(e.detail.value, dimmable.label)}
+                            />
+                            <span
+                                slot="label"
+                                style="padding-right: 12px; width: max-content; display: block;"
+                            >
+                            </span>
+                        </FormField>
+                    </div>
+                    <div class="switch__dim__right">
+                        <span class="status text-hint">{dimmable.value}</span>
+                    </div>
+            </div>
+        {/each}
     {/if}
 </div>
 

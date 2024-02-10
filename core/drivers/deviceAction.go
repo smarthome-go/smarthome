@@ -30,7 +30,8 @@ type DriverSetPowerInput struct {
 }
 
 type DriverDimInput struct {
-	Percent int64 `json:"percent"`
+	Value int64  `json:"percent"`
+	Label string `json:"label"`
 }
 
 //
@@ -80,7 +81,8 @@ func DeviceAction(action DriverActionKind, body DeviceActionrequestBody) (
 			device.VendorId,
 			device.ModelId,
 			DriverActionDim{
-				Percent: body.Dim.Percent,
+				Value: body.Dim.Value,
+				Label: body.Dim.Label,
 			},
 		)
 	case DriverActionKindSetPower:

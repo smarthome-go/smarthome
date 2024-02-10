@@ -129,12 +129,43 @@ func DeviceSetPowerSignature(span errors.Span) ast.TemplateMethod {
 	}
 }
 
+//
+// Generic dimmer implementation
+//
+
+const ReportDimTypeLabelIdent = "label"
+const ReportDimTypeRangeIdent = "range"
+const ReportDimTypeValueIdent = "value"
+
+func ReportDimType(span errors.Span) ast.Type {
+	return ast.NewObjectType(
+		[]ast.ObjectTypeField{
+			ast.NewObjectTypeField(
+				pAst.NewSpannedIdent(ReportDimTypeLabelIdent, span),
+				ast.NewStringType(span),
+				span,
+			),
+			ast.NewObjectTypeField(
+				pAst.NewSpannedIdent(ReportDimTypeRangeIdent, span),
+				ast.NewRangeType(span),
+				span,
+			),
+			ast.NewObjectTypeField(
+				pAst.NewSpannedIdent(ReportDimTypeValueIdent, span),
+				ast.NewIntType(span),
+				span,
+			),
+		},
+		span,
+	)
+}
+
 func DeviceReportDimSignature(span errors.Span) ast.TemplateMethod {
 	return ast.TemplateMethod{
 		Signature: ast.NewFunctionType(
 			ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)),
 			span,
-			ast.NewIntType(span),
+			ast.NewListType(ReportDimType(span), span),
 			span,
 		).(ast.FunctionType),
 		Modifier: pAst.FN_MODIFIER_PUB,
@@ -146,7 +177,12 @@ func DeviceDimSignature(span errors.Span) ast.TemplateMethod {
 		Signature: ast.NewFunctionType(
 			ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
 				ast.NewFunctionTypeParam(
-					pAst.NewSpannedIdent("percent", span),
+					pAst.NewSpannedIdent("label", span),
+					ast.NewStringType(span),
+					nil,
+				),
+				ast.NewFunctionTypeParam(
+					pAst.NewSpannedIdent("value", span),
 					ast.NewIntType(span),
 					nil,
 				),

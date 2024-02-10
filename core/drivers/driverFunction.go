@@ -116,8 +116,16 @@ func (self DriverActionReportDim) Kind() DriverActionKind {
 	return DriverActionKindReportDim
 }
 
+type DriverActionReportRange struct {
+	Lower int64 `json:"lower"`
+	// Is exclusive: backend may perform `+1` or `-1` to make this fit (x..y) vs (x..=y).
+	Upper int64 `json:"upper"`
+}
+
 type DriverActionReportDimOutput struct {
-	Percent uint8 `json:"percent"`
+	Value int64                   `json:"value"`
+	Label string                  `json:"label"`
+	Range DriverActionReportRange `json:"range"`
 }
 
 func (self DriverActionReportDimOutput) Kind() DriverActionKind {
@@ -129,7 +137,8 @@ func (self DriverActionReportDimOutput) Kind() DriverActionKind {
 //
 
 type DriverActionDim struct {
-	Percent int64
+	Value int64
+	Label string
 }
 
 func (self DriverActionDim) Kind() DriverActionKind {

@@ -179,6 +179,11 @@ func (self analyzerHost) GetBuiltinImport(
 					}, span),
 					Template: nil,
 				}, true, true
+			case "Dimmable":
+				return analyzer.BuiltinImport{
+					Type:     ReportDimType(span),
+					Template: nil,
+				}, true, true
 			default:
 				return analyzer.BuiltinImport{}, true, false
 			}

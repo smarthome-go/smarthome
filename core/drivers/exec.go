@@ -313,9 +313,26 @@ func InvokeDriverSetPower(
 // Report dimmable percent
 //
 
+func normalizeRange(input value.ValueRange) (lower, upper int64) {
+	start := (*input.Start).(value.ValueInt).Inner
+	end := (*input.End).(value.ValueInt).Inner
+
+	if end < start {
+		if !input.EndIsInclusive {
+			end++
+		}
+		return end, start
+	}
+
+	if !input.EndIsInclusive {
+		end--
+	}
+	return start, end
+}
+
 func InvokeDriverReportDimmable(
 	ids DriverInvocationIDs,
-) (DeviceDimmableInformation, []homescript.HmsError, error) {
+) ([]DriverActionReportDimOutput, []homescript.HmsError, error) {
 	ret, hmsErrs, err := InvokeDriverFunc(
 		ids,
 		FunctionCall{
@@ -330,32 +347,54 @@ func InvokeDriverReportDimmable(
 	)
 
 	if err != nil || hmsErrs != nil {
-		return DeviceDimmableInformation{}, hmsErrs, err
+		return nil, hmsErrs, err
 	}
 
-	percent := ret.ReturnValue.(value.ValueInt).Inner
-	if percent < 0 || percent > 100 {
-		return DeviceDimmableInformation{Percent: 0},
-			[]homescript.HmsError{
-				{
-					SyntaxError:     nil,
-					DiagnosticError: nil,
-					RuntimeInterrupt: &homescript.HmsRuntimeInterrupt{
-						Kind: "driver",
-						Message: fmt.Sprintf(
-							"Device function `%s` should return positive dim percent in range (0 <= x <= 100) but returned %d",
-							homescript.DeviceFunctionReportDim,
-							percent,
-						),
+	values := *ret.ReturnValue.(value.ValueList).Values
+	dimmables := make([]DriverActionReportDimOutput, len(values))
+
+	for idx, currentListElement := range values {
+		fields := (*currentListElement).(value.ValueObject).FieldsInternal
+
+		value_ := (*fields[homescript.ReportDimTypeValueIdent]).(value.ValueInt).Inner
+		label := (*fields[homescript.ReportDimTypeLabelIdent]).(value.ValueString).Inner
+		range_ := (*fields[homescript.ReportDimTypeRangeIdent]).(value.ValueRange)
+
+		lower, upper := normalizeRange(range_)
+
+		if value_ < lower || value_ > upper {
+			return nil,
+				[]homescript.HmsError{
+					{
+						SyntaxError:     nil,
+						DiagnosticError: nil,
+						RuntimeInterrupt: &homescript.HmsRuntimeInterrupt{
+							Kind: "driver",
+							Message: fmt.Sprintf(
+								"Device function `%s` should return value in dimmable range(%d..%d) but returned %d for label `%s`",
+								homescript.DeviceFunctionReportDim,
+								lower,
+								upper,
+								value_,
+								label,
+							),
+						},
+						Span: ret.CalledFunctionSpan,
 					},
-					Span: ret.CalledFunctionSpan,
-				},
-			}, nil
+				}, nil
+		}
+
+		dimmables[idx] = DriverActionReportDimOutput{
+			Value: value_,
+			Label: label,
+			Range: DriverActionReportRange{
+				Lower: lower,
+				Upper: upper,
+			},
+		}
 	}
 
-	return DeviceDimmableInformation{
-		Percent: uint8(percent),
-	}, nil, nil
+	return dimmables, nil, nil
 }
 
 func InvokeDriverDim(
@@ -379,7 +418,8 @@ func InvokeDriverDim(
 			Invocation: runtime.FunctionInvocation{
 				Function: homescript.DeviceFuncionSetDim,
 				Args: []value.Value{
-					*value.NewValueInt(dimAction.Percent), // TODO: test this by providing an int for instance.
+					*value.NewValueString(dimAction.Label), // TODO: test this by providing an int for instance.
+					*value.NewValueInt(dimAction.Value),    // TODO: test this by providing an int for instance.
 				},
 				FunctionSignature: runtime.FunctionInvocationSignatureFromType(
 					homescript.DeviceDimSignature(errors.Span{}).Signature,

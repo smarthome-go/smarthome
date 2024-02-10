@@ -25,7 +25,7 @@ export interface DeviceResponse {
     hmsErrors: ValidationError[];
     config: ConfigSpecWrapper,
     powerInformation: DevicePowerInformation,
-    dimmableInformation: DeviceDimmableInformation,
+    dimmables: DeviceDimmable[],
 }
 
 export interface DevicePowerInformation {
@@ -33,8 +33,16 @@ export interface DevicePowerInformation {
     powerDrawWatts: number,
 }
 
-export interface DeviceDimmableInformation {
-    percent: number,
+export interface DeviceDimmableRange {
+    lower: number,
+    // Upper is always exclusive.
+    upper: number,
+}
+
+export interface DeviceDimmable {
+    value: number,
+    label: string,
+    range: Range
 }
 
 export interface CreateDeviceRequest {
