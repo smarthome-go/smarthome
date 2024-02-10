@@ -59,6 +59,8 @@ func initLoggers() {
 	reminder.InitLogger(log)
 }
 
+const httpRootPath = "/"
+
 func runWebServer(configStruct core.Config, serverConfig database.ServerConfig) {
 	// Server, middleware and routes
 	r := routes.NewRouter()
@@ -77,7 +79,7 @@ func runWebServer(configStruct core.Config, serverConfig database.ServerConfig) 
 		log.Error("Failed to load HTML templates: ", err.Error())
 		os.Exit(1)
 	}
-	http.Handle("/", r)
+	http.Handle(httpRootPath, r)
 
 	// Finish startup and launch web server
 	event.Info("System Started", fmt.Sprintf("The Smarthome server completed startup at %s", time.Now().Format(time.ANSIC)))
