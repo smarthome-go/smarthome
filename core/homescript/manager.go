@@ -409,7 +409,7 @@ func (m *Manager) Run(
 		Function: "@init",
 		Args:     []value.Value{},
 		FunctionSignature: runtime.FunctionInvocationSignature{
-			Params:     map[string]ast.Type{},
+			Params:     []runtime.FunctionInvocationSignatureParam{},
 			ReturnType: ast.NewNullType(errors.Span{}),
 		},
 	}, nil)
@@ -657,7 +657,7 @@ func (m *Manager) killJob(job Job) {
 			Function: KillEventFunction,
 			Args:     []value.Value{},
 			FunctionSignature: runtime.FunctionInvocationSignature{
-				Params:     map[string]ast.Type{},
+				Params:     []runtime.FunctionInvocationSignatureParam{},
 				ReturnType: ast.NewNullType(errors.Span{}),
 			},
 		}, nil)
