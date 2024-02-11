@@ -1,4 +1,4 @@
-## Changelog for v0.9.0-beta
+## Changelog for v0.10.0-alpha
 
 ### Fixes
 

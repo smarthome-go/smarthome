@@ -4,11 +4,13 @@ workingdir := smarthome
 sources := $(wildcard *.go)
 # Do not edit manually, use the `version` target to change the
 # version programmatically in all places
-version := 0.9.0-beta
+version := 0.10.0-alpha
 
 build = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -ldflags "-s -w" -v -o $(appname) $(4)
 # TODO: eliminate usage of workingdir
 tar = mkdir -p build && cd ../ && tar -cvzf ./$(appname)_$(1)_$(2).tar.gz $(workingdir)/$(appname) $(workingdir)/web/dist $(workingdir)/web/html $(workingdir)/resources && mv $(appname)_$(1)_$(2).tar.gz $(workingdir)/build
+
+docker_repo := mikmuellerdev/smarthome
 
 .PHONY: all linux
 
@@ -130,12 +132,12 @@ docker-prepare: web build
 # Is used after `release` in order to publish the built
 # Docker image to Docker-Hub
 docker-push:
-	docker push mikmuellerdev/smarthome:$(version)-arm
-	docker push mikmuellerdev/smarthome:latest-arm
-	docker push mikmuellerdev/smarthome:$(version)-arm64
-	docker push mikmuellerdev/smarthome:latest-arm64
-	docker push mikmuellerdev/smarthome:$(version)-amd64
-	docker push mikmuellerdev/smarthome:latest-amd64
+	docker push $(docker_repo):$(version)-arm
+	docker push $(docker_repo):latest-arm
+	docker push $(docker_repo):$(version)-arm64
+	docker push $(docker_repo):latest-arm64
+	docker push $(docker_repo):$(version)-amd64
+	docker push $(docker_repo):latest-amd64
 
 	$(info "docker-push: successfully pushed to remote repository")
 
@@ -145,24 +147,24 @@ docker: cleanall web docker-prepare
 	docker buildx create --use
 
 	sudo docker buildx build \
-		-t mikmuellerdev/smarthome:$(version)-arm \
-		-t mikmuellerdev/smarthome:latest-arm \
+		-t docker_repo:$(version)-arm \
+		-t docker_repo:latest-arm \
 		--platform=linux/arm \
 		--load \
 		-f ./docker/container/Dockerfile \
 		./docker/container/
 
 	sudo docker buildx build \
-		-t mikmuellerdev/smarthome:$(version)-arm64 \
-		-t mikmuellerdev/smarthome:latest-arm64 \
+		-t docker_repo:$(version)-arm64 \
+		-t docker_repo:latest-arm64 \
 		--platform=linux/arm64 \
 		--load \
 		-f ./docker/container/Dockerfile \
 		./docker/container/
 
 	docker buildx build \
-		-t mikmuellerdev/smarthome:$(version)-amd64 \
-		-t mikmuellerdev/smarthome:latest-amd64 \
+		-t docker_repo:$(version)-amd64 \
+		-t docker_repo:latest-amd64 \
 		--platform=linux/amd64 \
 		--load \
 		-f ./docker/container/Dockerfile \
