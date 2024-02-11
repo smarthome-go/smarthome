@@ -10,8 +10,8 @@
     import FormField from "@smui/form-field";
     import Switch from "@smui/switch";
     import Select, { Option } from "@smui/select";
-    import { switches, switchesLoaded, homescripts } from "../main";
-    import type { ScheduleData, SwitchResponse } from "../main";
+    import { devices, devicesLoaded, homescripts } from "../main";
+    import type { ScheduleData, SwitchResponse, ScheduleTargetMode } from "../main";
     import Button from "@smui/button/src/Button.svelte";
 
     export let data: ScheduleData = {
@@ -21,7 +21,7 @@
         targetMode: "hms",
         homescriptCode: "",
         homescriptTargetId: "",
-        switchJobs: [],
+        deviceJobs: [],
     };
 
     /*
@@ -29,17 +29,17 @@
     */
 
     // Specifies which mode is currently being used for editing
-    let active: "hms" | "switches" | "code" = data.targetMode;
+    let active  = data.targetMode;
 
     // Saves the tab data for the editor type selection
-    const tabs: string[] = ["hms", "switches", "code"];
-    const tabData: { label: "hms" | "switches" | "code"; icon: string }[] = [
+    const tabs: ScheduleTargetMode[] = ["hms", "devices", "code"];
+    const tabData: { label: ScheduleTargetMode; icon: string }[] = [
         {
             label: "hms",
             icon: "list",
         },
         {
-            label: "switches",
+            label: "devices",
             icon: "power",
         },
         {
@@ -49,31 +49,31 @@
     ];
 
     /*
-        //// Switches ////
-        Used for when the active mode is set to `switches`
+        //// Devices ////
+        Used for when the active mode is set to `devices`
     */
-    // Saves the switches which are available to the current user
-    // Used for displaying the switch selector
-    let switchToBeInserted: string;
-    let switchesAvailable: SwitchResponse[] = [];
+    // Saves the devices which are available to the current user
+    // Used for displaying the device selector
+    let deviceToBeInserted: string;
+    let devicesAvailable: SwitchResponse[] = [];
 
     $: if (
-        $switchesLoaded &&
-        $switches.length > 0 &&
-        data.switchJobs !== undefined
+        $devicesLoaded &&
+        $devices.length > 0 &&
+        data.deviceJobs !== undefined
     )
         updateSwitchesAvailable();
 
     function updateSwitchesAvailable() {
-        switchesAvailable = $switches.filter((s) => {
+        devicesAvailable = $devices.filter((device) => {
             return (
-                data.switchJobs.filter((v) => v.switchId === s.id).length === 0
+                data.deviceJobs.filter((job) => job.deviceId === device.id).length === 0
             );
         });
         // Causes an update in the selection element
-        if (switchesAvailable.length === 1)
-            switchToBeInserted = switchesAvailable[0].id;
-        else switchToBeInserted = undefined;
+        if (devicesAvailable.length === 1)
+            deviceToBeInserted = devicesAvailable[0].id;
+        else deviceToBeInserted = undefined;
     }
 </script>
 
@@ -128,7 +128,7 @@
                     {/if}
                 </div>
             {/if}
-        {:else if active === "switches"}
+        {:else if active === "devices"}
             {#if data.targetMode !== active}
                 <HmsInputsReset
                     {active}
@@ -136,32 +136,32 @@
                     icon="auto_fix_off"
                     on:reset={() => (data.targetMode = active)}
                 />
-            {:else if switchesLoaded}
+            {:else if devicesLoaded}
                 <div class="main__editor__switches__header mdc-elevation--z1">
                     <Select
-                        bind:value={switchToBeInserted}
+                        bind:value={deviceToBeInserted}
                         label="Select Switch"
-                        disabled={switchesAvailable.length <= 1}
+                        disabled={devicesAvailable.length <= 1}
                     >
-                        {#each switchesAvailable as swOpt}
+                        {#each devicesAvailable as swOpt}
                             <Option value={swOpt.id}>{swOpt.name}</Option>
                         {/each}
                     </Select>
                     <IconButton
                         class="material-icons"
-                        disabled={switchToBeInserted === undefined}
+                        disabled={deviceToBeInserted === undefined}
                         on:click={() => {
-                            if (switchesAvailable.length === 0) {
+                            if (devicesAvailable.length === 0) {
                                 $createSnackbar(
-                                    "Only one action per switch is allowed."
+                                    "Only one action per device is allowed."
                                 );
                                 return;
                             }
 
-                            data.switchJobs = [
-                                ...data.switchJobs,
+                            data.deviceJobs = [
+                                ...data.deviceJobs,
                                 {
-                                    switchId: switchToBeInserted,
+                                    deviceId: deviceToBeInserted,
                                     powerOn: false,
                                 },
                             ];
@@ -171,7 +171,7 @@
                     </IconButton>
                 </div>
                 <div class="main__editor__switches__wizard">
-                    {#if data.switchJobs.length === 0}
+                    {#if data.deviceJobs.length === 0}
                         <div class="main__editor__switches__no-selection">
                             <i
                                 class="main__editor__switches__no-selection__icon material-icons"
@@ -180,9 +180,9 @@
                             <div
                                 class="main__editor__switches__no-selection__text"
                             >
-                                {#if $switches.length === 0 && $switchesLoaded}
-                                    <h6>No switches available</h6>
-                                    You need to have access to at least 1 switch.
+                                {#if $devices.length === 0 && $devices}
+                                    <h6>No Devices Available</h6>
+                                    You need to have access to at least one device.
                                     <br />
                                     <span class="text-disabled">
                                         If this is unintentional, contact your
@@ -196,26 +196,22 @@
                             </div>
                         </div>
                     {/if}
-                    {#each data.switchJobs as sw (sw.switchId)}
+                    {#each data.deviceJobs as job (job.deviceId)}
                         <div
                             class="main__editor__switches__wizard__item mdc-elevation--z1"
                         >
                             <FormField>
                                 <Switch
-                                    bind:checked={sw.powerOn}
+                                    bind:checked={job.powerOn}
                                     icons={false}
                                 />
-                                <span slot="label"
-                                    >{$switches.find(
-                                        (s) => s.id === sw.switchId
-                                    ).name}</span
-                                >
+                                <span slot="label">{$devices.find((device) => device.id === job.deviceId).name}</span>
                             </FormField>
                             <IconButton
                                 class="material-icons"
                                 on:click={() => {
-                                    data.switchJobs = data.switchJobs.filter(
-                                        (s) => s.switchId !== sw.switchId
+                                    data.deviceJobs = data.deviceJobs.filter(
+                                        (j) => j.deviceId !== job.deviceId
                                     );
                                 }}
                             >

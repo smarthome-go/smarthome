@@ -1,21 +1,19 @@
-package drivers
+package homescript
 
 import (
 	"fmt"
 	"reflect"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
 	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/homescript"
 )
 
 type RichDriver struct {
 	Driver        database.DeviceDriver `json:"driver"`
-	ExtractedInfo homescript.DriverInfo `json:"info"`
+	ExtractedInfo DriverInfo            `json:"info"`
 	// TODO: implement something like this for device as well
 	// Saves the persistent value(s) of the setting-fields of the `Driver` singleton.
 	// If this field is `nil`, the user has not configured their driver yet.
@@ -24,24 +22,18 @@ type RichDriver struct {
 	ValidationErrors []diagnostic.Diagnostic `json:"validationErrors"`
 }
 
-var log *logrus.Logger
-
-func InitLogger(logger *logrus.Logger) {
-	log = logger
-}
-
 func extractInfoFromDriver(
 	vendorID string,
 	modelID string,
 	homescriptCode string,
-) (homescript.DriverInfo, []diagnostic.Diagnostic, error) {
-	driverInfo, diagnostics, err := homescript.ExtractDriverInfoTotal(
+) (DriverInfo, []diagnostic.Diagnostic, error) {
+	driverInfo, diagnostics, err := ExtractDriverInfoTotal(
 		vendorID,
 		modelID,
 		homescriptCode,
 	)
 	if err != nil {
-		return homescript.DriverInfo{}, nil, err
+		return DriverInfo{}, nil, err
 	}
 
 	// Filter step: only include actual errors, not warnings and infos.
@@ -55,7 +47,7 @@ func extractInfoFromDriver(
 	if len(filtered) > 0 {
 		log.Tracef("Driver `%s:%s` is not working: `%s`", vendorID, modelID, filtered[0].Message)
 		// nolint:exhaustruct
-		return homescript.DriverInfo{}, filtered, nil
+		return DriverInfo{}, filtered, nil
 	}
 
 	return driverInfo, make([]diagnostic.Diagnostic, 0), nil
@@ -103,7 +95,7 @@ func ListDriversWithoutStoredValues() ([]RichDriver, error) {
 		richDriver := RichDriver{
 			Driver: driver,
 			//nolint:exhaustruct
-			ExtractedInfo:    homescript.DriverInfo{},
+			ExtractedInfo:    DriverInfo{},
 			Configuration:    nil,
 			IsValid:          true,
 			ValidationErrors: make([]diagnostic.Diagnostic, 0),
@@ -452,7 +444,7 @@ type FieldAccess struct {
 
 func valueMatchesSpec(
 	configValue interface{},
-	spec homescript.ConfigFieldDescriptor,
+	spec ConfigFieldDescriptor,
 	fieldAccessStack []FieldAccess,
 ) (
 	valid bool,
@@ -461,36 +453,36 @@ func valueMatchesSpec(
 ) {
 	switch self := configValue.(type) {
 	case string:
-		if spec.Kind() != homescript.CONFIG_FIELD_TYPE_STRING {
+		if spec.Kind() != CONFIG_FIELD_TYPE_STRING {
 			return false, fieldAccessStack, fmt.Sprintf("Expected %s, got STRING", spec.Kind())
 		}
 		return true, fieldAccessStack, ""
 	case int, int64:
-		if spec.Kind() != homescript.CONFIG_FIELD_TYPE_INT {
+		if spec.Kind() != CONFIG_FIELD_TYPE_INT {
 			return false, fieldAccessStack, fmt.Sprintf("Expected %s, got INT", spec.Kind())
 		}
 		return true, nil, ""
 	case float64:
 		// Check if this is actually an int and an int was expected.
-		if float64(int64(self)) == self && spec.Kind() == homescript.CONFIG_FIELD_TYPE_INT {
+		if float64(int64(self)) == self && spec.Kind() == CONFIG_FIELD_TYPE_INT {
 			return true, nil, ""
 		}
 
-		if spec.Kind() != homescript.CONFIG_FIELD_TYPE_FLOAT {
+		if spec.Kind() != CONFIG_FIELD_TYPE_FLOAT {
 			return false, fieldAccessStack, fmt.Sprintf("Expected %s, got FLOAT", spec.Kind())
 		}
 		return true, nil, ""
 	case bool:
-		if spec.Kind() != homescript.CONFIG_FIELD_TYPE_BOOL {
+		if spec.Kind() != CONFIG_FIELD_TYPE_BOOL {
 			return false, fieldAccessStack, fmt.Sprintf("Expected %s, got BOOL", spec.Kind())
 		}
 		return true, nil, ""
 	case map[string]interface{}:
-		if spec.Kind() != homescript.CONFIG_FIELD_TYPE_STRUCT {
+		if spec.Kind() != CONFIG_FIELD_TYPE_STRUCT {
 			return false, fieldAccessStack, fmt.Sprintf("Expected %s, got STRUCT", spec.Kind())
 		}
 
-		structSpec := spec.(homescript.ConfigFieldDescriptorStruct)
+		structSpec := spec.(ConfigFieldDescriptorStruct)
 
 		// Check that all struct fields are satisfied.
 		for _, field := range structSpec.Fields {
@@ -522,7 +514,7 @@ func valueMatchesSpec(
 
 		return true, nil, ""
 	case []interface{}:
-		listSpec := spec.(homescript.ConfigFieldDescriptorWithInner)
+		listSpec := spec.(ConfigFieldDescriptorWithInner)
 
 		for index, elem := range self {
 			if valid, stack, msg := valueMatchesSpec(elem, listSpec.Inner, append(fieldAccessStack, FieldAccess{

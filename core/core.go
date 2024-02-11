@@ -3,7 +3,6 @@ package core
 import (
 	"github.com/sirupsen/logrus"
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/drivers"
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/hardware"
 	"github.com/smarthome-go/smarthome/core/homescript"
@@ -16,7 +15,6 @@ var log *logrus.Logger
 func InitLoggers(logger *logrus.Logger) {
 	log = logger
 
-	drivers.InitLogger(log)
 	homescript.InitLogger(log)
 	database.InitLogger(log)
 	hardware.InitLogger(log)

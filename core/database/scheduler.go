@@ -17,16 +17,16 @@ type ScheduleData struct {
 	TargetMode         ScheduleTargetMode      `json:"targetMode"`         // Specifies which actions are taken when the schedule is executed
 	HomescriptCode     string                  `json:"homescriptCode"`     // Is read when using the `code` mode of the schedule
 	HomescriptTargetId string                  `json:"homescriptTargetId"` // Is required when using the `hms` mode of the schedule
-	SwitchJobs         []ScheduleSwitchJobData `json:"switchJobs"`
+	SwitchJobs         []ScheduleDeviceJobData `json:"deviceJobs"`
 }
 
 // Specifies which action will be performed as a target
 type ScheduleTargetMode string
 
 const (
-	ScheduleTargetModeCode     ScheduleTargetMode = "code"     // Will execute Homescript code as a target
-	ScheduleTargetModeSwitches ScheduleTargetMode = "switches" // Will perform a series of power actions as a target
-	ScheduleTargetModeHMS      ScheduleTargetMode = "hms"      // Will execute a Homescript by its id as a target
+	ScheduleTargetModeCode    ScheduleTargetMode = "code"    // Will execute Homescript code as a target
+	ScheduleTargetModeDevices ScheduleTargetMode = "devices" // Will perform a sequence of power actions as a target
+	ScheduleTargetModeHMS     ScheduleTargetMode = "hms"     // Will execute a Homescript by its id as a target
 )
 
 // Creates a new table containing the schedules for the normal scheduler jobs
@@ -41,7 +41,7 @@ func createScheduleTable() error {
 		Hour INT,
 		Minute INT,
 		TargetMode ENUM (
-			'switches',
+			'devices',
 			'code',
 			'hms'
 		),
@@ -102,9 +102,9 @@ func CreateNewSchedule(
 	}
 	// Create the schedule's switch jobs
 	for _, switchJob := range data.SwitchJobs {
-		if _, err := CreateNewScheduleSwitch(
+		if _, err := CreateNewScheduleDeviceJob(
 			uint(newId),
-			switchJob.SwitchId,
+			switchJob.DeviceId,
 			switchJob.PowerOn,
 		); err != nil {
 			log.Error("Failed to create new schedule: could not create switch job: ", err.Error())
@@ -154,7 +154,7 @@ func GetScheduleById(id uint) (Schedule, bool, error) {
 	}
 
 	// Obtain this schedule's switch jobs
-	switches, err := ListSwitchesOfSchedule(schedule.Id)
+	switches, err := ListDeviceJobsOfSchedule(schedule.Id)
 	if err != nil {
 		return Schedule{}, false, err
 	}
@@ -191,7 +191,7 @@ func GetUserSchedules(username string) ([]Schedule, error) {
 	defer res.Close()
 
 	// Obtain schedule switches
-	switches, err := ListUserScheduleSwitches(username)
+	switches, err := ListUserScheduleDeviceJobs(username)
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +214,7 @@ func GetUserSchedules(username string) ([]Schedule, error) {
 		}
 
 		// Append the schedule's switches to the data
-		schedule.Data.SwitchJobs = make([]ScheduleSwitchJobData, 0)
+		schedule.Data.SwitchJobs = make([]ScheduleDeviceJobData, 0)
 		for _, swItem := range switches {
 			if swItem.ScheduleId == schedule.Id {
 				schedule.Data.SwitchJobs = append(schedule.Data.SwitchJobs, swItem.Data)
@@ -253,7 +253,7 @@ func GetSchedules() ([]Schedule, error) {
 	}
 
 	// Obtain all schedule switch jobs
-	switches, err := ListAllScheduleSwitches()
+	switches, err := ListAllScheduleDeviceJobs()
 	if err != nil {
 		return nil, err
 	}
@@ -318,7 +318,7 @@ func ModifySchedule(id uint, newData ScheduleData) error {
 		return err
 	}
 	// Perform switch diff operations
-	oldSwitches, err := ListSwitchesOfSchedule(id)
+	oldSwitches, err := ListDeviceJobsOfSchedule(id)
 	if err != nil {
 		return err
 	}
@@ -329,8 +329,8 @@ func ModifySchedule(id uint, newData ScheduleData) error {
 
 	// Remove all unused switches
 	for _, swDel := range del {
-		if err := DeleteSwitchFromSchedule(
-			swDel.SwitchId,
+		if err := DeleteDeviceJobFromSchedule(
+			swDel.DeviceId,
 			id,
 		); err != nil {
 			return err
@@ -338,9 +338,9 @@ func ModifySchedule(id uint, newData ScheduleData) error {
 	}
 	// Add all missing switches
 	for _, swAdd := range add {
-		if _, err := CreateNewScheduleSwitch(
+		if _, err := CreateNewScheduleDeviceJob(
 			id,
-			swAdd.SwitchId,
+			swAdd.DeviceId,
 			swAdd.PowerOn,
 		); err != nil {
 			return err
@@ -353,17 +353,17 @@ func ModifySchedule(id uint, newData ScheduleData) error {
 // Outputs two slices which determine which actions have to be taken to transform the old state into the new state
 // This function is used in schedule modification
 func getSwitchDiff(
-	oldSwitches []ScheduleSwitchJobData,
-	newSwitches []ScheduleSwitchJobData,
+	oldSwitches []ScheduleDeviceJobData,
+	newSwitches []ScheduleDeviceJobData,
 ) (
-	add []ScheduleSwitchJobData,
-	del []ScheduleSwitchJobData,
+	add []ScheduleDeviceJobData,
+	del []ScheduleDeviceJobData,
 ) {
 	// Determine deletions
 	for _, swOld := range oldSwitches {
 		exists := false
 		for _, swNew := range newSwitches {
-			if swNew.SwitchId == swOld.SwitchId && swNew.PowerOn == swOld.PowerOn {
+			if swNew.DeviceId == swOld.DeviceId && swNew.PowerOn == swOld.PowerOn {
 				exists = true
 				break
 			}
@@ -376,7 +376,7 @@ func getSwitchDiff(
 	for _, swNew := range newSwitches {
 		exists := false
 		for _, swOld := range oldSwitches {
-			if swOld.SwitchId == swNew.SwitchId && swOld.PowerOn == swNew.PowerOn {
+			if swOld.DeviceId == swNew.DeviceId && swOld.PowerOn == swNew.PowerOn {
 				exists = true
 				break
 			}
@@ -394,7 +394,7 @@ func getSwitchDiff(
 // Does not validate the validity of the provided Id
 func DeleteScheduleById(id uint) error {
 	// Delete all switch jobs first
-	if err := DeleteAllSwitchesFromSchedule(id); err != nil {
+	if err := DeleteAllDeviceJobsFromSchedule(id); err != nil {
 		return err
 	}
 	// Delete the actual schedule

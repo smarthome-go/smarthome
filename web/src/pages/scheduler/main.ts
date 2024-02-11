@@ -9,18 +9,20 @@ export interface Schedule {
     data: ScheduleData
 }
 
+export type ScheduleTargetMode = 'code' | 'hms' | 'devices'
+
 export interface ScheduleData {
     name: string,
     hour: number,
     minute: number,
-    targetMode: 'code' | 'hms' | 'switches'
+    targetMode: ScheduleTargetMode
     homescriptCode: string,
     homescriptTargetId: string,
-    switchJobs: SwitchJob[]
+    deviceJobs: DeviceJob[]
 }
 
-export interface SwitchJob {
-    switchId: string,
+export interface DeviceJob {
+    deviceId: string,
     powerOn: boolean
 }
 
@@ -85,9 +87,9 @@ export const schedulesLoaded: Writable<boolean> = writable(false);
 export const hmsLoaded: Writable<boolean> = writable(false)
 export const homescripts: Writable<homescript[]> = writable([])
 
-// States that switches have been loaded
-export const switchesLoaded: Writable<boolean> = writable(false)
-export const switches: Writable<SwitchResponse[]> = writable([])
+// States that devices have been loaded
+export const devicesLoaded: Writable<boolean> = writable(false)
+export const devices: Writable<SwitchResponse[]> = writable([])
 
 export const loading: Writable<boolean> = writable(false)
 

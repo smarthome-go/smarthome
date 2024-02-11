@@ -7,5 +7,5 @@ import (
 )
 
 func TestCreateSchedulerSwitchesTable(t *testing.T) {
-	assert.NoError(t, createSchedulerSwitchesTable())
+	assert.NoError(t, createSchedulerDeviceJobTable())
 }

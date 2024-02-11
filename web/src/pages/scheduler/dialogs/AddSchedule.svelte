@@ -30,7 +30,7 @@
         targetMode: "hms",
         homescriptCode: "",
         homescriptTargetId: "",
-        switchJobs: [],
+        deviceJobs: [],
     };
 
     function reset() {
@@ -41,7 +41,7 @@
             targetMode: "hms",
             homescriptCode: "",
             homescriptTargetId: "",
-            switchJobs: [],
+            deviceJobs: [],
         };
         open = false;
     }
@@ -76,8 +76,8 @@
                 timeInvalid ||
                 (data.targetMode === "code" &&
                     data.homescriptCode.length === 0) ||
-                (data.targetMode === "switches" &&
-                    data.switchJobs.length === 0)}
+                (data.targetMode === "devices" &&
+                    data.deviceJobs.length === 0)}
             use={[InitialFocus]}
             on:click={() => {
                 dispatch("add", data);

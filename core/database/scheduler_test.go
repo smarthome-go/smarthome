@@ -178,7 +178,7 @@ func TestModifyDeleteSchedule(t *testing.T) {
 				Name:       "before2",
 				Hour:       5,
 				Minute:     6,
-				TargetMode: ScheduleTargetModeSwitches,
+				TargetMode: ScheduleTargetModeDevices,
 			},
 			After: ScheduleData{
 				Name:           "after2",

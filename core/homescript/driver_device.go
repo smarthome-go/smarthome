@@ -1,4 +1,4 @@
-package drivers
+package homescript
 
 import (
 	"encoding/json"
@@ -6,19 +6,18 @@ import (
 
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/homescript"
 )
 
 type Device struct {
-	DeviceType     database.DEVICE_TYPE               `json:"type"`
-	ID             string                             `json:"id"`
-	Name           string                             `json:"name"`
-	RoomID         string                             `json:"roomId"`
-	DriverVendorID string                             `json:"vendorId"`
-	DriverModelID  string                             `json:"modelId"`
-	SingletonJSON  any                                `json:"singletonJson"`
-	HmsErrors      []homescript.HmsError              `json:"hmsErrors"`
-	Config         homescript.ConfigInfoWrapperDevice `json:"config"`
+	DeviceType     database.DEVICE_TYPE    `json:"type"`
+	ID             string                  `json:"id"`
+	Name           string                  `json:"name"`
+	RoomID         string                  `json:"roomId"`
+	DriverVendorID string                  `json:"vendorId"`
+	DriverModelID  string                  `json:"modelId"`
+	SingletonJSON  any                     `json:"singletonJson"`
+	HmsErrors      []HmsError              `json:"hmsErrors"`
+	Config         ConfigInfoWrapperDevice `json:"config"`
 
 	// Device-specific information.
 	PowerInformation    DevicePowerInformation        `json:"powerInformation"`
@@ -70,7 +69,7 @@ func EnrichDevicesList(input []database.Device) ([]Device, error) {
 			}
 		}
 
-		hmsErrors := homescript.HmsErrorsFromDiagnostics(fittingDriver.ValidationErrors)
+		hmsErrors := HmsErrorsFromDiagnostics(fittingDriver.ValidationErrors)
 		storedDeviceValue := DeviceStore[device.Id]
 
 		savedConfig, _ := value.MarshalValue(

@@ -1,4 +1,4 @@
-package drivers
+package homescript
 
 import (
 	"encoding/json"
@@ -7,7 +7,6 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/homescript"
 )
 
 type DriverTuple struct {
@@ -172,7 +171,7 @@ func ApplyTransactionOnStored(
 	transformed := oldVal
 
 	for _, field := range singletonType.ObjFields {
-		if field.Annotation == nil || field.Annotation.Ident() != homescript.DriverFieldRequiredAnnotation {
+		if field.Annotation == nil || field.Annotation.Ident() != DriverFieldRequiredAnnotation {
 			// If this field is not a `@setting`, it can never be changed from the outside.
 			continue
 		}
@@ -193,7 +192,7 @@ func filterObjFieldsWithoutSetting(input value.ValueObject, singletonType ast.Ob
 		for _, typeField := range singletonType.ObjFields {
 			if typeField.FieldName.Ident() == fieldName &&
 				typeField.Annotation != nil &&
-				typeField.Annotation.Ident() == homescript.DriverFieldRequiredAnnotation {
+				typeField.Annotation.Ident() == DriverFieldRequiredAnnotation {
 				isSetting = true
 				break
 			}

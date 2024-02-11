@@ -5,22 +5,22 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/smarthome-go/smarthome/core/drivers"
+	"github.com/smarthome-go/smarthome/core/homescript"
 )
 
-func DeviceActionHandlerFactory(action drivers.DriverActionKind) func(w http.ResponseWriter, r *http.Request) {
+func DeviceActionHandlerFactory(action homescript.DriverActionKind) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		decoder := json.NewDecoder(r.Body)
 		decoder.DisallowUnknownFields()
-		var request drivers.DeviceActionrequestBody
+		var request homescript.DeviceActionrequestBody
 		if err := decoder.Decode(&request); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 			return
 		}
 
-		res, found, validationErr, backendErr := drivers.DeviceAction(
+		res, found, validationErr, backendErr := homescript.DeviceAction(
 			action,
 			request,
 		)

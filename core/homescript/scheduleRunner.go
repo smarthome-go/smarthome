@@ -10,7 +10,7 @@ import (
 	"github.com/smarthome-go/smarthome/core/event"
 )
 
-const SCHEDULE_MAXIMUM_RUNTIME = time.Minute * 10
+const SCHEDULE_MAXIMUM_HOMESCRIPT_RUNTIME = time.Minute * 10
 
 // Executes a given scheduler
 // If the user's schedulers are currently disabled
@@ -72,7 +72,7 @@ func scheduleRunnerFunc(id uint) {
 	log.Debug(fmt.Sprintf("Schedule '%s' (%d) is executing...", job.Data.Name, id))
 	switch job.Data.TargetMode {
 	case database.ScheduleTargetModeCode:
-		ctx, cancel := context.WithTimeout(context.Background(), SCHEDULE_MAXIMUM_RUNTIME)
+		ctx, cancel := context.WithTimeout(context.Background(), SCHEDULE_MAXIMUM_HOMESCRIPT_RUNTIME)
 
 		res, _, err := HmsManager.Run(
 			HMS_PROGRAM_KIND_NORMAL,
@@ -130,7 +130,7 @@ func scheduleRunnerFunc(id uint) {
 			return
 		}
 	case database.ScheduleTargetModeHMS:
-		ctx, cancel := context.WithTimeout(context.Background(), SCHEDULE_MAXIMUM_RUNTIME)
+		ctx, cancel := context.WithTimeout(context.Background(), SCHEDULE_MAXIMUM_HOMESCRIPT_RUNTIME)
 
 		res, _, err := HmsManager.RunById(
 			HMS_PROGRAM_KIND_NORMAL,
@@ -183,33 +183,21 @@ func scheduleRunnerFunc(id uint) {
 			)
 			return
 		}
-	case database.ScheduleTargetModeSwitches:
+	case database.ScheduleTargetModeDevices:
 		for _, switchJob := range job.Data.SwitchJobs {
 			// Validate if the user still has permission to perform this power job
-			hasPermission, err := database.UserHasDevicePermission(job.Owner, switchJob.SwitchId)
+			hasPermission, err := database.UserHasDevicePermission(job.Owner, switchJob.DeviceId)
 			if err != nil {
-				log.Error("Executing schedule's switch jobs failed: ", err.Error())
-				if _, err := Notify(
-					owner.Username,
-					"Schedule Failed",
-					fmt.Sprintf("Schedule '%s' failed due to switch validation error: %s", job.Data.Name, err.Error()),
-					NotificationLevelError,
-					true,
-				); err != nil {
-					log.Error("Failed to notify user: ", err.Error())
-					return
-				}
-				event.Error(
-					"Schedule Failure",
-					fmt.Sprintf("Schedule '%d' failed. Error: %s", id, err.Error()),
-				)
+				log.Errorf("Schedule '%d' failed. Error: %s", id, err.Error())
+				return
 			}
+
 			if !hasPermission {
 				log.Warn("Executing schedule's switch jobs failed: user now lacks permission to use switch")
 				if _, err := Notify(
 					owner.Username,
 					"Schedule Failed",
-					fmt.Sprintf("Schedule '%s' failed due to lacking switch permissions: you now lack permission to use %s", job.Data.Name, switchJob.SwitchId),
+					fmt.Sprintf("Schedule '%s' failed due to lacking switch permissions: you now lack permission to use %s", job.Data.Name, switchJob.DeviceId),
 					NotificationLevelError,
 					true,
 				); err != nil {
@@ -222,12 +210,46 @@ func scheduleRunnerFunc(id uint) {
 				)
 			}
 
-			// if err := hardware.SetSwitchPowerAll(switchJob.SwitchId, switchJob.PowerOn, owner.Username); err != nil {
-			// 	log.Error(fmt.Sprintf("Failed to set schedule power: `%s`", err.Error()))
-			// 	return
-			// }
+			switchData, found, err := database.GetDeviceById(switchJob.DeviceId)
+			if err != nil {
+				log.Errorf("Schedule '%d' failed. Error: %s", id, err.Error())
+				return
+			}
 
-			// BUG: complete schedule action
+			if !found {
+				log.Errorf("Schedule '%d' is being executed even though a switch was removed. Error: %s", id, err.Error())
+				return
+			}
+
+			_, hmsErrs, err := InvokeDriverSetPower(
+				switchJob.DeviceId,
+				switchData.VendorId,
+				switchData.ModelId,
+				DriverActionPower{State: switchJob.PowerOn},
+			)
+
+			if err != nil {
+				log.Errorf("Schedule '%d' failed. Error: %s", id, err.Error())
+				return
+			}
+
+			if hmsErrs != nil {
+				if _, err := Notify(
+					owner.Username,
+					"Schedule Failed",
+					fmt.Sprintf("Schedule '%s' failed due to Homescript execution error: %s", job.Data.Name, hmsErrs[0]),
+					NotificationLevelError,
+					true,
+				); err != nil {
+					log.Error("Failed to notify user: ", err.Error())
+					return
+				}
+				event.Error(
+					"Schedule Failure",
+					fmt.Sprintf("Schedule '%d' failed. Error: %s", id, hmsErrs[0]),
+				)
+				return
+			}
 		}
 	default:
 		log.Error("Unimplemented schedule mode")

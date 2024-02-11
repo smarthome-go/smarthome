@@ -738,12 +738,12 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 					switches := value.NewNoneOption()
 
 					switch sched.Data.TargetMode {
-					case database.ScheduleTargetModeSwitches:
+					case database.ScheduleTargetModeDevices:
 						innerValues := make([]*value.Value, 0)
 
 						for _, job := range sched.Data.SwitchJobs {
 							innerValues = append(innerValues, value.NewValueObject(map[string]*value.Value{
-								"switch": value.NewValueString(job.SwitchId),
+								"switch": value.NewValueString(job.DeviceId),
 								"power":  value.NewValueBool(job.PowerOn),
 							}))
 						}

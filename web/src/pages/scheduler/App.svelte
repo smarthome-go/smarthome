@@ -14,8 +14,8 @@
         loading,
         schedules,
         schedulesLoaded,
-        switches,
-        switchesLoaded,
+        devices,
+        devicesLoaded,
     } from "./main";
     import type { ScheduleData } from "./main";
     import Schedule from "./Schedule.svelte";
@@ -59,18 +59,17 @@
         $loading = false;
     }
 
-    // Loads the user's personal switches
-    async function loadSwitches() {
+    async function loadDevices() {
         $loading = true;
         try {
-            const res = await (await fetch("/api/switch/list/personal")).json();
+            const res = await (await fetch("/api/devices/list/personal")).json();
             if (res.success !== undefined && !res.success)
                 throw Error(res.error);
 
-            $switches = res;
-            $switchesLoaded = true;
+            $devices = res;
+            $devicesLoaded = true;
         } catch (err) {
-            $createSnackbar(`Could not load switches: ${err}`);
+            $createSnackbar(`Could not load devices: ${err}`);
         }
         $loading = false;
     }
@@ -126,7 +125,7 @@
     // Load the schedules as soon as possible
     onMount(async () => {
         await loadHomescript();
-        await loadSwitches();
+        await loadDevices();
         await loadSchedules();
     });
 </script>
@@ -143,7 +142,7 @@
                     class="material-icons"
                     on:click={async () => {
                         await loadHomescript();
-                        await loadSwitches();
+                        await loadDevices();
                         await loadSchedules();
                     }}>refresh</IconButton
                 >

@@ -1,4 +1,4 @@
-package drivers
+package homescript
 
 import (
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"

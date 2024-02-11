@@ -11,7 +11,7 @@
     import { createSnackbar } from "../../../global";
     import { onMount } from "svelte";
     import { loading } from "../main";
-    import type { Schedule, ScheduleData, SwitchJob } from "../main";
+    import type { Schedule, ScheduleData, DeviceJob } from "../main";
     import Inputs from "./Inputs.svelte";
 
     export let open = false;
@@ -30,7 +30,7 @@
             targetMode: "hms",
             homescriptCode: "",
             homescriptTargetId: "",
-            switchJobs: [],
+            deviceJobs: [],
         },
     };
 
@@ -41,16 +41,16 @@
         targetMode: "hms",
         homescriptCode: "",
         homescriptTargetId: "",
-        switchJobs: [],
+        deviceJobs: [],
     };
 
     function reset() {
         // Manually copy the entire array because JS creates implicit pointers here
-        let switchJobsTemp: SwitchJob[] = [];
-        for (let sw of dataBefore.switchJobs)
-            switchJobsTemp.push({
-                switchId: sw.switchId,
-                powerOn: sw.powerOn,
+        let deviceJobsTemp: DeviceJob[] = [];
+        for (let job of dataBefore.deviceJobs)
+            deviceJobsTemp.push({
+                deviceId: job.deviceId,
+                powerOn: job.powerOn,
             });
 
         data.data = {
@@ -60,16 +60,16 @@
             targetMode: dataBefore.targetMode,
             homescriptCode: dataBefore.homescriptCode,
             homescriptTargetId: dataBefore.homescriptTargetId,
-            switchJobs: switchJobsTemp,
+            deviceJobs: deviceJobsTemp,
         };
     }
 
     function upDatePrevious() {
         // Manually copy the entire array because JS creates implicit pointers here
-        let switchJobsTemp: SwitchJob[] = [];
-        for (let sw of data.data.switchJobs)
-            switchJobsTemp.push({
-                switchId: sw.switchId,
+        let deviceJobsTemp: DeviceJob[] = [];
+        for (let sw of data.data.deviceJobs)
+            deviceJobsTemp.push({
+                deviceId: sw.deviceId,
                 powerOn: sw.powerOn,
             });
 
@@ -80,7 +80,7 @@
             targetMode: data.data.targetMode,
             homescriptCode: data.data.homescriptCode,
             homescriptTargetId: data.data.homescriptTargetId,
-            switchJobs: switchJobsTemp,
+            deviceJobs: deviceJobsTemp,
         };
     }
 

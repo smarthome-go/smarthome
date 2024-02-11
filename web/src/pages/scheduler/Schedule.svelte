@@ -4,7 +4,7 @@
     import { createEventDispatcher, onMount } from "svelte";
     import ConfirmDeletion from "./dialogs/ConfirmDeletion.svelte";
     import EditSchedule from "./dialogs/EditSchedule.svelte";
-    import { timeUntilExecutionText, switches, homescripts } from "./main";
+    import { timeUntilExecutionText, devices, homescripts } from "./main";
     import type { Schedule } from "./main";
     import Progress from "../../components/Progress.svelte";
 
@@ -92,8 +92,8 @@
             {:else if data.data.targetMode === "code"}
                 Target: Code
                 <i class="material-icons">code</i>
-            {:else if data.data.targetMode === "switches"}
-                Target: Switches
+            {:else if data.data.targetMode === "devices"}
+                Target: Device Power
                 <i class="material-icons">power</i>
             {/if}
         </span>
@@ -147,15 +147,15 @@
                         {/await}
                     </span>
                 </div>
-            {:else if data.data.targetMode === "switches"}
+            {:else if data.data.targetMode === "devices"}
                 <div class="schedule__target__switches">
-                    {#each data.data.switchJobs as sw (sw.switchId)}
+                    {#each data.data.deviceJobs as job (job.deviceId)}
                         <div
                             class="schedule__target__switches__switch"
-                            class:on={sw.powerOn}
+                            class:on={job.powerOn}
                         >
                             <span>
-                                {$switches.find((s) => s.id === sw.switchId)
+                                {$devices.find((device) => device.id === job.deviceId)
                                     .name}
                             </span>
                         </div>

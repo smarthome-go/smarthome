@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/drivers"
 	"github.com/smarthome-go/smarthome/core/homescript"
 )
 
@@ -38,7 +37,7 @@ func ModifyHomescriptCode(id string, owner string, newCode string) (found bool, 
 			return false, validationErr
 		}
 
-		return drivers.ModifyCode(driver.VendorId, driver.ModelId, newCode)
+		return homescript.ModifyCode(driver.VendorId, driver.ModelId, newCode)
 	default:
 		panic(fmt.Sprintf("BUG warning: a new Homescript type was added without updating this code"))
 	}

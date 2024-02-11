@@ -8,7 +8,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/drivers"
+	"github.com/smarthome-go/smarthome/core/homescript"
 )
 
 type DeviceDriverRequest struct {
@@ -17,8 +17,8 @@ type DeviceDriverRequest struct {
 }
 
 type ConfigureDriverRequest struct {
-	Driver drivers.DriverTuple `json:"driver"`
-	Data   interface{}         `json:"data"`
+	Driver homescript.DriverTuple `json:"driver"`
+	Data   interface{}            `json:"data"`
 }
 
 type DeviceDriverAddRequest struct {
@@ -31,7 +31,7 @@ type DeviceDriverAddRequest struct {
 
 func ListDeviceDrivers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	drivers, err := drivers.ListDriversWithStoredConfig()
+	drivers, err := homescript.ListDriversWithStoredConfig()
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to list device drivers", Error: "database error"})
@@ -101,7 +101,7 @@ func CreateDeviceDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, dbErr = drivers.ParseDriverVersion(request.Version)
+	_, dbErr = homescript.ParseDriverVersion(request.Version)
 	if dbErr != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		Res(w, Response{
@@ -111,7 +111,7 @@ func CreateDeviceDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hmsErr, dbErr := drivers.Create(
+	hmsErr, dbErr := homescript.Create(
 		request.VendorId,
 		request.ModelId,
 		request.Name,
@@ -155,7 +155,7 @@ func ModifyDeviceDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := drivers.ParseDriverVersion(request.Version)
+	_, err := homescript.ParseDriverVersion(request.Version)
 	if err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		Res(w, Response{
@@ -198,7 +198,7 @@ func ConfigureDeviceDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	found, validationErr, dbErr := drivers.ValidateDriverConfigurationChange(
+	found, validationErr, dbErr := homescript.ValidateDriverConfigurationChange(
 		request.Driver.VendorID,
 		request.Driver.ModelID,
 		request.Data,
@@ -226,7 +226,7 @@ func ConfigureDeviceDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if dbErr = drivers.StoreDriverSingletonConfigUpdate(
+	if dbErr = homescript.StoreDriverSingletonConfigUpdate(
 		request.Driver.VendorID,
 		request.Driver.ModelID,
 		request.Data,

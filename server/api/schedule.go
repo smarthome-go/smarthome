@@ -90,7 +90,7 @@ func CreateNewSchedule(w http.ResponseWriter, r *http.Request) {
 			Res(w, Response{Success: false, Message: "failed to modify schedule", Error: fmt.Sprintf("Homescript `%s` has disabled scheduler selection", request.HomescriptTargetId)})
 			return
 		}
-	case database.ScheduleTargetModeSwitches:
+	case database.ScheduleTargetModeDevices:
 		// Validate that the switchActions only contain valid switches
 
 		// Only one switch action per switch is allowed
@@ -99,7 +99,7 @@ func CreateNewSchedule(w http.ResponseWriter, r *http.Request) {
 
 		for _, switchItem := range request.SwitchJobs {
 			// Validate that the switch is valid and accessible
-			found, err := database.UserHasDevicePermission(username, switchItem.SwitchId)
+			found, err := database.UserHasDevicePermission(username, switchItem.DeviceId)
 			if err != nil {
 				w.WriteHeader(http.StatusServiceUnavailable)
 				Res(w, Response{Success: false, Message: "failed to validate `switchJobs`", Error: "database failure"})
@@ -107,20 +107,20 @@ func CreateNewSchedule(w http.ResponseWriter, r *http.Request) {
 			}
 			if !found {
 				w.WriteHeader(http.StatusBadRequest)
-				Res(w, Response{Success: false, Message: "failed to create new schedule", Error: fmt.Sprintf("invalid switch id:`%s`", switchItem.SwitchId)})
+				Res(w, Response{Success: false, Message: "failed to create new schedule", Error: fmt.Sprintf("invalid switch id:`%s`", switchItem.DeviceId)})
 				return
 			}
 
 			// Check if the switch already exists
 			for _, existentSwitch := range existentSwitches {
-				if existentSwitch == switchItem.SwitchId {
+				if existentSwitch == switchItem.DeviceId {
 					w.WriteHeader(http.StatusBadRequest)
-					Res(w, Response{Success: false, Message: "failed to create new schedule", Error: fmt.Sprintf("second occurrence of switch `%s`: only one entry per switch-id allowed", switchItem.SwitchId)})
+					Res(w, Response{Success: false, Message: "failed to create new schedule", Error: fmt.Sprintf("second occurrence of switch `%s`: only one entry per switch-id allowed", switchItem.DeviceId)})
 					return
 				}
 			}
 			// Append to the existent switches
-			existentSwitches = append(existentSwitches, switchItem.SwitchId)
+			existentSwitches = append(existentSwitches, switchItem.DeviceId)
 		}
 	case database.ScheduleTargetModeCode:
 		// Nothing is validated (could validate Homescript via lint but is omitted)
@@ -194,7 +194,7 @@ func ModifySchedule(w http.ResponseWriter, r *http.Request) {
 			Res(w, Response{Success: false, Message: "failed to modify schedule", Error: fmt.Sprintf("Homescript `%s` has disabled scheduler selection", request.Data.HomescriptTargetId)})
 			return
 		}
-	case database.ScheduleTargetModeSwitches:
+	case database.ScheduleTargetModeDevices:
 		// Validate that the switchActions only contain valid switches
 
 		// Only one switch action per switch is allowed
@@ -203,7 +203,7 @@ func ModifySchedule(w http.ResponseWriter, r *http.Request) {
 
 		for _, switchItem := range request.Data.SwitchJobs {
 			// Validate that the switch is valid and accessible
-			found, err := database.UserHasDevicePermission(username, switchItem.SwitchId)
+			found, err := database.UserHasDevicePermission(username, switchItem.DeviceId)
 			if err != nil {
 				w.WriteHeader(http.StatusServiceUnavailable)
 				Res(w, Response{Success: false, Message: "failed to validate `switchJobs`", Error: "database failure"})
@@ -211,20 +211,20 @@ func ModifySchedule(w http.ResponseWriter, r *http.Request) {
 			}
 			if !found {
 				w.WriteHeader(http.StatusBadRequest)
-				Res(w, Response{Success: false, Message: "failed to modify schedule", Error: fmt.Sprintf("invalid switch id:`%s`", switchItem.SwitchId)})
+				Res(w, Response{Success: false, Message: "failed to modify schedule", Error: fmt.Sprintf("invalid switch id:`%s`", switchItem.DeviceId)})
 				return
 			}
 
 			// Check if the switch already exists
 			for _, existentSwitch := range existentSwitches {
-				if existentSwitch == switchItem.SwitchId {
+				if existentSwitch == switchItem.DeviceId {
 					w.WriteHeader(http.StatusBadRequest)
-					Res(w, Response{Success: false, Message: "failed to modify schedule", Error: fmt.Sprintf("second occurrence of switch `%s`: only one entry per switch-id allowed", switchItem.SwitchId)})
+					Res(w, Response{Success: false, Message: "failed to modify schedule", Error: fmt.Sprintf("second occurrence of switch `%s`: only one entry per switch-id allowed", switchItem.DeviceId)})
 					return
 				}
 			}
 			// Append to the existent switches
-			existentSwitches = append(existentSwitches, switchItem.SwitchId)
+			existentSwitches = append(existentSwitches, switchItem.DeviceId)
 		}
 	case database.ScheduleTargetModeCode:
 		// Nothing is validated (could validate Homescript via lint but is omitted)

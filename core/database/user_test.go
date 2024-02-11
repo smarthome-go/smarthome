@@ -55,7 +55,7 @@ func createUserMockData() error {
 			TargetMode:         ScheduleTargetModeCode,
 			HomescriptCode:     "print('Hello World!')",
 			HomescriptTargetId: "",
-			SwitchJobs:         make([]ScheduleSwitchJobData, 0),
+			SwitchJobs:         make([]ScheduleDeviceJobData, 0),
 		},
 	); err != nil {
 		return err

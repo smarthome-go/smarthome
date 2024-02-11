@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/drivers"
 	"github.com/smarthome-go/smarthome/core/hardware"
 	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/services/reminder"
@@ -15,7 +14,7 @@ func Init(config database.ServerConfig) error {
 	homescript.InitManager()
 
 	// Homescript driver value cache initialization
-	if err := drivers.PopulateValueCache(); err != nil {
+	if err := homescript.PopulateValueCache(); err != nil {
 		return err
 	}
 

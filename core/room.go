@@ -2,13 +2,13 @@ package core
 
 import (
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/drivers"
+	"github.com/smarthome-go/smarthome/core/homescript"
 )
 
 type Room struct {
-	Data    database.RoomData `json:"data"`
-	Devices []drivers.Device  `json:"devices"`
-	Cameras []database.Camera `json:"cameras"`
+	Data    database.RoomData   `json:"data"`
+	Devices []homescript.Device `json:"devices"`
+	Cameras []database.Camera   `json:"cameras"`
 }
 
 // Returns a complete list of rooms, includes its metadata like devices and cameras
@@ -19,7 +19,7 @@ func ListAllRoomsWithData(redactCameraUrl bool) ([]Room, error) {
 	}
 
 	// Get all devices.
-	devices, err := drivers.ListAllDevices()
+	devices, err := homescript.ListAllDevices()
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func ListAllRoomsWithData(redactCameraUrl bool) ([]Room, error) {
 
 	outputRooms := make([]Room, 0)
 	for _, room := range rooms {
-		devicesTemp := make([]drivers.Device, 0)
+		devicesTemp := make([]homescript.Device, 0)
 		camerasTemp := make([]database.Camera, 0)
 
 		// Add all devices of the current room
@@ -70,7 +70,7 @@ func ListPersonalRoomsWithData(username string) ([]Room, error) {
 	}
 
 	// Get the user's devices.
-	devices, err := drivers.ListPersonalDevices(username)
+	devices, err := homescript.ListPersonalDevices(username)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func ListPersonalRoomsWithData(username string) ([]Room, error) {
 
 	outputRooms := make([]Room, 0)
 	for _, room := range rooms {
-		devicesTemp := make([]drivers.Device, 0)
+		devicesTemp := make([]homescript.Device, 0)
 		camerasTemp := make([]database.Camera, 0)
 
 		// Add every device which is in the current room

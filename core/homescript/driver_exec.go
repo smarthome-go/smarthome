@@ -1,4 +1,4 @@
-package drivers
+package homescript
 
 import (
 	"bytes"
@@ -11,7 +11,6 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/runtime"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/homescript"
 )
 
 type DriverContext struct {
@@ -57,10 +56,10 @@ func invokeDriverGeneric(
 	vendorId,
 	modelId string,
 	functionInvocation FunctionCall,
-) (homescript.HmsRunResultContext, []homescript.HmsError, error) {
+) (HmsRunResultContext, []HmsError, error) {
 	driver, found, err := database.GetDeviceDriver(vendorId, modelId)
 	if err != nil {
-		return homescript.HmsRunResultContext{}, nil, err
+		return HmsRunResultContext{}, nil, err
 	}
 
 	if !found {
@@ -82,7 +81,7 @@ func invokeDriverGeneric(
 	if !found {
 		panic(fmt.Sprintf("Driver singleton of driver `%s:%s` not found in store", vendorId, modelId))
 	}
-	contextSingletons[homescript.DriverSingletonIdent] = driverSingleton
+	contextSingletons[DriverSingletonIdent] = driverSingleton
 
 	// Load device singleton if possible.
 	var deviceSingleton value.Value
@@ -92,20 +91,20 @@ func invokeDriverGeneric(
 		if !found {
 			panic(fmt.Sprintf("Device singleton of `%s` not found in store", deviceId))
 		}
-		contextSingletons[homescript.DriverDeviceSingletonIdent] = deviceSingleton
+		contextSingletons[DriverDeviceSingletonIdent] = deviceSingleton
 	}
 
 	// TODO: load corresponding device singleton.
-	hmsRes, resultContext, err := homescript.HmsManager.Run(
-		homescript.HMS_PROGRAM_KIND_DEVICE_DRIVER,
-		&homescript.AnalyzerDriverMetadata{
+	hmsRes, resultContext, err := HmsManager.Run(
+		HMS_PROGRAM_KIND_DEVICE_DRIVER,
+		&AnalyzerDriverMetadata{
 			VendorID: vendorId,
 			ModelID:  modelId,
 		},
 		"", // TODO: fix username requirement.
 		&filename,
 		driver.HomescriptCode,
-		homescript.InitiatorAPI,
+		InitiatorAPI,
 		cancelCtx,
 		cancelFunc,
 		nil,
@@ -117,11 +116,11 @@ func invokeDriverGeneric(
 	)
 
 	if err != nil {
-		return homescript.HmsRunResultContext{}, nil, err
+		return HmsRunResultContext{}, nil, err
 	}
 
 	if !hmsRes.Success {
-		errors := make([]homescript.HmsError, 0)
+		errors := make([]HmsError, 0)
 
 		// Filter out any non-error messages.
 		for _, d := range hmsRes.Errors {
@@ -131,26 +130,26 @@ func invokeDriverGeneric(
 			errors = append(errors, d)
 		}
 
-		return homescript.HmsRunResultContext{}, errors, nil
+		return HmsRunResultContext{}, errors, nil
 	}
 
 	// Get driver and device singleton.
-	driverSingletonAfter, found := resultContext.Singletons[homescript.DriverSingletonIdent]
+	driverSingletonAfter, found := resultContext.Singletons[DriverSingletonIdent]
 	if !found {
-		panic(fmt.Sprintf("Driver singleton (`%s`) not found after driver execution", homescript.DriverSingletonIdent))
+		panic(fmt.Sprintf("Driver singleton (`%s`) not found after driver execution", DriverSingletonIdent))
 	}
 
 	// Save driver singleton state after VM has terminated.
 	driverMarshaled, _ := value.MarshalValue(driverSingletonAfter, false)
 	if err := StoreDriverSingletonConfigUpdate(driver.VendorId, driver.ModelId, driverMarshaled); err != nil {
-		return homescript.HmsRunResultContext{}, nil, err
+		return HmsRunResultContext{}, nil, err
 	}
 
 	// Save device singleton state after VM has terminated (if device was even loaded).
 	if driverCtx.DeviceId != nil {
 		deviceMarshaled, _ := value.MarshalValue(deviceSingleton, false)
 		if err := StoreDeviceSingletonConfigUpdate(*driverCtx.DeviceId, deviceMarshaled); err != nil {
-			return homescript.HmsRunResultContext{}, nil, err
+			return HmsRunResultContext{}, nil, err
 		}
 	}
 
@@ -178,7 +177,7 @@ type DriverInvocationIDs struct {
 func InvokeDriverFunc(
 	ids DriverInvocationIDs,
 	call FunctionCall,
-) (homescript.HmsRunResultContext, []homescript.HmsError, error) {
+) (HmsRunResultContext, []HmsError, error) {
 	// TODO: add context support
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -194,7 +193,7 @@ func InvokeDriverFunc(
 	)
 
 	if dbErr != nil || hmsErrs != nil {
-		return homescript.HmsRunResultContext{}, hmsErrs, dbErr
+		return HmsRunResultContext{}, hmsErrs, dbErr
 	}
 
 	return runResult, nil, nil
@@ -202,15 +201,15 @@ func InvokeDriverFunc(
 
 func InvokeDriverReportPowerState(
 	ids DriverInvocationIDs,
-) (DriverActionGetPowerStateOutput, []homescript.HmsError, error) {
+) (DriverActionGetPowerStateOutput, []HmsError, error) {
 	ret, hmsErrs, err := InvokeDriverFunc(
 		ids,
 		FunctionCall{
 			Invocation: runtime.FunctionInvocation{
-				Function: homescript.DeviceFunctionReportPowerState,
+				Function: DeviceFunctionReportPowerState,
 				Args:     []value.Value{},
 				FunctionSignature: runtime.FunctionInvocationSignatureFromType(
-					homescript.DeviceReportPowerStateSignature(errors.Span{}).Signature,
+					DeviceReportPowerStateSignature(errors.Span{}).Signature,
 				),
 			},
 		},
@@ -227,15 +226,15 @@ func InvokeDriverReportPowerState(
 
 func InvokeDriverReportPowerDraw(
 	ids DriverInvocationIDs,
-) (DriverActionGetPowerDrawOutput, []homescript.HmsError, error) {
+) (DriverActionGetPowerDrawOutput, []HmsError, error) {
 	ret, hmsErrs, err := InvokeDriverFunc(
 		ids,
 		FunctionCall{
 			Invocation: runtime.FunctionInvocation{
-				Function: homescript.DeviceFunctionReportPowerDraw,
+				Function: DeviceFunctionReportPowerDraw,
 				Args:     []value.Value{},
 				FunctionSignature: runtime.FunctionInvocationSignatureFromType(
-					homescript.DeviceReportPowerDrawSignature(errors.Span{}).Signature,
+					DeviceReportPowerDrawSignature(errors.Span{}).Signature,
 				),
 			},
 		},
@@ -248,15 +247,15 @@ func InvokeDriverReportPowerDraw(
 	wattsRaw := ret.ReturnValue.(value.ValueInt).Inner
 	if wattsRaw < 0 {
 		return DriverActionGetPowerDrawOutput{Watts: 0},
-			[]homescript.HmsError{
+			[]HmsError{
 				{
 					SyntaxError:     nil,
 					DiagnosticError: nil,
-					RuntimeInterrupt: &homescript.HmsRuntimeInterrupt{
+					RuntimeInterrupt: &HmsRuntimeInterrupt{
 						Kind: "driver",
 						Message: fmt.Sprintf(
 							"Device function `%s` should return positive power consumption but returned %d",
-							homescript.DeviceFunctionReportPowerDraw,
+							DeviceFunctionReportPowerDraw,
 							wattsRaw,
 						),
 					},
@@ -275,7 +274,7 @@ func InvokeDriverSetPower(
 	vendorID,
 	modelID string,
 	powerAction DriverActionPower,
-) (DriverActionPowerOutput, []homescript.HmsError, error) {
+) (DriverActionPowerOutput, []HmsError, error) {
 	// TODO: add context support
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -289,12 +288,12 @@ func InvokeDriverSetPower(
 		modelID,
 		FunctionCall{
 			Invocation: runtime.FunctionInvocation{
-				Function: homescript.DeviceFuncionSetPower,
+				Function: DeviceFuncionSetPower,
 				Args: []value.Value{
 					*value.NewValueBool(powerAction.State), // TODO: test this by providing an int for instance.
 				},
 				FunctionSignature: runtime.FunctionInvocationSignatureFromType(
-					homescript.DeviceSetPowerSignature(errors.Span{}).Signature,
+					DeviceSetPowerSignature(errors.Span{}).Signature,
 				),
 			},
 		},
@@ -332,15 +331,15 @@ func normalizeRange(input value.ValueRange) (lower, upper int64) {
 
 func InvokeDriverReportDimmable(
 	ids DriverInvocationIDs,
-) ([]DriverActionReportDimOutput, []homescript.HmsError, error) {
+) ([]DriverActionReportDimOutput, []HmsError, error) {
 	ret, hmsErrs, err := InvokeDriverFunc(
 		ids,
 		FunctionCall{
 			Invocation: runtime.FunctionInvocation{
-				Function: homescript.DeviceFunctionReportDim,
+				Function: DeviceFunctionReportDim,
 				Args:     []value.Value{},
 				FunctionSignature: runtime.FunctionInvocationSignatureFromType(
-					homescript.DeviceReportDimSignature(errors.Span{}).Signature,
+					DeviceReportDimSignature(errors.Span{}).Signature,
 				),
 			},
 		},
@@ -356,23 +355,23 @@ func InvokeDriverReportDimmable(
 	for idx, currentListElement := range values {
 		fields := (*currentListElement).(value.ValueObject).FieldsInternal
 
-		value_ := (*fields[homescript.ReportDimTypeValueIdent]).(value.ValueInt).Inner
-		label := (*fields[homescript.ReportDimTypeLabelIdent]).(value.ValueString).Inner
-		range_ := (*fields[homescript.ReportDimTypeRangeIdent]).(value.ValueRange)
+		value_ := (*fields[ReportDimTypeValueIdent]).(value.ValueInt).Inner
+		label := (*fields[ReportDimTypeLabelIdent]).(value.ValueString).Inner
+		range_ := (*fields[ReportDimTypeRangeIdent]).(value.ValueRange)
 
 		lower, upper := normalizeRange(range_)
 
 		if value_ < lower || value_ > upper {
 			return nil,
-				[]homescript.HmsError{
+				[]HmsError{
 					{
 						SyntaxError:     nil,
 						DiagnosticError: nil,
-						RuntimeInterrupt: &homescript.HmsRuntimeInterrupt{
+						RuntimeInterrupt: &HmsRuntimeInterrupt{
 							Kind: "driver",
 							Message: fmt.Sprintf(
 								"Device function `%s` should return value in dimmable range(%d..%d) but returned %d for label `%s`",
-								homescript.DeviceFunctionReportDim,
+								DeviceFunctionReportDim,
 								lower,
 								upper,
 								value_,
@@ -402,7 +401,7 @@ func InvokeDriverDim(
 	vendorID,
 	modelID string,
 	dimAction DriverActionDim,
-) (DriverActionPowerOutput, []homescript.HmsError, error) {
+) (DriverActionPowerOutput, []HmsError, error) {
 	// TODO: add context support
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -416,13 +415,13 @@ func InvokeDriverDim(
 		modelID,
 		FunctionCall{
 			Invocation: runtime.FunctionInvocation{
-				Function: homescript.DeviceFuncionSetDim,
+				Function: DeviceFuncionSetDim,
 				Args: []value.Value{
 					*value.NewValueString(dimAction.Label), // TODO: test this by providing an int for instance.
 					*value.NewValueInt(dimAction.Value),    // TODO: test this by providing an int for instance.
 				},
 				FunctionSignature: runtime.FunctionInvocationSignatureFromType(
-					homescript.DeviceDimSignature(errors.Span{}).Signature,
+					DeviceDimSignature(errors.Span{}).Signature,
 				),
 			},
 		},

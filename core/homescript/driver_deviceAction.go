@@ -1,11 +1,10 @@
-package drivers
+package homescript
 
 import (
 	"errors"
 	"fmt"
 
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/homescript"
 )
 
 //
@@ -40,7 +39,7 @@ type DriverDimInput struct {
 
 type ActionResponse struct {
 	Success   bool                      `json:"success"`
-	HmsErrors []homescript.HmsError     `json:"hmsErrors"`
+	HmsErrors []HmsError                `json:"hmsErrors"`
 	Output    DriverActionOutputPayload `json:"output"`
 }
 
@@ -56,7 +55,7 @@ func DeviceAction(action DriverActionKind, body DeviceActionrequestBody) (
 	}
 
 	var out DriverActionOutputPayload
-	var hmsErrs []homescript.HmsError
+	var hmsErrs []HmsError
 
 	// Invoke driver.
 	switch action {

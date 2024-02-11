@@ -8,10 +8,10 @@
     export let icon = "code";
 
     // Bound to the `HMSInputs` active mode
-    export let active: "hms" | "switches" | "code" = "hms";
+    export let active: ScheduleTargetMode  = "hms";
 
     // Bound to the active mode inside the schedule's HMS-code
-    export let activeInCode: "hms" | "switches" | "code" = "hms";
+    export let activeInCode: ScheduleTargetMode = "hms";
 </script>
 
 <div class="warning">
