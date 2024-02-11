@@ -147,24 +147,24 @@ docker: cleanall web docker-prepare
 	docker buildx create --use
 
 	sudo docker buildx build \
-		-t docker_repo:$(version)-arm \
-		-t docker_repo:latest-arm \
+		-t $(docker_repo):$(version)-arm \
+		-t $(docker_repo):latest-arm \
 		--platform=linux/arm \
 		--load \
 		-f ./docker/container/Dockerfile \
 		./docker/container/
 
 	sudo docker buildx build \
-		-t docker_repo:$(version)-arm64 \
-		-t docker_repo:latest-arm64 \
+		-t $(docker_repo):$(version)-arm64 \
+		-t $(docker_repo):latest-arm64 \
 		--platform=linux/arm64 \
 		--load \
 		-f ./docker/container/Dockerfile \
 		./docker/container/
 
 	docker buildx build \
-		-t docker_repo:$(version)-amd64 \
-		-t docker_repo:latest-amd64 \
+		-t $(docker_repo):$(version)-amd64 \
+		-t $(docker_repo):latest-amd64 \
 		--platform=linux/amd64 \
 		--load \
 		-f ./docker/container/Dockerfile \
