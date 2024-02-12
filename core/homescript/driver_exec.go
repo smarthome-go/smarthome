@@ -288,7 +288,7 @@ func InvokeDriverSetPower(
 		modelID,
 		FunctionCall{
 			Invocation: runtime.FunctionInvocation{
-				Function: DeviceFuncionSetPower,
+				Function: DeviceFunctionSetPower,
 				Args: []value.Value{
 					*value.NewValueBool(powerAction.State), // TODO: test this by providing an int for instance.
 				},
@@ -415,7 +415,7 @@ func InvokeDriverDim(
 		modelID,
 		FunctionCall{
 			Invocation: runtime.FunctionInvocation{
-				Function: DeviceFuncionSetDim,
+				Function: DeviceFunctionSetDim,
 				Args: []value.Value{
 					*value.NewValueString(dimAction.Label), // TODO: test this by providing an int for instance.
 					*value.NewValueInt(dimAction.Value),    // TODO: test this by providing an int for instance.

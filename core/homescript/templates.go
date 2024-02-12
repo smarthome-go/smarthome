@@ -70,8 +70,8 @@ func driverTemplate(span errors.Span) DriverTemplate {
 const DeviceFunctionValidate = "validate_device"
 const DeviceFunctionReportPowerState = "report_power"
 const DeviceFunctionReportPowerDraw = "report_power_draw"
-const DeviceFuncionSetPower = "set_power"
-const DeviceFuncionSetDim = "dim"
+const DeviceFunctionSetPower = "set_power"
+const DeviceFunctionSetDim = "dim"
 const DeviceFunctionReportDim = "report_dim"
 const DeviceFunctionDim = "dim"
 
@@ -199,9 +199,9 @@ func deviceTemplate(span errors.Span) DeviceTemplate {
 				DeviceFunctionValidate:         deviceValidateDeviceSignature(span),
 				DeviceFunctionReportPowerState: DeviceReportPowerStateSignature(span),
 				DeviceFunctionReportPowerDraw:  DeviceReportPowerDrawSignature(span),
-				DeviceFuncionSetPower:          DeviceSetPowerSignature(span),
+				DeviceFunctionSetPower:         DeviceSetPowerSignature(span),
 				DeviceFunctionReportDim:        DeviceReportDimSignature(span),
-				DeviceFuncionSetDim:            DeviceDimSignature(span),
+				DeviceFunctionSetDim:           DeviceDimSignature(span),
 			},
 			Capabilities: map[string]ast.TemplateCapability{
 				DefaultCapabilityName: {
@@ -211,13 +211,13 @@ func deviceTemplate(span errors.Span) DeviceTemplate {
 				"dimmable": {
 					RequiresMethods: []string{
 						DeviceFunctionReportDim,
-						DeviceFuncionSetDim,
+						DeviceFunctionSetDim,
 					},
 					ConflictsWithCapabilities: []ast.TemplateConflict{},
 				},
 				"power": {
 					RequiresMethods: []string{
-						DeviceFuncionSetPower,
+						DeviceFunctionSetPower,
 						DeviceFunctionReportPowerState,
 						DeviceFunctionReportPowerDraw,
 					},

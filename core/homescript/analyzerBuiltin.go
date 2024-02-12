@@ -83,7 +83,7 @@ type Template interface {
 
 type DeviceTemplate struct {
 	Spec ast.TemplateSpec
-	// Maks the HMS capability identifier to a `DriverCapability`.
+	// Makes the HMS capability identifier to a `DriverCapability`.
 	Capabilities map[string]DeviceCapability
 }
 
@@ -97,7 +97,7 @@ func (self DeviceTemplate) GetSpec() ast.TemplateSpec {
 
 type DriverTemplate struct {
 	Spec ast.TemplateSpec
-	// Maks the HMS capability identifier to a `DriverCapability`.
+	// Makes the HMS capability identifier to a `DriverCapability`.
 	Capabilities map[string]DriverCapability
 }
 
