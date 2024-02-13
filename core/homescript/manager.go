@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/sirupsen/logrus"
 	"github.com/smarthome-go/homescript/v3/homescript"
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
 	"github.com/smarthome-go/homescript/v3/homescript/compiler"
@@ -17,11 +19,15 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 )
 
+const maxLinesErrMessage = 20
 const KillEventFunction = "kill"
 const KillEventMaxRuntime = 5 * time.Second
 
-// this can be decremented if a script uses too many resources
-const CALL_STACK_LIMIT_SIZE = 2048
+var VM_LIMITS = runtime.CoreLimits{
+	CallStackMaxSize: 128,
+	StackMaxSize:     512,
+	MaxMemorySize:    4096,
+}
 
 type HomescriptInitiator uint8
 
@@ -205,6 +211,8 @@ func resolveFileContentsOfErrors(
 		fileContents[err.Span.Filename] = script.Data.Code
 	}
 
+	fileContents[mainModuleFilename] = mainModuleCode
+
 	return fileContents, nil
 }
 
@@ -383,11 +391,7 @@ func (m *Manager) Run(
 		&cancelCtx,
 		&cancelCtxFunc,
 		interpreterScopeAdditions(),
-		runtime.CoreLimits{
-			CallStackMaxSize: 10000, // TODO: Make limits dynamic?
-			StackMaxSize:     10000,
-			MaxMemorySize:    10000,
-		},
+		VM_LIMITS,
 	)
 
 	// supportsKill := modules[entryModuleName].SupportsEvent("kill")
@@ -478,7 +482,27 @@ func (m *Manager) Run(
 
 			fileContents = fileContentsTemp
 
-			log.Debug(fmt.Sprintf("Homescript '%s' of user '%s' failed: %s", entryModuleName, username, errors[0]))
+			d := diagnostic.Diagnostic{
+				Level:   diagnostic.DiagnosticLevelError,
+				Message: errors[0].String(),
+				Notes:   []string{},
+				Span:    span,
+			}
+
+			errMsg := ""
+			if log.GetLevel() == logrus.TraceLevel {
+				errMsg = d.Display(fileContentsTemp[errors[0].Span.Filename])
+				if len(errMsg) > maxLinesErrMessage {
+					split := strings.Split(errMsg, "\n")
+					errMsg = fmt.Sprintf("%s\n<%d more lines>", strings.Join(split[0:maxLinesErrMessage], "\n"), len(split)-maxLinesErrMessage)
+				}
+			} else {
+				errMsg = errors[0].String()
+			}
+
+			log.Trace()
+
+			log.Debug(fmt.Sprintf("Homescript '%s' of user '%s' failed: %s", entryModuleName, username, errMsg))
 		}
 
 		return HmsRes{
@@ -640,6 +664,7 @@ func (m *Manager) killJob(job Job) {
 	_, killFnExists := job.Vm.Program.Mappings.Functions[KillEventFunction]
 	canceled := false
 	cancelMtx := sync.Mutex{}
+
 	if killFnExists {
 		// Give timeout of 10 secs
 		go func() {
@@ -665,6 +690,8 @@ func (m *Manager) killJob(job Job) {
 		cancelMtx.Lock()
 		canceled = true
 		cancelMtx.Unlock()
+	} else {
+		job.CancelCtx()
 	}
 
 	log.Trace("Successfully dispatched sigTerm to HMS interpreter channel")
