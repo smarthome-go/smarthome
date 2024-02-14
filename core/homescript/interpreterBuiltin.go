@@ -186,36 +186,100 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				}), nil
 			}), true
 		}
-	case "switch":
+	case "device":
 		switch toImport {
-		case "get_switch":
-			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
-				sw, found, err := database.GetDeviceById(args[0].(value.ValueString).Inner)
+		// case "get_switch":
+		// 	return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
+		// 		sw, found, err := database.GetDeviceById(args[0].(value.ValueString).Inner)
+		// 		if err != nil {
+		// 			return nil, value.NewVMFatalException(
+		// 				err.Error(),
+		// 				value.Vm_HostErrorKind,
+		// 				span,
+		// 			)
+		// 		}
+		//
+		// 		if !found {
+		// 			return value.NewNoneOption(), nil
+		// 		}
+		//
+		// 		return value.NewValueOption(value.NewValueObject(map[string]*value.Value{
+		// 			"name":      value.NewValueString(sw.Name),
+		// 			"room_id":   value.NewValueString(sw.RoomId),
+		// 			"vendor_id": value.NewValueString(sw.VendorId),
+		// 			"model_id":  value.NewValueString(sw.VendorId),
+		// 		})), nil
+		// 	}), true
+		case "set_power":
+			return *value.NewValueBuiltinFunction(func(
+				executor value.Executor,
+				cancelCtx *context.Context,
+				span errors.Span,
+				args ...value.Value,
+			) (*value.Value, *value.VmInterrupt) {
+				deviceId := args[0].(value.ValueString).Inner
+				powerOn := args[1].(value.ValueBool).Inner
+
+				output, deviceFound, hmsErr, err := SetDevicePower(deviceId, powerOn)
 				if err != nil {
 					return nil, value.NewVMFatalException(
-						err.Error(),
+						fmt.Sprintf("Backend failure during power action: %s", err.Error()),
 						value.Vm_HostErrorKind,
 						span,
 					)
 				}
 
-				if !found {
-					return value.NewNoneOption(), nil
+				if hmsErr != nil {
+					return nil, value.NewVMThrowInterrupt(
+						span,
+						fmt.Sprintf("Device malfunction: %s", hmsErr.String()),
+					)
 				}
 
-				return value.NewValueOption(value.NewValueObject(map[string]*value.Value{
-					"name":      value.NewValueString(sw.Name),
-					"room_id":   value.NewValueString(sw.RoomId),
-					"vendor_id": value.NewValueString(sw.VendorId),
-					"model_id":  value.NewValueString(sw.VendorId),
-				})), nil
-			}), true
-		case "power":
-			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
-				// switchId := args[0].(value.ValueString).Inner
-				// powerOn := args[1].(value.ValueBool).Inner
+				if !deviceFound {
+					return nil, value.NewVMThrowInterrupt(
+						span,
+						fmt.Sprintf("No such device: `%s`", deviceId),
+					)
+				}
 
-				return value.NewValueNull(), nil
+				return value.NewValueBool(output.Changed), nil
+			}), true
+		case "dim":
+			return *value.NewValueBuiltinFunction(func(
+				executor value.Executor,
+				cancelCtx *context.Context,
+				span errors.Span,
+				args ...value.Value,
+			) (*value.Value, *value.VmInterrupt) {
+				deviceId := args[0].(value.ValueString).Inner
+				function := args[1].(value.ValueString).Inner
+				dimValue := args[2].(value.ValueInt).Inner
+
+				output, deviceFound, hmsErr, err := SetDeviceDim(deviceId, function, dimValue)
+				if err != nil {
+					return nil, value.NewVMFatalException(
+						fmt.Sprintf("Backend failure during dim action: %s", err.Error()),
+						value.Vm_HostErrorKind,
+						span,
+					)
+				}
+
+				if hmsErr != nil {
+					return nil, value.NewVMThrowInterrupt(
+						span,
+						fmt.Sprintf("Device malfunction: %s", hmsErr.String()),
+					)
+				}
+
+				if !deviceFound {
+					return nil, value.NewVMThrowInterrupt(
+						span,
+						fmt.Sprintf("No such device: `%s`", deviceId),
+					)
+				}
+
+				return value.NewValueBool(output.Changed), nil
 			}), true
 		default:
 			return nil, true

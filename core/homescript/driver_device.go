@@ -203,3 +203,62 @@ func CreateDevice(
 
 	return true, nil, nil
 }
+
+func SetDevicePower(deviceId string, power bool) (output DriverActionPowerOutput, deviceFound bool, hmsErr *HmsError, err error) {
+	switchData, found, err := database.GetDeviceById(deviceId)
+	if err != nil {
+		return DriverActionPowerOutput{}, false, nil, err
+	}
+
+	if !found {
+		return DriverActionPowerOutput{}, false, nil, nil
+	}
+
+	output, hmsErrs, err := InvokeDriverSetPower(
+		deviceId,
+		switchData.VendorId,
+		switchData.ModelId,
+		DriverActionPower{State: power},
+	)
+
+	if err != nil {
+		return DriverActionPowerOutput{}, false, nil, err
+	}
+
+	if hmsErrs != nil {
+		return DriverActionPowerOutput{}, false, &hmsErrs[0], nil
+	}
+
+	return output, true, nil, nil
+}
+
+func SetDeviceDim(deviceId string, function string, value int64) (output DriverActionDimOutput, deviceFound bool, hmsErr *HmsError, err error) {
+	switchData, found, err := database.GetDeviceById(deviceId)
+	if err != nil {
+		return DriverActionDimOutput{}, false, nil, err
+	}
+
+	if !found {
+		return DriverActionDimOutput{}, false, nil, nil
+	}
+
+	output, hmsErrs, err := InvokeDriverDim(
+		deviceId,
+		switchData.VendorId,
+		switchData.ModelId,
+		DriverActionDim{
+			Value: value,
+			Label: function,
+		},
+	)
+
+	if err != nil {
+		return DriverActionDimOutput{}, false, nil, err
+	}
+
+	if hmsErrs != nil {
+		return DriverActionDimOutput{}, false, &hmsErrs[0], nil
+	}
+
+	return output, true, nil, nil
+}

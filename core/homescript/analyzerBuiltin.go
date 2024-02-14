@@ -254,39 +254,54 @@ func (self analyzerHost) GetBuiltinImport(
 			}, true, true
 		}
 		return analyzer.BuiltinImport{}, true, false
-	case "switch":
+	case "device":
 		switch valueName {
-		case "get_switch":
+		// TODO: port to device
+		// case "get_switch":
+		// 	return analyzer.BuiltinImport{
+		// 		Type: ast.NewFunctionType(
+		// 			ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+		// 				ast.NewFunctionTypeParam(pAst.NewSpannedIdent("id", span), ast.NewStringType(span), nil),
+		// 			}),
+		// 			span,
+		// 			ast.NewOptionType(
+		// 				ast.NewObjectType(
+		// 					[]ast.ObjectTypeField{
+		// 						ast.NewObjectTypeField(pAst.NewSpannedIdent("name", span), ast.NewStringType(span), span),
+		// 						ast.NewObjectTypeField(pAst.NewSpannedIdent("room_id", span), ast.NewStringType(span), span),
+		// 						ast.NewObjectTypeField(pAst.NewSpannedIdent("power", span), ast.NewBoolType(span), span),
+		// 						ast.NewObjectTypeField(pAst.NewSpannedIdent("watts", span), ast.NewIntType(span), span),
+		// 						ast.NewObjectTypeField(pAst.NewSpannedIdent("target_node", span), ast.NewOptionType(ast.NewStringType(span), span), span),
+		// 					},
+		// 					span),
+		// 				span),
+		// 			span,
+		// 		),
+		// 		Template: &ast.TemplateSpec{},
+		// 	}, true, true
+		case "set_power":
 			return analyzer.BuiltinImport{
 				Type: ast.NewFunctionType(
 					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("id", span), ast.NewStringType(span), nil),
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("device_id", span), ast.NewStringType(span), nil),
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("power", span), ast.NewBoolType(span), nil),
 					}),
 					span,
-					ast.NewOptionType(
-						ast.NewObjectType(
-							[]ast.ObjectTypeField{
-								ast.NewObjectTypeField(pAst.NewSpannedIdent("name", span), ast.NewStringType(span), span),
-								ast.NewObjectTypeField(pAst.NewSpannedIdent("room_id", span), ast.NewStringType(span), span),
-								ast.NewObjectTypeField(pAst.NewSpannedIdent("power", span), ast.NewBoolType(span), span),
-								ast.NewObjectTypeField(pAst.NewSpannedIdent("watts", span), ast.NewIntType(span), span),
-								ast.NewObjectTypeField(pAst.NewSpannedIdent("target_node", span), ast.NewOptionType(ast.NewStringType(span), span), span),
-							},
-							span),
-						span),
+					ast.NewBoolType(span),
 					span,
 				),
 				Template: &ast.TemplateSpec{},
 			}, true, true
-		case "power":
+		case "dim":
 			return analyzer.BuiltinImport{
 				Type: ast.NewFunctionType(
 					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("switch_id", span), ast.NewStringType(span), nil),
-						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("power", span), ast.NewBoolType(span), nil),
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("device_id", span), ast.NewStringType(span), nil),
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("function", span), ast.NewStringType(span), nil),
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("value", span), ast.NewIntType(span), nil),
 					}),
 					span,
-					ast.NewNullType(span),
+					ast.NewBoolType(span),
 					span,
 				),
 				Template: &ast.TemplateSpec{},

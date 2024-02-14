@@ -401,7 +401,7 @@ func InvokeDriverDim(
 	vendorID,
 	modelID string,
 	dimAction DriverActionDim,
-) (DriverActionPowerOutput, []HmsError, error) {
+) (DriverActionDimOutput, []HmsError, error) {
 	// TODO: add context support
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -428,10 +428,10 @@ func InvokeDriverDim(
 	)
 
 	if dbErr != nil || hmsErrs != nil {
-		return DriverActionPowerOutput{}, hmsErrs, dbErr
+		return DriverActionDimOutput{}, hmsErrs, dbErr
 	}
 
-	return DriverActionPowerOutput{
+	return DriverActionDimOutput{
 		Changed: runResult.ReturnValue.(value.ValueBool).Inner,
 	}, nil, nil
 }

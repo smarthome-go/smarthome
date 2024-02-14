@@ -141,7 +141,7 @@ func (self HmsError) String() string {
 	} else if self.DiagnosticError != nil {
 		return fmt.Sprintf("Semantic error at %s: `%s`", spanDisplay, self.DiagnosticError.Message)
 	} else if self.RuntimeInterrupt != nil {
-		return fmt.Sprintf("%s at %s: `%s`", self.RuntimeInterrupt.Kind, spanDisplay, self.RuntimeInterrupt.Message)
+		return fmt.Sprintf("%s at %s: `%s`", self.RuntimeInterrupt, spanDisplay, self.RuntimeInterrupt.Message)
 	}
 	panic("Illegal HmsError")
 }
@@ -467,7 +467,7 @@ func (m *Manager) Run(
 		if !addErr {
 			errors = append(errors, HmsError{
 				RuntimeInterrupt: &HmsRuntimeInterrupt{
-					Kind:    i.Kind().String(),
+					Kind:    i.KindString(),
 					Message: i.Message(),
 				},
 				Span: span,
@@ -492,8 +492,8 @@ func (m *Manager) Run(
 			errMsg := ""
 			if log.GetLevel() == logrus.TraceLevel {
 				errMsg = d.Display(fileContentsTemp[errors[0].Span.Filename])
-				if len(errMsg) > maxLinesErrMessage {
-					split := strings.Split(errMsg, "\n")
+				split := strings.Split(errMsg, "\n")
+				if len(split) > maxLinesErrMessage {
 					errMsg = fmt.Sprintf("%s\n<%d more lines>", strings.Join(split[0:maxLinesErrMessage], "\n"), len(split)-maxLinesErrMessage)
 				}
 			} else {
