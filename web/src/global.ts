@@ -17,7 +17,7 @@ export interface Notification {
     priority: number
     name: string
     description: string
-    date: 0
+    date: number
 }
 
 export interface Data {
