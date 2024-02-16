@@ -13,7 +13,7 @@
     import EditRoom from './dialogs/room/EditRoom.svelte'
     import LocalSettings from './dialogs/room/LocalSettings.svelte'
     import AddDevice from './dialogs/device/AddDevice.svelte'
-    import { loading, powerCamReloadEnabled, type DeviceType, type Room } from './main'
+    import { loading, powerCamReloadEnabled, type DeviceType, type Room, type CreateDeviceRequest } from './main'
     import Device from './Device.svelte'
 
     // If set to true, a camera-reload is triggered
@@ -118,51 +118,41 @@
     }
 
     // Adds a device.
-    async function addDevice(
-        type: DeviceType,
-        id: string,
-        name: string,
-        watts: number,
-        targetNode: string,
-        selectedDriverVendorId: string,
-        selectedDriverModelId: string,
-        singletonJson: {},
-    ) {
+    async function addDevice(req: CreateDeviceRequest) {
         $loading = true
+
         try {
+            req.roomId = currentRoom.data.id
+
             const res = await (
                 await fetch('/api/devices/add', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        id,
-                        name,
-                        watts,
-                        roomId: currentRoom.data.id,
-                        targetNode,
-                        selectedDriverVendor: selectedDriverVendorId,
-                        selectedDriverModel: selectedDriverModelId,
-                    }),
+                    body: JSON.stringify(req),
                 })
             ).json()
             if (!res.success) throw Error(res.error)
             const currentRoomIndex = rooms.findIndex(r => r.data.id == currentRoom.data.id)
 
-            currentRoom.devices = [
-                ...currentRoom.devices,
-                {
-                    type,
-                    id,
-                    name,
-                    vendorId: selectedDriverVendorId,
-                    modelId: selectedDriverModelId,
-                    roomId: currentRoom.data.id,
-                    singletonJson,
-                    validationErrors: [],
-                    config: { config: null } // TODO: get config from http-response
-                },
-            ]
-            rooms[currentRoomIndex] = currentRoom
+            // currentRoom.devices = [
+            //     ...currentRoom.devices,
+            //     {
+            //         type: req.type,
+            //         id: req.id,
+            //         name: req.name,
+            //         vendorId: req.vendorId,
+            //         modelId: req.modelId,
+            //         roomId: currentRoom.data.id,
+            //         config: { info: null, capabilities: [] }, // TODO: get config from http-response
+            //         singletonJson: null,
+            //         dimmables: [],
+            //         powerInformation: [],
+            //
+            //     },
+            // ]
+
+            // rooms[currentRoomIndex] = currentRoom
+            await loadRooms()
         } catch (err) {
             $createSnackbar(`Could not create device: ${err}`)
         }
@@ -272,7 +262,7 @@
             bind:rooms
         />
         <AddCamera cameras={currentRoom.cameras} bind:show={addCameraShow} onAdd={addCamera} />
-        <AddDevice devices={currentRoom.devices} bind:show={addDeviceShow} onAdd={addDevice} />
+        <AddDevice devices={currentRoom.devices} bind:show={addDeviceShow} on:add={(e) => addDevice(e.detail)} />
     {/if}
     <div id="tabs" class="mdc-elevation--z8">
         {#await loadRooms() then}

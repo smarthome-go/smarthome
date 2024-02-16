@@ -51,8 +51,8 @@ export interface CreateDeviceRequest {
     id: string
     name: string
     roomId: string
-    vendorId: string,
-    modelId: string,
+    driverVendorId: string,
+    driverModelId: string,
 }
 
 export interface Camera {

@@ -5,19 +5,33 @@
     import CharacterCounter from '@smui/textfield/character-counter'
     import Select, { Option } from '@smui/select'
     import Progress from '../../../../../src/components/Progress.svelte'
-    import type { CreateDeviceRequest, DeviceResponse } from '../../main'
-    import type { DriverData } from '../../../system/driver'
-    import { drivers, driversLoaded, fetchHardwareNodes, loading, hardwareNodesLoaded, hardwareNodes, fetchDrivers } from './main'
+    import type { CreateDeviceRequest, DeviceResponse, DeviceType } from '../../main'
+    import type { DriverData, FetchedDriver } from '../../../system/driver'
+    import { loading, drivers, driversLoaded, fetchDrivers } from './main'
+    import { createEventDispatcher } from 'svelte';
 
-    let selectedDriver: DriverData = {
-        vendorId: "",
-        modelId: "",
-        name: "",
-        version: "",
-        homescriptCode: ""
+    const dispatch = createEventDispatcher()
+
+    let selectedType: DeviceType = 'INPUT'
+
+    let selectedDriver: FetchedDriver = {
+        isValid: false,
+        configuration: null,
+        info: null,
+        validationErrors: null,
+        driver: {
+            vendorId: "",
+            modelId: "",
+            name: "",
+            version: "",
+            homescriptCode: ""
+        }
     }
+    $: console.log(selectedDriver)
 
     let open = false
+
+    // Gets the existing devices from the outside to check for ID collisions.
     export let devices: DeviceResponse[] = []
 
     let dataToAdd: CreateDeviceRequest = createEmptyDevice()
@@ -31,8 +45,8 @@
             type: "INPUT",
             id: "",
             name: "",
-            vendorId: "",
-            modelId: "",
+            driverVendorId: "",
+            driverModelId: "",
             roomId: ""
         }
     }
@@ -40,35 +54,37 @@
     export function show() {
         open = true
 
-        if (!$hardwareNodesLoaded) {
-            fetchHardwareNodes()
+        if (!$driversLoaded) {
             fetchDrivers()
         }
     }
-
-    export let onAdd: (
-        _id: string,
-        _name: string,
-        _watts: number,
-        _targetNodeUrl: string,
-        _selectedDriverVendorId: string,
-        _selectedDriverModelId: string,
-    ) => Promise<void>
 
     let idInvalid = false
     $: idInvalid = (dataDirty.id && dataToAdd.id === '')
     || dataToAdd.id.includes(' ')
     || devices.find(d => d.id === dataToAdd.id) !== undefined
+
+    function onAdd() {
+        dataToAdd.driverVendorId = selectedDriver.driver.vendorId
+        dataToAdd.driverModelId = selectedDriver.driver.modelId
+        dataToAdd.type = selectedType
+
+        console.dir(dataToAdd)
+
+        dispatch('add', dataToAdd)
+    }
+
+    // TODO: validation code for IDs!
 </script>
 
 <Dialog bind:open aria-labelledby="title" aria-describedby="content">
-    <Title id="title">Add Switch</Title>
+    <Title id="title">Add Device</Title>
     <Content id="content">
         {#if $driversLoaded}
             <Select bind:value={selectedDriver} label="Select Driver">
-                {#each $drivers as driver}
+                {#each $drivers as driver (`${driver.driver.vendorId}:${driver.driver.modelId}`)}
                     <Option value={driver}>
-                        {driver.driver.name} <code>{driver.driver.vendorId}: {driver.driver.modelId}</code>
+                        {driver.driver.name}
                     </Option>
                 {/each}
             </Select>
@@ -76,13 +92,20 @@
             <Progress bind:loading={$loading} />
         {/if}
         <br>
+        <Select bind:value={selectedType} label="Select Type">
+            {#each ['INPUT', 'OUTPUT'] as option}
+                <Option value={option}>
+                    <code>{option}</code>
+                </Option>
+            {/each}
+        </Select>
         <br>
         <Textfield
             bind:value={dataToAdd.id}
             bind:dirty={dataDirty.id}
             bind:invalid={idInvalid}
             input$maxlength={20}
-            label="Switch Id"
+            label="Device Id"
             required
         >
             <svelte:fragment slot="helper">
@@ -108,20 +131,20 @@
 
         <!-- TODO: implement `create` button properly -->
 
-        <!-- <Button -->
-        <!--     disabled={idInvalid || dataToAdd.id.replaceAll(' ', '') === '' || dataToAdd.name.replaceAll(' ', '') === ''} -->
-        <!--     use={[InitialFocus]} -->
-        <!--     on:click={() => { -->
-        <!--         onAdd( -->
-        <!--             { -->
-        <!--             id, name, -->
-        <!--             watts, -->
-        <!--             targetNodeUrl === 'none' ? null : targetNodeUrl, -->
-        <!--             selectedDriver} -->
-        <!--         ) -->
-        <!--     }} -->
-        <!-- > -->
-        <!--     <Label>Create</Label> -->
-        <!-- </Button> -->
+        <Button
+            disabled={idInvalid || dataToAdd.id.replaceAll(' ', '') === '' || dataToAdd.name.replaceAll(' ', '') === ''}
+            use={[InitialFocus]}
+            on:click={onAdd}
+        >
+            <Label>Create</Label>
+        </Button>
     </Actions>
 </Dialog>
+
+<style lang='scss'>
+    .driver {
+        &__name {
+            font-size: .8rem;
+        }
+    }
+</style>

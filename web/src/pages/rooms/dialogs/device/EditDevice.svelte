@@ -6,7 +6,7 @@
     import Select, { Option } from '@smui/select'
     import Progress from '../../../../../src/components/Progress.svelte'
     import { createEventDispatcher } from 'svelte'
-    import { fetchHardwareNodes, loading, hardwareNodesLoaded, hardwareNodes } from './main'
+    import { loading } from './main'
     import type { DeviceResponse } from '../../main';
     import DynamicConfigurator from '../../../../components/Homescript/DynamicConfigurator.svelte'
     import { createSnackbar } from '../../../../global';
