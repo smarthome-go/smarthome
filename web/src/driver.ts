@@ -33,12 +33,12 @@ export interface ConfigSpecStructField {
     type: ConfigSpec;
 }
 
-export interface ValidationError {
-    level:   number;
-    message: string;
-    notes:   string[];
-    span:    Span;
-}
+// export interface ValidationError {
+//     level:   number;
+//     message: string;
+//     notes:   string[];
+//     span:    Span;
+// }
 
 export interface Span {
     start:    Location;

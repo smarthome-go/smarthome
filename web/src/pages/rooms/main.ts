@@ -1,6 +1,7 @@
 import { type Writable, writable } from 'svelte/store'
 import App from './App.svelte'
-import type { ConfigSpecWrapper, ValidationError } from '../../driver'
+import type { ConfigSpecWrapper } from '../../driver'
+import type { homescriptError } from 'src/homescript'
 
 export interface Room {
     data: {
@@ -22,7 +23,7 @@ export interface DeviceResponse {
     vendorId: string,
     modelId: string,
     singletonJson: {},
-    hmsErrors: ValidationError[];
+    hmsErrors: homescriptError[];
     config: ConfigSpecWrapper,
     powerInformation: DevicePowerInformation,
     dimmables: DeviceDimmable[],

@@ -2,56 +2,81 @@
     import Button, { Label } from '@smui/button'
     import Dialog, { Actions, Content, InitialFocus, Title } from '@smui/dialog'
     import Progress from '../../../../../src/components/Progress.svelte'
-    import { fetchHardwareNodes, loading, hardwareNodesLoaded, hardwareNodes } from './main'
+    // import { fetchHardwareNodes, loading, hardwareNodesLoaded, hardwareNodes } from './main'
+    import type { DeviceResponse } from '../../main';
 
-    let open = false
+    export let open = false
 
-    export let id: string
-    export let name: string
-    export let watts: number
-    export let targetNode: string
-    let targetNodeLabel = undefined
+    export let data: DeviceResponse = null
 
-    export function show() {
-        open = true
+    // export function show() {
+    //     open = true
 
-        if (!$hardwareNodesLoaded) {
-            fetchHardwareNodes().then(() => {
-                setNodeLabel()
-            })
-        } else {
-            setNodeLabel()
-        }
-    }
+        // if (!$hardwareNodesLoaded) {
+        //     fetchHardwareNodes().then(() => {
+        //         setNodeLabel()
+        //     })
+        // } else {
+        //     setNodeLabel()
 
-    function setNodeLabel() {
-        if (targetNode === null || targetNode === undefined) {
-            targetNodeLabel = 'None'
-        } else {
-            targetNodeLabel = $hardwareNodes.find(h => {
-                if (h === undefined || h === null) {
-                    return false
-                }
-                return h.url === targetNode
-            }).name
-        }
-    }
+    // function setNodeLabel() {
+    //     if (targetNode === null || targetNode === undefined) {
+    //         targetNodeLabel = 'None'
+    //     } else {
+    //         targetNodeLabel = $hardwareNodes.find(h => {
+    //             if (h === undefined || h === null) {
+    //                 return false
+    //             }
+    //             return h.url === targetNode
+    //         }).name
+    //     }
+    // }
 </script>
 
 <Dialog bind:open aria-labelledby="title" aria-describedby="content">
-    <Title id="title">Switch Information</Title>
+    <Title id="title">Device Information</Title>
     <Content id="content">
-        ID: <code>{id}</code>
-        <br />
-        Name: {name}
-        <br />
-        Watts: {watts}
-        <br />
-        {#if $hardwareNodesLoaded}
-            Target Node: {targetNodeLabel}
-        {:else}
-            <Progress bind:loading={$loading} />
-        {/if}
+        <ul>
+            <li>
+                ID: <code>{data.id}</code>
+            </li>
+            <li>
+                Type: <code>{data.type}</code>
+            </li>
+            <li>
+                Name: <code>{data.name}</code>
+            </li>
+            <li>
+                ModelID: <code>{data.modelId}</code>
+            </li>
+            <li>
+                VendorID: <code>{data.vendorId}</code>
+            </li>
+            <li>
+                RoomID: <code>{data.roomId}</code>
+            </li>
+
+            {#if data.dimmables !== null}
+                <li>
+                    Dimmables: <code>[{data.dimmables.map(d => `${d.label}: ${d.range}: ${d.value}`).join(", ")}]</code>
+                </li>
+            {/if}
+
+            {#if data.powerInformation != null}
+                <li>
+                    Power: <code>PowerOn: {data.powerInformation.state}: {data.powerInformation.powerDrawWatts} Watts</code>
+                </li>
+            {/if}
+        </ul>
+        <!-- Name: {name} -->
+        <!-- <br /> -->
+        <!-- Watts: {watts} -->
+        <!-- <br /> -->
+        <!-- {#if $hardwareNodesLoaded} -->
+        <!--     Target Node: {targetNodeLabel} -->
+        <!-- {:else} -->
+        <!--     <Progress bind:loading={$loading} /> -->
+        <!-- {/if} -->
         <br />
     </Content>
     <Actions>

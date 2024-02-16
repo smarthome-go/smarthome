@@ -51,7 +51,7 @@ export interface homescriptResponse {
     id: string
     success: boolean
     output: string
-    fileContents: {}
+    fileContents: Map<string, string>
     errors: homescriptError[]
 }
 

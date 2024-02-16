@@ -14,7 +14,7 @@ export interface hmsResMessage {
 export interface hmsResWrapper {
     code: string
     modeRun: boolean
-    fileContents: {}
+    fileContents: Map<string, string>
     errors: homescriptError[]
     success: boolean
 }

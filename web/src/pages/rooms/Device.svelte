@@ -10,10 +10,17 @@
     import type { DeviceResponse } from './main';
     import Slider from '@smui/slider';
     import FormField from '@smui/form-field';
-    import Button from '@smui/button';
+    import Button, { Label, Icon } from '@smui/button';
+    import type { ValidationError } from 'src/driver';
+    import type { homescriptError } from 'src/homescript';
+    import Terminal from '../../components/Homescript/ExecutionResultPopup/Terminal.svelte'
+    import ExecutionResultPopup from '../../components/Homescript/ExecutionResultPopup/ExecutionResultPopup.svelte'
 
     // Event dispatcher
     const dispatch = createEventDispatcher()
+
+    let deviceInfoOpen = false
+    let deviceEditOpen = false
 
     export let data: DeviceResponse = {
         type: 'INPUT',
@@ -32,19 +39,16 @@
             state: false,
             powerDrawWatts: 0
         },
-        dimmableInformation: {
-            percent: 0,
-        }
+        dimmables: [],
     }
 
     let requests = 0
     let loading = false
 
     // Is bound to the `editSwitch` in order to pass an event to a child
-    let showEditSwitch: () => void
+    let showEditDevice: () => void
 
-    // Is bound to the `switchInfo` in order to pass an event to a child
-    let showSwitchInfo: () => void
+    let showDeviceInfo = () => deviceInfoOpen = true
 
     // Determines if edit button should be shown
     let hasEditPermission: boolean
@@ -103,83 +107,123 @@
             if (!res.success) throw Error(res.error)
         } catch (err) {
             $createSnackbar(
-                `Failed to set device '${data.name}' dimmable '${label}' to ${data.dimmableInformation}: ${err}`,
+                `Failed to set device '${data.name}' dimmable '${label}' to ${data.dimmables}: ${err}`,
             )
         }
         await sleep(500)
         requests--
         dispatch('dimDone', null)
     }
+
+    let homescriptCode: Map<string, string> = new Map()
+
+    $: if((data.hmsErrors !== null) && data.hmsErrors.length > 0) loadHmsSources()
+
+    // TODO: optimize this!
+    async function loadHmsSources() {
+        const url = "/api/homescript/sources"
+        let res = await (await fetch(url)).json()
+
+        for (let item of Object.keys(res)) {
+            homescriptCode.set(item, res[item])
+        }
+    }
 </script>
 
-<!-- <EditSwitch -->
-<!--     on:delete={() => dispatch('delete', null)} -->
-<!--     on:modify={event => { -->
-<!--         name = event.detail.name -->
-<!--         watts = event.detail.watts -->
-<!--         targetNode = event.detail.targetNode -->
-<!--         event.detail.id = id -->
-<!--         dispatch('modify', event.detail) -->
-<!--     }} -->
-<!--     {id} -->
-<!--     {name} -->
-<!--     {watts} -->
-<!--     {targetNode} -->
-<!--     bind:show={showEditSwitch} -->
-<!-- /> -->
+<EditDevice
+    on:delete={() => dispatch('delete', null)}
+    on:modify={event => {
+        // TODO: implement copy
+        name = event.detail.name
+        watts = event.detail.watts
+        targetNode = event.detail.targetNode
+        event.detail.id = id
+        dispatch('modify', event.detail)
+    }}
+    {data}
+    bind:show={showEditDevice}
+/>
 
-<!-- <SwitchInfo bind:show={showSwitchInfo} {id} {name} {watts} {targetNode} /> -->
+<DeviceInfo bind:open={deviceInfoOpen} {data} />
 
 <div class="switch mdc-elevation--z3" class:wide={hasEditPermission}>
-    {#if data.config.capabilities.includes('power')}
-        <div class="switch__power">
-            <div class="switch__power__left">
-                <Switch icons={false} bind:checked={data.powerInformation.state} on:SMUISwitch:change={toggle} />
-                <div
-                    class="switch__power__name__box"
-                    use:Ripple={{ surface: true }}
-                    on:click={() => showSwitchInfo()}
-                    on:keydown={() => showSwitchInfo()}
-                >
-                    <span class="switch__power__name"> {data.name}</span>
-                </div>
-            </div>
-            <div class="switch__power__right">
-                <div>
-                    <Progress type="circular" bind:loading />
-                </div>
-                {#if hasEditPermission}
-                    <IconButton class="material-icons" title="Edit Switch" on:click={showEditSwitch}
-                        >edit</IconButton
-                    >
-                {/if}
-            </div>
-        </div>
-    {/if}
+    {#if (data.hmsErrors !== null) && data.hmsErrors.length > 0}
+            <ExecutionResultPopup
+                open={true}
+                data={{
+                    response: {
+                        id: "",
+                        success: false,
+                        output: "",
+                        fileContents: homescriptCode, // TODO
+                        errors: data.hmsErrors,
+                    },
+                    code: "fn main(){}",
+                }}
+                scriptId={data.id}
+                on:close={() => {
+                    // This hack is required so that the window still remains scrollable after removal
+                }}
+            />
 
-    {#if data.config.capabilities.includes('dimmable')}
-        {#each data.dimmables as dimmable}
-            <div class="switch__dim">
-                    <div class="switch__dim__left">
-                        <FormField align="start" style="display: flex;">
-                            <!-- TODO: does this also update the value??? -->
-                            <Slider
-                                style="flex-grow: 1;"
-                                bind:value={dimmable.value}
-                                on:SMUISlider:change={(e) => dim(e.detail.value, dimmable.label)}
-                            />
-                            <span
-                                slot="label"
-                                style="padding-right: 12px; width: max-content; display: block;"
-                            >
-                            </span>
-                        </FormField>
-                    </div>
-                    <div class="switch__dim__right">
-                        <span class="status text-hint">{dimmable.value}</span>
-                    </div>
+            <div class="switch__error">
+                {data.hmsErrors.length} Error {data.hmsErrors.length != 1 ? 's' : ''}
+                <Button on:click={() => {}}>
+                    <Label>Inspect</Label>
+                    <Icon class="material-icons">bug_report</Icon>
+                </Button>
             </div>
-        {/each}
+    {:else}
+        {#if data.config.capabilities.includes('power')}
+            <div class="switch__power">
+                <div class="switch__power__left">
+                    <Switch icons={false} bind:checked={data.powerInformation.state} on:SMUISwitch:change={toggle} />
+                    <div
+                        class="switch__power__name__box"
+                        use:Ripple={{ surface: true }}
+                        on:click={showDeviceInfo}
+                        on:keydown={showDeviceInfo}
+                    >
+                        <span class="switch__power__name"> {data.name}</span>
+                    </div>
+                </div>
+                <div class="switch__power__right">
+                    <div>
+                        <Progress type="circular" bind:loading />
+                    </div>
+                    {#if hasEditPermission}
+                        <IconButton class="material-icons" title="Edit Switch" on:click={showEditDevice}
+                            >edit</IconButton
+                        >
+                    {/if}
+                </div>
+            </div>
+        {/if}
+
+        {#if data.config.capabilities.includes('dimmable')}
+            {#each data.dimmables as dimmable}
+                <div class="switch__dim">
+                        <div class="switch__dim__left">
+                            <FormField align="start" style="display: flex;">
+                                <!-- TODO: does this also update the value??? -->
+                                <Slider
+                                    style="flex-grow: 1;"
+                                    bind:value={dimmable.value}
+                                    on:SMUISlider:change={(e) => dim(e.detail.value, dimmable.label)}
+                                />
+                                <span
+                                    slot="label"
+                                    style="padding-right: 12px; width: max-content; display: block;"
+                                >
+                                </span>
+                            </FormField>
+                        </div>
+                        <div class="switch__dim__right">
+                            <span class="status text-hint">{dimmable.value}</span>
+                        </div>
+                </div>
+            {/each}
+        {/if}
     {/if}
 </div>
 
@@ -210,7 +254,7 @@
             }
         }
 
-        &__power {
+        &__power, &__error {
             background-color: var(--clr-height-1-3);
             border-radius: 0.3rem;
             width: 15rem;
