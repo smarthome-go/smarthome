@@ -161,6 +161,10 @@ type HmsRuntimeInterrupt struct {
 	Message string `json:"message"`
 }
 
+func (self HmsRuntimeInterrupt) String() string {
+	return fmt.Sprintf("%s: %s", self.Kind, self.Message)
+}
+
 func (m *Manager) PushJob(
 	username string,
 	initiator HomescriptInitiator,

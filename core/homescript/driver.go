@@ -94,10 +94,10 @@ func ExtractDriverInfo(
 	diagnostics := make([]diagnostic.Diagnostic, 0)
 
 	driverSingleton, driverSingletonFound := ast.AnalyzedSingletonTypeDefinition{}, false
-	driverCapabilities := make([]DriverCapability, 0)
+	driverCapabilities := make(CapabilitySet[DriverCapability], 0)
 
 	deviceSingleton, deviceSingletonFound := ast.AnalyzedSingletonTypeDefinition{}, false
-	deviceCapabilities := make([]DeviceCapability, 0)
+	deviceCapabilities := make(CapabilitySet[DeviceCapability], 0)
 
 	// Iterate over singletons, assert that there is a `driver` and a `device` singleton.
 	for _, singleton := range analyzed[mainModule].Singletons {

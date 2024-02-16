@@ -9,6 +9,11 @@ const DEVICE_DRIVER_MODVEN_ID_LEN = 50
 const DEVICE_DRIVER_VERSION_LEN = 50
 const DEVICE_DRIVER_DEFAULT_ICON = "developer_board"
 
+type DriverTuple struct {
+	VendorID string `json:"vendorId"`
+	ModelID  string `json:"modelId"`
+}
+
 // TODO: change this so that there is no user owning the device driver script
 
 type DeviceDriver struct {
@@ -194,6 +199,40 @@ func ModifyDeviceDriverCode(vendorId string, modelId string, newCode string) (bo
 	}
 
 	return rows > 0, nil
+}
+
+func GetDriverSources(ids []DriverTuple) (drivers map[DriverTuple]string, allFound bool, err error) {
+	query, err := db.Prepare(`
+	SELECT deviceDriver.HomescriptCode
+	FROM deviceDriver WHERE
+		deviceDriver.VendorId = ?
+		AND deviceDriver.ModelId = ?
+	`)
+
+	if err != nil {
+		return nil, false, err
+	}
+
+	for _, id := range ids {
+		row := query.QueryRow()
+		if err != nil {
+			return nil, false, err
+		}
+
+		var code string
+
+		if err := row.Scan(&code); err != nil {
+			if err == sql.ErrNoRows {
+				return nil, false, nil
+			}
+
+			return nil, false, err
+		}
+
+		drivers[id] = code
+	}
+
+	return drivers, true, nil
 }
 
 // Returns a list of homescripts owned by a given user

@@ -79,46 +79,64 @@ func EnrichDevicesList(input []database.Device) ([]Device, error) {
 
 		// Extract additional information by invoking driver function code.
 		// TODO: a hot / ready / precompiled VM instance would lead to additional performance gains here.
-
 		// TODO: fuse these
-		powerDraw, hmsErrs, err := InvokeDriverReportPowerDraw(
-			DriverInvocationIDs{
-				deviceID: device.Id, vendorID: device.VendorId, modelID: device.ModelId,
-			},
-		)
-		if err != nil {
-			return nil, err
-		}
-		if hmsErrs != nil {
-			hmsErrors = append(hmsErrors, hmsErrs...)
+		var powerStateInfo DriverActionGetPowerStateOutput
+		var powerDrawInfo DriverActionGetPowerDrawOutput
+		if fittingDriver.DeviceSupports(DeviceCapabilityPower) {
+			//
+			// Power state
+			//
+			powerStateTemp, hmsErrs, err := InvokeDriverReportPowerState(
+				DriverInvocationIDs{
+					deviceID: device.Id,
+					vendorID: device.VendorId,
+					modelID:  device.ModelId,
+				},
+			)
+			if err != nil {
+				return nil, err
+			}
+			if hmsErrs != nil {
+				hmsErrors = append(hmsErrors, hmsErrs...)
+			}
+
+			powerStateInfo = powerStateTemp
+
+			//
+			// Power draw
+			//
+			powerDrawTemp, hmsErrs, err := InvokeDriverReportPowerDraw(
+				DriverInvocationIDs{
+					deviceID: device.Id, vendorID: device.VendorId, modelID: device.ModelId,
+				},
+			)
+			if err != nil {
+				return nil, err
+			}
+			if hmsErrs != nil {
+				hmsErrors = append(hmsErrors, hmsErrs...)
+			}
+
+			powerDrawInfo = powerDrawTemp
 		}
 
-		powerState, hmsErrs, err := InvokeDriverReportPowerState(
-			DriverInvocationIDs{
-				deviceID: device.Id,
-				vendorID: device.VendorId,
-				modelID:  device.ModelId,
-			},
-		)
-		if err != nil {
-			return nil, err
-		}
-		if hmsErrs != nil {
-			hmsErrors = append(hmsErrors, hmsErrs...)
-		}
+		var dimmableInformation []DriverActionReportDimOutput
+		if fittingDriver.DeviceSupports(DeviceCapabilityDimmable) {
+			dimmableInformationTemp, hmsErrs, err := InvokeDriverReportDimmable(
+				DriverInvocationIDs{
+					deviceID: device.Id,
+					vendorID: device.VendorId,
+					modelID:  device.ModelId,
+				},
+			)
+			if err != nil {
+				return nil, err
+			}
+			if hmsErrs != nil {
+				hmsErrors = append(hmsErrors, hmsErrs...)
+			}
 
-		dimmableInformation, hmsErrs, err := InvokeDriverReportDimmable(
-			DriverInvocationIDs{
-				deviceID: device.Id,
-				vendorID: device.VendorId,
-				modelID:  device.ModelId,
-			},
-		)
-		if err != nil {
-			return nil, err
-		}
-		if hmsErrs != nil {
-			hmsErrors = append(hmsErrors, hmsErrs...)
+			dimmableInformation = dimmableInformationTemp
 		}
 
 		output[index] = Device{
@@ -129,17 +147,13 @@ func EnrichDevicesList(input []database.Device) ([]Device, error) {
 			DriverVendorID: device.VendorId,
 			DriverModelID:  device.ModelId,
 			SingletonJSON:  savedConfig,
-			HmsErrors:      hmsErrs,
+			HmsErrors:      hmsErrors,
 			Config:         fittingDriver.ExtractedInfo.DeviceConfig,
 			PowerInformation: DevicePowerInformation{
-				State:          powerState.State,
-				PowerDrawWatts: powerDraw.Watts,
+				State:          powerStateInfo.State,
+				PowerDrawWatts: powerDrawInfo.Watts,
 			},
 			DimmableInformation: dimmableInformation,
-
-			// DimmableInformation: DeviceDimmableInformation{
-			// 	Percent: dimmableInformation.Percent,
-			// },
 		}
 	}
 

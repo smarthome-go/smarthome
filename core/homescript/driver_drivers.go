@@ -22,6 +22,10 @@ type RichDriver struct {
 	ValidationErrors []diagnostic.Diagnostic `json:"validationErrors"`
 }
 
+func (self RichDriver) DeviceSupports(check DeviceCapability) bool {
+	return self.ExtractedInfo.DeviceConfig.Capabilities.Has(check)
+}
+
 func extractInfoFromDriver(
 	vendorID string,
 	modelID string,
@@ -68,7 +72,7 @@ func GetDriverWithInfos(vendorID, modelID string) (RichDriver, bool, error) {
 		return RichDriver{}, false, err
 	}
 
-	configuration := DriverStore[DriverTuple{
+	configuration := DriverStore[database.DriverTuple{
 		VendorID: vendorID,
 		ModelID:  modelID,
 	}]
@@ -131,7 +135,7 @@ func ListDriversWithStoredConfig() ([]RichDriver, error) {
 			continue
 		}
 
-		val, found := DriverStore[DriverTuple{
+		val, found := DriverStore[database.DriverTuple{
 			VendorID: driver.Driver.VendorId,
 			ModelID:  driver.Driver.ModelId,
 		}]
@@ -172,12 +176,12 @@ func Create(vendorID, modelID, name, version, hmsCode string) (hmsErr error, dbE
 	}
 
 	if hmsErrs != nil {
-		DriverStore[DriverTuple{
+		DriverStore[database.DriverTuple{
 			VendorID: vendorID,
 			ModelID:  modelID,
 		}] = value.ObjectZeroValue(configInfo.DriverConfig.Info.HmsType)
 	} else {
-		DriverStore[DriverTuple{
+		DriverStore[database.DriverTuple{
 			VendorID: vendorID,
 			ModelID:  modelID,
 		}] = value.ValueObject{
@@ -282,7 +286,7 @@ func ModifyCode(vendorID, modelID, newCode string) (found bool, dbErr error) {
 	objVal := value.ValueObject{FieldsInternal: make(map[string]*value.Value)}
 	// Do not overwrite everything, calculate a new stored value.
 	if hmsErrs != nil {
-		old := DriverStore[DriverTuple{
+		old := DriverStore[database.DriverTuple{
 			VendorID: vendorID,
 			ModelID:  modelID,
 		}]

@@ -25,6 +25,10 @@ type HomescriptResponse struct {
 	Errors       []homescript.HmsError `json:"errors"`
 }
 
+type GetSourcesRequest struct {
+	Ids []string `json:"ids"`
+}
+
 type CreateHomescriptRequest struct {
 	Id                  string `json:"id"`
 	Name                string `json:"name"`
@@ -701,5 +705,34 @@ func GetHMSJobs(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(jobs); err != nil {
 		log.Error(err.Error())
 		Res(w, Response{Success: false, Message: "failed to list Homescript jobs", Error: "could not encode response"})
+	}
+}
+
+func ListHomescriptSources(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(w, r)
+	if err != nil {
+		return
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request GetSourcesRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+
+	sources, allFound, err := homescript.GetSources(username, request.Ids)
+	if !allFound {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "invalid id(s)", Error: "one or more ids were not found in the database"})
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(sources); err != nil {
+		log.Error(err.Error())
+		Res(w, Response{Success: false, Message: "failed to list Homescript sources", Error: "could not encode response"})
 	}
 }

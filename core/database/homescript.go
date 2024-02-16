@@ -178,6 +178,43 @@ func ModifyHomescriptCode(id string, owner string, newCode string) error {
 	return nil
 }
 
+func GetHmsSources(username string, ids []string) (sources map[string]string, allFound bool, err error) {
+	query, err := db.Prepare(`
+	SELECT Id, Code FROM homescript
+	WHERE Id IN (?) AND Owner=?
+	`)
+
+	if err != nil {
+		return nil, false, err
+	}
+
+	defer query.Close()
+
+	res, err := query.Query(ids, username)
+	if err != nil {
+		return nil, false, err
+	}
+
+	sources = make(map[string]string)
+	for res.Next() {
+		var id, code string
+
+		if err := res.Scan(&id, &code); err != nil {
+			return nil, false, err
+		}
+
+		sources[id] = code
+	}
+
+	for _, id := range ids {
+		if _, found := sources[id]; !found {
+			return nil, false, nil
+		}
+	}
+
+	return sources, true, nil
+}
+
 // Returns a list of homescripts owned by a given user
 func ListHomescriptOfUser(username string) ([]Homescript, error) {
 	query, err := db.Prepare(`

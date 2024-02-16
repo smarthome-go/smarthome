@@ -176,6 +176,8 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/homescript/get/{id}", mdl.ApiAuth(mdl.Perm(api.GetUserHomescriptById, database.PermissionHomescript))).Methods("GET")
 	r.HandleFunc("/api/homescript/list/personal", mdl.ApiAuth(mdl.Perm(api.ListPersonalHomescripts, database.PermissionHomescript))).Methods("GET")
 	r.HandleFunc("/api/homescript/list/personal/complete", mdl.ApiAuth(mdl.Perm(api.ListPersonalHomescriptsWithArgs, database.PermissionHomescript))).Methods("GET")
+	r.HandleFunc("/api/homescript/list/personal/complete", mdl.ApiAuth(mdl.Perm(api.ListPersonalHomescriptsWithArgs, database.PermissionHomescript))).Methods("GET")
+	r.HandleFunc("/api/homescript/sources", mdl.ApiAuth(mdl.Perm(api.ListHomescriptSources, database.PermissionHomescript))).Methods("GET")
 
 	// Homescript Execution And Linting
 	r.HandleFunc("/api/homescript/lint", mdl.ApiAuth(mdl.Perm(api.LintHomescriptId, database.PermissionHomescript))).Methods("POST")

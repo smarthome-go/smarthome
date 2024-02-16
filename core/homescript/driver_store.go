@@ -9,11 +9,6 @@ import (
 	"github.com/smarthome-go/smarthome/core/database"
 )
 
-type DriverTuple struct {
-	VendorID string `json:"vendorId"`
-	ModelID  string `json:"modelId"`
-}
-
 type DriverSingletonKind uint8
 
 const (
@@ -25,7 +20,7 @@ const (
 
 // Maps a device-ID to the corresponding saved value.
 var DeviceStore map[string]value.ValueObject = make(map[string]value.ValueObject)
-var DriverStore map[DriverTuple]value.ValueObject = make(map[DriverTuple]value.ValueObject)
+var DriverStore map[database.DriverTuple]value.ValueObject = make(map[database.DriverTuple]value.ValueObject)
 
 // This package contains the storage backend implementation for per-driver / per-device configuration data.
 //
@@ -53,7 +48,7 @@ func StoreDriverSingletonConfigUpdate(
 		panic(fmt.Sprintf("Driver `%s:%s` to be stored not found", vendorID, modelID))
 	}
 
-	oldValue := DriverStore[DriverTuple{
+	oldValue := DriverStore[database.DriverTuple{
 		VendorID: vendorID,
 		ModelID:  modelID,
 	}]
@@ -87,7 +82,7 @@ func StoreDriverSingletonBackend(vendorID, modelID string, val value.ValueObject
 		return err
 	}
 
-	DriverStore[DriverTuple{
+	DriverStore[database.DriverTuple{
 		VendorID: vendorID,
 		ModelID:  modelID,
 	}] = val
@@ -269,12 +264,12 @@ func PopulateValueCache() error {
 
 			unmarshaledValue := value.TypeAwareUnmarshalValue(unmarshaledJSON, information.DriverConfig.Info.HmsType)
 
-			DriverStore[DriverTuple{
+			DriverStore[database.DriverTuple{
 				VendorID: driver.VendorId,
 				ModelID:  driver.ModelId,
 			}] = (*unmarshaledValue).(value.ValueObject)
 		} else {
-			DriverStore[DriverTuple{
+			DriverStore[database.DriverTuple{
 				VendorID: driver.VendorId,
 				ModelID:  driver.ModelId,
 			}] = value.ObjectZeroValue(information.DriverConfig.Info.HmsType)

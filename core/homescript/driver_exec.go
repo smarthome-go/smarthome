@@ -74,7 +74,7 @@ func invokeDriverGeneric(
 	contextSingletons := make(map[string]value.Value)
 
 	// Load driver singleton.
-	driverSingleton, found := DriverStore[DriverTuple{
+	driverSingleton, found := DriverStore[database.DriverTuple{
 		VendorID: vendorId,
 		ModelID:  modelId,
 	}]

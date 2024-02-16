@@ -17,8 +17,8 @@ type DeviceDriverRequest struct {
 }
 
 type ConfigureDriverRequest struct {
-	Driver homescript.DriverTuple `json:"driver"`
-	Data   interface{}            `json:"data"`
+	Driver database.DriverTuple `json:"driver"`
+	Data   interface{}          `json:"data"`
 }
 
 type DeviceDriverAddRequest struct {

@@ -22,14 +22,42 @@ type DriverInfo struct {
 	DeviceConfig ConfigInfoWrapperDevice `json:"device"`
 }
 
+//
+// Begin capability set
+//
+
+type CapabilitySet[T comparable] []T
+
+func (self CapabilitySet[T]) Has(check T) bool {
+	for _, elem := range self {
+		if elem == check {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (self CapabilitySet[T]) Add(add T) {
+	if self.Has(add) {
+		return
+	}
+
+	self = append(self, add)
+}
+
+//
+// End capability set
+//
+
 type ConfigInfoWrapperDevice struct {
-	Capabilities []DeviceCapability `json:"capabilities"`
-	Info         ConfigInfoWrapper  `json:"info"`
+	Capabilities CapabilitySet[DeviceCapability] `json:"capabilities"`
+	Info         ConfigInfoWrapper               `json:"info"`
 }
 
 type ConfigInfoWrapperDriver struct {
-	Capabilities []DriverCapability `json:"capabilities"`
-	Info         ConfigInfoWrapper  `json:"info"`
+	Capabilities CapabilitySet[DriverCapability] `json:"capabilities"`
+	Info         ConfigInfoWrapper               `json:"info"`
 }
 
 type ConfigInfoWrapper struct {
