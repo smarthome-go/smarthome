@@ -1,8 +1,8 @@
 <script lang="ts">
     import Button from "@smui/button";
     import type { FetchedDriver } from "../driver";
-    import DynamicConfigurator from "./DynamicConfigurator.svelte";
-    import { createEventDispatcher, onMount } from "svelte";
+    import DynamicConfigurator from "../../../components/Homescript/DynamicConfigurator.svelte";
+    import { createEventDispatcher } from "svelte";
 
     export let driver: FetchedDriver = null
 
