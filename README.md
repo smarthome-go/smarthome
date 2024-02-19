@@ -1,4 +1,14 @@
 # Smarthome
+
+## WIP
+[!IMPORTANT]
+Currently, the device backend is under a major reconstruction.
+
+As stated below, the only way to interact with real devices was by using the very limited smarthome node interface.
+> As of April 27, 2022 the only way to make Smarthome interact with the real world is through the use of [node](https://github.com/smarthome-go/node), a Hardware interface which is required in order to interact with most generic 433mhz remote-sockets.
+
+After this rework, Homescript can be used to implement custom drivers for any kind of device that the user can dream of. Right now, only basic functionality without much stability is implemented.
+
 **Version**: `0.10.0-alpha`
 
 A completely self-built Smarthome-system written in Go.
