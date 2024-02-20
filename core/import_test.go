@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/smarthome-go/smarthome/core/config"
 	"github.com/smarthome-go/smarthome/core/database"
 )
 
@@ -15,10 +14,10 @@ func TestRunSetup(t *testing.T) {
 	cronExpression := "1 2 * * *"
 	var interval uint = 42
 
-	setup := config.SetupStruct{
-		Users: []config.SetupUser{
+	setup := SetupStruct{
+		Users: []SetupUser{
 			{
-				Data: config.SetupUserData{
+				Data: SetupUserData{
 					Username:          "setup",
 					Forename:          "Set",
 					Surname:           "Up",
@@ -28,7 +27,7 @@ func TestRunSetup(t *testing.T) {
 					SchedulerEnabled:  true,
 					DarkTheme:         true,
 				},
-				Homescripts: []config.SetupHomescript{
+				Homescripts: []SetupHomescript{
 					{
 						Data: database.HomescriptData{
 							Id:                  "setup_hms",
@@ -39,7 +38,7 @@ func TestRunSetup(t *testing.T) {
 							Code:                "print('Hello World!')",
 							MDIcon:              "code",
 						},
-						Arguments: []config.SetupHomescriptArg{
+						Arguments: []SetupHomescriptArg{
 							{
 								ArgKey:    "a_key",
 								Prompt:    "Enter your value",
@@ -55,7 +54,7 @@ func TestRunSetup(t *testing.T) {
 								Display:   database.NumberHour,
 							},
 						},
-						Automations: []config.SetupAutomation{
+						Automations: []SetupAutomation{
 							{
 								Name:                  "automation (cron)",
 								Description:           "An automation for testing the setup using cron",
@@ -82,7 +81,7 @@ func TestRunSetup(t *testing.T) {
 						},
 					},
 				},
-				Reminders: []config.SetupReminder{
+				Reminders: []SetupReminder{
 					{
 						Name:              "Do something",
 						Description:       "This is an important task",
@@ -102,14 +101,14 @@ func TestRunSetup(t *testing.T) {
 				CameraPermissions: []string{"lvr_main_door"},
 			},
 		},
-		Rooms: []config.SetupRoom{
+		Rooms: []SetupRoom{
 			{
 				Data: database.RoomData{
 					Id:          "living_room",
 					Name:        "Living Room",
 					Description: "This is the room where people live in",
 				},
-				Switches: []config.SetupDevice{
+				Switches: []SetupDevice{
 					{
 						Id:      "lvr_big_lamp",
 						Name:    "Big Lamp",
@@ -117,7 +116,7 @@ func TestRunSetup(t *testing.T) {
 						Watts:   0,
 					},
 				},
-				Cameras: []config.SetupCamera{
+				Cameras: []SetupCamera{
 					{
 						Id:   "lvr_main_door",
 						Name: "Living Room Main Door",
@@ -126,7 +125,7 @@ func TestRunSetup(t *testing.T) {
 				},
 			},
 		},
-		HardwareNodes: []config.SetupHardwareNode{},
+		HardwareNodes: []SetupHardwareNode{},
 		ServerConfiguration: database.ServerConfig{
 			AutomationEnabled: false,
 			LockDownMode:      false,

@@ -1,6 +1,8 @@
 module github.com/smarthome-go/smarthome
 
-go 1.18
+go 1.21
+
+toolchain go1.22.0
 
 require (
 	github.com/briandowns/openweathermap v0.19.0
