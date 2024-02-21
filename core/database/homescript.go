@@ -144,6 +144,7 @@ func ModifyHomescriptById(id string, owner string, newData HomescriptData) error
 		newData.MDIcon,
 		newData.Workspace,
 		id,
+		owner,
 	)
 	if err != nil {
 		log.Error("Failed to update Homescript: executing query failed: ", err.Error())
