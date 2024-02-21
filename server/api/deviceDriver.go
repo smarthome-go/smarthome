@@ -22,11 +22,12 @@ type ConfigureDriverRequest struct {
 }
 
 type DeviceDriverAddRequest struct {
-	VendorId       string `json:"vendorId"`
-	ModelId        string `json:"modelId"`
-	Name           string `json:"name"`
-	Version        string `json:"version"`
-	HomescriptCode string `json:"homescriptCode"`
+	VendorId string `json:"vendorId"`
+	ModelId  string `json:"modelId"`
+	Name     string `json:"name"`
+	Version  string `json:"version"`
+	// If this is `nil`, the backend automatically generates code for the driver.
+	HomescriptCode *string `json:"homescriptCode"`
 }
 
 func ListDeviceDrivers(w http.ResponseWriter, r *http.Request) {
@@ -111,7 +112,7 @@ func CreateDeviceDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hmsErr, dbErr := homescript.Create(
+	hmsErr, dbErr := homescript.CreateDriver(
 		request.VendorId,
 		request.ModelId,
 		request.Name,

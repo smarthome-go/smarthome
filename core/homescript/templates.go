@@ -67,7 +67,8 @@ func driverTemplate(span errors.Span) DriverTemplate {
 // Device functions.
 //
 
-const DeviceFunctionValidate = "validate_device"
+const DeviceFunctionValidateDevice = "validate_device"
+const DeviceFunctionValidateDriver = "validate_device"
 const DeviceFunctionReportPowerState = "report_power"
 const DeviceFunctionReportPowerDraw = "report_power_draw"
 const DeviceFunctionSetPower = "set_power"
@@ -77,7 +78,7 @@ const DeviceFunctionDim = "dim"
 
 // TODO: maybe own submodule for templates?
 
-func deviceValidateDeviceSignature(span errors.Span) ast.TemplateMethod {
+func deviceValidateDeviceOrDriverSignature(span errors.Span) ast.TemplateMethod {
 	return ast.TemplateMethod{
 		Signature: ast.NewFunctionType(
 			ast.NewNormalFunctionTypeParamKind(
@@ -196,7 +197,7 @@ func deviceTemplate(span errors.Span) DeviceTemplate {
 	return DeviceTemplate{
 		Spec: ast.TemplateSpec{
 			BaseMethods: map[string]ast.TemplateMethod{
-				DeviceFunctionValidate:         deviceValidateDeviceSignature(span),
+				DeviceFunctionValidateDevice:   deviceValidateDeviceOrDriverSignature(span),
 				DeviceFunctionReportPowerState: DeviceReportPowerStateSignature(span),
 				DeviceFunctionReportPowerDraw:  DeviceReportPowerDrawSignature(span),
 				DeviceFunctionSetPower:         DeviceSetPowerSignature(span),
@@ -205,7 +206,7 @@ func deviceTemplate(span errors.Span) DeviceTemplate {
 			},
 			Capabilities: map[string]ast.TemplateCapability{
 				DefaultCapabilityName: {
-					RequiresMethods:           []string{DeviceFunctionValidate},
+					RequiresMethods:           []string{DeviceFunctionValidateDevice},
 					ConflictsWithCapabilities: []ast.TemplateConflict{},
 				},
 				"dimmable": {

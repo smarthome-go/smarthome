@@ -1,8 +1,12 @@
 package database
 
 import (
+	_ "embed"
 	"fmt"
 )
+
+//go:embed default_driver.hms
+var DefaultDriverHomescriptCode string
 
 type HOMESCRIPT_TYPE string
 

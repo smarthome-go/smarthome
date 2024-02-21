@@ -97,7 +97,7 @@ func TestRunSetup(t *testing.T) {
 					string(database.PermissionHomescript),
 					string(database.PermissionReminder),
 				},
-				SwitchPermissions: []string{"lvr_big_lamp"},
+				DevicePermissions: []string{"lvr_big_lamp"},
 				CameraPermissions: []string{"lvr_main_door"},
 			},
 		},
@@ -108,12 +108,14 @@ func TestRunSetup(t *testing.T) {
 					Name:        "Living Room",
 					Description: "This is the room where people live in",
 				},
-				Switches: []SetupDevice{
+				Devices: []SetupDevice{
 					{
-						Id:      "lvr_big_lamp",
-						Name:    "Big Lamp",
-						PowerOn: false,
-						Watts:   0,
+						DeviceType:    database.DEVICE_TYPE_OUTPUT,
+						Id:            "lvr_big_lamp",
+						Name:          "Big Lamp",
+						VendorId:      "foo-vendor",
+						ModelId:       "bar-model",
+						SingletonJSON: "{\"runs\": 42}",
 					},
 				},
 				Cameras: []SetupCamera{
@@ -125,7 +127,6 @@ func TestRunSetup(t *testing.T) {
 				},
 			},
 		},
-		HardwareNodes: []SetupHardwareNode{},
 		ServerConfiguration: database.ServerConfig{
 			AutomationEnabled: false,
 			LockDownMode:      false,
@@ -153,34 +154,18 @@ func TestRunSetup(t *testing.T) {
 		return
 	}
 
-	for _, switchItem := range setup.Rooms[0].Switches {
-		_, exists, err := database.GetDeviceById(switchItem.Id)
+	for _, device := range setup.Rooms[0].Devices {
+		_, exists, err := database.GetDeviceById(device.Id)
 		if err != nil {
 			t.Error(err.Error())
 			return
 		}
 		if !exists {
-			t.Errorf("Switch %s does not exist after setup was completed", switchItem.Id)
+			t.Errorf("Device %s does not exist after setup was completed", device.Id)
 			return
 		}
 	}
-	nodes, err := database.GetHardwareNodes()
-	if err != nil {
-		t.Error(err.Error())
-		return
-	}
-	for _, setupNode := range setup.HardwareNodes {
-		nodesvalid := false
-		for _, node := range nodes {
-			if node.Url == setupNode.Url && node.Name == setupNode.Name && node.Token == setupNode.Token {
-				nodesvalid = true
-			}
-		}
-		if !nodesvalid {
-			t.Errorf("Node %s does not exists after creation", setupNode.Url)
-			return
-		}
-	}
+
 	rooms, err := database.ListRooms()
 	if err != nil {
 		t.Error(err.Error())
@@ -198,6 +183,8 @@ func TestRunSetup(t *testing.T) {
 			return
 		}
 	}
+
+	// TODO: test drivers
 }
 
 func TestReadBrokenSetupFile(t *testing.T) {

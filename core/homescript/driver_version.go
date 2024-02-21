@@ -13,10 +13,9 @@ type SemanticVersion struct {
 }
 
 const semVerSegments = 3
+const delimiter = "."
 
 func ParseDriverVersion(source string) (SemanticVersion, error) {
-	delimiter := "."
-
 	split := strings.Split(source, delimiter)
 	if len(split) != semVerSegments {
 		return SemanticVersion{}, fmt.Errorf("Expected exactly 3 version components, got %d", len(split))
@@ -34,4 +33,12 @@ func ParseDriverVersion(source string) (SemanticVersion, error) {
 
 	//nolint:exhaustruct
 	return SemanticVersion{}, nil
+}
+
+func (self SemanticVersion) String() string {
+	output := make([]string, semVerSegments)
+	output[0] = fmt.Sprint(self.Major)
+	output[1] = fmt.Sprint(self.Minor)
+	output[2] = fmt.Sprint(self.Patch)
+	return strings.Join(output, delimiter)
 }

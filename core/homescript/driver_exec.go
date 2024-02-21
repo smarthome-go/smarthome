@@ -199,6 +199,27 @@ func InvokeDriverFunc(
 	return runResult, nil, nil
 }
 
+func InvokeValidateCheckDriver(ids DriverInvocationIDs) ([]HmsError, error) {
+	_, hmsErrs, err := InvokeDriverFunc(
+		ids,
+		FunctionCall{
+			Invocation: runtime.FunctionInvocation{
+				Function: DeviceFunctionValidateDriver,
+				Args:     []value.Value{},
+				FunctionSignature: runtime.FunctionInvocationSignatureFromType(
+					deviceValidateDeviceOrDriverSignature(errors.Span{}).Signature,
+				),
+			},
+		},
+	)
+
+	if err != nil || hmsErrs != nil {
+		return hmsErrs, err
+	}
+
+	return nil, nil
+}
+
 func InvokeDriverReportPowerState(
 	ids DriverInvocationIDs,
 ) (DriverActionGetPowerStateOutput, []HmsError, error) {

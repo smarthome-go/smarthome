@@ -41,8 +41,8 @@ func TestExportGeneration(t *testing.T) {
 		ModelId:        "test",
 		Name:           "Golang-Test",
 		Version:        "0.0.1",
-		HomescriptCode: "fn main() {}",
-		ConfigJson:     nil,
+		HomescriptCode: homescript.DefaultDriverHomescriptCode,
+		SingletonJSON:  nil,
 	}
 
 	assert.NoError(t, database.CreateNewDeviceDriver(testDriver))
@@ -65,23 +65,32 @@ func TestExportGeneration(t *testing.T) {
 		Description: "Where the people live...",
 	}))
 
-	// Create switches
-	assert.NoError(t, database.CreateDevice(
+	// Create devices
+	driverFound, hmsErr, dbErr := homescript.CreateDevice(
 		database.DEVICE_TYPE_OUTPUT,
 		"big_lamp",
 		"Big Lamp",
 		"living_room",
 		testDriver.VendorId,
 		testDriver.ModelId,
-	))
-	assert.NoError(t, database.CreateDevice(
+	)
+
+	assert.True(t, driverFound)
+	assert.NoError(t, dbErr)
+	assert.NoError(t, hmsErr)
+
+	driverFound, hmsErr, dbErr = homescript.CreateDevice(
 		database.DEVICE_TYPE_OUTPUT,
 		"desk_lamp",
 		"Desk Lamp",
 		"living_room",
 		testDriver.VendorId,
 		testDriver.ModelId,
-	))
+	)
+
+	assert.True(t, driverFound)
+	assert.NoError(t, dbErr)
+	assert.NoError(t, hmsErr)
 
 	// Create cameras
 	assert.NoError(t, database.CreateCamera(database.Camera{

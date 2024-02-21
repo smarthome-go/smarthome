@@ -93,18 +93,20 @@
 
 <div class="hardware">
     <Progress bind:loading />
-    <h6>Drivers</h6>
 
     <div class="hardware__type">
         <div class="hardware__type__label">
-            <a
-                class="hardware__type__label__name"
-                href="https://github.com/smarthome-go/node"
-                rel="noopener noreferrer nofollow"
-                target="_blank"
-                >Drivers (TODO: link to wiki)
-            </a>
-            <i class="hardware__type__label__icon material-icons">memory</i>
+            <div class="hardware__type__label__left">
+                <h6>
+                        <a
+                            class="hardware__type__label__name"
+                            href="https://github.com/smarthome-go/node"
+                            rel="noopener noreferrer nofollow"
+                            target="_blank"
+                            >Drivers (TODO: link to wiki)
+                        </a>
+                </h6>
+            </div>
             <div class="hardware__type__label__right">
                 <IconButton
                     disabled={loading}
@@ -133,7 +135,7 @@
                     <DriverComponent
                         bind:driver
                         on:save={(e) => saveDriverConfig(driver.driver.vendorId, driver.driver.modelId, e.detail)}
-                        on:delete={deleteDriver(driver.driver.vendorId, driver.driver.modelId)}
+                        on:delete={() => deleteDriver(driver.driver.vendorId, driver.driver.modelId)}
                     />
                 {/each}
                 <div class="hardware__drivers__placeholder" />
@@ -146,7 +148,7 @@
 <style lang="scss">
     @use './drivers.scss' as *;
 
-    // Main list which contains different kinds of manufacturers
+    // Main list which contains different kinds of drivers
     .hardware {
         padding: 1rem 1.5rem;
 
@@ -169,11 +171,7 @@
                 &__name {
                     color: var(--clr-text-hint);
                 }
-                // `i-tag` which contains a MD icon
-                &__icon {
-                    color: var(--clr-text-hint);
-                    font-size: 1.5rem;
-                }
+
                 &__right {
                     margin-left: auto;
                     display: flex;
@@ -182,10 +180,6 @@
                 }
             }
         }
-
-        /*
-           Vendor-specific styles start here
-        */
 
         // Driver list
         &__drivers {

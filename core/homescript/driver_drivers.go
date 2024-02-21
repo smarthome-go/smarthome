@@ -1,6 +1,7 @@
 package homescript
 
 import (
+	_ "embed"
 	"fmt"
 	"reflect"
 	"strings"
@@ -158,19 +159,25 @@ func ListDriversWithStoredConfig() ([]RichDriver, error) {
 	return drivers, nil
 }
 
-func Create(vendorID, modelID, name, version, hmsCode string) (hmsErr error, dbErr error) {
+func CreateDriver(vendorID, modelID, name, version string, hmsCode *string) (hmsErr error, dbErr error) {
+	hmsCodeToUse := database.DefaultDriverHomescriptCode
+
+	if hmsCode != nil {
+		hmsCodeToUse = *hmsCode
+	}
+
 	driverData := database.DeviceDriver{
 		VendorId:       vendorID,
 		ModelId:        modelID,
 		Name:           name,
 		Version:        version,
-		HomescriptCode: hmsCode,
+		HomescriptCode: hmsCodeToUse,
 		SingletonJSON:  nil,
 	}
 
 	// Try to create default JSON from schema.
 	// This can fail if the Homescript code is invalid.
-	configInfo, hmsErrs, err := extractInfoFromDriver(vendorID, modelID, hmsCode)
+	configInfo, hmsErrs, err := extractInfoFromDriver(vendorID, modelID, hmsCodeToUse)
 	if err != nil {
 		return nil, err
 	}

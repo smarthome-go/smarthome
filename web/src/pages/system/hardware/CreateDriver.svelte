@@ -10,16 +10,17 @@
     import CharacterCounter from "@smui/textfield/character-counter";
     import HelperText from "@smui/textfield/helper-text";
     import { createEventDispatcher } from "svelte";
-    import type { CreateDriver } from "../driver";
+    import type { CreateDriverReq } from "../driver";
 
     export let open: boolean;
 
-    let input: CreateDriver = {
+    let input: CreateDriverReq = {
        name: "",
        vendorId: "",
        modelId: "",
        version: "",
-       homescriptCode: ""
+        // Backend should generate code.
+       homescriptCode: null,
     }
 
     const dispatch = createEventDispatcher();

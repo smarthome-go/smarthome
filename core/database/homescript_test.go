@@ -105,7 +105,7 @@ func TestHomescript(t *testing.T) {
 			t.Errorf("Expected abundant error: want: %s got: ", item.Error)
 			return
 		}
-		homescript, exists, err := GetUserHomescriptById(item.Homescript.Data.Id, item.Homescript.Owner)
+		homescript, exists, err := GetPersonalHomescriptById(item.Homescript.Data.Id, item.Homescript.Owner)
 		if err != nil {
 			t.Error(err.Error())
 			return
@@ -144,7 +144,7 @@ func TestHomescript(t *testing.T) {
 				t.Errorf("Expected abundant error during modification of %s: want: %s got: %s", item.Homescript.Data.Id, item.ErrorModification, "")
 				return
 			}
-			homescript, exists, err := GetUserHomescriptById(item.Homescript.Data.Id, item.Homescript.Owner)
+			homescript, exists, err := GetPersonalHomescriptById(item.Homescript.Data.Id, item.Homescript.Owner)
 			if err != nil {
 				t.Error(err.Error())
 				return
@@ -286,7 +286,7 @@ func TestGetUserHomescriptById(t *testing.T) {
 			return
 		}
 	}
-	_, exists, err := GetUserHomescriptById("admin_new", "hms_testing2")
+	_, exists, err := GetPersonalHomescriptById("admin_new", "hms_testing2")
 	if err != nil {
 		t.Error(err.Error())
 		return
@@ -295,7 +295,7 @@ func TestGetUserHomescriptById(t *testing.T) {
 		t.Errorf("Homescript `admin_new` should not be accessible by user `hms_testing2`")
 		return
 	}
-	_, exists, err = GetUserHomescriptById("hms_testing_temp", "hms_testing2")
+	_, exists, err = GetPersonalHomescriptById("hms_testing_temp", "hms_testing2")
 	if err != nil {
 		t.Error(err.Error())
 		return

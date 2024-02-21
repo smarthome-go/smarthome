@@ -25,19 +25,21 @@ func createMockData() error {
 	if err := database.CreateRoom(database.RoomData{Id: "test_room"}); err != nil {
 		panic(err.Error())
 	}
-	if err := database.CreateDevice("test_switch", "", "test_room", 0, nil); err != nil {
-		panic(err.Error())
-	}
-	if err := database.CreateDevice("test_switch_modify", "", "test_room", 0, nil); err != nil {
-		panic(err.Error())
-	}
-	if err := database.CreateDevice("test_switch_inactive", "", "test_room", 0, nil); err != nil {
-		panic(err.Error())
-	}
-	if err := database.CreateDevice("test_switch_abort", "", "test_room", 0, nil); err != nil {
-		panic(err.Error())
-	}
-	_, doesExists, err := database.GetUserHomescriptById("test", "admin")
+
+	// if err := database.CreateDevice("test_switch", "", "test_room", 0, nil); err != nil {
+	// 	panic(err.Error())
+	// }
+	// if err := database.CreateDevice("test_switch_modify", "", "test_room", 0, nil); err != nil {
+	// 	panic(err.Error())
+	// }
+	// if err := database.CreateDevice("test_switch_inactive", "", "test_room", 0, nil); err != nil {
+	// 	panic(err.Error())
+	// }
+	// if err := database.CreateDevice("test_switch_abort", "", "test_room", 0, nil); err != nil {
+	// 	panic(err.Error())
+	// }
+
+	_, doesExists, err := database.GetPersonalHomescriptById("test", "admin")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -57,7 +59,7 @@ func createMockData() error {
 			panic(err.Error())
 		}
 	}
-	_, doesExists, err = database.GetUserHomescriptById("test_modify", "admin")
+	_, doesExists, err = database.GetPersonalHomescriptById("test_modify", "admin")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -77,7 +79,7 @@ func createMockData() error {
 			panic(err.Error())
 		}
 	}
-	_, doesExists, err = database.GetUserHomescriptById("test_inactive", "admin")
+	_, doesExists, err = database.GetPersonalHomescriptById("test_inactive", "admin")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -97,7 +99,7 @@ func createMockData() error {
 			panic(err.Error())
 		}
 	}
-	_, doesExists, err = database.GetUserHomescriptById("test_abort", "admin")
+	_, doesExists, err = database.GetPersonalHomescriptById("test_abort", "admin")
 	if err != nil {
 		panic(err.Error())
 	}

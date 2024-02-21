@@ -2,7 +2,7 @@ import { createSnackbar } from "../../global";
 import { get } from "svelte/store";
 import type { ConfigSpecWrapper, ValidationError } from "../../driver";
 
-export type CreateDriverReq = DriverData
+export type CreateDriverReq = DriverData & { homescriptCode: null | string }
 
 export interface FetchedDriver {
     driver:           DriverData;

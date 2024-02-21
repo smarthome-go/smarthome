@@ -363,20 +363,21 @@
         flex-direction: column;
         display: flex;
         gap: 1rem;
+        height: calc(100vh - 60px);
 
         @include widescreen {
-            height: calc(100vh - 60px);
             flex-direction: row;
         }
 
         @include mobile {
+            height: auto;
             padding: 1rem;
         }
 
         #general {
             background-color: var(--clr-height-0-1);
             border-radius: 0.4rem;
-            height: 65%;
+            height: 100%;
             width: 100%;
             box-sizing: border-box;
             padding: 1rem 1.5rem;
@@ -445,7 +446,6 @@
 
             @include widescreen {
                 height: 100%;
-                //width: 60%;
             }
 
             @include mobile {
@@ -457,12 +457,11 @@
             background-color: var(--clr-height-0-1);
             border-radius: 0.4rem;
             width: 100%;
+            height: calc(100vh - 60px);
             overflow-y: auto;
             padding-bottom: 1rem;
 
             @include widescreen {
-                height: 100%;
-                //width: 50%;
                 padding-bottom: 0;
             }
 

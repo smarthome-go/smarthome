@@ -1,0 +1,24 @@
+import { templ Driver, templ Device } from driver;
+
+$Driver = {
+    @setting bool_setting: bool,
+};
+
+impl Driver for $Driver {
+    pub fn validate_driver(self: $Driver) /* throws */ {
+        println(self)
+    }
+}
+
+
+$Device = {
+    @setting string_setting: str,
+};
+
+impl Device for $Device {
+    pub fn validate_device(self: $Device) /* throws */ {
+        println(self)
+    }
+}
+
+fn main(_driver: $Driver, _device: $Device) {}
