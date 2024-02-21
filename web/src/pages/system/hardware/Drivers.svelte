@@ -6,7 +6,7 @@
     import Fab from "@smui/fab";
     import CreateDriver from "./CreateDriver.svelte";
     import IconButton from "@smui/icon-button";
-    import type { FetchedDriver } from "../driver"
+    import type { FetchedDriver, CreateDriverReq } from "../driver"
     import { fetchDrivers, createDriver } from "../driver"
     import DriverComponent from "./DriverComponent.svelte";
 
@@ -55,12 +55,40 @@
         loading = false
     }
 
+    async function createDriverWrapper(data: CreateDriverReq) {
+        loading = true
+        await createDriver(data)
+        loading = false
+
+        await refresh()
+    }
+
+    async function deleteDriver(vendorId: string, modelId: string) {
+        try {
+            const res = await fetch(
+                '/api/system/hardware/driver/delete',
+                {
+                    method: 'DELETE',
+                    body: JSON.stringify({ vendorId, modelId })
+                },
+            );
+            if (res.status !== 200) {
+                let msg  = await res.json()
+                throw `${msg.message}: ${msg.error}`
+            }
+
+            drivers = drivers.filter(d => d.driver.vendorId !== vendorId && d.driver.modelId != modelId)
+        } catch (error) {
+            $createSnackbar(`Deleting driver failed: ${error}`)
+        }
+    }
+
     onMount(refresh);
 </script>
 
 <CreateDriver
     bind:open={createDriverOpen}
-    on:create={(e) => createDriver(e.detail)}
+    on:create={(e) => createDriverWrapper(e.detail)}
 />
 
 <div class="hardware">
@@ -102,14 +130,22 @@
                 <span class="text-hint">No installed drivers </span>
             {:else}
                 {#each drivers as driver}
-                    <DriverComponent bind:driver on:save={(e) => saveDriverConfig(driver.driver.vendorId, driver.driver.modelId, e.detail)} />
+                    <DriverComponent
+                        bind:driver
+                        on:save={(e) => saveDriverConfig(driver.driver.vendorId, driver.driver.modelId, e.detail)}
+                        on:delete={deleteDriver(driver.driver.vendorId, driver.driver.modelId)}
+                    />
                 {/each}
+                <div class="hardware__drivers__placeholder" />
+                <div class="hardware__drivers__placeholder" />
             {/if}
         </div>
     </div>
 </div>
 
 <style lang="scss">
+    @use './drivers.scss' as *;
+
     // Main list which contains different kinds of manufacturers
     .hardware {
         padding: 1rem 1.5rem;
@@ -155,7 +191,12 @@
         &__drivers {
             display: flex;
             flex-wrap: wrap;
-            gap: 1rem;
+            gap: 1.5rem;
+
+            &__placeholder {
+                flex-grow: 1;
+                width: $driver-width;
+            }
         }
     }
 </style>

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { ConfigSpec, ConfigSpecInner, ConfigSpecStruct, ConfigSpecType } from "../driver";
+    import type { ConfigSpec, ConfigSpecInner, ConfigSpecStruct, ConfigSpecType } from "../../driver";
     import { MDCTextField } from '@material/textfield';
     import { MDCRipple } from '@material/ripple';
     // import { MDCMenu } from '@material/menu';
@@ -982,9 +982,8 @@
 
     // https://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-deep-clone-an-object-in-javascript#122704
     function reactToNewInput(inp: any) {
-        // TODO: what to do if schema is incompatible, check using version tag?, Enforce in backend?
-        dataInternal = JSON.parse(JSON.stringify(inp)) // TODO: can we omit any of these clones?
-        drawUi(JSON.parse(JSON.stringify(inp)))
+        dataInternal = structuredClone(inp)
+        drawUi(structuredClone(inp))
         commitState()
     }
 

@@ -165,7 +165,7 @@ func ModifyDeviceDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	wasFound, err := database.ModifyDeviceDriver(request)
+	_, wasFound, err := database.GetDeviceDriver(request.VendorId, request.ModelId)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to modify device driver", Error: "database failure"})
@@ -179,6 +179,12 @@ func ModifyDeviceDriver(w http.ResponseWriter, r *http.Request) {
 			Message: "failed to modify device driver",
 			Error:   fmt.Sprintf("the device driver `%s:%s` does not exist", request.ModelId, request.VendorId),
 		})
+		return
+	}
+
+	if err := database.ModifyDeviceDriver(request); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to modify device driver", Error: "database failure"})
 		return
 	}
 

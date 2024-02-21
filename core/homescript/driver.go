@@ -237,6 +237,7 @@ func ExtractDriverInfo(
 		})
 		incompatibleType = true
 	}
+
 	if deviceConfig.Kind() != CONFIG_FIELD_TYPE_STRUCT {
 		diagnostics = append(diagnostics, diagnostic.Diagnostic{
 			Level:   diagnostic.DiagnosticLevelError,
@@ -251,8 +252,14 @@ func ExtractDriverInfo(
 
 	if incompatibleType {
 		return DriverInfo{
-			DriverConfig: ConfigInfoWrapperDriver{},
-			DeviceConfig: ConfigInfoWrapperDevice{},
+			DriverConfig: ConfigInfoWrapperDriver{
+				Capabilities: driverCapabilities,
+				Info:         ConfigInfoWrapper{},
+			},
+			DeviceConfig: ConfigInfoWrapperDevice{
+				Capabilities: deviceCapabilities,
+				Info:         ConfigInfoWrapper{},
+			},
 		}, diagnostics
 	}
 

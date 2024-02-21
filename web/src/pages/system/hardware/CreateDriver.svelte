@@ -10,17 +10,18 @@
     import CharacterCounter from "@smui/textfield/character-counter";
     import HelperText from "@smui/textfield/helper-text";
     import { createEventDispatcher } from "svelte";
+    import type { CreateDriver } from "../driver";
 
-    // Whether the dialog should be open or closed
     export let open: boolean;
 
-    // Input data
-    let name = "";
-    let vendorId = "";
-    let modelId = "";
-    let version = "";
+    let input: CreateDriver = {
+       name: "",
+       vendorId: "",
+       modelId: "",
+       version: "",
+       homescriptCode: ""
+    }
 
-    // Event dispatcher
     const dispatch = createEventDispatcher();
 
     function isEmpty(input: string): boolean {
@@ -36,7 +37,7 @@
     <Title id="create-node-title">Create Hardware Driver</Title>
     <Content id="create-node-content">
         <Textfield
-            bind:value={name}
+            bind:value={input.name}
             label="Name"
             style="width: 100%;"
         >
@@ -45,7 +46,7 @@
             </svelte:fragment>
         </Textfield>
         <Textfield
-            bind:value={vendorId}
+            bind:value={input.vendorId}
             label="Vendor ID"
             input$maxlength={50}
             style="width: 100%;"
@@ -56,7 +57,7 @@
             </svelte:fragment>
         </Textfield>
         <Textfield
-            bind:value={modelId}
+            bind:value={input.modelId}
             label="Model ID"
             input$maxlength={50}
             style="width: 100%;"
@@ -67,7 +68,7 @@
             </svelte:fragment>
         </Textfield>
         <Textfield
-            bind:value={version}
+            bind:value={input.version}
             label="Version"
             input$maxlength={50}
             style="width: 100%;"
@@ -86,18 +87,18 @@
             defaultAction
             use={[InitialFocus]}
             on:click={() => {
-                dispatch("create", {
-                    name,
-                    vendorId,
-                    modelId,
-                    version,
-            })
-            name = ""
-            vendorId = ""
-            modelId = ""
-            version = ""
+                dispatch("create", structuredClone(input))
+            input.name = ""
+            input.vendorId = ""
+            input.modelId = ""
+            input.version = ""
             }}
-            disabled={isEmpty(name) || isEmpty(vendorId) || isEmpty(modelId) || isEmpty(version) }
+            disabled={
+                isEmpty(input.name) ||
+                isEmpty(input.vendorId) ||
+                isEmpty(input.modelId) ||
+                isEmpty(input.version)
+            }
         >
             <Label>Create</Label>
         </Button>

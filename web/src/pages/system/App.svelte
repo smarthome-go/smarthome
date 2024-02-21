@@ -445,7 +445,7 @@
 
             @include widescreen {
                 height: 100%;
-                width: 60%;
+                //width: 60%;
             }
 
             @include mobile {
@@ -462,7 +462,7 @@
 
             @include widescreen {
                 height: 100%;
-                width: 50%;
+                //width: 50%;
                 padding-bottom: 0;
             }
 

@@ -2,10 +2,7 @@ import { createSnackbar } from "../../global";
 import { get } from "svelte/store";
 import type { ConfigSpecWrapper, ValidationError } from "../../driver";
 
-export interface CreateDriver {
-    data: DriverData,
-    code: string,
-}
+export type CreateDriverReq = DriverData
 
 export interface FetchedDriver {
     driver:           DriverData;
@@ -42,18 +39,13 @@ export async function fetchDrivers(): Promise<FetchedDriver[]> {
 }
 
 // Creates a new hardware node
-export async function createDriver(
-    data: CreateDriver
-) {
+export async function createDriver(data: CreateDriverReq) {
     try {
         const res = await (
             await fetch("/api/system/hardware/driver/add", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    data,
-                    code: "// Enter device Driver code here\n"
-                }),
+                body: JSON.stringify(data),
             })
         ).json();
         if (res.success !== undefined && !res.success)
