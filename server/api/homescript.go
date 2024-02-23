@@ -725,6 +725,12 @@ func ListHomescriptSources(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sources, allFound, err := homescript.GetSources(username, request.Ids)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "could not retrieve Homescript sources", Error: "database failure"})
+		return
+	}
+
 	if !allFound {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		Res(w, Response{Success: false, Message: "invalid id(s)", Error: "one or more ids were not found in the database"})

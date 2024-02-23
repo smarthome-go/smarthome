@@ -192,6 +192,8 @@ func ModifyDeviceDriverCode(vendorId string, modelId string, newCode string) (bo
 }
 
 func GetDriverSources(ids []DriverTuple) (drivers map[DriverTuple]string, allFound bool, err error) {
+	drivers = make(map[DriverTuple]string)
+
 	query, err := db.Prepare(`
 	SELECT deviceDriver.HomescriptCode
 	FROM deviceDriver WHERE
@@ -200,12 +202,14 @@ func GetDriverSources(ids []DriverTuple) (drivers map[DriverTuple]string, allFou
 	`)
 
 	if err != nil {
+		log.Errorf("Could not list driver sources: preparing query failed: %s\n", err.Error())
 		return nil, false, err
 	}
 
 	for _, id := range ids {
-		row := query.QueryRow()
+		row := query.QueryRow(id.VendorID, id.ModelID)
 		if err != nil {
+			log.Errorf("Could not list driver sources: query row failed: %s\n", err.Error())
 			return nil, false, err
 		}
 
@@ -216,6 +220,7 @@ func GetDriverSources(ids []DriverTuple) (drivers map[DriverTuple]string, allFou
 				return nil, false, nil
 			}
 
+			log.Errorf("Could not list driver sources: scanning failed: %s\n", err.Error())
 			return nil, false, err
 		}
 

@@ -76,13 +76,11 @@ func GetPersonalScriptById(homescriptId string, username string) (database.Homes
 }
 
 func GetSources(username string, ids []string) (sources map[string]string, found bool, err error) {
-	normalSources, found, err := database.GetHmsSources(username, ids)
+	sources = make(map[string]string)
+
+	rawSources, found, err := database.GetHmsSources(username, ids)
 	if err != nil {
 		return nil, false, err
-	}
-
-	if !found {
-		return nil, false, nil
 	}
 
 	// If the user has rights to modify and view drivers, also include drivers
@@ -92,21 +90,25 @@ func GetSources(username string, ids []string) (sources map[string]string, found
 	}
 
 	if !hasDriverPermission {
-		return normalSources, true, nil
+		return sources, found, nil
+	}
+
+	for key, val := range rawSources {
+		sources[key] = val
 	}
 
 	// Try to parse the driver ids
 	remaining := make([]database.DriverTuple, 0)
 
-	for _, id := range normalSources {
+	for _, id := range ids {
 		// If this was already loaded, this is not a driver
-		if _, alreadyLoaded := normalSources[id]; alreadyLoaded {
-			continue
+		if _, alreadyLoaded := sources[id]; alreadyLoaded {
+			panic(remaining)
 		}
 
 		tuple, err := ParseHmsToDriver(id)
 		if err != nil {
-			return nil, false, nil
+			return nil, false, err
 		}
 
 		remaining = append(remaining, tuple)

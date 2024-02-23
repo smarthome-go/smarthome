@@ -8,6 +8,7 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	herrors "github.com/smarthome-go/homescript/v3/homescript/errors"
 	"github.com/smarthome-go/homescript/v3/homescript/parser"
+	"github.com/smarthome-go/smarthome/core/database"
 )
 
 const DRIVER_TEMPLATE_IDENT = "Driver"
@@ -27,7 +28,8 @@ func ExtractDriverInfoTotal(
 	modelID string,
 	homescriptCode string,
 ) (info DriverInfo, hmsErrors []diagnostic.Diagnostic, err error) {
-	filename := fmt.Sprintf("@%s:%s", vendorID, modelID)
+	// TODO: remove this hack for the filename
+	filename := CreateDriverHmsId(database.DriverTuple{VendorID: vendorID, ModelID: modelID})
 
 	analyzed, res, err := HmsManager.Analyze(
 		"", // TODO: what to do with this field??

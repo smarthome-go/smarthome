@@ -184,19 +184,18 @@ func ModifyHomescriptCode(id string, owner string, newCode string) error {
 }
 
 func GetHmsSources(username string, ids []string) (sources map[string]string, allFound bool, err error) {
-	query, err := db.Prepare(`
-	SELECT Id, Code FROM homescript
-	WHERE Id IN (?) AND Owner=?
-	`)
+	query, err := db.Prepare(`SELECT Id, Code FROM homescript WHERE Owner=?`)
 
 	if err != nil {
+		log.Errorf("Failed to get Homescript sources: could not prepare query: %s", err.Error())
 		return nil, false, err
 	}
 
 	defer query.Close()
 
-	res, err := query.Query(ids, username)
+	res, err := query.Query(username)
 	if err != nil {
+		log.Errorf("Failed to get Homescript sources: could not execute query: %s", err.Error())
 		return nil, false, err
 	}
 
@@ -205,7 +204,21 @@ func GetHmsSources(username string, ids []string) (sources map[string]string, al
 		var id, code string
 
 		if err := res.Scan(&id, &code); err != nil {
+			log.Errorf("Failed to get Homescript sources: could not scan results: %s", err.Error())
 			return nil, false, err
+		}
+
+		// If the scanned id is not among the requested, skip it.
+		idWasRequested := false
+		for _, idReq := range ids {
+			if idReq == id {
+				idWasRequested = true
+				break
+			}
+		}
+
+		if !idWasRequested {
+			continue
 		}
 
 		sources[id] = code

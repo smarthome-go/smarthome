@@ -351,11 +351,18 @@
                     return true
                 })
 
+            let fileContents: Map<string, string> = new Map();
+            for (let key of Object.keys(currentExecResTemp.fileContents)) {
+            fileContents.set(key, currentExecResTemp.fileContents[key])
+            }
+
+            currentExecResTemp.fileContents
+
             currentExecRes = {
                 code: currentData.data.data.data.code,
                 modeRun: false,
                 errors: errs,
-                fileContents: currentExecResTemp.fileContents,
+                fileContents,
                 success: currentExecResTemp.success,
             }
             output = currentExecResTemp.output
@@ -428,13 +435,20 @@
                 let message = JSON.parse(evt.data)
                 if (message.kind !== undefined && message.kind === 'out') output += message.payload
                 else if (message.kind !== undefined && message.kind === 'res') {
+                    let fileContents: Map<string, string> = new Map();
+
+                    for (let key of Object.keys(message.fileContents)) {
+                        fileContents.set(key, message.fileContents[key])
+                    }
+
                     currentExecRes = {
                         code: currentData.data.data.data.code,
                         modeRun: true,
                         errors: message.errors,
-                        fileContents: message.fileContents,
+                        fileContents,
                         success: message.success,
                     }
+
                     currentExecutionCount--
                     requestLoading = false
                 } else if (message.kind === 'err') {

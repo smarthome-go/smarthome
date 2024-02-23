@@ -13,7 +13,7 @@
     import Button, { Label, Icon } from '@smui/button';
     import type { ValidationError } from 'src/driver';
     import type { homescriptError } from 'src/homescript';
-    import Terminal from '../../components/Homescript/ExecutionResultPopup/Terminal.svelte'
+    // import Terminal from '../../components/Homescript/ExecutionResultPopup/Terminal.svelte'
     import ExecutionResultPopup from '../../components/Homescript/ExecutionResultPopup/ExecutionResultPopup.svelte'
 
     // Event dispatcher
@@ -116,28 +116,39 @@
     }
 
     let homescriptCode: Map<string, string> = new Map()
+    let sourcesUpToDate = false
 
-    $: if((data.hmsErrors !== null) && data.hmsErrors.length > 0) loadHmsSources()
+    $: if((data.hmsErrors !== null) && data.hmsErrors.length > 0) loadHmsSources(data.hmsErrors.map(e => e.span.filename))
 
     // TODO: optimize this!
-    async function loadHmsSources() {
-        const url = "/api/homescript/sources"
-        let res = await (await fetch(url)).json()
+    async function loadHmsSources(ids: string[]) {
+        sourcesUpToDate = false
+
+        let res = await (await fetch("/api/homescript/sources", {
+            method: 'PUT',
+            body: JSON.stringify({
+                ids: [...new Set(ids)],
+            })
+        })).json()
 
         for (let item of Object.keys(res)) {
             homescriptCode.set(item, res[item])
         }
+
+        sourcesUpToDate = true
     }
+
+    let errorsOpen = false
 </script>
 
 <EditDevice
     on:delete={() => dispatch('delete', null)}
     on:modify={event => {
         // TODO: implement copy
-        name = event.detail.name
-        watts = event.detail.watts
-        targetNode = event.detail.targetNode
-        event.detail.id = id
+        // name = event.detail.name
+        // watts = event.detail.watts
+        // targetNode = event.detail.targetNode
+        // event.detail.id = id
         dispatch('modify', event.detail)
     }}
     {data}
@@ -148,27 +159,29 @@
 
 <div class="switch mdc-elevation--z3" class:wide={hasEditPermission}>
     {#if (data.hmsErrors !== null) && data.hmsErrors.length > 0}
-            <ExecutionResultPopup
-                open={true}
-                data={{
-                    response: {
-                        id: "",
-                        success: false,
-                        output: "",
-                        fileContents: homescriptCode, // TODO
-                        errors: data.hmsErrors,
-                    },
-                    code: "fn main(){}",
-                }}
-                scriptId={data.id}
-                on:close={() => {
-                    // This hack is required so that the window still remains scrollable after removal
-                }}
-            />
+            {#if sourcesUpToDate}
+                <ExecutionResultPopup
+                    open={errorsOpen}
+                    data={{
+                        modeRun: true,
+                        response: {
+                            id: "",
+                            success: false,
+                            output: "",
+                            fileContents: homescriptCode, // TODO
+                            errors: data.hmsErrors,
+                        },
+                        code: "fn main(){}",
+                    }}
+                    on:close={() => {
+                        // This hack is required so that the window still remains scrollable after removal
+                    }}
+                />
+            {/if}
 
             <div class="switch__error">
                 {data.hmsErrors.length} Error {data.hmsErrors.length != 1 ? 's' : ''}
-                <Button on:click={() => {}}>
+                <Button on:click={() => errorsOpen=true}>
                     <Label>Inspect</Label>
                     <Icon class="material-icons">bug_report</Icon>
                 </Button>
