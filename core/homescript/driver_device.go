@@ -3,6 +3,7 @@ package homescript
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
@@ -156,6 +157,23 @@ func EnrichDevicesList(input []database.Device) ([]Device, error) {
 			DimmableInformation: dimmableInformation,
 		}
 	}
+
+	// TODO: maybe remove this?
+	// Sort output by number of capabilities.
+	slices.SortFunc[[]Device](output, func(a Device, b Device) int {
+		aLen := len(a.Config.Capabilities)
+		bLen := len(b.Config.Capabilities)
+
+		if aLen < bLen {
+			return 1
+		}
+
+		if aLen > bLen {
+			return -1
+		}
+
+		return 0
+	})
 
 	return output, nil
 }
