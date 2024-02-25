@@ -1,20 +1,22 @@
 <script lang="ts">
     import IconButton from '@smui/icon-button'
     import Switch from '@smui/switch'
-    import { createEventDispatcher, onMount } from 'svelte/internal'
+    import { createEventDispatcher, onMount } from 'svelte'
     import Progress from '../../components/Progress.svelte'
     import { createSnackbar, hasPermission, sleep } from '../../global'
     import EditDevice from './dialogs/device/EditDevice.svelte'
     import DeviceInfo from './dialogs/device/DeviceInfo.svelte'
     import Ripple from '@smui/ripple'
-    import type { DeviceResponse } from './main';
+    import type { DeviceResponse } from '../../device';
     import Slider from '@smui/slider';
     import FormField from '@smui/form-field';
     import Button, { Label, Icon } from '@smui/button';
-    import type { ValidationError } from 'src/driver';
-    import type { homescriptError } from 'src/homescript';
     // import Terminal from '../../components/Homescript/ExecutionResultPopup/Terminal.svelte'
     import ExecutionResultPopup from '../../components/Homescript/ExecutionResultPopup/ExecutionResultPopup.svelte'
+    import GenericDevice from './GenericDevice.svelte';
+
+    import type { DeviceCapability, ValidationError } from '../../driver';
+    import type { homescriptError } from '../../homescript';
 
     // Event dispatcher
     const dispatch = createEventDispatcher()
@@ -56,6 +58,8 @@
         hasEditPermission = await hasPermission('modifyRooms')
     })
 
+    let isWide = hasEditPermission
+
     $: loading = requests !== 0
     async function toggle(event: CustomEvent<{ selected: boolean }>) {
         // Send a event in order to signal that the cameras should be reloaded
@@ -86,7 +90,7 @@
     }
 
     // TODO: introduce timer to only update if the user has finished their input.
-    async function dim(percent: number, label: string) {
+    async function dim(value: number, label: string) {
         // Send a event in order to signal that the cameras should be reloaded
         dispatch('dim', null)
         requests++
@@ -98,16 +102,22 @@
                     body: JSON.stringify({
                         deviceId: data.id,
                         dim: {
-                            percent,
+                            percent: value,
                             label,
                         },
                     }),
                 })
             ).json()
-            if (!res.success) throw Error(res.error)
+            if (!res.success) {
+                for (let error of (res.hmsErrors as homescriptError[])) {
+                    pushUserError(error)
+                }
+
+                throw "Homescript error"
+            }
         } catch (err) {
             $createSnackbar(
-                `Failed to set device '${data.name}' dimmable '${label}' to ${data.dimmables}: ${err}`,
+                `Failed to set device '${data.name}' dimmable '${label}' to ${value}: ${err}`,
             )
         }
         await sleep(500)
@@ -118,7 +128,17 @@
     let homescriptCode: Map<string, string> = new Map()
     let sourcesUpToDate = false
 
-    $: if((data.hmsErrors !== null) && data.hmsErrors.length > 0) loadHmsSources(data.hmsErrors.map(e => e.span.filename))
+    interface ErrorWrapper {
+        userCaused: boolean
+        error: homescriptError
+    }
+
+    // Error handling and recovery
+    let errors: ErrorWrapper[] = []
+    $: if (data.hmsErrors !== null && data.hmsErrors.length > 0) {
+        errors = data.hmsErrors.map((error) => Object.create({userCaused: false, error}))
+    }
+    $: if(errors.length) loadHmsSources(errors.map(e => e.error.span.filename))
 
     // TODO: optimize this!
     async function loadHmsSources(ids: string[]) {
@@ -138,7 +158,17 @@
         sourcesUpToDate = true
     }
 
+    function pushUserError(error: homescriptError) {
+        errors = [...errors, {
+            userCaused: true,
+            error,
+        }]
+    }
+
     let errorsOpen = false
+    $: errorsOpen = errors.find((e) => e.userCaused) !== undefined
+
+    function hasCapability(capability: DeviceCapability): boolean { return data.config.capabilities.includes(capability) }
 </script>
 
 <EditDevice
@@ -157,165 +187,130 @@
 
 <DeviceInfo bind:open={deviceInfoOpen} {data} />
 
-<div class="switch mdc-elevation--z3" class:wide={hasEditPermission}>
-    {#if (data.hmsErrors !== null) && data.hmsErrors.length > 0}
-            {#if sourcesUpToDate}
-                <ExecutionResultPopup
-                    open={errorsOpen}
-                    data={{
-                        modeRun: true,
-                        response: {
-                            id: "",
-                            success: false,
-                            output: "",
-                            fileContents: homescriptCode, // TODO
-                            errors: data.hmsErrors,
-                        },
-                        code: "fn main(){}",
-                    }}
-                    on:close={() => {
-                        // This hack is required so that the window still remains scrollable after removal
-                    }}
-                />
-            {/if}
-
-            <div class="switch__error">
-                {data.hmsErrors.length} Error {data.hmsErrors.length != 1 ? 's' : ''}
-                <Button on:click={() => errorsOpen=true}>
-                    <Label>Inspect</Label>
-                    <Icon class="material-icons">bug_report</Icon>
-                </Button>
-            </div>
-    {:else}
-        {#if data.config.capabilities.includes('power')}
-            <div class="switch__power">
-                <div class="switch__power__left">
-                    <Switch icons={false} bind:checked={data.powerInformation.state} on:SMUISwitch:change={toggle} />
-                    <div
-                        class="switch__power__name__box"
-                        use:Ripple={{ surface: true }}
-                        on:click={showDeviceInfo}
-                        on:keydown={showDeviceInfo}
-                    >
-                        <span class="switch__power__name"> {data.name}</span>
-                    </div>
-                </div>
-                <div class="switch__power__right">
-                    <div>
-                        <Progress type="circular" bind:loading />
-                    </div>
-                    {#if hasEditPermission}
-                        <IconButton class="material-icons" title="Edit Switch" on:click={showEditDevice}
-                            >edit</IconButton
-                        >
-                    {/if}
-                </div>
+<GenericDevice
+    name={data.name}
+    {hasEditPermission}
+    isTall={hasCapability('dimmable')}
+    on:info_show={() => deviceInfoOpen = true}
+    on:edit_show={showEditDevice}
+>
+    <div slot='top'>
+        {#if hasCapability('power')}
+            <div class="device__power">
+                <Switch icons={false} bind:checked={data.powerInformation.state} on:SMUISwitch:change={toggle} />
             </div>
         {/if}
+    </div>
 
-        {#if data.config.capabilities.includes('dimmable')}
-            {#each data.dimmables as dimmable}
-                <div class="switch__dim">
-                        <div class="switch__dim__left">
-                            <FormField align="start" style="display: flex;">
-                                <!-- TODO: does this also update the value??? -->
-                                <Slider
-                                    style="flex-grow: 1;"
-                                    bind:value={dimmable.value}
-                                    on:SMUISlider:change={(e) => dim(e.detail.value, dimmable.label)}
-                                />
-                                <span
-                                    slot="label"
-                                    style="padding-right: 12px; width: max-content; display: block;"
-                                >
-                                </span>
-                            </FormField>
-                        </div>
-                        <div class="switch__dim__right">
-                            <span class="status text-hint">{dimmable.value}</span>
-                        </div>
+    <div slot='extend'>
+        {#if (errors !== null) && errors.length > 0}
+                {#if sourcesUpToDate}
+                    <!-- TODO: this fails if the device has no initial errors. -->
+                    <!-- BUG: maybe it has something to do with missing sources? -->
+                    <ExecutionResultPopup
+                        open={errorsOpen}
+                        data={{
+                            modeRun: true,
+                            response: {
+                                id: "",
+                                success: false,
+                                output: "",
+                                fileContents: homescriptCode, // TODO
+                                errors: data.hmsErrors,
+                            },
+                            code: "fn main(){}",
+                        }}
+                        on:close={() => {
+                            // This hack is required so that the window still remains scrollable after removal
+                        }}
+                    />
+                {/if}
+
+                <div class="device__error">
+                    {data.hmsErrors.length} Error {data.hmsErrors.length != 1 ? 's' : ''}
+                    <Button on:click={() => errorsOpen=true}>
+                        <Label>Inspect</Label>
+                        <Icon class="material-icons">bug_report</Icon>
+                    </Button>
                 </div>
-            {/each}
         {/if}
-    {/if}
-</div>
 
-<style lang="scss">
-    @use '../../mixins' as *;
-    .switch {
-        display: flex;
-        flex-direction: column;
-        gap: .3rem;
+        {#if hasCapability('dimmable')}
+            <div class="device__dim">
+                {#each data.dimmables as dimmable}
+                    <div class="device__dim__sep"/>
+                    <div class="device__dim__item">
+                        <span class="device__dim__item__name text-hint">{dimmable.label}</span>
+                        <div class="device__dim__item__body">
+                            <div class="device__dim__item__body__left">
+                                <FormField align="start" style="display: flex;">
+                                    <!-- TODO: does this also update the value??? -->
+                                    <Slider
+                                        style="flex-grow: 1;"
+                                        bind:value={dimmable.value}
+                                        on:SMUISlider:change={(e) => dim(e.detail.value, dimmable.label)}
+                                    />
+                                </FormField>
+                            </div>
+                            <div class="device__dim__item__body__right">
+                                <span class="status text-hint">{dimmable.value}</span>
+                            </div>
+                        </div>
+                    </div>
+                {/each}
+            </div>
+        {/if}
+    </div>
+</GenericDevice>
 
+<style lang='scss'>
+    .device {
         &__dim {
-            background-color: var(--clr-height-1-3);
-            border-radius: 0.3rem;
-            padding: 0.5rem;
-            padding-left: 0;
             display: flex;
+            flex-direction: column;
+            flex-grow: 0;
 
-            &__left {
-                width: 85%;
+            &__sep {
+                width: 100%;
+                background-color: var(--clr-height-3-6);
+                border-radius: .3rem;
+                height: .125rem;
+
+                // TODO: decide whether to include this.
+                //&:first-of-type {
+                    //display: none;
+                //}
             }
 
-            &__right {
+            &__item {
+                background-color: var(--clr-height-1-3);
+                border-radius: 0.3rem;
+                padding: 0.8rem;
+                padding-left: 0;
                 display: flex;
                 flex-direction: column;
-                justify-content: center;
-                width: 15%;
-                font-size: .8rem;
-            }
-        }
 
-        &__power, &__error {
-            background-color: var(--clr-height-1-3);
-            border-radius: 0.3rem;
-            width: 15rem;
-            height: 3.3rem;
-            padding: 0.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-
-            &.wide {
-                width: 17rem;
-
-                @include mobile {
-                    width: 90%;
+                &__name {
+                    font-size: .65rem;
+                    margin-bottom: -.5rem;
+                    padding-left: .85rem;
                 }
-            }
 
-            & > * {
-                display: flex;
-                align-items: center;
-            }
-            &__left {
-                max-width: 70%;
-                gap: 0.2rem;
-            }
-            &__right {
-                div {
-                    margin-right: 14px;
+                &__body {
                     display: flex;
-                    align-items: center;
+
+                    &__left {
+                        width: 85%;
+                    }
+
+                    &__right {
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        width: 15%;
+                        font-size: .8rem;
+                    }
                 }
-            }
-
-            &__name {
-                overflow: hidden;
-                text-overflow: ellipsis;
-
-                &__box {
-                    padding: 2px 5px;
-                    border-radius: 5px;
-                    cursor: pointer;
-                }
-            }
-
-            @include mobile {
-                width: 90%;
-                height: auto;
-                flex-wrap: wrap;
             }
         }
     }

@@ -13,8 +13,10 @@
     import EditRoom from './dialogs/room/EditRoom.svelte'
     import LocalSettings from './dialogs/room/LocalSettings.svelte'
     import AddDevice from './dialogs/device/AddDevice.svelte'
-    import { loading, powerCamReloadEnabled, type DeviceType, type Room, type CreateDeviceRequest } from './main'
+    import { loading, powerCamReloadEnabled } from './main'
     import Device from './Device.svelte'
+    import type { Room } from '../../room';
+    import type { CreateDeviceRequest } from '../../device';
 
     // If set to true, a camera-reload is triggered
     let reloadCameras = false
@@ -317,6 +319,7 @@
                     {/if}
                 </div>
             {:else}
+                <!-- TODO: pack smaller devices into 'chunks' or 'groups' OR allow the user to pick an order? -->
                 {#each currentRoom !== undefined ? currentRoom.devices : [] as device (device.id)}
                     <Device
                         bind:data={device}
