@@ -12,6 +12,7 @@
 
     // Data is bound to display the result
     export let data: homescriptResponseWrapper
+    $: console.log(`DATA: `, data)
 </script>
 
 <Dialog
@@ -22,7 +23,7 @@
     on:SMUIDialog:closed={() => dispatch('close', null)}
 >
     <Header>
-        <Title id="title">Result of {data.response.id}</Title>
+        <Title id="title">Result of {data.response.title}</Title>
     </Header>
     <Content id="content">
         <div class="status mdc-elevation-z1">
@@ -45,24 +46,27 @@
                     {#if !data.response.success && data.response.errors.length > 0}
                         <div class="status__error">
                             <i class="material-icons">
-                                {#if data.response.errors[0].kind === 'SyntaxError'}
+                                {#if data.response.errors[0].syntaxError !== null}
                                     code
-                                {:else if data.response.errors[0].kind === 'TypeError'}
+                                {:else if data.response.errors[0].diagnosticError !== null}
                                     tag
-                                {:else if data.response.errors[0].kind === 'ReferenceError'}
-                                    alt_route
-                                {:else if data.response.errors[0].kind === 'ValueError'}
-                                    rule
-                                {:else if data.response.errors[0].kind === 'RuntimeError' || data.response.errors[0].kind === 'StackOverflow' || data.response.errors[0].kind === 'OutOfBoundsError'}
+                                    <!-- alt_route -->
+                                {:else if data.response.errors[0].runtimeError !== null}
                                     running_with_errors
-                                {:else if data.response.errors[0].kind === 'ThrowError'}
-                                    sms_failed
                                 {:else}
-                                    error
+                                    INVALID STATE
                                 {/if}
                             </i>
                             <code>
-                                {data.response.errors[0].kind}
+                                {#if data.response.errors[0].syntaxError !== null}
+                                    Syntax Error
+                                {:else if data.response.errors[0].diagnosticError !== null}
+                                    Semantic Error
+                                {:else if data.response.errors[0].runtimeError !== null}
+                                    Runtime Error
+                                {:else}
+                                    INVALID STATE
+                                {/if}
                             </code>
                         </div>
                     {/if}
@@ -73,7 +77,6 @@
             <h6>Output</h6>
             <Terminal
                 data={{
-                    code: data.code,
                     modeRun: data.modeRun,
                     fileContents: data.response.fileContents,
                     errors: data.response.errors,

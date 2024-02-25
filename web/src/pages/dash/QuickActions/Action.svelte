@@ -56,6 +56,7 @@
             success = hmsRes.success
             failure = !success
 
+            // TODO: what is the purpose of this timeout?
             setTimeout(() => {
                 success = false
                 failure = false
@@ -65,7 +66,6 @@
                 ...hmsExecutionResults,
                 {
                     response: hmsRes,
-                    code: data.data.data.code,
                     modeRun: true,
                 },
             ]

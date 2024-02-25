@@ -78,7 +78,12 @@
                     }),
                 })
             ).json()
-            if (!res.success) throw Error(res.error)
+
+            if (!res.success) {
+                for (let error of (res.hmsErrors as homescriptError[])) {
+                    pushUserError(error)
+                }
+            }
         } catch (err) {
             $createSnackbar(
                 `Failed to set device power '${data.name}' to ${event.detail.selected ? 'on' : 'off'}: ${err}`,
@@ -108,12 +113,11 @@
                     }),
                 })
             ).json()
+
             if (!res.success) {
                 for (let error of (res.hmsErrors as homescriptError[])) {
                     pushUserError(error)
                 }
-
-                throw "Homescript error"
             }
         } catch (err) {
             $createSnackbar(
@@ -205,20 +209,17 @@
     <div slot='extend'>
         {#if (errors !== null) && errors.length > 0}
                 {#if sourcesUpToDate}
-                    <!-- TODO: this fails if the device has no initial errors. -->
-                    <!-- BUG: maybe it has something to do with missing sources? -->
                     <ExecutionResultPopup
-                        open={errorsOpen}
+                        open={errorsOpen && sourcesUpToDate}
                         data={{
                             modeRun: true,
                             response: {
-                                id: "",
+                                title: `Driver invocation '${data.name}'`,
                                 success: false,
                                 output: "",
                                 fileContents: homescriptCode, // TODO
-                                errors: data.hmsErrors,
+                                errors: errors.map(w => w.error),
                             },
-                            code: "fn main(){}",
                         }}
                         on:close={() => {
                             // This hack is required so that the window still remains scrollable after removal

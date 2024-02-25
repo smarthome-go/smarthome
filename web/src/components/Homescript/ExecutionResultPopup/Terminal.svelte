@@ -19,13 +19,12 @@
     }
 
     function errToHtml(err: homescriptError, data: hmsResWrapper): string {
-        let code = data.code
-
-        console.log(data.fileContents)
         const fromContents = data.fileContents.get(err.span.filename)
-        if (fromContents !== undefined || fromContents !== null) {
-            code = fromContents
+        if (fromContents === undefined || fromContents === null) {
+            throw("Missing Homescript sources for this error")
         }
+
+        const code = fromContents
 
         let color = 'red'
         let kind = 'error: unknown'

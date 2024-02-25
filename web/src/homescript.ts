@@ -43,12 +43,11 @@ export interface homescriptData {
 // Is returned as a response to a Homescript run request
 export interface homescriptResponseWrapper {
     response: homescriptResponse
-    code: string
     modeRun: boolean
 }
 
 export interface homescriptResponse {
-    id: string
+    title: string
     success: boolean
     output: string
     fileContents: Map<string, string>
@@ -169,6 +168,7 @@ export async function runHomescriptById(
         body: JSON.stringify({ id, args, isWidget }),
     })
     if (res.status !== 200 && res.status !== 500) throw Error(await (res.json()))
+    // TODO: `id` is probably missing in the response
     return await (res.json())
 }
 
