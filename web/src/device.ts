@@ -15,6 +15,7 @@ export interface DeviceResponse {
     config: ConfigSpecWrapper,
     powerInformation: DevicePowerInformation,
     dimmables: DeviceDimmable[],
+    sensors: DeviceSensor[],
 }
 
 export interface DevicePowerInformation {
@@ -32,6 +33,13 @@ export interface DeviceDimmable {
     value: number,
     label: string,
     range: Range
+}
+
+export interface DeviceSensor {
+    label: string,
+    value: {},
+    hmsType: string,
+    unit: string,
 }
 
 export interface CreateDeviceRequest {

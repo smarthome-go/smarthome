@@ -1,4 +1,4 @@
-export type DeviceCapability = 'base' | 'power' | 'dimmable'
+export type DeviceCapability = 'base' | 'power' | 'dimmable' | 'sensor'
 
 export interface ConfigSpecWrapper {
     capabilities: DeviceCapability[]

@@ -42,6 +42,7 @@
             powerDrawWatts: 0
         },
         dimmables: [],
+        sensors: [],
     }
 
     let requests = 0
@@ -80,6 +81,7 @@
             ).json()
 
             if (!res.success) {
+                errors = []
                 for (let error of (res.hmsErrors as homescriptError[])) {
                     pushUserError(error)
                 }
@@ -115,6 +117,7 @@
             ).json()
 
             if (!res.success) {
+                errors = []
                 for (let error of (res.hmsErrors as homescriptError[])) {
                     pushUserError(error)
                 }
@@ -198,7 +201,7 @@
 <GenericDevice
     name={data.name}
     {hasEditPermission}
-    isTall={hasCapability('dimmable')}
+    isTall={hasCapability('dimmable') || hasCapability('sensor')}
     on:info_show={() => deviceInfoOpen = true}
     on:edit_show={showEditDevice}
     {hasErrors}
@@ -235,6 +238,25 @@
                         </div>
                     </div>
                 {/each}
+            </div>
+        {/if}
+
+        {#if hasCapability('sensor')}
+            <div class="device__sensor">
+                {#if data.sensors !== null}
+                    {#each data.sensors as sensor}
+                        <div class="device__sensor__sep"/>
+                        <div class="device__sensor__reading">
+                            <span class='text-disabled'>
+                                {sensor.label}
+                            </span>
+                            <span class="text-hint">
+                                {sensor.value}
+                                {sensor.unit}
+                            </span>
+                        </div>
+                    {/each}
+                {/if}
             </div>
         {/if}
     </div>
@@ -300,16 +322,34 @@
             }
         }
 
+        @mixin seperator {
+            width: 100%;
+            background-color: var(--clr-height-3-6);
+            border-radius: .3rem;
+            height: .125rem;
+        }
+
+        &__sensor {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 0;
+            margin-top: -.75rem;
+            padding: 0 1.5rem;
+            padding-right: 1rem;
+
+            &__reading {
+                display: flex;
+                gap: .4rem;
+            }
+        }
+
         &__dim {
             display: flex;
             flex-direction: column;
             flex-grow: 0;
 
             &__sep {
-                width: 100%;
-                background-color: var(--clr-height-3-6);
-                border-radius: .3rem;
-                height: .125rem;
+                @include seperator;
 
                 // TODO: decide whether to include this.
                 //&:first-of-type {

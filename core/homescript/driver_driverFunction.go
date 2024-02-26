@@ -13,6 +13,7 @@ type DriverActionKind uint8
 
 const (
 	DriverActionKindHealthCheck DriverActionKind = iota
+	DriverActionKindReportSensorReadings
 	DriverActionKindSetPower
 	DriverActionKindReportPowerState
 	DriverActionKindReportPowerDraw
@@ -46,6 +47,21 @@ type DriverActionHealthCheckOutput struct {
 
 func (self DriverActionHealthCheckOutput) Kind() DriverActionKind {
 	return DriverActionKindHealthCheck
+}
+
+//
+// Sensor action response
+//
+
+type DriverActionReportSensorReadingsOutput struct {
+	Label       string `json:"label"`
+	Value       any    `json:"value"`
+	HmsTypeKind string `json:"hmsType"`
+	Unit        string `json:"unit"`
+}
+
+func (self DriverActionReportSensorReadingsOutput) Kind() DriverActionKind {
+	return DriverActionKindReportSensorReadings
 }
 
 //

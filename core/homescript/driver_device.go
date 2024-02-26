@@ -21,8 +21,9 @@ type Device struct {
 	Config         ConfigInfoWrapperDevice `json:"config"`
 
 	// Device-specific information.
-	PowerInformation    DevicePowerInformation        `json:"powerInformation"`
-	DimmableInformation []DriverActionReportDimOutput `json:"dimmables"`
+	PowerInformation    DevicePowerInformation                   `json:"powerInformation"`
+	DimmableInformation []DriverActionReportDimOutput            `json:"dimmables"`
+	SensorReadings      []DriverActionReportSensorReadingsOutput `json:"sensors"`
 }
 
 type DevicePowerInformation struct {
@@ -140,6 +141,25 @@ func EnrichDevicesList(input []database.Device) ([]Device, error) {
 			dimmableInformation = dimmableInformationTemp
 		}
 
+		var sensorReadings []DriverActionReportSensorReadingsOutput
+		if fittingDriver.DeviceSupports(DeviceCapabilitySensor) {
+			readingsTemp, hmsErrs, err := InvokeDriverReportSensors(
+				DriverInvocationIDs{
+					deviceID: device.Id,
+					vendorID: device.VendorId,
+					modelID:  device.ModelId,
+				},
+			)
+			if err != nil {
+				return nil, err
+			}
+			if hmsErrs != nil {
+				hmsErrors = append(hmsErrors, hmsErrs...)
+			}
+
+			sensorReadings = readingsTemp
+		}
+
 		output[index] = Device{
 			DeviceType:     device.DeviceType,
 			ID:             device.Id,
@@ -155,6 +175,7 @@ func EnrichDevicesList(input []database.Device) ([]Device, error) {
 				PowerDrawWatts: powerDrawInfo.Watts,
 			},
 			DimmableInformation: dimmableInformation,
+			SensorReadings:      sensorReadings,
 		}
 	}
 

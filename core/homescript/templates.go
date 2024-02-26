@@ -69,6 +69,7 @@ func driverTemplate(span errors.Span) DriverTemplate {
 
 const DeviceFunctionValidateDevice = "validate_device"
 const DeviceFunctionValidateDriver = "validate_device"
+const DeviceFunctionReportSensorReadings = "report_sensor_readings"
 const DeviceFunctionReportPowerState = "report_power"
 const DeviceFunctionReportPowerDraw = "report_power_draw"
 const DeviceFunctionSetPower = "set_power"
@@ -90,6 +91,53 @@ func deviceValidateDeviceOrDriverSignature(span errors.Span) ast.TemplateMethod 
 		Modifier: pAst.FN_MODIFIER_PUB,
 	}
 }
+
+///
+/// Generic sensor implementattion
+///
+
+const ReportSensorTypeLabelIdent = "label"
+const ReportSensorTypeValueIdent = "value"
+const ReportSensorTypeUnitIdent = "unit"
+
+func ReportSensorReadingType(span errors.Span) ast.Type {
+	return ast.NewObjectType(
+		[]ast.ObjectTypeField{
+			ast.NewObjectTypeField(
+				pAst.NewSpannedIdent(ReportSensorTypeLabelIdent, span),
+				ast.NewStringType(span),
+				span,
+			),
+			ast.NewObjectTypeField(
+				pAst.NewSpannedIdent(ReportSensorTypeValueIdent, span),
+				ast.NewAnyType(span), // TODO: is this the way?
+				span,
+			),
+			ast.NewObjectTypeField(
+				pAst.NewSpannedIdent(ReportSensorTypeUnitIdent, span),
+				ast.NewStringType(span),
+				span,
+			),
+		},
+		span,
+	)
+}
+
+func DeviceReportSensorReadingsSignature(span errors.Span) ast.TemplateMethod {
+	return ast.TemplateMethod{
+		Signature: ast.NewFunctionType(
+			ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)),
+			span,
+			ast.NewListType(ReportSensorReadingType(span), span),
+			span,
+		).(ast.FunctionType),
+		Modifier: pAst.FN_MODIFIER_PUB,
+	}
+}
+
+///
+/// Power signature(s)
+///
 
 func DeviceReportPowerStateSignature(span errors.Span) ast.TemplateMethod {
 	return ast.TemplateMethod{
@@ -197,12 +245,13 @@ func deviceTemplate(span errors.Span) DeviceTemplate {
 	return DeviceTemplate{
 		Spec: ast.TemplateSpec{
 			BaseMethods: map[string]ast.TemplateMethod{
-				DeviceFunctionValidateDevice:   deviceValidateDeviceOrDriverSignature(span),
-				DeviceFunctionReportPowerState: DeviceReportPowerStateSignature(span),
-				DeviceFunctionReportPowerDraw:  DeviceReportPowerDrawSignature(span),
-				DeviceFunctionSetPower:         DeviceSetPowerSignature(span),
-				DeviceFunctionReportDim:        DeviceReportDimSignature(span),
-				DeviceFunctionSetDim:           DeviceDimSignature(span),
+				DeviceFunctionValidateDevice:       deviceValidateDeviceOrDriverSignature(span),
+				DeviceFunctionReportSensorReadings: DeviceReportSensorReadingsSignature(span),
+				DeviceFunctionReportPowerState:     DeviceReportPowerStateSignature(span),
+				DeviceFunctionReportPowerDraw:      DeviceReportPowerDrawSignature(span),
+				DeviceFunctionSetPower:             DeviceSetPowerSignature(span),
+				DeviceFunctionReportDim:            DeviceReportDimSignature(span),
+				DeviceFunctionSetDim:               DeviceDimSignature(span),
 			},
 			Capabilities: map[string]ast.TemplateCapability{
 				DefaultCapabilityName: {
@@ -224,6 +273,12 @@ func deviceTemplate(span errors.Span) DeviceTemplate {
 					},
 					ConflictsWithCapabilities: []ast.TemplateConflict{},
 				},
+				"sensor": {
+					RequiresMethods: []string{
+						DeviceFunctionReportSensorReadings,
+					},
+					ConflictsWithCapabilities: []ast.TemplateConflict{},
+				},
 			},
 			DefaultCapabilities: []string{"base"},
 			Span:                span,
@@ -233,6 +288,7 @@ func deviceTemplate(span errors.Span) DeviceTemplate {
 			"base":     DeviceCapabilityBase,
 			"power":    DeviceCapabilityPower,
 			"dimmable": DeviceCapabilityDimmable,
+			"sensor":   DeviceCapabilitySensor,
 		},
 	}
 }

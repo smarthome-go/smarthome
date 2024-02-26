@@ -184,6 +184,11 @@ func (self analyzerHost) GetBuiltinImport(
 					Type:     ReportDimType(span),
 					Template: nil,
 				}, true, true
+			case "Sensor":
+				return analyzer.BuiltinImport{
+					Type:     ReportSensorReadingType(span),
+					Template: nil,
+				}, true, true
 			default:
 				return analyzer.BuiltinImport{}, true, false
 			}

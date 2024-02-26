@@ -220,6 +220,68 @@ func InvokeValidateCheckDriver(ids DriverInvocationIDs) ([]HmsError, error) {
 	return nil, nil
 }
 
+func InvokeDriverReportSensors(
+	ids DriverInvocationIDs,
+) ([]DriverActionReportSensorReadingsOutput, []HmsError, error) {
+	ret, hmsErrs, err := InvokeDriverFunc(
+		ids,
+		FunctionCall{
+			Invocation: runtime.FunctionInvocation{
+				Function: DeviceFunctionReportSensorReadings,
+				Args:     []value.Value{},
+				FunctionSignature: runtime.FunctionInvocationSignatureFromType(
+					DeviceReportSensorReadingsSignature(errors.Span{}).Signature,
+				),
+			},
+		},
+	)
+
+	if err != nil || hmsErrs != nil {
+		return nil, hmsErrs, err
+	}
+
+	values := *ret.ReturnValue.(value.ValueList).Values
+	readings := make([]DriverActionReportSensorReadingsOutput, len(values))
+
+	for idx, currentListElement := range values {
+		fields := (*currentListElement).(value.ValueObject).FieldsInternal
+
+		value_ := (*fields[ReportDimTypeValueIdent])
+		label := (*fields[ReportSensorTypeLabelIdent]).(value.ValueString).Inner
+		unit := (*fields[ReportSensorTypeUnitIdent]).(value.ValueString).Inner
+
+		if !value_.Kind().TypeKind().IsPrimitive() {
+			return nil,
+				[]HmsError{
+					{
+						SyntaxError:     nil,
+						DiagnosticError: nil,
+						RuntimeInterrupt: &HmsRuntimeInterrupt{
+							Kind: "driver",
+							Message: fmt.Sprintf(
+								"Device function `%s` should return values of primitive data type but returned value `%s` of type `%s`",
+								DeviceFunctionReportSensorReadings,
+								label,
+								value_.Kind(),
+							),
+						},
+						Span: ret.CalledFunctionSpan,
+					},
+				}, nil
+		}
+
+		valueMarshaled, _ := value.MarshalValue(value_, false)
+		readings[idx] = DriverActionReportSensorReadingsOutput{
+			Label:       label,
+			Value:       valueMarshaled,
+			HmsTypeKind: value_.Kind().TypeKind().String(),
+			Unit:        unit,
+		}
+	}
+
+	return readings, nil, nil
+}
+
 func InvokeDriverReportPowerState(
 	ids DriverInvocationIDs,
 ) (DriverActionGetPowerStateOutput, []HmsError, error) {

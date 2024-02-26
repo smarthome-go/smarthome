@@ -6,8 +6,9 @@ type DeviceCapability string
 
 const (
 	DeviceCapabilityBase     DeviceCapability = "base"
-	DeviceCapabilityPower                     = "power"
-	DeviceCapabilityDimmable                  = "dimmable"
+	DeviceCapabilityPower    DeviceCapability = "power"
+	DeviceCapabilityDimmable DeviceCapability = "dimmable"
+	DeviceCapabilitySensor   DeviceCapability = "sensor"
 )
 
 type DriverCapability string
@@ -38,12 +39,12 @@ func (self CapabilitySet[T]) Has(check T) bool {
 	return false
 }
 
-func (self CapabilitySet[T]) Add(add T) {
+func (self *CapabilitySet[T]) Add(add T) {
 	if self.Has(add) {
 		return
 	}
 
-	self = append(self, add)
+	*self = append(*self, add)
 }
 
 //
