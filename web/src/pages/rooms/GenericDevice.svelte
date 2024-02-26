@@ -21,11 +21,14 @@
     function showEdit() {
         dispatch('edit_show')
     }
+
+    export let hasErrors: boolean
 </script>
 
-<div class="device mdc-elevation--z3" class:wide={isWide} class:tall={isTall}>
-    <div class="device__top">
+<div class="device mdc-elevation--z3" class:wide={isWide} class:tall={isTall} class:errors={hasErrors}>
+    <div class="device__top" class:errors={hasErrors}>
         <slot name="top"></slot>
+
         <div
             class="device__top__left"
             use:Ripple={{ surface: true }}
@@ -46,7 +49,12 @@
         </div>
     </div>
 
-    <slot name="extend"></slot>
+    <div class="device__extend" class:errors={hasErrors}>
+        <slot name="extend"></slot>
+    </div>
+    <div class="device__bottom">
+        <slot name="bottom"></slot>
+    </div>
 </div>
 
 
@@ -74,10 +82,28 @@
             }
         }
 
+        @include mobile {
+            width: 90%;
+            height: auto;
+            flex-wrap: wrap;
+        }
+
+        @mixin device_error {
+            filter: saturate(55%) brightness(80%);
+        }
+
+        &.errors {
+            background-color: var(--clr-height-0-3);
+        }
+
         &__top {
             display: flex;
             align-items: center;
             justify-content: space-between;
+
+            &.errors {
+                @include device_error;
+            }
 
             & > * {
                 display: flex;
@@ -98,7 +124,6 @@
             }
 
             &__right {
-
                 div {
                     margin-right: 14px;
                     display: flex;
@@ -107,11 +132,14 @@
             }
         }
 
+        &__extend {
+            &.errors {
+                @include device_error;
+            }
+        }
 
-        @include mobile {
-            width: 90%;
-            height: auto;
-            flex-wrap: wrap;
+        &__bottom {
+            margin-top: auto;
         }
     }
 </style>

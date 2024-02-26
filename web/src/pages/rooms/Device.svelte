@@ -167,12 +167,16 @@
             userCaused: true,
             error,
         }]
+
+        errorsOpen = errors.find((e) => e.userCaused) !== undefined
     }
 
     let errorsOpen = false
-    $: errorsOpen = errors.find((e) => e.userCaused) !== undefined
 
     function hasCapability(capability: DeviceCapability): boolean { return data.config.capabilities.includes(capability) }
+
+    let hasErrors = false
+    $: hasErrors = errors !== null && errors.length > 0
 </script>
 
 <EditDevice
@@ -197,6 +201,7 @@
     isTall={hasCapability('dimmable')}
     on:info_show={() => deviceInfoOpen = true}
     on:edit_show={showEditDevice}
+    {hasErrors}
 >
     <div slot='top'>
         {#if hasCapability('power')}
@@ -207,35 +212,6 @@
     </div>
 
     <div slot='extend'>
-        {#if (errors !== null) && errors.length > 0}
-                {#if sourcesUpToDate}
-                    <ExecutionResultPopup
-                        open={errorsOpen && sourcesUpToDate}
-                        data={{
-                            modeRun: true,
-                            response: {
-                                title: `Driver invocation '${data.name}'`,
-                                success: false,
-                                output: "",
-                                fileContents: homescriptCode, // TODO
-                                errors: errors.map(w => w.error),
-                            },
-                        }}
-                        on:close={() => {
-                            // This hack is required so that the window still remains scrollable after removal
-                        }}
-                    />
-                {/if}
-
-                <div class="device__error">
-                    {data.hmsErrors.length} Error {data.hmsErrors.length != 1 ? 's' : ''}
-                    <Button on:click={() => errorsOpen=true}>
-                        <Label>Inspect</Label>
-                        <Icon class="material-icons">bug_report</Icon>
-                    </Button>
-                </div>
-        {/if}
-
         {#if hasCapability('dimmable')}
             <div class="device__dim">
                 {#each data.dimmables as dimmable}
@@ -262,10 +238,68 @@
             </div>
         {/if}
     </div>
+
+    <div slot="bottom">
+        {#if hasErrors}
+            <div class="device__errors">
+                {#if sourcesUpToDate}
+                    <ExecutionResultPopup
+                        bind:open={errorsOpen}
+                        data={{
+                            modeRun: true,
+                            response: {
+                                title: `Driver invocation '${data.name}'`,
+                                success: false,
+                                output: "",
+                                fileContents: homescriptCode, // TODO
+                                errors: errors.map(w => w.error),
+                            },
+                        }}
+                        on:close={() => {
+                            // This hack is required so that the window still remains scrollable after removal
+                        }}
+                    />
+                {/if}
+
+                <span
+                    class="device__errors__banner"
+                    use:Ripple={{ surface: true }}
+                    on:click={() => errorsOpen=true}
+                    on:keydown={() => errorsOpen=true}
+                >
+                    <i class="material-icons">cancel</i>
+                    {data.hmsErrors.length} Error {errors.length != 1 ? 's' : ''}
+                </span>
+            </div>
+        {/if}
+   </div>
 </GenericDevice>
 
 <style lang='scss'>
     .device {
+        &__errors {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+
+            &__banner {
+                font-weight: bold;
+                color: var(--clr-error);
+                font-size: .95rem;
+                padding: .1rem .4rem;
+                border-radius: .3rem;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: .3rem;
+
+                i {
+                    font-size: 1rem;
+                }
+            }
+        }
+
         &__dim {
             display: flex;
             flex-direction: column;
