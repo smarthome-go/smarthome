@@ -1,18 +1,9 @@
 import { get, writable } from 'svelte/store'
 import type { Writable } from 'svelte/store'
-import { createSnackbar } from '../../global'
+import { createSnackbar, type ShallowUserData } from '../../global'
+import { fetchAllShallowDevices, type ShallowDeviceResponse } from '../../device'
 import App from './App.svelte'
-
-
-export interface User {
-    username: string
-    forename: string
-    surname: string
-    primaryColorDark: string
-    primaryColorLight: string
-    schedulerEnabled: boolean
-    darkTheme: boolean
-}
+import type { Camera } from 'src/room'
 
 export interface Permission {
     permission: string
@@ -20,33 +11,18 @@ export interface Permission {
     description: string
 }
 
-export interface Switch {
-    id: string
-    name: string
-    roomId: string
-    powerOn: boolean
-    watts: number
-}
-
-export interface Camera {
-    id: string
-    name: string
-    url: string
-    roomId: string
-}
-
-export interface UserData {
-    user: User
+export interface PermissionUserData {
+    user: ShallowUserData
     permissions: string[]
-    switchPermissions: string[]
+    devicePermissions: string[]
 }
 
 export const loading: Writable<boolean> = writable(false)
-export const users: Writable<UserData[]> = writable([])
+export const users: Writable<PermissionUserData[]> = writable([])
 export const allPermissions: Writable<Permission[]> = writable([])
-export const allSwitches: Writable<Switch[]> = writable([])
+export const allDevices: Writable<ShallowDeviceResponse[]> = writable([])
 export const allCameras: Writable<Camera[]> = writable([])
-export const allSwitchesFetched: Writable<boolean> = writable(false)
+export const allDevicesFetched: Writable<boolean> = writable(false)
 export const allCamerasFetched: Writable<boolean> = writable(false)
 
 export async function fetchAllPermissions() {
@@ -59,15 +35,16 @@ export async function fetchAllPermissions() {
     }
 }
 
-export async function fetchAllSwitches() {
+export async function fetchAllDevices() {
     try {
-        const res = await (await fetch('/api/switch/list/all')).json()
-        if (res.success !== undefined && !res.success) throw Error(res.error)
-        allSwitches.set(res)
+        // const res = await (await fetch('/api/switch/list/all')).json()
+        // if (res.success !== undefined && !res.success) throw Error(res.error)
+        const res = await fetchAllShallowDevices()
+        allDevices.set(res)
     } catch (err) {
-        get(createSnackbar)(`Could not load system switches: ${err}`)
+        get(createSnackbar)(`Could not load system devices: ${err}`)
     }
-    allSwitchesFetched.set(true)
+    allDevicesFetched.set(true)
 }
 
 export async function fetchAllCameras() {

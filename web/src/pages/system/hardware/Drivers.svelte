@@ -150,7 +150,7 @@
 
     // Main list which contains different kinds of drivers
     .hardware {
-        padding: 1rem 1.5rem;
+        padding: 0 1.5rem;
 
         h6 {
             margin: 0;

@@ -149,6 +149,12 @@
 
     // TODO: optimize this!
     async function loadHmsSources(ids: string[]) {
+        // They user would not see any code 
+        // if (!hasPermission('modifyServerConfig')) {
+        //     return;
+        // }
+        // TODO: what to do?
+
         sourcesUpToDate = false
 
         let res = await (await fetch("/api/homescript/sources", {

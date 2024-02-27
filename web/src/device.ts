@@ -1,9 +1,20 @@
 import type { ConfigSpecWrapper } from "./driver"
 import type { homescriptError } from 'src/homescript';
+import { get } from "svelte/store";
+import { createSnackbar } from "./global";
 
 export type DeviceType = 'INPUT' |'OUTPUT'
 
 export interface DeviceResponse {
+    shallow: ShallowDeviceResponse;
+    hmsErrors: homescriptError[];
+    config: ConfigSpecWrapper,
+    powerInformation: DevicePowerInformation,
+    dimmables: DeviceDimmable[],
+    sensors: DeviceSensor[],
+}
+
+export interface ShallowDeviceResponse {
     type: DeviceType
     id: string
     name: string
@@ -11,11 +22,6 @@ export interface DeviceResponse {
     vendorId: string,
     modelId: string,
     singletonJson: {},
-    hmsErrors: homescriptError[];
-    config: ConfigSpecWrapper,
-    powerInformation: DevicePowerInformation,
-    dimmables: DeviceDimmable[],
-    sensors: DeviceSensor[],
 }
 
 export interface DevicePowerInformation {
@@ -54,4 +60,19 @@ export interface CreateDeviceRequest {
 export interface ModifyDeviceRequest {
     id: string,
     name: string,
+}
+
+export async function fetchAllShallowDevices(): Promise<ShallowDeviceResponse[]> {
+    try {
+        let res = await fetch("/api/devices/list/all")
+
+        let resJson = await res.json()
+        if (resJson.success === false) {
+            throw(resJson.error)
+        }
+
+        return resJson as ShallowDeviceResponse[]
+    } catch (err) {
+        get(createSnackbar)(`Could not load devices: ${err}`)
+    }
 }

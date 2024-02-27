@@ -13,7 +13,7 @@
     export let darkTheme: boolean
 
     export let permissions: string[] = []
-    export let switchPermissions: string[] = []
+    export let devicePermissions: string[] = []
 
     let editOpen = false
     let permissionsOpen = false
@@ -30,11 +30,13 @@
     bind:surname
     bind:open={editOpen}
 />
+
 <EditPermissions
     {username}
     bind:permissions
-    bind:switchPermissions
+    bind:devicePermissions
     bind:open={permissionsOpen}
+    currentMode={'Permissions'}
 />
 
 <div class="root">

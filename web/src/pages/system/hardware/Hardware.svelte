@@ -160,8 +160,6 @@
 <style lang="scss">
     // Main list which contains different kinds of manufacturers
     .hardware {
-        padding: 1rem 1.5rem;
-
         h6 {
             margin: 0;
             font-size: 1.1rem;

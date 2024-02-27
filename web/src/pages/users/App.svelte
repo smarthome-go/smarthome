@@ -4,10 +4,10 @@
     import { onMount } from "svelte";
     import Progress from "../../components/Progress.svelte";
     import { createSnackbar } from "../../global";
-    import type { UserData } from "../../global";
+    import type { ShallowUserData, UserData } from "../../global";
     import Page from "../../Page.svelte";
     import AddUser from "./dialogs/AddUser.svelte";
-    import { allPermissions, loading, users } from "./main";
+    import { allPermissions, loading, users, type PermissionUserData } from "./main";
     import User from "./User.svelte";
 
     let addUserShow: () => void;
@@ -33,13 +33,16 @@
             const res = await (await fetch("/api/user/manage/list")).json();
             if (res.success !== undefined && !res.success)
                 throw Error(res.error);
-            $users = res.map((u: UserData) =>
-                Object.create({
-                    user: u,
-                    permissions: [],
-                    switchPermissions: [],
+
+                $users = res.map((u: ShallowUserData) => {
+                    const user: PermissionUserData  = {
+                        user: u,
+                        permissions: [],
+                        devicePermissions: []
+                    }
+
+                    return user
                 })
-            );
         } catch (err) {
             $createSnackbar(`Could not load users: ${err}`);
         }
@@ -70,7 +73,7 @@
                         username: username,
                     },
                     permissions: [],
-                    switchPermissions: [],
+                    devicePermissions: [],
                 },
             ];
         } catch (err) {
@@ -110,7 +113,7 @@
                 <User
                     {...user.user}
                     bind:permissions={user.permissions}
-                    bind:switchPermissions={user.switchPermissions}
+                    bind:devicePermissions={user.devicePermissions}
                 />
             </div>
         {/each}

@@ -6,23 +6,24 @@
     import TabBar from '@smui/tab-bar'
     import Progress from '../../../components/Progress.svelte'
     import { createSnackbar } from '../../../global'
+    import { fetchAllShallowDevices } from '../../../device'
     import {
     allCameras,
     allCamerasFetched,
     allPermissions,
-    allSwitches,
-    allSwitchesFetched,
+    allDevices,
+    allDevicesFetched,
     fetchAllCameras,
     fetchAllPermissions,
-    fetchAllSwitches
+    fetchAllDevices
     } from '../main'
     import CameraPermissions from './CameraPermission.svelte'
     import Permission from './Permission.svelte'
-    import SwitchPermission from './SwitchPermission.svelte'
+    import DevicePermission from './DevicePermission.svelte'
 
     // Dialog open / loading booleans
     export let open = false
-    export let currentMode = 'Permissions'
+    export let currentMode: 'Permissions' | 'Device Permissions' | 'Camera Permissions'
 
     /**
      * Dynamic Content fetching
@@ -31,13 +32,13 @@
 
     // Keeps track of content and whether it has been fetched
     let permissionsFetched = false
-    let switchPermissionsFetched = false
+    let devicePermissionsFetched = false
     let cameraPermissionsFetched = false
 
     // Exported user data
     export let username = ''
     export let permissions: string[] = []
-    export let switchPermissions: string[] = []
+    export let devicePermissions: string[] = []
     export let cameraPermissions: string[] = []
 
     $: {
@@ -48,12 +49,12 @@
     // Handles dynamic fetching of user data
     function handleOpen() {
         if ($allPermissions.length === 0) fetchAllPermissions()
-        if (!$allSwitchesFetched) fetchAllSwitches()
+        if (!$allDevicesFetched) fetchAllDevices()
         if (!$allCamerasFetched) fetchAllCameras()
         if (currentMode == 'Permissions' && !permissionsFetched)
             fetchUserPermissions()
-        if (currentMode == 'Switch Permissions' && !switchPermissionsFetched)
-            fetchUserSwitchPermissions()
+        if (currentMode == 'Device Permissions' && !devicePermissionsFetched)
+            fetchUserDevicePermissions()
         if (currentMode == 'Camera Permissions' && !cameraPermissionsFetched)
             fetchUserCameraPermissions()
     }
@@ -80,17 +81,18 @@
     }
 
     // Retrieves the users personal switch permissions
-    async function fetchUserSwitchPermissions() {
+    async function fetchUserDevicePermissions() {
         try {
             const res = await (
                 await fetch(
-                    `/api/user/permissions/switch/list/user/${username}`
+                    `/api/user/permissions/device/list/user/${username}`
                 )
             ).json()
             if (res.success !== undefined && !res.success)
                 throw Error(res.error)
-            switchPermissionsFetched = true
-            switchPermissions = res
+
+            devicePermissionsFetched = true
+            devicePermissions = res
         } catch (err) {
             $createSnackbar(`Failed to load user switch permissions: ${err}`)
         }
@@ -149,40 +151,40 @@
         }
     }
 
-    // Adds an arbitrary switch-permission if it is valid and not held by the user
-    async function grantSwitchPermission(permission: string) {
+    // Adds an arbitrary device-permission if it is valid and not held by the user
+    async function grantDevicePermission(permission: string) {
         try {
             const res = await (
-                await fetch('/api/user/permissions/switch/add', {
+                await fetch('/api/user/permissions/device/add', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, switch: permission }),
                 })
             ).json()
             if (!res.success) throw Error(res.error)
-            switchPermissions = [...switchPermissions, permission]
+            devicePermissions = [...devicePermissions, permission]
         } catch (err) {
-            $createSnackbar(`Failed to grant switch-permission: ${err}`)
+            $createSnackbar(`Failed to grant device-permission: ${err}`)
             throw Error()
         }
     }
 
-    // Removes an arbitrary switch-permission if it is valid and held by the user
-    async function removeSwitchPermission(permission: string) {
+    // Removes an arbitrary device-permission if it is valid and held by the user
+    async function removeDevicePermission(permission: string) {
         try {
             const res = await (
-                await fetch('/api/user/permissions//switch/delete', {
+                await fetch('/api/user/permissions/device/delete', {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, switch: permission }),
                 })
             ).json()
             if (!res.success) throw Error(res.error)
-            switchPermissions = switchPermissions.filter(
+            devicePermissions = devicePermissions.filter(
                 (s) => s !== permission
             )
         } catch (err) {
-            $createSnackbar(`Failed to remove switch-permission: ${err}`)
+            $createSnackbar(`Failed to remove device-permission: ${err}`)
             throw Error()
         }
     }
@@ -236,10 +238,10 @@
                     ? permissions.includes('viewCameras')
                         ? [
                               'Permissions',
-                              'Switch Permissions',
+                              'Device Permissions',
                               'Camera Permissions',
                           ]
-                        : ['Permissions', 'Switch Permissions']
+                        : ['Permissions', 'Device Permissions']
                     : permissions.includes('viewCameras')
                     ? ['Permissions', 'Camera Permissions']
                     : ['Permissions']}
@@ -259,8 +261,8 @@
                         case 'Permissions':
                             fetchUserPermissions()
                             break
-                        case 'Switch Permissions':
-                            fetchUserSwitchPermissions()
+                        case 'Device Permissions':
+                            fetchUserDevicePermissions()
                             break
                         case 'Camera Permissions':
                             fetchUserCameraPermissions()
@@ -289,32 +291,32 @@
                     {/each}
                 {/if}
             </div>
-        {:else if currentMode === 'Switch Permissions'}
+        {:else if currentMode === 'Device Permissions'}
             <div class="switch-permissions">
-                {#if !switchPermissionsFetched}
+                {#if !devicePermissionsFetched}
                     <div class="no-permissions">
                         <Progress type="circular" loading={true} />
                         <h6>Preparing editor...</h6>
                     </div>
                 {:else}
-                    {#each $allSwitches as switchItem (switchItem.id)}
-                        <SwitchPermission
-                            id={switchItem.id}
-                            name={switchItem.name}
-                            roomId={switchItem.roomId}
-                            active={switchPermissions.includes(switchItem.id)}
-                            grantFunc={grantSwitchPermission}
-                            removeFunc={removeSwitchPermission}
+                    {#each $allDevices as device (device.id)}
+                        <DevicePermission
+                            id={device.id}
+                            name={device.name}
+                            roomId={device.roomId}
+                            active={devicePermissions.includes(device.id)}
+                            grantFunc={grantDevicePermission}
+                            removeFunc={removeDevicePermission}
                         />
                     {/each}
                 {/if}
-                {#if $allSwitches.length === 0 && switchPermissionsFetched}
+                {#if $allDevices.length === 0 && devicePermissionsFetched}
                     <div class="no-permissions">
                         <i class="material-icons">power_off</i>
                         <div class="bottom">
-                            <h6>No switches available</h6>
+                            <h6>No Devices Available</h6>
                             <span
-                                >You can create switches in the <a href="/rooms"
+                                >You can create devices in the <a href="/rooms"
                                     >rooms</a
                                 > section.</span
                             >
@@ -340,7 +342,7 @@
                         />
                     {/each}
                 {/if}
-                {#if $allSwitches.length === 0 && cameraPermissionsFetched}
+                {#if $allDevices.length === 0 && cameraPermissionsFetched}
                     <div class="no-permissions">
                         <i class="material-icons">videocam_off</i>
                         <div class="bottom">

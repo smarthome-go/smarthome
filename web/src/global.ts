@@ -28,7 +28,11 @@ export interface Data {
 }
 
 export interface UserData {
-    user: {
+    user: ShallowUserData
+    permissions: string[]
+}
+
+export interface ShallowUserData {
         username: string
         forename: string
         surname: string
@@ -36,8 +40,6 @@ export interface UserData {
         primaryColorLight: string
         schedulerEnabled: boolean
         darkTheme: boolean
-    }
-    permissions: string[]
 }
 
 // Given an arbitrary input color, the function decides whether text on the color should be white or black

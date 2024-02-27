@@ -151,9 +151,9 @@
     }
 
 
-    type Activity = 'general' | 'devices'
+    type Activity = 'general' | 'drivers'
     let currentActivity: Activity = 'general'
-    let activities: Activity[] = ['general', 'devices']
+    let activities: Activity[] = ['general', 'drivers']
 
     // As soon as the component is mounted, fetch the configuration
     onMount(fetchConfig);
@@ -326,7 +326,7 @@
             </div>
             <ExportImport />
         </div>
-        {:else if currentActivity == 'devices'}
+        {:else if currentActivity == 'drivers'}
             <!-- TODO: is being replaced by generic drivers -->
             <!-- <div id="hardware-left" class="mdc-elevation--z1"> -->
             <!--     <Hardware /> -->
@@ -457,7 +457,6 @@
             background-color: var(--clr-height-0-1);
             border-radius: 0.4rem;
             width: 100%;
-            height: calc(100vh - 60px);
             overflow-y: auto;
             padding-bottom: 1rem;
 

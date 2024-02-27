@@ -107,10 +107,10 @@
 
     let editDriverShow = null
 
-    function editCodeUrl(vendorId: string, modelId: string): string {
-        const hmsEditorUrl = "/hmsEditor"
-        return `${hmsEditorUrl}?id=@driver:${vendorId}:${modelId}`
-    }
+    // function editCodeUrl(vendorId: string, modelId: string): string {
+    //     const hmsEditorUrl = "/hmsEditor"
+    //     return `${hmsEditorUrl}?id=@driver:${vendorId}:${modelId}`
+    // }
 
     let infoOpen = false
 
@@ -155,11 +155,23 @@
         <div class="driver__health">
             <span class='text-hint'>Status:</span>
             <!-- Homescript Status -->
-            <div class="driver__health__chip" use:Ripple={{ surface: true }} class:ok={driver.validationErrors.length === 0} on:click={openInfo}>
+            <div
+                class="driver__health__chip"
+                use:Ripple={{ surface: true }}
+                class:ok={driver.validationErrors.length === 0}
+                on:click={openInfo}
+                on:keydown={openInfo}
+            >
                 <span>Homescript</span>
             </div>
             <!-- Driver Integrity -->
-            <div class="driver__health__chip" use:Ripple={{ surface: true }} class:ok={true} on:click={openInfo}>
+            <div
+                class="driver__health__chip"
+                use:Ripple={{ surface: true }}
+                class:ok={true}
+                on:click={openInfo}
+                on:keydown={openInfo}
+            >
                 <span>Integrity</span>
             </div>
         </div>

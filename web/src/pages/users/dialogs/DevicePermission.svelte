@@ -50,7 +50,7 @@
         <h6>{name}</h6>
         <div>
             <Progress type="circular" bind:loading />
-            <pre><span>{id}</span>/{roomId}</pre>
+            <pre>{roomId}/<span>{id}</span></pre>
         </div>
     </div>
     <FormField>
@@ -59,7 +59,7 @@
             checked={active}
             disabled={loading && loadingTime > 50}
         />
-        <span slot="label">Switch {active ? "granted" : "denied"}</span>
+        <span slot="label">Device {active ? "useable" : "forbidden"}</span>
     </FormField>
 </div>
 

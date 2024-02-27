@@ -121,10 +121,10 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/user/permissions/list/personal", mdl.ApiAuth(api.GetCurrentUserPermissions)).Methods("GET")
 	r.HandleFunc("/api/user/permissions/list/user/{username}", mdl.ApiAuth(mdl.Perm(api.GetForeignUserPermissions, database.PermissionManageUsers))).Methods("GET")
 
-	// Switch Permissions
-	r.HandleFunc("/api/user/permissions/switch/add", mdl.ApiAuth(mdl.Perm(api.AddSwitchPermission, database.PermissionManageUsers))).Methods("POST")
-	r.HandleFunc("/api/user/permissions/switch/delete", mdl.ApiAuth(mdl.Perm(api.RemoveSwitchPermission, database.PermissionManageUsers))).Methods("DELETE")
-	r.HandleFunc("/api/user/permissions/switch/list/user/{username}", mdl.ApiAuth(mdl.Perm(api.GetForeignUserSwitchPermissions, database.PermissionManageUsers))).Methods("GET")
+	// Device Permissions
+	r.HandleFunc("/api/user/permissions/device/add", mdl.ApiAuth(mdl.Perm(api.AddDevicePermission, database.PermissionManageUsers))).Methods("POST")
+	r.HandleFunc("/api/user/permissions/device/delete", mdl.ApiAuth(mdl.Perm(api.RemoveDevicePermission, database.PermissionManageUsers))).Methods("DELETE")
+	r.HandleFunc("/api/user/permissions/device/list/user/{username}", mdl.ApiAuth(mdl.Perm(api.GetForeignUserDevicePermissions, database.PermissionManageUsers))).Methods("GET")
 
 	// Camera Permissions
 	r.HandleFunc("/api/user/permissions/camera/add", mdl.ApiAuth(mdl.Perm(api.AddCameraPermission, database.PermissionManageUsers))).Methods("POST")
