@@ -8,6 +8,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// TODO: think about branding and add it to the user welcome notification
+
 // Identified by a username, has a password and an avatar path
 type FullUser struct {
 	Username          string `json:"username"`
@@ -221,7 +223,8 @@ func AddUser(user FullUser) error {
 	if err = InsertUser(user); err != nil {
 		return err
 	}
-	if _, err = AddNotification(user.Username, "Hello!", "Welcome to Smarthome, the self-built home automation system.", 1); err != nil {
+	// TODO: branding
+	if _, err = AddNotification(user.Username, "Hello!", "Welcome to Smarthome, TODO: branding", 1); err != nil {
 		return err
 	}
 	log.Debug(fmt.Sprintf("Added user %s %s <%s>", user.Forename, user.Surname, user.Username))
