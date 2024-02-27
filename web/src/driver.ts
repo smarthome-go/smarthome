@@ -52,4 +52,6 @@ export interface Location {
     index:  number;
 }
 
-
+export function createDriverHMSID(vendorID: string, modelID: string): string {
+    return `@driver:${vendorID}:${modelID}`
+}

@@ -5,7 +5,9 @@
     import CharacterCounter from '@smui/textfield/character-counter'
     import { createEventDispatcher } from 'svelte'
     import { loading } from './main'
-    import type { DeviceResponse } from '../../main';
+    import type { DeviceResponse } from '../../../../device';
+    import { createDriverHMSID } from '../../../../driver';
+    import { hmsEditorURLForId } from '../../../../urls';
     import DynamicConfigurator from '../../../../components/Homescript/DynamicConfigurator.svelte'
     import { createSnackbar, hasPermission } from '../../../../global';
 

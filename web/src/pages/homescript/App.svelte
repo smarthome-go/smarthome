@@ -9,6 +9,7 @@
     import AddHomescript from './dialogs/AddHomescript.svelte'
     import HmsSelector from './dialogs/HmsSelector.svelte'
     import { hmsLoaded, homescripts, jobs, loading } from './main'
+    import { hmsEditorURLForId } from '../../urls'
     import DeleteHomescript from './dialogs/DeleteHomescript.svelte'
     import {
         killAllJobsById,
@@ -437,10 +438,7 @@
                     </div>
                     <div class="run__buttons">
                         <Button
-                            on:click={() =>
-                                (window.location.href = `/homescript/editor?id=${encodeURIComponent(
-                                    selection,
-                                )}`)}
+                            href={hmsEditorURLForId(selection)}
                             disabled={selectedDataChanged}
                             variant="outlined"
                         >

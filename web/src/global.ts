@@ -147,7 +147,10 @@ export async function fetchNotificationCount(): Promise<number> {
 
 export const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms))
 
-export async function hasPermission(permission: string): Promise<boolean> {
+export type Permission = 'setPower' | 'viewCameras' | 'manageUsers' | 'debug' | 'logging' | 'automation'
+    | 'scheduler' | 'reminder' | 'modifyServerConfig' | 'modifyRooms' | 'homescript' | 'hmsNetwork' | '*';
+
+export async function hasPermission(permission: Permission): Promise<boolean> {
     while (!hasFetched) await sleep(5)
     const permissions = get(data).userData.permissions
     return (permissions.includes(permission) || permissions.includes('*'))
