@@ -50,3 +50,8 @@ export interface CreateDeviceRequest {
     driverVendorId: string,
     driverModelId: string,
 }
+
+export interface ModifyDeviceRequest {
+    id: string,
+    name: string,
+}

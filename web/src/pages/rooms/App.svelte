@@ -16,7 +16,7 @@
     import { loading, powerCamReloadEnabled } from './main'
     import Device from './Device.svelte'
     import type { Room } from '../../room';
-    import type { CreateDeviceRequest } from '../../device';
+    import type { CreateDeviceRequest, DeviceResponse, ModifyDeviceRequest } from '../../device';
 
     // If set to true, a camera-reload is triggered
     let reloadCameras = false
@@ -228,20 +228,27 @@
         $loading = false
     }
 
-    async function modifyDevice(event) {
-        const data = event.detail
+
+    async function modifyDevice(data: DeviceResponse) {
         $loading = true
         try {
+            let request: ModifyDeviceRequest = {
+                id: data.id,
+                name: data.name,
+            }
+
             const res = await (
                 await fetch('/api/devices/modify', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data),
+                    body: JSON.stringify(request),
                 })
             ).json()
             if (!res.success) throw Error(res.error)
             // TODO: make this generic: Would be reset on power change if not updated in `currentRoom`.
             let deviceInCurrentRoom = currentRoom.devices.find(s => s.id == data.id)
+
+            // NOTE: if a device gets more fields, they must be added here.
             deviceInCurrentRoom.name = data.name
 
             // TODO: add more?
