@@ -290,7 +290,7 @@
                     on:keydown={() => errorsOpen=true}
                 >
                     <i class="material-icons">cancel</i>
-                    {data.hmsErrors.length} Error {errors.length != 1 ? 's' : ''}
+                    {errors.length} Error {errors.length != 1 ? 's' : ''}
                 </span>
             </div>
         {/if}
