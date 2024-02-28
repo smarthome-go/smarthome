@@ -20,11 +20,15 @@
 
     function errToHtml(err: homescriptError, data: hmsResWrapper): string {
         const fromContents = data.fileContents.get(err.span.filename)
-        if (fromContents === undefined || fromContents === null) {
-            throw("Missing Homescript sources for this error")
-        }
 
-        const code = fromContents
+        let code = fromContents
+        let missingSources = false
+
+        if (fromContents === undefined || fromContents === null) {
+            // throw("Missing Homescript sources for this error")
+            console.log("No sources")
+            missingSources = true
+        }
 
         let color = 'red'
         let kind = 'error: unknown'
@@ -71,6 +75,15 @@
             err.span.end.column == 0
         ) {
             return `<span class="${color}">${kind}</span> in ${err.span.filename}<br>${message}<br>${notes}`
+        }
+
+        if (missingSources) {
+            return (
+                `<span class="${color} bold">${kind}</span><span class="bold">&nbsp;at&nbsp;${err.span.filename}:${err.span.start.line}:${err.span.start.column}</span>` +
+                `<br><br><span class="${color} bold">${message
+                    .replaceAll(' ', '&nbsp;')
+                    .replaceAll('\n', '<br>')}</span><br>${notes}`
+            )
         }
 
         const lines = code.split('\n')
@@ -142,7 +155,7 @@
                 {#if data.success}
                     Homescript executed successfully
                 {:else}
-                    Homescript failed with interrupt
+                    Homescript crashed during runtime
                 {/if}
             {:else if data.success}
                 Analyzer detected no issues

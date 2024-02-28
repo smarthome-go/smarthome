@@ -80,7 +80,7 @@
                     modeRun: data.modeRun,
                     fileContents: data.response.fileContents,
                     errors: data.response.errors,
-                    success: data.response.errors.length > 0,
+                    success: data.response.errors.length === 0,
                 }}
                 output={data.response.output}
             />

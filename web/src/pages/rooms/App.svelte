@@ -221,7 +221,7 @@
                 })
             ).json()
             if (!res.success) throw Error(res.error)
-            currentRoom.devices = currentRoom.devices.filter(s => s.id !== id)
+            currentRoom.devices = currentRoom.devices.filter(s => s.shallow.id !== id)
         } catch (err) {
             $createSnackbar(`Could not delete device: ${err}`)
         }
@@ -233,8 +233,8 @@
         $loading = true
         try {
             let request: ModifyDeviceRequest = {
-                id: data.id,
-                name: data.name,
+                id: data.shallow.id,
+                name: data.shallow.name,
             }
 
             const res = await (
@@ -246,13 +246,16 @@
             ).json()
             if (!res.success) throw Error(res.error)
             // TODO: make this generic: Would be reset on power change if not updated in `currentRoom`.
-            let deviceInCurrentRoom = currentRoom.devices.find(s => s.id == data.id)
+            let deviceInCurrentRoom = currentRoom.devices.find(s => s.shallow.id == data.shallow.id)
 
             // NOTE: if a device gets more fields, they must be added here.
-            deviceInCurrentRoom.name = data.name
+            deviceInCurrentRoom.shallow.name = data.shallow.name
 
             // TODO: add more?
         } catch (err) {
+            if (err instanceof TypeError) {
+                throw err
+            }
             $createSnackbar(`Could not edit device: ${err}`)
         }
         $loading = false
@@ -327,11 +330,11 @@
                 </div>
             {:else}
                 <!-- TODO: pack smaller devices into 'chunks' or 'groups' OR allow the user to pick an order? -->
-                {#each currentRoom !== undefined ? currentRoom.devices : [] as device (device.id)}
+                {#each currentRoom !== undefined ? currentRoom.devices : [] as device (device.shallow.id)}
                     <Device
                         bind:data={device}
-                        on:delete={() => deleteDevice(device.id)}
-                        on:modify={modifyDevice}
+                        on:delete={() => deleteDevice(device.shallow.id)}
+                        on:modify={(e) => modifyDevice(e.detail)}
                         on:powerChange={() => (reloadCameras = $powerCamReloadEnabled)}
                         on:powerChangeDone={() => (reloadCameras = false)}
                     />

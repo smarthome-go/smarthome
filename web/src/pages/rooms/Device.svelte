@@ -25,13 +25,15 @@
     let deviceEditOpen = false
 
     export let data: DeviceResponse = {
-        type: 'INPUT',
-        id: '',
-        name: '',
-        vendorId: '',
-        modelId: '',
-        roomId: '',
-        singletonJson: {},
+        shallow: {
+            type: 'INPUT',
+            id: '',
+            name: '',
+            vendorId: '',
+            modelId: '',
+            roomId: '',
+            singletonJson: {},
+        },
         hmsErrors: [],
         config: {
             capabilities: [],
@@ -72,7 +74,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        deviceId: data.id,
+                        deviceId: data.shallow.id,
                         power: {
                             state: event.detail.selected,
                         },
@@ -88,7 +90,7 @@
             }
         } catch (err) {
             $createSnackbar(
-                `Failed to set device power '${data.name}' to ${event.detail.selected ? 'on' : 'off'}: ${err}`,
+                `Failed to set device power '${data.shallow.name}' to ${event.detail.selected ? 'on' : 'off'}: ${err}`,
             )
         }
         await sleep(500)
@@ -107,7 +109,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        deviceId: data.id,
+                        deviceId: data.shallow.id,
                         dim: {
                             percent: value,
                             label,
@@ -124,7 +126,7 @@
             }
         } catch (err) {
             $createSnackbar(
-                `Failed to set device '${data.name}' dimmable '${label}' to ${value}: ${err}`,
+                `Failed to set device '${data.shallow.name}' dimmable '${label}' to ${value}: ${err}`,
             )
         }
         await sleep(500)
@@ -145,14 +147,17 @@
     $: if (data.hmsErrors !== null && data.hmsErrors.length > 0) {
         errors = data.hmsErrors.map((error) => Object.create({userCaused: false, error}))
     }
-    $: if(errors.length) loadHmsSources(errors.map(e => e.error.span.filename))
+    $: if(errors.length && canFetchSources !== undefined) loadHmsSources(errors.map(e => e.error.span.filename))
+
+    let canFetchSources = undefined
 
     // TODO: optimize this!
     async function loadHmsSources(ids: string[]) {
-        // They user would not see any code 
-        // if (!hasPermission('modifyServerConfig')) {
-        //     return;
-        // }
+        // They would not see any code as there would be a 403.
+        if (!canFetchSources) {
+            console.log("not fetching sources...")
+            return
+        }
         // TODO: what to do?
 
         sourcesUpToDate = false
@@ -186,26 +191,26 @@
 
     let hasErrors = false
     $: hasErrors = errors !== null && errors.length > 0
+
+    async function mount() {
+        canFetchSources = (await hasPermission('modifyServerConfig')) && (await hasPermission('homescript'))
+        console.log(`Configured error display: user can fetch sources: ${canFetchSources}`)
+    }
+
+    onMount(mount)
 </script>
 
 <EditDevice
     on:delete={() => dispatch('delete', null)}
-    on:modify={event => {
-        // TODO: implement copy
-        // name = event.detail.name
-        // watts = event.detail.watts
-        // targetNode = event.detail.targetNode
-        // event.detail.id = id
-        dispatch('modify', event.detail)
-    }}
-    {data}
+    on:modify={e => dispatch('modify', e.detail)}
     bind:show={showEditDevice}
+    {data}
 />
 
 <DeviceInfo bind:open={deviceInfoOpen} {data} />
 
 <GenericDevice
-    name={data.name}
+    name={data.shallow.name}
     {hasEditPermission}
     isTall={hasCapability('dimmable') || hasCapability('sensor')}
     on:info_show={() => deviceInfoOpen = true}
@@ -270,16 +275,33 @@
     <div slot="bottom">
         {#if hasErrors}
             <div class="device__errors">
-                {#if sourcesUpToDate}
+                {#if !canFetchSources}
                     <ExecutionResultPopup
                         bind:open={errorsOpen}
                         data={{
                             modeRun: true,
                             response: {
-                                title: `Driver invocation '${data.name}'`,
+                                title: `Driver invocation '${data.shallow.name}'`,
                                 success: false,
                                 output: "",
-                                fileContents: homescriptCode, // TODO
+                                fileContents: new Map(),
+                                errors: errors.map(w => w.error),
+                            },
+                        }}
+                        on:close={() => {
+                            // This hack is required so that the window still remains scrollable after removal
+                        }}
+                    />
+                {:else if sourcesUpToDate}
+                    <ExecutionResultPopup
+                        bind:open={errorsOpen}
+                        data={{
+                            modeRun: true,
+                            response: {
+                                title: `Driver invocation '${data.shallow.name}'`,
+                                success: false,
+                                output: "",
+                                fileContents: homescriptCode,
                                 errors: errors.map(w => w.error),
                             },
                         }}

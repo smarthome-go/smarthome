@@ -35,8 +35,8 @@
     }
 
     let configuredChanged = false
-    let configuredData = structuredClone(data.singletonJson)
-    $: configuredChanged = (JSON.stringify(data.singletonJson) !== JSON.stringify(configuredData))
+    let configuredData = structuredClone(data.shallow.singletonJson)
+    $: configuredChanged = (JSON.stringify(data.shallow.singletonJson) !== JSON.stringify(configuredData))
         || (JSON.stringify(data) !== JSON.stringify(dataBefore))
 
 
@@ -62,7 +62,7 @@
                 '/api/devices/configure', {
                     method: "PUT",
                     body: JSON.stringify({
-                        id: data.id,
+                        id: data.shallow.id,
                         data: configuredData
                     })
                 }
@@ -91,7 +91,7 @@
     >
         <Title id="confirmation-title">Confirm Deletion</Title>
         <Content id="confirmation-content">
-            You are about to delete the device '{data.id}' (${data.name}}).
+            You are about to delete the device '{data.shallow.id}' (${data.shallow.name}}).
             This action is irreversible, do you want to proceed?
         </Content>
         <Actions>
@@ -103,9 +103,9 @@
             </Button>
         </Actions>
     </Dialog>
-    <Title id="title">Edit Device <code>{data.id}</code></Title>
+    <Title id="title">Edit Device <code>{data.shallow.id}</code></Title>
     <Content id="content">
-        <Textfield bind:value={data.name} input$maxlength={30} label="Name" required>
+        <Textfield bind:value={data.shallow.name} input$maxlength={30} label="Name" required>
             <svelte:fragment slot="helper">
                 <CharacterCounter>0 / 30</CharacterCounter>
             </svelte:fragment>
@@ -115,7 +115,7 @@
             <DynamicConfigurator
                 bind:spec={data.config.info.config}
                 on:change={ (e) => reactToOutput(e.detail) }
-                bind:inputData={data.singletonJson}
+                bind:inputData={data.shallow.singletonJson}
                 topLevelLabel={`Device Configuration`}
             />
         </div>
@@ -125,7 +125,7 @@
             <Button
                 disabled={configuredChanged}
                 variant="outlined"
-                href={hmsEditorURLForId(createDriverHMSID(data.vendorId, data.modelId))}
+                href={hmsEditorURLForId(createDriverHMSID(data.shallow.vendorId, data.shallow.modelId))}
             >
                 <Icon class="material-icons">code</Icon>
                 <Label>Edit Driver</Label>
