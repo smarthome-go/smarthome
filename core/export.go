@@ -160,18 +160,18 @@ func ExportConfig(
 		roomDevices := make([]SetupDevice, 0)
 		for _, sw := range room.Devices {
 			roomDevices = append(roomDevices, SetupDevice{
-				DeviceType: sw.DeviceType,
-				Id:         sw.ID,
-				Name:       sw.Name,
-				VendorId:   sw.DriverVendorID,
-				ModelId:    sw.DriverModelID,
+				DeviceType: sw.Shallow.DeviceType,
+				Id:         sw.Shallow.ID,
+				Name:       sw.Shallow.Name,
+				VendorId:   sw.Shallow.DriverVendorID,
+				ModelId:    sw.Shallow.DriverModelID,
 			})
 		}
 
 		roomCameras := make([]SetupCamera, 0)
 		for _, cam := range room.Cameras {
 			roomCameras = append(roomCameras, SetupCamera{
-				Id:   cam.Id,
+				Id:   cam.ID,
 				Name: cam.Name,
 				Url:  cam.Url,
 			})
@@ -179,7 +179,7 @@ func ExportConfig(
 
 		rooms = append(rooms, SetupRoom{
 			Data: database.RoomData{
-				Id:          room.Data.Id,
+				ID:          room.Data.ID,
 				Name:        room.Data.Name,
 				Description: room.Data.Description,
 			},

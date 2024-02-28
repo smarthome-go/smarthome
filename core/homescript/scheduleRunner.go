@@ -223,8 +223,8 @@ func scheduleRunnerFunc(id uint) {
 
 			_, hmsErrs, err := InvokeDriverSetPower(
 				switchJob.DeviceId,
-				switchData.VendorId,
-				switchData.ModelId,
+				switchData.VendorID,
+				switchData.ModelID,
 				DriverActionPower{State: switchJob.PowerOn},
 			)
 

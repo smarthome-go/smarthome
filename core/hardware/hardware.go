@@ -13,9 +13,9 @@ import (
 type DeviceJobData any
 
 type DeviceOutputJob struct {
-	Id     int64           `json:"id"`
-	Device database.Device `json:"device"`
-	Data   DeviceJobData   `json:"data"`
+	Id     int64                  `json:"id"`
+	Device database.ShallowDevice `json:"device"`
+	Data   DeviceJobData          `json:"data"`
 }
 
 type JobResult struct {

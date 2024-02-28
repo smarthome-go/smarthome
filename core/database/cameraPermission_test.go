@@ -22,22 +22,22 @@ func TestUserCameraPermissions(t *testing.T) {
 		t.Error(err.Error())
 	}
 	// Create test room
-	if err := CreateRoom(RoomData{Id: "test"}); err != nil {
+	if err := CreateRoom(RoomData{ID: "test"}); err != nil {
 		t.Error(err.Error())
 	}
 	// Create test cameras
 	cams := []Camera{
 		{
-			Id:     "perm1",
-			RoomId: "test",
+			ID:     "perm1",
+			RoomID: "test",
 		},
 		{
-			Id:     "perm2",
-			RoomId: "test",
+			ID:     "perm2",
+			RoomID: "test",
 		},
 		{
-			Id:     "perm3",
-			RoomId: "test",
+			ID:     "perm3",
+			RoomID: "test",
 		},
 	}
 	for _, cam := range cams {
@@ -53,14 +53,14 @@ func TestUserCameraPermissions(t *testing.T) {
 	assert.Empty(t, emptyPerm)
 	// Grant user permission to every camera in cams
 	for _, cam := range cams {
-		if _, err := AddUserCameraPermission("cam_perm", cam.Id); err != nil {
+		if _, err := AddUserCameraPermission("cam_perm", cam.ID); err != nil {
 			t.Error(err.Error())
 		}
 	}
 	// Check permissions again
 	wantedPerm := make([]string, 0)
 	for _, cam := range cams {
-		wantedPerm = append(wantedPerm, cam.Id)
+		wantedPerm = append(wantedPerm, cam.ID)
 	}
 	allPerms, err := GetUserCameraPermissions("cam_perm")
 	if err != nil {
@@ -87,14 +87,14 @@ func TestUserCameraPermissions(t *testing.T) {
 	// Remove every permission from the user using a different function
 	// Grant user permission to every camera in cams again
 	for _, cam := range cams {
-		if _, err := AddUserCameraPermission("cam_perm", cam.Id); err != nil {
+		if _, err := AddUserCameraPermission("cam_perm", cam.ID); err != nil {
 			t.Error(err.Error())
 		}
-		if _, err := RemoveUserCameraPermission("cam_perm", cam.Id); err != nil {
+		if _, err := RemoveUserCameraPermission("cam_perm", cam.ID); err != nil {
 			t.Error(err.Error())
 		}
 		// Test if the `UserHasCameraPermission` function is able to output `false`
-		hasPermission, err := UserHasCameraPermission("cam_perm", cam.Id)
+		hasPermission, err := UserHasCameraPermission("cam_perm", cam.ID)
 		if err != nil {
 			t.Error(err.Error())
 		}

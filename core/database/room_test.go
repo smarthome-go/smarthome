@@ -21,7 +21,7 @@ func TestCreateRooms(t *testing.T) {
 	}{
 		{
 			Room: RoomData{
-				Id:          "test_1",
+				ID:          "test_1",
 				Name:        "test_1",
 				Description: "test_1",
 			},
@@ -29,7 +29,7 @@ func TestCreateRooms(t *testing.T) {
 		},
 		{
 			Room: RoomData{
-				Id:          "test_2",
+				ID:          "test_2",
 				Name:        "test_2",
 				Description: "test_2",
 			},
@@ -37,7 +37,7 @@ func TestCreateRooms(t *testing.T) {
 		},
 		{
 			Room: RoomData{
-				Id:          "test_3",
+				ID:          "test_3",
 				Name:        "test_3",
 				Description: "test_3",
 			},
@@ -55,12 +55,12 @@ func TestCreateRooms(t *testing.T) {
 		}
 		valid := false
 		for _, item := range rooms {
-			if item.Id == test.Room.Id {
+			if item.ID == test.Room.ID {
 				valid = true
 			}
 		}
 		if !valid {
-			t.Errorf("Room %s was not found after creation", test.Room.Id)
+			t.Errorf("Room %s was not found after creation", test.Room.ID)
 		}
 	}
 }
@@ -172,7 +172,7 @@ func TestDeleteRoom(t *testing.T) {
 	}{
 		{
 			Room: RoomData{
-				Id:          "test_1",
+				ID:          "test_1",
 				Name:        "test_1",
 				Description: "test_1",
 			},
@@ -180,7 +180,7 @@ func TestDeleteRoom(t *testing.T) {
 		},
 		{
 			Room: RoomData{
-				Id:          "test_2",
+				ID:          "test_2",
 				Name:        "test_2",
 				Description: "test_2",
 			},
@@ -188,7 +188,7 @@ func TestDeleteRoom(t *testing.T) {
 		},
 		{
 			Room: RoomData{
-				Id:          "test_3",
+				ID:          "test_3",
 				Name:        "test_3",
 				Description: "test_3",
 			},
@@ -209,24 +209,24 @@ func TestDeleteRoom(t *testing.T) {
 	}
 	for _, room := range rooms {
 		// Validate creation in order to avoid false positives
-		_, found, err := GetRoomDataById(room.Id)
+		_, found, err := GetRoomDataById(room.ID)
 		if err != nil {
 			t.Error(err.Error())
 		}
 		if !found {
-			t.Errorf("Room %s was not found after creation", room.Id)
+			t.Errorf("Room %s was not found after creation", room.ID)
 		}
 		// Perform deletion
-		if err := DeleteRoom(room.Id); err != nil {
+		if err := DeleteRoom(room.ID); err != nil {
 			t.Error(err.Error())
 		}
 		// Validate Deletion
-		_, found, err = GetRoomDataById(room.Id)
+		_, found, err = GetRoomDataById(room.ID)
 		if err != nil {
 			t.Error(err.Error())
 		}
 		if found {
-			t.Errorf("Room %s found after deletion", room.Id)
+			t.Errorf("Room %s found after deletion", room.ID)
 		}
 	}
 }
@@ -238,7 +238,7 @@ func TestModifyRoom(t *testing.T) {
 	}{
 		{
 			Room: RoomData{
-				Id:          "test_1",
+				ID:          "test_1",
 				Name:        "test_1",
 				Description: "test_1",
 			},
@@ -246,7 +246,7 @@ func TestModifyRoom(t *testing.T) {
 		},
 		{
 			Room: RoomData{
-				Id:          "test_3",
+				ID:          "test_3",
 				Name:        "test_3",
 				Description: "test_3",
 			},
@@ -261,15 +261,15 @@ func TestModifyRoom(t *testing.T) {
 		}
 		// Used as a random data source in order to guarantee unique labels
 		currentTime := time.Now().UnixMilli()
-		if err := ModifyRoomData(test.Room.Id, fmt.Sprintf("name:%d", currentTime), fmt.Sprintf("description:%d", currentTime)); err != nil {
+		if err := ModifyRoomData(test.Room.ID, fmt.Sprintf("name:%d", currentTime), fmt.Sprintf("description:%d", currentTime)); err != nil {
 			t.Error(err.Error())
 		}
-		room, found, err := GetRoomDataById(test.Room.Id)
+		room, found, err := GetRoomDataById(test.Room.ID)
 		if err != nil {
 			t.Error(err.Error())
 		}
 		if !found {
-			t.Errorf("Room %s not found after modifycation", test.Room.Id)
+			t.Errorf("Room %s not found after modifycation", test.Room.ID)
 		}
 		if room.Name != fmt.Sprintf("name:%d", currentTime) || room.Description != fmt.Sprintf("description:%d", currentTime) {
 			t.Errorf("Invalid values after modification: want: (name:%d, description:%d), got(%s, %s)", currentTime, currentTime, room.Name, room.Description)

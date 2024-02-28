@@ -24,13 +24,13 @@ func ParseDeviceType(from string) (DEVICE_TYPE, bool) {
 
 // Identified by a device ID, has a name and belongs to one room
 // Each device can either be an input device or an output device
-type Device struct {
+type ShallowDevice struct {
 	DeviceType    DEVICE_TYPE `json:"type"`
-	Id            string      `json:"id"`
+	ID            string      `json:"id"`
 	Name          string      `json:"name"`
-	RoomId        string      `json:"roomId"`
-	VendorId      string      `json:"vendorId"`
-	ModelId       string      `json:"modelId"`
+	RoomID        string      `json:"roomId"`
+	VendorID      string      `json:"vendorId"`
+	ModelID       string      `json:"modelId"`
 	SingletonJSON string      `json:"singletonJson"`
 }
 
@@ -70,7 +70,7 @@ func createDeviceTable() error {
 
 // Creates a new device
 // Will return an error if the database fails
-func CreateDevice(data Device) error {
+func CreateDevice(data ShallowDevice) error {
 	query, err := db.Prepare(`
 	INSERT INTO
 	device(
@@ -100,11 +100,11 @@ func CreateDevice(data Device) error {
 	defer query.Close()
 	res, err := query.Exec(
 		data.DeviceType,
-		data.Id,
+		data.ID,
 		data.Name,
-		data.RoomId,
-		data.VendorId,
-		data.ModelId,
+		data.RoomID,
+		data.VendorID,
+		data.ModelID,
 		data.SingletonJSON,
 	)
 	if err != nil {
@@ -120,7 +120,7 @@ func CreateDevice(data Device) error {
 		return err
 	}
 	if rowsAffected > 0 {
-		log.Debug(fmt.Sprintf("Added device `%s` with name `%s`", data.Id, data.Name))
+		log.Debug(fmt.Sprintf("Added device `%s` with name `%s`", data.ID, data.Name))
 	}
 	return nil
 }
@@ -205,11 +205,11 @@ func DeleteRoomDevices(roomId string) error {
 	}
 
 	for _, device := range devices {
-		if device.RoomId != roomId {
+		if device.RoomID != roomId {
 			continue
 		}
 
-		if err := DeleteDevice(device.Id); err != nil {
+		if err := DeleteDevice(device.ID); err != nil {
 			return err
 		}
 	}
@@ -218,7 +218,7 @@ func DeleteRoomDevices(roomId string) error {
 }
 
 // Returns a list of all available devices with their attributes
-func ListAllDevices() ([]Device, error) {
+func ListAllDevices() ([]ShallowDevice, error) {
 	res, err := db.Query(`
 	SELECT
 		device.DeviceType,
@@ -236,16 +236,16 @@ func ListAllDevices() ([]Device, error) {
 	}
 	defer res.Close()
 
-	devices := make([]Device, 0)
+	devices := make([]ShallowDevice, 0)
 	for res.Next() {
-		var device Device
+		var device ShallowDevice
 		if err := res.Scan(
 			&device.DeviceType,
-			&device.Id,
+			&device.ID,
 			&device.Name,
-			&device.RoomId,
-			&device.VendorId,
-			&device.ModelId,
+			&device.RoomID,
+			&device.VendorID,
+			&device.ModelID,
 			&device.SingletonJSON,
 		); err != nil {
 			log.Error("Could not list devices: Failed to scan results: ", err.Error())
@@ -260,7 +260,7 @@ func ListAllDevices() ([]Device, error) {
 
 // Like `list all devices` but takes a username as a filter
 // Only returns devices which are contained in the device-permission table with the given user
-func ListUserDevicesQuery(username string) ([]Device, error) {
+func ListUserDevicesQuery(username string) ([]ShallowDevice, error) {
 	query, err := db.Prepare(`
 	SELECT
 		device.DeviceType,
@@ -287,17 +287,17 @@ func ListUserDevicesQuery(username string) ([]Device, error) {
 		return nil, err
 	}
 
-	devices := make([]Device, 0)
+	devices := make([]ShallowDevice, 0)
 	for res.Next() {
-		var device Device
+		var device ShallowDevice
 
 		if err := res.Scan(
 			&device.DeviceType,
-			&device.Id,
+			&device.ID,
 			&device.Name,
-			&device.RoomId,
-			&device.VendorId,
-			&device.ModelId,
+			&device.RoomID,
+			&device.VendorID,
+			&device.ModelID,
 			&device.SingletonJSON,
 		); err != nil {
 			log.Error("Could not list user devices: Failed to scan results: ", err.Error())
@@ -310,7 +310,7 @@ func ListUserDevicesQuery(username string) ([]Device, error) {
 	return devices, nil
 }
 
-func ListUserDevices(username string) ([]Device, error) {
+func ListUserDevices(username string) ([]ShallowDevice, error) {
 	hasPermissionToAllDevices, err := UserHasPermission(username, PermissionModifyRooms)
 	if err != nil {
 		return nil, err
@@ -322,7 +322,7 @@ func ListUserDevices(username string) ([]Device, error) {
 }
 
 // Returns an arbitrary device given its ID
-func GetDeviceById(id string) (dev Device, found bool, err error) {
+func GetDeviceById(id string) (dev ShallowDevice, found bool, err error) {
 	query, err := db.Prepare(`
 	SELECT
 		device.DeviceType,
@@ -337,25 +337,25 @@ func GetDeviceById(id string) (dev Device, found bool, err error) {
 	`)
 	if err != nil {
 		log.Error("Failed to get device by ID: preparing query failed: ", err.Error())
-		return Device{}, false, err
+		return ShallowDevice{}, false, err
 	}
 	defer query.Close()
 
-	var device Device
+	var device ShallowDevice
 	if err := query.QueryRow(id).Scan(
 		&device.DeviceType,
-		&device.Id,
+		&device.ID,
 		&device.Name,
-		&device.RoomId,
-		&device.VendorId,
-		&device.ModelId,
+		&device.RoomID,
+		&device.VendorID,
+		&device.ModelID,
 		&device.SingletonJSON,
 	); err != nil {
 		if err == sql.ErrNoRows {
-			return Device{}, false, nil
+			return ShallowDevice{}, false, nil
 		}
 		log.Error("Failed to get device by id: scanning results failed: ", err.Error())
-		return Device{}, false, err
+		return ShallowDevice{}, false, err
 	}
 
 	return device, true, nil

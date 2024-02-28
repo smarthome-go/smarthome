@@ -33,7 +33,7 @@ func TestDefaultDriverHmsCode(t *testing.T) {
 
 	// Create a room.
 	assert.NoError(t, database.CreateRoom(database.RoomData{
-		Id:          driverBaseID,
+		ID:          driverBaseID,
 		Name:        "Default Driver Test",
 		Description: "/",
 	}))

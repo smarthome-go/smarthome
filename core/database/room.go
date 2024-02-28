@@ -6,7 +6,7 @@ import (
 )
 
 type RoomData struct {
-	Id          string `json:"id"`
+	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
@@ -50,7 +50,7 @@ func CreateRoom(room RoomData) error {
 		return err
 	}
 	defer query.Close()
-	res, err := query.Exec(room.Id, room.Name, room.Description)
+	res, err := query.Exec(room.ID, room.Name, room.Description)
 	if err != nil {
 		log.Error("Could not create room: executing query failed: ", err.Error())
 		return err
@@ -61,7 +61,7 @@ func CreateRoom(room RoomData) error {
 		return err
 	}
 	if rowsAffected > 0 {
-		log.Debug(fmt.Sprintf("Added room `%s` (Id: `%s`)", room.Name, room.Id))
+		log.Debug(fmt.Sprintf("Added room `%s` (Id: `%s`)", room.Name, room.ID))
 	}
 	return nil
 }
@@ -105,7 +105,7 @@ func ListRooms() ([]RoomData, error) {
 	rooms := make([]RoomData, 0)
 	for res.Next() {
 		var roomTemp RoomData
-		if err := res.Scan(&roomTemp.Id, &roomTemp.Name, &roomTemp.Description); err != nil {
+		if err := res.Scan(&roomTemp.ID, &roomTemp.Name, &roomTemp.Description); err != nil {
 			log.Error("Failed to list rooms: failed to scan results: ", err.Error())
 			return nil, err
 		}
@@ -130,7 +130,7 @@ func GetRoomDataById(id string) (RoomData, bool, error) {
 	}
 	defer query.Close()
 	var room RoomData
-	if err := query.QueryRow(id).Scan(&room.Id, &room.Name, &room.Description); err != nil {
+	if err := query.QueryRow(id).Scan(&room.ID, &room.Name, &room.Description); err != nil {
 		if err == sql.ErrNoRows {
 			return RoomData{}, false, nil
 		}
@@ -178,7 +178,7 @@ func ListPersonalRoomData(username string) ([]RoomData, error) {
 	rooms := make([]RoomData, 0)
 	for res.Next() {
 		roomTemp := RoomData{}
-		if err := res.Scan(&roomTemp.Id, &roomTemp.Name, &roomTemp.Description); err != nil {
+		if err := res.Scan(&roomTemp.ID, &roomTemp.Name, &roomTemp.Description); err != nil {
 			log.Error("Failed to list personal room data: failed to scan results: ", err.Error())
 			return nil, err
 		}

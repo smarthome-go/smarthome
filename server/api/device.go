@@ -76,7 +76,7 @@ func GetUserDevices(w http.ResponseWriter, r *http.Request) {
 // Returns a list of available devices as JSON to the user, no authentication required
 func GetAllDevicesRich(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	devices, err := homescript.ListAllDevices()
+	devices, err := homescript.ListAllDevicesRich()
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "database error", Error: "database failure"})
@@ -97,7 +97,7 @@ func GetUserDevicesRich(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	devices, err := homescript.ListPersonalDevices(username)
+	devices, err := homescript.ListPersonalDevicesRich(username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "database error", Error: "database error"})

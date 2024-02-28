@@ -9,7 +9,7 @@ import (
 func createTestRoom() error {
 	return CreateRoom(
 		RoomData{
-			Id:          "test",
+			ID:          "test",
 			Name:        "test_room",
 			Description: "test_description",
 		})
@@ -32,55 +32,55 @@ func TestSwitches(t *testing.T) {
 		return
 	}
 	table := []struct {
-		Switch Device
+		Switch ShallowDevice
 		Error  string
 	}{
 		{
-			Switch: Device{
+			Switch: ShallowDevice{
 				DeviceType:    "",
-				Id:            "test_1",
+				ID:            "test_1",
 				Name:          "test_1",
-				RoomId:        "test",
-				VendorId:      "",
-				ModelId:       "",
+				RoomID:        "test",
+				VendorID:      "",
+				ModelID:       "",
 				SingletonJSON: "",
 			},
 			Error: "",
 		},
 		{
-			Switch: Device{
+			Switch: ShallowDevice{
 				DeviceType:    "",
-				Id:            "test_2",
+				ID:            "test_2",
 				Name:          "test_2",
-				RoomId:        "test",
-				VendorId:      "",
-				ModelId:       "",
+				RoomID:        "test",
+				VendorID:      "",
+				ModelID:       "",
 				SingletonJSON: "",
 			},
 			Error: "",
 		},
 		{
-			Switch: Device{
+			Switch: ShallowDevice{
 				DeviceType:    "",
-				Id:            "test_3",
+				ID:            "test_3",
 				Name:          "test_3",
-				RoomId:        "invalid",
-				VendorId:      "",
-				ModelId:       "",
+				RoomID:        "invalid",
+				VendorID:      "",
+				ModelID:       "",
 				SingletonJSON: "",
 			},
 			Error: "Error 1452 (23000): Cannot add or update a child row: a foreign key constraint fails",
 		},
 	}
 	for _, test := range table {
-		t.Run(fmt.Sprintf("create switch/%s", test.Switch.Id), func(t *testing.T) {
-			if err := CreateDevice(Device{
+		t.Run(fmt.Sprintf("create switch/%s", test.Switch.ID), func(t *testing.T) {
+			if err := CreateDevice(ShallowDevice{
 				DeviceType:    DEVICE_TYPE_OUTPUT,
-				Id:            test.Switch.Id,
+				ID:            test.Switch.ID,
 				Name:          test.Switch.Name,
-				RoomId:        test.Switch.RoomId,
-				VendorId:      test.Switch.VendorId,
-				ModelId:       test.Switch.ModelId,
+				RoomID:        test.Switch.RoomID,
+				VendorID:      test.Switch.VendorID,
+				ModelID:       test.Switch.ModelID,
 				SingletonJSON: test.Switch.SingletonJSON,
 			}); err != nil {
 				if !strings.Contains(err.Error(), test.Error) || test.Error == "" {
@@ -92,7 +92,7 @@ func TestSwitches(t *testing.T) {
 				return
 			}
 		})
-		t.Run(fmt.Sprintf("get switch/%s", test.Switch.Id), func(t *testing.T) {
+		t.Run(fmt.Sprintf("get switch/%s", test.Switch.ID), func(t *testing.T) {
 			switches, err := ListAllDevices()
 			if err != nil {
 				t.Errorf("Could not list switches: %s", err.Error())
@@ -100,20 +100,20 @@ func TestSwitches(t *testing.T) {
 			}
 			valid := false
 			for _, s := range switches {
-				if s.Id == test.Switch.Id &&
+				if s.ID == test.Switch.ID &&
 					s.Name == test.Switch.Name &&
-					s.RoomId == test.Switch.RoomId &&
+					s.RoomID == test.Switch.RoomID &&
 					s.SingletonJSON == test.Switch.SingletonJSON {
 					valid = true
 				}
 			}
 			if !valid && test.Error == "" {
-				t.Errorf("Switch %s not found or has invalid metadata. want: %v", test.Switch.Id, test.Switch)
+				t.Errorf("Switch %s not found or has invalid metadata. want: %v", test.Switch.ID, test.Switch)
 				return
 			}
 		})
-		t.Run(fmt.Sprintf("delete switch/%s", test.Switch.Id), func(t *testing.T) {
-			if err := DeleteDevice(test.Switch.Id); err != nil {
+		t.Run(fmt.Sprintf("delete switch/%s", test.Switch.ID), func(t *testing.T) {
+			if err := DeleteDevice(test.Switch.ID); err != nil {
 				t.Error(err.Error())
 				return
 			}
@@ -124,12 +124,12 @@ func TestSwitches(t *testing.T) {
 			}
 			valid := false
 			for _, s := range switches {
-				if s.Id == test.Switch.Id {
+				if s.ID == test.Switch.ID {
 					valid = true
 				}
 			}
 			if valid {
-				t.Errorf("Switch %s was found after deletion", test.Switch.Id)
+				t.Errorf("Switch %s was found after deletion", test.Switch.ID)
 				return
 			}
 		})
@@ -145,41 +145,41 @@ func TestUserSwitches(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
-	switches := []Device{
+	switches := []ShallowDevice{
 		{
 			DeviceType:    "",
-			Id:            "1",
+			ID:            "1",
 			Name:          "1",
-			RoomId:        "test",
-			VendorId:      "",
-			ModelId:       "",
+			RoomID:        "test",
+			VendorID:      "",
+			ModelID:       "",
 			SingletonJSON: "",
 		},
 		{
 			DeviceType:    "",
-			Id:            "2",
+			ID:            "2",
 			Name:          "2",
-			RoomId:        "test",
-			VendorId:      "",
-			ModelId:       "",
+			RoomID:        "test",
+			VendorID:      "",
+			ModelID:       "",
 			SingletonJSON: "",
 		},
 		{
 			DeviceType:    "",
-			Id:            "3",
+			ID:            "3",
 			Name:          "3",
-			RoomId:        "test",
-			VendorId:      "",
-			ModelId:       "",
+			RoomID:        "test",
+			VendorID:      "",
+			ModelID:       "",
 			SingletonJSON: "",
 		},
 		{
 			DeviceType:    "",
-			Id:            "4",
+			ID:            "4",
 			Name:          "4",
-			RoomId:        "test",
-			VendorId:      "",
-			ModelId:       "",
+			RoomID:        "test",
+			VendorID:      "",
+			ModelID:       "",
 			SingletonJSON: "",
 		},
 	}
@@ -211,15 +211,15 @@ func TestUserSwitches(t *testing.T) {
 
 	t.Run("create switches", func(t *testing.T) {
 		for _, switchItem := range switches {
-			t.Run(fmt.Sprintf("create switches/%s", switchItem.Id), func(t *testing.T) {
+			t.Run(fmt.Sprintf("create switches/%s", switchItem.ID), func(t *testing.T) {
 				if err := CreateDevice(
-					Device{
+					ShallowDevice{
 						DeviceType:    DEVICE_TYPE_OUTPUT,
-						Id:            switchItem.Id,
+						ID:            switchItem.ID,
 						Name:          switchItem.Name,
-						RoomId:        switchItem.RoomId,
-						VendorId:      switchItem.VendorId,
-						ModelId:       switchItem.ModelId,
+						RoomID:        switchItem.RoomID,
+						VendorID:      switchItem.VendorID,
+						ModelID:       switchItem.ModelID,
 						SingletonJSON: switchItem.SingletonJSON,
 					},
 				); err != nil {
@@ -264,7 +264,7 @@ func TestUserSwitches(t *testing.T) {
 					}
 					valid := false
 					for _, s := range userSwitches {
-						if s.Id == switchId {
+						if s.ID == switchId {
 							valid = true
 						}
 					}

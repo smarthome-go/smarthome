@@ -22,7 +22,7 @@ func removeAllAutomations(t *testing.T) {
 
 // Creates mock data, including a room, switches and homescripts
 func createMockData() error {
-	if err := database.CreateRoom(database.RoomData{Id: "test_room"}); err != nil {
+	if err := database.CreateRoom(database.RoomData{ID: "test_room"}); err != nil {
 		panic(err.Error())
 	}
 

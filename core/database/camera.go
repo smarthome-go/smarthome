@@ -3,10 +3,10 @@ package database
 import "database/sql"
 
 type Camera struct {
-	Id     string `json:"id"`
+	ID     string `json:"id"`
 	Name   string `json:"name"`
 	Url    string `json:"url"`
-	RoomId string `json:"roomId"`
+	RoomID string `json:"roomId"`
 }
 
 // Is used for listing available cameras without specifying sensitive information
@@ -60,10 +60,10 @@ func CreateCamera(data Camera) error {
 	}
 	defer query.Close()
 	if _, err := query.Exec(
-		data.Id,
+		data.ID,
 		data.Name,
 		data.Url,
-		data.RoomId,
+		data.RoomID,
 	); err != nil {
 		log.Error("Failed to create camera: executing query failed: ", err.Error())
 		return err
@@ -113,10 +113,10 @@ func ListCameras() ([]Camera, error) {
 	for res.Next() {
 		var camera Camera
 		if err := res.Scan(
-			&camera.Id,
+			&camera.ID,
 			&camera.Name,
 			&camera.Url,
-			&camera.RoomId,
+			&camera.RoomID,
 		); err != nil {
 			log.Error("Failed to list cameras: scanning results failed: ", err.Error())
 			return nil, err
@@ -185,10 +185,10 @@ func ListUserCamerasQuery(username string) ([]Camera, error) {
 	for res.Next() {
 		var camera Camera
 		if err := res.Scan(
-			&camera.Id,
+			&camera.ID,
 			&camera.Name,
 			&camera.Url,
-			&camera.RoomId,
+			&camera.RoomID,
 		); err != nil {
 			log.Error("Could not list user cameras: scanning results failed: ", err.Error())
 			return nil, err
@@ -229,10 +229,10 @@ func GetCameraById(id string) (cam Camera, exists bool, err error) {
 	defer query.Close()
 	var camera Camera
 	if err := query.QueryRow(id).Scan(
-		&camera.Id,
+		&camera.ID,
 		&camera.Name,
 		&camera.Url,
-		&camera.RoomId,
+		&camera.RoomID,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return Camera{}, false, nil
@@ -276,10 +276,10 @@ func DeleteRoomCameras(roomId string) error {
 	}
 	for _, cam := range cameras {
 		// Skip any cameras which are not in the given room
-		if cam.RoomId != roomId {
+		if cam.RoomID != roomId {
 			continue
 		}
-		if err := DeleteCamera(cam.Id); err != nil {
+		if err := DeleteCamera(cam.ID); err != nil {
 			return err
 		}
 	}

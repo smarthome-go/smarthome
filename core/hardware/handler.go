@@ -53,7 +53,7 @@ const cooldown = 500
 
 // Main interface for interacting with the queuing system
 // Waits until all jobs are completed, can return an error
-func sendDeviceData(device database.Device, data DeviceJobData) error {
+func sendDeviceData(device database.ShallowDevice, data DeviceJobData) error {
 	uniqueId := time.Now().UnixNano()
 	addJobToQueue(device, data, uniqueId)
 	result := consumeResult(uniqueId)
@@ -62,7 +62,7 @@ func sendDeviceData(device database.Device, data DeviceJobData) error {
 
 // Used for adding a job to a queue, keeps track of daemons and spawns them if needed
 // Waits until the daemon quits, waiting for all (and the new) job(s) to be completed.
-func addJobToQueue(device database.Device, data DeviceJobData, id int64) {
+func addJobToQueue(device database.ShallowDevice, data DeviceJobData, id int64) {
 	item := DeviceOutputJob{
 		Id:     id,
 		Device: device,

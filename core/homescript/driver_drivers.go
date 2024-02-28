@@ -314,12 +314,12 @@ func ModifyCode(vendorID, modelID, newCode string) (found bool, dbErr error) {
 		return false, err
 	}
 	for _, device := range devices {
-		if device.VendorId != vendorID || device.ModelId != modelID {
+		if device.VendorID != vendorID || device.ModelID != modelID {
 			continue
 		}
-		oldDeviceData := DeviceStore[device.Id]
+		oldDeviceData := DeviceStore[device.ID]
 		newDeviceData := (*ApplyNewSchemaOnObjData(oldDeviceData, configInfo.DeviceConfig.Info.HmsType)).(value.ValueObject)
-		if err := StoreDeviceSingletonBackend(device.Id, newDeviceData); err != nil {
+		if err := StoreDeviceSingletonBackend(device.ID, newDeviceData); err != nil {
 			return false, err
 		}
 	}
@@ -351,16 +351,16 @@ func ValidateDeviceConfigurationChange(deviceId string, newConfig interface{}) (
 	}
 
 	// Retrieve driver in order to perform validation
-	driver, found, err := database.GetDeviceDriver(device.VendorId, device.ModelId)
+	driver, found, err := database.GetDeviceDriver(device.VendorID, device.ModelID)
 	if err != nil {
 		return false, nil, err
 	}
 
 	if !found {
-		panic(fmt.Sprintf("Driver `%s:%s` was not found in DB", device.VendorId, device.ModelId))
+		panic(fmt.Sprintf("Driver `%s:%s` was not found in DB", device.VendorID, device.ModelID))
 	}
 
-	oldInfo, validationErrors, err := extractInfoFromDriver(device.VendorId, device.ModelId, driver.HomescriptCode)
+	oldInfo, validationErrors, err := extractInfoFromDriver(device.VendorID, device.ModelID, driver.HomescriptCode)
 	if err != nil {
 		return false, nil, err
 	}

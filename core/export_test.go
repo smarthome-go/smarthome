@@ -60,7 +60,7 @@ func TestExportGeneration(t *testing.T) {
 
 	// Create a room with contents
 	assert.NoError(t, database.CreateRoom(database.RoomData{
-		Id:          "living_room",
+		ID:          "living_room",
 		Name:        "Living Room",
 		Description: "Where the people live...",
 	}))
@@ -94,21 +94,21 @@ func TestExportGeneration(t *testing.T) {
 
 	// Create cameras
 	assert.NoError(t, database.CreateCamera(database.Camera{
-		Id:     "lvr_main_door",
+		ID:     "lvr_main_door",
 		Name:   "Main Door",
-		RoomId: "living_room",
+		RoomID: "living_room",
 		Url:    "http://example.com/1",
 	}))
 	assert.NoError(t, database.CreateCamera(database.Camera{
-		Id:     "lvr_shelf",
+		ID:     "lvr_shelf",
 		Name:   "Shelf",
-		RoomId: "living_room",
+		RoomID: "living_room",
 		Url:    "http://example.com/2",
 	}))
 
 	// Create an additional, empty room
 	assert.NoError(t, database.CreateRoom(database.RoomData{
-		Id:          "server_room",
+		ID:          "server_room",
 		Name:        "Server Room",
 		Description: "Where the server serves...",
 	}))

@@ -6,9 +6,9 @@ import (
 )
 
 type Room struct {
-	Data    database.RoomData   `json:"data"`
-	Devices []homescript.Device `json:"devices"`
-	Cameras []database.Camera   `json:"cameras"`
+	Data    database.RoomData       `json:"data"`
+	Devices []homescript.RichDevice `json:"devices"`
+	Cameras []database.Camera       `json:"cameras"`
 }
 
 // Returns a complete list of rooms, includes its metadata like devices and cameras
@@ -19,7 +19,7 @@ func ListAllRoomsWithData(redactCameraUrl bool) ([]Room, error) {
 	}
 
 	// Get all devices.
-	devices, err := homescript.ListAllDevices()
+	devices, err := homescript.ListAllDevicesRich()
 	if err != nil {
 		return nil, err
 	}
@@ -32,12 +32,12 @@ func ListAllRoomsWithData(redactCameraUrl bool) ([]Room, error) {
 
 	outputRooms := make([]Room, 0)
 	for _, room := range rooms {
-		devicesTemp := make([]homescript.Device, 0)
+		devicesTemp := make([]homescript.RichDevice, 0)
 		camerasTemp := make([]database.Camera, 0)
 
 		// Add all devices of the current room
 		for _, device := range devices {
-			if device.RoomID == room.Id {
+			if device.Shallow.RoomID == room.ID {
 				devicesTemp = append(devicesTemp, device)
 			}
 		}
@@ -47,7 +47,7 @@ func ListAllRoomsWithData(redactCameraUrl bool) ([]Room, error) {
 			if redactCameraUrl {
 				camera.Url = "redacted"
 			}
-			if camera.RoomId == room.Id {
+			if camera.RoomID == room.ID {
 				camerasTemp = append(camerasTemp, camera)
 			}
 		}
@@ -70,7 +70,7 @@ func ListPersonalRoomsWithData(username string) ([]Room, error) {
 	}
 
 	// Get the user's devices.
-	devices, err := homescript.ListPersonalDevices(username)
+	devices, err := homescript.ListPersonalDevicesRich(username)
 	if err != nil {
 		return nil, err
 	}
@@ -83,19 +83,19 @@ func ListPersonalRoomsWithData(username string) ([]Room, error) {
 
 	outputRooms := make([]Room, 0)
 	for _, room := range rooms {
-		devicesTemp := make([]homescript.Device, 0)
+		devicesTemp := make([]homescript.RichDevice, 0)
 		camerasTemp := make([]database.Camera, 0)
 
-		// Add every device which is in the current room
+		// Add every device which is in the current room.
 		for _, device := range devices {
-			if device.RoomID == room.Id {
+			if device.Shallow.RoomID == room.ID {
 				devicesTemp = append(devicesTemp, device)
 			}
 		}
 
-		// Add every camera which is in the current room
+		// Add every camera which is in the current room.
 		for _, camera := range cameras {
-			if camera.RoomId == room.Id {
+			if camera.RoomID == room.ID {
 				camerasTemp = append(camerasTemp, camera)
 			}
 		}

@@ -13,7 +13,7 @@ import (
 )
 
 type RoomRequest struct {
-	Id          string `json:"id"`
+	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
@@ -80,17 +80,17 @@ func AddRoom(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	if strings.Contains(request.Id, " ") || !utf8string.NewString(request.Id).IsASCII() {
+	if strings.Contains(request.ID, " ") || !utf8string.NewString(request.ID).IsASCII() {
 		w.WriteHeader(http.StatusBadRequest)
 		Res(w, Response{Success: false, Message: "bad request", Error: "id should only include ASCII characters and must not have whitespaces"})
 		return
 	}
-	if len(request.Id) > 30 || len(request.Name) > 50 {
+	if len(request.ID) > 30 || len(request.Name) > 50 {
 		w.WriteHeader(http.StatusBadRequest)
 		Res(w, Response{Success: false, Message: "bad request", Error: "maximum lengths for id and name are 30 and 50 "})
 		return
 	}
-	_, alreadyExists, err := database.GetRoomDataById(request.Id)
+	_, alreadyExists, err := database.GetRoomDataById(request.ID)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to create new room: could not check for conflicts", Error: "database failure"})
@@ -120,7 +120,7 @@ func ModifyRoomData(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	room, found, err := database.GetRoomDataById(request.Id)
+	room, found, err := database.GetRoomDataById(request.ID)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to modify room", Error: "database failure"})
@@ -135,7 +135,7 @@ func ModifyRoomData(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: true, Message: "data unchanged"})
 		return
 	}
-	if err := database.ModifyRoomData(request.Id, request.Name, request.Description); err != nil {
+	if err := database.ModifyRoomData(request.ID, request.Name, request.Description); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to modify room", Error: "database failure"})
 		return

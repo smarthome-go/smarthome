@@ -343,7 +343,7 @@ func DriverHasDependentDevices(vendorId string, modelId string) (bool, error) {
 	}
 
 	for _, dev := range devices {
-		if dev.VendorId == vendorId && dev.ModelId == modelId {
+		if dev.VendorID == vendorId && dev.ModelID == modelId {
 			return true, nil
 		}
 	}

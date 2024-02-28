@@ -18,6 +18,12 @@ const (
 
 // TODO: add deep clone for retrieval?
 
+///
+/// Device driver singleton store and cache.
+/// This is a write-through cache as writing does not happen often (once at the end of each driver invocation)
+/// However, the written data is quite important and should be saved in the database.
+///
+
 // Maps a device-ID to the corresponding saved value.
 var DeviceStore map[string]value.ValueObject = make(map[string]value.ValueObject)
 var DriverStore map[database.DriverTuple]value.ValueObject = make(map[database.DriverTuple]value.ValueObject)
@@ -106,13 +112,13 @@ func StoreDeviceSingletonConfigUpdate(
 		panic(fmt.Sprintf("Device `%s` to be stored not found", deviceID))
 	}
 
-	driver, found, err := GetDriverWithInfos(device.VendorId, device.ModelId)
+	driver, found, err := GetDriverWithInfos(device.VendorID, device.ModelID)
 	if err != nil {
 		return err
 	}
 
 	if !found {
-		panic(fmt.Sprintf("Driver `%s:%s` to be stored not found", device.VendorId, device.ModelId))
+		panic(fmt.Sprintf("Driver `%s:%s` to be stored not found", device.VendorID, device.ModelID))
 	}
 
 	oldValue := DeviceStore[deviceID]
@@ -277,20 +283,20 @@ func PopulateValueCache() error {
 
 		// Populate each device which uses this driver.
 		for _, device := range devices {
-			if device.VendorId != driver.VendorId || device.ModelId != driver.ModelId {
+			if device.VendorID != driver.VendorId || device.ModelID != driver.ModelId {
 				continue
 			}
 
-			val, found, err := RetrieveDeviceSingletonFromDB(device.Id, information.DeviceConfig.Info.HmsType)
+			val, found, err := RetrieveDeviceSingletonFromDB(device.ID, information.DeviceConfig.Info.HmsType)
 			if err != nil {
 				return err
 			}
 
 			if !found {
-				panic(fmt.Sprintf("Device not found in database: `%s`", device.Id))
+				panic(fmt.Sprintf("Device not found in database: `%s`", device.ID))
 			}
 
-			DeviceStore[device.Id] = val.(value.ValueObject)
+			DeviceStore[device.ID] = val.(value.ValueObject)
 		}
 	}
 

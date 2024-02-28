@@ -48,7 +48,7 @@ func initDB(args ...bool) error {
 
 func TestPower(t *testing.T) {
 	// Create a test room
-	if err := database.CreateRoom(database.RoomData{Id: "testing", Name: "testing", Description: "testing"}); err != nil {
+	if err := database.CreateRoom(database.RoomData{ID: "testing", Name: "testing", Description: "testing"}); err != nil {
 		t.Error("Failed to create room:", err.Error())
 		return
 	}

@@ -9,16 +9,20 @@ import (
 	"github.com/smarthome-go/smarthome/core/database"
 )
 
-type Device struct {
-	DeviceType     database.DEVICE_TYPE    `json:"type"`
-	ID             string                  `json:"id"`
-	Name           string                  `json:"name"`
-	RoomID         string                  `json:"roomId"`
-	DriverVendorID string                  `json:"vendorId"`
-	DriverModelID  string                  `json:"modelId"`
-	SingletonJSON  any                     `json:"singletonJson"`
-	HmsErrors      []HmsError              `json:"hmsErrors"`
-	Config         ConfigInfoWrapperDevice `json:"config"`
+type ShallowDevice struct {
+	DeviceType     database.DEVICE_TYPE `json:"type"`
+	ID             string               `json:"id"`
+	Name           string               `json:"name"`
+	RoomID         string               `json:"roomId"`
+	DriverVendorID string               `json:"vendorId"`
+	DriverModelID  string               `json:"modelId"`
+	SingletonJSON  any                  `json:"singletonJson"`
+}
+
+type RichDevice struct {
+	Shallow   ShallowDevice           `json:"shallow"`
+	HmsErrors []HmsError              `json:"hmsErrors"`
+	Config    ConfigInfoWrapperDevice `json:"config"`
 
 	// Device-specific information.
 	PowerInformation    DevicePowerInformation                   `json:"powerInformation"`
@@ -31,11 +35,7 @@ type DevicePowerInformation struct {
 	PowerDrawWatts uint `json:"powerDrawWatts"`
 }
 
-// type DeviceDimmableInformation struct {
-// 	Percent uint8 `json:"percent"`
-// }
-
-func ListAllDevices() ([]Device, error) {
+func ListAllDevicesRich() ([]RichDevice, error) {
 	raw, err := database.ListAllDevices()
 	if err != nil {
 		return nil, err
@@ -44,7 +44,7 @@ func ListAllDevices() ([]Device, error) {
 	return EnrichDevicesList(raw)
 }
 
-func ListPersonalDevices(username string) ([]Device, error) {
+func ListPersonalDevicesRich(username string) ([]RichDevice, error) {
 	raw, err := database.ListUserDevices(username)
 	if err != nil {
 		return nil, err
@@ -53,27 +53,27 @@ func ListPersonalDevices(username string) ([]Device, error) {
 	return EnrichDevicesList(raw)
 }
 
-func EnrichDevicesList(input []database.Device) ([]Device, error) {
+func EnrichDevicesList(input []database.ShallowDevice) ([]RichDevice, error) {
 	drivers, err := ListDriversWithoutStoredValues()
 	if err != nil {
 		return nil, err
 	}
 
-	output := make([]Device, len(input))
+	output := make([]RichDevice, len(input))
 	for index, device := range input {
 		// Find correct driver.
 		var fittingDriver RichDriver
 
 		for _, driver := range drivers {
-			if driver.Driver.VendorId == device.VendorId && driver.Driver.ModelId == device.ModelId {
+			if driver.Driver.VendorId == device.VendorID && driver.Driver.ModelId == device.ModelID {
 				fittingDriver = driver
 				break
 			}
 		}
 
 		hmsErrors := HmsErrorsFromDiagnostics(fittingDriver.ValidationErrors)
-		storedDeviceValue := DeviceStore[device.Id]
 
+		storedDeviceValue := DeviceStore[device.ID]
 		savedConfig, _ := value.MarshalValue(
 			filterObjFieldsWithoutSetting(storedDeviceValue, fittingDriver.ExtractedInfo.DeviceConfig.Info.HmsType),
 			false,
@@ -90,9 +90,9 @@ func EnrichDevicesList(input []database.Device) ([]Device, error) {
 			//
 			powerStateTemp, hmsErrs, err := InvokeDriverReportPowerState(
 				DriverInvocationIDs{
-					deviceID: device.Id,
-					vendorID: device.VendorId,
-					modelID:  device.ModelId,
+					deviceID: device.ID,
+					vendorID: device.VendorID,
+					modelID:  device.ModelID,
 				},
 			)
 			if err != nil {
@@ -109,7 +109,7 @@ func EnrichDevicesList(input []database.Device) ([]Device, error) {
 			//
 			powerDrawTemp, hmsErrs, err := InvokeDriverReportPowerDraw(
 				DriverInvocationIDs{
-					deviceID: device.Id, vendorID: device.VendorId, modelID: device.ModelId,
+					deviceID: device.ID, vendorID: device.VendorID, modelID: device.ModelID,
 				},
 			)
 			if err != nil {
@@ -126,9 +126,9 @@ func EnrichDevicesList(input []database.Device) ([]Device, error) {
 		if fittingDriver.DeviceSupports(DeviceCapabilityDimmable) {
 			dimmableInformationTemp, hmsErrs, err := InvokeDriverReportDimmable(
 				DriverInvocationIDs{
-					deviceID: device.Id,
-					vendorID: device.VendorId,
-					modelID:  device.ModelId,
+					deviceID: device.ID,
+					vendorID: device.VendorID,
+					modelID:  device.ModelID,
 				},
 			)
 			if err != nil {
@@ -145,9 +145,9 @@ func EnrichDevicesList(input []database.Device) ([]Device, error) {
 		if fittingDriver.DeviceSupports(DeviceCapabilitySensor) {
 			readingsTemp, hmsErrs, err := InvokeDriverReportSensors(
 				DriverInvocationIDs{
-					deviceID: device.Id,
-					vendorID: device.VendorId,
-					modelID:  device.ModelId,
+					deviceID: device.ID,
+					vendorID: device.VendorID,
+					modelID:  device.ModelID,
 				},
 			)
 			if err != nil {
@@ -160,16 +160,18 @@ func EnrichDevicesList(input []database.Device) ([]Device, error) {
 			sensorReadings = readingsTemp
 		}
 
-		output[index] = Device{
-			DeviceType:     device.DeviceType,
-			ID:             device.Id,
-			Name:           device.Name,
-			RoomID:         device.RoomId,
-			DriverVendorID: device.VendorId,
-			DriverModelID:  device.ModelId,
-			SingletonJSON:  savedConfig,
-			HmsErrors:      hmsErrors,
-			Config:         fittingDriver.ExtractedInfo.DeviceConfig,
+		output[index] = RichDevice{
+			Shallow: ShallowDevice{
+				DeviceType:     device.DeviceType,
+				ID:             device.ID,
+				Name:           device.Name,
+				RoomID:         device.RoomID,
+				DriverVendorID: device.VendorID,
+				DriverModelID:  device.ModelID,
+				SingletonJSON:  savedConfig,
+			},
+			HmsErrors: hmsErrors,
+			Config:    fittingDriver.ExtractedInfo.DeviceConfig,
 			PowerInformation: DevicePowerInformation{
 				State:          powerStateInfo.State,
 				PowerDrawWatts: powerDrawInfo.Watts,
@@ -181,7 +183,7 @@ func EnrichDevicesList(input []database.Device) ([]Device, error) {
 
 	// TODO: maybe remove this?
 	// Sort output by number of capabilities.
-	slices.SortFunc[[]Device](output, func(a Device, b Device) int {
+	slices.SortFunc[[]RichDevice](output, func(a RichDevice, b RichDevice) int {
 		aLen := len(a.Config.Capabilities)
 		bLen := len(b.Config.Capabilities)
 
@@ -242,13 +244,13 @@ func CreateDevice(
 	DeviceStore[id] = defaultDevice
 
 	// Create device in database.
-	if err := database.CreateDevice(database.Device{
+	if err := database.CreateDevice(database.ShallowDevice{
 		DeviceType:    type_,
-		Id:            id,
+		ID:            id,
 		Name:          name,
-		RoomId:        roomID,
-		VendorId:      driverVendorID,
-		ModelId:       driverModelID,
+		RoomID:        roomID,
+		VendorID:      driverVendorID,
+		ModelID:       driverModelID,
 		SingletonJSON: string(marshaled),
 	}); err != nil {
 		return false, nil, err
@@ -269,8 +271,8 @@ func SetDevicePower(deviceId string, power bool) (output DriverActionPowerOutput
 
 	output, hmsErrs, err := InvokeDriverSetPower(
 		deviceId,
-		switchData.VendorId,
-		switchData.ModelId,
+		switchData.VendorID,
+		switchData.ModelID,
 		DriverActionPower{State: power},
 	)
 
@@ -297,8 +299,8 @@ func SetDeviceDim(deviceId string, function string, value int64) (output DriverA
 
 	output, hmsErrs, err := InvokeDriverDim(
 		deviceId,
-		switchData.VendorId,
-		switchData.ModelId,
+		switchData.VendorID,
+		switchData.ModelID,
 		DriverActionDim{
 			Value: value,
 			Label: function,

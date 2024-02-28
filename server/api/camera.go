@@ -14,10 +14,10 @@ import (
 )
 
 type AddCameraRequest struct {
-	Id     string `json:"id"`
+	ID     string `json:"id"`
 	Name   string `json:"name"`
 	Url    string `json:"url"`
-	RoomId string `json:"roomId"`
+	RoomID string `json:"roomId"`
 }
 
 type ModifyCameraRequest struct {
@@ -104,18 +104,18 @@ func CreateCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Validate length and encoding
-	if strings.Contains(request.Id, " ") || !utf8string.NewString(request.Id).IsASCII() {
+	if strings.Contains(request.ID, " ") || !utf8string.NewString(request.ID).IsASCII() {
 		w.WriteHeader(http.StatusBadRequest)
 		Res(w, Response{Success: false, Message: "bad request", Error: "id should only include ASCII characters and must not have whitespaces"})
 		return
 	}
-	if len(request.Id) > 50 || len(request.Name) > 50 {
+	if len(request.ID) > 50 || len(request.Name) > 50 {
 		w.WriteHeader(http.StatusBadRequest)
 		Res(w, Response{Success: false, Message: "bad request", Error: "maximum lengths for id and name are 50 and 50"})
 		return
 	}
 	// Validate that no conflicts are present
-	_, alreadyExists, err := database.GetCameraById(request.Id)
+	_, alreadyExists, err := database.GetCameraById(request.ID)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to create camera", Error: "database failure"})
@@ -127,7 +127,7 @@ func CreateCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Validate that the room exists
-	_, roomExists, err := database.GetRoomDataById(request.RoomId)
+	_, roomExists, err := database.GetRoomDataById(request.RoomID)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to create camera", Error: "database failure"})

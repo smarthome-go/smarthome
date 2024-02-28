@@ -76,9 +76,9 @@ func DeviceAction(action DriverActionKind, body DeviceActionrequestBody) (
 				nil
 		}
 		out, hmsErrs, err = InvokeDriverDim(
-			device.Id,
-			device.VendorId,
-			device.ModelId,
+			device.ID,
+			device.VendorID,
+			device.ModelID,
 			DriverActionDim{
 				Value: body.Dim.Value,
 				Label: body.Dim.Label,
@@ -92,9 +92,9 @@ func DeviceAction(action DriverActionKind, body DeviceActionrequestBody) (
 				nil
 		}
 		out, hmsErrs, err = InvokeDriverSetPower(
-			device.Id,
-			device.VendorId,
-			device.ModelId,
+			device.ID,
+			device.VendorID,
+			device.ModelID,
 			DriverActionPower{State: body.Power.State},
 		)
 	default:

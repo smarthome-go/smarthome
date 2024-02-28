@@ -19,41 +19,41 @@ func TestCreateCamera(t *testing.T) {
 		t.Error(err.Error())
 	}
 	// Create test rooms
-	if err := CreateRoom(RoomData{Id: "test"}); err != nil {
+	if err := CreateRoom(RoomData{ID: "test"}); err != nil {
 		t.Error(err.Error())
 		return
 	}
-	if err := CreateRoom(RoomData{Id: "test2"}); err != nil {
+	if err := CreateRoom(RoomData{ID: "test2"}); err != nil {
 		t.Error(err.Error())
 	}
 	table := []Camera{
 		{
-			Id:     "test_1",
+			ID:     "test_1",
 			Name:   "test 1",
 			Url:    "http://example/com/1",
-			RoomId: "test",
+			RoomID: "test",
 		},
 		{
-			Id:     "test_2",
+			ID:     "test_2",
 			Name:   "test 2",
 			Url:    "http://example.com/2",
-			RoomId: "test2",
+			RoomID: "test2",
 		},
 	}
 
 	for _, camera := range table {
-		t.Run(fmt.Sprintf("TestCreateCamera/%s", camera.Id), func(t *testing.T) {
+		t.Run(fmt.Sprintf("TestCreateCamera/%s", camera.ID), func(t *testing.T) {
 			// Create
 			if err := CreateCamera(camera); err != nil {
 				t.Error(err.Error())
 			}
 			// Assert equality
-			cam, found, err := GetCameraById(camera.Id)
+			cam, found, err := GetCameraById(camera.ID)
 			if err != nil {
 				t.Error(err.Error())
 			}
 			if !found {
-				t.Errorf("Camera %s not found after creation", camera.Id)
+				t.Errorf("Camera %s not found after creation", camera.ID)
 			}
 			assert.Equal(t, camera, cam, "camera from id has invalid metadata")
 		})
@@ -76,13 +76,13 @@ func TestListCamerasRedacted(t *testing.T) {
 		t.Error(err.Error())
 	}
 	for _, cam := range oldCams {
-		if err := DeleteCamera(cam.Id); err != nil {
+		if err := DeleteCamera(cam.ID); err != nil {
 			t.Error(err.Error())
 		}
 	}
 	// Create test data
 	if err := CreateRoom(RoomData{
-		Id:          "redacted",
+		ID:          "redacted",
 		Name:        "redacted",
 		Description: "redacted",
 	}); err != nil {
@@ -90,16 +90,16 @@ func TestListCamerasRedacted(t *testing.T) {
 	}
 	data := []Camera{
 		{
-			Id:     "test_redacted_1",
+			ID:     "test_redacted_1",
 			Name:   "1",
 			Url:    "http://hidden.com",
-			RoomId: "redacted",
+			RoomID: "redacted",
 		},
 		{
-			Id:     "test_redacted_2",
+			ID:     "test_redacted_2",
 			Name:   "2",
 			Url:    "http://hidden2.com",
-			RoomId: "redacted",
+			RoomID: "redacted",
 		},
 	}
 	for _, camera := range data {
@@ -111,7 +111,7 @@ func TestListCamerasRedacted(t *testing.T) {
 	dataCpy := make([]RedactedCamera, 0)
 	for _, camera := range data {
 		dataCpy = append(dataCpy, RedactedCamera{
-			Id:   camera.Id,
+			Id:   camera.ID,
 			Name: camera.Name,
 		})
 	}
@@ -124,7 +124,7 @@ func TestListCamerasRedacted(t *testing.T) {
 
 func TestModifyCamera(t *testing.T) {
 	// Create test room
-	if err := CreateRoom(RoomData{Id: "test"}); err != nil {
+	if err := CreateRoom(RoomData{ID: "test"}); err != nil {
 		t.Error(err.Error())
 	}
 
@@ -136,46 +136,46 @@ func TestModifyCamera(t *testing.T) {
 		{
 			Name: "only_modify_URL",
 			Original: Camera{
-				Id:     "test_3",
+				ID:     "test_3",
 				Name:   "old_name",
 				Url:    "old_url",
-				RoomId: "test",
+				RoomID: "test",
 			},
 			Modified: Camera{
-				Id:     "test_3",
+				ID:     "test_3",
 				Name:   "old_name",
 				Url:    "https://example.com/1",
-				RoomId: "test",
+				RoomID: "test",
 			},
 		},
 		{
 			Name: "only_modify_name",
 			Original: Camera{
-				Id:     "test_4",
+				ID:     "test_4",
 				Name:   "old_name",
 				Url:    "old_url",
-				RoomId: "test",
+				RoomID: "test",
 			},
 			Modified: Camera{
-				Id:     "test_4",
+				ID:     "test_4",
 				Name:   "new_name",
 				Url:    "old_url",
-				RoomId: "test",
+				RoomID: "test",
 			},
 		},
 		{
 			Name: "modify_URL_and_name",
 			Original: Camera{
-				Id:     "test_5",
+				ID:     "test_5",
 				Name:   "old_name",
 				Url:    "old_url",
-				RoomId: "test",
+				RoomID: "test",
 			},
 			Modified: Camera{
-				Id:     "test_5",
+				ID:     "test_5",
 				Name:   "new_name",
 				Url:    "https://example.com/2",
-				RoomId: "test",
+				RoomID: "test",
 			},
 		},
 	}
@@ -184,15 +184,15 @@ func TestModifyCamera(t *testing.T) {
 			if err := CreateCamera(test.Original); err != nil {
 				t.Error(err.Error())
 			}
-			if err := ModifyCamera(test.Original.Id, test.Modified.Name, test.Modified.Url); err != nil {
+			if err := ModifyCamera(test.Original.ID, test.Modified.Name, test.Modified.Url); err != nil {
 				t.Error(err.Error())
 			}
-			camera, found, err := GetCameraById(test.Original.Id)
+			camera, found, err := GetCameraById(test.Original.ID)
 			if err != nil {
 				t.Error(err.Error())
 			}
 			if !found {
-				t.Errorf("Camera with id %s does not exist after modification", test.Original.Id)
+				t.Errorf("Camera with id %s does not exist after modification", test.Original.ID)
 			}
 			assert.Equal(t, test.Modified, camera)
 		})
@@ -201,52 +201,52 @@ func TestModifyCamera(t *testing.T) {
 
 func TestDeleteCameraById(t *testing.T) {
 	// Create test rooms
-	if err := CreateRoom(RoomData{Id: "test3"}); err != nil {
+	if err := CreateRoom(RoomData{ID: "test3"}); err != nil {
 		t.Error(err.Error())
 	}
 	table := []Camera{
 		{
-			Id:     "test_delete_1",
+			ID:     "test_delete_1",
 			Name:   "test 1",
 			Url:    "http://example/com/1",
-			RoomId: "test3",
+			RoomID: "test3",
 		},
 		{
-			Id:     "test_delete_2",
+			ID:     "test_delete_2",
 			Name:   "test 2",
 			Url:    "http://example.com/2",
-			RoomId: "test3",
+			RoomID: "test3",
 		},
 	}
 	for _, camera := range table {
-		t.Run(fmt.Sprintf("TestDeleteCameraById/%s", camera.Id), func(t *testing.T) {
+		t.Run(fmt.Sprintf("TestDeleteCameraById/%s", camera.ID), func(t *testing.T) {
 			// Create
 			if err := CreateCamera(camera); err != nil {
 				t.Error(err.Error())
 			}
 
 			// Validate creation
-			cam, found, err := GetCameraById(camera.Id)
+			cam, found, err := GetCameraById(camera.ID)
 			if err != nil {
 				t.Error(err.Error())
 			}
 			if !found {
-				t.Errorf("Camera %s not found after creation", camera.Id)
+				t.Errorf("Camera %s not found after creation", camera.ID)
 			}
 			assert.Equal(t, camera, cam)
 
 			// Delete
-			if err := DeleteCamera(cam.Id); err != nil {
+			if err := DeleteCamera(cam.ID); err != nil {
 				t.Error(err.Error())
 			}
 
 			// Validate deletion
-			cam, found, err = GetCameraById(camera.Id)
+			cam, found, err = GetCameraById(camera.ID)
 			if err != nil {
 				t.Error(err.Error())
 			}
 			if found {
-				t.Errorf("Camera %s found after deletion", camera.Id)
+				t.Errorf("Camera %s found after deletion", camera.ID)
 			}
 			assert.Empty(t, cam)
 		})
@@ -259,7 +259,7 @@ func TestListUserCameras(t *testing.T) {
 		t.Error(err.Error())
 	}
 	// Create a room for the cameras
-	if err := CreateRoom(RoomData{Id: "test"}); err != nil {
+	if err := CreateRoom(RoomData{ID: "test"}); err != nil {
 		t.Error(err.Error())
 	}
 	// Create test users
@@ -280,16 +280,16 @@ func TestListUserCameras(t *testing.T) {
 	// Create test cameras
 	cams := []Camera{
 		{
-			Id:     "test_user_1",
+			ID:     "test_user_1",
 			Name:   "test 1",
 			Url:    "http://example/com/1",
-			RoomId: "test",
+			RoomID: "test",
 		},
 		{
-			Id:     "test_user_2",
+			ID:     "test_user_2",
 			Name:   "test 2",
 			Url:    "http://example.com/2",
-			RoomId: "test",
+			RoomID: "test",
 		},
 	}
 	for _, cam := range cams {
@@ -299,8 +299,8 @@ func TestListUserCameras(t *testing.T) {
 	}
 	// Add an additional camera which will not be added to the permissions in order to check if the function does not return ungranted cameras
 	if err := CreateCamera(Camera{
-		Id:     "unlisted",
-		RoomId: "test",
+		ID:     "unlisted",
+		RoomID: "test",
 	}); err != nil {
 		t.Error(err.Error())
 	}
@@ -312,7 +312,7 @@ func TestListUserCameras(t *testing.T) {
 	assert.Empty(t, userCamsBefPerm)
 	// Grant the user permission to all cameras
 	for _, cam := range cams {
-		if _, err := AddUserCameraPermission("cameras", cam.Id); err != nil {
+		if _, err := AddUserCameraPermission("cameras", cam.ID); err != nil {
 			t.Error(err.Error())
 		}
 	}

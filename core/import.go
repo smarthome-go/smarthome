@@ -387,13 +387,13 @@ func createRoomsInDatabase(rooms []SetupRoom) error {
 		}
 
 		for _, device := range room.Devices {
-			if err := database.CreateDevice(database.Device{
+			if err := database.CreateDevice(database.ShallowDevice{
 				DeviceType:    device.DeviceType,
-				Id:            device.Id,
+				ID:            device.Id,
 				Name:          device.Name,
-				RoomId:        room.Data.Id,
-				VendorId:      device.VendorId,
-				ModelId:       device.ModelId,
+				RoomID:        room.Data.ID,
+				VendorID:      device.VendorId,
+				ModelID:       device.ModelId,
 				SingletonJSON: device.SingletonJSON,
 			}); err != nil {
 				log.Error("Could not create devices from setup file: ", err.Error())
@@ -404,10 +404,10 @@ func createRoomsInDatabase(rooms []SetupRoom) error {
 		for _, camera := range room.Cameras {
 			// Override the (possible) empty room-id to match the current room
 			if err := database.CreateCamera(database.Camera{
-				Id:     camera.Id,
+				ID:     camera.Id,
 				Name:   camera.Name,
 				Url:    camera.Url,
-				RoomId: room.Data.Id,
+				RoomID: room.Data.ID,
 			}); err != nil {
 				log.Error("Could not create cameras from setup file: ", err.Error())
 				return err
