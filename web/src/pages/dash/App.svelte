@@ -5,17 +5,10 @@
     import QuickActions from './QuickActions/QuickActions.svelte'
     import Reminders from './Reminders/Reminders.svelte'
     import Weather from './Weather.svelte'
-    import { data } from '../../global'
+    import { data, hasPermissionSync } from '../../global'
     import Box from './Box.svelte'
     import Progress from '../../components/Progress.svelte'
     import { runHomescriptById } from '../../homescript'
-
-    function hasPermission(permission: string): boolean {
-        return (
-            $data.userData.permissions.includes(permission) ||
-            $data.userData.permissions.includes('*')
-        )
-    }
 
     let homescripts = undefined
 </script>
@@ -23,17 +16,19 @@
 <Page>
     <div class="dash">
         <PowerUsage />
-        {#if $data && hasPermission('homescript')}
+        <!-- HACK: A note on performance: this can possibly be considered bad practice as this abuses svelte as a spin-lock -->
+        <!-- A better alternative would be to use svelte await -->
+        {#if $data && hasPermissionSync('homescript')}
             <QuickActions bind:homescripts />
         {/if}
         <Weather />
-        {#if ($data && hasPermission('automation')) || hasPermission('scheduler')}
+        {#if ($data && hasPermissionSync('automation')) || hasPermissionSync('scheduler')}
             <AutomationsSchedules />
         {/if}
-        {#if $data && hasPermission('reminder')}
+        {#if $data && hasPermissionSync('reminder')}
             <Reminders />
         {/if}
-        {#if $data && hasPermission('homescript') && homescripts !== undefined}
+        {#if $data && hasPermissionSync('homescript') && homescripts !== undefined}
             {#each homescripts.filter(h => h.data.data.isWidget) as hms (hms.data.data.id)}
                 <Box loading={false}>
                     <span slot="header" class="title">{hms.data.data.name}</span>

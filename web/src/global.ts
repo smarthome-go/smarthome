@@ -154,6 +154,10 @@ export type Permission = 'setPower' | 'viewCameras' | 'manageUsers' | 'debug' | 
 
 export async function hasPermission(permission: Permission): Promise<boolean> {
     while (!hasFetched) await sleep(5)
+    return hasPermissionSync(permission)
+}
+
+export function hasPermissionSync(permission: Permission): boolean {
     const permissions = get(data).userData.permissions
     return (permissions.includes(permission) || permissions.includes('*'))
 }
