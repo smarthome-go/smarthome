@@ -355,16 +355,16 @@ func (m *Manager) Run(
 	prog := comp.Compile(modules, entryModuleName)
 
 	// TODO: remove this debug output
-	i := 0
-	for name, function := range prog.Functions {
-		fmt.Printf("%03d ===> func: %s\n", i, name)
-
-		for idx, inst := range function {
-			fmt.Printf("%03d | %s\n", idx, inst)
-		}
-
-		i++
-	}
+	// i := 0
+	// for name, function := range prog.Functions {
+	// 	fmt.Printf("%03d ===> func: %s\n", i, name)
+	//
+	// 	for idx, inst := range function {
+	// 		fmt.Printf("%03d | %s\n", idx, inst)
+	// 	}
+	//
+	// 	i++
+	// }
 
 	log.Debug(fmt.Sprintf("Homescript '%s' of user '%s' is executing...", entryModuleName, username))
 

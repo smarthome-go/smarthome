@@ -26,7 +26,7 @@ func ValidateCredentials(username string, password string) (bool, error) {
 		return false, err
 	}
 	if !userExists {
-		log.Trace("Credentials invalid: user does not exist")
+		log.Tracef("Credentials invalid: user `%s` does not exist", username)
 		return false, nil
 	}
 	hash, err := database.GetUserPasswordHash(username)

@@ -5,7 +5,7 @@
     import CharacterCounter from '@smui/textfield/character-counter'
     import { createEventDispatcher } from 'svelte'
     import { loading } from './main'
-    import type { DeviceResponse } from '../../../../device';
+    import type { HydratedDeviceResponse } from '../../../../device';
     import { createDriverHMSID } from '../../../../driver';
     import { hmsEditorURLForId } from '../../../../urls';
     import DynamicConfigurator from '../../../../components/Homescript/DynamicConfigurator.svelte'
@@ -20,9 +20,9 @@
     let deleteOpen = false
     let open = false
 
-    export let data: DeviceResponse = null
+    export let data: HydratedDeviceResponse = null
 
-    let dataBefore: DeviceResponse
+    let dataBefore: HydratedDeviceResponse
 
     export function show() {
         open = true
@@ -113,7 +113,7 @@
 
         <div>
             <DynamicConfigurator
-                bind:spec={data.config.info.config}
+                bind:spec={data.extractions.config.info.config}
                 on:change={ (e) => reactToOutput(e.detail) }
                 bind:inputData={data.shallow.singletonJson}
                 topLevelLabel={`Device Configuration`}

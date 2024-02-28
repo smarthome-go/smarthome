@@ -7,7 +7,7 @@
     import EditDevice from './dialogs/device/EditDevice.svelte'
     import DeviceInfo from './dialogs/device/DeviceInfo.svelte'
     import Ripple from '@smui/ripple'
-    import type { DeviceResponse } from '../../device';
+    import type { DeviceExtractions, HydratedDeviceResponse, ShallowDeviceResponse } from '../../device';
     import Slider from '@smui/slider';
     import FormField from '@smui/form-field';
     import Button, { Label, Icon } from '@smui/button';
@@ -24,16 +24,17 @@
     let deviceInfoOpen = false
     let deviceEditOpen = false
 
-    export let data: DeviceResponse = {
-        shallow: {
-            type: 'INPUT',
-            id: '',
-            name: '',
-            vendorId: '',
-            modelId: '',
-            roomId: '',
-            singletonJson: {},
-        },
+    export let shallow: ShallowDeviceResponse = {
+        type: 'INPUT', id: '',
+        name: '',
+        vendorId: '',
+        modelId: '',
+        roomId: '',
+        singletonJson: {},
+    }
+
+    let extractionsLoaded = false
+    let extractions: DeviceExtractions = {
         hmsErrors: [],
         config: {
             capabilities: [],
@@ -47,6 +48,48 @@
         sensors: [],
     }
 
+    async function loadExtractions() {
+        try {
+            let res = await fetch(`/api/devices/extract/${shallow.id}`)
+            let responseJson = await res.json()
+            if (responseJson.error !== undefined) {
+                throw(responseJson.error)
+            }
+            if (res.status !== 200) {
+                throw(responseJson)
+            }
+
+            extractions = (responseJson as HydratedDeviceResponse).extractions
+            shallow = (responseJson as HydratedDeviceResponse).shallow
+            console.dir(extractions)
+            extractionsLoaded = true
+        } catch (err) {
+            $createSnackbar(`Failed to hydrate device: ${err}`)
+        }
+    }
+
+    // export let data: DeviceResponse = {
+    //     shallow: {
+    //         type: 'INPUT', id: '',
+    //         name: '',
+    //         vendorId: '',
+    //         modelId: '',
+    //         roomId: '',
+    //         singletonJson: {},
+    //     },
+    //     hmsErrors: [],
+    //     config: {
+    //         capabilities: [],
+    //         info: null
+    //     },
+    //     powerInformation: {
+    //         state: false,
+    //         powerDrawWatts: 0
+    //     },
+    //     dimmables: [],
+    //     sensors: [],
+    // }
+
     let requests = 0
     let loading = false
 
@@ -59,6 +102,7 @@
     let hasEditPermission: boolean
     onMount(async () => {
         hasEditPermission = await hasPermission('modifyRooms')
+        await loadExtractions()
     })
 
     let isWide = hasEditPermission
@@ -74,7 +118,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        deviceId: data.shallow.id,
+                        deviceId: shallow.id,
                         power: {
                             state: event.detail.selected,
                         },
@@ -90,7 +134,7 @@
             }
         } catch (err) {
             $createSnackbar(
-                `Failed to set device power '${data.shallow.name}' to ${event.detail.selected ? 'on' : 'off'}: ${err}`,
+                `Failed to set device power '${shallow.name}' to ${event.detail.selected ? 'on' : 'off'}: ${err}`,
             )
         }
         await sleep(500)
@@ -109,7 +153,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        deviceId: data.shallow.id,
+                        deviceId: shallow.id,
                         dim: {
                             percent: value,
                             label,
@@ -126,7 +170,7 @@
             }
         } catch (err) {
             $createSnackbar(
-                `Failed to set device '${data.shallow.name}' dimmable '${label}' to ${value}: ${err}`,
+                `Failed to set device '${shallow.name}' dimmable '${label}' to ${value}: ${err}`,
             )
         }
         await sleep(500)
@@ -144,8 +188,8 @@
 
     // Error handling and recovery
     let errors: ErrorWrapper[] = []
-    $: if (data.hmsErrors !== null && data.hmsErrors.length > 0) {
-        errors = data.hmsErrors.map((error) => Object.create({userCaused: false, error}))
+    $: if (extractionsLoaded && extractions.hmsErrors !== null && extractions.hmsErrors.length > 0) {
+        errors = extractions.hmsErrors.map((error) => Object.create({userCaused: false, error}))
     }
     $: if(errors.length && canFetchSources !== undefined) loadHmsSources(errors.map(e => e.error.span.filename))
 
@@ -187,7 +231,7 @@
 
     let errorsOpen = false
 
-    function hasCapability(capability: DeviceCapability): boolean { return data.config.capabilities.includes(capability) }
+    function hasCapability(self: DeviceExtractions, capability: DeviceCapability): boolean { return self.config.capabilities.includes(capability) }
 
     let hasErrors = false
     $: hasErrors = errors !== null && errors.length > 0
@@ -200,35 +244,37 @@
     onMount(mount)
 </script>
 
-<EditDevice
-    on:delete={() => dispatch('delete', null)}
-    on:modify={e => dispatch('modify', e.detail)}
-    bind:show={showEditDevice}
-    {data}
-/>
+{#if extractionsLoaded}
+    <EditDevice
+        on:delete={() => dispatch('delete', null)}
+        on:modify={e => dispatch('modify', e.detail)}
+        bind:show={showEditDevice}
+        data={ { shallow: shallow, extractions } }
+    />
 
-<DeviceInfo bind:open={deviceInfoOpen} {data} />
+    <DeviceInfo bind:open={deviceInfoOpen} data={{shallow, extractions}} />
+{/if}
 
 <GenericDevice
-    name={data.shallow.name}
+    name={shallow.name}
     {hasEditPermission}
-    isTall={hasCapability('dimmable') || hasCapability('sensor')}
+    isTall={hasCapability(extractions, 'dimmable') || hasCapability(extractions, 'sensor')}
     on:info_show={() => deviceInfoOpen = true}
     on:edit_show={showEditDevice}
     {hasErrors}
 >
     <div slot='top'>
-        {#if hasCapability('power')}
+        {#if hasCapability(extractions, 'power')}
             <div class="device__power">
-                <Switch icons={false} bind:checked={data.powerInformation.state} on:SMUISwitch:change={toggle} />
+                <Switch icons={false} bind:checked={extractions.powerInformation.state} on:SMUISwitch:change={toggle} />
             </div>
         {/if}
     </div>
 
     <div slot='extend'>
-        {#if hasCapability('dimmable')}
+        {#if hasCapability(extractions, 'dimmable')}
             <div class="device__dim">
-                {#each data.dimmables as dimmable}
+                {#each extractions.dimmables as dimmable}
                     <div class="device__dim__sep"/>
                     <div class="device__dim__item">
                         <span class="device__dim__item__name text-hint">{dimmable.label}</span>
@@ -252,10 +298,10 @@
             </div>
         {/if}
 
-        {#if hasCapability('sensor')}
+        {#if hasCapability(extractions, 'sensor')}
             <div class="device__sensor">
-                {#if data.sensors !== null}
-                    {#each data.sensors as sensor}
+                {#if extractions.sensors !== null}
+                    {#each extractions.sensors as sensor}
                         <div class="device__sensor__sep"/>
                         <div class="device__sensor__reading">
                             <span class='text-disabled'>
@@ -281,7 +327,7 @@
                         data={{
                             modeRun: true,
                             response: {
-                                title: `Driver invocation '${data.shallow.name}'`,
+                                title: `Driver invocation '${shallow.name}'`,
                                 success: false,
                                 output: "",
                                 fileContents: new Map(),
@@ -298,7 +344,7 @@
                         data={{
                             modeRun: true,
                             response: {
-                                title: `Driver invocation '${data.shallow.name}'`,
+                                title: `Driver invocation '${shallow.name}'`,
                                 success: false,
                                 output: "",
                                 fileContents: homescriptCode,

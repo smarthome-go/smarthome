@@ -138,6 +138,7 @@ type SetupWeatherMeasurement struct {
 	Humidity           uint8   `json:"humidity"`
 }
 
+// TODO: pay respect to device and driver JSON
 func ExportConfig(
 	includeProfilePictures bool, // The user's profile pictures in base64
 	includedCacheData bool, // Weather history and power data
@@ -160,11 +161,11 @@ func ExportConfig(
 		roomDevices := make([]SetupDevice, 0)
 		for _, sw := range room.Devices {
 			roomDevices = append(roomDevices, SetupDevice{
-				DeviceType: sw.Shallow.DeviceType,
-				Id:         sw.Shallow.ID,
-				Name:       sw.Shallow.Name,
-				VendorId:   sw.Shallow.DriverVendorID,
-				ModelId:    sw.Shallow.DriverModelID,
+				DeviceType: sw.DeviceType,
+				Id:         sw.ID,
+				Name:       sw.Name,
+				VendorId:   sw.VendorID,
+				ModelId:    sw.ModelID,
 			})
 		}
 

@@ -1,4 +1,4 @@
-import type { DeviceResponse } from "./device"
+import type { ShallowDeviceResponse } from "./device"
 
 export interface Room {
     data: {
@@ -6,7 +6,7 @@ export interface Room {
         name: string
         description: string
     }
-    devices: DeviceResponse[]
+    devices: ShallowDeviceResponse[]
     cameras: Camera[]
 }
 
@@ -15,4 +15,10 @@ export interface Camera {
     name: string
     url: string
     roomId: string
+}
+
+// The purpose of this function is to cache the device layout.
+// This way, if the user visits the page ofter the initial load, there will be placeholders.
+function storeDeviceLayout() {
+    // TODO
 }

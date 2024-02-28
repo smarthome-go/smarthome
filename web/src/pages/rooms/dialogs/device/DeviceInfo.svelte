@@ -3,11 +3,11 @@
     import Dialog, { Actions, Content, InitialFocus, Title } from '@smui/dialog'
     import Progress from '../../../../../src/components/Progress.svelte'
     // import { fetchHardwareNodes, loading, hardwareNodesLoaded, hardwareNodes } from './main'
-    import type { DeviceResponse } from '../../main';
+    import type { HydratedDeviceResponse } from '../../../../device';
 
     export let open = false
 
-    export let data: DeviceResponse = null
+    export let data: HydratedDeviceResponse = null
 
     // export function show() {
     //     open = true
@@ -38,33 +38,33 @@
     <Content id="content">
         <ul>
             <li>
-                ID: <code>{data.id}</code>
+                ID: <code>{data.shallow.id}</code>
             </li>
             <li>
-                Type: <code>{data.type}</code>
+                Type: <code>{data.shallow.type}</code>
             </li>
             <li>
-                Name: <code>{data.name}</code>
+                Name: <code>{data.shallow.name}</code>
             </li>
             <li>
-                ModelID: <code>{data.modelId}</code>
+                ModelID: <code>{data.shallow.modelId}</code>
             </li>
             <li>
-                VendorID: <code>{data.vendorId}</code>
+                VendorID: <code>{data.shallow.vendorId}</code>
             </li>
             <li>
-                RoomID: <code>{data.roomId}</code>
+                RoomID: <code>{data.shallow.roomId}</code>
             </li>
 
-            {#if data.dimmables !== null}
+            {#if data.extractions.dimmables !== null}
                 <li>
-                    Dimmables: <code>[{data.dimmables.map(d => `${d.label}: ${d.range}: ${d.value}`).join(", ")}]</code>
+                    Dimmables: <code>[{data.extractions.dimmables.map(d => `${d.label}: ${d.range}: ${d.value}`).join(", ")}]</code>
                 </li>
             {/if}
 
-            {#if data.powerInformation != null}
+            {#if data.extractions.powerInformation != null}
                 <li>
-                    Power: <code>PowerOn: {data.powerInformation.state}: {data.powerInformation.powerDrawWatts} Watts</code>
+                    Power: <code>PowerOn: {data.extractions.powerInformation.state}: {data.extractions.powerInformation.powerDrawWatts} Watts</code>
                 </li>
             {/if}
         </ul>

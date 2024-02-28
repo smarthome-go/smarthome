@@ -5,8 +5,12 @@ import { createSnackbar } from "./global";
 
 export type DeviceType = 'INPUT' |'OUTPUT'
 
-export interface DeviceResponse {
+export interface HydratedDeviceResponse {
     shallow: ShallowDeviceResponse;
+    extractions: DeviceExtractions;
+}
+
+export interface DeviceExtractions {
     hmsErrors: homescriptError[];
     config: ConfigSpecWrapper,
     powerInformation: DevicePowerInformation,

@@ -69,10 +69,6 @@ type HomescriptIdRunRequest struct {
 	IsWidget bool            `json:"isWidget"`
 }
 
-type HomescriptIdRequest struct {
-	Id string `json:"id"`
-}
-
 // Runs any given Homescript given its id
 func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -479,7 +475,7 @@ func DeleteHomescriptById(w http.ResponseWriter, r *http.Request) {
 	}
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
-	var request HomescriptIdRequest
+	var request GenericIdRequest
 	if err := decoder.Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})

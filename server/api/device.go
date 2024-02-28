@@ -9,6 +9,7 @@ import (
 
 	"golang.org/x/exp/utf8string"
 
+	"github.com/gorilla/mux"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/server/middleware"
@@ -40,7 +41,8 @@ type DeleteDeviceRequest struct {
 // Returns a list of available devices as JSON to the user, no authentication required
 func GetAllDevices(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	devices, err := database.ListAllDevices()
+	// TODO: also implement ordering???
+	devices, err := homescript.ListAllDevicesShallow()
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "database error", Error: "database failure"})
@@ -61,7 +63,7 @@ func GetUserDevices(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	devices, err := database.ListUserDevices(username)
+	devices, err := homescript.ListPersonalDevicesShallow(username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "database error", Error: "database error"})
@@ -104,6 +106,57 @@ func GetUserDevicesRich(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := json.NewEncoder(w).Encode(devices); err != nil {
+		log.Error(err.Error())
+		Res(w, Response{Success: false, Message: "failed to get personal devices", Error: "could not encode content"})
+	}
+}
+
+func ExtractUserDevice(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	username, err := middleware.GetUserFromCurrentSession(w, r)
+	if err != nil {
+		return
+	}
+
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok || id == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "failed to extract device info", Error: "no camera id provided"})
+		return
+	}
+
+	hasPermission, err := database.UserHasDevicePermission(username, id)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to extract device info", Error: "database failure"})
+		return
+	}
+	if !hasPermission {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to extract device info", Error: fmt.Sprintf("the device `%s` does not exist or you lack permission to access it", id)})
+		return
+	}
+
+	device, found, err := homescript.EnrichDeviceAll(id)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to extract device info", Error: "database failure"})
+		return
+	}
+	if !found {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to extract device info", Error: fmt.Sprintf("the device `%s` does not exist or you lack permission to access it", id)})
+		return
+	}
+
+	// device, err := homescript.ListPersonalDevicesRich(username)
+	// if err != nil {
+	// 	w.WriteHeader(http.StatusServiceUnavailable)
+	// 	Res(w, Response{Success: false, Message: "database error", Error: "database error"})
+	// 	return
+	// }
+	if err := json.NewEncoder(w).Encode(device); err != nil {
 		log.Error(err.Error())
 		Res(w, Response{Success: false, Message: "failed to get personal devices", Error: "could not encode content"})
 	}

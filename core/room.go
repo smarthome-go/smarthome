@@ -6,9 +6,9 @@ import (
 )
 
 type Room struct {
-	Data    database.RoomData       `json:"data"`
-	Devices []homescript.RichDevice `json:"devices"`
-	Cameras []database.Camera       `json:"cameras"`
+	Data    database.RoomData        `json:"data"`
+	Devices []database.ShallowDevice `json:"devices"`
+	Cameras []database.Camera        `json:"cameras"`
 }
 
 // Returns a complete list of rooms, includes its metadata like devices and cameras
@@ -19,7 +19,7 @@ func ListAllRoomsWithData(redactCameraUrl bool) ([]Room, error) {
 	}
 
 	// Get all devices.
-	devices, err := homescript.ListAllDevicesRich()
+	devices, err := homescript.ListAllDevicesShallow()
 	if err != nil {
 		return nil, err
 	}
@@ -32,12 +32,12 @@ func ListAllRoomsWithData(redactCameraUrl bool) ([]Room, error) {
 
 	outputRooms := make([]Room, 0)
 	for _, room := range rooms {
-		devicesTemp := make([]homescript.RichDevice, 0)
+		devicesTemp := make([]database.ShallowDevice, 0)
 		camerasTemp := make([]database.Camera, 0)
 
 		// Add all devices of the current room
 		for _, device := range devices {
-			if device.Shallow.RoomID == room.ID {
+			if device.RoomID == room.ID {
 				devicesTemp = append(devicesTemp, device)
 			}
 		}
@@ -62,7 +62,9 @@ func ListAllRoomsWithData(redactCameraUrl bool) ([]Room, error) {
 	return outputRooms, nil
 }
 
-// Returns a complete list of rooms to which a user has access to, includes its metadata like devices and cameras
+// Returns a complete list of rooms to which a user has access to, includes its metadata like devices and cameras.
+// NOTE: do to extreme (> 1s) response times in the web UI, this function no longer includes rich devices.
+// Instead, only the shallow device list of each room is returned.
 func ListPersonalRoomsWithData(username string) ([]Room, error) {
 	rooms, err := database.ListPersonalRoomData(username)
 	if err != nil {
@@ -70,7 +72,7 @@ func ListPersonalRoomsWithData(username string) ([]Room, error) {
 	}
 
 	// Get the user's devices.
-	devices, err := homescript.ListPersonalDevicesRich(username)
+	devices, err := homescript.ListPersonalDevicesShallow(username)
 	if err != nil {
 		return nil, err
 	}
@@ -83,12 +85,12 @@ func ListPersonalRoomsWithData(username string) ([]Room, error) {
 
 	outputRooms := make([]Room, 0)
 	for _, room := range rooms {
-		devicesTemp := make([]homescript.RichDevice, 0)
+		devicesTemp := make([]database.ShallowDevice, 0)
 		camerasTemp := make([]database.Camera, 0)
 
 		// Add every device which is in the current room.
 		for _, device := range devices {
-			if device.Shallow.RoomID == room.ID {
+			if device.RoomID == room.ID {
 				devicesTemp = append(devicesTemp, device)
 			}
 		}

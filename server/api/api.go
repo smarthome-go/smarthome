@@ -24,3 +24,7 @@ func Res(w http.ResponseWriter, res Response) {
 		return
 	}
 }
+
+type GenericIdRequest struct {
+	Id string `json:"id"`
+}

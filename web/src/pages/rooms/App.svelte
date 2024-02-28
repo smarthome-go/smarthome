@@ -16,7 +16,7 @@
     import { loading, powerCamReloadEnabled } from './main'
     import Device from './Device.svelte'
     import type { Room } from '../../room';
-    import type { CreateDeviceRequest, DeviceResponse, ModifyDeviceRequest } from '../../device';
+    import type { CreateDeviceRequest, HydratedDeviceResponse, ModifyDeviceRequest } from '../../device';
 
     // If set to true, a camera-reload is triggered
     let reloadCameras = false
@@ -221,7 +221,7 @@
                 })
             ).json()
             if (!res.success) throw Error(res.error)
-            currentRoom.devices = currentRoom.devices.filter(s => s.shallow.id !== id)
+            currentRoom.devices = currentRoom.devices.filter(s => s.id !== id)
         } catch (err) {
             $createSnackbar(`Could not delete device: ${err}`)
         }
@@ -229,7 +229,7 @@
     }
 
 
-    async function modifyDevice(data: DeviceResponse) {
+    async function modifyDevice(data: HydratedDeviceResponse) {
         $loading = true
         try {
             let request: ModifyDeviceRequest = {
@@ -246,10 +246,10 @@
             ).json()
             if (!res.success) throw Error(res.error)
             // TODO: make this generic: Would be reset on power change if not updated in `currentRoom`.
-            let deviceInCurrentRoom = currentRoom.devices.find(s => s.shallow.id == data.shallow.id)
+            let deviceInCurrentRoom = currentRoom.devices.find(s => s.id == data.shallow.id)
 
             // NOTE: if a device gets more fields, they must be added here.
-            deviceInCurrentRoom.shallow.name = data.shallow.name
+            deviceInCurrentRoom.name = data.shallow.name
 
             // TODO: add more?
         } catch (err) {
@@ -330,10 +330,10 @@
                 </div>
             {:else}
                 <!-- TODO: pack smaller devices into 'chunks' or 'groups' OR allow the user to pick an order? -->
-                {#each currentRoom !== undefined ? currentRoom.devices : [] as device (device.shallow.id)}
+                {#each currentRoom !== undefined ? currentRoom.devices : [] as device (device.id)}
                     <Device
-                        bind:data={device}
-                        on:delete={() => deleteDevice(device.shallow.id)}
+                        bind:shallow={device}
+                        on:delete={() => deleteDevice(device.id)}
                         on:modify={(e) => modifyDevice(e.detail)}
                         on:powerChange={() => (reloadCameras = $powerCamReloadEnabled)}
                         on:powerChangeDone={() => (reloadCameras = false)}
