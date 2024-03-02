@@ -396,7 +396,7 @@
             }
         }
 
-        @mixin seperator {
+        @mixin separator {
             width: 100%;
             background-color: var(--clr-height-3-6);
             border-radius: .3rem;
@@ -423,7 +423,7 @@
             flex-grow: 0;
 
             &__sep {
-                @include seperator;
+                @include separator;
 
                 // TODO: decide whether to include this.
                 //&:first-of-type {

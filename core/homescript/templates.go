@@ -93,7 +93,7 @@ func deviceValidateDeviceOrDriverSignature(span errors.Span) ast.TemplateMethod 
 }
 
 ///
-/// Generic sensor implementattion
+/// Generic sensor implementation
 ///
 
 const ReportSensorTypeLabelIdent = "label"

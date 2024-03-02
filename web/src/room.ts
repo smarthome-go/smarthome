@@ -18,7 +18,7 @@ export interface Camera {
 }
 
 // The purpose of this function is to cache the device layout.
-// This way, if the user visits the page ofter the initial load, there will be placeholders.
+// This way, if the user visits the page after the initial load, there will be placeholders.
 function storeDeviceLayout() {
     // TODO
 }
