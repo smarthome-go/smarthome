@@ -213,16 +213,36 @@ func (self analyzerHost) GetBuiltinImport(
 			return analyzer.BuiltinImport{
 				Type: ast.NewFunctionType(
 					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("host", span), ast.NewStringType(span), nil),
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("username", span), ast.NewStringType(span), nil),
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("password", span), ast.NewStringType(span), nil),
 						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("topics", span), ast.NewListType(ast.NewStringType(span), span), nil),
 					}),
 					span,
 					ast.NewNullType(span),
 					span,
 				),
-				Template: &ast.TemplateSpec{},
+				Template: nil,
 			}, true, true
+		case "publish":
+			return analyzer.BuiltinImport{
+				Type: ast.NewFunctionType(
+					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("host", span), ast.NewStringType(span), nil),
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("username", span), ast.NewStringType(span), nil),
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("password", span), ast.NewStringType(span), nil),
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("topic", span), ast.NewStringType(span), nil),
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("payload", span), ast.NewStringType(span), nil),
+					}),
+					span,
+					ast.NewNullType(span),
+					span,
+				),
+				Template: nil,
+			}, true, true
+		default:
+			return analyzer.BuiltinImport{}, true, false
 		}
-		return analyzer.BuiltinImport{}, true, false
 	case "hms":
 		switch valueName {
 		case "exec":

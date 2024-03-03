@@ -83,7 +83,11 @@ var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 
 func mqttSubsribe() value.Value {
 	return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
-		topicArgsRaw := args[0].(value.ValueList).Values
+		host := args[0].(value.ValueString).Inner
+		username := args[1].(value.ValueString).Inner
+		password := args[2].(value.ValueString).Inner
+
+		topicArgsRaw := args[3].(value.ValueList).Values
 		topicArgs := make(map[string]byte)
 		for _, topic := range *topicArgsRaw {
 			topicStr := (*topic).(value.ValueString).Inner
@@ -96,7 +100,7 @@ func mqttSubsribe() value.Value {
 
 		mqtt.DEBUG = log.New(os.Stdout, "", 0)
 		mqtt.ERROR = log.New(os.Stdout, "", 0)
-		opts := mqtt.NewClientOptions().AddBroker("tcp://HOST:1883").SetClientID("homescript-test-shome").SetPassword("PW").SetUsername("test")
+		opts := mqtt.NewClientOptions().AddBroker(host).SetClientID("homescript-test-shome").SetUsername(username).SetPassword(password)
 
 		opts.SetKeepAlive(60 * time.Second)
 		// Set the message callback handler
@@ -150,6 +154,44 @@ func mqttSubsribe() value.Value {
 	})
 }
 
+func mqttPublish() value.Value {
+	return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
+		host := args[0].(value.ValueString).Inner
+		username := args[1].(value.ValueString).Inner
+		password := args[2].(value.ValueString).Inner
+		topic := args[3].(value.ValueString).Inner
+		payload := args[4].(value.ValueString).Inner
+
+		// callBackArg := args[1].(value.ValueVMFunction)
+
+		spew.Dump(args)
+		// return value.NewValueNull(), nil
+
+		mqtt.DEBUG = log.New(os.Stdout, "", 0)
+		mqtt.ERROR = log.New(os.Stdout, "", 0)
+		opts := mqtt.NewClientOptions().AddBroker(host).SetClientID("homescript-test-shome").SetUsername(username).SetPassword(password)
+
+		opts.SetKeepAlive(60 * time.Second)
+		// Set the message callback handler
+		opts.SetDefaultPublishHandler(f)
+		opts.SetPingTimeout(1 * time.Second)
+
+		c := mqtt.NewClient(opts)
+		if token := c.Connect(); token.Wait() && token.Error() != nil {
+			panic(token.Error())
+		}
+
+		// Publish a message
+		token := c.Publish(topic, 0, false, payload)
+		token.Wait()
+
+		// Disconnect
+		c.Disconnect(250)
+
+		return value.NewValueNull(), nil
+	})
+}
+
 // if it exists, returns a value which is part of the host builtin modules
 func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport string) (val value.Value, found bool) {
 	switch moduleName {
@@ -157,6 +199,8 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 		switch toImport {
 		case "subscribe":
 			return mqttSubsribe(), true
+		case "publish":
+			return mqttPublish(), true
 		default:
 			return nil, false
 		}
