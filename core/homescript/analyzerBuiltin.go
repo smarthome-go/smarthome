@@ -114,6 +114,18 @@ type ImportKey struct {
 	ValueName  string
 }
 
+func mqttCallbackFn(span errors.Span) ast.Type {
+	return ast.NewFunctionType(
+		ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+			ast.NewFunctionTypeParam(pAst.NewSpannedIdent("topic", span), ast.NewStringType(span), nil),
+			ast.NewFunctionTypeParam(pAst.NewSpannedIdent("payload", span), ast.NewStringType(span), nil),
+		}),
+		span,
+		ast.NewNullType(span),
+		span,
+	)
+}
+
 func (self analyzerHost) GetBuiltinImport(
 	moduleName string,
 	valueName string,
@@ -195,6 +207,22 @@ func (self analyzerHost) GetBuiltinImport(
 		case pAst.IMPORT_KIND_NORMAL:
 			return analyzer.BuiltinImport{}, true, false
 		}
+	case "mqtt":
+		switch valueName {
+		case "subscribe":
+			return analyzer.BuiltinImport{
+				Type: ast.NewFunctionType(
+					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("topics", span), ast.NewListType(ast.NewStringType(span), span), nil),
+					}),
+					span,
+					ast.NewNullType(span),
+					span,
+				),
+				Template: &ast.TemplateSpec{},
+			}, true, true
+		}
+		return analyzer.BuiltinImport{}, true, false
 	case "hms":
 		switch valueName {
 		case "exec":
@@ -640,7 +668,7 @@ func (self analyzerHost) GetBuiltinImport(
 }
 
 func (self analyzerHost) ResolveCodeModule(moduleName string) (code string, moduleFound bool, err error) {
-	log.Trace(fmt.Sprintf("Resolving module `%s` by user `%s`", moduleName, self.username))
+	logger.Trace(fmt.Sprintf("Resolving module `%s` by user `%s`", moduleName, self.username))
 	script, found, err := GetPersonalScriptById(moduleName, self.username)
 	if err != nil || !found {
 		return "", found, err

@@ -20,7 +20,7 @@ var automationScheduler *gocron.Scheduler
 func ActivateAutomationSystem(config database.ServerConfig) error {
 	automations, err := database.GetAutomations()
 	if err != nil {
-		log.Error("Failed to activate automation system: database failure whilst starting saved automations: ", err.Error())
+		logger.Error("Failed to activate automation system: database failure whilst starting saved automations: ", err.Error())
 		return err
 	}
 
@@ -28,7 +28,7 @@ func ActivateAutomationSystem(config database.ServerConfig) error {
 	for _, automationItem := range automations {
 		if err := RegisterAutomation(automationItem.Id, automationItem.Data, config); err != nil {
 			// Log the error
-			log.Error(fmt.Sprintf("Could not activate automation '%d': invalid cron expression", automationItem.Id))
+			logger.Error(fmt.Sprintf("Could not activate automation '%d': invalid cron expression", automationItem.Id))
 			event.Error("Automation Activation Failure", fmt.Sprintf("The automation %s could not be activated due to an internal error. Please remove it from the system.", automationItem.Data.Name))
 
 			if _, err := Notify(
@@ -38,7 +38,7 @@ func ActivateAutomationSystem(config database.ServerConfig) error {
 				NotificationLevelError,
 				false,
 			); err != nil {
-				log.Error("Failed to notify user about failing automation: ", err.Error())
+				logger.Error("Failed to notify user about failing automation: ", err.Error())
 			}
 			error = err
 			continue // non-critical error, will only affect this automation
@@ -47,7 +47,7 @@ func ActivateAutomationSystem(config database.ServerConfig) error {
 
 	if error != nil {
 		event.Info("Automation System Activated", "Successfully activated saved automations")
-		log.Info("Successfully activated saved automations")
+		logger.Info("Successfully activated saved automations")
 	}
 	return error
 }
@@ -56,7 +56,7 @@ func ActivateAutomationSystem(config database.ServerConfig) error {
 func DeactivateAutomationSystem(config database.ServerConfig) error {
 	automations, err := database.GetAutomations()
 	if err != nil {
-		log.Error("Failed to deactivate automation system: database failure whilst deactivating automations: ", err.Error())
+		logger.Error("Failed to deactivate automation system: database failure whilst deactivating automations: ", err.Error())
 		return err // This is a critical error which can not be recovered from
 	}
 
@@ -66,7 +66,7 @@ func DeactivateAutomationSystem(config database.ServerConfig) error {
 		}
 	}
 
-	log.Info("Successfully disabled automation system: all jobs were stopped")
+	logger.Info("Successfully disabled automation system: all jobs were stopped")
 	event.Info("Disabled Automation System", "Successfully disabled automation system: all jobs were stopped")
 	return nil
 }
@@ -77,12 +77,12 @@ func InitAutomations(config database.ServerConfig) error {
 	automationScheduler.TagsUnique()
 	if config.AutomationEnabled {
 		if err := ActivateAutomationSystem(config); err != nil {
-			log.Error("Failed to activate automation system: could not activate persistent jobs: ", err.Error())
+			logger.Error("Failed to activate automation system: could not activate persistent jobs: ", err.Error())
 			return err
 		}
-		log.Info("Successfully activated automation system")
+		logger.Info("Successfully activated automation system")
 	} else {
-		log.Info("Skipping activation of automation system due to it being disabled")
+		logger.Info("Skipping activation of automation system due to it being disabled")
 	}
 	automationScheduler.StartAsync()
 	return nil
@@ -92,18 +92,18 @@ func InitAutomations(config database.ServerConfig) error {
 func RunAllAutomationsWithTrigger(username string, trigger database.AutomationTrigger, context AutomationContext) {
 	config, found, err := database.GetServerConfiguration()
 	if err != nil || !found {
-		log.Error("Could not run automations with certain trigger: server configuration not found or errored")
+		logger.Error("Could not run automations with certain trigger: server configuration not found or errored")
 		return
 	}
 
 	if !config.AutomationEnabled {
-		log.Debug("Not running automations with trigger, automation system disabled")
+		logger.Debug("Not running automations with trigger, automation system disabled")
 		return
 	}
 
 	automations, err := GetUserAutomations(username)
 	if err != nil {
-		log.Error("Could not run all automations with certain trigger: could not get user automations: ", err.Error())
+		logger.Error("Could not run all automations with certain trigger: could not get user automations: ", err.Error())
 		return
 	}
 

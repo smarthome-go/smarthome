@@ -26,7 +26,7 @@ func InitScheduler() error {
 func startSavedSchedules() error {
 	schedules, err := database.GetSchedules()
 	if err != nil {
-		log.Error("Failed to start schedules: database failure: ", err.Error())
+		logger.Error("Failed to start schedules: database failure: ", err.Error())
 		return err
 	}
 	for _, schedule := range schedules {
@@ -35,11 +35,11 @@ func startSavedSchedules() error {
 		schedulerJob.Tag(fmt.Sprintf("%d", schedule.Id))
 		schedulerJob.LimitRunsTo(1)
 		if _, err := schedulerJob.Do(scheduleRunnerFunc, schedule.Id); err != nil {
-			log.Error("Failed to activates saved schedules: could not register cronjob: ", err.Error())
+			logger.Error("Failed to activates saved schedules: could not register cronjob: ", err.Error())
 			return err
 		}
-		log.Trace(fmt.Sprintf("Successfully activated schedule '%d' of user '%s'", schedule.Id, schedule.Owner))
+		logger.Trace(fmt.Sprintf("Successfully activated schedule '%d' of user '%s'", schedule.Id, schedule.Owner))
 	}
-	log.Debug("Successfully activated conventional scheduler")
+	logger.Debug("Successfully activated conventional scheduler")
 	return nil
 }

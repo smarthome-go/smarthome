@@ -23,7 +23,7 @@ type Notification struct {
 func Notify(username string, title string, description string, level NotificationLevel, run_hooks bool) (uint, error) {
 	newId, err := database.AddNotification(username, title, description, uint8(level))
 	if err != nil {
-		log.Error("Failed to notify user: database failure: ", err.Error())
+		logger.Error("Failed to notify user: database failure: ", err.Error())
 		return 0, err
 	}
 

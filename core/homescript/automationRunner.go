@@ -30,7 +30,7 @@ type NotificationContext struct {
 func AutomationRunnerFunc(id uint, automationCtx AutomationContext) {
 	job, jobFound, err := database.GetAutomationById(id)
 	if err != nil {
-		log.Error(fmt.Sprintf("Automation with id: '%d' could not be executed: database failure: %s", id, err.Error()))
+		logger.Error(fmt.Sprintf("Automation with id: '%d' could not be executed: database failure: %s", id, err.Error()))
 		event.Error(
 			"Automation Failed",
 			fmt.Sprintf("Automation with id: '%d' could not be executed due to database failure: %s", id, err.Error()),
@@ -38,35 +38,35 @@ func AutomationRunnerFunc(id uint, automationCtx AutomationContext) {
 		return
 	}
 	if !jobFound {
-		log.Error(fmt.Sprintf("Automation with id: '%d' could not be executed: Id not found in database", id))
+		logger.Error(fmt.Sprintf("Automation with id: '%d' could not be executed: Id not found in database", id))
 		event.Error(
 			"Automation Failed",
 			fmt.Sprintf("Automation with id: '%d' could not be executed because it could not be found in the database", id),
 		)
 		// Abort this automation in order to prevent future errors
 		if err := automationScheduler.RemoveByTag(fmt.Sprintf("%d", id)); err != nil {
-			log.Error("Failed to remove dangling automation: could not stop cron job: ", err.Error())
+			logger.Error("Failed to remove dangling automation: could not stop cron job: ", err.Error())
 			return
 		}
-		log.Info(fmt.Sprintf("Successfully aborted dangling automation: %d", id))
+		logger.Info(fmt.Sprintf("Successfully aborted dangling automation: %d", id))
 		return
 	}
 
 	// Check if the user has blocked their automations & schedules
 	userData, found, err := database.GetUserByUsername(job.Owner)
 	if err != nil {
-		log.Error("Automation failed because owner user could not be determined")
+		logger.Error("Automation failed because owner user could not be determined")
 		return
 	}
 	if !found {
-		log.Warn("Automation failed because owner user does not exist anymore, deleting automation...")
+		logger.Warn("Automation failed because owner user does not exist anymore, deleting automation...")
 		if err := database.DeleteAutomationById(id); err != nil {
-			log.Error("Cleaning up dangling automation failed: could not remove automation from database: ", err.Error())
+			logger.Error("Cleaning up dangling automation failed: could not remove automation from database: ", err.Error())
 		}
 		return
 	}
 	if !userData.SchedulerEnabled {
-		log.Debug(fmt.Sprintf("Automation '%s' was not executed because its owner has disabled their schedules & automations", job.Data.Name))
+		logger.Debug(fmt.Sprintf("Automation '%s' was not executed because its owner has disabled their schedules & automations", job.Data.Name))
 		event.Debug(
 			"Automation Skipped",
 			fmt.Sprintf("Automation '%s' has been skipped", job.Data.Name),
@@ -91,7 +91,7 @@ func AutomationRunnerFunc(id uint, automationCtx AutomationContext) {
 			return
 		}
 		// Notify the user
-		log.Info(fmt.Sprintf("Automation '%s' was skipped once", job.Data.Name))
+		logger.Info(fmt.Sprintf("Automation '%s' was skipped once", job.Data.Name))
 		if _, err := Notify(
 			job.Owner,
 			"Automation Skipped Once",
@@ -99,7 +99,7 @@ func AutomationRunnerFunc(id uint, automationCtx AutomationContext) {
 			NotificationLevelInfo,
 			false,
 		); err != nil {
-			log.Error("Failed to notify user: ", err.Error())
+			logger.Error("Failed to notify user: ", err.Error())
 			return
 		}
 		return
@@ -107,7 +107,7 @@ func AutomationRunnerFunc(id uint, automationCtx AutomationContext) {
 
 	// Update the execution time of the automation
 	if err := database.UpdateAutomationLastRunTime(job.Id); err != nil {
-		log.Error(fmt.Sprintf("Could not update `lastRun` of automation with ID `%d`: %s", job.Id, err.Error()))
+		logger.Error(fmt.Sprintf("Could not update `lastRun` of automation with ID `%d`: %s", job.Id, err.Error()))
 		event.Error(
 			"Automation Failed",
 			fmt.Sprintf("Automation '%s' failed because its last run time could not be adjusted: %s", job.Data.Name, err.Error()),
@@ -119,7 +119,7 @@ func AutomationRunnerFunc(id uint, automationCtx AutomationContext) {
 	if job.Data.Trigger == database.TriggerSunrise || job.Data.Trigger == database.TriggerSunset {
 		serverConfig, found, err := database.GetServerConfiguration()
 		if err != nil || !found {
-			log.Fatal("Could not retrieve server configuration")
+			logger.Fatal("Could not retrieve server configuration")
 			os.Exit(1)
 		}
 
@@ -130,7 +130,7 @@ func AutomationRunnerFunc(id uint, automationCtx AutomationContext) {
 		}
 
 		if err := UpdateJobTime(id, serverConfig); err != nil {
-			log.Error("Failed to run automation: could not update next launch time: ", err.Error())
+			logger.Error("Failed to run automation: could not update next launch time: ", err.Error())
 			event.Error(
 				"Automation Failed",
 				fmt.Sprintf("Automation '%s' failed because its next launch time could not be adjusted: %s", job.Data.Name, err.Error()),
@@ -142,17 +142,17 @@ func AutomationRunnerFunc(id uint, automationCtx AutomationContext) {
 				NotificationLevelError,
 				false,
 			); err != nil {
-				log.Error("Failed to notify user: ", err.Error())
+				logger.Error("Failed to notify user: ", err.Error())
 				return
 			}
 			return
 		}
 	}
 
-	log.Debug(fmt.Sprintf("Automation '%d' is running", id))
+	logger.Debug(fmt.Sprintf("Automation '%d' is running", id))
 	_, scriptExists, err := GetPersonalScriptById(job.Data.HomescriptId, job.Owner)
 	if err != nil {
-		log.Error(fmt.Sprintf("Automation '%s' failed because its Homescript Id could not be retrieved from the database: %s", job.Data.Name, err.Error()))
+		logger.Error(fmt.Sprintf("Automation '%s' failed because its Homescript Id could not be retrieved from the database: %s", job.Data.Name, err.Error()))
 		event.Error(
 			"Automation Failed",
 			fmt.Sprintf("Automation '%s' could not be executed because it s Homescript Id could not be retrieved from the database: %s", job.Data.Name, err.Error()),
@@ -164,13 +164,13 @@ func AutomationRunnerFunc(id uint, automationCtx AutomationContext) {
 			NotificationLevelError,
 			false,
 		); err != nil {
-			log.Error("Failed to notify user: ", err.Error())
+			logger.Error("Failed to notify user: ", err.Error())
 			return
 		}
 		return
 	}
 	if !scriptExists {
-		log.Error(fmt.Sprintf("Automation '%s' failed because its Homescript Id: '%s' is invalid", job.Data.Name, job.Data.HomescriptId))
+		logger.Error(fmt.Sprintf("Automation '%s' failed because its Homescript Id: '%s' is invalid", job.Data.Name, job.Data.HomescriptId))
 		event.Error(
 			"Automation Failed",
 			fmt.Sprintf("Automation '%s' failed because its Homescript Id: '%s' is invalid. This indicates a bad configuration.", job.Data.Name, job.Data.HomescriptId),
@@ -182,7 +182,7 @@ func AutomationRunnerFunc(id uint, automationCtx AutomationContext) {
 			NotificationLevelError,
 			false,
 		); err != nil {
-			log.Error("Failed to notify user: ", err.Error())
+			logger.Error("Failed to notify user: ", err.Error())
 			return
 		}
 		return
@@ -218,7 +218,7 @@ func AutomationRunnerFunc(id uint, automationCtx AutomationContext) {
 	)
 
 	if err != nil {
-		log.Warn(fmt.Sprintf("Automation '%s' failed during the execution of Homescript: '%s', which terminated abnormally", job.Data.Name, job.Data.HomescriptId))
+		logger.Warn(fmt.Sprintf("Automation '%s' failed during the execution of Homescript: '%s', which terminated abnormally", job.Data.Name, job.Data.HomescriptId))
 		event.Error(
 			"Automation Failed",
 			fmt.Sprintf("Automation '%s' failed during execution of Homescript '%s'. Error: %s", job.Data.Name, job.Data.HomescriptId, err.Error()),
@@ -230,13 +230,13 @@ func AutomationRunnerFunc(id uint, automationCtx AutomationContext) {
 			NotificationLevelError,
 			false,
 		); err != nil {
-			log.Error("Failed to notify user: ", err.Error())
+			logger.Error("Failed to notify user: ", err.Error())
 			return
 		}
 		return
 	}
 	if !res.Success {
-		log.Warn(fmt.Sprintf("Automation '%s' failed during the execution of Homescript: '%s', which terminated abnormally", job.Data.Name, job.Data.HomescriptId))
+		logger.Warn(fmt.Sprintf("Automation '%s' failed during the execution of Homescript: '%s', which terminated abnormally", job.Data.Name, job.Data.HomescriptId))
 		event.Error(
 			"Automation Failed",
 			fmt.Sprintf("Automation '%s' failed during execution of Homescript '%s'. Error: %s", job.Data.Name, job.Data.HomescriptId, res.Errors[0]),
@@ -249,7 +249,7 @@ func AutomationRunnerFunc(id uint, automationCtx AutomationContext) {
 			NotificationLevelError,
 			false,
 		); err != nil {
-			log.Error("Failed to notify user: ", err.Error())
+			logger.Error("Failed to notify user: ", err.Error())
 			return
 		}
 		return

@@ -258,7 +258,7 @@ func PopulateValueCache() error {
 
 		// Just skip this driver, its value will never be required anyways.
 		if len(hmsErrs) > 0 {
-			log.Tracef("Skipping default value instantiation of driver `%s:%s`", driver.VendorId, driver.ModelId)
+			logger.Tracef("Skipping default value instantiation of driver `%s:%s`", driver.VendorId, driver.ModelId)
 			continue
 		}
 

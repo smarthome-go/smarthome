@@ -64,7 +64,7 @@ func DriverFromHmsId(id string) (driver database.DeviceDriver, validationErr err
 func GetPersonalScriptById(homescriptId string, username string) (database.Homescript, bool, error) {
 	homescripts, err := ListPersonal(username)
 	if err != nil {
-		log.Error("Failed to get Homescript by id: ", err.Error())
+		logger.Error("Failed to get Homescript by id: ", err.Error())
 		return database.Homescript{}, false, err
 	}
 	for _, homescriptItem := range homescripts {

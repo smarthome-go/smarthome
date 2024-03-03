@@ -338,7 +338,7 @@ func (m *Manager) Run(
 		entryModuleName = *filename
 	}
 
-	log.Trace(fmt.Sprintf("Homescript '%s' of user '%s' is being analyzed...", entryModuleName, username))
+	logger.Trace(fmt.Sprintf("Homescript '%s' of user '%s' is being analyzed...", entryModuleName, username))
 
 	modules, res, err := m.Analyze(username, entryModuleName, code, programKind, driverData)
 	if err != nil {
@@ -349,7 +349,7 @@ func (m *Manager) Run(
 		return res, HmsRunResultContext{}, nil
 	}
 
-	log.Trace(fmt.Sprintf("Homescript '%s' of user '%s' is being compiled...", entryModuleName, username))
+	logger.Trace(fmt.Sprintf("Homescript '%s' of user '%s' is being compiled...", entryModuleName, username))
 
 	comp := compiler.NewCompiler()
 	prog := comp.Compile(modules, entryModuleName)
@@ -366,7 +366,7 @@ func (m *Manager) Run(
 	// 	i++
 	// }
 
-	log.Debug(fmt.Sprintf("Homescript '%s' of user '%s' is executing...", entryModuleName, username))
+	logger.Debug(fmt.Sprintf("Homescript '%s' of user '%s' is executing...", entryModuleName, username))
 
 	// interpreter := interpreter.NewInterpreter(
 	// 	CALL_STACK_LIMIT_SIZE,
@@ -382,25 +382,32 @@ func (m *Manager) Run(
 	// 	&cancelCtx,
 	// )
 
-	vm := runtime.NewVM(
+	vm := &runtime.VM{}
+
+	rawExecutor := NewInterpreterExecutor(username,
+		outputWriter,
+		args,
+		automationContext,
+		cancelCtxFunc,
+		singletonsToLoad,
+		vm,
+	)
+
+	*vm = runtime.NewVM(
 		prog,
-		NewInterpreterExecutor(
-			username,
-			outputWriter,
-			args,
-			automationContext,
-			cancelCtxFunc,
-			singletonsToLoad,
-		),
+		rawExecutor,
 		&cancelCtx,
 		&cancelCtxFunc,
 		interpreterScopeAdditions(),
 		VM_LIMITS,
 	)
 
+	exec := vm.Executor.(interpreterExecutor)
+	*exec.vm = *vm
+
 	// supportsKill := modules[entryModuleName].SupportsEvent("kill")
 
-	id := m.PushJob(username, initiator, cancelCtxFunc, filename, &vm, entryModuleName, true)
+	id := m.PushJob(username, initiator, cancelCtxFunc, filename, vm, entryModuleName, true)
 	defer m.removeJob(id)
 
 	// send the id to the id channel (only if it exists)
@@ -494,7 +501,7 @@ func (m *Manager) Run(
 			}
 
 			errMsg := ""
-			if log.GetLevel() == logrus.TraceLevel {
+			if logger.GetLevel() == logrus.TraceLevel {
 				errMsg = d.Display(fileContentsTemp[errors[0].Span.Filename])
 				split := strings.Split(errMsg, "\n")
 				if len(split) > maxLinesErrMessage {
@@ -504,9 +511,9 @@ func (m *Manager) Run(
 				errMsg = errors[0].String()
 			}
 
-			log.Trace()
+			logger.Trace()
 
-			log.Debug(fmt.Sprintf("Homescript '%s' of user '%s' failed: %s", entryModuleName, username, errMsg))
+			logger.Debug(fmt.Sprintf("Homescript '%s' of user '%s' failed: %s", entryModuleName, username, errMsg))
 		}
 
 		return HmsRes{
@@ -516,7 +523,7 @@ func (m *Manager) Run(
 		}, HmsRunResultContext{}, nil
 	}
 
-	log.Debug(fmt.Sprintf("Homescript '%s' of user '%s' executed successfully", entryModuleName, username))
+	logger.Debug(fmt.Sprintf("Homescript '%s' of user '%s' executed successfully", entryModuleName, username))
 
 	// Stores the original (non-mangled) singletons of the entry module.
 	singletons := make(map[string]value.Value)
@@ -663,7 +670,7 @@ func (m *Manager) KillAllId(hmsId string) (count uint64, success bool) {
 }
 
 func (m *Manager) killJob(job Job) {
-	log.Trace("Dispatching sigTerm to HMS interpreter channel...")
+	logger.Trace("Dispatching sigTerm to HMS interpreter channel...")
 
 	_, killFnExists := job.Vm.Program.Mappings.Functions[KillEventFunction]
 	canceled := false
@@ -677,7 +684,7 @@ func (m *Manager) killJob(job Job) {
 			defer cancelMtx.Unlock()
 			cancelMtx.Lock()
 			if !canceled {
-				log.Debugf("Job %d did not quit on time, terminating kill event...", job.JobId)
+				logger.Debugf("Job %d did not quit on time, terminating kill event...", job.JobId)
 				job.CancelCtx()
 			}
 		}()
@@ -698,7 +705,7 @@ func (m *Manager) killJob(job Job) {
 		job.CancelCtx()
 	}
 
-	log.Trace("Successfully dispatched sigTerm to HMS interpreter channel")
+	logger.Trace("Successfully dispatched sigTerm to HMS interpreter channel")
 }
 
 // Can be used to access the manager's jobs from the outside in a safe manner

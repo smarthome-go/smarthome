@@ -48,7 +48,7 @@ func CreateNewAutomation(
 			*days,
 		)
 		if err != nil {
-			log.Error("Could not create automation: failed to generate cron expression: unexpected input: ", err.Error())
+			logger.Error("Could not create automation: failed to generate cron expression: unexpected input: ", err.Error())
 			return 0, err
 		}
 		TriggerCronExpression = &cronExpression
@@ -70,14 +70,14 @@ func CreateNewAutomation(
 	}
 	newAutomationId, err := database.CreateNewAutomation(automationData)
 	if err != nil {
-		log.Error("Could not create automation: database failure: ", err.Error())
+		logger.Error("Could not create automation: database failure: ", err.Error())
 		return 0, err
 	}
 
 	// Retrieve the server config in order to determine if the automation system is enabled
 	serverConfig, found, err := database.GetServerConfiguration()
 	if err != nil || !found {
-		log.Error("Failed to setup new automation: could not retrieve server configuration due to database failure")
+		logger.Error("Failed to setup new automation: could not retrieve server configuration due to database failure")
 		return 0, errors.New("failed to setup new automation: could not retrieve server configuration due to database failure")
 	}
 
@@ -85,7 +85,7 @@ func CreateNewAutomation(
 		return 0, fmt.Errorf("Could not create new automation: registering job failed: %s", err.Error())
 	}
 
-	log.Debug(fmt.Sprintf("Created new automation '%s' for user '%s' with trigger '%v'.", name, owner, trigger))
+	logger.Debug(fmt.Sprintf("Created new automation '%s' for user '%s' with trigger '%v'.", name, owner, trigger))
 	event.Debug("Automation Created", fmt.Sprintf("%s created a new automation (name: `%s`, trigger `%s`)", owner, name, trigger))
 	return newAutomationId, nil
 }
@@ -95,18 +95,18 @@ func RemoveAutomation(automationId uint) error {
 	// Get current automation
 	thisAutomation, exists, err := database.GetAutomationById(automationId)
 	if err != nil {
-		log.Error("Failed to remove automation: database failure: ", err.Error())
+		logger.Error("Failed to remove automation: database failure: ", err.Error())
 		return err
 	}
 	if !exists {
-		log.Error(fmt.Sprintf("Failed to remove automation: no such id ('%d') is currently registered", automationId))
+		logger.Error(fmt.Sprintf("Failed to remove automation: no such id ('%d') is currently registered", automationId))
 		return fmt.Errorf("failed to remove automation: id '%d' is not a currently active automation", automationId)
 	}
 
 	// Unregister automation
 	serverConfig, found, err := database.GetServerConfiguration()
 	if err != nil || !found {
-		log.Error("Failed to remove automation: could not retrieve server configuration due to database failure")
+		logger.Error("Failed to remove automation: could not retrieve server configuration due to database failure")
 		return errors.New("failed to remove automation: could not retrieve server configuration due to database failure")
 	}
 	if err := UnregisterAutomation(automationId, thisAutomation.Data, serverConfig); err != nil {
@@ -115,11 +115,11 @@ func RemoveAutomation(automationId uint) error {
 
 	// Delete automation
 	if err := database.DeleteAutomationById(automationId); err != nil {
-		log.Error("Failed to remove automation: database failure: ", err.Error())
+		logger.Error("Failed to remove automation: database failure: ", err.Error())
 		return err
 	}
 
-	log.Trace(fmt.Sprintf("Deactivated and removed automation. id: '%d'", automationId))
+	logger.Trace(fmt.Sprintf("Deactivated and removed automation. id: '%d'", automationId))
 	event.Debug("Automation Removed", fmt.Sprintf("Automation %d was removed from the system", automationId))
 	return nil
 }
@@ -130,7 +130,7 @@ func GetUserAutomations(username string) ([]Automation, error) {
 	automations := make([]Automation, 0)
 	automationsTemp, err := database.GetUserAutomations(username)
 	if err != nil {
-		log.Error("Failed to list automations of user: database failure: ", err.Error())
+		logger.Error("Failed to list automations of user: database failure: ", err.Error())
 		return nil, err
 	}
 	for _, automationItem := range automationsTemp {
@@ -139,7 +139,7 @@ func GetUserAutomations(username string) ([]Automation, error) {
 		if automationItem.Data.TriggerCronExpression != nil {
 			cronDescriptionTemp, err := automation.GenerateHumanReadableCronExpression(*automationItem.Data.TriggerCronExpression)
 			if err != nil {
-				log.Error("Failed to list automations of user: could not generate cron description: ", err.Error())
+				logger.Error("Failed to list automations of user: could not generate cron description: ", err.Error())
 				return nil, err
 			}
 			cronDescription = &cronDescriptionTemp
@@ -168,7 +168,7 @@ func GetUserAutomations(username string) ([]Automation, error) {
 func GetUserAutomationById(username string, automationId uint) (Automation, bool, error) {
 	automationsTemp, err := database.GetUserAutomations(username)
 	if err != nil {
-		log.Error("Failed to get user automation by id: database failure: ", err.Error())
+		logger.Error("Failed to get user automation by id: database failure: ", err.Error())
 		return Automation{}, false, err
 	}
 	for _, automationItem := range automationsTemp {
@@ -180,7 +180,7 @@ func GetUserAutomationById(username string, automationId uint) (Automation, bool
 		if automationItem.Data.TriggerCronExpression != nil {
 			cronDescriptionTemp, err := automation.GenerateHumanReadableCronExpression(*automationItem.Data.TriggerCronExpression)
 			if err != nil {
-				log.Error("Failed to get user automation by id: could not generate cron description: ", err.Error())
+				logger.Error("Failed to get user automation by id: could not generate cron description: ", err.Error())
 				return Automation{}, false, err
 			}
 			cronDescription = &cronDescriptionTemp
@@ -210,7 +210,7 @@ func UnregisterAutomation(automationId uint, data database.AutomationData, confi
 		if data.Enabled && config.AutomationEnabled {
 			// After the metadata has been changed, restart the scheduler
 			if err := automationScheduler.RemoveByTag(fmt.Sprint(automationId)); err != nil {
-				log.Error("Failed to unregister automation item: could not stop cron job: ", err.Error())
+				logger.Error("Failed to unregister automation item: could not stop cron job: ", err.Error())
 				return err
 			}
 		}
@@ -221,7 +221,7 @@ func UnregisterAutomation(automationId uint, data database.AutomationData, confi
 	}
 
 	event.Debug("Deactivated Automation", fmt.Sprintf("Successfully deactivated automation '%s' (%d)", data.Name, automationId))
-	log.Debug(fmt.Sprintf("Successfully deactivated automation '%s' (%d)", data.Name, automationId))
+	logger.Debug(fmt.Sprintf("Successfully deactivated automation '%s' (%d)", data.Name, automationId))
 	return nil
 }
 
@@ -229,7 +229,7 @@ func RegisterAutomation(automationId uint, data database.AutomationData, config 
 	// If the automation is disabled or the entire subsystem is shutdown, do not register this automation
 	if !data.Enabled || !config.AutomationEnabled {
 		event.Trace("Automation Skipped", fmt.Sprintf("Automation `%d` was not started", automationId))
-		log.Debug(fmt.Sprintf("Skipping activation of automation '%d': automation (system) is disabled", automationId))
+		logger.Debug(fmt.Sprintf("Skipping activation of automation '%d': automation (system) is disabled", automationId))
 		return nil
 	}
 
@@ -261,14 +261,14 @@ func RegisterAutomation(automationId uint, data database.AutomationData, config 
 		automationJob := automationScheduler.Cron(*newCronExpression)
 		automationJob.Tag(fmt.Sprint(automationId))
 		if _, err := automationJob.Do(AutomationRunnerFunc, automationId, AutomationContext{}); err != nil {
-			log.Error("Failed to start automation, registering cron job failed: ", err.Error())
+			logger.Error("Failed to start automation, registering cron job failed: ", err.Error())
 			return err
 		}
 	case database.TriggerInterval:
 		automationJob := automationScheduler.Every(time.Second * time.Duration(*data.TriggerIntervalSeconds))
 		automationJob.Tag(fmt.Sprint(automationId))
 		if _, err := automationJob.Do(AutomationRunnerFunc, automationId, AutomationContext{}); err != nil {
-			log.Error("Failed to start automation, registering cron job failed: ", err.Error())
+			logger.Error("Failed to start automation, registering cron job failed: ", err.Error())
 			return err
 		}
 	case database.TriggerOnLogin, database.TriggerOnLogout, database.TriggerOnNotification, database.TriggerOnShutdown, database.TriggerOnBoot:
@@ -278,7 +278,7 @@ func RegisterAutomation(automationId uint, data database.AutomationData, config 
 	}
 
 	event.Debug("Automation Activated", fmt.Sprintf("Successfully activated automation '%s' (%d)", data.Name, automationId))
-	log.Debug(fmt.Sprintf("Successfully activated automation '%s' (%d)", data.Name, automationId))
+	logger.Debug(fmt.Sprintf("Successfully activated automation '%s' (%d)", data.Name, automationId))
 	return nil
 }
 
@@ -295,11 +295,11 @@ func ModifyAutomationById(automationId uint, newAutomation database.AutomationDa
 
 	automationBefore, exists, err := database.GetAutomationById(automationId)
 	if err != nil {
-		log.Error("Failed to modify automation by id: could not get previous state due to database failure: ", err.Error())
+		logger.Error("Failed to modify automation by id: could not get previous state due to database failure: ", err.Error())
 		return err
 	}
 	if !exists {
-		log.Error("Failed to modify automation by id: could not get previous automation: not found")
+		logger.Error("Failed to modify automation by id: could not get previous automation: not found")
 		return fmt.Errorf("failed to modify automation by id: could not get previous automation: not found")
 	}
 
@@ -312,7 +312,7 @@ func ModifyAutomationById(automationId uint, newAutomation database.AutomationDa
 	}
 
 	if err := database.ModifyAutomation(automationId, newAutomation); err != nil {
-		log.Error("Failed to modify automation by id: database failure during modification: ", err.Error())
+		logger.Error("Failed to modify automation by id: database failure during modification: ", err.Error())
 		return err
 	}
 
@@ -340,6 +340,6 @@ func UpdateJobTime(id uint, config database.ServerConfig) error {
 		return fmt.Errorf("Could not update launch time: registering failed: %s", err.Error())
 	}
 
-	log.Trace(fmt.Sprintf("Successfully updated the next execution time of automation '%d'", id))
+	logger.Trace(fmt.Sprintf("Successfully updated the next execution time of automation '%d'", id))
 	return nil
 }

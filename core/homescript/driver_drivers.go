@@ -50,7 +50,7 @@ func extractInfoFromDriver(
 	}
 
 	if len(filtered) > 0 {
-		log.Tracef("Driver `%s:%s` is not working: `%s`", vendorID, modelID, filtered[0].Message)
+		logger.Tracef("Driver `%s:%s` is not working: `%s`", vendorID, modelID, filtered[0].Message)
 		// nolint:exhaustruct
 		return DriverInfo{}, filtered, nil
 	}
@@ -132,7 +132,7 @@ func ListDriversWithStoredConfig() ([]RichDriver, error) {
 
 	for idx, driver := range drivers {
 		if !driver.IsValid {
-			log.Tracef("Skipping driver `%s:%s` in list with stored values: driver is not valid", driver.Driver.VendorId, driver.Driver.ModelId)
+			logger.Tracef("Skipping driver `%s:%s` in list with stored values: driver is not valid", driver.Driver.VendorId, driver.Driver.ModelId)
 			continue
 		}
 

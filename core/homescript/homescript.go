@@ -11,11 +11,11 @@ var RESERVED_IDS = []string{
 	"sys",
 }
 
-var log *logrus.Logger
+var logger *logrus.Logger
 
-func InitLogger(logger *logrus.Logger) {
-	log = logger
-	automation.InitLogger(logger)
+func InitLogger(loggerTemp *logrus.Logger) {
+	logger = loggerTemp
+	automation.InitLogger(loggerTemp)
 }
 
 // Checks whether a given Homescript has automations which rely on it

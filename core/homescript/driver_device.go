@@ -55,7 +55,7 @@ func shallowSorter(input *[]database.ShallowDevice) error {
 	}
 
 	if needsRebuild {
-		log.Trace("Driver cache outdated, needs rebuild before list.")
+		logger.Trace("Driver cache outdated, needs rebuild before list.")
 		if err := RebuildCache(); err != nil {
 			return err
 		}
@@ -437,7 +437,7 @@ var CachedDriverMeta map[database.DriverTuple]DriverInfo = make(map[database.Dri
 
 // TODO: only run this function on drivers which actually changed
 func RebuildCache() error {
-	log.Debug("Rebuilding homescript driver metadata cache...")
+	logger.Debug("Rebuilding homescript driver metadata cache...")
 	drivers, err := ListDriversWithoutStoredValues()
 	if err != nil {
 		return err

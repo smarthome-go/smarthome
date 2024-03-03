@@ -55,7 +55,7 @@ func ExtractDriverInfoTotal(
 	}
 
 	if len(errors) != 0 {
-		log.Debugf("Could not extract driver info: %s", errors[0].String())
+		logger.Debugf("Could not extract driver info: %s", errors[0].String())
 		diagnostics := make([]diagnostic.Diagnostic, len(errors))
 		for idx, err := range errors {
 			if err.SyntaxError != nil {
