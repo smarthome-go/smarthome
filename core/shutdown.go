@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/smarthome-go/smarthome/core/automation"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
 	hardware "github.com/smarthome-go/smarthome/core/hardware_deprecated"
@@ -130,7 +131,7 @@ func RunBootAutomations(config database.ServerConfig) {
 
 		go func(jobId uint) {
 			maxRuntime := BOOT_AUTOMATION_MAX_RUNTIME
-			homescript.AutomationRunnerFunc(jobId, types.AutomationContext{MaximumHMSRuntime: &maxRuntime})
+			automation.AutomationRunnerFunc(jobId, types.AutomationContext{MaximumHMSRuntime: &maxRuntime})
 		}(job.Id)
 	}
 }
@@ -161,7 +162,7 @@ func runShutdownAutomations(ch *chan struct{}, config database.ServerConfig) {
 		wg.Add(1)
 
 		go func(jobId uint) {
-			homescript.AutomationRunnerFunc(jobId, types.AutomationContext{})
+			automation.AutomationRunnerFunc(jobId, types.AutomationContext{})
 			wg.Done()
 		}(job.Id)
 	}
@@ -174,7 +175,7 @@ func Shutdown(config database.ServerConfig) error {
 	var error error
 
 	// Shutdown automations (it is not safe to do this concurrently with the background HMS jobs)
-	if err := homescript.DeactivateAutomationSystem(config); err != nil {
+	if err := automation.Manager.DeactivateAutomationSystem(config); err != nil {
 		error = err
 	}
 

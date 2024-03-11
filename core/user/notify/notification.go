@@ -1,6 +1,8 @@
-package homescript
+package notify
 
 import (
+	"github.com/sirupsen/logrus"
+	automationTypes "github.com/smarthome-go/smarthome/core/automation/types"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
@@ -14,36 +16,62 @@ const (
 )
 
 type Notification struct {
-	Id          uint              `json:"id"`
+	ID          uint              `json:"id"`
 	Priority    NotificationLevel `json:"priority"`
 	Name        string            `json:"name"`
 	Description string            `json:"description"`
-	Date        uint              `json:"date"` // Unix-Millis are used in this layer
+	Date        uint              `json:"date"` // Unix-Millis are used in this layer.
 }
 
-func Notify(username string, title string, description string, level NotificationLevel, run_hooks bool) (uint, error) {
-	newId, err := database.AddNotification(username, title, description, uint8(level))
+var log *logrus.Logger
+
+func InitLogger(logger *logrus.Logger) {
+	log = logger
+}
+
+type NotificationManager struct {
+	HmsManager types.Manager
+	Automation automationTypes.AutomationManager
+}
+
+var Manager NotificationManager
+
+func InitManager(hms types.Manager, automation automationTypes.AutomationManager) {
+	panic("TODO")
+}
+
+func (m NotificationManager) Notify(
+	username string,
+	title string,
+	description string,
+	level NotificationLevel,
+	runHooks bool,
+) (uint, error) {
+	newID, err := database.AddNotification(username, title, description, uint8(level))
 	if err != nil {
-		logger.Error("Failed to notify user: database failure: ", err.Error())
+		log.Error("Failed to notify user: database failure: ", err.Error())
 		return 0, err
 	}
 
-	// Run any notification hooks
-	if run_hooks {
+	// Run any notification hooks.
+	if runHooks {
 		notificationContext := types.NotificationContext{
-			Id:          newId,
+			Id:          newID,
 			Title:       title,
 			Description: description,
 			Level:       uint8(level),
 		}
-		go RunAllAutomationsWithTrigger(
+		go m.Automation.RunAllAutomationsWithTrigger(
 			username,
 			database.TriggerOnNotification,
-			types.AutomationContext{NotificationContext: &notificationContext},
+			types.AutomationContext{
+				NotificationContext: &notificationContext,
+				MaximumHMSRuntime:   nil,
+			},
 		)
 	}
 
-	return newId, nil
+	return newID, nil
 }
 
 func GetNotifications(username string) ([]Notification, error) {
@@ -54,7 +82,7 @@ func GetNotifications(username string) ([]Notification, error) {
 	output := make([]Notification, 0)
 	for _, notification := range fromDB {
 		output = append(output, Notification{
-			Id:          notification.Id,
+			ID:          notification.Id,
 			Priority:    NotificationLevel(notification.Priority),
 			Name:        notification.Name,
 			Description: notification.Description,

@@ -4,7 +4,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/homescript/automation"
 )
 
 var RESERVED_IDS = []string{
@@ -15,7 +14,6 @@ var logger *logrus.Logger
 
 func InitLogger(loggerTemp *logrus.Logger) {
 	logger = loggerTemp
-	automation.InitLogger(loggerTemp)
 }
 
 // Checks whether a given Homescript has automations which rely on it

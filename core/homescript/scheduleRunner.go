@@ -10,6 +10,7 @@ import (
 	"github.com/smarthome-go/smarthome/core/device/driver"
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
+	"github.com/smarthome-go/smarthome/core/user/notify"
 )
 
 const SCHEDULE_MAXIMUM_HOMESCRIPT_RUNTIME = time.Minute * 10
@@ -55,11 +56,11 @@ func scheduleRunnerFunc(id uint) {
 	}
 	if !owner.SchedulerEnabled {
 		logger.Debug(fmt.Sprintf("Not running schedule '%s' because user's schedules are currently disabled", job.Data.Name))
-		if _, err := Notify(
+		if _, err := notify.Manager.Notify(
 			owner.Username,
 			"Schedule Skipped",
 			fmt.Sprintf("Schedule '%s' was discarded because your schedules are disabled", job.Data.Name),
-			NotificationLevelWarn,
+			notify.NotificationLevelWarn,
 			true,
 		); err != nil {
 			logger.Error("Failed to notify user: ", err.Error())
@@ -96,11 +97,11 @@ func scheduleRunnerFunc(id uint) {
 
 		if err != nil {
 			logger.Error("Executing schedule's Homescript failed: ", err.Error())
-			if _, err := Notify(
+			if _, err := notify.Manager.Notify(
 				owner.Username,
 				"Schedule Failed",
 				fmt.Sprintf("Schedule '%s' failed due to Homescript error: %s", job.Data.Name, err.Error()),
-				NotificationLevelError,
+				notify.NotificationLevelError,
 				true,
 			); err != nil {
 				logger.Error("Failed to notify user: ", err.Error())
@@ -115,11 +116,11 @@ func scheduleRunnerFunc(id uint) {
 
 		if !res.Success {
 			logger.Error("Executing schedule's Homescript failed: ", res.Errors[0])
-			if _, err := Notify(
+			if _, err := notify.Manager.Notify(
 				owner.Username,
 				"Schedule Failed",
 				fmt.Sprintf("Schedule '%s' failed due to Homescript error: %s", job.Data.Name, res.Errors[0]),
-				NotificationLevelError,
+				notify.NotificationLevelError,
 				true,
 			); err != nil {
 				logger.Error("Failed to notify user: ", err.Error())
@@ -151,11 +152,11 @@ func scheduleRunnerFunc(id uint) {
 
 		if err != nil {
 			logger.Error("Executing schedule's Homescript failed: ", err.Error())
-			if _, err := Notify(
+			if _, err := notify.Manager.Notify(
 				owner.Username,
 				"Schedule Failed",
 				fmt.Sprintf("Schedule '%s' failed due to Homescript system error: %s", job.Data.Name, err.Error()),
-				NotificationLevelError,
+				notify.NotificationLevelError,
 				true,
 			); err != nil {
 				logger.Error("Failed to notify user: ", err.Error())
@@ -169,11 +170,11 @@ func scheduleRunnerFunc(id uint) {
 		}
 		if !res.Success {
 			logger.Error("Executing schedule's Homescript failed: ", res.Errors[0])
-			if _, err := Notify(
+			if _, err := notify.Manager.Notify(
 				owner.Username,
 				"Schedule Failed",
 				fmt.Sprintf("Schedule '%s' failed due to Homescript execution error: %s", job.Data.Name, res.Errors[0]),
-				NotificationLevelError,
+				notify.NotificationLevelError,
 				true,
 			); err != nil {
 				logger.Error("Failed to notify user: ", err.Error())
@@ -196,11 +197,11 @@ func scheduleRunnerFunc(id uint) {
 
 			if !hasPermission {
 				logger.Warn("Executing schedule's switch jobs failed: user now lacks permission to use switch")
-				if _, err := Notify(
+				if _, err := notify.Manager.Notify(
 					owner.Username,
 					"Schedule Failed",
 					fmt.Sprintf("Schedule '%s' failed due to lacking switch permissions: you now lack permission to use %s", job.Data.Name, switchJob.DeviceId),
-					NotificationLevelError,
+					notify.NotificationLevelError,
 					true,
 				); err != nil {
 					logger.Error("Failed to notify user: ", err.Error())
@@ -236,11 +237,11 @@ func scheduleRunnerFunc(id uint) {
 			}
 
 			if hmsErrs != nil {
-				if _, err := Notify(
+				if _, err := notify.Manager.Notify(
 					owner.Username,
 					"Schedule Failed",
 					fmt.Sprintf("Schedule '%s' failed due to Homescript execution error: %s", job.Data.Name, hmsErrs[0]),
-					NotificationLevelError,
+					notify.NotificationLevelError,
 					true,
 				); err != nil {
 					logger.Error("Failed to notify user: ", err.Error())

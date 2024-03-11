@@ -10,14 +10,14 @@ import (
 // Returns a Homescript given its id
 // Returns Homescript, has been found, error
 // This also includes drivers and other types of Homescript.
-func GetPersonalScriptById(homescriptId string, username string) (database.Homescript, bool, error) {
+func (m *Manager) GetPersonalScriptById(homescriptID string, username string) (database.Homescript, bool, error) {
 	homescripts, err := ListPersonal(username)
 	if err != nil {
 		logger.Error("Failed to get Homescript by id: ", err.Error())
 		return database.Homescript{}, false, err
 	}
 	for _, homescriptItem := range homescripts {
-		if homescriptItem.Data.Id == homescriptId {
+		if homescriptItem.Data.Id == homescriptID {
 			return homescriptItem, true, nil
 		}
 	}

@@ -11,9 +11,11 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/smarthome-go/smarthome/core"
+	"github.com/smarthome-go/smarthome/core/automation"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/device/driver"
 	"github.com/smarthome-go/smarthome/core/event"
+	"github.com/smarthome-go/smarthome/core/user/notify"
 	"github.com/smarthome-go/smarthome/core/utils"
 	"github.com/smarthome-go/smarthome/server/api"
 	"github.com/smarthome-go/smarthome/server/middleware"
@@ -52,6 +54,8 @@ func initLoggers() {
 	// Initialize module loggers
 	log = logTemp
 	core.InitLoggers(log)
+	automation.InitLogger(log)
+	notify.InitLogger(log)
 	camera.InitLogger(log)
 	middleware.InitLogger(log)
 	api.InitLogger(log)

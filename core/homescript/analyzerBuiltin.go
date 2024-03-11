@@ -634,7 +634,7 @@ func (self analyzerHost) GetBuiltinImport(
 
 func (self analyzerHost) ResolveCodeModule(moduleName string) (code string, moduleFound bool, err error) {
 	logger.Trace(fmt.Sprintf("Resolving module `%s` by user `%s`", moduleName, self.username))
-	script, found, err := GetPersonalScriptById(moduleName, self.username)
+	script, found, err := HmsManager.GetPersonalScriptById(moduleName, self.username)
 	if err != nil || !found {
 		return "", found, err
 	}

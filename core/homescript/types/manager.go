@@ -7,6 +7,7 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
+	"github.com/smarthome-go/smarthome/core/database"
 )
 
 type Job struct {
@@ -21,6 +22,8 @@ type Job struct {
 }
 
 type Manager interface {
+	GetPersonalScriptById(homescriptID string, username string) (database.Homescript, bool, error)
+
 	Analyze(
 		username string,
 		filename string,

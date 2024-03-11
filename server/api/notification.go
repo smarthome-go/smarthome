@@ -6,7 +6,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/homescript"
+	"github.com/smarthome-go/smarthome/core/user/notify"
 	"github.com/smarthome-go/smarthome/server/middleware"
 )
 
@@ -53,11 +53,11 @@ func NotifyUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newId, err := homescript.Notify(
+	newId, err := notify.Manager.Notify(
 		username,
 		request.Name,
 		request.Description,
-		homescript.NotificationLevel(request.Priority),
+		notify.NotificationLevel(request.Priority),
 		true,
 	)
 
@@ -91,7 +91,7 @@ func GetNotifications(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	notifications, err := homescript.GetNotifications(username)
+	notifications, err := notify.GetNotifications(username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to get notifications", Error: "database failure"})

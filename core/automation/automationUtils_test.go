@@ -1,4 +1,4 @@
-package homescript
+package automation
 
 import (
 	"testing"

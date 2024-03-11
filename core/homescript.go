@@ -14,7 +14,7 @@ import (
 // that a driver script updates the driver and a normal script updates in the `homescripts` table.
 func ModifyHomescriptCode(id string, owner string, newCode string) (found bool, err error) {
 	// Determine whether this is a driver script or a normal script
-	script, found, err := homescript.GetPersonalScriptById(id, owner)
+	script, found, err := homescript.HmsManager.GetPersonalScriptById(id, owner)
 	if err != nil {
 		return false, err
 	}

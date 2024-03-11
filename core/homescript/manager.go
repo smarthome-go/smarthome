@@ -99,7 +99,7 @@ func (m *Manager) PushJob(
 	return id
 }
 
-func resolveFileContentsOfErrors(
+func (m Manager) resolveFileContentsOfErrors(
 	username string,
 	mainModuleFilename string,
 	mainModuleCode string,
@@ -112,7 +112,7 @@ func resolveFileContentsOfErrors(
 			continue
 		}
 
-		script, found, dbErr := GetPersonalScriptById(err.Span.Filename, username)
+		script, found, dbErr := m.GetPersonalScriptById(err.Span.Filename, username)
 		if dbErr != nil {
 			return nil, dbErr
 		}
@@ -178,7 +178,7 @@ func (m *Manager) Analyze(
 		})
 	}
 
-	fileContents, err := resolveFileContentsOfErrors(
+	fileContents, err := m.resolveFileContentsOfErrors(
 		username,
 		filename,
 		code,
@@ -201,7 +201,7 @@ func (m *Manager) AnalyzeById(
 	programKind types.HMS_PROGRAM_KIND,
 	driverData *types.AnalyzerDriverMetadata,
 ) (map[string]ast.AnalyzedProgram, types.HmsRes, error) {
-	hms, found, err := GetPersonalScriptById(id, username)
+	hms, found, err := m.GetPersonalScriptById(id, username)
 	if err != nil {
 		return nil, types.HmsRes{}, err
 	}
@@ -386,7 +386,7 @@ func (m *Manager) Run(
 		}
 
 		if isErr {
-			fileContentsTemp, err := resolveFileContentsOfErrors(username, entryModuleName, code, errors)
+			fileContentsTemp, err := m.resolveFileContentsOfErrors(username, entryModuleName, code, errors)
 			if err != nil {
 				return types.HmsRes{}, types.HmsRunResultContext{}, err
 			}
@@ -466,7 +466,7 @@ func (m *Manager) RunById(
 	automationContext *types.AutomationContext,
 	singletonsToLoad map[string]value.Value,
 ) (types.HmsRes, types.HmsRunResultContext, error) {
-	script, found, err := GetPersonalScriptById(hmsId, username)
+	script, found, err := m.GetPersonalScriptById(hmsId, username)
 	if err != nil {
 		return types.HmsRes{}, types.HmsRunResultContext{}, err
 	}

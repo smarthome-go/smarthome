@@ -18,11 +18,12 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
+	"github.com/smarthome-go/smarthome/core/automation"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/device/driver"
 	"github.com/smarthome-go/smarthome/core/event"
-	"github.com/smarthome-go/smarthome/core/homescript/automation"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
+	"github.com/smarthome-go/smarthome/core/user/notify"
 	"github.com/smarthome-go/smarthome/services/weather"
 )
 
@@ -988,11 +989,11 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				// this avoids unconditional recursion and thus prevents a crash
 				runHooks := hmsExecutor.automationContext == nil || hmsExecutor.automationContext.NotificationContext == nil
 
-				newId, err := Notify(
+				newId, err := notify.Manager.Notify(
 					executor.GetUser(),
 					title,
 					description,
-					NotificationLevel(level),
+					notify.NotificationLevel(level),
 					runHooks,
 				)
 

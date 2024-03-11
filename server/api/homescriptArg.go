@@ -66,7 +66,7 @@ func GetHomescriptArgsByHmsId(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to get arguments of Homescript by its id", Error: "no Homescript id provided"})
 		return
 	}
-	_, exists, err := homescript.GetPersonalScriptById(homescriptId, username)
+	_, exists, err := homescript.HmsManager.GetPersonalScriptById(homescriptId, username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to get arguments of Homescript by its id", Error: "database failure"})
@@ -105,7 +105,7 @@ func CreateNewHomescriptArg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Validate the existence of the mentioned Homescript
-	_, exists, err := homescript.GetPersonalScriptById(request.HomescriptId, username)
+	_, exists, err := homescript.HmsManager.GetPersonalScriptById(request.HomescriptId, username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to create new Homescript argument: checks failed", Error: "database failure"})

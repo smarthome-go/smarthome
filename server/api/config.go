@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/smarthome-go/smarthome/core"
+	"github.com/smarthome-go/smarthome/core/automation"
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/homescript/automation"
 	"github.com/smarthome-go/smarthome/server/middleware"
 )
 

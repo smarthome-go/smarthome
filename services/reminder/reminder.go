@@ -7,8 +7,11 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/homescript"
+	"github.com/smarthome-go/smarthome/core/user/notify"
 )
+
+const HoursPerDay = 24
+const NormalAlertDaysLeft = 2
 
 var log *logrus.Logger
 
@@ -16,14 +19,20 @@ func InitLogger(logger *logrus.Logger) {
 	log = logger
 }
 
-// Send a fitting notification which informs the reminders owner of the remaining time to complete the specified task
-func sendDueInReminder(id uint, username string, name string, daysLeft uint, dueDate time.Time, level homescript.NotificationLevel) error {
-	daysLeft++ // The current day should be added to the days the user has left to complete the task
+// Send a fitting notification which informs the reminders owner of the remaining time to complete the specified task.
+func sendDueInReminder(id uint,
+	username string,
+	name string,
+	daysLeft uint,
+	dueDate time.Time,
+	level notify.NotificationLevel,
+) error {
+	daysLeft++ // The current day should be added to the days the user has left to complete the task.
 	dayText := "days"
 	if daysLeft == 1 {
 		dayText = "day"
 	}
-	if _, err := homescript.Notify(
+	if _, err := notify.Manager.Notify(
 		username,
 		fmt.Sprintf("Task is due on %s", dueDate.Format("Monday, 2.1.2006")),
 		fmt.Sprintf("You have %d %s left to complete the task '%s'",
@@ -37,11 +46,11 @@ func sendDueInReminder(id uint, username string, name string, daysLeft uint, due
 		return err
 	}
 	log.Trace(fmt.Sprintf("Successfully sent reminder notification for '%d' to user '%s'", id, username))
-	// Mark that the user has been notified and update it to the current time
+	// Mark that the user has been notified and update it to the current time.
 	return database.SetReminderUserWasNotified(id, true, time.Now().Local())
 }
 
-// Will be executed by a scheduler in order to send periodic notifications to the user
+// Will be executed by a scheduler in order to send periodic notifications to the user.
 func SendUrgencyNotifications(username string) error {
 	reminders, err := database.GetUserReminders(username)
 	if err != nil {
@@ -51,20 +60,20 @@ func SendUrgencyNotifications(username string) error {
 	now := time.Now()
 
 	for _, reminder := range reminders {
-		// The due date will likely be in the future
-		remainingDays := int(reminder.DueDate.Sub(now).Hours() / 24)
+		// The due date will likely be in the future.
+		remainingDays := int(reminder.DueDate.Sub(now).Hours() / HoursPerDay)
 		dayText := "days"
 		if remainingDays == -1 || remainingDays == 1 {
 			dayText = "day"
 		}
 
-		// If the last notification was sent in the last 24 hours, skip the current notification
-		if now.Sub(reminder.UserWasNotifiedAt).Hours() < 24 {
+		// If the last notification was sent in the last 24 hours, skip the current notification.
+		if now.Sub(reminder.UserWasNotifiedAt).Hours() < HoursPerDay {
 			continue
 		}
 
 		if remainingDays < 0 && reminder.Priority > database.Low {
-			if _, err := homescript.Notify(
+			if _, err := notify.Manager.Notify(
 				username,
 				fmt.Sprintf("Reminder '%s' Is Overdue", reminder.Name),
 				fmt.Sprintf("The task '%s' was supposed to be finished on %s. You are behind schedule by %d %s.",
@@ -73,48 +82,79 @@ func SendUrgencyNotifications(username string) error {
 					remainingDays*-1,
 					dayText,
 				),
-				homescript.NotificationLevelError,
+				notify.NotificationLevelError,
 				true,
 			); err != nil {
 				return err
 			}
-			// Mark that the user has been notified and update it to the current time
+
+			// Mark that the user has been notified and update it to the current time.
 			if err := database.SetReminderUserWasNotified(reminder.Id, true, time.Now().Local()); err != nil {
 				return err
 			}
-			continue // Continue to the next reminder
+
+			// Go to the next reminder.
+			continue
 		}
 
 		switch reminder.Priority {
 		case database.Low:
-			continue // The low priority will not trigger any notification
+			// The low priority will not trigger any notifications.
+			continue
 		case database.Normal:
-			if remainingDays < 2 {
-				if err := sendDueInReminder(reminder.Id, username, reminder.Name, uint(remainingDays), reminder.DueDate, homescript.NotificationLevelInfo); err != nil {
+			if remainingDays < NormalAlertDaysLeft {
+				if err := sendDueInReminder(
+					reminder.Id,
+					username,
+					reminder.Name,
+					uint(remainingDays),
+					reminder.DueDate,
+					notify.NotificationLevelInfo,
+				); err != nil {
 					log.Error("Failed to send notification for reminder: ", err.Error())
 					return err
 				}
 			}
 			continue
 		case database.Medium:
-			if remainingDays < 3 {
-				if err := sendDueInReminder(reminder.Id, username, reminder.Name, uint(remainingDays), reminder.DueDate, homescript.NotificationLevelInfo); err != nil {
+			if remainingDays < NormalAlertDaysLeft+1 {
+				if err := sendDueInReminder(
+					reminder.Id,
+					username,
+					reminder.Name,
+					uint(remainingDays),
+					reminder.DueDate,
+					notify.NotificationLevelInfo,
+				); err != nil {
 					log.Error("Failed to send notification for reminder: ", err.Error())
 					return err
 				}
 			}
 			continue
 		case database.High:
-			if remainingDays < 4 {
-				if err := sendDueInReminder(reminder.Id, username, reminder.Name, uint(remainingDays), reminder.DueDate, homescript.NotificationLevelWarn); err != nil {
+			if remainingDays < NormalAlertDaysLeft+2 {
+				if err := sendDueInReminder(
+					reminder.Id,
+					username,
+					reminder.Name,
+					uint(remainingDays),
+					reminder.DueDate,
+					notify.NotificationLevelWarn,
+				); err != nil {
 					log.Error("Failed to send notification for reminder: ", err.Error())
 					return err
 				}
 			}
 			continue
 		case database.Urgent:
-			if remainingDays < 5 {
-				if err := sendDueInReminder(reminder.Id, username, reminder.Name, uint(remainingDays), reminder.DueDate, homescript.NotificationLevelError); err != nil {
+			if remainingDays < NormalAlertDaysLeft+3 {
+				if err := sendDueInReminder(reminder.Id,
+					username,
+					reminder.Name,
+					uint(remainingDays),
+					reminder.DueDate,
+					notify.NotificationLevelError,
+				); err != nil {
 					log.Error("Failed to send notification for reminder: ", err.Error())
 					return err
 				}

@@ -71,7 +71,7 @@ func CreateNewSchedule(w http.ResponseWriter, r *http.Request) {
 	// Validate target-mode specific data
 	switch request.TargetMode {
 	case database.ScheduleTargetModeHMS:
-		hmsData, HMSfound, err := homescript.GetPersonalScriptById(
+		hmsData, HMSfound, err := homescript.HmsManager.GetPersonalScriptById(
 			request.HomescriptTargetId,
 			username,
 		)
@@ -175,7 +175,7 @@ func ModifySchedule(w http.ResponseWriter, r *http.Request) {
 	// Validate target-mode specific data
 	switch request.Data.TargetMode {
 	case database.ScheduleTargetModeHMS:
-		hmsData, HMSfound, err := homescript.GetPersonalScriptById(
+		hmsData, HMSfound, err := homescript.HmsManager.GetPersonalScriptById(
 			request.Data.HomescriptTargetId,
 			username,
 		)
