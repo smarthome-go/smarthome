@@ -15,6 +15,7 @@ import (
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/device/driver"
 	"github.com/smarthome-go/smarthome/core/event"
+	"github.com/smarthome-go/smarthome/core/scheduler"
 	"github.com/smarthome-go/smarthome/core/user/notify"
 	"github.com/smarthome-go/smarthome/core/utils"
 	"github.com/smarthome-go/smarthome/server/api"
@@ -55,6 +56,7 @@ func initLoggers() {
 	log = logTemp
 	core.InitLoggers(log)
 	automation.InitLogger(log)
+	scheduler.InitLogger(log)
 	notify.InitLogger(log)
 	camera.InitLogger(log)
 	middleware.InitLogger(log)

@@ -1,4 +1,4 @@
-package homescript
+package scheduler
 
 import (
 	"fmt"
@@ -18,61 +18,61 @@ type UserSchedule struct {
 }
 
 // Creates and starts a schedule based on the provided input data
-func CreateNewSchedule(data database.ScheduleData, owner string) (uint, error) {
+func (m SchedulerManager) CreateNewSchedule(data database.ScheduleData, owner string) (uint, error) {
 	newScheduleId, err := database.CreateNewSchedule(owner, data)
 	if err != nil {
-		logger.Error("Failed to create new schedule: database failure: ", err.Error())
+		log.Error("Failed to create new schedule: database failure: ", err.Error())
 		return 0, err
 	}
 
 	// Prepare the job for go-cron
-	schedulerJob := scheduleScheduler.Every(1).Day().At(fmt.Sprintf("%02d:%02d", data.Hour, data.Minute))
+	schedulerJob := m.scheduler.Every(1).Day().At(fmt.Sprintf("%02d:%02d", data.Hour, data.Minute))
 	schedulerJob.Tag(fmt.Sprintf("%d", newScheduleId))
 	schedulerJob.LimitRunsTo(1)
 	if _, err := schedulerJob.Do(scheduleRunnerFunc, newScheduleId); err != nil {
-		logger.Error("Failed to create new schedule: could not register cron job: ", err.Error())
+		log.Error("Failed to create new schedule: could not register cron job: ", err.Error())
 		return 0, err
 	}
 	event.Debug("Schedule Created", fmt.Sprintf("%s created Schedule `%s` (ID: %d)", owner, data.Name, newScheduleId))
-	logger.Trace(fmt.Sprintf("Successfully added and setup schedule '%d'", newScheduleId))
+	log.Trace(fmt.Sprintf("Successfully added and setup schedule '%d'", newScheduleId))
 	return newScheduleId, nil
 }
 
 // Aborts and deletes a schedule based on its id
-func RemoveScheduleById(id uint) error {
+func (m SchedulerManager) RemoveScheduleById(id uint) error {
 	if err := database.DeleteScheduleById(id); err != nil {
-		logger.Error("Failed to remove schedule: could not delete schedule from database: ", err.Error())
+		log.Error("Failed to remove schedule: could not delete schedule from database: ", err.Error())
 		return err
 	}
-	if err := scheduleScheduler.RemoveByTag(fmt.Sprintf("%d", id)); err != nil {
-		logger.Error("Failed to remove schedule: could not abort schedule: ", err.Error())
+	if err := m.scheduler.RemoveByTag(fmt.Sprintf("%d", id)); err != nil {
+		log.Error("Failed to remove schedule: could not abort schedule: ", err.Error())
 		return err
 	}
-	logger.Trace(fmt.Sprintf("Successfully removed and aborted schedule '%d'", id))
+	log.Trace(fmt.Sprintf("Successfully removed and aborted schedule '%d'", id))
 	event.Debug("Schedule Removed", fmt.Sprintf("Schedule %d was removed from the system", id))
 	return nil
 }
 
 // Modify an already set up schedule
 // After the modification was performed, the schedule is restarted
-func ModifyScheduleById(id uint, newSchedule database.ScheduleData) error {
+func (m SchedulerManager) ModifyScheduleById(id uint, newSchedule database.ScheduleData) error {
 	if err := database.ModifySchedule(id, newSchedule); err != nil {
-		logger.Error("Failed to modify schedule by id: ", err.Error())
+		log.Error("Failed to modify schedule by id: ", err.Error())
 		return err
 	}
-	if err := scheduleScheduler.RemoveByTag(fmt.Sprintf("%d", id)); err != nil {
-		logger.Error("Failed to modify schedule: could not abort schedule: ", err.Error())
+	if err := m.scheduler.RemoveByTag(fmt.Sprintf("%d", id)); err != nil {
+		log.Error("Failed to modify schedule: could not abort schedule: ", err.Error())
 		return err
 	}
 	// Prepare the job for go-cron
-	schedulerJob := scheduleScheduler.Every(1).Day().At(fmt.Sprintf("%02d:%02d", newSchedule.Hour, newSchedule.Minute))
+	schedulerJob := m.scheduler.Every(1).Day().At(fmt.Sprintf("%02d:%02d", newSchedule.Hour, newSchedule.Minute))
 	schedulerJob.Tag(fmt.Sprintf("%d", id))
 	schedulerJob.LimitRunsTo(1)
 	if _, err := schedulerJob.Do(scheduleRunnerFunc, id); err != nil {
-		logger.Error("Failed to modify schedule: could not register cronjob after modification: ", err.Error())
+		log.Error("Failed to modify schedule: could not register cronjob after modification: ", err.Error())
 		return err
 	}
-	logger.Trace(fmt.Sprintf("Successfully added and setup schedule after modification: '%d'", id))
+	log.Trace(fmt.Sprintf("Successfully added and setup schedule after modification: '%d'", id))
 	event.Debug("Schedule Modified", fmt.Sprintf("Schedule %d was modified: new time: %d:%d ", newSchedule.Hour, newSchedule.Minute, id))
 	return nil
 }

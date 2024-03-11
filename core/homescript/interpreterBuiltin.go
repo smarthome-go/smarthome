@@ -23,6 +23,7 @@ import (
 	"github.com/smarthome-go/smarthome/core/device/driver"
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
+	"github.com/smarthome-go/smarthome/core/scheduler"
 	"github.com/smarthome-go/smarthome/core/user/notify"
 	"github.com/smarthome-go/smarthome/services/weather"
 )
@@ -875,7 +876,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 					return nil, value.NewVMThrowInterrupt(span, "Fields `hour` and `minute` have to be >= 0")
 				}
 
-				newId, err := CreateNewSchedule(database.ScheduleData{
+				newId, err := scheduler.Manager.CreateNewSchedule(database.ScheduleData{
 					Name:           (*data["name"]).(value.ValueString).Inner,
 					Hour:           uint(hour),
 					Minute:         uint(minute),
@@ -897,7 +898,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 					return nil, value.NewVMThrowInterrupt(span, fmt.Sprintf("IDs must be > 0, got %d", id))
 				}
 
-				_, found, err := GetUserScheduleById(executor.GetUser(), uint(id))
+				_, found, err := scheduler.GetUserScheduleById(executor.GetUser(), uint(id))
 				if err != nil {
 					return nil, value.NewVMFatalException(
 						fmt.Sprintf("Could not delete schedule: %s", err.Error()),
@@ -910,7 +911,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 					return nil, value.NewVMThrowInterrupt(span, fmt.Sprintf("No schedule with ID %d exists", id))
 				}
 
-				if err := RemoveScheduleById(uint(id)); err != nil {
+				if err := scheduler.Manager.RemoveScheduleById(uint(id)); err != nil {
 					return nil, value.NewVMFatalException(
 						fmt.Sprintf("Could not delete schedule: %s", err.Error()),
 						value.Vm_HostErrorKind,

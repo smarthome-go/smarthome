@@ -8,6 +8,7 @@ import (
 	"github.com/smarthome-go/smarthome/core/device/driver"
 	hardware "github.com/smarthome-go/smarthome/core/hardware_deprecated"
 	"github.com/smarthome-go/smarthome/core/homescript"
+	"github.com/smarthome-go/smarthome/core/scheduler"
 	"github.com/smarthome-go/smarthome/services/reminder"
 )
 
@@ -21,22 +22,24 @@ func Init(config database.ServerConfig) error {
 		return err
 	}
 
-	// Schedulers
 	if err := automation.InitManager(hmsManager, config); err != nil {
 		return fmt.Errorf("Failed to activate automation system: %s", err.Error())
 	}
-	if err := homescript.InitScheduler(); err != nil { // Initializes the normal scheduler
+
+	if err := scheduler.InitManager(hmsManager); err != nil {
 		return fmt.Errorf("Failed to activate scheduler system: %s", err.Error())
 	}
 
-	if err := reminder.InitSchedule(); err != nil { // Initialize notification scheduler for reminders
+	if err := reminder.InitSchedule(); err != nil {
 		return fmt.Errorf("Failed to activate reminder scheduler: %s", err.Error())
 	}
 
 	// Hardware handler
 	hardware.Init()
+
 	if err := hardware.StartPowerUsageSnapshotScheduler(); err != nil {
 		return fmt.Errorf("Failed to start periodic power usage snapshot scheduler: %s", err.Error())
 	}
+
 	return nil
 }

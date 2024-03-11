@@ -7,6 +7,7 @@ import (
 
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/homescript"
+	"github.com/smarthome-go/smarthome/core/scheduler"
 	"github.com/smarthome-go/smarthome/server/middleware"
 )
 
@@ -130,7 +131,7 @@ func CreateNewSchedule(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to create new schedule", Error: fmt.Sprintf("invalid `targetMode`: `%s`", request.TargetMode)})
 		return
 	}
-	id, err := homescript.CreateNewSchedule(request, username)
+	id, err := scheduler.Manager.CreateNewSchedule(request, username)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		Res(w, Response{Success: false, Message: "failed to add schedule", Error: "internal server error"})
@@ -155,7 +156,7 @@ func ModifySchedule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Validate if the schedule exists
-	_, doesExists, err := homescript.GetUserScheduleById(username, request.Id)
+	_, doesExists, err := scheduler.GetUserScheduleById(username, request.Id)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		Res(w, Response{Success: false, Message: "failed to modify schedule", Error: "internal server error"})
@@ -234,7 +235,7 @@ func ModifySchedule(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to modify schedule", Error: fmt.Sprintf("invalid `targetMode`: `%s`", request.Data.TargetMode)})
 		return
 	}
-	if err := homescript.ModifyScheduleById(request.Id, request.Data); err != nil {
+	if err := scheduler.Manager.ModifyScheduleById(request.Id, request.Data); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		Res(w, Response{Success: false, Message: "failed to modify schedule", Error: "internal server error"})
 		return
@@ -257,7 +258,7 @@ func RemoveSchedule(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	_, doesExists, err := homescript.GetUserScheduleById(username, request.Id) // Checks if the schedule exists and if the user is allowed to delete it
+	_, doesExists, err := scheduler.GetUserScheduleById(username, request.Id) // Checks if the schedule exists and if the user is allowed to delete it
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		Res(w, Response{Success: false, Message: "failed to delete schedule", Error: "backend failure"})
@@ -268,7 +269,7 @@ func RemoveSchedule(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "failed to delete schedule", Error: "invalid id / not found"})
 		return
 	}
-	if err := homescript.RemoveScheduleById(request.Id); err != nil {
+	if err := scheduler.Manager.RemoveScheduleById(request.Id); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		Res(w, Response{Success: false, Message: "failed to delete schedule", Error: "backend failure"})
 		return

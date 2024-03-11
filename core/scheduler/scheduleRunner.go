@@ -1,4 +1,4 @@
-package homescript
+package scheduler
 
 import (
 	"bytes"
@@ -19,43 +19,43 @@ const SCHEDULE_MAXIMUM_HOMESCRIPT_RUNTIME = time.Minute * 10
 // If the user's schedulers are currently disabled
 // the job runner will still be executed and remove the current scheduler but without running the homescript
 // Error handling works in a similar way to the runner of the automation system
-func scheduleRunnerFunc(id uint) {
+func scheduleRunnerFunc(id uint, m SchedulerManager) {
 	job, jobFound, err := database.GetScheduleById(id)
 	if err != nil {
-		logger.Error(fmt.Sprintf("Failed to run schedule '%s': database failure whilst retrieving job information: %s", job.Data.Name, err.Error()))
+		log.Error(fmt.Sprintf("Failed to run schedule '%s': database failure whilst retrieving job information: %s", job.Data.Name, err.Error()))
 		return
 	}
 	if !jobFound {
-		logger.Error(fmt.Sprintf("Failed to run schedule '%s': no metadata saved in the database: %s", job.Data.Name, err.Error()))
+		log.Error(fmt.Sprintf("Failed to run schedule '%s': no metadata saved in the database: %s", job.Data.Name, err.Error()))
 		// Abort this schedule to avoid future errors
-		if err := scheduleScheduler.RemoveByTag(fmt.Sprintf("%d", id)); err != nil {
-			logger.Error("Failed to remove dangling schedule: could not abort schedule: ", err.Error())
+		if err := m.scheduler.RemoveByTag(fmt.Sprintf("%d", id)); err != nil {
+			log.Error("Failed to remove dangling schedule: could not abort schedule: ", err.Error())
 			return
 		}
-		logger.Info(fmt.Sprintf("Successfully aborted dangling schedule: %d", id))
+		log.Info(fmt.Sprintf("Successfully aborted dangling schedule: %d", id))
 		return
 	}
 	// Delete the schedule from the database
 	if err := database.DeleteScheduleById(id); err != nil {
-		logger.Error("Removing schedule failed: could not remove schedule from database: ", err.Error())
+		log.Error("Removing schedule failed: could not remove schedule from database: ", err.Error())
 		return
 	}
 	// Check if the user has blocked their automations & schedules
 	owner, found, err := database.GetUserByUsername(job.Owner)
 	if err != nil {
-		logger.Error("Schedule failed because owner user could not be determined")
+		log.Error("Schedule failed because owner user could not be determined")
 		return
 	}
 	if !found {
-		logger.Warn("Schedule failed because owner user does not exist anymore, skipping execution...")
+		log.Warn("Schedule failed because owner user does not exist anymore, skipping execution...")
 		return
 	}
 	if !owner.SchedulerEnabled {
-		logger.Debug(fmt.Sprintf("Schedule '%s' was not executed because its owner has disabled their schedules & automations", job.Data.Name))
+		log.Debug(fmt.Sprintf("Schedule '%s' was not executed because its owner has disabled their schedules & automations", job.Data.Name))
 		return
 	}
 	if !owner.SchedulerEnabled {
-		logger.Debug(fmt.Sprintf("Not running schedule '%s' because user's schedules are currently disabled", job.Data.Name))
+		log.Debug(fmt.Sprintf("Not running schedule '%s' because user's schedules are currently disabled", job.Data.Name))
 		if _, err := notify.Manager.Notify(
 			owner.Username,
 			"Schedule Skipped",
@@ -63,7 +63,7 @@ func scheduleRunnerFunc(id uint) {
 			notify.NotificationLevelWarn,
 			true,
 		); err != nil {
-			logger.Error("Failed to notify user: ", err.Error())
+			log.Error("Failed to notify user: ", err.Error())
 			return
 		}
 		event.Debug(
@@ -72,12 +72,12 @@ func scheduleRunnerFunc(id uint) {
 		)
 		return
 	}
-	logger.Debug(fmt.Sprintf("Schedule '%s' (%d) is executing...", job.Data.Name, id))
+	log.Debug(fmt.Sprintf("Schedule '%s' (%d) is executing...", job.Data.Name, id))
 	switch job.Data.TargetMode {
 	case database.ScheduleTargetModeCode:
 		ctx, cancel := context.WithTimeout(context.Background(), SCHEDULE_MAXIMUM_HOMESCRIPT_RUNTIME)
 
-		res, _, err := HmsManager.Run(
+		res, _, err := m.hms.Run(
 			types.HMS_PROGRAM_KIND_NORMAL,
 			nil,
 			owner.Username,
@@ -96,7 +96,7 @@ func scheduleRunnerFunc(id uint) {
 		)
 
 		if err != nil {
-			logger.Error("Executing schedule's Homescript failed: ", err.Error())
+			log.Error("Executing schedule's Homescript failed: ", err.Error())
 			if _, err := notify.Manager.Notify(
 				owner.Username,
 				"Schedule Failed",
@@ -104,7 +104,7 @@ func scheduleRunnerFunc(id uint) {
 				notify.NotificationLevelError,
 				true,
 			); err != nil {
-				logger.Error("Failed to notify user: ", err.Error())
+				log.Error("Failed to notify user: ", err.Error())
 				return
 			}
 			event.Error(
@@ -115,7 +115,7 @@ func scheduleRunnerFunc(id uint) {
 		}
 
 		if !res.Success {
-			logger.Error("Executing schedule's Homescript failed: ", res.Errors[0])
+			log.Error("Executing schedule's Homescript failed: ", res.Errors[0])
 			if _, err := notify.Manager.Notify(
 				owner.Username,
 				"Schedule Failed",
@@ -123,7 +123,7 @@ func scheduleRunnerFunc(id uint) {
 				notify.NotificationLevelError,
 				true,
 			); err != nil {
-				logger.Error("Failed to notify user: ", err.Error())
+				log.Error("Failed to notify user: ", err.Error())
 				return
 			}
 			event.Error(
@@ -135,7 +135,7 @@ func scheduleRunnerFunc(id uint) {
 	case database.ScheduleTargetModeHMS:
 		ctx, cancel := context.WithTimeout(context.Background(), SCHEDULE_MAXIMUM_HOMESCRIPT_RUNTIME)
 
-		res, _, err := HmsManager.RunById(
+		res, _, err := m.hms.RunById(
 			types.HMS_PROGRAM_KIND_NORMAL,
 			nil,
 			job.Data.HomescriptTargetId,
@@ -151,7 +151,7 @@ func scheduleRunnerFunc(id uint) {
 		)
 
 		if err != nil {
-			logger.Error("Executing schedule's Homescript failed: ", err.Error())
+			log.Error("Executing schedule's Homescript failed: ", err.Error())
 			if _, err := notify.Manager.Notify(
 				owner.Username,
 				"Schedule Failed",
@@ -159,7 +159,7 @@ func scheduleRunnerFunc(id uint) {
 				notify.NotificationLevelError,
 				true,
 			); err != nil {
-				logger.Error("Failed to notify user: ", err.Error())
+				log.Error("Failed to notify user: ", err.Error())
 				return
 			}
 			event.Error(
@@ -169,7 +169,7 @@ func scheduleRunnerFunc(id uint) {
 			return
 		}
 		if !res.Success {
-			logger.Error("Executing schedule's Homescript failed: ", res.Errors[0])
+			log.Error("Executing schedule's Homescript failed: ", res.Errors[0])
 			if _, err := notify.Manager.Notify(
 				owner.Username,
 				"Schedule Failed",
@@ -177,7 +177,7 @@ func scheduleRunnerFunc(id uint) {
 				notify.NotificationLevelError,
 				true,
 			); err != nil {
-				logger.Error("Failed to notify user: ", err.Error())
+				log.Error("Failed to notify user: ", err.Error())
 				return
 			}
 			event.Error(
@@ -191,12 +191,12 @@ func scheduleRunnerFunc(id uint) {
 			// Validate if the user still has permission to perform this power job
 			hasPermission, err := database.UserHasDevicePermission(job.Owner, switchJob.DeviceId)
 			if err != nil {
-				logger.Errorf("Schedule '%d' failed. Error: %s", id, err.Error())
+				log.Errorf("Schedule '%d' failed. Error: %s", id, err.Error())
 				return
 			}
 
 			if !hasPermission {
-				logger.Warn("Executing schedule's switch jobs failed: user now lacks permission to use switch")
+				log.Warn("Executing schedule's switch jobs failed: user now lacks permission to use switch")
 				if _, err := notify.Manager.Notify(
 					owner.Username,
 					"Schedule Failed",
@@ -204,7 +204,7 @@ func scheduleRunnerFunc(id uint) {
 					notify.NotificationLevelError,
 					true,
 				); err != nil {
-					logger.Error("Failed to notify user: ", err.Error())
+					log.Error("Failed to notify user: ", err.Error())
 					return
 				}
 				event.Warn(
@@ -215,12 +215,12 @@ func scheduleRunnerFunc(id uint) {
 
 			switchData, found, err := database.GetDeviceById(switchJob.DeviceId)
 			if err != nil {
-				logger.Errorf("Schedule '%d' failed. Error: %s", id, err.Error())
+				log.Errorf("Schedule '%d' failed. Error: %s", id, err.Error())
 				return
 			}
 
 			if !found {
-				logger.Errorf("Schedule '%d' is being executed even though a switch was removed. Error: %s", id, err.Error())
+				log.Errorf("Schedule '%d' is being executed even though a switch was removed. Error: %s", id, err.Error())
 				return
 			}
 
@@ -232,7 +232,7 @@ func scheduleRunnerFunc(id uint) {
 			)
 
 			if err != nil {
-				logger.Errorf("Schedule '%d' failed. Error: %s", id, err.Error())
+				log.Errorf("Schedule '%d' failed. Error: %s", id, err.Error())
 				return
 			}
 
@@ -244,7 +244,7 @@ func scheduleRunnerFunc(id uint) {
 					notify.NotificationLevelError,
 					true,
 				); err != nil {
-					logger.Error("Failed to notify user: ", err.Error())
+					log.Error("Failed to notify user: ", err.Error())
 					return
 				}
 				event.Error(
@@ -255,7 +255,7 @@ func scheduleRunnerFunc(id uint) {
 			}
 		}
 	default:
-		logger.Error("Unimplemented schedule mode")
+		log.Error("Unimplemented schedule mode")
 	}
 	event.Info("Schedule Executed Successfully",
 		fmt.Sprintf("Schedule '%s' of user '%s' has been executed successfully", job.Data.Name, job.Owner),
