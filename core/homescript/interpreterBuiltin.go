@@ -85,7 +85,7 @@ var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	fmt.Printf("MSG: %s\n", msg.Payload())
 }
 
-func mqttSubsribe() value.Value {
+func mqttSubscribe() value.Value {
 	return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 		host := args[0].(value.ValueString).Inner
 		username := args[1].(value.ValueString).Inner
@@ -202,7 +202,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 	case "mqtt":
 		switch toImport {
 		case "subscribe":
-			return mqttSubsribe(), true
+			return mqttSubscribe(), true
 		case "publish":
 			return mqttPublish(), true
 		default:
