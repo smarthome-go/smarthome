@@ -1,9 +1,10 @@
-package homescript
+package driver
 
 import (
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	pAst "github.com/smarthome-go/homescript/v3/homescript/parser/ast"
+	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
 const DefaultCapabilityName = "base"
@@ -31,6 +32,34 @@ func driverValidateDriverSignature(span errors.Span) ast.TemplateMethod {
 		).(ast.FunctionType),
 		Modifier: pAst.FN_MODIFIER_PUB,
 	}
+}
+
+type DeviceTemplate struct {
+	Spec ast.TemplateSpec
+	// Makes the HMS capability identifier to a `DriverCapability`.
+	Capabilities map[string]DeviceCapability
+}
+
+func (self DeviceTemplate) Kind() types.TemplateKind {
+	return types.TemplateKindDevice
+}
+
+func (self DeviceTemplate) GetSpec() ast.TemplateSpec {
+	return self.Spec
+}
+
+type DriverTemplate struct {
+	Spec ast.TemplateSpec
+	// Makes the HMS capability identifier to a `DriverCapability`.
+	Capabilities map[string]DriverCapability
+}
+
+func (self DriverTemplate) Kind() types.TemplateKind {
+	return types.TemplateKindDriver
+}
+
+func (self DriverTemplate) GetSpec() ast.TemplateSpec {
+	return self.Spec
 }
 
 func driverTemplate(span errors.Span) DriverTemplate {
@@ -295,8 +324,8 @@ func deviceTemplate(span errors.Span) DeviceTemplate {
 
 // NOTE: here, all important templates are defined so that additional information can be attached to it.
 // TODO: add integration tests for checking if all HMS template capabilities have a mapping.
-func Templates(span errors.Span) map[ImportKey]Template {
-	return map[ImportKey]Template{
+func Templates(span errors.Span) map[types.ImportKey]types.Template {
+	return map[types.ImportKey]types.Template{
 		{
 			ModuleName: DriverModuleIdent,
 			ValueName:  DRIVER_TEMPLATE_IDENT,

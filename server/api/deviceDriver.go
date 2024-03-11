@@ -8,7 +8,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/homescript"
+	"github.com/smarthome-go/smarthome/core/device/driver"
 )
 
 type DeviceDriverRequest struct {
@@ -32,7 +32,7 @@ type DeviceDriverAddRequest struct {
 
 func ListDeviceDrivers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	drivers, err := homescript.ListDriversWithStoredConfig()
+	drivers, err := driver.Manager.ListDriversWithStoredConfig()
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to list device drivers", Error: "database error"})
@@ -102,7 +102,7 @@ func CreateDeviceDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, dbErr = homescript.ParseDriverVersion(request.Version)
+	_, dbErr = driver.ParseDriverVersion(request.Version)
 	if dbErr != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		Res(w, Response{
@@ -112,7 +112,7 @@ func CreateDeviceDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hmsErr, dbErr := homescript.CreateDriver(
+	hmsErr, dbErr := driver.Manager.CreateDriver(
 		request.VendorId,
 		request.ModelId,
 		request.Name,
@@ -156,7 +156,7 @@ func ModifyDeviceDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := homescript.ParseDriverVersion(request.Version)
+	_, err := driver.ParseDriverVersion(request.Version)
 	if err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		Res(w, Response{
@@ -205,7 +205,7 @@ func ConfigureDeviceDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	found, validationErr, dbErr := homescript.ValidateDriverConfigurationChange(
+	found, validationErr, dbErr := driver.Manager.ValidateDriverConfigurationChange(
 		request.Driver.VendorID,
 		request.Driver.ModelID,
 		request.Data,
@@ -233,7 +233,7 @@ func ConfigureDeviceDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if dbErr = homescript.StoreDriverSingletonConfigUpdate(
+	if dbErr = driver.Manager.StoreDriverSingletonConfigUpdate(
 		request.Driver.VendorID,
 		request.Driver.ModelID,
 		request.Data,

@@ -9,6 +9,7 @@ import (
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/hardware"
 	"github.com/smarthome-go/smarthome/core/homescript"
+	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
 type shutdownJobName string
@@ -48,7 +49,7 @@ func waitForHomescripts(ch *chan struct{}) {
 			log.Infof("Killing remaining %d Homescripts...", jobLen)
 
 			for _, job := range homescript.HmsManager.GetJobList() {
-				go homescript.HmsManager.Kill(job.JobId)
+				go homescript.HmsManager.Kill(job.JobID)
 			}
 
 			sentKill = true
@@ -61,8 +62,8 @@ func waitForHomescripts(ch *chan struct{}) {
 				hmsList += ", "
 			}
 			id := "<unknown>"
-			if hms.HmsId != nil {
-				id = *hms.HmsId
+			if hms.HmsID != nil {
+				id = *hms.HmsID
 			}
 			hmsList += "`" + id + "`"
 		}
@@ -129,7 +130,7 @@ func RunBootAutomations(config database.ServerConfig) {
 
 		go func(jobId uint) {
 			maxRuntime := BOOT_AUTOMATION_MAX_RUNTIME
-			homescript.AutomationRunnerFunc(jobId, homescript.AutomationContext{MaximumHMSRuntime: &maxRuntime})
+			homescript.AutomationRunnerFunc(jobId, types.AutomationContext{MaximumHMSRuntime: &maxRuntime})
 		}(job.Id)
 	}
 }
@@ -160,7 +161,7 @@ func runShutdownAutomations(ch *chan struct{}, config database.ServerConfig) {
 		wg.Add(1)
 
 		go func(jobId uint) {
-			homescript.AutomationRunnerFunc(jobId, homescript.AutomationContext{})
+			homescript.AutomationRunnerFunc(jobId, types.AutomationContext{})
 			wg.Done()
 		}(job.Id)
 	}

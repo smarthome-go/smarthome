@@ -5,24 +5,35 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/smarthome-go/smarthome/core/homescript"
+	"github.com/smarthome-go/smarthome/core/device/driver"
 )
 
-func DeviceActionHandlerFactory(action homescript.DriverActionKind) func(w http.ResponseWriter, r *http.Request) {
+type DeviceActionrequestBody struct {
+	DeviceID string `json:"deviceId"`
+
+	// TODO: use dynamic typing here?
+	// Or use separate API endpoint for each intent?
+	Power *driver.DriverSetPowerInput `json:"power"`
+	Dim   *driver.DriverDimInput      `json:"dim"`
+}
+
+func DeviceActionHandlerFactory(action driver.DriverActionKind) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		decoder := json.NewDecoder(r.Body)
 		decoder.DisallowUnknownFields()
-		var request homescript.DeviceActionrequestBody
+		var request DeviceActionrequestBody
 		if err := decoder.Decode(&request); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 			return
 		}
 
-		res, found, validationErr, backendErr := homescript.DeviceAction(
+		res, found, validationErr, backendErr := driver.Manager.DeviceAction(
 			action,
-			request,
+			request.DeviceID,
+			request.Power,
+			request.Dim,
 		)
 
 		if backendErr != nil {

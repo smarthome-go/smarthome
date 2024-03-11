@@ -12,6 +12,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/smarthome-go/smarthome/core/homescript"
+	"github.com/smarthome-go/smarthome/core/homescript/types"
 	"github.com/smarthome-go/smarthome/server/middleware"
 )
 
@@ -27,10 +28,10 @@ type HMSMessageTXOut struct {
 	Payload string           `json:"payload"`
 }
 type HMSMessageTXRes struct {
-	Kind         HMSMessageKindTX      `json:"kind"`
-	Errors       []homescript.HmsError `json:"errors"`
-	FileContents map[string]string     `json:"fileContents"`
-	Success      bool                  `json:"success"`
+	Kind         HMSMessageKindTX  `json:"kind"`
+	Errors       []types.HmsError  `json:"errors"`
+	FileContents map[string]string `json:"fileContents"`
+	Success      bool              `json:"success"`
 }
 type HMSMessageKindTX string
 
@@ -122,19 +123,19 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Start running the code
-	res := make(chan homescript.HmsRes)
+	res := make(chan types.HmsRes)
 
 	idChan := make(chan uint64)
 
-	go func(writer io.Writer, results *chan homescript.HmsRes, idChan *chan uint64) {
+	go func(writer io.Writer, results *chan types.HmsRes, idChan *chan uint64) {
 		ctx, cancel := context.WithCancel(context.Background())
 
 		res, _, err := homescript.HmsManager.RunById(
-			homescript.HMS_PROGRAM_KIND_NORMAL,
+			types.HMS_PROGRAM_KIND_NORMAL,
 			nil,
 			request.Payload,
 			username,
-			homescript.InitiatorAPI,
+			types.InitiatorAPI,
 			ctx,
 			cancel,
 			idChan,

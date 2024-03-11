@@ -1,4 +1,6 @@
-package homescript
+package driver
+
+import "github.com/smarthome-go/smarthome/core/homescript/types"
 
 //
 // Driver actions
@@ -6,7 +8,7 @@ package homescript
 
 type DriverActionOutput struct {
 	Payload   DriverActionOutputPayload `json:"payload"`
-	HmsErrors []HmsError                `json:"hmsErrors"`
+	HmsErrors []types.HmsError          `json:"hmsErrors"`
 }
 
 type DriverActionKind uint8

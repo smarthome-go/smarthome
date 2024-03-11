@@ -2,6 +2,7 @@ package homescript
 
 import (
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
 type NotificationLevel uint8
@@ -29,7 +30,7 @@ func Notify(username string, title string, description string, level Notificatio
 
 	// Run any notification hooks
 	if run_hooks {
-		notificationContext := NotificationContext{
+		notificationContext := types.NotificationContext{
 			Id:          newId,
 			Title:       title,
 			Description: description,
@@ -38,7 +39,7 @@ func Notify(username string, title string, description string, level Notificatio
 		go RunAllAutomationsWithTrigger(
 			username,
 			database.TriggerOnNotification,
-			AutomationContext{NotificationContext: &notificationContext},
+			types.AutomationContext{NotificationContext: &notificationContext},
 		)
 	}
 

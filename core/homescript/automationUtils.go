@@ -8,6 +8,7 @@ import (
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/homescript/automation"
+	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
 type Automation struct {
@@ -260,14 +261,14 @@ func RegisterAutomation(automationId uint, data database.AutomationData, config 
 
 		automationJob := automationScheduler.Cron(*newCronExpression)
 		automationJob.Tag(fmt.Sprint(automationId))
-		if _, err := automationJob.Do(AutomationRunnerFunc, automationId, AutomationContext{}); err != nil {
+		if _, err := automationJob.Do(AutomationRunnerFunc, automationId, types.AutomationContext{}); err != nil {
 			logger.Error("Failed to start automation, registering cron job failed: ", err.Error())
 			return err
 		}
 	case database.TriggerInterval:
 		automationJob := automationScheduler.Every(time.Second * time.Duration(*data.TriggerIntervalSeconds))
 		automationJob.Tag(fmt.Sprint(automationId))
-		if _, err := automationJob.Do(AutomationRunnerFunc, automationId, AutomationContext{}); err != nil {
+		if _, err := automationJob.Do(AutomationRunnerFunc, automationId, types.AutomationContext{}); err != nil {
 			logger.Error("Failed to start automation, registering cron job failed: ", err.Error())
 			return err
 		}

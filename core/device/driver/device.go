@@ -1,4 +1,4 @@
-package homescript
+package driver
 
 import (
 	"encoding/json"
@@ -7,6 +7,7 @@ import (
 
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
 type ShallowDevice struct {
@@ -25,7 +26,7 @@ type RichDevice struct {
 }
 
 type DeviceExtractions struct {
-	HmsErrors []HmsError              `json:"hmsErrors"`
+	HmsErrors []types.HmsError        `json:"hmsErrors"`
 	Config    ConfigInfoWrapperDevice `json:"config"`
 
 	// Device-specific information.
@@ -39,7 +40,7 @@ type DevicePowerInformation struct {
 	PowerDrawWatts uint `json:"powerDrawWatts"`
 }
 
-func shallowSorter(input *[]database.ShallowDevice) error {
+func (d DriverManager) shallowSorter(input *[]database.ShallowDevice) error {
 	needsRebuild := false
 
 	for _, dev := range *input {
@@ -55,8 +56,8 @@ func shallowSorter(input *[]database.ShallowDevice) error {
 	}
 
 	if needsRebuild {
-		logger.Trace("Driver cache outdated, needs rebuild before list.")
-		if err := RebuildCache(); err != nil {
+		log.Trace("Driver cache outdated, needs rebuild before list.")
+		if err := d.RebuildCache(); err != nil {
 			return err
 		}
 	}
@@ -99,20 +100,20 @@ func deviceSorter(a, b ConfigInfoWrapperDevice) int {
 	return 0
 }
 
-func ListAllDevicesShallow() ([]database.ShallowDevice, error) {
+func (d DriverManager) ListAllDevicesShallow() ([]database.ShallowDevice, error) {
 	unsorted, err := database.ListAllDevices()
 	if err != nil {
 		return nil, err
 	}
 
-	if err := shallowSorter(&unsorted); err != nil {
+	if err := d.shallowSorter(&unsorted); err != nil {
 		return nil, err
 	}
 
 	return unsorted, nil
 }
 
-func ListPersonalDevicesShallow(username string) ([]database.ShallowDevice, error) {
+func (d DriverManager) ListPersonalDevicesShallow(username string) ([]database.ShallowDevice, error) {
 	unsorted, err := database.ListUserDevices(username)
 	if err != nil {
 		return nil, err
@@ -124,7 +125,7 @@ func ListPersonalDevicesShallow(username string) ([]database.ShallowDevice, erro
 		old += fmt.Sprintf("%s\n", e.ID)
 	}
 
-	if err := shallowSorter(&unsorted); err != nil {
+	if err := d.shallowSorter(&unsorted); err != nil {
 		return nil, err
 	}
 
@@ -137,41 +138,41 @@ func ListPersonalDevicesShallow(username string) ([]database.ShallowDevice, erro
 	return unsorted, nil
 }
 
-func ListAllDevicesRich() ([]RichDevice, error) {
+func (d DriverManager) ListAllDevicesRich() ([]RichDevice, error) {
 	raw, err := database.ListAllDevices()
 	if err != nil {
 		return nil, err
 	}
 
-	return EnrichDevicesList(raw)
+	return d.EnrichDevicesList(raw)
 }
 
-func ListPersonalDevicesRich(username string) ([]RichDevice, error) {
+func (d DriverManager) ListPersonalDevicesRich(username string) ([]RichDevice, error) {
 	raw, err := database.ListUserDevices(username)
 	if err != nil {
 		return nil, err
 	}
 
-	return EnrichDevicesList(raw)
+	return d.EnrichDevicesList(raw)
 }
 
-func EnrichDeviceAll(deviceID string) (RichDevice, bool, error) {
+func (d DriverManager) EnrichDeviceAll(deviceID string) (RichDevice, bool, error) {
 	device, found, err := database.GetDeviceById(deviceID)
 	if err != nil || !found {
 		return RichDevice{}, found, err
 	}
 
-	driver, found, err := GetDriverWithInfos(device.VendorID, device.ModelID)
+	driver, found, err := d.GetDriverWithInfos(device.VendorID, device.ModelID)
 	if err != nil || !found {
 		return RichDevice{}, found, err
 	}
 
-	richDevice, err := EnrichDevice(device, driver)
+	richDevice, err := d.EnrichDevice(device, driver)
 	return richDevice, true, err
 }
 
-func EnrichDevice(device database.ShallowDevice, fittingDriver RichDriver) (RichDevice, error) {
-	hmsErrors := HmsErrorsFromDiagnostics(fittingDriver.ValidationErrors)
+func (d DriverManager) EnrichDevice(device database.ShallowDevice, fittingDriver RichDriver) (RichDevice, error) {
+	hmsErrors := types.HmsErrorsFromDiagnostics(fittingDriver.ValidationErrors)
 
 	storedDeviceValue := DeviceStore[device.ID]
 	savedConfig, _ := value.MarshalValue(
@@ -188,7 +189,7 @@ func EnrichDevice(device database.ShallowDevice, fittingDriver RichDriver) (Rich
 		//
 		// Power state
 		//
-		powerStateTemp, hmsErrs, err := InvokeDriverReportPowerState(
+		powerStateTemp, hmsErrs, err := d.InvokeDriverReportPowerState(
 			DriverInvocationIDs{
 				deviceID: device.ID,
 				vendorID: device.VendorID,
@@ -207,7 +208,7 @@ func EnrichDevice(device database.ShallowDevice, fittingDriver RichDriver) (Rich
 		//
 		// Power draw
 		//
-		powerDrawTemp, hmsErrs, err := InvokeDriverReportPowerDraw(
+		powerDrawTemp, hmsErrs, err := d.InvokeDriverReportPowerDraw(
 			DriverInvocationIDs{
 				deviceID: device.ID, vendorID: device.VendorID, modelID: device.ModelID,
 			},
@@ -224,7 +225,7 @@ func EnrichDevice(device database.ShallowDevice, fittingDriver RichDriver) (Rich
 
 	var dimmableInformation []DriverActionReportDimOutput
 	if fittingDriver.DeviceSupports(DeviceCapabilityDimmable) {
-		dimmableInformationTemp, hmsErrs, err := InvokeDriverReportDimmable(
+		dimmableInformationTemp, hmsErrs, err := d.InvokeDriverReportDimmable(
 			DriverInvocationIDs{
 				deviceID: device.ID,
 				vendorID: device.VendorID,
@@ -243,7 +244,7 @@ func EnrichDevice(device database.ShallowDevice, fittingDriver RichDriver) (Rich
 
 	var sensorReadings []DriverActionReportSensorReadingsOutput
 	if fittingDriver.DeviceSupports(DeviceCapabilitySensor) {
-		readingsTemp, hmsErrs, err := InvokeDriverReportSensors(
+		readingsTemp, hmsErrs, err := d.InvokeDriverReportSensors(
 			DriverInvocationIDs{
 				deviceID: device.ID,
 				vendorID: device.VendorID,
@@ -436,9 +437,9 @@ func EnrichDevice(device database.ShallowDevice, fittingDriver RichDriver) (Rich
 var CachedDriverMeta map[database.DriverTuple]DriverInfo = make(map[database.DriverTuple]DriverInfo)
 
 // TODO: only run this function on drivers which actually changed
-func RebuildCache() error {
-	logger.Debug("Rebuilding homescript driver metadata cache...")
-	drivers, err := ListDriversWithoutStoredValues()
+func (d DriverManager) RebuildCache() error {
+	log.Debug("Rebuilding homescript driver metadata cache...")
+	drivers, err := d.ListDriversWithoutStoredValues()
 	if err != nil {
 		return err
 	}
@@ -453,8 +454,8 @@ func RebuildCache() error {
 	return nil
 }
 
-func EnrichDevicesList(input []database.ShallowDevice) ([]RichDevice, error) {
-	drivers, err := ListDriversWithoutStoredValues()
+func (d DriverManager) EnrichDevicesList(input []database.ShallowDevice) ([]RichDevice, error) {
+	drivers, err := d.ListDriversWithoutStoredValues()
 	if err != nil {
 		return nil, err
 	}
@@ -471,7 +472,7 @@ func EnrichDevicesList(input []database.ShallowDevice) ([]RichDevice, error) {
 			}
 		}
 
-		enriched, err := EnrichDevice(device, fittingDriver)
+		enriched, err := d.EnrichDevice(device, fittingDriver)
 		if err != nil {
 			return nil, err
 		}
@@ -602,7 +603,7 @@ func EnrichDevicesList(input []database.ShallowDevice) ([]RichDevice, error) {
 // 1. Fetch the corresponding driver from the DB
 // 2. Generate a default JSON from the driver device singleton
 // 3. Create the new device.
-func CreateDevice(
+func (d DriverManager) CreateDevice(
 	type_ database.DEVICE_TYPE,
 	id string,
 	name string,
@@ -620,7 +621,7 @@ func CreateDevice(
 		return false, nil, nil
 	}
 
-	driverInfo, validationErrors, err := extractInfoFromDriver(driver.VendorId, driver.ModelId, driver.HomescriptCode)
+	driverInfo, validationErrors, err := d.extractInfoFromDriver(driver.VendorId, driver.ModelId, driver.HomescriptCode)
 	if err != nil {
 		return false, nil, err
 	}
@@ -657,7 +658,7 @@ func CreateDevice(
 	return true, nil, nil
 }
 
-func SetDevicePower(deviceId string, power bool) (output DriverActionPowerOutput, deviceFound bool, hmsErr *HmsError, err error) {
+func (d DriverManager) SetDevicePower(deviceId string, power bool) (output DriverActionPowerOutput, deviceFound bool, hmsErr *types.HmsError, err error) {
 	switchData, found, err := database.GetDeviceById(deviceId)
 	if err != nil {
 		return DriverActionPowerOutput{}, false, nil, err
@@ -667,7 +668,7 @@ func SetDevicePower(deviceId string, power bool) (output DriverActionPowerOutput
 		return DriverActionPowerOutput{}, false, nil, nil
 	}
 
-	output, hmsErrs, err := InvokeDriverSetPower(
+	output, hmsErrs, err := d.InvokeDriverSetPower(
 		deviceId,
 		switchData.VendorID,
 		switchData.ModelID,
@@ -685,7 +686,7 @@ func SetDevicePower(deviceId string, power bool) (output DriverActionPowerOutput
 	return output, true, nil, nil
 }
 
-func SetDeviceDim(deviceId string, function string, value int64) (output DriverActionDimOutput, deviceFound bool, hmsErr *HmsError, err error) {
+func (d DriverManager) SetDeviceDim(deviceId string, function string, value int64) (output DriverActionDimOutput, deviceFound bool, hmsErr *types.HmsError, err error) {
 	switchData, found, err := database.GetDeviceById(deviceId)
 	if err != nil {
 		return DriverActionDimOutput{}, false, nil, err
@@ -695,7 +696,7 @@ func SetDeviceDim(deviceId string, function string, value int64) (output DriverA
 		return DriverActionDimOutput{}, false, nil, nil
 	}
 
-	output, hmsErrs, err := InvokeDriverDim(
+	output, hmsErrs, err := d.InvokeDriverDim(
 		deviceId,
 		switchData.VendorID,
 		switchData.ModelID,

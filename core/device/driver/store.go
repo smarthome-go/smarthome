@@ -1,4 +1,4 @@
-package homescript
+package driver
 
 import (
 	"encoding/json"
@@ -39,13 +39,13 @@ var DriverStore map[database.DriverTuple]value.ValueObject = make(map[database.D
 // This function exists alongside its backend because invoking this function BEFORE new HMS code is saved in the DB
 // would revert the schema changes that it is intended to write, as it pulls data from the DB
 // which at this point resides in an outdated state.
-func StoreDriverSingletonConfigUpdate(
+func (d DriverManager) StoreDriverSingletonConfigUpdate(
 	vendorID string,
 	modelID string,
 	fromJSON any,
 ) error {
 	// TODO: need to patch the original value by only applying the changed fields.
-	driver, found, err := GetDriverWithInfos(vendorID, modelID)
+	driver, found, err := d.GetDriverWithInfos(vendorID, modelID)
 	if err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func StoreDriverSingletonBackend(vendorID, modelID string, val value.ValueObject
 // This function exists alongside its backend because invoking this function BEFORE new HMS code is saved in the DB
 // would revert the schema changes that it is intended  to write, as it pulls data from the DB
 // which at this point resides in an outdated state.
-func StoreDeviceSingletonConfigUpdate(
+func (d DriverManager) StoreDeviceSingletonConfigUpdate(
 	deviceID string,
 	fromJSON any,
 ) error {
@@ -112,7 +112,7 @@ func StoreDeviceSingletonConfigUpdate(
 		panic(fmt.Sprintf("Device `%s` to be stored not found", deviceID))
 	}
 
-	driver, found, err := GetDriverWithInfos(device.VendorID, device.ModelID)
+	driver, found, err := d.GetDriverWithInfos(device.VendorID, device.ModelID)
 	if err != nil {
 		return err
 	}
@@ -236,7 +236,7 @@ func filterObjFieldsWithoutSetting(input value.ValueObject, singletonType ast.Ob
 // 	return patched
 // }
 
-func PopulateValueCache() error {
+func (d DriverManager) PopulateValueCache() error {
 	// Retrieve devices list.
 	devices, err := database.ListAllDevices()
 	if err != nil {
@@ -251,14 +251,14 @@ func PopulateValueCache() error {
 
 	for _, driver := range drivers {
 		// Load type information for this driver.
-		information, hmsErrs, err := extractInfoFromDriver(driver.VendorId, driver.ModelId, driver.HomescriptCode)
+		information, hmsErrs, err := d.extractInfoFromDriver(driver.VendorId, driver.ModelId, driver.HomescriptCode)
 		if err != nil {
 			return err
 		}
 
 		// Just skip this driver, its value will never be required anyways.
 		if len(hmsErrs) > 0 {
-			logger.Tracef("Skipping default value instantiation of driver `%s:%s`", driver.VendorId, driver.ModelId)
+			log.Tracef("Skipping default value instantiation of driver `%s:%s`", driver.VendorId, driver.ModelId)
 			continue
 		}
 

@@ -19,8 +19,10 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/runtime"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/device/driver"
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/homescript/automation"
+	"github.com/smarthome-go/smarthome/core/homescript/types"
 	"github.com/smarthome-go/smarthome/services/weather"
 )
 
@@ -28,7 +30,7 @@ type interpreterExecutor struct {
 	username          string
 	ioWriter          io.Writer
 	args              map[string]string
-	automationContext *AutomationContext
+	automationContext *types.AutomationContext
 	cancelCtxFunc     context.CancelFunc
 	singletonsToLoad  map[string]value.Value
 	vm                *runtime.VM
@@ -42,7 +44,7 @@ func NewInterpreterExecutor(
 	username string,
 	writer io.Writer,
 	args map[string]string,
-	automationContext *AutomationContext,
+	automationContext *types.AutomationContext,
 	cancelCtxFunc context.CancelFunc,
 	singletonsToLoad map[string]value.Value,
 	vm *runtime.VM,
@@ -225,11 +227,11 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				}
 
 				res, _, err := HmsManager.RunById(
-					HMS_PROGRAM_KIND_NORMAL,
+					types.HMS_PROGRAM_KIND_NORMAL,
 					nil,
 					hmsId,
 					self.username,
-					InitiatorExec,
+					types.InitiatorExec,
 					*cancelCtx,
 					self.cancelCtxFunc,
 					nil,
@@ -354,7 +356,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				deviceId := args[0].(value.ValueString).Inner
 				powerOn := args[1].(value.ValueBool).Inner
 
-				output, deviceFound, hmsErr, err := SetDevicePower(deviceId, powerOn)
+				output, deviceFound, hmsErr, err := driver.Manager.SetDevicePower(deviceId, powerOn)
 				if err != nil {
 					return nil, value.NewVMFatalException(
 						fmt.Sprintf("Backend failure during power action: %s", err.Error()),
@@ -390,7 +392,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				function := args[1].(value.ValueString).Inner
 				dimValue := args[2].(value.ValueInt).Inner
 
-				output, deviceFound, hmsErr, err := SetDeviceDim(deviceId, function, dimValue)
+				output, deviceFound, hmsErr, err := driver.Manager.SetDeviceDim(deviceId, function, dimValue)
 				if err != nil {
 					return nil, value.NewVMFatalException(
 						fmt.Sprintf("Backend failure during dim action: %s", err.Error()),

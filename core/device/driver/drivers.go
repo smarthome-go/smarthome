@@ -1,4 +1,4 @@
-package homescript
+package driver
 
 import (
 	_ "embed"
@@ -27,12 +27,12 @@ func (self RichDriver) DeviceSupports(check DeviceCapability) bool {
 	return self.ExtractedInfo.DeviceConfig.Capabilities.Has(check)
 }
 
-func extractInfoFromDriver(
+func (d DriverManager) extractInfoFromDriver(
 	vendorID string,
 	modelID string,
 	homescriptCode string,
 ) (DriverInfo, []diagnostic.Diagnostic, error) {
-	driverInfo, diagnostics, err := ExtractDriverInfoTotal(
+	driverInfo, diagnostics, err := d.ExtractDriverInfoTotal(
 		vendorID,
 		modelID,
 		homescriptCode,
@@ -50,7 +50,7 @@ func extractInfoFromDriver(
 	}
 
 	if len(filtered) > 0 {
-		logger.Tracef("Driver `%s:%s` is not working: `%s`", vendorID, modelID, filtered[0].Message)
+		log.Tracef("Driver `%s:%s` is not working: `%s`", vendorID, modelID, filtered[0].Message)
 		// nolint:exhaustruct
 		return DriverInfo{}, filtered, nil
 	}
@@ -58,7 +58,7 @@ func extractInfoFromDriver(
 	return driverInfo, make([]diagnostic.Diagnostic, 0), nil
 }
 
-func GetDriverWithInfos(vendorID, modelID string) (RichDriver, bool, error) {
+func (d DriverManager) GetDriverWithInfos(vendorID, modelID string) (RichDriver, bool, error) {
 	rawDriver, found, err := database.GetDeviceDriver(vendorID, modelID)
 	if err != nil {
 		return RichDriver{}, false, err
@@ -68,7 +68,7 @@ func GetDriverWithInfos(vendorID, modelID string) (RichDriver, bool, error) {
 		return RichDriver{}, false, nil
 	}
 
-	driverInfo, diagnostics, err := extractInfoFromDriver(vendorID, modelID, rawDriver.HomescriptCode)
+	driverInfo, diagnostics, err := d.extractInfoFromDriver(vendorID, modelID, rawDriver.HomescriptCode)
 	if err != nil {
 		return RichDriver{}, false, err
 	}
@@ -89,7 +89,7 @@ func GetDriverWithInfos(vendorID, modelID string) (RichDriver, bool, error) {
 	}, true, nil
 }
 
-func ListDriversWithoutStoredValues() ([]RichDriver, error) {
+func (d DriverManager) ListDriversWithoutStoredValues() ([]RichDriver, error) {
 	defaultDrivers, err := database.ListDeviceDrivers()
 	if err != nil {
 		return nil, err
@@ -106,7 +106,7 @@ func ListDriversWithoutStoredValues() ([]RichDriver, error) {
 			ValidationErrors: make([]diagnostic.Diagnostic, 0),
 		}
 
-		driverInfo, validationErrors, err := extractInfoFromDriver(driver.VendorId, driver.ModelId, driver.HomescriptCode)
+		driverInfo, validationErrors, err := d.extractInfoFromDriver(driver.VendorId, driver.ModelId, driver.HomescriptCode)
 		if err != nil {
 			return nil, err
 		}
@@ -124,15 +124,15 @@ func ListDriversWithoutStoredValues() ([]RichDriver, error) {
 	return richDrivers, nil
 }
 
-func ListDriversWithStoredConfig() ([]RichDriver, error) {
-	drivers, err := ListDriversWithoutStoredValues()
+func (d DriverManager) ListDriversWithStoredConfig() ([]RichDriver, error) {
+	drivers, err := d.ListDriversWithoutStoredValues()
 	if err != nil {
 		return nil, err
 	}
 
 	for idx, driver := range drivers {
 		if !driver.IsValid {
-			logger.Tracef("Skipping driver `%s:%s` in list with stored values: driver is not valid", driver.Driver.VendorId, driver.Driver.ModelId)
+			log.Tracef("Skipping driver `%s:%s` in list with stored values: driver is not valid", driver.Driver.VendorId, driver.Driver.ModelId)
 			continue
 		}
 
@@ -159,7 +159,7 @@ func ListDriversWithStoredConfig() ([]RichDriver, error) {
 	return drivers, nil
 }
 
-func CreateDriver(vendorID, modelID, name, version string, hmsCode *string) (hmsErr error, dbErr error) {
+func (d DriverManager) CreateDriver(vendorID, modelID, name, version string, hmsCode *string) (hmsErr error, dbErr error) {
 	hmsCodeToUse := database.DefaultDriverHomescriptCode
 
 	if hmsCode != nil {
@@ -177,7 +177,7 @@ func CreateDriver(vendorID, modelID, name, version string, hmsCode *string) (hms
 
 	// Try to create default JSON from schema.
 	// This can fail if the Homescript code is invalid.
-	configInfo, hmsErrs, err := extractInfoFromDriver(vendorID, modelID, hmsCodeToUse)
+	configInfo, hmsErrs, err := d.extractInfoFromDriver(vendorID, modelID, hmsCodeToUse)
 	if err != nil {
 		return nil, err
 	}
@@ -282,10 +282,10 @@ outer:
 
 // Apart from actually modifying the code of the driver in the DB,
 // the saved singleton state of this driver and all dependent devices must be rebuilt.
-func ModifyCode(vendorID, modelID, newCode string) (found bool, dbErr error) {
+func (d DriverManager) ModifyCode(vendorID, modelID, newCode string) (found bool, dbErr error) {
 	// Try to create default JSON from schema.
 	// This can fail if the Homescript code is invalid.
-	configInfo, hmsErrs, err := extractInfoFromDriver(vendorID, modelID, newCode)
+	configInfo, hmsErrs, err := d.extractInfoFromDriver(vendorID, modelID, newCode)
 	if err != nil {
 		return false, err
 	}
@@ -340,7 +340,7 @@ func ModifyCode(vendorID, modelID, newCode string) (found bool, dbErr error) {
 }
 
 // TODO: a lot of overlapping code!
-func ValidateDeviceConfigurationChange(deviceId string, newConfig interface{}) (found bool, validateErr error, dbErr error) {
+func (d DriverManager) ValidateDeviceConfigurationChange(deviceId string, newConfig interface{}) (found bool, validateErr error, dbErr error) {
 	device, found, err := database.GetDeviceById(deviceId)
 	if err != nil {
 		return false, nil, err
@@ -360,7 +360,7 @@ func ValidateDeviceConfigurationChange(deviceId string, newConfig interface{}) (
 		panic(fmt.Sprintf("Driver `%s:%s` was not found in DB", device.VendorID, device.ModelID))
 	}
 
-	oldInfo, validationErrors, err := extractInfoFromDriver(device.VendorID, device.ModelID, driver.HomescriptCode)
+	oldInfo, validationErrors, err := d.extractInfoFromDriver(device.VendorID, device.ModelID, driver.HomescriptCode)
 	if err != nil {
 		return false, nil, err
 	}
@@ -395,7 +395,7 @@ func ValidateDeviceConfigurationChange(deviceId string, newConfig interface{}) (
 	return true, nil, nil
 }
 
-func ValidateDriverConfigurationChange(vendorID, modelID string, newConfig interface{}) (found bool, validateErr error, dbErr error) {
+func (d DriverManager) ValidateDriverConfigurationChange(vendorID, modelID string, newConfig interface{}) (found bool, validateErr error, dbErr error) {
 	driver, found, err := database.GetDeviceDriver(vendorID, modelID)
 	if err != nil {
 		return false, nil, err
@@ -405,7 +405,7 @@ func ValidateDriverConfigurationChange(vendorID, modelID string, newConfig inter
 		return false, nil, nil
 	}
 
-	oldInfo, validationErrors, err := extractInfoFromDriver(vendorID, modelID, driver.HomescriptCode)
+	oldInfo, validationErrors, err := d.extractInfoFromDriver(vendorID, modelID, driver.HomescriptCode)
 	if err != nil {
 		return false, nil, err
 	}

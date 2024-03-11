@@ -1,15 +1,23 @@
-package homescript
+package driver
 
 import (
 	"fmt"
 
+	"github.com/sirupsen/logrus"
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
 	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	herrors "github.com/smarthome-go/homescript/v3/homescript/errors"
 	"github.com/smarthome-go/homescript/v3/homescript/parser"
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
+
+var log *logrus.Logger
+
+func InitLogger(logger *logrus.Logger) {
+	log = logger
+}
 
 const DRIVER_TEMPLATE_IDENT = "Driver"
 const DEVICE_TEMPLATE_IDENT = "Device"
@@ -23,20 +31,33 @@ var DriverSingletonIdent = fmt.Sprintf("%s%s", parser.SINGLETON_TOKEN, DRIVER_SI
 var DriverDeviceSingletonIdent = fmt.Sprintf("%s%s", parser.SINGLETON_TOKEN, DRIVER_DEVICE_SINGLETON_IDENT)
 var DriverFieldRequiredAnnotation = fmt.Sprintf("%s%s", parser.TYPE_ANNOTATION_TOKEN, DRIVER_FIELD_REQUIRED_ANNOTATION)
 
-func ExtractDriverInfoTotal(
+type DriverManager struct {
+	Hms types.Manager
+}
+
+// TODO: do this correctly
+var Manager DriverManager
+
+func InitManager(hmsManager types.Manager) {
+	Manager = DriverManager{
+		Hms: hmsManager,
+	}
+}
+
+func (self *DriverManager) ExtractDriverInfoTotal(
 	vendorID string,
 	modelID string,
 	homescriptCode string,
 ) (info DriverInfo, hmsErrors []diagnostic.Diagnostic, err error) {
 	// TODO: remove this hack for the filename
-	filename := CreateDriverHmsId(database.DriverTuple{VendorID: vendorID, ModelID: modelID})
+	filename := types.CreateDriverHmsId(database.DriverTuple{VendorID: vendorID, ModelID: modelID})
 
-	analyzed, res, err := HmsManager.Analyze(
+	analyzed, res, err := self.Hms.Analyze(
 		"", // TODO: what to do with this field??
 		filename,
 		homescriptCode,
-		HMS_PROGRAM_KIND_DEVICE_DRIVER,
-		&AnalyzerDriverMetadata{
+		types.HMS_PROGRAM_KIND_DEVICE_DRIVER,
+		&types.AnalyzerDriverMetadata{
 			// VendorId: driver.VendorId,
 			// ModelId:  driver.ModelId,
 		},
@@ -46,7 +67,7 @@ func ExtractDriverInfoTotal(
 	}
 
 	// Only include actual errors, not other diagnostic messages
-	errors := make([]HmsError, 0)
+	errors := make([]types.HmsError, 0)
 	for _, err := range res.Errors {
 		if err.DiagnosticError != nil && err.DiagnosticError.Level != diagnostic.DiagnosticLevelError {
 			continue
@@ -55,7 +76,7 @@ func ExtractDriverInfoTotal(
 	}
 
 	if len(errors) != 0 {
-		logger.Debugf("Could not extract driver info: %s", errors[0].String())
+		log.Debugf("Could not extract driver info: %s", errors[0].String())
 		diagnostics := make([]diagnostic.Diagnostic, len(errors))
 		for idx, err := range errors {
 			if err.SyntaxError != nil {

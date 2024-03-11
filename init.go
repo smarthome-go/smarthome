@@ -12,6 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/smarthome-go/smarthome/core"
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/device/driver"
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/utils"
 	"github.com/smarthome-go/smarthome/server/api"
@@ -57,6 +58,7 @@ func initLoggers() {
 	routes.InitLogger(log)
 	templates.InitLogger(log)
 	reminder.InitLogger(log)
+	driver.InitLogger(log)
 }
 
 const httpRootPath = "/"

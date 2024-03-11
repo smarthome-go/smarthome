@@ -15,14 +15,15 @@ import (
 	"github.com/smarthome-go/smarthome/core"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/homescript"
+	"github.com/smarthome-go/smarthome/core/homescript/types"
 	"github.com/smarthome-go/smarthome/server/middleware"
 )
 
 type HomescriptResponse struct {
-	Success      bool                  `json:"success"`
-	Output       string                `json:"output"`
-	FileContents map[string]string     `json:"fileContents"`
-	Errors       []homescript.HmsError `json:"errors"`
+	Success      bool              `json:"success"`
+	Output       string            `json:"output"`
+	FileContents map[string]string `json:"fileContents"`
+	Errors       []types.HmsError  `json:"errors"`
 }
 
 type GetSourcesRequest struct {
@@ -102,9 +103,9 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	initiator := homescript.InitiatorAPI
+	initiator := types.InitiatorAPI
 	if request.IsWidget {
-		initiator = homescript.InitiatorWidget
+		initiator = types.InitiatorWidget
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -112,7 +113,7 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 	// Run the Homescript
 	var outputBuffer bytes.Buffer
 	res, _, err := homescript.HmsManager.Run(
-		homescript.HMS_PROGRAM_KIND_NORMAL,
+		types.HMS_PROGRAM_KIND_NORMAL,
 		nil,
 		username,
 		&request.Id,
@@ -174,9 +175,9 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	programKind := homescript.HMS_PROGRAM_KIND_NORMAL
+	programKind := types.HMS_PROGRAM_KIND_NORMAL
 	if hmsData.Data.Type == database.HOMESCRIPT_TYPE_DRIVER {
-		programKind = homescript.HMS_PROGRAM_KIND_DEVICE_DRIVER
+		programKind = types.HMS_PROGRAM_KIND_DEVICE_DRIVER
 	}
 
 	// Lint the Homescript
@@ -233,12 +234,12 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 	// Run the Homescript
 	var outputBuffer bytes.Buffer
 	res, _, err := homescript.HmsManager.Run(
-		homescript.HMS_PROGRAM_KIND_NORMAL,
+		types.HMS_PROGRAM_KIND_NORMAL,
 		nil,
 		username,
 		nil,
 		request.Code,
-		homescript.InitiatorAPI,
+		types.InitiatorAPI,
 		ctx,
 		cancel,
 		nil,
@@ -293,13 +294,13 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 		args[arg.Key] = arg.Value
 	}
 
-	programKind := homescript.HMS_PROGRAM_KIND_NORMAL
-	var driverMetadata *homescript.AnalyzerDriverMetadata = nil
+	programKind := types.HMS_PROGRAM_KIND_NORMAL
+	var driverMetadata *types.AnalyzerDriverMetadata = nil
 
 	if request.IsDriver {
-		programKind = homescript.HMS_PROGRAM_KIND_DEVICE_DRIVER
+		programKind = types.HMS_PROGRAM_KIND_DEVICE_DRIVER
 
-		_, validationErr, databaseErr := homescript.DriverFromHmsId(request.ModuleName)
+		_, validationErr, databaseErr := types.DriverFromHmsId(request.ModuleName)
 		if databaseErr != nil {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			Res(w, Response{Success: false, Message: "could not lint Homescript string", Error: "database error"})
@@ -312,7 +313,7 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		driverMetadata = &homescript.AnalyzerDriverMetadata{
+		driverMetadata = &types.AnalyzerDriverMetadata{
 			// VendorId: driverData.VendorId,
 			// ModelId:  driverData.ModelId,
 		}

@@ -4,7 +4,9 @@ import (
 	"fmt"
 
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/device/driver"
 	"github.com/smarthome-go/smarthome/core/homescript"
+	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
 // Modifies the code of a given Homescript.
@@ -28,7 +30,7 @@ func ModifyHomescriptCode(id string, owner string, newCode string) (found bool, 
 		}
 		return true, nil
 	case database.HOMESCRIPT_TYPE_DRIVER:
-		driver, validationErr, dbErr := homescript.DriverFromHmsId(id)
+		driverData, validationErr, dbErr := types.DriverFromHmsId(id)
 		if dbErr != nil {
 			return false, dbErr
 		}
@@ -37,7 +39,7 @@ func ModifyHomescriptCode(id string, owner string, newCode string) (found bool, 
 			return false, validationErr
 		}
 
-		return homescript.ModifyCode(driver.VendorId, driver.ModelId, newCode)
+		return driver.Manager.ModifyCode(driverData.VendorId, driverData.ModelId, newCode)
 	default:
 		panic(fmt.Sprintf("BUG warning: a new Homescript type was added without updating this code"))
 	}

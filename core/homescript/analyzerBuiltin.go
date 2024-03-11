@@ -8,30 +8,20 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	pAst "github.com/smarthome-go/homescript/v3/homescript/parser/ast"
+	"github.com/smarthome-go/smarthome/core/device/driver"
+	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
 // A list of `known` object type annotations
 // The analyzer uses these in order to sanity-check every annotation
-var knownObjectTypeAnnotations = []string{DRIVER_FIELD_REQUIRED_ANNOTATION}
-
-type HMS_PROGRAM_KIND uint8
-
-const (
-	HMS_PROGRAM_KIND_NORMAL HMS_PROGRAM_KIND = iota
-	HMS_PROGRAM_KIND_DEVICE_DRIVER
-)
-
-type AnalyzerDriverMetadata struct {
-	VendorID string
-	ModelID  string
-}
+var knownObjectTypeAnnotations = []string{driver.DRIVER_FIELD_REQUIRED_ANNOTATION}
 
 type analyzerHost struct {
 	username string
 	// Depending on the program kind, the post-validation hook performs specific validations.
-	programKind HMS_PROGRAM_KIND
+	programKind types.HMS_PROGRAM_KIND
 
-	driverData *AnalyzerDriverMetadata
+	driverData *types.AnalyzerDriverMetadata
 }
 
 func (analyzerHost) GetKnownObjectTypeFieldAnnotations() []string {
@@ -40,8 +30,8 @@ func (analyzerHost) GetKnownObjectTypeFieldAnnotations() []string {
 
 func newAnalyzerHost(
 	username string,
-	programKind HMS_PROGRAM_KIND,
-	driverData *AnalyzerDriverMetadata,
+	programKind types.HMS_PROGRAM_KIND,
+	driverData *types.AnalyzerDriverMetadata,
 ) analyzerHost {
 	return analyzerHost{
 		username:    username,
@@ -56,62 +46,17 @@ func (self analyzerHost) PostValidationHook(
 	analyzer *analyzer.Analyzer,
 ) []diagnostic.Diagnostic {
 	switch self.programKind {
-	case HMS_PROGRAM_KIND_DEVICE_DRIVER:
+	case types.HMS_PROGRAM_KIND_DEVICE_DRIVER:
 		// fmt.Printf("post validation driver hook: %s: %s\n", self.driverData.VendorId, self.driverData.ModelId)
 
-		info, diagnostics := ExtractDriverInfo(analyzedModules, mainModule, true)
+		info, diagnostics := driver.ExtractDriverInfo(analyzedModules, mainModule, true)
 		fmt.Printf("post-validation: INFO: %v\n", info)
 		return diagnostics
-	case HMS_PROGRAM_KIND_NORMAL:
+	case types.HMS_PROGRAM_KIND_NORMAL:
 		// TODO: is there something to implement?
 	}
 
 	return nil
-}
-
-type TemplateKind uint8
-
-const (
-	TemplateKindDriver TemplateKind = iota
-	TemplateKindDevice
-)
-
-type Template interface {
-	Kind() TemplateKind
-	GetSpec() ast.TemplateSpec
-}
-
-type DeviceTemplate struct {
-	Spec ast.TemplateSpec
-	// Makes the HMS capability identifier to a `DriverCapability`.
-	Capabilities map[string]DeviceCapability
-}
-
-func (self DeviceTemplate) Kind() TemplateKind {
-	return TemplateKindDevice
-}
-
-func (self DeviceTemplate) GetSpec() ast.TemplateSpec {
-	return self.Spec
-}
-
-type DriverTemplate struct {
-	Spec ast.TemplateSpec
-	// Makes the HMS capability identifier to a `DriverCapability`.
-	Capabilities map[string]DriverCapability
-}
-
-func (self DriverTemplate) Kind() TemplateKind {
-	return TemplateKindDriver
-}
-
-func (self DriverTemplate) GetSpec() ast.TemplateSpec {
-	return self.Spec
-}
-
-type ImportKey struct {
-	ModuleName string
-	ValueName  string
 }
 
 func mqttCallbackFn(span errors.Span) ast.Type {
@@ -134,7 +79,7 @@ func (self analyzerHost) GetBuiltinImport(
 ) (result analyzer.BuiltinImport, moduleFound bool, valueFound bool) {
 	// TODO: differentiate between no such module and no such value?
 	if kind == pAst.IMPORT_KIND_TEMPLATE {
-		templ, found := Templates(span)[ImportKey{
+		templ, found := driver.Templates(span)[types.ImportKey{
 			ModuleName: moduleName,
 			ValueName:  valueName,
 		}]
@@ -193,12 +138,12 @@ func (self analyzerHost) GetBuiltinImport(
 				}, true, true
 			case "Dimmable":
 				return analyzer.BuiltinImport{
-					Type:     ReportDimType(span),
+					Type:     driver.ReportDimType(span),
 					Template: nil,
 				}, true, true
 			case "Sensor":
 				return analyzer.BuiltinImport{
-					Type:     ReportSensorReadingType(span),
+					Type:     driver.ReportSensorReadingType(span),
 					Template: nil,
 				}, true, true
 			default:

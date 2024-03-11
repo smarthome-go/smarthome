@@ -1,4 +1,4 @@
-package homescript
+package driver
 
 import (
 	"bytes"
@@ -11,6 +11,7 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/runtime"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
 type DriverContext struct {
@@ -47,7 +48,7 @@ type FunctionCall struct {
 // 	panic("Unreachable, there is at least one error if `Success` was `false`")
 // }
 
-func invokeDriverGeneric(
+func (d *DriverManager) invokeDriverGeneric(
 	// Termination handling
 	cancelCtx context.Context,
 	cancelFunc context.CancelFunc,
@@ -56,10 +57,10 @@ func invokeDriverGeneric(
 	vendorId,
 	modelId string,
 	functionInvocation FunctionCall,
-) (HmsRunResultContext, []HmsError, error) {
+) (types.HmsRunResultContext, []types.HmsError, error) {
 	driver, found, err := database.GetDeviceDriver(vendorId, modelId)
 	if err != nil {
-		return HmsRunResultContext{}, nil, err
+		return types.HmsRunResultContext{}, nil, err
 	}
 
 	if !found {
@@ -95,16 +96,16 @@ func invokeDriverGeneric(
 	}
 
 	// TODO: load corresponding device singleton.
-	hmsRes, resultContext, err := HmsManager.Run(
-		HMS_PROGRAM_KIND_DEVICE_DRIVER,
-		&AnalyzerDriverMetadata{
+	hmsRes, resultContext, err := d.Hms.Run(
+		types.HMS_PROGRAM_KIND_DEVICE_DRIVER,
+		&types.AnalyzerDriverMetadata{
 			VendorID: vendorId,
 			ModelID:  modelId,
 		},
 		"", // TODO: fix username requirement.
 		&filename,
 		driver.HomescriptCode,
-		InitiatorAPI,
+		types.InitiatorAPI,
 		cancelCtx,
 		cancelFunc,
 		nil,
@@ -116,11 +117,11 @@ func invokeDriverGeneric(
 	)
 
 	if err != nil {
-		return HmsRunResultContext{}, nil, err
+		return types.HmsRunResultContext{}, nil, err
 	}
 
 	if !hmsRes.Success {
-		errors := make([]HmsError, 0)
+		errors := make([]types.HmsError, 0)
 
 		// Filter out any non-error messages.
 		for _, d := range hmsRes.Errors {
@@ -130,7 +131,7 @@ func invokeDriverGeneric(
 			errors = append(errors, d)
 		}
 
-		return HmsRunResultContext{}, errors, nil
+		return types.HmsRunResultContext{}, errors, nil
 	}
 
 	// Get driver and device singleton.
@@ -141,15 +142,15 @@ func invokeDriverGeneric(
 
 	// Save driver singleton state after VM has terminated.
 	driverMarshaled, _ := value.MarshalValue(driverSingletonAfter, false)
-	if err := StoreDriverSingletonConfigUpdate(driver.VendorId, driver.ModelId, driverMarshaled); err != nil {
-		return HmsRunResultContext{}, nil, err
+	if err := d.StoreDriverSingletonConfigUpdate(driver.VendorId, driver.ModelId, driverMarshaled); err != nil {
+		return types.HmsRunResultContext{}, nil, err
 	}
 
 	// Save device singleton state after VM has terminated (if device was even loaded).
 	if driverCtx.DeviceId != nil {
 		deviceMarshaled, _ := value.MarshalValue(deviceSingleton, false)
-		if err := StoreDeviceSingletonConfigUpdate(*driverCtx.DeviceId, deviceMarshaled); err != nil {
-			return HmsRunResultContext{}, nil, err
+		if err := d.StoreDeviceSingletonConfigUpdate(*driverCtx.DeviceId, deviceMarshaled); err != nil {
+			return types.HmsRunResultContext{}, nil, err
 		}
 	}
 
@@ -174,14 +175,14 @@ type DriverInvocationIDs struct {
 // TDOO: maybe implement a function factory to create those almost identical functions more ideomatically.
 //
 
-func InvokeDriverFunc(
+func (d DriverManager) InvokeDriverFunc(
 	ids DriverInvocationIDs,
 	call FunctionCall,
-) (HmsRunResultContext, []HmsError, error) {
+) (types.HmsRunResultContext, []types.HmsError, error) {
 	// TODO: add context support
 	ctx, cancel := context.WithCancel(context.Background())
 
-	runResult, hmsErrs, dbErr := invokeDriverGeneric(
+	runResult, hmsErrs, dbErr := d.invokeDriverGeneric(
 		ctx,
 		cancel,
 		DriverContext{
@@ -193,14 +194,14 @@ func InvokeDriverFunc(
 	)
 
 	if dbErr != nil || hmsErrs != nil {
-		return HmsRunResultContext{}, hmsErrs, dbErr
+		return types.HmsRunResultContext{}, hmsErrs, dbErr
 	}
 
 	return runResult, nil, nil
 }
 
-func InvokeValidateCheckDriver(ids DriverInvocationIDs) ([]HmsError, error) {
-	_, hmsErrs, err := InvokeDriverFunc(
+func (d DriverManager) InvokeValidateCheckDriver(ids DriverInvocationIDs) ([]types.HmsError, error) {
+	_, hmsErrs, err := d.InvokeDriverFunc(
 		ids,
 		FunctionCall{
 			Invocation: runtime.FunctionInvocation{
@@ -220,10 +221,10 @@ func InvokeValidateCheckDriver(ids DriverInvocationIDs) ([]HmsError, error) {
 	return nil, nil
 }
 
-func InvokeDriverReportSensors(
+func (d DriverManager) InvokeDriverReportSensors(
 	ids DriverInvocationIDs,
-) ([]DriverActionReportSensorReadingsOutput, []HmsError, error) {
-	ret, hmsErrs, err := InvokeDriverFunc(
+) ([]DriverActionReportSensorReadingsOutput, []types.HmsError, error) {
+	ret, hmsErrs, err := d.InvokeDriverFunc(
 		ids,
 		FunctionCall{
 			Invocation: runtime.FunctionInvocation{
@@ -252,11 +253,11 @@ func InvokeDriverReportSensors(
 
 		if !value_.Kind().TypeKind().IsPrimitive() {
 			return nil,
-				[]HmsError{
+				[]types.HmsError{
 					{
 						SyntaxError:     nil,
 						DiagnosticError: nil,
-						RuntimeInterrupt: &HmsRuntimeInterrupt{
+						RuntimeInterrupt: &types.HmsRuntimeInterrupt{
 							Kind: "driver",
 							Message: fmt.Sprintf(
 								"Device function `%s` should return values of primitive data type but returned value `%s` of type `%s`",
@@ -282,10 +283,10 @@ func InvokeDriverReportSensors(
 	return readings, nil, nil
 }
 
-func InvokeDriverReportPowerState(
+func (d DriverManager) InvokeDriverReportPowerState(
 	ids DriverInvocationIDs,
-) (DriverActionGetPowerStateOutput, []HmsError, error) {
-	ret, hmsErrs, err := InvokeDriverFunc(
+) (DriverActionGetPowerStateOutput, []types.HmsError, error) {
+	ret, hmsErrs, err := d.InvokeDriverFunc(
 		ids,
 		FunctionCall{
 			Invocation: runtime.FunctionInvocation{
@@ -307,10 +308,10 @@ func InvokeDriverReportPowerState(
 	}, nil, nil
 }
 
-func InvokeDriverReportPowerDraw(
+func (d DriverManager) InvokeDriverReportPowerDraw(
 	ids DriverInvocationIDs,
-) (DriverActionGetPowerDrawOutput, []HmsError, error) {
-	ret, hmsErrs, err := InvokeDriverFunc(
+) (DriverActionGetPowerDrawOutput, []types.HmsError, error) {
+	ret, hmsErrs, err := d.InvokeDriverFunc(
 		ids,
 		FunctionCall{
 			Invocation: runtime.FunctionInvocation{
@@ -330,11 +331,11 @@ func InvokeDriverReportPowerDraw(
 	wattsRaw := ret.ReturnValue.(value.ValueInt).Inner
 	if wattsRaw < 0 {
 		return DriverActionGetPowerDrawOutput{Watts: 0},
-			[]HmsError{
+			[]types.HmsError{
 				{
 					SyntaxError:     nil,
 					DiagnosticError: nil,
-					RuntimeInterrupt: &HmsRuntimeInterrupt{
+					RuntimeInterrupt: &types.HmsRuntimeInterrupt{
 						Kind: "driver",
 						Message: fmt.Sprintf(
 							"Device function `%s` should return positive power consumption but returned %d",
@@ -352,16 +353,16 @@ func InvokeDriverReportPowerDraw(
 	}, nil, nil
 }
 
-func InvokeDriverSetPower(
+func (d DriverManager) InvokeDriverSetPower(
 	deviceID,
 	vendorID,
 	modelID string,
 	powerAction DriverActionPower,
-) (DriverActionPowerOutput, []HmsError, error) {
+) (DriverActionPowerOutput, []types.HmsError, error) {
 	// TODO: add context support
 	ctx, cancel := context.WithCancel(context.Background())
 
-	runResult, hmsErrs, dbErr := invokeDriverGeneric(
+	runResult, hmsErrs, dbErr := d.invokeDriverGeneric(
 		ctx,
 		cancel,
 		DriverContext{
@@ -412,10 +413,10 @@ func normalizeRange(input value.ValueRange) (lower, upper int64) {
 	return start, end
 }
 
-func InvokeDriverReportDimmable(
+func (d DriverManager) InvokeDriverReportDimmable(
 	ids DriverInvocationIDs,
-) ([]DriverActionReportDimOutput, []HmsError, error) {
-	ret, hmsErrs, err := InvokeDriverFunc(
+) ([]DriverActionReportDimOutput, []types.HmsError, error) {
+	ret, hmsErrs, err := d.InvokeDriverFunc(
 		ids,
 		FunctionCall{
 			Invocation: runtime.FunctionInvocation{
@@ -446,11 +447,11 @@ func InvokeDriverReportDimmable(
 
 		if value_ < lower || value_ > upper {
 			return nil,
-				[]HmsError{
+				[]types.HmsError{
 					{
 						SyntaxError:     nil,
 						DiagnosticError: nil,
-						RuntimeInterrupt: &HmsRuntimeInterrupt{
+						RuntimeInterrupt: &types.HmsRuntimeInterrupt{
 							Kind: "driver",
 							Message: fmt.Sprintf(
 								"Device function `%s` should return value in dimmable range(%d..%d) but returned %d for label `%s`",
@@ -479,16 +480,16 @@ func InvokeDriverReportDimmable(
 	return dimmables, nil, nil
 }
 
-func InvokeDriverDim(
+func (d DriverManager) InvokeDriverDim(
 	deviceID,
 	vendorID,
 	modelID string,
 	dimAction DriverActionDim,
-) (DriverActionDimOutput, []HmsError, error) {
+) (DriverActionDimOutput, []types.HmsError, error) {
 	// TODO: add context support
 	ctx, cancel := context.WithCancel(context.Background())
 
-	runResult, hmsErrs, dbErr := invokeDriverGeneric(
+	runResult, hmsErrs, dbErr := d.invokeDriverGeneric(
 		ctx,
 		cancel,
 		DriverContext{

@@ -2,7 +2,7 @@ package core
 
 import (
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/homescript"
+	"github.com/smarthome-go/smarthome/core/device/driver"
 )
 
 type Room struct {
@@ -19,7 +19,7 @@ func ListAllRoomsWithData(redactCameraUrl bool) ([]Room, error) {
 	}
 
 	// Get all devices.
-	devices, err := homescript.ListAllDevicesShallow()
+	devices, err := driver.Manager.ListAllDevicesShallow()
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func ListPersonalRoomsWithData(username string) ([]Room, error) {
 	}
 
 	// Get the user's devices.
-	devices, err := homescript.ListPersonalDevicesShallow(username)
+	devices, err := driver.Manager.ListPersonalDevicesShallow(username)
 	if err != nil {
 		return nil, err
 	}

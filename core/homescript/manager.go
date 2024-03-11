@@ -17,6 +17,7 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
+	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
 const maxLinesErrMessage = 20
@@ -29,25 +30,13 @@ var VM_LIMITS = runtime.CoreLimits{
 	MaxMemorySize:    4096,
 }
 
-type HomescriptInitiator uint8
-
-const (
-	InitiatorAutomation         HomescriptInitiator = iota // triggered by a normal automation
-	InitiatorAutomationOnNotify                            // triggered by an automation which runs on every notification
-	InitiatorSchedule                                      // triggered by a schedule
-	InitiatorExec                                          // triggered by a call to `exec`
-	InitiatorInternal                                      // triggered internally
-	InitiatorAPI                                           // triggered through the API
-	InitiatorWidget                                        // triggered through a widget
-)
-
 //
 // Homescript manager
 //
 
 type Manager struct {
 	Lock         sync.RWMutex
-	Jobs         []Job
+	Jobs         []types.Job
 	CompileCache ManagerCompileCache
 }
 
@@ -63,17 +52,6 @@ func newManagerCompileCache() ManagerCompileCache {
 	}
 }
 
-type Job struct {
-	Username        string
-	JobId           uint64
-	HmsId           *string
-	Initiator       HomescriptInitiator
-	CancelCtx       context.CancelFunc
-	Vm              *runtime.VM
-	EntryModuleName string
-	SupportsKill    bool
-}
-
 // For external usage (can be marshaled)
 type ApiJob struct {
 	Jobid uint64  `json:"jobId"`
@@ -82,92 +60,23 @@ type ApiJob struct {
 
 var HmsManager Manager
 
-func InitManager() {
+func InitManager() types.Manager {
 	HmsManager = Manager{
 		Lock:         sync.RWMutex{},
-		Jobs:         make([]Job, 0),
+		Jobs:         make([]types.Job, 0),
 		CompileCache: newManagerCompileCache(),
 	}
+
+	return &HmsManager
 }
 
 func (self *Manager) ClearCompileCache() {
 
 }
 
-//
-// Results and errors
-//
-
-type HmsRes struct {
-	Success      bool
-	Errors       []HmsError
-	FileContents map[string]string
-}
-
-type HmsError struct {
-	SyntaxError      *HmsSyntaxError      `json:"syntaxError"`
-	DiagnosticError  *HmsDiagnosticError  `json:"diagnosticError"`
-	RuntimeInterrupt *HmsRuntimeInterrupt `json:"runtimeError"`
-	Span             errors.Span          `json:"span"`
-}
-
-func HmsErrorsFromDiagnostics(input []diagnostic.Diagnostic) []HmsError {
-	output := make([]HmsError, 0)
-
-	for _, diagnosticMsg := range input {
-		if diagnosticMsg.Level != diagnostic.DiagnosticLevelError {
-			continue
-		}
-
-		output = append(output, HmsError{
-			SyntaxError: nil,
-			DiagnosticError: &HmsDiagnosticError{
-				Level:   diagnostic.DiagnosticLevelError,
-				Message: diagnosticMsg.Message,
-				Notes:   diagnosticMsg.Notes,
-			},
-			RuntimeInterrupt: nil,
-			Span:             diagnosticMsg.Span,
-		})
-	}
-
-	return output
-}
-
-func (self HmsError) String() string {
-	spanDisplay := fmt.Sprintf("%s:%d:%d", self.Span.Filename, self.Span.Start.Line, self.Span.Start.Column)
-	if self.SyntaxError != nil {
-		return fmt.Sprintf("Syntax error at %s: `%s`", spanDisplay, self.SyntaxError.Message)
-	} else if self.DiagnosticError != nil {
-		return fmt.Sprintf("Semantic error at %s: `%s`", spanDisplay, self.DiagnosticError.Message)
-	} else if self.RuntimeInterrupt != nil {
-		return fmt.Sprintf("%s at %s: `%s`", self.RuntimeInterrupt, spanDisplay, self.RuntimeInterrupt.Message)
-	}
-	panic("Illegal HmsError")
-}
-
-type HmsSyntaxError struct {
-	Message string `json:"message"`
-}
-
-type HmsDiagnosticError struct {
-	Level   diagnostic.DiagnosticLevel `json:"kind"`
-	Message string                     `json:"message"`
-	Notes   []string                   `json:"notes"`
-}
-
-type HmsRuntimeInterrupt struct {
-	Kind    string `json:"kind"`
-	Message string `json:"message"`
-}
-
-func (self HmsRuntimeInterrupt) String() string {
-	return fmt.Sprintf("%s: %s", self.Kind, self.Message)
-}
-
 func (m *Manager) PushJob(
 	username string,
-	initiator HomescriptInitiator,
+	initiator types.HomescriptInitiator,
 	cancelCtxFunc context.CancelFunc,
 	hmsId *string,
 	vm *runtime.VM,
@@ -176,13 +85,13 @@ func (m *Manager) PushJob(
 ) uint64 {
 	m.Lock.Lock()
 	id := uint64(len(m.Jobs))
-	m.Jobs = append(m.Jobs, Job{
+	m.Jobs = append(m.Jobs, types.Job{
 		Username:        username,
-		JobId:           id,
-		HmsId:           hmsId,
+		JobID:           id,
+		HmsID:           hmsId,
 		Initiator:       initiator,
 		CancelCtx:       cancelCtxFunc,
-		Vm:              vm,
+		VM:              vm,
 		EntryModuleName: entryModuleName,
 		SupportsKill:    supportsKill,
 	})
@@ -194,7 +103,7 @@ func resolveFileContentsOfErrors(
 	username string,
 	mainModuleFilename string,
 	mainModuleCode string,
-	errors []HmsError,
+	errors []types.HmsError,
 ) (map[string]string, error) {
 	fileContents := make(map[string]string)
 
@@ -224,9 +133,9 @@ func (m *Manager) Analyze(
 	username string,
 	filename string,
 	code string,
-	programKind HMS_PROGRAM_KIND,
-	driverData *AnalyzerDriverMetadata,
-) (map[string]ast.AnalyzedProgram, HmsRes, error) {
+	programKind types.HMS_PROGRAM_KIND,
+	driverData *types.AnalyzerDriverMetadata,
+) (map[string]ast.AnalyzedProgram, types.HmsRes, error) {
 	analyzedModules, diagnostics, syntaxErrors := homescript.Analyze(
 		homescript.InputProgram{
 			Filename:    filename,
@@ -236,14 +145,14 @@ func (m *Manager) Analyze(
 		newAnalyzerHost(username, programKind, driverData),
 	)
 
-	errors := make([]HmsError, 0)
+	errors := make([]types.HmsError, 0)
 	success := true
 
 	if len(syntaxErrors) > 0 {
 		success = false
 		for _, syntax := range syntaxErrors {
-			errors = append(errors, HmsError{
-				SyntaxError: &HmsSyntaxError{
+			errors = append(errors, types.HmsError{
+				SyntaxError: &types.HmsSyntaxError{
 					Message: syntax.Message,
 				},
 				Span: syntax.Span,
@@ -259,8 +168,8 @@ func (m *Manager) Analyze(
 		if d.Notes == nil {
 			notesTemp = make([]string, 0)
 		}
-		errors = append(errors, HmsError{
-			DiagnosticError: &HmsDiagnosticError{
+		errors = append(errors, types.HmsError{
+			DiagnosticError: &types.HmsDiagnosticError{
 				Level:   d.Level,
 				Message: d.Message,
 				Notes:   notesTemp,
@@ -276,10 +185,10 @@ func (m *Manager) Analyze(
 		errors,
 	)
 	if err != nil {
-		return nil, HmsRes{}, err
+		return nil, types.HmsRes{}, err
 	}
 
-	return analyzedModules, HmsRes{
+	return analyzedModules, types.HmsRes{
 		Errors:       errors,
 		FileContents: fileContents,
 		Success:      success,
@@ -289,12 +198,12 @@ func (m *Manager) Analyze(
 func (m *Manager) AnalyzeById(
 	id string,
 	username string,
-	programKind HMS_PROGRAM_KIND,
-	driverData *AnalyzerDriverMetadata,
-) (map[string]ast.AnalyzedProgram, HmsRes, error) {
+	programKind types.HMS_PROGRAM_KIND,
+	driverData *types.AnalyzerDriverMetadata,
+) (map[string]ast.AnalyzedProgram, types.HmsRes, error) {
 	hms, found, err := GetPersonalScriptById(id, username)
 	if err != nil {
-		return nil, HmsRes{}, err
+		return nil, types.HmsRes{}, err
 	}
 	if !found {
 		panic(fmt.Sprintf("Homescript with ID %s owned by user %s was not found", id, username)) // TODO: no panic
@@ -303,32 +212,23 @@ func (m *Manager) AnalyzeById(
 	return m.Analyze(username, id, hms.Data.Code, programKind, driverData)
 }
 
-// NOTE: this is primarily required for the driver.
-type HmsRunResultContext struct {
-	Singletons map[string]value.Value
-	// This is `nil` if no additional function was invoced or the called function did not return a value.
-	ReturnValue value.Value
-	// This is non zero-valued if an additional function is called.
-	CalledFunctionSpan errors.Span
-}
-
 func (m *Manager) Run(
-	programKind HMS_PROGRAM_KIND,
-	driverData *AnalyzerDriverMetadata,
+	programKind types.HMS_PROGRAM_KIND,
+	driverData *types.AnalyzerDriverMetadata,
 	username string,
 	filename *string,
 	code string,
-	initiator HomescriptInitiator,
+	initiator types.HomescriptInitiator,
 	cancelCtx context.Context,
 	cancelCtxFunc context.CancelFunc,
 	idChan *chan uint64,
 	args map[string]string,
 	outputWriter io.Writer,
-	automationContext *AutomationContext,
+	automationContext *types.AutomationContext,
 	// If this is left non-empty, an additional function is called after `init`.
 	functionInvocation *runtime.FunctionInvocation,
 	singletonsToLoad map[string]value.Value,
-) (HmsRes, HmsRunResultContext, error) {
+) (types.HmsRes, types.HmsRunResultContext, error) {
 	// TODO: handle arguments
 
 	// TODO: the @ symbol cannot be used in IDs?
@@ -342,11 +242,11 @@ func (m *Manager) Run(
 
 	modules, res, err := m.Analyze(username, entryModuleName, code, programKind, driverData)
 	if err != nil {
-		return HmsRes{}, HmsRunResultContext{}, err
+		return types.HmsRes{}, types.HmsRunResultContext{}, err
 	}
 
 	if !res.Success {
-		return res, HmsRunResultContext{}, nil
+		return res, types.HmsRunResultContext{}, nil
 	}
 
 	logger.Trace(fmt.Sprintf("Homescript '%s' of user '%s' is being compiled...", entryModuleName, username))
@@ -439,7 +339,7 @@ func (m *Manager) Run(
 
 		span := errors.Span{}
 
-		errors := make([]HmsError, 0)
+		errors := make([]types.HmsError, 0)
 
 		addErr := false
 		isErr := true
@@ -448,8 +348,8 @@ func (m *Manager) Run(
 		case value.Vm_ExitInterruptKind: // ignore this
 			exitI := i.(value.Vm_ExitInterrupt)
 			if exitI.Code != 0 {
-				errors = append(errors, HmsError{
-					RuntimeInterrupt: &HmsRuntimeInterrupt{
+				errors = append(errors, types.HmsError{
+					RuntimeInterrupt: &types.HmsRuntimeInterrupt{
 						Kind: "Exit",
 						Message: fmt.Sprintf(
 							"Core %d terminated with exit-code: %d",
@@ -476,8 +376,8 @@ func (m *Manager) Run(
 		fileContents := make(map[string]string)
 
 		if !addErr {
-			errors = append(errors, HmsError{
-				RuntimeInterrupt: &HmsRuntimeInterrupt{
+			errors = append(errors, types.HmsError{
+				RuntimeInterrupt: &types.HmsRuntimeInterrupt{
 					Kind:    i.KindString(),
 					Message: i.Message(),
 				},
@@ -488,7 +388,7 @@ func (m *Manager) Run(
 		if isErr {
 			fileContentsTemp, err := resolveFileContentsOfErrors(username, entryModuleName, code, errors)
 			if err != nil {
-				return HmsRes{}, HmsRunResultContext{}, err
+				return types.HmsRes{}, types.HmsRunResultContext{}, err
 			}
 
 			fileContents = fileContentsTemp
@@ -516,11 +416,11 @@ func (m *Manager) Run(
 			logger.Debug(fmt.Sprintf("Homescript '%s' of user '%s' failed: %s", entryModuleName, username, errMsg))
 		}
 
-		return HmsRes{
+		return types.HmsRes{
 			Success:      !isErr,
 			Errors:       errors,
 			FileContents: fileContents,
-		}, HmsRunResultContext{}, nil
+		}, types.HmsRunResultContext{}, nil
 	}
 
 	logger.Debug(fmt.Sprintf("Homescript '%s' of user '%s' executed successfully", entryModuleName, username))
@@ -539,12 +439,12 @@ func (m *Manager) Run(
 		})
 	}
 
-	return HmsRes{
+	return types.HmsRes{
 			Success:      true,
-			Errors:       make([]HmsError, 0),
+			Errors:       make([]types.HmsError, 0),
 			FileContents: make(map[string]string),
 		},
-		HmsRunResultContext{
+		types.HmsRunResultContext{
 			Singletons:         singletons,
 			ReturnValue:        spawnResult.ReturnValue,
 			CalledFunctionSpan: calledFunctionSpan,
@@ -553,22 +453,22 @@ func (m *Manager) Run(
 
 // Executes a given Homescript from the database and returns its output, exit-code and possible error
 func (m *Manager) RunById(
-	programKind HMS_PROGRAM_KIND,
-	driverData *AnalyzerDriverMetadata,
+	programKind types.HMS_PROGRAM_KIND,
+	driverData *types.AnalyzerDriverMetadata,
 	hmsId string,
 	username string,
-	initiator HomescriptInitiator,
+	initiator types.HomescriptInitiator,
 	cancelCtx context.Context,
 	cancelCtxFunc context.CancelFunc,
 	idChan *chan uint64,
 	args map[string]string,
 	outputWriter io.Writer,
-	automationContext *AutomationContext,
+	automationContext *types.AutomationContext,
 	singletonsToLoad map[string]value.Value,
-) (HmsRes, HmsRunResultContext, error) {
+) (types.HmsRes, types.HmsRunResultContext, error) {
 	script, found, err := GetPersonalScriptById(hmsId, username)
 	if err != nil {
-		return HmsRes{}, HmsRunResultContext{}, err
+		return types.HmsRes{}, types.HmsRunResultContext{}, err
 	}
 	if !found {
 		panic(fmt.Sprintf("Homescript with ID %s owned by user %s was not found", hmsId, username)) // TODO: no panic
@@ -597,12 +497,12 @@ func (m *Manager) RunById(
 // However, this function should only be used internally
 // The function is automatically called when a Homescript execution ends
 func (m *Manager) removeJob(jobId uint64) bool {
-	jobsTemp := make([]Job, 0)
+	jobsTemp := make([]types.Job, 0)
 	success := false
 	m.Lock.Lock()
 	defer m.Lock.Unlock()
 	for _, job := range m.Jobs {
-		if job.JobId == jobId {
+		if job.JobID == jobId {
 			success = true
 			continue
 		}
@@ -613,15 +513,15 @@ func (m *Manager) removeJob(jobId uint64) bool {
 }
 
 // Returns a job given its ID
-func (m *Manager) GetJobById(jobId uint64) (Job, bool) {
+func (m *Manager) GetJobById(jobId uint64) (types.Job, bool) {
 	m.Lock.RLock()
 	defer m.Lock.RUnlock()
 	for _, job := range m.Jobs {
-		if job.JobId == jobId {
+		if job.JobID == jobId {
 			return job, true
 		}
 	}
-	return Job{}, false
+	return types.Job{}, false
 }
 
 // Terminates a job given its internal job ID
@@ -641,7 +541,7 @@ func (m *Manager) Kill(jobId uint64) bool {
 		job := m.Jobs[idx]
 		m.Lock.Unlock()
 
-		if job.JobId == jobId {
+		if job.JobID == jobId {
 			m.killJob(job)
 			return true
 		}
@@ -656,7 +556,7 @@ func (m *Manager) KillAllId(hmsId string) (count uint64, success bool) {
 	m.Lock.Lock()
 	defer m.Lock.Unlock()
 	for _, job := range m.Jobs {
-		if job.HmsId == nil || *job.HmsId != hmsId {
+		if job.HmsID == nil || *job.HmsID != hmsId {
 			continue
 		}
 
@@ -669,10 +569,10 @@ func (m *Manager) KillAllId(hmsId string) (count uint64, success bool) {
 	return count, success
 }
 
-func (m *Manager) killJob(job Job) {
+func (m *Manager) killJob(job types.Job) {
 	logger.Trace("Dispatching sigTerm to HMS interpreter channel...")
 
-	_, killFnExists := job.Vm.Program.Mappings.Functions[KillEventFunction]
+	_, killFnExists := job.VM.Program.Mappings.Functions[KillEventFunction]
 	canceled := false
 	cancelMtx := sync.Mutex{}
 
@@ -684,12 +584,12 @@ func (m *Manager) killJob(job Job) {
 			defer cancelMtx.Unlock()
 			cancelMtx.Lock()
 			if !canceled {
-				logger.Debugf("Job %d did not quit on time, terminating kill event...", job.JobId)
+				logger.Debugf("Job %d did not quit on time, terminating kill event...", job.JobID)
 				job.CancelCtx()
 			}
 		}()
 
-		job.Vm.SpawnSync(runtime.FunctionInvocation{
+		job.VM.SpawnSync(runtime.FunctionInvocation{
 			Function: KillEventFunction,
 			Args:     []value.Value{},
 			FunctionSignature: runtime.FunctionInvocationSignature{
@@ -709,7 +609,7 @@ func (m *Manager) killJob(job Job) {
 }
 
 // Can be used to access the manager's jobs from the outside in a safe manner
-func (m *Manager) GetJobList() []Job {
+func (m *Manager) GetJobList() []types.Job {
 	m.Lock.RLock()
 	defer m.Lock.RUnlock()
 	return m.Jobs
@@ -733,8 +633,8 @@ func (m *Manager) GetUserDirectJobs(username string) []ApiJob {
 		// }
 
 		jobs = append(jobs, ApiJob{
-			Jobid: job.JobId,
-			HmsId: job.HmsId,
+			Jobid: job.JobID,
+			HmsId: job.HmsID,
 		})
 	}
 	return jobs

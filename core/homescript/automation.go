@@ -9,6 +9,7 @@ import (
 
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
+	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
 // The automationScheduler which will run all predefined automation jobs
@@ -89,7 +90,7 @@ func InitAutomations(config database.ServerConfig) error {
 }
 
 // Runs all automations of the passed user with the given trigger
-func RunAllAutomationsWithTrigger(username string, trigger database.AutomationTrigger, context AutomationContext) {
+func RunAllAutomationsWithTrigger(username string, trigger database.AutomationTrigger, context types.AutomationContext) {
 	config, found, err := database.GetServerConfiguration()
 	if err != nil || !found {
 		logger.Error("Could not run automations with certain trigger: server configuration not found or errored")

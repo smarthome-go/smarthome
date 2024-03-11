@@ -7,7 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/homescript"
+	"github.com/smarthome-go/smarthome/core/device/driver"
 	"github.com/smarthome-go/smarthome/server/api"
 
 	// `mdl` is shorter than `middleware`
@@ -100,11 +100,11 @@ func NewRouter() *mux.Router {
 
 	// TODO: Device actions???
 	r.HandleFunc("/api/devices/action/power",
-		mdl.ApiAuth(mdl.Perm(api.DeviceActionHandlerFactory(homescript.DriverActionKindSetPower), database.PermissionPower)),
+		mdl.ApiAuth(mdl.Perm(api.DeviceActionHandlerFactory(driver.DriverActionKindSetPower), database.PermissionPower)),
 	).Methods("POST")
 
 	r.HandleFunc("/api/devices/action/dim",
-		mdl.ApiAuth(mdl.Perm(api.DeviceActionHandlerFactory(homescript.DriverActionKindDim), database.PermissionPower)),
+		mdl.ApiAuth(mdl.Perm(api.DeviceActionHandlerFactory(driver.DriverActionKindDim), database.PermissionPower)),
 	).Methods("POST")
 
 	// Cameras

@@ -1,24 +1,16 @@
-package homescript
+package driver
 
 import (
 	"errors"
 	"fmt"
 
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
 //
 // Action requests.
 //
-
-type DeviceActionrequestBody struct {
-	DeviceID string `json:"deviceId"`
-
-	// TODO: use dynamic typing here?
-	// Or use separate API endpoint for each intent?
-	Power *DriverSetPowerInput `json:"power"`
-	Dim   *DriverDimInput      `json:"dim"`
-}
 
 //
 // Action-specific inputs.
@@ -39,23 +31,25 @@ type DriverDimInput struct {
 
 type ActionResponse struct {
 	Success   bool                      `json:"success"`
-	HmsErrors []HmsError                `json:"hmsErrors"`
+	HmsErrors []types.HmsError          `json:"hmsErrors"`
 	Output    DriverActionOutputPayload `json:"output"`
 }
 
-func DeviceAction(action DriverActionKind, body DeviceActionrequestBody) (
+// TODO: make this function signature better
+// Use interfaces here
+func (d DriverManager) DeviceAction(action DriverActionKind, deviceID string, Power *DriverSetPowerInput, Dim *DriverDimInput) (
 	res ActionResponse,
 	deviceFound bool,
 	httpErr error,
 	err error,
 ) {
-	device, found, err := database.GetDeviceById(body.DeviceID)
+	device, found, err := database.GetDeviceById(deviceID)
 	if !found || err != nil {
 		return ActionResponse{}, false, nil, err
 	}
 
 	var out DriverActionOutputPayload
-	var hmsErrs []HmsError
+	var hmsErrs []types.HmsError
 
 	// Invoke driver.
 	switch action {
@@ -69,33 +63,33 @@ func DeviceAction(action DriverActionKind, body DeviceActionrequestBody) (
 		// TODO: implement this
 		panic("TODO")
 	case DriverActionKindDim:
-		if body.Dim == nil {
+		if Dim == nil {
 			return ActionResponse{},
 				true,
 				errors.New("Dim action field is missing even though it is required"),
 				nil
 		}
-		out, hmsErrs, err = InvokeDriverDim(
+		out, hmsErrs, err = d.InvokeDriverDim(
 			device.ID,
 			device.VendorID,
 			device.ModelID,
 			DriverActionDim{
-				Value: body.Dim.Value,
-				Label: body.Dim.Label,
+				Value: Dim.Value,
+				Label: Dim.Label,
 			},
 		)
 	case DriverActionKindSetPower:
-		if body.Power == nil {
+		if Power == nil {
 			return ActionResponse{},
 				true,
 				errors.New("Power action field is missing even though it is required"),
 				nil
 		}
-		out, hmsErrs, err = InvokeDriverSetPower(
+		out, hmsErrs, err = d.InvokeDriverSetPower(
 			device.ID,
 			device.VendorID,
 			device.ModelID,
-			DriverActionPower{State: body.Power.State},
+			DriverActionPower{State: Power.State},
 		)
 	default:
 		panic(fmt.Sprintf("A new device action kind was added without updating this code: `%d`", action))

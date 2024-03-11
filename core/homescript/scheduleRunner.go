@@ -7,7 +7,9 @@ import (
 	"time"
 
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/device/driver"
 	"github.com/smarthome-go/smarthome/core/event"
+	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
 const SCHEDULE_MAXIMUM_HOMESCRIPT_RUNTIME = time.Minute * 10
@@ -75,12 +77,12 @@ func scheduleRunnerFunc(id uint) {
 		ctx, cancel := context.WithTimeout(context.Background(), SCHEDULE_MAXIMUM_HOMESCRIPT_RUNTIME)
 
 		res, _, err := HmsManager.Run(
-			HMS_PROGRAM_KIND_NORMAL,
+			types.HMS_PROGRAM_KIND_NORMAL,
 			nil,
 			owner.Username,
 			nil,
 			job.Data.HomescriptCode,
-			InitiatorSchedule,
+			types.InitiatorSchedule,
 			ctx,
 			cancel,
 			nil,
@@ -133,11 +135,11 @@ func scheduleRunnerFunc(id uint) {
 		ctx, cancel := context.WithTimeout(context.Background(), SCHEDULE_MAXIMUM_HOMESCRIPT_RUNTIME)
 
 		res, _, err := HmsManager.RunById(
-			HMS_PROGRAM_KIND_NORMAL,
+			types.HMS_PROGRAM_KIND_NORMAL,
 			nil,
 			job.Data.HomescriptTargetId,
 			owner.Username,
-			InitiatorSchedule,
+			types.InitiatorSchedule,
 			ctx,
 			cancel,
 			nil,
@@ -221,11 +223,11 @@ func scheduleRunnerFunc(id uint) {
 				return
 			}
 
-			_, hmsErrs, err := InvokeDriverSetPower(
+			_, hmsErrs, err := driver.Manager.InvokeDriverSetPower(
 				switchJob.DeviceId,
 				switchData.VendorID,
 				switchData.ModelID,
-				DriverActionPower{State: switchJob.PowerOn},
+				driver.DriverActionPower{State: switchJob.PowerOn},
 			)
 
 			if err != nil {

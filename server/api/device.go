@@ -11,7 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/homescript"
+	"github.com/smarthome-go/smarthome/core/device/driver"
 	"github.com/smarthome-go/smarthome/server/middleware"
 )
 
@@ -42,7 +42,7 @@ type DeleteDeviceRequest struct {
 func GetAllDevices(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	// TODO: also implement ordering???
-	devices, err := homescript.ListAllDevicesShallow()
+	devices, err := driver.Manager.ListAllDevicesShallow()
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "database error", Error: "database failure"})
@@ -63,7 +63,7 @@ func GetUserDevices(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	devices, err := homescript.ListPersonalDevicesShallow(username)
+	devices, err := driver.Manager.ListPersonalDevicesShallow(username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "database error", Error: "database error"})
@@ -78,7 +78,7 @@ func GetUserDevices(w http.ResponseWriter, r *http.Request) {
 // Returns a list of available devices as JSON to the user, no authentication required
 func GetAllDevicesRich(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	devices, err := homescript.ListAllDevicesRich()
+	devices, err := driver.Manager.ListAllDevicesRich()
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "database error", Error: "database failure"})
@@ -99,7 +99,7 @@ func GetUserDevicesRich(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	devices, err := homescript.ListPersonalDevicesRich(username)
+	devices, err := driver.Manager.ListPersonalDevicesRich(username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "database error", Error: "database error"})
@@ -138,7 +138,7 @@ func ExtractUserDevice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	device, found, err := homescript.EnrichDeviceAll(id)
+	device, found, err := driver.Manager.EnrichDeviceAll(id)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to extract device info", Error: "database failure"})
@@ -233,7 +233,7 @@ func CreateDevice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	driverFound, hmsErr, dbErr := homescript.CreateDevice(
+	driverFound, hmsErr, dbErr := driver.Manager.CreateDevice(
 		parsedType,
 		request.Id,
 		request.Name,
@@ -311,7 +311,7 @@ func ConfigureDevice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	found, validateErr, dbErr := homescript.ValidateDeviceConfigurationChange(request.ID, request.Data)
+	found, validateErr, dbErr := driver.Manager.ValidateDeviceConfigurationChange(request.ID, request.Data)
 	if dbErr != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to modify device", Error: "database failure"})
@@ -334,7 +334,7 @@ func ConfigureDevice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := homescript.StoreDeviceSingletonConfigUpdate(request.ID, request.Data); err != nil {
+	if err := driver.Manager.StoreDeviceSingletonConfigUpdate(request.ID, request.Data); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to configure device", Error: "database failure"})
 		return

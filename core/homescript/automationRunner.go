@@ -10,24 +10,13 @@ import (
 
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
+	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
-
-type AutomationContext struct {
-	NotificationContext *NotificationContext
-	MaximumHMSRuntime   *time.Duration
-}
-
-type NotificationContext struct {
-	Id          uint
-	Title       string
-	Description string
-	Level       uint8
-}
 
 // Is called when the scheduler executes the given automation
 // The AutomationRunnerFunc automatically tries to fetch the required configuration from the provided id
 // Error handling is accomplished by logging to the internal event system and notifying the user about their automations failure
-func AutomationRunnerFunc(id uint, automationCtx AutomationContext) {
+func AutomationRunnerFunc(id uint, automationCtx types.AutomationContext) {
 	job, jobFound, err := database.GetAutomationById(id)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Automation with id: '%d' could not be executed: database failure: %s", id, err.Error()))
@@ -188,12 +177,12 @@ func AutomationRunnerFunc(id uint, automationCtx AutomationContext) {
 		return
 	}
 
-	var initiator HomescriptInitiator
+	var initiator types.HomescriptInitiator
 	switch job.Data.Trigger {
 	case database.TriggerOnNotification:
-		initiator = InitiatorAutomationOnNotify
+		initiator = types.InitiatorAutomationOnNotify
 	default:
-		initiator = InitiatorAutomation
+		initiator = types.InitiatorAutomation
 	}
 
 	// NOTE: If the automation context includes a maximum runtime, kill the script if it exceeds this timeout
@@ -203,7 +192,7 @@ func AutomationRunnerFunc(id uint, automationCtx AutomationContext) {
 	}
 
 	res, _, err := HmsManager.RunById(
-		HMS_PROGRAM_KIND_NORMAL,
+		types.HMS_PROGRAM_KIND_NORMAL,
 		nil,
 		job.Data.HomescriptId,
 		job.Owner,
