@@ -1,4 +1,4 @@
-## Changelog for v0.10.0-alpha
+## Changelog for v0.10.1-alpha
 
 ### Fixes
 

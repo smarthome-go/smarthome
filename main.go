@@ -29,7 +29,7 @@ const (
 
 func main() {
 	// Do not change the version manually, use the `make version` command instead
-	utils.Version = "0.10.0-alpha"
+	utils.Version = "0.10.1-alpha"
 
 	initLoggers()
 
