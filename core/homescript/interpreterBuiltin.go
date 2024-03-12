@@ -4,16 +4,11 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
-	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/go-ping/ping"
-	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
 	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime"
@@ -80,121 +75,121 @@ func (self interpreterExecutor) LoadSingleton(singletonIdent, moduleName string)
 	return value, available, nil
 }
 
-var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-	fmt.Printf("TOPIC: %s\n", msg.Topic())
-	fmt.Printf("MSG: %s\n", msg.Payload())
-}
+// var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
+// 	fmt.Printf("TOPIC: %s\n", msg.Topic())
+// 	fmt.Printf("MSG: %s\n", msg.Payload())
+// }
+//
+// func mqttSubscribe() value.Value {
+// 	return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
+// 		host := args[0].(value.ValueString).Inner
+// 		username := args[1].(value.ValueString).Inner
+// 		password := args[2].(value.ValueString).Inner
+//
+// 		topicArgsRaw := args[3].(value.ValueList).Values
+// 		topicArgs := make(map[string]byte)
+// 		for _, topic := range *topicArgsRaw {
+// 			topicStr := (*topic).(value.ValueString).Inner
+// 			topicArgs[topicStr] = 0
+// 		}
+// 		// callBackArg := args[1].(value.ValueVMFunction)
+//
+// 		spew.Dump(args)
+// 		// return value.NewValueNull(), nil
+//
+// 		mqtt.DEBUG = log.New(os.Stdout, "", 0)
+// 		mqtt.ERROR = log.New(os.Stdout, "", 0)
+// 		opts := mqtt.NewClientOptions().AddBroker(host).SetClientID("homescript-test-shome").SetUsername(username).SetPassword(password)
+//
+// 		opts.SetKeepAlive(60 * time.Second)
+// 		// Set the message callback handler
+// 		opts.SetDefaultPublishHandler(f)
+// 		opts.SetPingTimeout(1 * time.Second)
+//
+// 		c := mqtt.NewClient(opts)
+// 		if token := c.Connect(); token.Wait() && token.Error() != nil {
+// 			panic(token.Error())
+// 		}
+//
+// 		var callBack mqtt.MessageHandler = func(c mqtt.Client, m mqtt.Message) {
+// 			core := executor.(interpreterExecutor).vm.SpawnAsync(runtime.FunctionInvocation{
+// 				Function:    "mqtt_recv",
+// 				LiteralName: false,
+// 				Args: []value.Value{
+// 					*value.NewValueString(string(m.Topic())),
+// 					*value.NewValueString(string(m.Payload())),
+// 				},
+// 				FunctionSignature: runtime.FunctionInvocationSignatureFromType(mqttCallbackFn(span).(ast.FunctionType)),
+// 			}, nil)
+//
+// 			logger.Infof("Dispatched MQTT message to core %d", core.Corenum)
+// 		}
+//
+// 		logger.Infof("Subscribed to MQTT topics: `%v`", topicArgs)
+//
+// 		// Subscribe to a topic
+// 		if token := c.SubscribeMultiple(topicArgs, callBack); token.Wait() && token.Error() != nil {
+// 			fmt.Println(token.Error())
+// 			os.Exit(1)
+// 		}
+//
+// 		// Publish a message
+// 		// token := c.Publish("testtopic/1", 0, false, "Hello World")
+// 		// token.Wait()
+//
+// 		// time.Sleep(6 * time.Second)
+//
+// 		// Unscribe
+// 		// if token := c.Unsubscribe("testtopic/#"); token.Wait() && token.Error() != nil {
+// 		// 	fmt.Println(token.Error())
+// 		// 	os.Exit(1)
+// 		// }
+//
+// 		// Disconnect
+// 		// c.Disconnect(250)
+// 		// time.Sleep(1 * time.Second)
+//
+// 		return value.NewValueNull(), nil
+// 	})
+// }
 
-func mqttSubscribe() value.Value {
-	return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
-		host := args[0].(value.ValueString).Inner
-		username := args[1].(value.ValueString).Inner
-		password := args[2].(value.ValueString).Inner
-
-		topicArgsRaw := args[3].(value.ValueList).Values
-		topicArgs := make(map[string]byte)
-		for _, topic := range *topicArgsRaw {
-			topicStr := (*topic).(value.ValueString).Inner
-			topicArgs[topicStr] = 0
-		}
-		// callBackArg := args[1].(value.ValueVMFunction)
-
-		spew.Dump(args)
-		// return value.NewValueNull(), nil
-
-		mqtt.DEBUG = log.New(os.Stdout, "", 0)
-		mqtt.ERROR = log.New(os.Stdout, "", 0)
-		opts := mqtt.NewClientOptions().AddBroker(host).SetClientID("homescript-test-shome").SetUsername(username).SetPassword(password)
-
-		opts.SetKeepAlive(60 * time.Second)
-		// Set the message callback handler
-		opts.SetDefaultPublishHandler(f)
-		opts.SetPingTimeout(1 * time.Second)
-
-		c := mqtt.NewClient(opts)
-		if token := c.Connect(); token.Wait() && token.Error() != nil {
-			panic(token.Error())
-		}
-
-		var callBack mqtt.MessageHandler = func(c mqtt.Client, m mqtt.Message) {
-			core := executor.(interpreterExecutor).vm.SpawnAsync(runtime.FunctionInvocation{
-				Function:    "mqtt_recv",
-				LiteralName: false,
-				Args: []value.Value{
-					*value.NewValueString(string(m.Topic())),
-					*value.NewValueString(string(m.Payload())),
-				},
-				FunctionSignature: runtime.FunctionInvocationSignatureFromType(mqttCallbackFn(span).(ast.FunctionType)),
-			}, nil)
-
-			logger.Infof("Dispatched MQTT message to core %d", core.Corenum)
-		}
-
-		logger.Infof("Subscribed to MQTT topics: `%v`", topicArgs)
-
-		// Subscribe to a topic
-		if token := c.SubscribeMultiple(topicArgs, callBack); token.Wait() && token.Error() != nil {
-			fmt.Println(token.Error())
-			os.Exit(1)
-		}
-
-		// Publish a message
-		// token := c.Publish("testtopic/1", 0, false, "Hello World")
-		// token.Wait()
-
-		// time.Sleep(6 * time.Second)
-
-		// Unscribe
-		// if token := c.Unsubscribe("testtopic/#"); token.Wait() && token.Error() != nil {
-		// 	fmt.Println(token.Error())
-		// 	os.Exit(1)
-		// }
-
-		// Disconnect
-		// c.Disconnect(250)
-		// time.Sleep(1 * time.Second)
-
-		return value.NewValueNull(), nil
-	})
-}
-
-func mqttPublish() value.Value {
-	return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
-		host := args[0].(value.ValueString).Inner
-		username := args[1].(value.ValueString).Inner
-		password := args[2].(value.ValueString).Inner
-		topic := args[3].(value.ValueString).Inner
-		payload := args[4].(value.ValueString).Inner
-
-		// callBackArg := args[1].(value.ValueVMFunction)
-
-		spew.Dump(args)
-		// return value.NewValueNull(), nil
-
-		mqtt.DEBUG = log.New(os.Stdout, "", 0)
-		mqtt.ERROR = log.New(os.Stdout, "", 0)
-		opts := mqtt.NewClientOptions().AddBroker(host).SetClientID("homescript-test-shome").SetUsername(username).SetPassword(password)
-
-		opts.SetKeepAlive(60 * time.Second)
-		// Set the message callback handler
-		opts.SetDefaultPublishHandler(f)
-		opts.SetPingTimeout(1 * time.Second)
-
-		c := mqtt.NewClient(opts)
-		if token := c.Connect(); token.Wait() && token.Error() != nil {
-			panic(token.Error())
-		}
-
-		// Publish a message
-		token := c.Publish(topic, 0, false, payload)
-		token.Wait()
-
-		// Disconnect
-		c.Disconnect(250)
-
-		return value.NewValueNull(), nil
-	})
-}
+// func mqttPublish() value.Value {
+// 	return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
+// 		host := args[0].(value.ValueString).Inner
+// 		username := args[1].(value.ValueString).Inner
+// 		password := args[2].(value.ValueString).Inner
+// 		topic := args[3].(value.ValueString).Inner
+// 		payload := args[4].(value.ValueString).Inner
+//
+// 		// callBackArg := args[1].(value.ValueVMFunction)
+//
+// 		spew.Dump(args)
+// 		// return value.NewValueNull(), nil
+//
+// 		mqtt.DEBUG = log.New(os.Stdout, "", 0)
+// 		mqtt.ERROR = log.New(os.Stdout, "", 0)
+// 		opts := mqtt.NewClientOptions().AddBroker(host).SetClientID("homescript-test-shome").SetUsername(username).SetPassword(password)
+//
+// 		opts.SetKeepAlive(60 * time.Second)
+// 		// Set the message callback handler
+// 		opts.SetDefaultPublishHandler(f)
+// 		opts.SetPingTimeout(1 * time.Second)
+//
+// 		c := mqtt.NewClient(opts)
+// 		if token := c.Connect(); token.Wait() && token.Error() != nil {
+// 			panic(token.Error())
+// 		}
+//
+// 		// Publish a message
+// 		token := c.Publish(topic, 0, false, payload)
+// 		token.Wait()
+//
+// 		// Disconnect
+// 		c.Disconnect(250)
+//
+// 		return value.NewValueNull(), nil
+// 	})
+// }
 
 // if it exists, returns a value which is part of the host builtin modules
 func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport string) (val value.Value, found bool) {
@@ -202,9 +197,9 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 	case "mqtt":
 		switch toImport {
 		case "subscribe":
-			return mqttSubscribe(), true
+			panic("TODO")
 		case "publish":
-			return mqttPublish(), true
+			panic("TODO")
 		default:
 			return nil, false
 		}

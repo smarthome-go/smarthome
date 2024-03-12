@@ -607,7 +607,7 @@ func (self analyzerHost) GetBuiltinImport(
 					),
 					span,
 				),
-				Template: &ast.TemplateSpec{},
+				Template: nil,
 			}, true, true
 		}
 		return analyzer.BuiltinImport{}, true, false
@@ -625,9 +625,19 @@ func (self analyzerHost) GetBuiltinImport(
 					ast.NewIntType(span),
 					span,
 				),
-				Template: &ast.TemplateSpec{},
+				Template: nil,
 			}, true, true
 		}
+	case "time":
+		switch valueName {
+		case "Time":
+			return analyzer.BuiltinImport{
+				Type:     timeObjType(errors.Span{}),
+				Template: nil,
+			}, true, true
+		}
+
+		return analyzer.BuiltinImport{}, true, false
 	}
 	return analyzer.BuiltinImport{}, false, false
 }
