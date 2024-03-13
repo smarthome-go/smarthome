@@ -11,12 +11,13 @@ import (
 	"github.com/go-ping/ping"
 	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
-	"github.com/smarthome-go/homescript/v3/homescript/runtime"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/automation"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/device/driver"
 	"github.com/smarthome-go/smarthome/core/event"
+	"github.com/smarthome-go/smarthome/core/homescript/dispatcher"
+	dispatcherT "github.com/smarthome-go/smarthome/core/homescript/dispatcher/types"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 	"github.com/smarthome-go/smarthome/core/scheduler"
 	"github.com/smarthome-go/smarthome/core/user/notify"
@@ -24,36 +25,54 @@ import (
 )
 
 type interpreterExecutor struct {
+	// All `attaching` registrations in the dispatcher (these need to be revoked before the VM is deleted).
+	registrations *[]dispatcherT.RegistrationID
+	// Other.
+	jobID             uint64
+	programID         string
 	username          string
 	ioWriter          io.Writer
 	args              map[string]string
 	automationContext *types.AutomationContext
 	cancelCtxFunc     context.CancelFunc
 	singletonsToLoad  map[string]value.Value
-	vm                *runtime.VM
 }
 
-func (self interpreterExecutor) GetUser() string {
-	return self.username
+func (self interpreterExecutor) Free() error {
+	var errRes error = nil
+
+	for _, registration := range *self.registrations {
+		// Return the first error that is found
+		if err := dispatcher.Instance.Unregister(registration); err != nil && errRes == nil {
+			errRes = err
+		}
+	}
+
+	return errRes
 }
 
 func NewInterpreterExecutor(
+	jobID uint64,
+	programID string,
 	username string,
 	writer io.Writer,
 	args map[string]string,
 	automationContext *types.AutomationContext,
 	cancelCtxFunc context.CancelFunc,
 	singletonsToLoad map[string]value.Value,
-	vm *runtime.VM,
 ) interpreterExecutor {
+	registrations := make([]dispatcherT.RegistrationID, 0)
+
 	return interpreterExecutor{
+		registrations:     &registrations,
+		jobID:             jobID,
+		programID:         programID,
 		username:          username,
 		ioWriter:          writer,
 		args:              args,
 		automationContext: automationContext,
 		cancelCtxFunc:     cancelCtxFunc,
 		singletonsToLoad:  singletonsToLoad,
-		vm:                vm,
 	}
 }
 
@@ -197,7 +216,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 	case "mqtt":
 		switch toImport {
 		case "subscribe":
-			panic("TODO")
+			return mqttSubscribe(), true
 		case "publish":
 			panic("TODO")
 		default:
@@ -477,7 +496,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 					return nil, i
 				}
 
-				if err := database.InsertHmsStorageEntry(executor.GetUser(), key, disp); err != nil {
+				if err := database.InsertHmsStorageEntry(executor.(interpreterExecutor).username, key, disp); err != nil {
 					return nil, value.NewVMFatalException(
 						fmt.Sprintf("Could not set storage: %s", err.Error()),
 						value.Vm_HostErrorKind,
@@ -491,7 +510,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 				key := args[0].(value.ValueString).Inner
 
-				val, err := database.GetHmsStorageEntry(executor.GetUser(), key)
+				val, err := database.GetHmsStorageEntry(executor.(interpreterExecutor).username, key)
 				if err != nil {
 					return nil, value.NewVMFatalException(
 						fmt.Sprintf("Could not set storage: %s", err.Error()),
@@ -539,7 +558,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 					title,
 					description,
 					dueDate,
-					executor.GetUser(),
+					executor.(interpreterExecutor).username,
 					database.ReminderPriority(priority),
 				)
 				if err != nil {
@@ -653,9 +672,9 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				}),
 				"generic": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 					// TODO: fix this by running drivers without a user tag.
-					if executor.GetUser() != "" {
+					if executor.(interpreterExecutor).username != "" {
 						// Check permissions and request building beforehand
-						hasPermission, err := database.UserHasPermission(executor.GetUser(), database.PermissionHomescriptNetwork)
+						hasPermission, err := database.UserHasPermission(executor.(interpreterExecutor).username, database.PermissionHomescriptNetwork)
 						if err != nil {
 							return nil, value.NewVMFatalException(
 								fmt.Sprintf("Could not perform request: failed to validate your permissions: %s", err.Error()),
@@ -772,9 +791,9 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				return nil
 			}
 
-			if self.GetUser() != "" {
+			if self.username != "" {
 				testPermissions = func(username string, span errors.Span) *value.VmInterrupt {
-					hasPermission, err := database.UserHasPermission(self.GetUser(), database.PermissionLogging)
+					hasPermission, err := database.UserHasPermission(self.username, database.PermissionLogging)
 					if err != nil {
 						return value.NewVMFatalException(err.Error(), value.Vm_HostErrorKind, span)
 					}
@@ -789,7 +808,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				"trace": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 					title := args[0].(value.ValueString).Inner
 					description := args[1].(value.ValueString).Inner
-					if i := testPermissions(executor.GetUser(), span); i != nil {
+					if i := testPermissions(executor.(interpreterExecutor).username, span); i != nil {
 						return nil, i
 					}
 					event.Trace(title, description)
@@ -798,7 +817,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				"debug": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 					title := args[0].(value.ValueString).Inner
 					description := args[1].(value.ValueString).Inner
-					if i := testPermissions(executor.GetUser(), span); i != nil {
+					if i := testPermissions(executor.(interpreterExecutor).username, span); i != nil {
 						return nil, i
 					}
 					event.Debug(title, description)
@@ -807,7 +826,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				"info": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 					title := args[0].(value.ValueString).Inner
 					description := args[1].(value.ValueString).Inner
-					if i := testPermissions(executor.GetUser(), span); i != nil {
+					if i := testPermissions(self.username, span); i != nil {
 						return nil, i
 					}
 					event.Info(title, description)
@@ -816,7 +835,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				"warn": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 					title := args[0].(value.ValueString).Inner
 					description := args[1].(value.ValueString).Inner
-					if i := testPermissions(executor.GetUser(), span); i != nil {
+					if i := testPermissions(self.username, span); i != nil {
 						return nil, i
 					}
 					event.Warn(title, description)
@@ -825,7 +844,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				"error": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 					title := args[0].(value.ValueString).Inner
 					description := args[1].(value.ValueString).Inner
-					if i := testPermissions(executor.GetUser(), span); i != nil {
+					if i := testPermissions(self.username, span); i != nil {
 						return nil, i
 					}
 					event.Error(title, description)
@@ -834,7 +853,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				"fatal": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 					title := args[0].(value.ValueString).Inner
 					description := args[1].(value.ValueString).Inner
-					if i := testPermissions(executor.GetUser(), span); i != nil {
+					if i := testPermissions(self.username, span); i != nil {
 						return nil, i
 					}
 					event.Fatal(title, description)
@@ -877,7 +896,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 					Minute:         uint(minute),
 					TargetMode:     database.ScheduleTargetModeCode,
 					HomescriptCode: (*data["code"]).(value.ValueString).Inner,
-				}, executor.GetUser())
+				}, self.username)
 
 				if err != nil {
 					return nil, value.NewVMFatalException(fmt.Sprintf("Backend error: %s", err.Error()), value.Vm_HostErrorKind, span)
@@ -893,7 +912,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 					return nil, value.NewVMThrowInterrupt(span, fmt.Sprintf("IDs must be > 0, got %d", id))
 				}
 
-				_, found, err := scheduler.GetUserScheduleById(executor.GetUser(), uint(id))
+				_, found, err := scheduler.GetUserScheduleById(self.username, uint(id))
 				if err != nil {
 					return nil, value.NewVMFatalException(
 						fmt.Sprintf("Could not delete schedule: %s", err.Error()),
@@ -918,7 +937,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 			}), true
 		case "list_schedules":
 			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
-				schedules, err := database.GetUserSchedules(executor.GetUser())
+				schedules, err := database.GetUserSchedules(self.username)
 				if err != nil {
 					return nil, value.NewVMFatalException(
 						fmt.Sprintf("Could not list schedules: %s", err.Error()),
@@ -986,7 +1005,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				runHooks := hmsExecutor.automationContext == nil || hmsExecutor.automationContext.NotificationContext == nil
 
 				newId, err := notify.Manager.Notify(
-					executor.GetUser(),
+					self.username,
 					title,
 					description,
 					notify.NotificationLevel(level),

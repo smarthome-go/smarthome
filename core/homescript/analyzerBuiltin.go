@@ -158,10 +158,8 @@ func (self analyzerHost) GetBuiltinImport(
 			return analyzer.BuiltinImport{
 				Type: ast.NewFunctionType(
 					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("host", span), ast.NewStringType(span), nil),
-						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("username", span), ast.NewStringType(span), nil),
-						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("password", span), ast.NewStringType(span), nil),
 						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("topics", span), ast.NewListType(ast.NewStringType(span), span), nil),
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("fn", span), ast.NewStringType(span), nil),
 					}),
 					span,
 					ast.NewNullType(span),
@@ -173,9 +171,6 @@ func (self analyzerHost) GetBuiltinImport(
 			return analyzer.BuiltinImport{
 				Type: ast.NewFunctionType(
 					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
-						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("host", span), ast.NewStringType(span), nil),
-						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("username", span), ast.NewStringType(span), nil),
-						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("password", span), ast.NewStringType(span), nil),
 						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("topic", span), ast.NewStringType(span), nil),
 						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("payload", span), ast.NewStringType(span), nil),
 					}),

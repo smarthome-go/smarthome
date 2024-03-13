@@ -2,8 +2,11 @@ package homescript
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	"io"
+	"math"
+	"math/big"
 	"strings"
 	"sync"
 	"time"
@@ -23,6 +26,7 @@ import (
 const maxLinesErrMessage = 20
 const KillEventFunction = "kill"
 const KillEventMaxRuntime = 5 * time.Second
+const jobIDNumDigits = 16
 
 var VM_LIMITS = runtime.CoreLimits{
 	CallStackMaxSize: 128,
@@ -36,7 +40,7 @@ var VM_LIMITS = runtime.CoreLimits{
 
 type Manager struct {
 	Lock         sync.RWMutex
-	Jobs         []types.Job
+	Jobs         map[uint64]types.Job
 	CompileCache ManagerCompileCache
 }
 
@@ -63,7 +67,7 @@ var HmsManager Manager
 func InitManager() types.Manager {
 	HmsManager = Manager{
 		Lock:         sync.RWMutex{},
-		Jobs:         make([]types.Job, 0),
+		Jobs:         make(map[uint64]types.Job),
 		CompileCache: newManagerCompileCache(),
 	}
 
@@ -72,6 +76,38 @@ func InitManager() types.Manager {
 
 func (self *Manager) ClearCompileCache() {
 
+}
+
+func (m *Manager) generatePotentialJobId() uint64 {
+	maxLimit := int64(int(math.Pow10(jobIDNumDigits)) - 1)
+	lowLimit := uint64(math.Pow10(jobIDNumDigits - 1))
+
+	randomNum, err := rand.Int(rand.Reader, big.NewInt(maxLimit))
+	if err != nil {
+		panic(err.Error())
+	}
+
+	randomInt := uint64(randomNum.Int64())
+
+	if uint64(randomInt) <= lowLimit {
+		randomInt += lowLimit
+	}
+
+	return randomInt
+}
+
+func (m *Manager) AllocJobId() uint64 {
+	for {
+		potential := m.generatePotentialJobId()
+		m.Lock.Lock()
+		_, invalid := m.Jobs[potential]
+
+		if !invalid {
+			m.Jobs[potential] = types.Job{}
+			m.Lock.Unlock()
+			return potential
+		}
+	}
 }
 
 func (m *Manager) PushJob(
@@ -83,9 +119,23 @@ func (m *Manager) PushJob(
 	entryModuleName string,
 	supportsKill bool,
 ) uint64 {
+	id := m.AllocJobId()
+	m.setJob(id, username, initiator, cancelCtxFunc, hmsId, vm, entryModuleName, supportsKill)
+	return id
+}
+
+func (m *Manager) setJob(
+	id uint64,
+	username string,
+	initiator types.HomescriptInitiator,
+	cancelCtxFunc context.CancelFunc,
+	hmsId *string,
+	vm *runtime.VM,
+	entryModuleName string,
+	supportsKill bool,
+) {
 	m.Lock.Lock()
-	id := uint64(len(m.Jobs))
-	m.Jobs = append(m.Jobs, types.Job{
+	m.Jobs[id] = types.Job{
 		Username:        username,
 		JobID:           id,
 		HmsID:           hmsId,
@@ -94,12 +144,11 @@ func (m *Manager) PushJob(
 		VM:              vm,
 		EntryModuleName: entryModuleName,
 		SupportsKill:    supportsKill,
-	})
+	}
 	m.Lock.Unlock()
-	return id
 }
 
-func (m Manager) resolveFileContentsOfErrors(
+func (m *Manager) resolveFileContentsOfErrors(
 	username string,
 	mainModuleFilename string,
 	mainModuleCode string,
@@ -233,14 +282,14 @@ func (m *Manager) Run(
 
 	// TODO: the @ symbol cannot be used in IDs?
 	// FIX: implement this uniqueness properly
-	entryModuleName := fmt.Sprintf("live@%d", time.Now().Nanosecond())
+	programID := fmt.Sprintf("live@%d", time.Now().Nanosecond())
 	if filename != nil {
-		entryModuleName = *filename
+		programID = *filename
 	}
 
-	logger.Trace(fmt.Sprintf("Homescript '%s' of user '%s' is being analyzed...", entryModuleName, username))
+	logger.Trace(fmt.Sprintf("Homescript '%s' of user '%s' is being analyzed...", programID, username))
 
-	modules, res, err := m.Analyze(username, entryModuleName, code, programKind, driverData)
+	modules, res, err := m.Analyze(username, programID, code, programKind, driverData)
 	if err != nil {
 		return types.HmsRes{}, types.HmsRunResultContext{}, err
 	}
@@ -249,10 +298,10 @@ func (m *Manager) Run(
 		return res, types.HmsRunResultContext{}, nil
 	}
 
-	logger.Trace(fmt.Sprintf("Homescript '%s' of user '%s' is being compiled...", entryModuleName, username))
+	logger.Trace(fmt.Sprintf("Homescript '%s' of user '%s' is being compiled...", programID, username))
 
 	comp := compiler.NewCompiler()
-	prog := comp.Compile(modules, entryModuleName)
+	prog := comp.Compile(modules, programID)
 
 	// TODO: remove this debug output
 	// i := 0
@@ -266,7 +315,7 @@ func (m *Manager) Run(
 	// 	i++
 	// }
 
-	logger.Debug(fmt.Sprintf("Homescript '%s' of user '%s' is executing...", entryModuleName, username))
+	logger.Debug(fmt.Sprintf("Homescript '%s' of user '%s' is executing...", programID, username))
 
 	// interpreter := interpreter.NewInterpreter(
 	// 	CALL_STACK_LIMIT_SIZE,
@@ -282,37 +331,40 @@ func (m *Manager) Run(
 	// 	&cancelCtx,
 	// )
 
-	vm := &runtime.VM{}
+	jobID := m.AllocJobId()
 
-	rawExecutor := NewInterpreterExecutor(username,
+	executor := NewInterpreterExecutor(
+		jobID,
+		programID,
+		username,
 		outputWriter,
 		args,
 		automationContext,
 		cancelCtxFunc,
 		singletonsToLoad,
-		vm,
 	)
 
-	*vm = runtime.NewVM(
+	vm := runtime.NewVM(
 		prog,
-		rawExecutor,
+		executor,
 		&cancelCtx,
 		&cancelCtxFunc,
 		interpreterScopeAdditions(),
 		VM_LIMITS,
 	)
 
-	exec := vm.Executor.(interpreterExecutor)
-	*exec.vm = *vm
-
 	// supportsKill := modules[entryModuleName].SupportsEvent("kill")
 
-	id := m.PushJob(username, initiator, cancelCtxFunc, filename, vm, entryModuleName, true)
-	defer m.removeJob(id)
+	m.setJob(jobID, username, initiator, cancelCtxFunc, filename, &vm, programID, true)
+	defer func() {
+		// TODO: does this work?
+		executor.Free()
+		m.removeJob(jobID)
+	}()
 
 	// send the id to the id channel (only if it exists)
 	if idChan != nil {
-		*idChan <- id
+		*idChan <- jobID
 	}
 
 	fmt.Printf("Calling entry function `%s`\n", compiler.EntryPointFunctionIdent)
@@ -386,7 +438,7 @@ func (m *Manager) Run(
 		}
 
 		if isErr {
-			fileContentsTemp, err := m.resolveFileContentsOfErrors(username, entryModuleName, code, errors)
+			fileContentsTemp, err := m.resolveFileContentsOfErrors(username, programID, code, errors)
 			if err != nil {
 				return types.HmsRes{}, types.HmsRunResultContext{}, err
 			}
@@ -413,7 +465,7 @@ func (m *Manager) Run(
 
 			logger.Trace()
 
-			logger.Debug(fmt.Sprintf("Homescript '%s' of user '%s' failed: %s", entryModuleName, username, errMsg))
+			logger.Debug(fmt.Sprintf("Homescript '%s' of user '%s' failed: %s", programID, username, errMsg))
 		}
 
 		return types.HmsRes{
@@ -423,7 +475,7 @@ func (m *Manager) Run(
 		}, types.HmsRunResultContext{}, nil
 	}
 
-	logger.Debug(fmt.Sprintf("Homescript '%s' of user '%s' executed successfully", entryModuleName, username))
+	logger.Debug(fmt.Sprintf("Homescript '%s' of user '%s' executed successfully", programID, username))
 
 	// Stores the original (non-mangled) singletons of the entry module.
 	singletons := make(map[string]value.Value)
@@ -496,58 +548,36 @@ func (m *Manager) RunById(
 // Removes an arbitrary job from the job list
 // However, this function should only be used internally
 // The function is automatically called when a Homescript execution ends
-func (m *Manager) removeJob(jobId uint64) bool {
-	jobsTemp := make([]types.Job, 0)
-	success := false
+func (m *Manager) removeJob(jobID uint64) bool {
 	m.Lock.Lock()
-	defer m.Lock.Unlock()
-	for _, job := range m.Jobs {
-		if job.JobID == jobId {
-			success = true
-			continue
-		}
-		jobsTemp = append(jobsTemp, job)
-	}
-	m.Jobs = jobsTemp
+	_, found := m.Jobs[jobID]
+	delete(m.Jobs, jobID)
+	m.Lock.Unlock()
+
+	success := found
 	return success
 }
 
 // Returns a job given its ID
-func (m *Manager) GetJobById(jobId uint64) (types.Job, bool) {
+func (m *Manager) GetJobById(jobID uint64) (types.Job, bool) {
 	m.Lock.RLock()
+	job, found := m.Jobs[jobID]
 	defer m.Lock.RUnlock()
-	for _, job := range m.Jobs {
-		if job.JobID == jobId {
-			return job, true
-		}
-	}
-	return types.Job{}, false
+
+	return job, found
 }
 
 // Terminates a job given its internal job ID
 // This method operates on all types of run-type
 // The returned boolean indicates whether a job was killed or not
-func (m *Manager) Kill(jobId uint64) bool {
-	idx := 0
-
-	for {
-		m.Lock.Lock()
-		jobLen := len(m.Jobs)
-		if idx >= jobLen {
-			m.Lock.Unlock()
-			return false
-		}
-
-		job := m.Jobs[idx]
-		m.Lock.Unlock()
-
-		if job.JobID == jobId {
-			m.killJob(job)
-			return true
-		}
-
-		idx++
+func (m *Manager) Kill(jobID uint64) bool {
+	job, found := m.GetJobById(jobID)
+	if !found {
+		return false
 	}
+
+	m.killJob(job)
+	return true
 }
 
 // Terminates all jobs which are executing a given Homescript-ID / Homescript-label
@@ -612,7 +642,13 @@ func (m *Manager) killJob(job types.Job) {
 func (m *Manager) GetJobList() []types.Job {
 	m.Lock.RLock()
 	defer m.Lock.RUnlock()
-	return m.Jobs
+
+	jobList := make([]types.Job, 0)
+	for _, job := range m.Jobs {
+		jobList = append(jobList, job)
+	}
+
+	return jobList
 }
 
 // Returns just the jobs which are executed by the specified user

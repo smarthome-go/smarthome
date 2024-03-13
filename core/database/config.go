@@ -5,11 +5,18 @@ import (
 )
 
 type ServerConfig struct {
-	AutomationEnabled    bool    `json:"automationEnabled"`    // Sets the global state of the server's automation system
-	LockDownMode         bool    `json:"lockDownMode"`         // If enabled, the server is unable to change power states and will not allow power actions
-	OpenWeatherMapApiKey string  `json:"openWeatherMapApiKey"` // Specifies the OpenWeatherMap API key
-	Latitude             float32 `json:"latitude"`             // Specifies the physical location of the Smarthome server
-	Longitude            float32 `json:"longitude"`            // Latitude and longitude are being used for calculating the sunset / sunrise times and for OpenWeatherMap's weather service
+	AutomationEnabled    bool       `json:"automationEnabled"`    // Sets the global state of the server's automation system
+	LockDownMode         bool       `json:"lockDownMode"`         // If enabled, the server is unable to change power states and will not allow power actions
+	OpenWeatherMapApiKey string     `json:"openWeatherMapApiKey"` // Specifies the OpenWeatherMap API key
+	Latitude             float32    `json:"latitude"`             // Specifies the physical location of the Smarthome server
+	Longitude            float32    `json:"longitude"`            // Latitude and longitude are being used for calculating the sunset / sunrise times and for OpenWeatherMap's weather service
+	Mqtt                 MqttConfig `json:"mqtt"`
+}
+
+type MqttConfig struct {
+	Host     string
+	Username string
+	Password string
 }
 
 // Creates the table that contains the server configuration
@@ -21,9 +28,14 @@ func createConfigTable() error {
 		Id						INT PRIMARY KEY,
 		AutomationEnabled		BOOLEAN DEFAULT TRUE,
 		LockDownMode BOOLEAN	DEFAULT FALSE,
+		-- Begin Weather
 		OpenWeatherMapApiKey	VARCHAR(64) DEFAULT "",
 		Latitude FLOAT(32)		DEFAULT 0.0,
-		Longitude FLOAT(32)		DEFAULT 0.0
+		Longitude FLOAT(32)		DEFAULT 0.0,
+		-- Begin MQTT
+		MQTTHost				TEXT,
+		MQTTUsername			TEXT,
+		MQTTPassword			TEXT
 	)`)
 	if err != nil {
 		log.Error("Failed to create server configuration table: executing query failed: ", err.Error())
@@ -40,9 +52,12 @@ func createConfigTable() error {
 		configuration(
 			Id,
 			AutomationEnabled,
-			LockDownMode
+			LockDownMode,
+			MQTTHost,
+			MQTTUsername,
+			MQTTPassword
 		)
-		VALUES(0, TRUE, FALSE)
+		VALUES(0, TRUE, FALSE, "tcp://host:1883", "username", "")
 		`); err != nil {
 			log.Error("Failed to create configuration: insert failed: executing query failed: ", err.Error())
 			return err
@@ -61,7 +76,10 @@ func GetServerConfiguration() (ServerConfig, bool, error) {
 		LockDownMode,
 		OpenWeatherMapApiKey,
 		Latitude,
-		Longitude
+		Longitude,
+		MQTTHost,
+		MQTTUsername,
+		MQTTPassword
 	FROM configuration
 	WHERE Id=0
 	`).Scan(
@@ -70,6 +88,9 @@ func GetServerConfiguration() (ServerConfig, bool, error) {
 		&config.OpenWeatherMapApiKey,
 		&config.Latitude,
 		&config.Longitude,
+		&config.Mqtt.Host,
+		&config.Mqtt.Username,
+		&config.Mqtt.Password,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			log.Warn("No server configuration present")
@@ -90,7 +111,10 @@ func SetServerConfiguration(config ServerConfig) error {
 		LockDownMode=?,
 		OpenWeatherMapApiKey=?,
 		Latitude=?,
-		Longitude=?
+		Longitude=?,
+		MQTTHost=?,
+		MQTTUsername=?,
+		MQTTPassword=?
 	WHERE Id=0
 	`)
 	if err != nil {
@@ -104,6 +128,9 @@ func SetServerConfiguration(config ServerConfig) error {
 		config.OpenWeatherMapApiKey,
 		config.Latitude,
 		config.Longitude,
+		config.Mqtt.Host,
+		config.Mqtt.Username,
+		config.Mqtt.Password,
 	); err != nil {
 		log.Error("Failed to update the servers configuration: executing query failed: ", err.Error())
 		return err
@@ -187,6 +214,28 @@ func UpdateOpenWeatherMapApiKey(newKey string) error {
 	defer query.Close()
 	if _, err := query.Exec(newKey); err != nil {
 		log.Error("Failed to update the servers OpenWeatherMap API Key: executing query failed: ", err.Error())
+		return err
+	}
+	return nil
+}
+
+// Changes the server's MQTT broker attributes
+func UpdateMqttConfig(settings MqttConfig) error {
+	query, err := db.Prepare(`
+	UPDATE configuration
+	SET
+		MQTTHost=?,
+		MQTTUsername=?,
+		MQTTPassword=?
+	WHERE Id=0
+	`)
+	if err != nil {
+		log.Error("Failed to update the servers MQTT settings: preparing query failed: ", err.Error())
+		return err
+	}
+	defer query.Close()
+	if _, err := query.Exec(settings.Host, settings.Username, settings.Password); err != nil {
+		log.Error("Failed to update the servers MQTT config: executing query failed: ", err.Error())
 		return err
 	}
 	return nil

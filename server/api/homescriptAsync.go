@@ -175,7 +175,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 			wsMutex.Lock()
 			if err := ws.WriteJSON(HMSMessageTXErr{
 				Kind:    MessageKindErr,
-				Message: fmt.Sprintf("invalid kill message: %s", err.Error()),
+				Message: fmt.Sprintf("invalid kill message: %s\n", err.Error()),
 			}); err != nil {
 				return
 			}
@@ -186,7 +186,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 			wsMutex.Lock()
 			if err := ws.WriteJSON(HMSMessageTXErr{
 				Kind:    MessageKindErr,
-				Message: fmt.Sprintf("invalid kill request kind: %s", request.Kind),
+				Message: fmt.Sprintf("invalid kill request kind: %s\n", request.Kind),
 			}); err != nil {
 				return
 			}

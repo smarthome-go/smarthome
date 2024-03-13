@@ -8,6 +8,7 @@ import (
 	"github.com/smarthome-go/smarthome/core/device/driver"
 	hardware "github.com/smarthome-go/smarthome/core/hardware_deprecated"
 	"github.com/smarthome-go/smarthome/core/homescript"
+	"github.com/smarthome-go/smarthome/core/homescript/dispatcher"
 	"github.com/smarthome-go/smarthome/core/scheduler"
 	"github.com/smarthome-go/smarthome/services/reminder"
 )
@@ -21,6 +22,15 @@ func Init(config database.ServerConfig) error {
 	if err := driver.Manager.PopulateValueCache(); err != nil {
 		return err
 	}
+
+	// Mqtt manager initialization
+	mqttManager, err := dispatcher.NewMqttManager(config.Mqtt)
+	if err != nil {
+		log.Errorf("MQTT initialization failed: %s", err.Error())
+	}
+
+	// Homescript dispatcher initialization
+	dispatcher.InitInstance(hmsManager, mqttManager)
 
 	if err := automation.InitManager(hmsManager, config); err != nil {
 		return fmt.Errorf("Failed to activate automation system: %s", err.Error())
