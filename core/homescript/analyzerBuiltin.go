@@ -159,7 +159,12 @@ func (self analyzerHost) GetBuiltinImport(
 				Type: ast.NewFunctionType(
 					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
 						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("topics", span), ast.NewListType(ast.NewStringType(span), span), nil),
-						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("fn", span), ast.NewStringType(span), nil),
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("callback", span), ast.NewFunctionType(
+							ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{}),
+							span,
+							ast.NewNullType(span),
+							span,
+						), nil),
 					}),
 					span,
 					ast.NewNullType(span),

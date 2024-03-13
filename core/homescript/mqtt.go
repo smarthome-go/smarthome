@@ -20,14 +20,15 @@ func mqttSubscribe() value.Value {
 		}
 
 		// BUG: this is definitly unsafe
-		fnName := args[1].(value.ValueString).Inner
+		fn := args[1].(value.ValueVMFunction).Ident
 
 		hmsExecutor := executor.(interpreterExecutor)
 
 		id, err := dispatcher.Instance.Register(dispatcherTypes.RegisterInfo{
 			ProgramID: hmsExecutor.programID,
 			Function: &dispatcherTypes.CalledFunction{
-				Ident: fnName,
+				Ident:          fn,
+				IdentIsLiteral: true,
 				CallMode: dispatcherTypes.CallModeAttaching{
 					HMSJobID: hmsExecutor.jobID,
 				},

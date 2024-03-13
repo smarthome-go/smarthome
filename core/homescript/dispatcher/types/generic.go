@@ -43,8 +43,9 @@ type CallModeAttaching struct {
 func (c CallModeAttaching) Kind() CallModeKind { return CallModeKindAttaching }
 
 type CalledFunction struct {
-	Ident    string
-	CallMode CallMode
+	Ident          string
+	IdentIsLiteral bool
+	CallMode       CallMode
 }
 
 //

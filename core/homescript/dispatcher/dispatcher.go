@@ -188,7 +188,7 @@ func (i *InstanceT) AttachingCall(
 
 	_ = job.VM.SpawnAsync(runtime.FunctionInvocation{
 		Function:          info.Function.Ident,
-		LiteralName:       false, // BUG: this must be tweaked later.
+		LiteralName:       info.Function.IdentIsLiteral,
 		Args:              meta.Args,
 		FunctionSignature: meta.FunctionSignature,
 	}, nil)
