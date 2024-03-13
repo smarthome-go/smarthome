@@ -46,3 +46,16 @@ func mqttSubscribe() value.Value {
 		return value.NewValueNull(), nil
 	})
 }
+
+func mqttPublish() value.Value {
+	return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
+		topic := args[0].(value.ValueString).Inner
+		payload := args[1].(value.ValueString).Inner
+
+		if err := dispatcher.Instance.Mqtt.Publish(topic, payload); err != nil {
+			return nil, value.NewVMFatalException(fmt.Sprintf("Dispatcher registration failed: %s", err.Error()), value.Vm_HostErrorKind, span)
+		}
+
+		return value.NewValueNull(), nil
+	})
+}

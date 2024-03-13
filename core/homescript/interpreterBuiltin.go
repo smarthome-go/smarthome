@@ -218,7 +218,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 		case "subscribe":
 			return mqttSubscribe(), true
 		case "publish":
-			panic("TODO")
+			return mqttPublish(), true
 		default:
 			return nil, false
 		}
