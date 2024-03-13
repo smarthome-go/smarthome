@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   smarthome:
-    image: mikmuellerdev/smarthome:0.10.1-alpha
+    image: mikmuellerdev/smarthome:0.10.2-alpha
     container_name: smarthome
     hostname: smarthome
     depends_on:

@@ -9,7 +9,7 @@
 
 > After this rework, Homescript can be used to implement custom drivers for any kind of device that the user can dream of. Right now, only basic functionality without much stability is implemented.
 
-**Version**: `0.10.1-alpha`
+**Version**: `0.10.2-alpha`
 
 A completely self-built Smarthome-system written in Go.
 
@@ -39,5 +39,5 @@ A guide for getting started can be found [here](./docs/Quickstart.md).
 
 ## Showcase
 A comprehensive list of screenshots can be found [here](https://github.com/smarthome-go/docs/blob/main/server/screenshots/README.md)  
-*Screenshot of the Dashboard in version 0.10.1-alpha*
+*Screenshot of the Dashboard in version 0.10.2-alpha*
 ![](https://raw.githubusercontent.com/smarthome-go/docs/main/server/screenshots/dashboard.png)
