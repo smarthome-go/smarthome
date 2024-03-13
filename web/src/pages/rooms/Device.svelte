@@ -231,7 +231,7 @@
 
     let errorsOpen = false
 
-    function hasCapability(self: DeviceExtractions, capability: DeviceCapability): boolean { return self.config.capabilities.includes(capability) }
+    function hasCapability(self: DeviceExtractions, capability: DeviceCapability): boolean { return self.config.capabilities !== null && self.config.capabilities.includes(capability) }
 
     let hasErrors = false
     $: hasErrors = errors !== null && errors.length > 0

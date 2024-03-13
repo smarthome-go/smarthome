@@ -93,6 +93,7 @@
         }
 
         &.errors {
+            height: auto;
             background-color: var(--clr-height-0-3);
         }
 
