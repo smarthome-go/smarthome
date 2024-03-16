@@ -52,6 +52,11 @@ func InitInstance(hms types.Manager, mqtt *MqttManager) {
 	}
 }
 
+func (self *InstanceT) Reload(mqttConfig database.MqttConfig) error {
+	self.Mqtt.setConfig(mqttConfig)
+	return self.Mqtt.Reload()
+}
+
 // TODO: same as for the HMS manager, join these two functions.
 func (i *InstanceT) generatePotentialID() dispatcherTypes.RegistrationID {
 	maxLimit := int64(int(math.Pow10(registrationIDNumDigits)) - 1)

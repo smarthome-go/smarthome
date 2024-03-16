@@ -1,6 +1,7 @@
 package core
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/smarthome-go/smarthome/core/automation"
@@ -52,4 +53,36 @@ func Init(config database.ServerConfig) error {
 	}
 
 	return nil
+}
+
+func Reload() error {
+	var hasErr error
+
+	config, found, err := database.GetServerConfiguration()
+	if err != nil {
+		log.Errorf("Could not reload core: could not get server config: %s", err.Error())
+		return err
+	}
+
+	if !found {
+		msg := "Could not reload core: no server config present"
+		log.Error(msg)
+		return errors.New(msg)
+	}
+
+	// Reload dispatcher (and MQTT subsystem)
+	if err := dispatcher.Instance.Reload(config.Mqtt); err != nil {
+		log.Warnf("Could not fully reload core: dispatcher reload error: %s", err.Error())
+		hasErr = err
+	}
+
+	return hasErr
+}
+
+func UpdateMqttConfig(newConfig database.MqttConfig) (reloadErr, dbErr error) {
+	if err := database.UpdateMqttConfig(newConfig); err != nil {
+		return nil, err
+	}
+
+	return Reload(), nil
 }

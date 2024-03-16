@@ -1,5 +1,7 @@
 package types
 
+import "fmt"
+
 type CallModeKind uint8
 
 const (
@@ -72,4 +74,10 @@ type RegisterInfo struct {
 type Dispatcher interface {
 	Register(RegisterInfo) error
 	UnRegister(RegisterInfo) error
+}
+
+const mQTTProtocol = "tcp"
+
+func MakeBrokerURI(host string, port uint16) string {
+	return fmt.Sprintf("%s://%s:%d", mQTTProtocol, host, port)
 }

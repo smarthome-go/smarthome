@@ -1,7 +1,9 @@
 package core
 
 import (
+	"errors"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -170,7 +172,22 @@ func runShutdownAutomations(ch *chan struct{}, config database.ServerConfig) {
 	wg.Wait()
 }
 
-func Shutdown(config database.ServerConfig) error {
+func Shutdown(terminateProcess bool) error {
+	log.Info("System shutting down...")
+
+	config, found, err := database.GetServerConfiguration()
+	if err != nil {
+		return err
+	}
+
+	if !found {
+		return errors.New("Could not shutdown: not server configuration found")
+	}
+
+	return ShutdownWithConfig(config, terminateProcess)
+}
+
+func ShutdownWithConfig(config database.ServerConfig, terminateProcess bool) error {
 	var tasks = make([]shutdownJob, 0)
 	var error error
 
@@ -221,6 +238,16 @@ func Shutdown(config database.ServerConfig) error {
 	}
 
 	log.Debug("All core background shutdown tasks have finished")
+	if error != nil {
+		return error
+	}
+
 	event.Info("System Shutdown", "System shutdown completed")
-	return error
+	log.Info("Shutdown completed")
+
+	if terminateProcess {
+		os.Exit(0)
+	}
+
+	return nil
 }

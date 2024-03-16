@@ -95,13 +95,7 @@ func abortSetup() error {
 
 func FactoryReset() error {
 	// Shutdown the core
-	serverConfig, err := getServerConfiguration()
-	if err != nil {
-		return err
-	}
-
-	// Shutdown the core
-	if err := Shutdown(serverConfig); err != nil {
+	if err := Shutdown(false); err != nil {
 		log.Error("Setup failed, could not shutdown core: ", err.Error())
 		return err
 	}

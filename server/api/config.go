@@ -158,7 +158,6 @@ func ImportConfiguration(w http.ResponseWriter, r *http.Request) {
 	middleware.InitWithRandomKey()
 }
 
-// Is used to reset the Smarthome server to its factory settings
 func FactoryReset(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := core.FactoryReset(); err != nil {

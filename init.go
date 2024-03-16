@@ -134,7 +134,6 @@ mainLoop:
 
 	// Shutdown
 	{
-		log.Info("System shutting down...")
 		signal.Reset(os.Interrupt)
 
 		// Shutdown the webserver
@@ -146,11 +145,8 @@ mainLoop:
 		cancel()
 
 		// Wait for any other tasks
-		if err := core.Shutdown(serverConfig); err != nil {
+		if err := core.Shutdown(false); err != nil {
 			log.Fatal(fmt.Sprintf("Graceful shutdown failed: `%s`", err.Error()))
 		}
-
-		log.Info("Shutdown compete")
-		os.Exit(0)
 	}
 }
