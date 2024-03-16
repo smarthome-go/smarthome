@@ -20,7 +20,7 @@ func InitLogger(logger *logrus.Logger) {
 type SchedulerManager struct {
 	// This scheduler executes jobs only once, and then removes the given job
 	scheduler *gocron.Scheduler
-	hms types.Manager
+	hms       types.Manager
 }
 
 var Manager SchedulerManager
@@ -28,7 +28,7 @@ var Manager SchedulerManager
 func InitManager(hms types.Manager) error {
 	Manager = SchedulerManager{
 		scheduler: gocron.NewScheduler(time.Local),
-		hms: hms,
+		hms:       hms,
 	}
 	Manager.scheduler.TagsUnique()
 	if err := Manager.startSavedSchedules(); err != nil {

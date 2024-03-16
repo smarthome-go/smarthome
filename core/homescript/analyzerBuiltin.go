@@ -96,6 +96,48 @@ func (self analyzerHost) GetBuiltinImport(
 	}
 
 	switch moduleName {
+	case "triggers":
+		if kind != pAst.IMPORT_KIND_TRIGGER {
+			return analyzer.BuiltinImport{}, true, false
+		}
+
+		switch valueName {
+		case "minute":
+			return analyzer.BuiltinImport{
+				Trigger: &analyzer.TriggerFunction{
+					TriggerFnType: ast.NewFunctionType(
+						ast.NewNormalFunctionTypeParamKind(
+							[]ast.FunctionTypeParam{ast.NewFunctionTypeParam(
+								pAst.NewSpannedIdent("minutes", span),
+								ast.NewIntType(span),
+								nil,
+							)},
+						),
+						span,
+						ast.NewNullType(span),
+						span,
+					).(ast.FunctionType),
+					CallbackFnType: ast.NewFunctionType(
+						ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+							ast.NewFunctionTypeParam(
+								pAst.NewSpannedIdent("offset", span),
+								ast.NewIntType(span),
+								nil,
+							),
+						}),
+						span,
+						ast.NewNullType(span),
+						span,
+					).(ast.FunctionType),
+					Connective: pAst.AtTriggerDispatchKeyword,
+					ImportedAt: span,
+				},
+				Type:     nil,
+				Template: nil,
+			}, true, true
+		default:
+			return analyzer.BuiltinImport{}, true, false
+		}
 	case "driver":
 		switch kind {
 		case pAst.IMPORT_KIND_TEMPLATE:

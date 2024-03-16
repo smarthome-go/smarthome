@@ -38,30 +38,6 @@ type interpreterExecutor struct {
 	singletonsToLoad  map[string]value.Value
 }
 
-func (self interpreterExecutor) RegisterTrigger(
-	callbackFunctionIdent string,
-	eventTriggerIdent string,
-	span errors.Span,
-	args []value.Value,
-) error {
-	switch eventTriggerIdent {
-	case "minute":
-		stringArgs := make([]string, len(args))
-		for idx, arg := range args {
-			argVString, err := arg.Display()
-			if err != nil {
-				panic((*err).Message())
-			}
-			stringArgs[idx] = argVString
-		}
-		fmt.Printf("PLACEHOLDER: Would register trigger `minute` (with args: `[%s]`) now", strings.Join(stringArgs, ", "))
-	default:
-		panic(fmt.Sprintf("Unknown event trigger ident: `%s`", eventTriggerIdent))
-	}
-
-	return nil
-}
-
 func (self interpreterExecutor) Free() error {
 	var errRes error = nil
 

@@ -18,6 +18,7 @@ import (
 	"github.com/smarthome-go/smarthome/core/database"
 	dispatcherTypes "github.com/smarthome-go/smarthome/core/homescript/dispatcher/types"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
+	"github.com/smarthome-go/smarthome/core/scheduler"
 )
 
 const registrationIDNumDigits = 16
@@ -45,9 +46,10 @@ func InitInstance(hms types.Manager, mqtt *MqttManager) {
 		Hms:  hms,
 		Mqtt: mqtt,
 		Registrations: dispatcherTypes.Registrations{
-			Lock:              sync.RWMutex{},
-			Set:               make(map[dispatcherTypes.RegistrationID]dispatcherTypes.RegisterInfo),
-			MqttRegistrations: make(map[string][]dispatcherTypes.RegistrationID),
+			Lock:                   sync.RWMutex{},
+			Set:                    make(map[dispatcherTypes.RegistrationID]dispatcherTypes.RegisterInfo),
+			MqttRegistrations:      make(map[string][]dispatcherTypes.RegistrationID),
+			SchedulerRegistrations: make(map[string]dispatcherTypes.RegistrationID),
 		},
 	}
 }
@@ -124,6 +126,24 @@ func (i *InstanceT) Register(info dispatcherTypes.RegisterInfo) (dispatcherTypes
 		}
 
 		i.Registrations.Lock.Unlock()
+	case dispatcherTypes.CallBackTriggerAtTime:
+		// TODO: need job ID here, this is not unique.
+		schedulerTag := fmt.Sprintf("dispatcher-%s-%s", info.ProgramID, info.Function.Ident)
+
+		if err := scheduler.Manager.CreateNewScheduleInternal(
+			trigger.Hour,
+			trigger.Minute,
+			schedulerTag,
+			i.timeCallBack,
+			info,
+		); err != nil {
+			return 0, fmt.Errorf("Could not register time: %s", err.Error())
+		}
+
+		i.Registrations.Lock.Lock()
+		i.Registrations.Set[id] = info
+		i.Registrations.SchedulerRegistrations[schedulerTag] = id
+		i.Registrations.Lock.Unlock()
 	default:
 		panic(fmt.Sprintf("Unreachable: introduced a new trigger type (%v) without updating this code", info.Trigger))
 	}
@@ -166,6 +186,17 @@ func (i *InstanceT) Unregister(id dispatcherTypes.RegistrationID) error {
 			}
 
 			i.Registrations.MqttRegistrations[topic] = newSlice
+		}
+	}
+
+	// Delete reference in scheduler if required.
+	for tag, idToCheck := range i.Registrations.SchedulerRegistrations {
+		fmt.Printf("REGISTRATION: ===== %d", idToCheck)
+		if id == idToCheck {
+			if err := scheduler.Manager.RemoveScheduleInternal(tag); err != nil && unregisterErr == nil {
+				unregisterErr = err
+			}
+			delete(i.Registrations.SchedulerRegistrations, tag)
 		}
 	}
 
@@ -254,4 +285,13 @@ func (i *InstanceT) mqttCallBack(_ mqtt.Client, message mqtt.Message) {
 			},
 		})
 	}
+}
+
+func (i *InstanceT) timeCallBack(registration dispatcherTypes.RegisterInfo) {
+	i.CallBack(registration, CallBackMeta{
+		Args: []value.Value{},
+		FunctionSignature: runtime.FunctionInvocationSignature{
+			Params: []runtime.FunctionInvocationSignatureParam{},
+		},
+	})
 }

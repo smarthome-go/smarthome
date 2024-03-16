@@ -17,25 +17,53 @@ type UserSchedule struct {
 	HomescriptCode string `json:"homescriptCode"` // Will be executed if the scheduler runs the job
 }
 
+func (m SchedulerManager) CreateNewScheduleInternal(
+	hour, minute uint8,
+	scheduleTag string,
+	callBack interface{},
+	callbackArgs ...interface{},
+) error {
+	// Prepare the job for go-cron
+	schedulerJob := m.scheduler.Every(1).Day().At(fmt.Sprintf("%02d:%02d", hour, minute))
+	schedulerJob.Tag(scheduleTag)
+	schedulerJob.LimitRunsTo(1)
+	if _, err := schedulerJob.Do(callBack, callbackArgs...); err != nil {
+		log.Error("Failed to create new schedule: could not register cron job: ", err.Error())
+		return err
+	}
+	log.Trace(fmt.Sprintf("Successfully added and setup schedule '%s'", scheduleTag))
+	return nil
+}
+
 // Creates and starts a schedule based on the provided input data
 func (m SchedulerManager) CreateNewSchedule(data database.ScheduleData, owner string) (uint, error) {
-	newScheduleId, err := database.CreateNewSchedule(owner, data)
+	newScheduleID, err := database.CreateNewSchedule(owner, data)
 	if err != nil {
 		log.Error("Failed to create new schedule: database failure: ", err.Error())
 		return 0, err
 	}
 
-	// Prepare the job for go-cron
-	schedulerJob := m.scheduler.Every(1).Day().At(fmt.Sprintf("%02d:%02d", data.Hour, data.Minute))
-	schedulerJob.Tag(fmt.Sprintf("%d", newScheduleId))
-	schedulerJob.LimitRunsTo(1)
-	if _, err := schedulerJob.Do(scheduleRunnerFunc, newScheduleId); err != nil {
-		log.Error("Failed to create new schedule: could not register cron job: ", err.Error())
+	if err := m.CreateNewScheduleInternal(
+		uint8(data.Hour),
+		uint8(data.Minute),
+		fmt.Sprint(newScheduleID),
+		scheduleRunnerFunc,
+		newScheduleID,
+	); err != nil {
 		return 0, err
 	}
-	event.Debug("Schedule Created", fmt.Sprintf("%s created Schedule `%s` (ID: %d)", owner, data.Name, newScheduleId))
-	log.Trace(fmt.Sprintf("Successfully added and setup schedule '%d'", newScheduleId))
-	return newScheduleId, nil
+
+	event.Debug("Schedule Created", fmt.Sprintf("%s created Schedule `%s` (ID: %d)", owner, data.Name, newScheduleID))
+	return newScheduleID, nil
+}
+
+func (m SchedulerManager) RemoveScheduleInternal(tag string) error {
+	if err := m.scheduler.RemoveByTag(tag); err != nil {
+		log.Error("Failed to remove schedule: could not abort schedule: ", err.Error())
+		return err
+	}
+
+	return nil
 }
 
 // Aborts and deletes a schedule based on its id
@@ -44,8 +72,7 @@ func (m SchedulerManager) RemoveScheduleById(id uint) error {
 		log.Error("Failed to remove schedule: could not delete schedule from database: ", err.Error())
 		return err
 	}
-	if err := m.scheduler.RemoveByTag(fmt.Sprintf("%d", id)); err != nil {
-		log.Error("Failed to remove schedule: could not abort schedule: ", err.Error())
+	if err := m.RemoveScheduleInternal(fmt.Sprintf("%d", id)); err != nil {
 		return err
 	}
 	log.Trace(fmt.Sprintf("Successfully removed and aborted schedule '%d'", id))

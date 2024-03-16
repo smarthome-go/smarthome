@@ -54,12 +54,42 @@ type CalledFunction struct {
 // Triggers.
 //
 
+type CallBackTriggerKind uint8
+
+const (
+	OnMqttCallBackTriggerKind CallBackTriggerKind = iota
+	AtTimeCallBackTriggerKind
+)
+
 type CallBackTrigger interface {
+	Kind() CallBackTriggerKind
 }
+
+// MQTT Trigger.
 
 type CallBackTriggerMqtt struct {
 	Topics []string
 }
+
+func (self CallBackTriggerMqtt) Kind() CallBackTriggerKind { return OnMqttCallBackTriggerKind }
+
+// AtTime Trigger.
+
+type TriggerTimeMode uint8
+
+const (
+	OnlyOnceTriggerTimeMode TriggerTimeMode = iota
+	RepeatingTriggerTimeMode
+)
+
+type CallBackTriggerAtTime struct {
+	Hour   uint8
+	Minute uint8
+	Second uint8
+	Mode   TriggerTimeMode
+}
+
+func (self CallBackTriggerAtTime) Kind() CallBackTriggerKind { return AtTimeCallBackTriggerKind }
 
 //
 // Dispatcher.
