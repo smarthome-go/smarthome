@@ -14,9 +14,11 @@ type ServerConfig struct {
 }
 
 type MqttConfig struct {
-	Host     string
-	Username string
-	Password string
+	Enabled  bool   `json:"enabled"`
+	Host     string `json:"host"`
+	Port     uint16 `json:"port"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 // Creates the table that contains the server configuration
@@ -33,7 +35,9 @@ func createConfigTable() error {
 		Latitude FLOAT(32)		DEFAULT 0.0,
 		Longitude FLOAT(32)		DEFAULT 0.0,
 		-- Begin MQTT
+		MQTTEnabled				BOOLEAN,
 		MQTTHost				TEXT,
+		MQTTPort				SMALLINT,
 		MQTTUsername			TEXT,
 		MQTTPassword			TEXT
 	)`)
@@ -53,11 +57,13 @@ func createConfigTable() error {
 			Id,
 			AutomationEnabled,
 			LockDownMode,
+			MQTTEnabled,
 			MQTTHost,
+			MQTTPort,
 			MQTTUsername,
 			MQTTPassword
 		)
-		VALUES(0, TRUE, FALSE, "tcp://host:1883", "username", "")
+		VALUES(0, TRUE, FALSE, FALSE, "host", 1883, "username", "")
 		`); err != nil {
 			log.Error("Failed to create configuration: insert failed: executing query failed: ", err.Error())
 			return err
@@ -77,7 +83,9 @@ func GetServerConfiguration() (ServerConfig, bool, error) {
 		OpenWeatherMapApiKey,
 		Latitude,
 		Longitude,
+		MQTTEnabled,
 		MQTTHost,
+		MQTTPort,
 		MQTTUsername,
 		MQTTPassword
 	FROM configuration
@@ -88,7 +96,9 @@ func GetServerConfiguration() (ServerConfig, bool, error) {
 		&config.OpenWeatherMapApiKey,
 		&config.Latitude,
 		&config.Longitude,
+		&config.Mqtt.Enabled,
 		&config.Mqtt.Host,
+		&config.Mqtt.Port,
 		&config.Mqtt.Username,
 		&config.Mqtt.Password,
 	); err != nil {
@@ -112,7 +122,10 @@ func SetServerConfiguration(config ServerConfig) error {
 		OpenWeatherMapApiKey=?,
 		Latitude=?,
 		Longitude=?,
+		-- MQTT section
+		MQTTEnabled=?,
 		MQTTHost=?,
+		MQTTPort=?,
 		MQTTUsername=?,
 		MQTTPassword=?
 	WHERE Id=0
@@ -128,7 +141,9 @@ func SetServerConfiguration(config ServerConfig) error {
 		config.OpenWeatherMapApiKey,
 		config.Latitude,
 		config.Longitude,
+		config.Mqtt.Enabled,
 		config.Mqtt.Host,
+		config.Mqtt.Port,
 		config.Mqtt.Username,
 		config.Mqtt.Password,
 	); err != nil {
@@ -224,7 +239,9 @@ func UpdateMqttConfig(settings MqttConfig) error {
 	query, err := db.Prepare(`
 	UPDATE configuration
 	SET
+		MQTTEnabled=?,
 		MQTTHost=?,
+		MQTTPort=?,
 		MQTTUsername=?,
 		MQTTPassword=?
 	WHERE Id=0
@@ -234,7 +251,13 @@ func UpdateMqttConfig(settings MqttConfig) error {
 		return err
 	}
 	defer query.Close()
-	if _, err := query.Exec(settings.Host, settings.Username, settings.Password); err != nil {
+	if _, err := query.Exec(
+		settings.Enabled,
+		settings.Host,
+		settings.Port,
+		settings.Username,
+		settings.Password,
+	); err != nil {
 		log.Error("Failed to update the servers MQTT config: executing query failed: ", err.Error())
 		return err
 	}
