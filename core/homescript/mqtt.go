@@ -19,7 +19,7 @@ func mqttSubscribe() value.Value {
 			topicsActual[idx] = (*v).(value.ValueString).Inner
 		}
 
-		// BUG: this is definitly unsafe
+		// BUG: this is definitely unsafe
 		fn := args[1].(value.ValueVMFunction).Ident
 
 		hmsExecutor := executor.(interpreterExecutor)

@@ -56,7 +56,7 @@ func NewMqttManager(config database.MqttConfig) (m *MqttManager, e error) {
 		Initialized: false,
 	}
 
-	logger.Debugf("Intializing MQTT subsystem for broker `%s@%s`...", manager.Config.Username, manager.Config.Host)
+	logger.Debugf("Initializing MQTT subsystem for broker `%s@%s`...", manager.Config.Username, manager.Config.Host)
 
 	if err := manager.init(); err != nil {
 		return &manager, err
@@ -167,7 +167,7 @@ func (m *MqttManager) Unsubscribe(topic string) error {
 
 	if old.Consumers == 0 {
 		if token := m.Client.Unsubscribe(topic); token.Wait() && token.Error() != nil {
-			logger.Errorf("Could not unsubsribe from MQTT topic `%s`: %s", topic, token.Error())
+			logger.Errorf("Could not unsubscribe from MQTT topic `%s`: %s", topic, token.Error())
 			return token.Error()
 		}
 		delete(m.Subscriptions.Set, topic)
