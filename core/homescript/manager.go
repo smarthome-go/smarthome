@@ -28,6 +28,10 @@ const KillEventFunction = "kill"
 const KillEventMaxRuntime = 5 * time.Second
 const jobIDNumDigits = 16
 
+// Onlu for debugging.
+
+const printDebugASM = true
+
 var VM_LIMITS = runtime.CoreLimits{
 	CallStackMaxSize: 128,
 	StackMaxSize:     512,
@@ -303,17 +307,9 @@ func (m *Manager) Run(
 	comp := compiler.NewCompiler()
 	prog := comp.Compile(modules, programID)
 
-	// TODO: remove this debug output
-	// i := 0
-	// for name, function := range prog.Functions {
-	// 	fmt.Printf("%03d ===> func: %s\n", i, name)
-	//
-	// 	for idx, inst := range function {
-	// 		fmt.Printf("%03d | %s\n", idx, inst)
-	// 	}
-	//
-	// 	i++
-	// }
+	if printDebugASM {
+		fmt.Println(prog.AsmString())
+	}
 
 	logger.Debug(fmt.Sprintf("Homescript '%s' of user '%s' is executing...", programID, username))
 
