@@ -28,7 +28,11 @@ func (self interpreterExecutor) RegisterTrigger(
 			stringArgs[idx] = argVString
 		}
 
-		logger.Tracef("Registered trigger `minute` with args `[%s]`", strings.Join(stringArgs, ", "))
+		logger.Tracef(
+			"Registered trigger `minute` with callback fn `%s` and args `[%s]`",
+			callbackFunctionIdent,
+			strings.Join(stringArgs, ", "),
+		)
 
 		minutes := args[0].(value.ValueInt).Inner
 		now := time.Now()
@@ -45,10 +49,11 @@ func (self interpreterExecutor) RegisterTrigger(
 					},
 				},
 				Trigger: types.CallBackTriggerAtTime{
-					Hour:   uint8(then.Hour()),
-					Minute: uint8(then.Minute()),
-					Second: uint8(then.Second()),
-					Mode:   types.OnlyOnceTriggerTimeMode,
+					Hour:         uint8(then.Hour()),
+					Minute:       uint8(then.Minute()),
+					Second:       uint8(then.Second()),
+					Mode:         types.OnlyOnceTriggerTimeMode,
+					RegisteredAt: time.Now(),
 				},
 			},
 		)

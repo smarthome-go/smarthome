@@ -1,6 +1,9 @@
 package types
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 type CallModeKind uint8
 
@@ -83,10 +86,11 @@ const (
 )
 
 type CallBackTriggerAtTime struct {
-	Hour   uint8
-	Minute uint8
-	Second uint8
-	Mode   TriggerTimeMode
+	Hour         uint8
+	Minute       uint8
+	Second       uint8
+	Mode         TriggerTimeMode
+	RegisteredAt time.Time
 }
 
 func (self CallBackTriggerAtTime) Kind() CallBackTriggerKind { return AtTimeCallBackTriggerKind }

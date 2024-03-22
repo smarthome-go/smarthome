@@ -120,7 +120,7 @@ func (self analyzerHost) GetBuiltinImport(
 					CallbackFnType: ast.NewFunctionType(
 						ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
 							ast.NewFunctionTypeParam(
-								pAst.NewSpannedIdent("offset", span),
+								pAst.NewSpannedIdent("elapsed", span),
 								ast.NewIntType(span),
 								nil,
 							),

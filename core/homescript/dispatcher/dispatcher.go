@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"slices"
 	"sync"
+	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/pkg/errors"
@@ -288,10 +289,16 @@ func (i *InstanceT) mqttCallBack(_ mqtt.Client, message mqtt.Message) {
 }
 
 func (i *InstanceT) timeCallBack(registration dispatcherTypes.RegisterInfo) {
+	trigger := registration.Trigger.(dispatcherTypes.CallBackTriggerAtTime)
 	i.CallBack(registration, CallBackMeta{
-		Args: []value.Value{},
+		Args: []value.Value{
+			*value.NewValueInt(int64(time.Since(trigger.RegisteredAt).Seconds())),
+		},
 		FunctionSignature: runtime.FunctionInvocationSignature{
-			Params: []runtime.FunctionInvocationSignatureParam{},
+			Params: []runtime.FunctionInvocationSignatureParam{
+				{Ident: "elapsed", Type: ast.NewIntType(herrors.Span{})},
+			},
+			ReturnType: ast.NewNullType(herrors.Span{}),
 		},
 	})
 }
