@@ -322,6 +322,65 @@
         $loading = false
     }
 
+    // KEY BINDS.
+    // CTRL + S => Save current script
+    // F8       => Run current script
+    // F9       => Lint current code
+    // F10      => Cancel current job(s)
+    document.addEventListener('keydown', e => {
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault()
+
+            if (!selectedDataChanged) {
+                return
+            }
+            modifyCurrentHomescript()
+        } else if (e.key === 'F8') {
+            e.preventDefault()
+
+            if ($jobs.filter(j => j.hmsId === selection).length > 0) {
+                $createSnackbar('Program is already running.')
+                return
+            }
+
+            if (selectedDataChanged) {
+                $createSnackbar('Homescript has pending, unsaved changes.')
+                return
+            }
+
+            initCurrentRun()
+        } else if (e.key === 'F9') {
+            e.preventDefault()
+
+            if ($jobs.filter(j => j.hmsId === selection).length > 0) {
+                $createSnackbar('Program is already running.')
+                return
+            }
+
+            if (selectedDataChanged) {
+                $createSnackbar('Homescript has pending, unsaved changes.')
+                return
+            }
+
+            initCurrentLint()
+        } else if (e.key === 'F10') {
+            e.preventDefault()
+
+            if ($jobs.filter(j => j.hmsId === selection).length === 0) {
+                $createSnackbar('Homescript not running.')
+                return
+            }
+
+            killCurrentJob()
+        }
+    })
+
+    async function killCurrentJob() {
+        await killAllJobsById(selection)
+        await sleep(100)
+        $jobs = await getRunningJobs()
+    }
+
     onMount(async () => {
         // Load Homescripts as soon as the component is mounted
         await loadHomescripts()
@@ -447,11 +506,7 @@
                         </Button>
                         {#if $jobs.filter(j => j.hmsId === selection).length > 0}
                             <Button
-                                on:click={async function () {
-                                    await killAllJobsById(selection)
-                                    await sleep(100)
-                                    $jobs = await getRunningJobs()
-                                }}
+                                on:click={killCurrentJob}
                                 variant="outlined"
                             >
                                 <Label>Kill</Label>

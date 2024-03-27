@@ -190,7 +190,7 @@
     // Specifies whether there are unsaved changes or if the code is up-to-date
     let savedCode: Map<string, string> = new Map()
 
-    // KEY BINDS
+    // KEY BINDS.
     // CTRL + S => Save current script
     // F8       => Run current script
     // F9       => Lint current code
