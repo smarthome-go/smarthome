@@ -12,6 +12,7 @@
 
     export let data: EditorHms = {
         unsaved: false,
+        errors: false,
         data: {
             data: {
                 owner: '',
@@ -37,9 +38,20 @@
     }
 </script>
 
-<div class="fileOption" class:selected class:unsaved={data.unsaved} use:Ripple={{ surface: true }} tabindex="0" role="button" on:click={onClick} on:keypress={onClick}>
+<div
+    class="fileOption"
+    class:selected
+    class:unsaved={data.unsaved}
+    class:errors={data.errors}
+    use:Ripple={{ surface: true }}
+    tabindex="0"
+    role="button"
+    on:click={onClick}
+    on:keypress={onClick}
+>
     <div class="fileOption__border-left" class:endPiece></div>
     <div class="fileOption__border-tpiece" class:endPiece></div>
+
     <i class="material-icons">
         {#if data.data.data.data.type === 'DRIVER'}
            memory
@@ -47,6 +59,7 @@
             {data.data.data.data.mdIcon}
         {/if}
     </i>
+
     <div class="fileOption__right">
         <span class="fileOption__right__id">{data.data.data.data.id}</span>
         <span class="text-hint fileOption__right__name">{data.data.data.data.name}</span>
@@ -60,6 +73,7 @@
         display: flex;
         align-items: stretch;
         $outlineClr: var(--clr-text-disabled);
+        padding-right: .5rem;
 
         * {
             user-select: none;
@@ -109,16 +123,24 @@
             }
         }
 
+        &.errors {
+            .fileOption__right > * {
+                color: var(--clr-error);
+            }
+        }
+
         &.selected {
             background-color: var(--clr-height-2-6);
         }
 
         &.unsaved {
             .fileOption__unsaved-indicator {
-                $size: .4rem;
+                align-self: center;
 
+                $size: .5rem;
                 height: $size;
                 width: $size;
+
                 background-color: var(--clr-text-hint);
                 border-radius: 50%;
                 margin-left: auto;

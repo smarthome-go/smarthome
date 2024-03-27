@@ -3,7 +3,7 @@
     import Page from '../../Page.svelte'
     import { createSnackbar } from '../../global'
     import { lintHomescriptCode } from '../../homescript'
-    import type { homescript, homescriptArgSubmit, homescriptWithArgs } from '../../homescript'
+    import type { homescript, homescriptArgSubmit, homescriptResponse, homescriptWithArgs } from '../../homescript'
     import { onMount } from 'svelte'
     import IconButton from '@smui/icon-button'
     import Select, { Option } from '@smui/select'
@@ -72,6 +72,7 @@
             for (let script of res) {
                 homescripts = [...homescripts, {
                     unsaved: false,
+                    errors: false,
                     data: script,
                 }]
             }
@@ -138,6 +139,7 @@
 
     let currentData: EditorHms = {
         unsaved: false,
+        errors: false,
         data: {
             data: {
                 owner: '',
@@ -167,7 +169,7 @@
 
         if (unsaved != currentData.unsaved) {
             // This function produces a lot of runtime overhead, so be careful when calling it
-            setUnsaved(unsaved)
+            setBooleanPropertyOnHms('unsaved', unsaved)
         }
     }
 
@@ -261,15 +263,15 @@
             // this is required so that svelte triggers a refresh of the other variables
 
             // Commit this change
-            setUnsaved(false)
+            setBooleanPropertyOnHms('unsaved', false)
         } catch (err) {
             $createSnackbar(`Failed to save '${currentScript}': ${err}`)
         }
         otherLoading = false
     }
 
-    function setUnsaved(value: boolean) {
-            currentData.unsaved = false
+    function setBooleanPropertyOnHms(propertyKey: 'unsaved' | 'errors', value: boolean) {
+            currentData[propertyKey] = value
 
             // This part of the code is required to update the value in the list of homescripts.
             // It is required so that the file explorer also reports the correct save-state of its files.
@@ -278,7 +280,7 @@
                 throw "BUG warning: current homescript is not in the list of all homescripts"
             }
 
-            homescripts[index].unsaved = value
+            homescripts[index][propertyKey] = value
     }
 
     /*
@@ -326,6 +328,40 @@
         }
     }
 
+    function displayLintResult(res: homescriptResponse) {
+        let errs = res.errors
+
+        // If hint and info diagnostics should be hidden, do it here
+        if (!showLintInfo)
+            errs = errs.filter(d => {
+                if (d.diagnosticError !== null) {
+                    if (d.diagnosticError.kind <= 1) {
+                        return false
+                    }
+                }
+                return true
+            })
+
+        let fileContents: Map<string, string> = new Map();
+        for (let key of Object.keys(res.fileContents)) {
+        fileContents.set(key, res.fileContents[key])
+        }
+
+        res.fileContents
+
+        currentExecRes = {
+            // code: currentData.data.data.data.code,
+            modeRun: false,
+            errors: errs,
+            fileContents,
+            success: res.success,
+        }
+
+        setBooleanPropertyOnHms('errors', !res.success)
+
+        output = res.output
+    }
+
     // Dry-run function without data modifications or expensive operations
     // Can be used to validate the correctness of a script without the need for execution
     async function lintCurrentCode() {
@@ -340,34 +376,8 @@
                 currentData.data.data.data.id,
                 currentData.data.data.data.type == 'DRIVER',
             )
-            let errs = currentExecResTemp.errors
 
-            // If hint and info diagnostics should be hidden, do it here
-            if (!showLintInfo)
-                errs = errs.filter(d => {
-                    if (d.diagnosticError !== null) {
-                        if (d.diagnosticError.kind <= 1) {
-                            return false
-                        }
-                    }
-                    return true
-                })
-
-            let fileContents: Map<string, string> = new Map();
-            for (let key of Object.keys(currentExecResTemp.fileContents)) {
-            fileContents.set(key, currentExecResTemp.fileContents[key])
-            }
-
-            currentExecResTemp.fileContents
-
-            currentExecRes = {
-                code: currentData.data.data.data.code,
-                modeRun: false,
-                errors: errs,
-                fileContents,
-                success: currentExecResTemp.success,
-            }
-            output = currentExecResTemp.output
+            displayLintResult(currentExecResTemp)
         } catch (err) {
             $createSnackbar(`Failed to lint '${currentScript}': ${err}`)
         }
@@ -621,6 +631,7 @@
             <div class="container__editor" class:alt={layoutAlt}>
                 {#if homescriptsLoaded}
                 <HmsEditor
+                    on:lint={(e) => displayLintResult(e.detail)}
                     bind:moduleName={currentData.data.data.data.id}
                     bind:code={currentData.data.data.data.code}
                     {showLintInfo}

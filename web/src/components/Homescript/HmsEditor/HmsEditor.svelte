@@ -68,6 +68,10 @@
         try {
             console.log('linting as driver: ', isDriver)
             const result = await lintHomescriptCode(code, [], moduleName, isDriver)
+
+            // Editor page will use these.
+            dispatch('lint', result)
+
             diagnostics = result.errors.map(e => {
                 let severity = 'error'
                 let message = 'error: unknown'

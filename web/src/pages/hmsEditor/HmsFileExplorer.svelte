@@ -5,6 +5,7 @@
     export let homescripts: EditorHms[] = []
     export let currentScript: EditorHms = {
         unsaved: false,
+        errors: false,
         data: {
             data: {
                 owner: '',
