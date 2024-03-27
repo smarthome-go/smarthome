@@ -18,6 +18,35 @@ func (self interpreterExecutor) RegisterTrigger(
 	args []value.Value,
 ) error {
 	switch eventTriggerIdent {
+	case "message":
+		topicsStrList := make([]string, 0)
+
+		topicList := args[0].(value.ValueList).Values
+		for _, item := range *topicList {
+			topicsStrList = append(topicsStrList, (*item).(value.ValueString).Inner)
+		}
+
+		id, err := dispatcher.Instance.Register(
+			types.RegisterInfo{
+				ProgramID: self.programID,
+				Function: &types.CalledFunction{
+					Ident:          callbackFunctionIdent,
+					IdentIsLiteral: false,
+					CallMode: types.CallModeAttaching{
+						HMSJobID: self.jobID,
+					},
+				},
+				Trigger: types.CallBackTriggerMqtt{
+					Topics: topicsStrList,
+				},
+			},
+		)
+
+		if err != nil {
+			return err
+		}
+
+		*self.registrations = append(*self.registrations, id)
 	case "minute":
 		stringArgs := make([]string, len(args))
 		for idx, arg := range args {

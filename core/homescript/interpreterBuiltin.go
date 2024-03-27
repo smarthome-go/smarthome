@@ -1044,7 +1044,7 @@ func (self interpreterExecutor) ResolveModuleCode(moduleName string) (code strin
 
 // Writes the given string (produced by a print function for instance) to any arbitrary source
 func (self interpreterExecutor) WriteStringTo(input string) error {
-	self.ioWriter.Write([]byte(input)) // TODO: does this even work?
+	self.ioWriter.Write([]byte(input))
 	return nil
 }
 
@@ -1056,6 +1056,32 @@ func checkCancelation(ctx *context.Context, span errors.Span) *value.VmInterrupt
 		// do nothing, this should not block the entire interpreter
 		return nil
 	}
+}
+
+func (e interpreterExecutor) genericPrinter(span errors.Span, args []value.Value, trailingNewLine bool) *value.VmInterrupt {
+	output := make([]string, 0)
+	for _, arg := range args {
+		disp, i := arg.Display()
+		if i != nil {
+			return i
+		}
+		output = append(output, disp)
+	}
+
+	outStr := strings.Join(output, " ")
+	if trailingNewLine {
+		outStr = outStr + "\n"
+	}
+
+	if err := e.WriteStringTo(outStr); err != nil {
+		return value.NewVMFatalException(
+			err.Error(),
+			value.Vm_HostErrorKind,
+			span,
+		)
+	}
+
+	return nil
 }
 
 func interpreterScopeAdditions() map[string]value.Value {
@@ -1101,27 +1127,11 @@ func interpreterScopeAdditions() map[string]value.Value {
 
 			return value.NewValueString(out), nil
 		}),
+		"print": *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
+			return value.NewValueNull(), executor.(interpreterExecutor).genericPrinter(span, args, false)
+		}),
 		"println": *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
-			output := make([]string, 0)
-			for _, arg := range args {
-				disp, i := arg.Display()
-				if i != nil {
-					return nil, i
-				}
-				output = append(output, disp)
-			}
-
-			outStr := strings.Join(output, " ") + "\n"
-
-			if err := executor.WriteStringTo(outStr); err != nil {
-				return nil, value.NewVMFatalException(
-					err.Error(),
-					value.Vm_HostErrorKind,
-					span,
-				)
-			}
-
-			return value.NewValueNull(), nil
+			return value.NewValueNull(), executor.(interpreterExecutor).genericPrinter(span, args, true)
 		}),
 		"time": *value.NewValueObject(map[string]*value.Value{
 			"sleep": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {

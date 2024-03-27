@@ -195,6 +195,55 @@ func (self analyzerHost) GetBuiltinImport(
 			return analyzer.BuiltinImport{}, true, false
 		}
 	case "mqtt":
+		if kind == pAst.IMPORT_KIND_TRIGGER {
+			switch valueName {
+			case "message":
+				return analyzer.BuiltinImport{
+					Type:     nil,
+					Template: nil,
+					Trigger: &analyzer.TriggerFunction{
+						TriggerFnType: ast.NewFunctionType(
+							ast.NewNormalFunctionTypeParamKind(
+								[]ast.FunctionTypeParam{
+									ast.NewFunctionTypeParam(
+										pAst.NewSpannedIdent("topics", span),
+										ast.NewListType(ast.NewStringType(span), span),
+										nil,
+									),
+								},
+							),
+							span,
+							ast.NewNullType(span),
+							span,
+						).(ast.FunctionType),
+						CallbackFnType: ast.NewFunctionType(
+							ast.NewNormalFunctionTypeParamKind(
+								[]ast.FunctionTypeParam{
+									ast.NewFunctionTypeParam(
+										pAst.NewSpannedIdent("topic", span),
+										ast.NewStringType(span),
+										nil,
+									),
+									ast.NewFunctionTypeParam(
+										pAst.NewSpannedIdent("payload", span),
+										ast.NewStringType(span),
+										nil,
+									),
+								},
+							),
+							span,
+							ast.NewNullType(span),
+							span,
+						).(ast.FunctionType),
+						Connective: pAst.OnTriggerDispatchKeyword,
+						ImportedAt: span,
+					},
+				}, true, true
+			}
+
+			return analyzer.BuiltinImport{}, true, false
+		}
+
 		switch valueName {
 		case "subscribe":
 			return analyzer.BuiltinImport{
@@ -711,6 +760,14 @@ func analyzerScopeAdditions() map[string]analyzer.Variable {
 				ast.NewVarArgsFunctionTypeParamKind([]ast.Type{ast.NewStringType(errors.Span{})}, ast.NewUnknownType()),
 				errors.Span{},
 				ast.NewStringType(errors.Span{}),
+				errors.Span{},
+			),
+		),
+		"print": analyzer.NewBuiltinVar(
+			ast.NewFunctionType(
+				ast.NewVarArgsFunctionTypeParamKind([]ast.Type{}, ast.NewUnknownType()),
+				errors.Span{},
+				ast.NewNullType(errors.Span{}),
 				errors.Span{},
 			),
 		),

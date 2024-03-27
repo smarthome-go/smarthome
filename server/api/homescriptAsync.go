@@ -61,6 +61,13 @@ const (
 	MessageKindKill HMSMessageKindRX = "kill"
 )
 
+func BufioScanAll(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	if atEOF && len(data) == 0 {
+		return 0, nil, nil
+	}
+	return len(data), data, nil
+}
+
 // Runs any given Homescript by its ID
 // The output is in realtime
 func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
@@ -175,7 +182,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 			wsMutex.Lock()
 			if err := ws.WriteJSON(HMSMessageTXErr{
 				Kind:    MessageKindErr,
-				Message: fmt.Sprintf("invalid kill message: %s\n", err.Error()),
+				Message: fmt.Sprintf("invalid kill message: `%s`\n", err.Error()),
 			}); err != nil {
 				return
 			}
@@ -186,14 +193,14 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 			wsMutex.Lock()
 			if err := ws.WriteJSON(HMSMessageTXErr{
 				Kind:    MessageKindErr,
-				Message: fmt.Sprintf("invalid kill request kind: %s\n", request.Kind),
+				Message: fmt.Sprintf("invalid kill request kind: `%s`\n", request.Kind),
 			}); err != nil {
 				return
 			}
 			wsMutex.Unlock()
 		}
 		// Kill the Homescript
-		log.Trace("Killing script via Websocket")
+		log.Trace("Killing script via Websocket...")
 		// cancel()
 		homescript.HmsManager.Kill(jobId)
 		log.Trace("Killed script via Websocket")
@@ -205,6 +212,50 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 	killPipe := make(chan bool)
 	go func(kill chan bool) {
 		scanner.Split(bufio.ScanRunes)
+
+		// lastBufioInput := time.Now()
+
+		// scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+		// 	timeSinceLast := time.Since(lastBufioInput)
+		// 	lastBufioInput = time.Now()
+		//
+		// 	throughput := float64(len(data)) / timeSinceLast.Seconds()
+		// 	fmt.Printf("=====  len: %d | time since: %f | throughput: %f ====\n", len(data), timeSinceLast.Seconds(), throughput)
+		//
+		// 	if timeSinceLast.Milliseconds() < 1 {
+		// 		fmt.Println("time since last is sub milli")
+		// 		return bufio.ScanRunes(data, atEOF)
+		// 	}
+		//
+		// 	// TODO: use another split function dynamically based on the "throughput"
+		// 	// if throughput < 10 {
+		// 	// 	return bufio.ScanRunes(data, atEOF)
+		// 	// }
+		//
+		// 	// if len(data) > 10000 {
+		// 	// 	fmt.Println("=== emergency dump ===")
+		// 	// 	// return BufioScanAll(data, atEOF)
+		// 	// }
+		//
+		// 	if len(data) < 100 {
+		// 		return 0, nil, nil
+		// 	}
+		//
+		// 	advance = 0
+		// 	token = make([]byte, 0)
+		// 	for i := 0; i < 100; i++ {
+		// 		advanceTemp, tokenTemp, err := bufio.ScanRunes(data[i:], atEOF)
+		// 		if err != nil {
+		// 			return advanceTemp, tokenTemp, err
+		// 		}
+		//
+		// 		advance += advanceTemp
+		// 		token = append(token, tokenTemp...)
+		// 	}
+		//
+		// 	return advance, token, nil
+		// })
+
 		for scanner.Scan() {
 			wsMutex.Lock()
 			if err := ws.SetWriteDeadline(time.Now().Add(10 * time.Second)); err != nil {
@@ -220,7 +271,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 			wsMutex.Unlock()
 		}
 		if scanner.Err() != nil {
-			log.Error("Scanner failed: ", err.Error())
+			log.Error("Scanner failed: ", scanner.Err())
 		}
 		<-kill
 	}(killPipe)
