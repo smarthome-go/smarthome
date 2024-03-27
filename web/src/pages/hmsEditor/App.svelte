@@ -1,4 +1,5 @@
 <script lang="ts">
+    import Split from 'split-grid'
     import Page from '../../Page.svelte'
     import { createSnackbar } from '../../global'
     import { lintHomescriptCode } from '../../homescript'
@@ -18,6 +19,7 @@
     import FormField from '@smui/form-field'
     import HmsFileExplorer from './HmsFileExplorer.svelte';
     import type { EditorHms } from './types';
+    import EditorLeft from './EditorLeft.svelte';
 
     /*
        General variables
@@ -287,11 +289,11 @@
     let currentExecRes: hmsResWrapper = undefined
 
     let output = ''
-    $: if ((output || currentExecRes) && terminal) {
-        terminal.scrollTop = terminal.scrollHeight
+    $: if ((output || currentExecRes) && terminalContentDiv) {
+        terminalContentDiv.scrollTop = terminalContentDiv.scrollHeight
     }
 
-    let terminal: HTMLDivElement
+    let terminalContentDiv: HTMLDivElement
 
     // Keeps track of whether the current HMS request is meant to be `run` or `lint`
     // Is used in the argument-prompt popup which dispatches the according request to the server
@@ -430,10 +432,19 @@
             }
         }
 
+        let WSBufferSizeChars = 1
+
+        let WSOutputBuf = ""
         conn.onmessage = evt => {
             try {
                 let message = JSON.parse(evt.data)
-                if (message.kind !== undefined && message.kind === 'out') output += message.payload
+                if (message.kind !== undefined && message.kind === 'out') {
+                    WSOutputBuf += message.payload
+                    if (WSOutputBuf.length >= WSBufferSizeChars) {
+                        output += WSOutputBuf;
+                        WSOutputBuf = ""
+                    }
+                }
                 else if (message.kind !== undefined && message.kind === 'res') {
                     let fileContents: Map<string, string> = new Map();
 
@@ -442,7 +453,6 @@
                     }
 
                     currentExecRes = {
-                        code: currentData.data.data.data.code,
                         modeRun: true,
                         errors: message.errors,
                         fileContents,
@@ -467,8 +477,67 @@
         }
     }
 
+    //
+    // Resizing logic.
+    //
+
+    let terminalDiv: HTMLElement | undefined = undefined
+
+    let terminalResizing = false
+    let editorLeftResizing = false
+
+    const gutterLeftTrackNr = 1
+    const gutterTerminalTrackNr = 3
+
+    function updateTerminalSizeAfterDrag(_direction: 'row' | 'column', track:number) {
+        switch (track) {
+            case gutterLeftTrackNr:
+                editorLeftResizing = false
+            case gutterTerminalTrackNr:
+                const terminalContentStyle =window.getComputedStyle(terminalContentDiv)
+                const terminalContentPaddingHorizontal = parseFloat(terminalContentStyle.paddingLeft)
+                    + parseFloat(terminalContentStyle.paddingRight)
+                const parentWidth = terminalDiv.getBoundingClientRect().width
+                const maxWidth = parentWidth - terminalContentPaddingHorizontal
+                terminalContentDiv.style.maxWidth = `${maxWidth}px`
+                terminalResizing = false
+                break
+        default:
+        }
+    }
+
+    function blurTerminalOnDrag(_direction: 'row' | 'column', track: number) {
+        switch (track) {
+            case gutterLeftTrackNr:
+                editorLeftResizing = true
+                break
+            case gutterTerminalTrackNr:
+                terminalResizing = true
+                break
+            default:
+        }
+    }
+
+
     // Load the Homescript-list at the beginning
     onMount(async () => {
+        // Resizing setup.
+        Split({
+            onDragEnd: updateTerminalSizeAfterDrag,
+            onDragStart: blurTerminalOnDrag,
+            columnMinSizes: { 0: 50, 2: 50, 4: 50 },
+            columnGutters: [
+            {
+                track: 1,
+                element: document.querySelector('.container__gutter-1'),
+            },
+            {
+                track: 3,
+                element: document.querySelector('.container__gutter-3'),
+            }
+            ],
+        })
+
         // Used for initially setting the active script via URL query
         const selectedFromQuery = new URLSearchParams(window.location.search).get('id')
 
@@ -537,45 +606,18 @@
                 <Progress type="circular" bind:loading={otherLoading} />
             </div>
         </div>
-        <div class="container">
-            <div class="container__left">
-                <div class="container__left__files">
-                    <span class="text-hint mdc-elevation--z2 container__left__files__title">Files</span>
-                    <HmsFileExplorer
-                        bind:homescripts
-                        bind:currentScript={currentData}
-                    ></HmsFileExplorer>
-                </div>
 
-                <div class="container__left__diagnostics">
-                    <div class="container__left__diagnostics__list">
-                        {#if currentExecRes !== undefined}
-                            <div class="container__left__diagnostics__list__item">
-                                <span class='icon-info'></span>
-                                <span>
-                                {currentExecRes.errors.map(e => e.diagnosticError !== null ? (e.diagnosticError.kind === 1 ? 1 : 0) : 0).reduce((acc, i) => acc + i, 0)}
-                                </span>
-                            </div>
-                            <div class="container__left__diagnostics__list__item">
-                                <span class='icon-warn'></span>
-                                <span>
-                                {currentExecRes.errors.map(e => e.diagnosticError !== null ? (e.diagnosticError.kind === 2 ? 1 : 0) : 0).reduce((acc, i) => acc + i, 0)}
-                                </span>
-                            </div>
-                            <div class="container__left__diagnostics__list__item">
-                                <span class='icon-error'></span>
-                                <span>
-                                {currentExecRes.errors.map(e => e.diagnosticError !== null ? (e.diagnosticError.kind === 3 ? 1 : 0) : (e.syntaxError !== null ? 1 : 0)).reduce((acc, i) => acc + i, 0)}
-                                </span>
-                            </div>
-                        {:else}
-                            <span class='text-disabled'>
-                                No diagnostics available
-                            </span>
-                        {/if}
-                    </div>
-                </div>
+        <div class="container">
+            <div class="container__left" class:resizing={editorLeftResizing}>
+                <EditorLeft
+                    bind:currentData
+                    bind:homescripts
+                    {currentExecRes}
+                />
             </div>
+
+            <div class="container__gutter-col container__gutter-1"></div>
+
             <div class="container__editor" class:alt={layoutAlt}>
                 {#if homescriptsLoaded}
                 <HmsEditor
@@ -586,7 +628,10 @@
                 />
                 {/if}
             </div>
-            <div class="container__terminal" class:alt={layoutAlt}>
+
+            <div class="container__gutter-col container__gutter-3"></div>
+
+            <div class="container__terminal" class:alt={layoutAlt} bind:this={terminalDiv} class:resizing={terminalResizing}>
                 <div class="container__terminal__header mdc-elevation--z2">
                     <div class="container__terminal__header__left">
                         <IconButton
@@ -627,12 +672,16 @@
                     </div>
                 </div>
                 <Progress type="linear" bind:loading={requestLoading} />
-                <div class="container__terminal__content" bind:this={terminal}>
-                    {#if output.length === 0 && currentExecRes === undefined}
-                        <span class="gray"> Homescript output will be displayed here. </span>
-                    {:else}
-                        <Terminal data={currentExecRes} {output} />
-                    {/if}
+                <div class="container__terminal__content" bind:this={terminalContentDiv}>
+                    <!-- {#if terminalResizing} -->
+                    <!--     Resizing... -->
+                    <!-- {:else} -->
+                        {#if output.length === 0 && currentExecRes === undefined}
+                            <span class="gray"> Homescript output will be displayed here. </span>
+                        {:else}
+                            <Terminal data={currentExecRes} {output} />
+                        {/if}
+                    <!-- {/if} -->
                 </div>
             </div>
         </div>
@@ -641,7 +690,6 @@
 
 <style lang="scss">
     @use '../../mixins' as *;
-    @use '../../components/Homescript/HmsEditor/icons.scss' as *;
 
     #error404 {
         display: flex;
@@ -715,113 +763,76 @@
         }
     }
 
-    .container {
-        display: flex;
+   .container {
+        $gutter-width: 5px;
+        $gutter-color0: var(--clr-height-0-3);
+        $gutter-color1: var(--clr-height-4-8);
+
+        display: grid;
+        grid-template-columns: 2.5fr $gutter-width 9fr $gutter-width 350px;
+
         overflow: hidden;
-        flex-direction: column;
         height: calc(100vh - 3.67rem);
 
         @include mobile {
-            height: calc(100vh - 9rem);
+            //height: calc(100vh - 9rem);
         }
 
-        @include widescreen {
-            flex-direction: row;
+        // @include widescreen {
+            // flex-direction: row;
+        // }
+
+        &__gutter-col {
+            grid-row: 1/-1;
+            cursor: col-resize;
+            background: repeating-linear-gradient(
+                45deg,
+                $gutter-color0 0px,
+                $gutter-color0 2px,
+                $gutter-color1 2px,
+                $gutter-color1 $gutter-width
+            );
+        }
+
+        &__gutter-1 {
+            grid-column: 2;
+        }
+
+        &__gutter-3 {
+            grid-column: 4;
+        }
+
+        @mixin on-resize {
+            &.resizing {
+                background: repeating-linear-gradient(
+                    45deg,
+                    var(--clr-height-0-1) 0px,
+                    var(--clr-height-0-1) 5px,
+                    transparent 5px,
+                    transparent 10px
+                );
+            }
         }
 
         &__left {
             display: flex;
             flex-direction: column;
 
-            &__files {
-                width: 20rem;
-                display: flex;
-                flex-direction: column;
-
-                &__title {
-                    padding: .3rem .8rem;
-                }
-            }
-
-            &__diagnostics {
-                margin-top: auto;
-
-                &__list {
-                    display: flex;
-                    gap: .6rem;
-                    background-color: var(--clr-height-1-4);
-                    padding: .2rem .5rem;
-
-                    &__item {
-                        display: flex;
-                        align-items: center;
-                        gap: .2rem;
-                        color: var(--clr-text-hint);
-
-                        .icon-info {
-                           content: url($info-icon-svg);
-                           height: 1rem;
-                        }
-
-                        .icon-warn {
-                           content: url($warn-icon-svg);
-                           height: 1rem;
-                        }
-
-                        .icon-error {
-                           content: url($error-icon-svg);
-                           height: 1rem;
-                        }
-                    }
-                }
-            }
+            @include on-resize;
         }
 
         &__editor {
             overflow: auto;
-            height: 75%;
-
-            @include widescreen {
-                width: 75%;
-                height: 100%;
-            }
-
-            // Used when the expand-terminal button is selected
-            transition-property: width, height;
-            transition-duration: 0.25s;
-
-            &.alt {
-                @include widescreen {
-                    width: 25%;
-                }
-                @include not-widescreen {
-                    height: 25%;
-                }
-            }
+            height: 100%;
         }
 
         &__terminal {
-            height: 25%;
+            height: 100%;
             display: flex;
             flex-direction: column;
+            overflow-x: hidden;
 
-            // Used when the expand-terminal button is selected
-            transition-property: width, height;
-            transition-duration: 0.25s;
-
-            @include widescreen {
-                width: 25%;
-                height: 100%;
-            }
-
-            &.alt {
-                @include widescreen {
-                    width: 75%;
-                }
-                @include not-widescreen {
-                    height: 75%;
-                }
-            }
+            @include on-resize;
 
             &__header {
                 padding: 0.2rem;
@@ -841,6 +852,11 @@
                 padding: 1rem 1.3rem;
                 height: 100%;
                 overflow-y: auto;
+
+                // This is updated via JS after a drag.
+                // Required because otherwise, a lot of output would grow the terminal.
+                // However, the terminal should only grow when the user drags it.
+                max-width: 10rem;
             }
         }
     }
