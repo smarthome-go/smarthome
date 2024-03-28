@@ -8,7 +8,7 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	herrors "github.com/smarthome-go/homescript/v3/homescript/errors"
-	"github.com/smarthome-go/homescript/v3/homescript/parser"
+	"github.com/smarthome-go/homescript/v3/homescript/lexer"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
@@ -27,9 +27,9 @@ const DRIVER_DEVICE_SINGLETON_IDENT = "Device"
 
 const DRIVER_FIELD_REQUIRED_ANNOTATION = "setting"
 
-var DriverSingletonIdent = fmt.Sprintf("%s%s", parser.SINGLETON_TOKEN, DRIVER_SINGLETON_IDENT)
-var DriverDeviceSingletonIdent = fmt.Sprintf("%s%s", parser.SINGLETON_TOKEN, DRIVER_DEVICE_SINGLETON_IDENT)
-var DriverFieldRequiredAnnotation = fmt.Sprintf("%s%s", parser.TYPE_ANNOTATION_TOKEN, DRIVER_FIELD_REQUIRED_ANNOTATION)
+var DriverSingletonIdent = fmt.Sprintf("%s%s", lexer.SINGLETON_TOKEN, DRIVER_SINGLETON_IDENT)
+var DriverDeviceSingletonIdent = fmt.Sprintf("%s%s", lexer.SINGLETON_TOKEN, DRIVER_DEVICE_SINGLETON_IDENT)
+var DriverFieldRequiredAnnotation = fmt.Sprintf("%s%s", lexer.TYPE_ANNOTATION_TOKEN, DRIVER_FIELD_REQUIRED_ANNOTATION)
 
 type DriverManager struct {
 	Hms types.Manager
@@ -401,7 +401,10 @@ func typeToConfigField(from ast.Type, topLevel bool, contextSpan errors.Span) (C
 				Level:   diagnostic.DiagnosticLevelWarning,
 				Message: "Cannot apply settings-based configuration on this singleton",
 				Notes: []string{
-					fmt.Sprintf("A field can be used as a setting by prefixing it with the `%s%s` directive", parser.TYPE_ANNOTATION_TOKEN, DRIVER_FIELD_REQUIRED_ANNOTATION),
+					fmt.Sprintf(
+						"A field can be used as a setting by prefixing it with the `%s%s` directive",
+						lexer.TYPE_ANNOTATION_TOKEN,
+						DRIVER_FIELD_REQUIRED_ANNOTATION),
 				},
 				Span: contextSpan,
 				// In this case, the context span will be the span of the entire singleton, not just its type.
