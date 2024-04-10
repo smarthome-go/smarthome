@@ -255,6 +255,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 					self.ioWriter,
 					nil,
 					nil,
+					nil,
 				)
 
 				if err != nil {

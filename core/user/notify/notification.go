@@ -37,7 +37,10 @@ type NotificationManager struct {
 var Manager NotificationManager
 
 func InitManager(hms types.Manager, automation automationTypes.AutomationManager) {
-	panic("TODO")
+	Manager = NotificationManager{
+		HmsManager: hms,
+		Automation: automation,
+	}
 }
 
 func (m NotificationManager) Notify(

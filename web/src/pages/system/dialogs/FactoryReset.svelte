@@ -153,7 +153,7 @@
         display: block;
     }
     #reset-output {
-        font-family: 'Jetbrains Mono', monospace;
+        font-family: 'Jetbrains Mono NL', monospace;
         font-size: 0.9rem;
     }
 </style>

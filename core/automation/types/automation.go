@@ -6,6 +6,5 @@ import (
 )
 
 type AutomationManager interface {
-	InitAutomations(config database.ServerConfig) error
 	RunAllAutomationsWithTrigger(username string, trigger database.AutomationTrigger, context types.AutomationContext)
 }

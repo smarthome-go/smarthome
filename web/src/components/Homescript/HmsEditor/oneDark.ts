@@ -25,7 +25,7 @@ const highlightBackground = '#2c313a',
 
 export const oneDarkTheme = EditorView.theme({
     '*': {
-        fontFamily: 'JetBrains Mono, monospace',
+        fontFamily: 'Jetbrains Mono NL, monospace',
     },
     '&': {
         color: fg,

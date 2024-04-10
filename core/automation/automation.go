@@ -101,7 +101,7 @@ func (m AutomationManager) DeactivateAutomationSystem(config database.ServerConf
 }
 
 // Runs all automations of the passed user with the given trigger
-func RunAllAutomationsWithTrigger(username string, trigger database.AutomationTrigger, context types.AutomationContext) {
+func (m AutomationManager) RunAllAutomationsWithTrigger(username string, trigger database.AutomationTrigger, context types.AutomationContext) {
 	config, found, err := database.GetServerConfiguration()
 	if err != nil || !found {
 		log.Error("Could not run automations with certain trigger: server configuration not found or errored")

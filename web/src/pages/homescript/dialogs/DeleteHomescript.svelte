@@ -64,7 +64,7 @@
             background-color: var(--clr-height-0-2);
             color: var(--clr-primary);
             font-size: 0.9rem;
-            font-family: "Jetbrains Mono", monospace;
+            font-family: "Jetbrains Mono NL", monospace;
         }
     }
 </style>

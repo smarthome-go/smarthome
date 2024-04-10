@@ -32,7 +32,11 @@ func (c CallModeAllocating) Kind() CallModeKind { return CallModeKindAllocating 
 // Adaptive.
 //
 
-type CallModeAdaptive struct{}
+type CallModeAdaptive struct {
+	HMSJobID uint64
+	// TODO: why is this required
+	Username string
+}
 
 func (c CallModeAdaptive) Kind() CallModeKind { return CallModeKindAdaptive }
 

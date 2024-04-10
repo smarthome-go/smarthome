@@ -112,7 +112,7 @@
             padding-left: .5rem;
 
             &__id {
-                font-family: "Jetbrains Mono", monospace;
+                font-family: "Jetbrains Mono NL", monospace;
                 font-size: .75rem;
                 line-height: 1em;
             }

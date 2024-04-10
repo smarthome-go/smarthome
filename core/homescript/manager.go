@@ -512,6 +512,7 @@ func (m *Manager) RunById(
 	args map[string]string,
 	outputWriter io.Writer,
 	automationContext *types.AutomationContext,
+	functionInvocation *runtime.FunctionInvocation,
 	singletonsToLoad map[string]value.Value,
 ) (types.HmsRes, types.HmsRunResultContext, error) {
 	script, found, err := m.GetPersonalScriptById(hmsId, username)
@@ -535,8 +536,7 @@ func (m *Manager) RunById(
 		args,
 		outputWriter,
 		automationContext,
-		// Do not use any user-defined entry function.
-		nil,
+		functionInvocation,
 		singletonsToLoad,
 	)
 }

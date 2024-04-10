@@ -153,14 +153,14 @@
         <span class="text-disabled">
             {#if data.modeRun}
                 {#if data.success}
-                    Homescript executed successfully
+                    Homescript executed successfully.
                 {:else}
-                    Homescript crashed during runtime
+                    Homescript runtime crashed during execution.
                 {/if}
             {:else if data.success}
-                Analyzer detected no issues
+                Analyzer detected no issues.
             {:else}
-                Analyzer detected issues
+                Analyzer detected issues.
             {/if}
         </span>
     {:else}

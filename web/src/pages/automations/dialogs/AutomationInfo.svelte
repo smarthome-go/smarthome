@@ -76,7 +76,7 @@
         margin: 0.3rem 0;
     }
     code {
-        font-family: 'Jetbrains Mono', monospace;
+        font-family: 'Jetbrains Mono NL', monospace;
         font-size: 0.9rem;
     }
     .container {

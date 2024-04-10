@@ -69,6 +69,8 @@ type Manager interface {
 		args map[string]string,
 		outputWriter io.Writer,
 		automationContext *AutomationContext,
+		// If this is left non-empty, an additional function is called after `init`.
+		functionInvocation *runtime.FunctionInvocation,
 		singletonsToLoad map[string]value.Value,
 	) (HmsRes, HmsRunResultContext, error)
 

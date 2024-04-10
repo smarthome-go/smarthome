@@ -309,7 +309,7 @@
 
             &__row {
                 &__level {
-                    font-family: "Jetbrains Mono", monospace;
+                    font-family: "Jetbrains Mono NL", monospace;
                     font-size: 0.75rem;
                 }
             }

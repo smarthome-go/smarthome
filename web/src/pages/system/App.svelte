@@ -7,7 +7,7 @@
     import Progress from "../../components/Progress.svelte";
     import Button, { Icon } from "@smui/button";
     import Textfield from "@smui/textfield";
-    import type { systemConfig } from "./main";
+    import type { mqttSystemConfig, systemConfig } from "./main";
     import { onMount } from "svelte";
     import { createSnackbar } from "../../global";
     import HelperText from "@smui/textfield/helper-text";
@@ -19,10 +19,11 @@
     import PurgeCache from "./dialogs/PurgeCache.svelte";
     import Drivers from "./hardware/Drivers.svelte";
 
-    let loading = false;
+    let loading = 0;
 
     let automationEnabledLoading = false;
     let lockDownModeEnabledLoading = false;
+    let mqttLoading = 0;
 
 
     // Specifies whether the dialog for flushing cached data should be open or closed
@@ -40,14 +41,34 @@
         openWeatherMapApiKey: "",
         latitude: 0.0,
         longitude: 0.0,
+        mqtt: {
+            enabled: false,
+            host: "",
+            port: 0,
+            username: "",
+            password: "",
+        }
     };
 
     let latitudeInput = 0.0;
     let longitudeInput = 0.0;
     let owmInput = "";
 
+    let mqttInput: mqttSystemConfig = {
+        enabled: false,
+        host: "",
+        port: 0,
+        username: "",
+        password: ""
+    }
+
+    let statusMQTT: mqttStatus = {
+        working: false,
+        error: null
+    }
+
     async function fetchConfig() {
-        loading = true;
+        loading++
         try {
             const res = await (await fetch("/api/system/config")).json();
             if (res.success !== undefined && !res.success)
@@ -56,14 +77,16 @@
             owmInput = res.openWeatherMapApiKey;
             latitudeInput = res.latitude;
             longitudeInput = res.longitude;
+
+            mqttInput = structuredClone(config.mqtt)
         } catch (err) {
             $createSnackbar(`Failed to load system configuration: ${err}`);
         }
-        loading = false;
+        loading--
     }
 
     async function updateOWMKey() {
-        loading = true;
+        loading++
         try {
             const res = await (
                 await fetch("/api/weather/key/modify", {
@@ -80,11 +103,64 @@
         } catch (err) {
             $createSnackbar(`Failed to update OpenWeatherMap API key: ${err}`);
         }
-        loading = false;
+        setTimeout(() => {
+            loading--
+        }, 750);
+    }
+
+    async function fetchMQTTStatus() {
+        mqttLoading++
+        try {
+            const res = await (await fetch("/api/system/mqtt/status")).json();
+            if (res.success !== undefined && !res.success)
+                throw Error(res.error);
+            statusMQTT = res
+        } catch (err) {
+            $createSnackbar(`Failed to load MQTT status: ${err}`);
+        }
+
+        setTimeout(() => {
+            mqttLoading--
+        }, 750);
+    }
+
+    async function updateMQTT() {
+        loading++
+        mqttLoading++
+
+        try {
+            let res = await fetch("/api/system/mqtt/config", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(mqttInput),
+            })
+
+            let resJson: any = {}
+            if (res.status === 200 || res.status === 500) {
+                resJson = await res.json();
+            }
+
+            if (res.status === 500) {
+                statusMQTT.workning = false
+                statusMQTT.error = resJson.error
+            } else if (resJson.success !== undefined && !resJson.success) {
+                throw Error(resJson.error);
+            }
+
+            config.mqtt = structuredClone(mqttInput)
+            await fetchMQTTStatus()
+        } catch (err) {
+            $createSnackbar(`Failed to update MQTT configuration: ${err}`);
+        }
+
+        setTimeout(() => {
+            mqttLoading--
+            loading--
+        }, 750);
     }
 
     async function updateGeolocation() {
-        loading = true;
+        loading++
         try {
             const res = await (
                 await fetch("/api/system/location/modify", {
@@ -103,7 +179,7 @@
         } catch (err) {
             $createSnackbar(`Failed to update geolocation: ${err}`);
         }
-        loading = false;
+        loading--
     }
 
     async function setAutomationsEnabled(enabled: boolean) {
@@ -156,7 +232,10 @@
     let activities: Activity[] = ['general', 'drivers']
 
     // As soon as the component is mounted, fetch the configuration
-    onMount(fetchConfig);
+    onMount(() => {
+        fetchConfig()
+        fetchMQTTStatus()
+    });
 </script>
 
 
@@ -191,7 +270,7 @@
             <Button on:click={() => (logsOpen = true)}>Logs</Button>
         </div>
     </div>
-    <Progress bind:loading />
+    <Progress loading={loading > 0} />
     <div id="content">
         {#if currentActivity == 'general'}
         <div id="general" class="mdc-elevation--z1">
@@ -324,6 +403,108 @@
                     </div>
                 </FormField>
             </div>
+
+            <div class="mqtt-status">
+                <div class="mqtt-status__title">
+                    <h6>MQTT Status</h6>
+                    <IconButton
+                        title="Update"
+                        class="material-icons"
+                        on:click={fetchMQTTStatus}>refresh</IconButton
+                    >
+                </div>
+
+                <div class="mqtt-status__status">
+                    {#if statusMQTT.working}
+                        Working <i class="material-icons">check</i>
+                    {:else}
+                        Failure: <code>{statusMQTT.error}</code> <i class="material-icons">error</i>
+                    {/if}
+
+                    <Progress
+                        type={"circular"}
+                        loading={mqttLoading > 0}
+                    />
+                </div>
+            </div>
+
+            <div class="mqtt">
+                <div class="mwtt__title">
+                    <h6>MQTT Configuration</h6>
+                    <Button
+                        on:click={updateMQTT}
+                        disabled={JSON.stringify(mqttInput) == JSON.stringify(config.mqtt)}
+                    >
+                        <Label>Save</Label>
+                        <Icon class="material-icons">save</Icon>
+                    </Button>
+                </div>
+
+                <FormField>
+                    <Switch
+                        bind:checked={mqttInput.enabled}
+                    />
+                    <div slot="label" class="lockdown__label">
+                        <span
+                            >MQTT subsystem {config.mqtt.enabled
+                                ? "online"
+                                : "offline"}</span
+                        >
+                    </div>
+                </FormField>
+
+                <div class="mqtt__host">
+                    <div>
+                        <Textfield
+                            bind:value={mqttInput.host}
+                            label="Host"
+                            type="text"
+                        >
+                            <HelperText slot="helper"
+                                >Hostname without port.</HelperText
+                            >
+                        </Textfield>
+                    </div>
+
+                    <div>
+                        <Textfield
+                            bind:value={mqttInput.port}
+                            label="Port"
+                            type="number"
+                        >
+                            <HelperText slot="helper"
+                                >MQTT Port.</HelperText
+                            >
+                        </Textfield>
+                    </div>
+                </div>
+
+                <div class="mqtt__credentials">
+                    <div>
+                        <Textfield
+                            bind:value={mqttInput.username}
+                            label="Username"
+                            type="text"
+                        >
+                            <HelperText slot="helper"
+                                >MQTT Username</HelperText
+                            >
+                        </Textfield>
+                    </div>
+
+                    <div>
+                        <Textfield
+                            bind:value={mqttInput.password}
+                            label="Password"
+                            type="password"
+                        >
+                            <HelperText slot="helper"
+                                >MQTT Password</HelperText
+                            >
+                        </Textfield>
+                    </div>
+                </div>
+            </div>
             <ExportImport />
         </div>
         {:else if currentActivity == 'drivers'}
@@ -381,6 +562,7 @@
             width: 100%;
             box-sizing: border-box;
             padding: 1rem 1.5rem;
+            overflow-y: auto;
 
             h6 {
                 margin: 0;
@@ -407,6 +589,7 @@
                         color: var(--clr-text-disabled);
                     }
                 }
+
                 &__inputs {
                     display: flex;
                     gap: 1rem;
@@ -414,6 +597,44 @@
             }
 
             .owm {
+                &__title {
+                    display: flex;
+                    align-items: center;
+
+                    h6 {
+                        margin: 0;
+                    }
+
+                    :global &__help {
+                        color: var(--clr-text-disabled);
+                    }
+                }
+            }
+
+            .mqtt-status {
+                &__title {
+                    display: flex;
+                    align-items: center;
+
+                    h6 {
+                        margin: 0;
+                    }
+                }
+
+                &__status {
+                    display: flex;
+                    align-items: center;
+                    gap: 1rem;
+                }
+            }
+
+            .mqtt {
+                &__host, &__credentials {
+                    display: flex;
+                    align-items: center;
+                    gap: 1rem;
+                }
+
                 &__title {
                     display: flex;
                     align-items: center;

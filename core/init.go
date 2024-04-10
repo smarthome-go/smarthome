@@ -11,6 +11,7 @@ import (
 	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/core/homescript/dispatcher"
 	"github.com/smarthome-go/smarthome/core/scheduler"
+	"github.com/smarthome-go/smarthome/core/user/notify"
 	"github.com/smarthome-go/smarthome/services/reminder"
 )
 
@@ -36,6 +37,8 @@ func Init(config database.ServerConfig) error {
 	if err := automation.InitManager(hmsManager, config); err != nil {
 		return fmt.Errorf("Failed to activate automation system: %s", err.Error())
 	}
+
+	notify.InitManager(hmsManager, automation.Manager)
 
 	if err := scheduler.InitManager(hmsManager); err != nil {
 		return fmt.Errorf("Failed to activate scheduler system: %s", err.Error())

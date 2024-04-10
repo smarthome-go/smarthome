@@ -559,6 +559,8 @@
         }
 
         currentScript = selectedFromQuery
+
+        updateTerminalSizeAfterDrag('column', 3)
     })
 </script>
 
@@ -858,7 +860,7 @@
             }
 
             &__content {
-                font-family: 'Jetbrains Mono', monospace;
+                font-family: 'Jetbrains Mono NL', monospace;
                 font-size: 0.9rem;
                 padding: 1rem 1.3rem;
                 height: 100%;

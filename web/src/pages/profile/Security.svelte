@@ -219,7 +219,7 @@
 
                 &__token-code {
                     font-size: 0.7rem;
-                    font-family: "Jetbrains Mono", monospace;
+                    font-family: "Jetbrains Mono NL", monospace;
                 }
             }
         }

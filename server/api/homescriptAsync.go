@@ -44,9 +44,9 @@ const (
 
 // Messages sent by the client
 type HmsMessageRXInit struct {
-	Kind    HMSMessageKindRX `json:"kind"`
-	Payload string           `json:"payload"`
-	Args    []HomescriptArg  `json:"args"`
+	Kind  HMSMessageKindRX `json:"kind"`
+	HMSID string           `json:"payload"`
+	Args  []HomescriptArg  `json:"args"`
 }
 
 type HmsMessageRXKill struct {
@@ -140,7 +140,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 		res, _, err := homescript.HmsManager.RunById(
 			types.HMS_PROGRAM_KIND_NORMAL,
 			nil,
-			request.Payload,
+			request.HMSID,
 			username,
 			types.InitiatorAPI,
 			ctx,
@@ -150,7 +150,9 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 			outWriter,
 			nil,
 			nil,
+			nil,
 		)
+
 		if err != nil {
 			wsMutex.Lock()
 			if err := ws.WriteJSON(HMSMessageTXErr{

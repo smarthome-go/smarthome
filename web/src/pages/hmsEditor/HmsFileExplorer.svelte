@@ -102,7 +102,7 @@
                     align-items: center;
                     gap: .75rem;
                     padding: .3rem .7rem;
-                    font-family: 'Jetbrains Mono', monospace;
+                    font-family: 'Jetbrains Mono NL', monospace;
                     font-size: .8rem;
                     line-height: 1em;
                     background-color: var(--clr-height-1-2);

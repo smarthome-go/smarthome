@@ -1,6 +1,7 @@
 package dispatcher
 
 import (
+	"context"
 	"crypto/rand"
 	"fmt"
 	"math"
@@ -9,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -53,6 +55,10 @@ func InitInstance(hms types.Manager, mqtt *MqttManager) {
 			SchedulerRegistrations: make(map[string]dispatcherTypes.RegistrationID),
 		},
 	}
+}
+
+func (self *InstanceT) MQTTStatus() error {
+	return self.Mqtt.Status()
 }
 
 func (self *InstanceT) Reload(mqttConfig database.MqttConfig) error {
@@ -239,7 +245,40 @@ func (i *InstanceT) CallBack(info dispatcherTypes.RegisterInfo, meta CallBackMet
 	case dispatcherTypes.CallModeAllocating:
 		panic("not supported")
 	case dispatcherTypes.CallModeAdaptive:
-		panic("not supported")
+		_, found := i.Hms.GetJobById(callMode.HMSJobID)
+		if found {
+			i.AttachingCall(info, dispatcherTypes.CallModeAttaching{
+				HMSJobID: callMode.HMSJobID,
+			}, meta)
+			return
+		}
+
+		cancel, cancelFnc := context.WithCancel(context.Background())
+
+		invocation := runtime.FunctionInvocation{
+			Function:          info.Function.Ident,
+			LiteralName:       info.Function.IdentIsLiteral,
+			Args:              meta.Args,
+			FunctionSignature: meta.FunctionSignature,
+		}
+
+		res, _, _ := i.Hms.RunById(
+			types.HMS_PROGRAM_KIND_NORMAL, // TODO: fix this!
+			nil,
+			info.ProgramID,
+			callMode.Username,
+			types.InitiatorAPI,
+			cancel,
+			cancelFnc,
+			nil,
+			nil,
+			nil,
+			nil,
+			&invocation,
+			nil,
+		)
+
+		spew.Dump(res)
 	case dispatcherTypes.CallModeAttaching:
 		i.AttachingCall(info, callMode, meta)
 	default:

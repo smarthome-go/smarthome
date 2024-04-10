@@ -205,6 +205,7 @@ func AutomationRunnerFunc(id uint, automationCtx types.AutomationContext) {
 		&bytes.Buffer{},
 		&automationCtx,
 		nil,
+		nil,
 	)
 
 	if err != nil {

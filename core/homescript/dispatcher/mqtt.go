@@ -16,7 +16,7 @@ import (
 const MqttKeepAlive time.Duration = time.Second * 60
 const MqttPingTimeout time.Duration = time.Second
 const MqttDisconnectTimeoutMillis uint = 250
-const MqttQOS byte = 0x0
+const MqttQOS byte = 0x2
 
 // Error messages.
 
@@ -104,6 +104,20 @@ func (m *MqttManager) init() error {
 	}
 
 	logger.Infof("Initialized MQTT subsystem for broker `%s@%s`", m.Config.Username, m.Config.Host)
+	return nil
+}
+
+func (m *MqttManager) Status() error {
+	if m.Client == nil || !m.Client.IsConnected() {
+		if err := m.init(); err != nil {
+			return err
+		}
+	}
+
+	if token := m.Client.Publish("healthcheck", 2, false, ""); token.Error() != nil {
+		return token.Error()
+	}
+
 	return nil
 }
 

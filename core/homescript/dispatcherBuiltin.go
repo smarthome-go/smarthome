@@ -26,14 +26,15 @@ func (self interpreterExecutor) RegisterTrigger(
 			topicsStrList = append(topicsStrList, (*item).(value.ValueString).Inner)
 		}
 
-		id, err := dispatcher.Instance.Register(
+		_, err := dispatcher.Instance.Register(
 			types.RegisterInfo{
 				ProgramID: self.programID,
 				Function: &types.CalledFunction{
 					Ident:          callbackFunctionIdent,
 					IdentIsLiteral: false,
-					CallMode: types.CallModeAttaching{
+					CallMode: types.CallModeAdaptive{
 						HMSJobID: self.jobID,
+						Username: self.username,
 					},
 				},
 				Trigger: types.CallBackTriggerMqtt{
@@ -46,7 +47,7 @@ func (self interpreterExecutor) RegisterTrigger(
 			return err
 		}
 
-		*self.registrations = append(*self.registrations, id)
+		// *self.registrations = append(*self.registrations, id)
 	case "minute":
 		stringArgs := make([]string, len(args))
 		for idx, arg := range args {

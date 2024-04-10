@@ -9,6 +9,20 @@ export interface systemConfig {
     openWeatherMapApiKey: string,
     latitude: number,
     longitude: number
+    mqtt: mqttSystemConfig
+}
+
+export interface mqttSystemConfig {
+    enabled: boolean,
+    host: string,
+    port: number,
+    username: string,
+    password: string,
+}
+
+export interface mqttStatus {
+    working: boolean,
+    error: string | null
 }
 
 export interface logEvent {
