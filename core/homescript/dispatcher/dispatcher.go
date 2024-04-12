@@ -1,6 +1,7 @@
 package dispatcher
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"fmt"
@@ -111,6 +112,27 @@ func (i *InstanceT) Register(info dispatcherTypes.RegisterInfo) (dispatcherTypes
 		panic("Function cannot be <nil>")
 	}
 
+	//
+	// TODO: check that this registration does not exist already.
+	//
+
+	if info.Function.CallMode.Kind() == dispatcherTypes.CallModeKindAdaptive {
+		i.Registrations.Lock.RLock()
+
+		for id, infoIter := range i.Registrations.Set {
+
+			if infoIter.Function.CallMode.Kind() == dispatcherTypes.CallModeKindAdaptive && infoIter.ProgramID == info.ProgramID {
+				// Remove this old registration.
+				if err := i.Unregister(id); err != nil {
+					return 0, err
+				}
+				logger.Debugf("Unregistered old ADAPTIVE job with id %d\n", id)
+			}
+		}
+
+		i.Registrations.Lock.RUnlock()
+	}
+
 	id := i.AllocRegistrationID()
 
 	switch trigger := info.Trigger.(type) {
@@ -219,12 +241,12 @@ type CallBackMeta struct {
 
 func (i *InstanceT) AttachingCall(
 	info dispatcherTypes.RegisterInfo,
-	call dispatcherTypes.CallModeAttaching,
+	jobID uint64,
 	meta CallBackMeta,
 ) {
-	job, found := i.Hms.GetJobById(call.HMSJobID)
+	job, found := i.Hms.GetJobById(jobID)
 	if !found {
-		logger.Errorf("Could not dispatch callback into HMS job with ID %d (callback mode attaching)", call.HMSJobID)
+		logger.Errorf("Could not dispatch callback into HMS job with ID %d (callback mode attaching)", jobID)
 		return
 	}
 
@@ -243,47 +265,81 @@ func (i *InstanceT) AttachingCall(
 func (i *InstanceT) CallBack(info dispatcherTypes.RegisterInfo, meta CallBackMeta) {
 	switch callMode := info.Function.CallMode.(type) {
 	case dispatcherTypes.CallModeAllocating:
-		panic("not supported")
-	case dispatcherTypes.CallModeAdaptive:
-		_, found := i.Hms.GetJobById(callMode.HMSJobID)
-		if found {
-			i.AttachingCall(info, dispatcherTypes.CallModeAttaching{
-				HMSJobID: callMode.HMSJobID,
-			}, meta)
-			return
-		}
-
-		cancel, cancelFnc := context.WithCancel(context.Background())
-
-		invocation := runtime.FunctionInvocation{
-			Function:          info.Function.Ident,
-			LiteralName:       info.Function.IdentIsLiteral,
-			Args:              meta.Args,
-			FunctionSignature: meta.FunctionSignature,
-		}
-
-		res, _, _ := i.Hms.RunById(
-			types.HMS_PROGRAM_KIND_NORMAL, // TODO: fix this!
-			nil,
-			info.ProgramID,
+		go i.allocatingCall(
+			info,
+			meta,
 			callMode.Username,
-			types.InitiatorAPI,
-			cancel,
-			cancelFnc,
-			nil,
-			nil,
-			nil,
-			nil,
-			&invocation,
-			nil,
 		)
+	case dispatcherTypes.CallModeAdaptive:
+		for _, job := range i.Hms.GetJobList() {
+			if job.HmsID == nil {
+				continue
+			}
 
-		spew.Dump(res)
+			if *job.HmsID == info.ProgramID {
+				i.AttachingCall(info, job.JobID, meta)
+				return
+			}
+		}
+
+		logger.Tracef("Could not perform attaching call for adaptive job `%s`\n", info.ProgramID)
+
+		go i.allocatingCall(
+			info,
+			meta,
+			callMode.Username,
+		)
 	case dispatcherTypes.CallModeAttaching:
-		i.AttachingCall(info, callMode, meta)
+		go i.AttachingCall(info, callMode.HMSJobID, meta)
 	default:
 		panic("A new call mode was added without updating this code")
 	}
+}
+
+func (i *InstanceT) allocatingCall(
+	info dispatcherTypes.RegisterInfo,
+	meta CallBackMeta,
+	username string,
+) {
+	logger.Tracef("Performing allocating call for program `%s`...\n", info.ProgramID)
+	cancel, cancelFnc := context.WithCancel(context.Background())
+
+	invocation := runtime.FunctionInvocation{
+		Function:          info.Function.Ident,
+		LiteralName:       info.Function.IdentIsLiteral,
+		Args:              meta.Args,
+		FunctionSignature: meta.FunctionSignature,
+	}
+
+	spew.Dump(meta.FunctionSignature)
+
+	var buffer bytes.Buffer
+	res, _, err := i.Hms.RunById(
+		types.HMS_PROGRAM_KIND_NORMAL, // TODO: fix this!
+		nil,
+		info.ProgramID,
+		username,
+		types.InitiatorAPI,
+		cancel,
+		cancelFnc,
+		nil,
+		nil,
+		&buffer,
+		nil,
+		&invocation,
+		nil,
+	)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	if !res.Success {
+		spew.Dump(res.Errors)
+		panic("HMS crashed on invocation")
+	}
+
+	spew.Dump(res)
 }
 
 type MqttMessage struct {
@@ -321,7 +377,7 @@ func (i *InstanceT) mqttCallBack(_ mqtt.Client, message mqtt.Message) {
 						Ident: "payload",
 						Type:  ast.NewStringType(herrors.Span{}),
 					}},
-				ReturnType: nil,
+				ReturnType: ast.NewNullType(herrors.Span{}),
 			},
 		})
 	}

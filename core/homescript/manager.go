@@ -28,9 +28,9 @@ const KillEventFunction = "kill"
 const KillEventMaxRuntime = 5 * time.Second
 const jobIDNumDigits = 16
 
-// Onlu for debugging.
+// Only for debugging.
 
-const printDebugASM = true
+const printDebugASM = false
 
 var VM_LIMITS = runtime.CoreLimits{
 	CallStackMaxSize: 128,
@@ -46,18 +46,6 @@ type Manager struct {
 	Lock         sync.RWMutex
 	Jobs         map[uint64]types.Job
 	CompileCache ManagerCompileCache
-}
-
-type ManagerCompileCache struct {
-	Cache map[string]compiler.Program
-	Lock  sync.RWMutex
-}
-
-func newManagerCompileCache() ManagerCompileCache {
-	return ManagerCompileCache{
-		Cache: make(map[string]compiler.Program),
-		Lock:  sync.RWMutex{},
-	}
 }
 
 // For external usage (can be marshaled)
@@ -304,11 +292,10 @@ func (m *Manager) Run(
 
 	logger.Trace(fmt.Sprintf("Homescript '%s' of user '%s' is being compiled...", programID, username))
 
-	comp := compiler.NewCompiler()
-	prog := comp.Compile(modules, programID)
+	compOut := m.Compile(modules, programID, username)
 
 	if printDebugASM {
-		fmt.Println(prog.AsmString())
+		fmt.Println(compOut.AsmString())
 	}
 
 	logger.Debug(fmt.Sprintf("Homescript '%s' of user '%s' is executing...", programID, username))
@@ -341,7 +328,7 @@ func (m *Manager) Run(
 	)
 
 	vm := runtime.NewVM(
-		prog,
+		compOut,
 		executor,
 		&cancelCtx,
 		&cancelCtxFunc,
@@ -475,7 +462,7 @@ func (m *Manager) Run(
 
 	// Stores the original (non-mangled) singletons of the entry module.
 	singletons := make(map[string]value.Value)
-	for name, mangled := range prog.Mappings.Singletons {
+	for name, mangled := range compOut.Mappings.Singletons {
 		singletons[name] = vm.GetGlobals()[mangled]
 	}
 

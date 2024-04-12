@@ -24,7 +24,9 @@ type CallMode interface {
 // Allocating.
 //
 
-type CallModeAllocating struct{}
+type CallModeAllocating struct {
+	Username string
+}
 
 func (c CallModeAllocating) Kind() CallModeKind { return CallModeKindAllocating }
 
@@ -33,7 +35,6 @@ func (c CallModeAllocating) Kind() CallModeKind { return CallModeKindAllocating 
 //
 
 type CallModeAdaptive struct {
-	HMSJobID uint64
 	// TODO: why is this required
 	Username string
 }

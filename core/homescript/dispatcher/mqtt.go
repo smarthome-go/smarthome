@@ -2,6 +2,7 @@ package dispatcher
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"sync"
@@ -111,6 +112,10 @@ func (m *MqttManager) Status() error {
 	if m.Client == nil || !m.Client.IsConnected() {
 		if err := m.init(); err != nil {
 			return err
+		}
+
+		if m.Client == nil || !m.Client.IsConnected() {
+			return fmt.Errorf("Not connected to broker")
 		}
 	}
 

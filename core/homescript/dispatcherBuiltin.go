@@ -17,6 +17,46 @@ func (self interpreterExecutor) RegisterTrigger(
 	span errors.Span,
 	args []value.Value,
 ) error {
+	return self.registerTriggerOverride(callbackFunctionIdent, eventTriggerIdent, span, args, nil)
+}
+
+func (self interpreterExecutor) registerTriggerOverride(
+	callbackFunctionIdent string,
+	eventTriggerIdent string,
+	span errors.Span,
+	args []value.Value,
+	callmodeOverride *types.CallMode,
+) error {
+	id, err := registerTriggerOverride(
+		callbackFunctionIdent,
+		eventTriggerIdent,
+		span,
+		args,
+		callmodeOverride,
+		self.username,
+		self.programID,
+		&self.jobID,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	*self.registrations = append(*self.registrations, id)
+
+	return nil
+}
+
+func registerTriggerOverride(
+	callbackFunctionIdent string,
+	eventTriggerIdent string,
+	span errors.Span,
+	args []value.Value,
+	callmodeOverride *types.CallMode,
+	username string,
+	programID string,
+	jobID *uint64,
+) (types.RegistrationID, error) {
 	switch eventTriggerIdent {
 	case "message":
 		topicsStrList := make([]string, 0)
@@ -26,16 +66,21 @@ func (self interpreterExecutor) RegisterTrigger(
 			topicsStrList = append(topicsStrList, (*item).(value.ValueString).Inner)
 		}
 
-		_, err := dispatcher.Instance.Register(
+		callmode := types.CallMode(types.CallModeAdaptive{
+			Username: username,
+		})
+
+		if callmodeOverride != nil {
+			callmode = *callmodeOverride
+		}
+
+		id, err := dispatcher.Instance.Register(
 			types.RegisterInfo{
-				ProgramID: self.programID,
+				ProgramID: programID,
 				Function: &types.CalledFunction{
 					Ident:          callbackFunctionIdent,
 					IdentIsLiteral: false,
-					CallMode: types.CallModeAdaptive{
-						HMSJobID: self.jobID,
-						Username: self.username,
-					},
+					CallMode:       callmode,
 				},
 				Trigger: types.CallBackTriggerMqtt{
 					Topics: topicsStrList,
@@ -44,10 +89,10 @@ func (self interpreterExecutor) RegisterTrigger(
 		)
 
 		if err != nil {
-			return err
+			return 0, err
 		}
 
-		// *self.registrations = append(*self.registrations, id)
+		return id, nil
 	case "minute":
 		stringArgs := make([]string, len(args))
 		for idx, arg := range args {
@@ -68,15 +113,21 @@ func (self interpreterExecutor) RegisterTrigger(
 		now := time.Now()
 		then := now.Add(time.Minute * time.Duration(minutes))
 
+		callmode := types.CallMode(types.CallModeAttaching{
+			HMSJobID: *jobID,
+		})
+
+		if callmodeOverride != nil {
+			callmode = *callmodeOverride
+		}
+
 		id, err := dispatcher.Instance.Register(
 			types.RegisterInfo{
-				ProgramID: self.programID,
+				ProgramID: programID,
 				Function: &types.CalledFunction{
 					Ident:          callbackFunctionIdent,
 					IdentIsLiteral: false,
-					CallMode: types.CallModeAttaching{
-						HMSJobID: self.jobID,
-					},
+					CallMode:       callmode,
 				},
 				Trigger: types.CallBackTriggerAtTime{
 					Hour:         uint8(then.Hour()),
@@ -89,13 +140,11 @@ func (self interpreterExecutor) RegisterTrigger(
 		)
 
 		if err != nil {
-			return err
+			return 0, err
 		}
 
-		*self.registrations = append(*self.registrations, id)
+		return id, nil
 	default:
 		panic(fmt.Sprintf("Unknown event trigger ident: `%s`", eventTriggerIdent))
 	}
-
-	return nil
 }
