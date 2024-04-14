@@ -44,6 +44,22 @@ func InitManager(hmsManager types.Manager) {
 	}
 }
 
+func (m *DriverManager) InitDevices() error {
+	// Compile every driver's source code (register any triggers if existent)
+	// TODO: implement this in a better way
+	devices, err := m.ListAllDevicesRich()
+	if err != nil {
+		return err
+	}
+
+	for idx, device := range devices {
+		fmt.Printf("=== %02d | (%s) %s\n", idx, device.Shallow.DeviceType, device.Shallow.Name)
+		fmt.Printf("\t -> errors=%v\n", device.Extractions.HmsErrors)
+	}
+
+	return nil
+}
+
 func (self *DriverManager) ExtractDriverInfoTotal(
 	vendorID string,
 	modelID string,

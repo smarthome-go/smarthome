@@ -180,6 +180,21 @@ func (d DriverManager) EnrichDevice(device database.ShallowDevice, fittingDriver
 		false,
 	)
 
+	invocationID := DriverInvocationIDs{
+		deviceID: device.ID,
+		vendorID: device.VendorID,
+		modelID:  device.ModelID,
+	}
+
+	hmsErrs, err := d.InvokeValidateCheckDriver(invocationID)
+	if err != nil {
+		return RichDevice{}, err
+	}
+
+	if hmsErrs != nil {
+		hmsErrors = append(hmsErrors, hmsErrs...)
+	}
+
 	// Extract additional information by invoking driver function code.
 	// TODO: a hot / ready / precompiled VM instance would lead to additional performance gains here.
 	// TODO: fuse these
@@ -189,13 +204,7 @@ func (d DriverManager) EnrichDevice(device database.ShallowDevice, fittingDriver
 		//
 		// Power state
 		//
-		powerStateTemp, hmsErrs, err := d.InvokeDriverReportPowerState(
-			DriverInvocationIDs{
-				deviceID: device.ID,
-				vendorID: device.VendorID,
-				modelID:  device.ModelID,
-			},
-		)
+		powerStateTemp, hmsErrs, err := d.InvokeDriverReportPowerState(invocationID)
 		if err != nil {
 			return RichDevice{}, err
 		}
@@ -208,11 +217,7 @@ func (d DriverManager) EnrichDevice(device database.ShallowDevice, fittingDriver
 		//
 		// Power draw
 		//
-		powerDrawTemp, hmsErrs, err := d.InvokeDriverReportPowerDraw(
-			DriverInvocationIDs{
-				deviceID: device.ID, vendorID: device.VendorID, modelID: device.ModelID,
-			},
-		)
+		powerDrawTemp, hmsErrs, err := d.InvokeDriverReportPowerDraw(invocationID)
 		if err != nil {
 			return RichDevice{}, err
 		}
@@ -225,13 +230,7 @@ func (d DriverManager) EnrichDevice(device database.ShallowDevice, fittingDriver
 
 	var dimmableInformation []DriverActionReportDimOutput
 	if fittingDriver.DeviceSupports(DeviceCapabilityDimmable) {
-		dimmableInformationTemp, hmsErrs, err := d.InvokeDriverReportDimmable(
-			DriverInvocationIDs{
-				deviceID: device.ID,
-				vendorID: device.VendorID,
-				modelID:  device.ModelID,
-			},
-		)
+		dimmableInformationTemp, hmsErrs, err := d.InvokeDriverReportDimmable(invocationID)
 		if err != nil {
 			return RichDevice{}, err
 		}
@@ -244,13 +243,7 @@ func (d DriverManager) EnrichDevice(device database.ShallowDevice, fittingDriver
 
 	var sensorReadings []DriverActionReportSensorReadingsOutput
 	if fittingDriver.DeviceSupports(DeviceCapabilitySensor) {
-		readingsTemp, hmsErrs, err := d.InvokeDriverReportSensors(
-			DriverInvocationIDs{
-				deviceID: device.ID,
-				vendorID: device.VendorID,
-				modelID:  device.ModelID,
-			},
-		)
+		readingsTemp, hmsErrs, err := d.InvokeDriverReportSensors(invocationID)
 		if err != nil {
 			return RichDevice{}, err
 		}

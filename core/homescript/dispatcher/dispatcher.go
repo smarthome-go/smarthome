@@ -121,7 +121,6 @@ func (i *InstanceT) registerInternal(info dispatcherTypes.RegisterInfo) (dispatc
 		i.DoneRegistrations.Lock.RLock()
 
 		for id, infoIter := range i.DoneRegistrations.Set {
-
 			if infoIter.Function.CallMode.Kind() == dispatcherTypes.CallModeKindAdaptive && infoIter.ProgramID == info.ProgramID {
 				// Remove this old registration.
 				if err := i.Unregister(id); err != nil {

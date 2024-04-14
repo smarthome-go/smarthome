@@ -23,12 +23,6 @@ func Init(config database.ServerConfig) error {
 	// Homescript Manager initialization
 	hmsManager := homescript.InitManager()
 
-	// Homescript driver initialization
-	driver.InitManager(hmsManager)
-	if err := driver.Manager.PopulateValueCache(); err != nil {
-		return err
-	}
-
 	// Mqtt manager initialization
 	mqttManager, err := dispatcher.NewMqttManager(config.Mqtt, OnMqttRetryHook)
 	if err != nil {
@@ -37,6 +31,16 @@ func Init(config database.ServerConfig) error {
 
 	// Homescript dispatcher initialization
 	dispatcher.InitInstance(hmsManager, mqttManager)
+
+	// Homescript driver initialization
+	driver.InitManager(hmsManager)
+	if err := driver.Manager.PopulateValueCache(); err != nil {
+		return err
+	}
+
+	if err := driver.Manager.InitDevices(); err != nil {
+		return err
+	}
 
 	if err := automation.InitManager(hmsManager, config); err != nil {
 		return fmt.Errorf("Failed to activate automation system: %s", err.Error())

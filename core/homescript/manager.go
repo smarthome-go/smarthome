@@ -66,8 +66,8 @@ func InitManager() types.Manager {
 	return &HmsManager
 }
 
-func (self *Manager) ClearCompileCache() {
-
+func (m *Manager) ClearCompileCache() {
+	panic("TODO")
 }
 
 func (m *Manager) generatePotentialJobId() uint64 {
