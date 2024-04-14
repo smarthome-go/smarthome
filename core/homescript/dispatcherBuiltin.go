@@ -86,6 +86,8 @@ func registerTriggerOverride(
 					Topics: topicsStrList,
 				},
 			},
+			// NOTE: Annotations should never fail silently.
+			types.ToleranceRetry,
 		)
 
 		if err != nil {
@@ -94,6 +96,8 @@ func registerTriggerOverride(
 
 		return id, nil
 	case "minute":
+		panic("Why does this even exist?")
+
 		stringArgs := make([]string, len(args))
 		for idx, arg := range args {
 			argVString, err := arg.Display()
@@ -137,6 +141,8 @@ func registerTriggerOverride(
 					RegisteredAt: time.Now(),
 				},
 			},
+			// NOTE: annotations should never fail silently.
+			types.ToleranceRetry,
 		)
 
 		if err != nil {

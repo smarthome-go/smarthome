@@ -24,19 +24,22 @@ func mqttSubscribe() value.Value {
 
 		hmsExecutor := executor.(interpreterExecutor)
 
-		id, err := dispatcher.Instance.Register(dispatcherTypes.RegisterInfo{
-			ProgramID: hmsExecutor.programID,
-			Function: &dispatcherTypes.CalledFunction{
-				Ident:          fn,
-				IdentIsLiteral: true,
-				CallMode: dispatcherTypes.CallModeAttaching{
-					HMSJobID: hmsExecutor.jobID,
+		id, err := dispatcher.Instance.Register(
+			dispatcherTypes.RegisterInfo{
+				ProgramID: hmsExecutor.programID,
+				Function: &dispatcherTypes.CalledFunction{
+					Ident:          fn,
+					IdentIsLiteral: true,
+					CallMode: dispatcherTypes.CallModeAttaching{
+						HMSJobID: hmsExecutor.jobID,
+					},
+				},
+				Trigger: dispatcherTypes.CallBackTriggerMqtt{
+					Topics: topicsActual,
 				},
 			},
-			Trigger: dispatcherTypes.CallBackTriggerMqtt{
-				Topics: topicsActual,
-			},
-		})
+			dispatcherTypes.NoTolerance,
+		)
 
 		if err != nil {
 			return nil, value.NewVMFatalException(fmt.Sprintf("Dispatcher registration failed: %s", err.Error()), value.Vm_HostErrorKind, span)

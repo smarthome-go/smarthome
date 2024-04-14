@@ -38,9 +38,10 @@ func InitLogger(log *logrus.Logger) {
 //
 
 type InstanceT struct {
-	Hms           types.Manager
-	Mqtt          *MqttManager
-	Registrations dispatcherTypes.Registrations
+	Hms                  types.Manager
+	Mqtt                 *MqttManager
+	DoneRegistrations    dispatcherTypes.Registrations
+	PendingRegistrations PendingQueue
 }
 
 var Instance InstanceT
@@ -49,7 +50,7 @@ func InitInstance(hms types.Manager, mqtt *MqttManager) {
 	Instance = InstanceT{
 		Hms:  hms,
 		Mqtt: mqtt,
-		Registrations: dispatcherTypes.Registrations{
+		DoneRegistrations: dispatcherTypes.Registrations{
 			Lock:                   sync.RWMutex{},
 			Set:                    make(map[dispatcherTypes.RegistrationID]dispatcherTypes.RegisterInfo),
 			MqttRegistrations:      make(map[string][]dispatcherTypes.RegistrationID),
@@ -89,25 +90,25 @@ func (i *InstanceT) generatePotentialID() dispatcherTypes.RegistrationID {
 func (i *InstanceT) AllocRegistrationID() dispatcherTypes.RegistrationID {
 	for {
 		potential := i.generatePotentialID()
-		i.Registrations.Lock.Lock()
-		_, invalid := i.Registrations.Set[potential]
+		i.DoneRegistrations.Lock.Lock()
+		_, invalid := i.DoneRegistrations.Set[potential]
 
 		if !invalid {
 			// nolint:exhaustruct
-			i.Registrations.Set[potential] = dispatcherTypes.RegisterInfo{}
-			i.Registrations.Lock.Unlock()
+			i.DoneRegistrations.Set[potential] = dispatcherTypes.RegisterInfo{}
+			i.DoneRegistrations.Lock.Unlock()
 			return potential
 		}
 	}
 }
 
 func (i *InstanceT) FreeRegistrationID(id dispatcherTypes.RegistrationID) {
-	i.Registrations.Lock.Lock()
-	delete(i.Registrations.Set, id)
-	i.Registrations.Lock.Unlock()
+	i.DoneRegistrations.Lock.Lock()
+	delete(i.DoneRegistrations.Set, id)
+	i.DoneRegistrations.Lock.Unlock()
 }
 
-func (i *InstanceT) Register(info dispatcherTypes.RegisterInfo) (dispatcherTypes.RegistrationID, error) {
+func (i *InstanceT) registerInternal(info dispatcherTypes.RegisterInfo) (dispatcherTypes.RegistrationID, error) {
 	if info.Function == nil {
 		panic("Function cannot be <nil>")
 	}
@@ -117,9 +118,9 @@ func (i *InstanceT) Register(info dispatcherTypes.RegisterInfo) (dispatcherTypes
 	//
 
 	if info.Function.CallMode.Kind() == dispatcherTypes.CallModeKindAdaptive {
-		i.Registrations.Lock.RLock()
+		i.DoneRegistrations.Lock.RLock()
 
-		for id, infoIter := range i.Registrations.Set {
+		for id, infoIter := range i.DoneRegistrations.Set {
 
 			if infoIter.Function.CallMode.Kind() == dispatcherTypes.CallModeKindAdaptive && infoIter.ProgramID == info.ProgramID {
 				// Remove this old registration.
@@ -130,7 +131,7 @@ func (i *InstanceT) Register(info dispatcherTypes.RegisterInfo) (dispatcherTypes
 			}
 		}
 
-		i.Registrations.Lock.RUnlock()
+		i.DoneRegistrations.Lock.RUnlock()
 	}
 
 	id := i.AllocRegistrationID()
@@ -142,19 +143,19 @@ func (i *InstanceT) Register(info dispatcherTypes.RegisterInfo) (dispatcherTypes
 			return 0, errors.WithMessage(err, "Could not register via MQTT manager")
 		}
 
-		i.Registrations.Lock.Lock()
-		i.Registrations.Set[id] = info
+		i.DoneRegistrations.Lock.Lock()
+		i.DoneRegistrations.Set[id] = info
 
 		for _, topic := range trigger.Topics {
-			old, found := i.Registrations.MqttRegistrations[topic]
+			old, found := i.DoneRegistrations.MqttRegistrations[topic]
 			if !found {
-				i.Registrations.MqttRegistrations[topic] = make([]dispatcherTypes.RegistrationID, 0)
+				i.DoneRegistrations.MqttRegistrations[topic] = make([]dispatcherTypes.RegistrationID, 0)
 			}
 
-			i.Registrations.MqttRegistrations[topic] = append(old, id)
+			i.DoneRegistrations.MqttRegistrations[topic] = append(old, id)
 		}
 
-		i.Registrations.Lock.Unlock()
+		i.DoneRegistrations.Lock.Unlock()
 	case dispatcherTypes.CallBackTriggerAtTime:
 		// TODO: need job ID here, this is not unique.
 		schedulerTag := fmt.Sprintf("dispatcher-%s-%s", info.ProgramID, info.Function.Ident)
@@ -169,10 +170,10 @@ func (i *InstanceT) Register(info dispatcherTypes.RegisterInfo) (dispatcherTypes
 			return 0, fmt.Errorf("Could not register time: %s", err.Error())
 		}
 
-		i.Registrations.Lock.Lock()
-		i.Registrations.Set[id] = info
-		i.Registrations.SchedulerRegistrations[schedulerTag] = id
-		i.Registrations.Lock.Unlock()
+		i.DoneRegistrations.Lock.Lock()
+		i.DoneRegistrations.Set[id] = info
+		i.DoneRegistrations.SchedulerRegistrations[schedulerTag] = id
+		i.DoneRegistrations.Lock.Unlock()
 	default:
 		panic(fmt.Sprintf("Unreachable: introduced a new trigger type (%v) without updating this code", info.Trigger))
 	}
@@ -181,20 +182,20 @@ func (i *InstanceT) Register(info dispatcherTypes.RegisterInfo) (dispatcherTypes
 }
 
 func (i *InstanceT) Unregister(id dispatcherTypes.RegistrationID) error {
-	i.Registrations.Lock.Lock()
-	defer i.Registrations.Lock.Unlock()
+	i.DoneRegistrations.Lock.Lock()
+	defer i.DoneRegistrations.Lock.Unlock()
 
-	_, valid := i.Registrations.Set[id]
+	_, valid := i.DoneRegistrations.Set[id]
 	if !valid {
 		return fmt.Errorf("Cannot unregister registration with ID %d: not registered", id)
 	}
 
-	delete(i.Registrations.Set, id)
+	delete(i.DoneRegistrations.Set, id)
 
 	var unregisterErr error
 
 	// Also delete all references in MQTT.
-	for topic, ids := range i.Registrations.MqttRegistrations {
+	for topic, ids := range i.DoneRegistrations.MqttRegistrations {
 		if slices.Contains[[]dispatcherTypes.RegistrationID](ids, id) {
 			if err := i.Mqtt.Unsubscribe(topic); err != nil && unregisterErr == nil {
 				unregisterErr = err
@@ -202,7 +203,7 @@ func (i *InstanceT) Unregister(id dispatcherTypes.RegistrationID) error {
 
 			if len(ids) == 1 {
 				// Remove entire topic from map.
-				delete(i.Registrations.MqttRegistrations, topic)
+				delete(i.DoneRegistrations.MqttRegistrations, topic)
 				continue
 			}
 
@@ -214,18 +215,18 @@ func (i *InstanceT) Unregister(id dispatcherTypes.RegistrationID) error {
 				newSlice = append(newSlice, idToCheck)
 			}
 
-			i.Registrations.MqttRegistrations[topic] = newSlice
+			i.DoneRegistrations.MqttRegistrations[topic] = newSlice
 		}
 	}
 
 	// Delete reference in scheduler if required.
-	for tag, idToCheck := range i.Registrations.SchedulerRegistrations {
+	for tag, idToCheck := range i.DoneRegistrations.SchedulerRegistrations {
 		fmt.Printf("REGISTRATION: ===== %d", idToCheck)
 		if id == idToCheck {
 			if err := scheduler.Manager.RemoveScheduleInternal(tag); err != nil && unregisterErr == nil {
 				unregisterErr = err
 			}
-			delete(i.Registrations.SchedulerRegistrations, tag)
+			delete(i.DoneRegistrations.SchedulerRegistrations, tag)
 		}
 	}
 
@@ -354,10 +355,10 @@ func (i *InstanceT) mqttCallBack(_ mqtt.Client, message mqtt.Message) {
 
 	logger.Tracef("Mqtt Callback: topic: `%s`, payload: `%s`", topic, payload)
 
-	i.Registrations.Lock.RLock()
-	defer i.Registrations.Lock.RUnlock()
-	for _, registrationID := range i.Registrations.MqttRegistrations[topic] {
-		registration, found := i.Registrations.Set[registrationID]
+	i.DoneRegistrations.Lock.RLock()
+	defer i.DoneRegistrations.Lock.RUnlock()
+	for _, registrationID := range i.DoneRegistrations.MqttRegistrations[topic] {
+		registration, found := i.DoneRegistrations.Set[registrationID]
 		if !found {
 			panic(fmt.Sprintf("Registered MQTT ID not found: %d", registrationID))
 		}

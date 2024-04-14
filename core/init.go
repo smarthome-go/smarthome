@@ -15,6 +15,10 @@ import (
 	"github.com/smarthome-go/smarthome/services/reminder"
 )
 
+func OnMqttRetryHook() error {
+	return dispatcher.Instance.RegisterPending()
+}
+
 func Init(config database.ServerConfig) error {
 	// Homescript Manager initialization
 	hmsManager := homescript.InitManager()
@@ -26,7 +30,7 @@ func Init(config database.ServerConfig) error {
 	}
 
 	// Mqtt manager initialization
-	mqttManager, err := dispatcher.NewMqttManager(config.Mqtt)
+	mqttManager, err := dispatcher.NewMqttManager(config.Mqtt, OnMqttRetryHook)
 	if err != nil {
 		log.Errorf("MQTT initialization failed: %s", err.Error())
 	}

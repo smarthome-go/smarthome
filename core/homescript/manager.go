@@ -30,7 +30,7 @@ const jobIDNumDigits = 16
 
 // Only for debugging.
 
-const printDebugASM = false
+const printDebugASM = true
 
 var VM_LIMITS = runtime.CoreLimits{
 	CallStackMaxSize: 128,
@@ -350,24 +350,19 @@ func (m *Manager) Run(
 		*idChan <- jobID
 	}
 
-	fmt.Printf("Calling entry function `%s`\n", compiler.EntryPointFunctionIdent)
-
-	// TODO: maybe add debugger support anytime
-
-	// First, spawn the `@init` function.
-	spawnResult := vm.SpawnSync(runtime.FunctionInvocation{
-		Function: "@init",
-		Args:     []value.Value{},
-		FunctionSignature: runtime.FunctionInvocationSignature{
-			Params:     []runtime.FunctionInvocationSignatureParam{},
-			ReturnType: ast.NewNullType(errors.Span{}),
-		},
-	}, nil)
-
-	// If the `@init` function completed successfully, run the optional function routing.
-	if spawnResult.Exception == nil && functionInvocation != nil {
-		spawnResult = vm.SpawnSync(*functionInvocation, nil)
+	// If there is no explicit invocation, call the `main` function.
+	if functionInvocation == nil {
+		functionInvocation = &runtime.FunctionInvocation{
+			Function: compiler.MainFunctionIdent,
+			Args:     []value.Value{},
+			FunctionSignature: runtime.FunctionInvocationSignature{
+				Params:     []runtime.FunctionInvocationSignatureParam{},
+				ReturnType: ast.NewNullType(errors.Span{}),
+			},
+		}
 	}
+
+	spawnResult := vm.SpawnSync(*functionInvocation, nil)
 
 	if spawnResult.Exception != nil {
 		i := spawnResult.Exception.Interrupt
