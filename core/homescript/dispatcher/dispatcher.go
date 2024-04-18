@@ -20,6 +20,7 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/runtime"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/device/driver"
 	dispatcherTypes "github.com/smarthome-go/smarthome/core/homescript/dispatcher/types"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 	"github.com/smarthome-go/smarthome/core/scheduler"
@@ -121,9 +122,14 @@ func (i *InstanceT) registerInternal(info dispatcherTypes.RegisterInfo) (dispatc
 		i.DoneRegistrations.Lock.RLock()
 
 		for id, infoIter := range i.DoneRegistrations.Set {
+			if infoIter.Function == nil {
+				panic("Function may not be <nil>")
+			}
+
 			if infoIter.Function.CallMode.Kind() == dispatcherTypes.CallModeKindAdaptive && infoIter.ProgramID == info.ProgramID {
 				// Remove this old registration.
 				if err := i.Unregister(id); err != nil {
+					i.DoneRegistrations.Lock.RUnlock()
 					return 0, err
 				}
 				logger.Debugf("Unregistered old ADAPTIVE job with id %d\n", id)
@@ -139,6 +145,11 @@ func (i *InstanceT) registerInternal(info dispatcherTypes.RegisterInfo) (dispatc
 	case dispatcherTypes.CallBackTriggerMqtt:
 		// TODO: maybe check that a program cannot register twice.
 		if err := i.Mqtt.Subscribe(trigger.Topics, i.mqttCallBack); err != nil {
+			// Delete allocated ID again. TODO: make deletion on failure more robust -> refactor code
+			i.DoneRegistrations.Lock.Lock()
+			delete(i.DoneRegistrations.Set, id)
+			i.DoneRegistrations.Lock.Unlock()
+
 			return 0, errors.WithMessage(err, "Could not register via MQTT manager")
 		}
 
@@ -166,6 +177,11 @@ func (i *InstanceT) registerInternal(info dispatcherTypes.RegisterInfo) (dispatc
 			i.timeCallBack,
 			info,
 		); err != nil {
+			// Delete allocated ID again.
+			i.DoneRegistrations.Lock.Lock()
+			delete(i.DoneRegistrations.Set, id)
+			i.DoneRegistrations.Lock.Unlock()
+
 			return 0, fmt.Errorf("Could not register time: %s", err.Error())
 		}
 
@@ -314,21 +330,45 @@ func (i *InstanceT) allocatingCall(
 	spew.Dump(meta.FunctionSignature)
 
 	var buffer bytes.Buffer
-	res, _, err := i.Hms.RunById(
-		types.HMS_PROGRAM_KIND_NORMAL, // TODO: fix this!
-		nil,
-		info.ProgramID,
-		username,
-		types.InitiatorAPI,
-		cancel,
-		cancelFnc,
-		nil,
-		nil,
-		&buffer,
-		nil,
-		&invocation,
-		nil,
-	)
+
+	var err error
+	var res types.HmsRes
+
+	if info.DriverTriplet != nil {
+		// panic("Fill in values of the driver triplet")
+		_, hmsRes, errTemp := driver.Manager.InvokeDriverFunc(
+			*info.DriverTriplet,
+			driver.FunctionCall{
+				Invocation: invocation,
+			},
+		)
+
+		err = errTemp
+		res = types.HmsRes{
+			Success:      len(hmsRes) == 0,
+			Errors:       hmsRes,
+			FileContents: map[string]string{}, // TODO: is this ok?
+		}
+	} else {
+		resTemp, _, errTemp := i.Hms.RunById(
+			types.HMS_PROGRAM_KIND_NORMAL, // TODO: fix this!
+			nil,
+			info.ProgramID,
+			username,
+			types.InitiatorAPI,
+			cancel,
+			cancelFnc,
+			nil,
+			nil,
+			&buffer,
+			nil,
+			&invocation,
+			nil,
+		)
+
+		res = resTemp
+		err = errTemp
+	}
 
 	if err != nil {
 		panic(err.Error())

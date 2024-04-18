@@ -3,6 +3,8 @@ package types
 import (
 	"fmt"
 	"time"
+
+	driverTypes "github.com/smarthome-go/smarthome/core/device/driver/types"
 )
 
 type CallModeKind uint8
@@ -106,8 +108,10 @@ func (self CallBackTriggerAtTime) Kind() CallBackTriggerKind { return AtTimeCall
 
 type RegisterInfo struct {
 	ProgramID string
-	Function  *CalledFunction
-	Trigger   CallBackTrigger
+	// This is != nil if the target of the dispatch is a driver.
+	DriverTriplet *driverTypes.DriverInvocationIDs
+	Function      *CalledFunction
+	Trigger       CallBackTrigger
 }
 
 type Dispatcher interface {

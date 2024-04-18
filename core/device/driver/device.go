@@ -7,6 +7,7 @@ import (
 
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
+	driverTypes "github.com/smarthome-go/smarthome/core/device/driver/types"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
@@ -168,6 +169,7 @@ func (d DriverManager) EnrichDeviceAll(deviceID string) (RichDevice, bool, error
 	}
 
 	richDevice, err := d.EnrichDevice(device, driver)
+
 	return richDevice, true, err
 }
 
@@ -180,10 +182,10 @@ func (d DriverManager) EnrichDevice(device database.ShallowDevice, fittingDriver
 		false,
 	)
 
-	invocationID := DriverInvocationIDs{
-		deviceID: device.ID,
-		vendorID: device.VendorID,
-		modelID:  device.ModelID,
+	invocationID := driverTypes.DriverInvocationIDs{
+		DeviceID: device.ID,
+		VendorID: device.VendorID,
+		ModelID:  device.ModelID,
 	}
 
 	hmsErrs, err := d.InvokeValidateCheckDriver(invocationID)

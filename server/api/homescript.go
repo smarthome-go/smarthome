@@ -14,6 +14,7 @@ import (
 
 	"github.com/smarthome-go/smarthome/core"
 	"github.com/smarthome-go/smarthome/core/database"
+	driverTypes "github.com/smarthome-go/smarthome/core/device/driver/types"
 	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 	"github.com/smarthome-go/smarthome/server/middleware"
@@ -295,7 +296,7 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 	}
 
 	programKind := types.HMS_PROGRAM_KIND_NORMAL
-	var driverMetadata *types.AnalyzerDriverMetadata = nil
+	var driverMetadata *driverTypes.DriverInvocationIDs = nil
 
 	if request.IsDriver {
 		programKind = types.HMS_PROGRAM_KIND_DEVICE_DRIVER
@@ -313,9 +314,11 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		driverMetadata = &types.AnalyzerDriverMetadata{
-			// VendorId: driverData.VendorId,
-			// ModelId:  driverData.ModelId,
+		// TODO: better way to do this?
+		driverMetadata = &driverTypes.DriverInvocationIDs{
+			DeviceID: "",
+			VendorID: "",
+			ModelID:  "",
 		}
 	}
 

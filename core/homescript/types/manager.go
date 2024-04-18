@@ -8,7 +8,13 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/runtime"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
+	driverTypes "github.com/smarthome-go/smarthome/core/device/driver/types"
 )
+
+type ProgramInvocation struct {
+	ProgramID string
+	DriverIDs *driverTypes.DriverInvocationIDs
+}
 
 type Job struct {
 	Username        string
@@ -29,19 +35,19 @@ type Manager interface {
 		filename string,
 		code string,
 		programKind HMS_PROGRAM_KIND,
-		driverData *AnalyzerDriverMetadata,
+		driverData *driverTypes.DriverInvocationIDs,
 	) (map[string]ast.AnalyzedProgram, HmsRes, error)
 
 	AnalyzeById(
 		id string,
 		username string,
 		programKind HMS_PROGRAM_KIND,
-		driverData *AnalyzerDriverMetadata,
+		driverData *driverTypes.DriverInvocationIDs,
 	) (map[string]ast.AnalyzedProgram, HmsRes, error)
 
 	Run(
 		programKind HMS_PROGRAM_KIND,
-		driverData *AnalyzerDriverMetadata,
+		driverData *driverTypes.DriverInvocationIDs,
 		username string,
 		filename *string,
 		code string,
@@ -59,7 +65,7 @@ type Manager interface {
 
 	RunById(
 		programKind HMS_PROGRAM_KIND,
-		driverData *AnalyzerDriverMetadata,
+		driverData *driverTypes.DriverInvocationIDs,
 		hmsID string,
 		username string,
 		initiator HomescriptInitiator,
@@ -77,4 +83,6 @@ type Manager interface {
 	GetJobList() []Job
 	GetJobById(jobID uint64) (Job, bool)
 	KillAllId(hmsID string) (count uint64, success bool)
+
+	InvalidateCompileCacheEntry(ids ProgramInvocation)
 }

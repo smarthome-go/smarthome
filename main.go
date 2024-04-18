@@ -9,6 +9,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	_ "net/http/pprof"
+
 	"github.com/smarthome-go/smarthome/core"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/utils"
