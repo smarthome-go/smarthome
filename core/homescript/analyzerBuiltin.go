@@ -9,6 +9,7 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	pAst "github.com/smarthome-go/homescript/v3/homescript/parser/ast"
 	"github.com/smarthome-go/smarthome/core/device/driver"
+	driverTypes "github.com/smarthome-go/smarthome/core/device/driver/types"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
@@ -21,7 +22,7 @@ type analyzerHost struct {
 	// Depending on the program kind, the post-validation hook performs specific validations.
 	programKind types.HMS_PROGRAM_KIND
 
-	driverData *types.AnalyzerDriverMetadata
+	driverData *driverTypes.DriverInvocationIDs
 }
 
 func (analyzerHost) GetKnownObjectTypeFieldAnnotations() []string {
@@ -31,7 +32,7 @@ func (analyzerHost) GetKnownObjectTypeFieldAnnotations() []string {
 func newAnalyzerHost(
 	username string,
 	programKind types.HMS_PROGRAM_KIND,
-	driverData *types.AnalyzerDriverMetadata,
+	driverData *driverTypes.DriverInvocationIDs,
 ) analyzerHost {
 	return analyzerHost{
 		username:    username,

@@ -7,6 +7,7 @@ import (
 
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
+	driverTypes "github.com/smarthome-go/smarthome/core/device/driver/types"
 	"github.com/smarthome-go/smarthome/core/homescript/dispatcher"
 	"github.com/smarthome-go/smarthome/core/homescript/dispatcher/types"
 )
@@ -17,7 +18,7 @@ func (self interpreterExecutor) RegisterTrigger(
 	span errors.Span,
 	args []value.Value,
 ) error {
-	return self.registerTriggerOverride(callbackFunctionIdent, eventTriggerIdent, span, args, nil)
+	return self.registerTriggerOverride(callbackFunctionIdent, eventTriggerIdent, span, args, nil, nil)
 }
 
 func (self interpreterExecutor) registerTriggerOverride(
@@ -26,6 +27,7 @@ func (self interpreterExecutor) registerTriggerOverride(
 	span errors.Span,
 	args []value.Value,
 	callmodeOverride *types.CallMode,
+	driverTiplet *driverTypes.DriverInvocationIDs,
 ) error {
 	id, err := registerTriggerOverride(
 		callbackFunctionIdent,
@@ -36,6 +38,7 @@ func (self interpreterExecutor) registerTriggerOverride(
 		self.username,
 		self.programID,
 		&self.jobID,
+		driverTiplet,
 	)
 
 	if err != nil {
@@ -56,6 +59,7 @@ func registerTriggerOverride(
 	username string,
 	programID string,
 	jobID *uint64,
+	driverTiplet *driverTypes.DriverInvocationIDs,
 ) (types.RegistrationID, error) {
 	switch eventTriggerIdent {
 	case "message":
@@ -85,6 +89,7 @@ func registerTriggerOverride(
 				Trigger: types.CallBackTriggerMqtt{
 					Topics: topicsStrList,
 				},
+				DriverTriplet: driverTiplet,
 			},
 			// NOTE: Annotations should never fail silently.
 			types.ToleranceRetry,

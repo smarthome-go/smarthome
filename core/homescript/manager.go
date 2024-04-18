@@ -20,6 +20,7 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
+	driverTypes "github.com/smarthome-go/smarthome/core/device/driver/types"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
@@ -175,7 +176,7 @@ func (m *Manager) Analyze(
 	filename string,
 	code string,
 	programKind types.HMS_PROGRAM_KIND,
-	driverData *types.AnalyzerDriverMetadata,
+	driverData *driverTypes.DriverInvocationIDs,
 ) (map[string]ast.AnalyzedProgram, types.HmsRes, error) {
 	analyzedModules, diagnostics, syntaxErrors := homescript.Analyze(
 		homescript.InputProgram{
@@ -240,7 +241,7 @@ func (m *Manager) AnalyzeById(
 	id string,
 	username string,
 	programKind types.HMS_PROGRAM_KIND,
-	driverData *types.AnalyzerDriverMetadata,
+	driverData *driverTypes.DriverInvocationIDs,
 ) (map[string]ast.AnalyzedProgram, types.HmsRes, error) {
 	hms, found, err := m.GetPersonalScriptById(id, username)
 	if err != nil {
@@ -255,7 +256,7 @@ func (m *Manager) AnalyzeById(
 
 func (m *Manager) Run(
 	programKind types.HMS_PROGRAM_KIND,
-	driverData *types.AnalyzerDriverMetadata,
+	driverData *driverTypes.DriverInvocationIDs,
 	username string,
 	filename *string,
 	code string,
@@ -292,7 +293,23 @@ func (m *Manager) Run(
 
 	logger.Trace(fmt.Sprintf("Homescript '%s' of user '%s' is being compiled...", programID, username))
 
-	compOut := m.Compile(modules, programID, username)
+	jobID := m.AllocJobId()
+
+	executor := NewInterpreterExecutor(
+		jobID,
+		programID,
+		username,
+		outputWriter,
+		args,
+		automationContext,
+		cancelCtxFunc,
+		singletonsToLoad,
+	)
+
+	compOut, err := m.Compile(modules, programID, username, driverData, executor)
+	if err != nil {
+		return types.HmsRes{}, types.HmsRunResultContext{}, err
+	}
 
 	if printDebugASM {
 		fmt.Println(compOut.AsmString())
@@ -313,19 +330,6 @@ func (m *Manager) Run(
 	// 	interpreterScopeAdditions(),
 	// 	&cancelCtx,
 	// )
-
-	jobID := m.AllocJobId()
-
-	executor := NewInterpreterExecutor(
-		jobID,
-		programID,
-		username,
-		outputWriter,
-		args,
-		automationContext,
-		cancelCtxFunc,
-		singletonsToLoad,
-	)
 
 	vm := runtime.NewVM(
 		compOut,
@@ -484,7 +488,7 @@ func (m *Manager) Run(
 // Executes a given Homescript from the database and returns its output, exit-code and possible error
 func (m *Manager) RunById(
 	programKind types.HMS_PROGRAM_KIND,
-	driverData *types.AnalyzerDriverMetadata,
+	driverData *driverTypes.DriverInvocationIDs,
 	hmsId string,
 	username string,
 	initiator types.HomescriptInitiator,

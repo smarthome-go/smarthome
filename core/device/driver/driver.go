@@ -10,6 +10,7 @@ import (
 	herrors "github.com/smarthome-go/homescript/v3/homescript/errors"
 	"github.com/smarthome-go/homescript/v3/homescript/lexer"
 	"github.com/smarthome-go/smarthome/core/database"
+	driverTypes "github.com/smarthome-go/smarthome/core/device/driver/types"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
@@ -73,10 +74,15 @@ func (self *DriverManager) ExtractDriverInfoTotal(
 		filename,
 		homescriptCode,
 		types.HMS_PROGRAM_KIND_DEVICE_DRIVER,
-		&types.AnalyzerDriverMetadata{
-			// VendorId: driver.VendorId,
-			// ModelId:  driver.ModelId,
+		&driverTypes.DriverInvocationIDs{
+			DeviceID: "", // TODO: is this allowed?
+			VendorID: vendorID,
+			ModelID:  modelID,
 		},
+		// &driverTypes.AnalyzerDriverMetadata{
+		// 	// VendorId: driver.VendorId,
+		// 	// ModelId:  driver.ModelId,
+		// },
 	)
 	if err != nil {
 		return DriverInfo{}, nil, err

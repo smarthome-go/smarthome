@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
@@ -11,6 +12,7 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/runtime"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
+	driverTypes "github.com/smarthome-go/smarthome/core/device/driver/types"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
@@ -95,10 +97,15 @@ func (d *DriverManager) invokeDriverGeneric(
 		contextSingletons[DriverDeviceSingletonIdent] = deviceSingleton
 	}
 
-	// TODO: load corresponding device singleton.
+	var deviceId string
+	if driverCtx.DeviceId != nil {
+		deviceId = *driverCtx.DeviceId
+	}
+
 	hmsRes, resultContext, err := d.Hms.Run(
 		types.HMS_PROGRAM_KIND_DEVICE_DRIVER,
-		&types.AnalyzerDriverMetadata{
+		&driverTypes.DriverInvocationIDs{
+			DeviceID: deviceId,
 			VendorID: vendorId,
 			ModelID:  modelId,
 		},
@@ -165,31 +172,30 @@ func (d *DriverManager) invokeDriverGeneric(
 //
 //
 
-type DriverInvocationIDs struct {
-	deviceID string
-	vendorID string
-	modelID  string
-}
-
 //
 // TDOO: maybe implement a function factory to create those almost identical functions more ideomatically.
 //
 
 func (d DriverManager) InvokeDriverFunc(
-	ids DriverInvocationIDs,
+	ids driverTypes.DriverInvocationIDs,
 	call FunctionCall,
 ) (types.HmsRunResultContext, []types.HmsError, error) {
+	if ids.VendorID == "" || ids.ModelID == "" || ids.DeviceID == "" {
+		panic("One or more ids in the driver triplet were empty")
+	}
+
 	// TODO: add context support
 	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel = context.WithTimeout(ctx, time.Second*10)
 
 	runResult, hmsErrs, dbErr := d.invokeDriverGeneric(
 		ctx,
 		cancel,
 		DriverContext{
-			DeviceId: &ids.deviceID,
+			DeviceId: &ids.DeviceID,
 		},
-		ids.vendorID,
-		ids.modelID,
+		ids.VendorID,
+		ids.ModelID,
 		call,
 	)
 
@@ -200,7 +206,7 @@ func (d DriverManager) InvokeDriverFunc(
 	return runResult, nil, nil
 }
 
-func (d DriverManager) InvokeValidateCheckDriver(ids DriverInvocationIDs) ([]types.HmsError, error) {
+func (d DriverManager) InvokeValidateCheckDriver(ids driverTypes.DriverInvocationIDs) ([]types.HmsError, error) {
 	_, hmsErrs, err := d.InvokeDriverFunc(
 		ids,
 		FunctionCall{
@@ -222,7 +228,7 @@ func (d DriverManager) InvokeValidateCheckDriver(ids DriverInvocationIDs) ([]typ
 }
 
 func (d DriverManager) InvokeDriverReportSensors(
-	ids DriverInvocationIDs,
+	ids driverTypes.DriverInvocationIDs,
 ) ([]DriverActionReportSensorReadingsOutput, []types.HmsError, error) {
 	ret, hmsErrs, err := d.InvokeDriverFunc(
 		ids,
@@ -284,7 +290,7 @@ func (d DriverManager) InvokeDriverReportSensors(
 }
 
 func (d DriverManager) InvokeDriverReportPowerState(
-	ids DriverInvocationIDs,
+	ids driverTypes.DriverInvocationIDs,
 ) (DriverActionGetPowerStateOutput, []types.HmsError, error) {
 	ret, hmsErrs, err := d.InvokeDriverFunc(
 		ids,
@@ -309,7 +315,7 @@ func (d DriverManager) InvokeDriverReportPowerState(
 }
 
 func (d DriverManager) InvokeDriverReportPowerDraw(
-	ids DriverInvocationIDs,
+	ids driverTypes.DriverInvocationIDs,
 ) (DriverActionGetPowerDrawOutput, []types.HmsError, error) {
 	ret, hmsErrs, err := d.InvokeDriverFunc(
 		ids,
@@ -414,7 +420,7 @@ func normalizeRange(input value.ValueRange) (lower, upper int64) {
 }
 
 func (d DriverManager) InvokeDriverReportDimmable(
-	ids DriverInvocationIDs,
+	ids driverTypes.DriverInvocationIDs,
 ) ([]DriverActionReportDimOutput, []types.HmsError, error) {
 	ret, hmsErrs, err := d.InvokeDriverFunc(
 		ids,
