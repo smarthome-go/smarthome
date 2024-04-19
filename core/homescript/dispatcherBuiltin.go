@@ -7,7 +7,6 @@ import (
 
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
-	driverTypes "github.com/smarthome-go/smarthome/core/device/driver/types"
 	"github.com/smarthome-go/smarthome/core/homescript/dispatcher"
 	"github.com/smarthome-go/smarthome/core/homescript/dispatcher/types"
 )
@@ -27,8 +26,9 @@ func (self interpreterExecutor) registerTriggerOverride(
 	span errors.Span,
 	args []value.Value,
 	callmodeOverride *types.CallMode,
-	driverTiplet *driverTypes.DriverInvocationIDs,
+	// driverTiplet *driverTypes.DriverInvocationIDs,
 ) error {
+	// TODO: also refactor this
 	id, err := registerTriggerOverride(
 		callbackFunctionIdent,
 		eventTriggerIdent,
@@ -50,16 +50,18 @@ func (self interpreterExecutor) registerTriggerOverride(
 	return nil
 }
 
+// TODO: think about a better argument structure here.
 func registerTriggerOverride(
-	callbackFunctionIdent string,
-	eventTriggerIdent string,
-	span errors.Span,
-	args []value.Value,
-	callmodeOverride *types.CallMode,
-	username string,
-	programID string,
-	jobID *uint64,
-	driverTiplet *driverTypes.DriverInvocationIDs,
+	// callbackFunctionIdent string,
+	// eventTriggerIdent string,
+	// span errors.Span,
+	// args []value.Value,
+	// callmodeOverride *types.CallMode,
+	// username string,
+	// programID string,
+	// jobID *uint64,
+	// driverTiplet *driverTypes.DriverInvocationIDs,
+	foo int,
 ) (types.RegistrationID, error) {
 	switch eventTriggerIdent {
 	case "message":

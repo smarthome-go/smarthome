@@ -17,7 +17,7 @@ import (
 // Is called when the scheduler executes the given automation
 // The AutomationRunnerFunc automatically tries to fetch the required configuration from the provided id
 // Error handling is accomplished by logging to the internal event system and notifying the user about their automations failure
-func AutomationRunnerFunc(id uint, automationCtx types.AutomationContext) {
+func AutomationRunnerFunc(id uint, automationCtx types.ExecutionContextAutomation) {
 	job, jobFound, err := database.GetAutomationById(id)
 	if err != nil {
 		log.Error(fmt.Sprintf("Automation with id: '%d' could not be executed: database failure: %s", id, err.Error()))
@@ -178,13 +178,13 @@ func AutomationRunnerFunc(id uint, automationCtx types.AutomationContext) {
 		return
 	}
 
-	var initiator types.HomescriptInitiator
-	switch job.Data.Trigger {
-	case database.TriggerOnNotification:
-		initiator = types.InitiatorAutomationOnNotify
-	default:
-		initiator = types.InitiatorAutomation
-	}
+	// var initiator types.HomescriptInitiator
+	// switch job.Data.Trigger {
+	// case database.TriggerOnNotification:
+	// 	initiator = types.InitiatorAutomationOnNotify
+	// default:
+	// 	initiator = types.InitiatorAutomation
+	// }
 
 	// NOTE: If the automation context includes a maximum runtime, kill the script if it exceeds this timeout
 	ctx, cancel := context.WithCancel(context.Background())
@@ -192,20 +192,15 @@ func AutomationRunnerFunc(id uint, automationCtx types.AutomationContext) {
 		ctx, cancel = context.WithTimeout(context.Background(), *automationCtx.MaximumHMSRuntime)
 	}
 
-	res, _, err := Manager.Hms.RunById(
-		types.HMS_PROGRAM_KIND_NORMAL,
-		nil,
+	res, err := Manager.Hms.RunUserScript(
 		job.Data.HomescriptId,
 		job.Owner,
-		initiator,
-		ctx,
-		cancel,
 		nil,
-		nil,
+		types.Cancelation{
+			Context:    ctx,
+			CancelFunc: cancel,
+		},
 		&bytes.Buffer{},
-		&automationCtx,
-		nil,
-		nil,
 	)
 
 	if err != nil {
@@ -226,17 +221,24 @@ func AutomationRunnerFunc(id uint, automationCtx types.AutomationContext) {
 		}
 		return
 	}
-	if !res.Success {
+	if !res.Errors.ContainsError {
 		log.Warn(fmt.Sprintf("Automation '%s' failed during the execution of Homescript: '%s', which terminated abnormally", job.Data.Name, job.Data.HomescriptId))
 		event.Error(
 			"Automation Failed",
-			fmt.Sprintf("Automation '%s' failed during execution of Homescript '%s'. Error: %s", job.Data.Name, job.Data.HomescriptId, res.Errors[0]),
+			fmt.Sprintf("Automation '%s' failed during execution of Homescript '%s'. Error: %s", job.Data.Name, job.Data.HomescriptId, res.Errors.Diagnostics[0]),
 		)
 
 		if _, err := notify.Manager.Notify(
 			job.Owner,
 			"Automation Failed",
-			fmt.Sprintf("Automation '**%s**' failed during execution of Homescript '**%s**'.\n```\n%s\n```", job.Data.Name, job.Data.HomescriptId, strings.ReplaceAll(res.Errors[0].String(), "`", "\\`")),
+			fmt.Sprintf(
+				"Automation '**%s**' failed during execution of Homescript '**%s**'.\n```\n%s\n```",
+				job.Data.Name,
+				job.Data.HomescriptId,
+				strings.ReplaceAll(res.Errors.Diagnostics[0].String(),
+					"`",
+					"\\`",
+				)),
 			notify.NotificationLevelError,
 			false,
 		); err != nil {

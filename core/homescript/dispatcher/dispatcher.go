@@ -332,7 +332,7 @@ func (i *InstanceT) allocatingCall(
 	username string,
 ) {
 	logger.Tracef("Performing allocating call for program `%s`...\n", info.ProgramID)
-	cancel, cancelFnc := context.WithCancel(context.Background())
+	cancelCtx, cancelFnc := context.WithCancel(context.Background())
 
 	invocation := runtime.FunctionInvocation{
 		Function:          info.Function.Ident,
@@ -350,7 +350,7 @@ func (i *InstanceT) allocatingCall(
 
 	if info.DriverTriplet != nil {
 		// panic("Fill in values of the driver triplet")
-		_, hmsRes, errTemp := driver.Manager.InvokeDriverFunc(
+		hmsRes, errTemp := driver.Manager.InvokeDriverFunc(
 			*info.DriverTriplet,
 			driver.FunctionCall{
 				Invocation: invocation,
@@ -359,25 +359,34 @@ func (i *InstanceT) allocatingCall(
 
 		err = errTemp
 		res = types.HmsRes{
-			Success:      len(hmsRes) == 0,
-			Errors:       hmsRes,
-			FileContents: map[string]string{}, // TODO: is this ok?
+			Errors:             hmsRes.Errors,
+			Singletons:         nil,
+			ReturnValue:        nil,
+			CalledFunctionSpan: herrors.Span{},
 		}
 	} else {
-		resTemp, _, errTemp := i.Hms.RunById(
-			types.HMS_PROGRAM_KIND_NORMAL, // TODO: fix this!
-			nil,
+		resTemp, errTemp := i.Hms.RunUserScript(
+			// types.HMS_PROGRAM_KIND_NORMAL, // TODO: fix this!
+			// nil,
+			// info.ProgramID,
+			// username,
+			// types.InitiatorAPI,
+			// cancel,
+			// cancelFnc,
+			// nil,
+			// nil,
+			// &buffer,
+			// nil,
+			// &invocation,
+			// nil,
 			info.ProgramID,
 			username,
-			types.InitiatorAPI,
-			cancel,
-			cancelFnc,
 			nil,
-			nil,
+			types.Cancelation{
+				Context:    cancelCtx,
+				CancelFunc: cancelFnc,
+			},
 			&buffer,
-			nil,
-			&invocation,
-			nil,
 		)
 
 		res = resTemp
@@ -388,7 +397,7 @@ func (i *InstanceT) allocatingCall(
 		panic(err.Error())
 	}
 
-	if !res.Success {
+	if res.Errors.ContainsError {
 		spew.Dump(res.Errors)
 		panic("HMS crashed on invocation")
 	}

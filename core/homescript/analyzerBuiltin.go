@@ -42,7 +42,7 @@ func (self analyzerHost) PostValidationHook(
 		info, diagnostics := driver.ExtractDriverInfo(analyzedModules, mainModule, true)
 		logger.Tracef("[Driver] Post-validation: INFO: %v\n", info)
 		return diagnostics
-	case types.HMS_PROGRAM_KIND_NORMAL:
+	default:
 		// TODO: is there something to implement?
 	}
 
@@ -724,12 +724,21 @@ func (self analyzerHost) GetBuiltinImport(
 }
 
 func (self analyzerHost) ResolveCodeModule(moduleName string) (code string, moduleFound bool, err error) {
-	logger.Trace(fmt.Sprintf("Resolving module `%s` by user `%s`", moduleName, self.username))
-	script, found, err := HmsManager.GetPersonalScriptById(moduleName, self.username)
-	if err != nil || !found {
-		return "", found, err
+	logger.Trace(fmt.Sprintf("Resolving module `%s`", moduleName))
+
+	if self.context.Username() != nil {
+		script, found, err := HmsManager.GetPersonalScriptById(moduleName, *self.context.Username())
+		if err != nil || !found {
+			return "", found, err
+		}
+		return script.Data.Code, true, nil
+	} else {
+		script, found, err := HmsManager.GetScriptById(moduleName)
+		if err != nil || !found {
+			return "", found, err
+		}
+		return script.Data.Code, true, nil
 	}
-	return script.Data.Code, true, nil
 }
 
 // TODO: fill this

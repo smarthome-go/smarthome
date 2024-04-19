@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/smarthome-go/homescript/v3/homescript"
 	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 
@@ -75,7 +74,7 @@ func (d *DriverManager) invokeDriverGeneric(
 	var outputBuffer bytes.Buffer
 
 	// TODO: do not hardcode stuff like this
-	filename := fmt.Sprintf("@driver:%s:%s", vendorId, modelId)
+	// filename := fmt.Sprintf("@driver:%s:%s", vendorId, modelId)
 
 	contextSingletons := make(map[string]value.Value)
 
@@ -119,15 +118,18 @@ func (d *DriverManager) invokeDriverGeneric(
 		deviceId = *driverCtx.DeviceId
 	}
 
-	d.Hms.Run(
-		types.ProgramInvocation{
-			Identifier: homescript.InputProgram{
-				ProgramText: "",
-				Filename:    filename,
-			},
-			FunctionInvocation: runtime.FunctionInvocation{},
-			SingletonsToLoad:   map[string]value.Value{},
+	res, err := d.Hms.RunDriverScript(
+		driverTypes.DriverInvocationIDs{
+			DeviceID: deviceId,
+			VendorID: vendorId,
+			ModelID:  modelId,
 		},
+		functionInvocation.Invocation,
+		types.Cancelation{
+			Context:    cancelCtx,
+			CancelFunc: cancelFunc,
+		},
+		&outputBuffer,
 	)
 
 	// hmsRes, resultContext, err := d.Hms.Run(
@@ -152,25 +154,34 @@ func (d *DriverManager) invokeDriverGeneric(
 	// )
 
 	if err != nil {
-		return types.HmsRunResultContext{}, nil, err
+		return types.HmsRes{}, err
 	}
 
-	if !hmsRes.Success {
-		errors := make([]types.HmsError, 0)
+	if !res.Errors.ContainsError {
+		errorList := make([]types.HmsError, 0)
 
 		// Filter out any non-error messages.
-		for _, d := range hmsRes.Errors {
+		for _, d := range res.Errors.Diagnostics {
 			if d.DiagnosticError != nil && d.DiagnosticError.Level != diagnostic.DiagnosticLevelError {
 				continue
 			}
-			errors = append(errors, d)
+			errorList = append(errorList, d)
 		}
 
-		return types.HmsRunResultContext{}, errors, nil
+		return types.HmsRes{
+			Errors: types.HmsDiagnosticsContainer{
+				ContainsError: true,
+				Diagnostics:   errorList,
+				FileContents:  res.Errors.FileContents,
+			},
+			Singletons:         nil,
+			ReturnValue:        nil,
+			CalledFunctionSpan: errors.Span{},
+		}, nil
 	}
 
 	// Get driver and device singleton.
-	driverSingletonAfter, found := resultContext.Singletons[DriverSingletonIdent]
+	driverSingletonAfter, found := res.Singletons[DriverSingletonIdent]
 	if !found {
 		panic(fmt.Sprintf("Driver singleton (`%s`) not found after driver execution", DriverSingletonIdent))
 	}
@@ -178,18 +189,18 @@ func (d *DriverManager) invokeDriverGeneric(
 	// Save driver singleton state after VM has terminated.
 	driverMarshaled, _ := value.MarshalValue(driverSingletonAfter, false)
 	if err := d.StoreDriverSingletonConfigUpdate(driver.VendorId, driver.ModelId, driverMarshaled); err != nil {
-		return types.HmsRunResultContext{}, nil, err
+		return types.HmsRes{}, err
 	}
 
 	// Save device singleton state after VM has terminated (if device was even loaded).
 	if driverCtx.DeviceId != nil {
 		deviceMarshaled, _ := value.MarshalValue(deviceSingleton, false)
 		if err := d.StoreDeviceSingletonConfigUpdate(*driverCtx.DeviceId, deviceMarshaled); err != nil {
-			return types.HmsRunResultContext{}, nil, err
+			return types.HmsRes{}, err
 		}
 	}
 
-	return resultContext, nil, nil
+	return res, nil
 }
 
 //
@@ -207,7 +218,7 @@ func (d *DriverManager) invokeDriverGeneric(
 func (d DriverManager) InvokeDriverFunc(
 	ids driverTypes.DriverInvocationIDs,
 	call FunctionCall,
-) (types.HmsRunResultContext, []types.HmsError, error) {
+) (types.HmsRes, error) {
 	if ids.VendorID == "" || ids.ModelID == "" || ids.DeviceID == "" {
 		panic("One or more ids in the driver triplet were empty")
 	}
@@ -216,7 +227,7 @@ func (d DriverManager) InvokeDriverFunc(
 	ctx, cancel := context.WithCancel(context.Background())
 	ctx, cancel = context.WithTimeout(ctx, time.Second*10)
 
-	runResult, hmsErrs, dbErr := d.invokeDriverGeneric(
+	runResult, dbErr := d.invokeDriverGeneric(
 		ctx,
 		cancel,
 		DriverContext{
@@ -227,15 +238,15 @@ func (d DriverManager) InvokeDriverFunc(
 		call,
 	)
 
-	if dbErr != nil || hmsErrs != nil {
-		return types.HmsRunResultContext{}, hmsErrs, dbErr
+	if dbErr != nil {
+		return types.HmsRes{}, dbErr
 	}
 
-	return runResult, nil, nil
+	return runResult, nil
 }
 
 func (d DriverManager) InvokeValidateCheckDriver(ids driverTypes.DriverInvocationIDs) ([]types.HmsError, error) {
-	_, hmsErrs, err := d.InvokeDriverFunc(
+	res, err := d.InvokeDriverFunc(
 		ids,
 		FunctionCall{
 			Invocation: runtime.FunctionInvocation{
@@ -248,8 +259,8 @@ func (d DriverManager) InvokeValidateCheckDriver(ids driverTypes.DriverInvocatio
 		},
 	)
 
-	if err != nil || hmsErrs != nil {
-		return hmsErrs, err
+	if err != nil || res.Errors.ContainsError {
+		return res.Errors.Diagnostics, err
 	}
 
 	return nil, nil
@@ -258,7 +269,7 @@ func (d DriverManager) InvokeValidateCheckDriver(ids driverTypes.DriverInvocatio
 func (d DriverManager) InvokeDriverReportSensors(
 	ids driverTypes.DriverInvocationIDs,
 ) ([]DriverActionReportSensorReadingsOutput, []types.HmsError, error) {
-	ret, hmsErrs, err := d.InvokeDriverFunc(
+	ret, err := d.InvokeDriverFunc(
 		ids,
 		FunctionCall{
 			Invocation: runtime.FunctionInvocation{
@@ -271,8 +282,8 @@ func (d DriverManager) InvokeDriverReportSensors(
 		},
 	)
 
-	if err != nil || hmsErrs != nil {
-		return nil, hmsErrs, err
+	if err != nil || ret.Errors.ContainsError {
+		return nil, ret.Errors.Diagnostics, err
 	}
 
 	values := *ret.ReturnValue.(value.ValueList).Values
@@ -320,7 +331,7 @@ func (d DriverManager) InvokeDriverReportSensors(
 func (d DriverManager) InvokeDriverReportPowerState(
 	ids driverTypes.DriverInvocationIDs,
 ) (DriverActionGetPowerStateOutput, []types.HmsError, error) {
-	ret, hmsErrs, err := d.InvokeDriverFunc(
+	ret, err := d.InvokeDriverFunc(
 		ids,
 		FunctionCall{
 			Invocation: runtime.FunctionInvocation{
@@ -333,8 +344,8 @@ func (d DriverManager) InvokeDriverReportPowerState(
 		},
 	)
 
-	if err != nil || hmsErrs != nil {
-		return DriverActionGetPowerStateOutput{}, hmsErrs, err
+	if err != nil || ret.Errors.ContainsError {
+		return DriverActionGetPowerStateOutput{}, ret.Errors.Diagnostics, err
 	}
 
 	return DriverActionGetPowerStateOutput{
@@ -345,7 +356,7 @@ func (d DriverManager) InvokeDriverReportPowerState(
 func (d DriverManager) InvokeDriverReportPowerDraw(
 	ids driverTypes.DriverInvocationIDs,
 ) (DriverActionGetPowerDrawOutput, []types.HmsError, error) {
-	ret, hmsErrs, err := d.InvokeDriverFunc(
+	ret, err := d.InvokeDriverFunc(
 		ids,
 		FunctionCall{
 			Invocation: runtime.FunctionInvocation{
@@ -358,8 +369,8 @@ func (d DriverManager) InvokeDriverReportPowerDraw(
 		},
 	)
 
-	if err != nil || hmsErrs != nil {
-		return DriverActionGetPowerDrawOutput{}, hmsErrs, err
+	if err != nil || ret.Errors.ContainsError {
+		return DriverActionGetPowerDrawOutput{}, ret.Errors.Diagnostics, err
 	}
 
 	wattsRaw := ret.ReturnValue.(value.ValueInt).Inner
@@ -396,7 +407,7 @@ func (d DriverManager) InvokeDriverSetPower(
 	// TODO: add context support
 	ctx, cancel := context.WithCancel(context.Background())
 
-	runResult, hmsErrs, dbErr := d.invokeDriverGeneric(
+	runResult, dbErr := d.invokeDriverGeneric(
 		ctx,
 		cancel,
 		DriverContext{
@@ -417,8 +428,8 @@ func (d DriverManager) InvokeDriverSetPower(
 		},
 	)
 
-	if dbErr != nil || hmsErrs != nil {
-		return DriverActionPowerOutput{}, hmsErrs, dbErr
+	if dbErr != nil || runResult.Errors.ContainsError {
+		return DriverActionPowerOutput{}, runResult.Errors.Diagnostics, dbErr
 	}
 
 	return DriverActionPowerOutput{
@@ -450,7 +461,7 @@ func normalizeRange(input value.ValueRange) (lower, upper int64) {
 func (d DriverManager) InvokeDriverReportDimmable(
 	ids driverTypes.DriverInvocationIDs,
 ) ([]DriverActionReportDimOutput, []types.HmsError, error) {
-	ret, hmsErrs, err := d.InvokeDriverFunc(
+	res, err := d.InvokeDriverFunc(
 		ids,
 		FunctionCall{
 			Invocation: runtime.FunctionInvocation{
@@ -463,11 +474,11 @@ func (d DriverManager) InvokeDriverReportDimmable(
 		},
 	)
 
-	if err != nil || hmsErrs != nil {
-		return nil, hmsErrs, err
+	if err != nil || res.Errors.ContainsError {
+		return nil, res.Errors.Diagnostics, err
 	}
 
-	values := *ret.ReturnValue.(value.ValueList).Values
+	values := *res.ReturnValue.(value.ValueList).Values
 	dimmables := make([]DriverActionReportDimOutput, len(values))
 
 	for idx, currentListElement := range values {
@@ -496,7 +507,7 @@ func (d DriverManager) InvokeDriverReportDimmable(
 								label,
 							),
 						},
-						Span: ret.CalledFunctionSpan,
+						Span: res.CalledFunctionSpan,
 					},
 				}, nil
 		}
@@ -523,7 +534,7 @@ func (d DriverManager) InvokeDriverDim(
 	// TODO: add context support
 	ctx, cancel := context.WithCancel(context.Background())
 
-	runResult, hmsErrs, dbErr := d.invokeDriverGeneric(
+	res, dbErr := d.invokeDriverGeneric(
 		ctx,
 		cancel,
 		DriverContext{
@@ -545,11 +556,11 @@ func (d DriverManager) InvokeDriverDim(
 		},
 	)
 
-	if dbErr != nil || hmsErrs != nil {
-		return DriverActionDimOutput{}, hmsErrs, dbErr
+	if dbErr != nil || res.Errors.ContainsError {
+		return DriverActionDimOutput{}, nil, dbErr
 	}
 
 	return DriverActionDimOutput{
-		Changed: runResult.ReturnValue.(value.ValueBool).Inner,
+		Changed: res.ReturnValue.(value.ValueBool).Inner,
 	}, nil, nil
 }

@@ -260,14 +260,14 @@ func (m AutomationManager) RegisterAutomation(automationId uint, data database.A
 
 		automationJob := m.automationScheduler.Cron(*newCronExpression)
 		automationJob.Tag(fmt.Sprint(automationId))
-		if _, err := automationJob.Do(AutomationRunnerFunc, automationId, types.AutomationContext{}); err != nil {
+		if _, err := automationJob.Do(AutomationRunnerFunc, automationId, types.ExecutionContextAutomation{}); err != nil {
 			log.Error("Failed to start automation, registering cron job failed: ", err.Error())
 			return err
 		}
 	case database.TriggerInterval:
 		automationJob := m.automationScheduler.Every(time.Second * time.Duration(*data.TriggerIntervalSeconds))
 		automationJob.Tag(fmt.Sprint(automationId))
-		if _, err := automationJob.Do(AutomationRunnerFunc, automationId, types.AutomationContext{}); err != nil {
+		if _, err := automationJob.Do(AutomationRunnerFunc, automationId, types.ExecutionContextAutomation{}); err != nil {
 			log.Error("Failed to start automation, registering cron job failed: ", err.Error())
 			return err
 		}

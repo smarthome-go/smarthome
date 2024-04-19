@@ -4,13 +4,13 @@ import (
 	"fmt"
 
 	"github.com/sirupsen/logrus"
+	"github.com/smarthome-go/homescript/v3/homescript"
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
 	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	herrors "github.com/smarthome-go/homescript/v3/homescript/errors"
 	"github.com/smarthome-go/homescript/v3/homescript/lexer"
 	"github.com/smarthome-go/smarthome/core/database"
-	driverTypes "github.com/smarthome-go/smarthome/core/device/driver/types"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
@@ -70,34 +70,30 @@ func (self *DriverManager) ExtractDriverInfoTotal(
 	filename := types.CreateDriverHmsId(database.DriverTuple{VendorID: vendorID, ModelID: modelID})
 
 	analyzed, res, err := self.Hms.Analyze(
-		"", // TODO: what to do with this field??
-		filename,
-		homescriptCode,
-		types.HMS_PROGRAM_KIND_DEVICE_DRIVER,
-		&driverTypes.DriverInvocationIDs{
-			DeviceID: "", // TODO: is this allowed?
-			VendorID: vendorID,
-			ModelID:  modelID,
+		homescript.InputProgram{
+			ProgramText: homescriptCode,
+			Filename:    filename,
 		},
-		// &driverTypes.AnalyzerDriverMetadata{
-		// 	// VendorId: driver.VendorId,
-		// 	// ModelId:  driver.ModelId,
-		// },
+		types.NewExecutionContextDriver(
+			vendorID,
+			modelID,
+			nil,
+		),
 	)
 	if err != nil {
 		return DriverInfo{}, nil, err
 	}
 
-	// Only include actual errors, not other diagnostic messages
-	errors := make([]types.HmsError, 0)
-	for _, err := range res.Errors {
-		if err.DiagnosticError != nil && err.DiagnosticError.Level != diagnostic.DiagnosticLevelError {
-			continue
+	if res.Errors.ContainsError {
+		// Only include actual errors, not other diagnostic messages
+		errors := make([]types.HmsError, 0)
+		for _, err := range res.Errors.Diagnostics {
+			if err.DiagnosticError != nil && err.DiagnosticError.Level != diagnostic.DiagnosticLevelError {
+				continue
+			}
+			errors = append(errors, err)
 		}
-		errors = append(errors, err)
-	}
 
-	if len(errors) != 0 {
 		log.Debugf("Could not extract driver info: %s", errors[0].String())
 		diagnostics := make([]diagnostic.Diagnostic, len(errors))
 		for idx, err := range errors {

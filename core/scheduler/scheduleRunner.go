@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/smarthome-go/homescript/v3/homescript"
+	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/device/driver"
 	"github.com/smarthome-go/smarthome/core/event"
@@ -77,22 +79,26 @@ func scheduleRunnerFunc(id uint, m SchedulerManager) {
 	case database.ScheduleTargetModeCode:
 		ctx, cancel := context.WithTimeout(context.Background(), SCHEDULE_MAXIMUM_HOMESCRIPT_RUNTIME)
 
-		res, _, err := m.hms.Run(
-			types.HMS_PROGRAM_KIND_NORMAL,
-			nil,
-			owner.Username,
-			nil,
-			job.Data.HomescriptCode,
-			types.InitiatorSchedule,
-			ctx,
-			cancel,
-			nil,
-			nil,
+		filename := fmt.Sprintf("@schedule-%d", id)
+
+		res, err := m.hms.Run(
+			types.ProgramInvocation{
+				Identifier: homescript.InputProgram{
+					ProgramText: job.Data.HomescriptCode,
+					Filename:    filename,
+				},
+				FunctionInvocation: nil,
+				SingletonsToLoad:   map[string]value.Value{},
+			},
+			types.NewExecutionContextUser(
+				job.Owner,
+				nil,
+			),
+			types.Cancelation{
+				Context:    ctx,
+				CancelFunc: cancel,
+			},
 			&bytes.Buffer{},
-			nil,
-			// Do not use any custom runner func.
-			nil,
-			nil,
 		)
 
 		if err != nil {
@@ -114,12 +120,12 @@ func scheduleRunnerFunc(id uint, m SchedulerManager) {
 			return
 		}
 
-		if !res.Success {
-			log.Error("Executing schedule's Homescript failed: ", res.Errors[0])
+		if !res.Errors.ContainsError {
+			log.Error("Executing schedule's Homescript failed: ", res.Errors.Diagnostics[0])
 			if _, err := notify.Manager.Notify(
 				owner.Username,
 				"Schedule Failed",
-				fmt.Sprintf("Schedule '%s' failed due to Homescript error: %s", job.Data.Name, res.Errors[0]),
+				fmt.Sprintf("Schedule '%s' failed due to Homescript error: %s", job.Data.Name, res.Errors.Diagnostics[0]),
 				notify.NotificationLevelError,
 				true,
 			); err != nil {
@@ -128,27 +134,22 @@ func scheduleRunnerFunc(id uint, m SchedulerManager) {
 			}
 			event.Error(
 				"Schedule Failure",
-				fmt.Sprintf("Schedule '%d' failed. Error: %s", id, res.Errors[0]),
+				fmt.Sprintf("Schedule '%d' failed. Error: %s", id, res.Errors.Diagnostics[0]),
 			)
 			return
 		}
 	case database.ScheduleTargetModeHMS:
 		ctx, cancel := context.WithTimeout(context.Background(), SCHEDULE_MAXIMUM_HOMESCRIPT_RUNTIME)
 
-		res, _, err := m.hms.RunById(
-			types.HMS_PROGRAM_KIND_NORMAL,
-			nil,
+		res, err := m.hms.RunUserScript(
 			job.Data.HomescriptTargetId,
 			owner.Username,
-			types.InitiatorSchedule,
-			ctx,
-			cancel,
 			nil,
-			nil,
+			types.Cancelation{
+				Context:    ctx,
+				CancelFunc: cancel,
+			},
 			&bytes.Buffer{},
-			nil,
-			nil,
-			nil,
 		)
 
 		if err != nil {
@@ -169,12 +170,12 @@ func scheduleRunnerFunc(id uint, m SchedulerManager) {
 			)
 			return
 		}
-		if !res.Success {
-			log.Error("Executing schedule's Homescript failed: ", res.Errors[0])
+		if !res.Errors.ContainsError {
+			log.Error("Executing schedule's Homescript failed: ", res.Errors.Diagnostics[0])
 			if _, err := notify.Manager.Notify(
 				owner.Username,
 				"Schedule Failed",
-				fmt.Sprintf("Schedule '%s' failed due to Homescript execution error: %s", job.Data.Name, res.Errors[0]),
+				fmt.Sprintf("Schedule '%s' failed due to Homescript execution error: %s", job.Data.Name, res.Errors.Diagnostics[0]),
 				notify.NotificationLevelError,
 				true,
 			); err != nil {
@@ -183,7 +184,7 @@ func scheduleRunnerFunc(id uint, m SchedulerManager) {
 			}
 			event.Error(
 				"Schedule Failure",
-				fmt.Sprintf("Schedule '%d' failed. Error: %s", id, res.Errors[0]),
+				fmt.Sprintf("Schedule '%d' failed. Error: %s", id, res.Errors.Diagnostics[0]),
 			)
 			return
 		}
@@ -201,7 +202,11 @@ func scheduleRunnerFunc(id uint, m SchedulerManager) {
 				if _, err := notify.Manager.Notify(
 					owner.Username,
 					"Schedule Failed",
-					fmt.Sprintf("Schedule '%s' failed due to lacking switch permissions: you now lack permission to use %s", job.Data.Name, switchJob.DeviceId),
+					fmt.Sprintf(
+						"Schedule '%s' failed due to lacking switch permissions: you now lack permission to use %s",
+						job.Data.Name,
+						switchJob.DeviceId,
+					),
 					notify.NotificationLevelError,
 					true,
 				); err != nil {

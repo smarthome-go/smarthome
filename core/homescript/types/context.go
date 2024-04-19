@@ -50,6 +50,18 @@ type ExecutionContextDriver struct {
 	DeviceID *string
 }
 
+func (d ExecutionContextDriver) Kind() HMS_CONTEXT_KIND      { return HMS_PROGRAM_KIND_DEVICE_DRIVER }
+func (d ExecutionContextDriver) Username() *string           { return nil }
+func (d ExecutionContextDriver) UserArgs() map[string]string { return nil }
+
+func NewExecutionContextDriver(vendor, model string, deviceID *string) ExecutionContextDriver {
+	return ExecutionContextDriver{
+		DriverVendor: vendor,
+		DriverModel:  model,
+		DeviceID:     deviceID,
+	}
+}
+
 //
 // Automation context.
 //

@@ -25,7 +25,7 @@ type Job struct {
 
 type ProgramInvocation struct {
 	Identifier         homescript.InputProgram
-	FunctionInvocation runtime.FunctionInvocation
+	FunctionInvocation *runtime.FunctionInvocation
 	SingletonsToLoad   map[string]value.Value
 }
 
@@ -38,13 +38,12 @@ type Manager interface {
 	GetPersonalScriptById(homescriptID string, username string) (database.Homescript, bool, error)
 
 	Analyze(
-		invocation ProgramInvocation,
+		program homescript.InputProgram,
 		context ExecutionContext,
 	) (map[string]ast.AnalyzedProgram, HmsRes, error)
 
 	AnalyzeUserScript(
 		programID, username string,
-		invocation ProgramInvocation,
 	) (map[string]ast.AnalyzedProgram, HmsRes, error)
 
 	Run(
@@ -57,14 +56,14 @@ type Manager interface {
 
 	RunUserScript(
 		programID, username string,
-		invocation ProgramInvocation,
+		function *runtime.FunctionInvocation,
 		cancelation Cancelation,
 		outputWriter io.Writer,
 	) (HmsRes, error)
 
-	RunDriverSsript(
+	RunDriverScript(
 		driverIDs driverTypes.DriverInvocationIDs,
-		invocation ProgramInvocation,
+		invocation runtime.FunctionInvocation,
 		cancelation Cancelation,
 		outputWriter io.Writer,
 	) (HmsRes, error)

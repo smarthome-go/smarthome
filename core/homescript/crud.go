@@ -20,8 +20,8 @@ func (m *Manager) GetPersonalScriptById(homescriptID string, username string) (d
 	return script, found, nil
 }
 
-func (m *Manager) GetScriptById(homescriptID string, username string) (database.Homescript, bool, error) {
-	homescripts, err := ListPersonal(username)
+func (m *Manager) GetScriptById(homescriptID string) (database.Homescript, bool, error) {
+	homescripts, err := ListHms(true)
 	if err != nil {
 		logger.Error("Failed to get Homescript by id: ", err.Error())
 		return database.Homescript{}, false, err
