@@ -201,7 +201,7 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 			Success:      res.Success,
 			Output:       "",
 			FileContents: res.FileContents,
-			Errors:       res.Errors,
+			Errors:       res.Diagnostics,
 		}); err != nil {
 		log.Error(err.Error())
 		Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
@@ -340,7 +340,7 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
 			Success:      res.Success,
-			Errors:       res.Errors,
+			Errors:       res.Diagnostics,
 			FileContents: res.FileContents,
 		}); err != nil {
 		log.Error(err.Error())

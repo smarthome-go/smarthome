@@ -58,7 +58,7 @@ func (m NotificationManager) Notify(
 
 	// Run any notification hooks.
 	if runHooks {
-		notificationContext := types.NotificationContext{
+		notificationContext := types.ExecutionContextNotification{
 			Id:          newID,
 			Title:       title,
 			Description: description,
@@ -67,7 +67,11 @@ func (m NotificationManager) Notify(
 		go m.Automation.RunAllAutomationsWithTrigger(
 			username,
 			database.TriggerOnNotification,
-			types.AutomationContext{
+			types.ExecutionContextAutomation{
+				UserContext: types.NewExecutionContextUser(
+					username,
+					nil,
+				),
 				NotificationContext: &notificationContext,
 				MaximumHMSRuntime:   nil,
 			},

@@ -12,10 +12,21 @@ import (
 // Results and errors.
 //
 
+type HmsDiagnosticsContainer struct {
+	ContainsError bool
+	Diagnostics   []HmsError
+	FileContents  map[string]string
+}
+
 type HmsRes struct {
-	Success      bool
-	Errors       []HmsError
-	FileContents map[string]string
+	Errors HmsDiagnosticsContainer
+	// The state of the used singletons after execution.
+	Singletons map[string]value.Value
+	// This is `nil` if no additional function was invoced or the called function did not return a value.
+	ReturnValue value.Value
+	// This is non zero-valued if an additional function is called.
+	// TODO: why is this required?
+	CalledFunctionSpan errors.Span
 }
 
 type HmsError struct {
@@ -82,10 +93,5 @@ func (e HmsRuntimeInterrupt) String() string {
 }
 
 // NOTE: this is primarily required for the driver.
-type HmsRunResultContext struct {
-	Singletons map[string]value.Value
-	// This is `nil` if no additional function was invoced or the called function did not return a value.
-	ReturnValue value.Value
-	// This is non zero-valued if an additional function is called.
-	CalledFunctionSpan errors.Span
-}
+// type HmsRunResultContext struct {
+// }

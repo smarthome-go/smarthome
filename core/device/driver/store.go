@@ -7,8 +7,6 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
-	driverTypes "github.com/smarthome-go/smarthome/core/device/driver/types"
-	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
 type DriverSingletonKind uint8
@@ -72,27 +70,15 @@ func (d DriverManager) StoreDriverSingletonConfigUpdate(
 		return err
 	}
 
-	programID := types.CreateDriverHmsId(database.DriverTuple{
-		VendorID: vendorID,
-		ModelID:  modelID,
-	})
-
-	// Invalidate compilation cache of ALL devices that use this driver.
-
 	devices, err := database.ListAllDevices()
 	if err != nil {
 		return err
 	}
 
 	for _, dev := range devices {
-		d.Hms.InvalidateCompileCacheEntry(types.ProgramInvocation{
-			ProgramID: programID,
-			DriverIDs: &driverTypes.DriverInvocationIDs{
-				DeviceID: dev.ID,
-				VendorID: driver.Driver.VendorId,
-				ModelID:  driver.Driver.ModelId,
-			},
-		})
+		fmt.Printf("DEVICE: %s\n", dev.ID)
+		// TODO: trigger a re-registration of any triggers.
+		panic("TODO: not implemented")
 	}
 
 	return nil
@@ -160,20 +146,8 @@ func (d DriverManager) StoreDeviceSingletonConfigUpdate(
 		driver.ExtractedInfo.DeviceConfig.Info.HmsType,
 	)
 
-	programID := types.CreateDriverHmsId(database.DriverTuple{
-		VendorID: driver.Driver.VendorId,
-		ModelID:  driver.Driver.ModelId,
-	})
-
-	// Invalidate compilation cache.
-	d.Hms.InvalidateCompileCacheEntry(types.ProgramInvocation{
-		ProgramID: programID,
-		DriverIDs: &driverTypes.DriverInvocationIDs{
-			DeviceID: deviceID,
-			VendorID: driver.Driver.VendorId,
-			ModelID:  driver.Driver.ModelId,
-		},
-	})
+	// TODO: trigger re-registration of any triggers.
+	panic("TODO: not implemented")
 
 	return StoreDeviceSingletonBackend(deviceID, withOldValues)
 }

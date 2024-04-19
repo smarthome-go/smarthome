@@ -20,7 +20,6 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
-	driverTypes "github.com/smarthome-go/smarthome/core/device/driver/types"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
@@ -142,49 +141,57 @@ func (m *Manager) setJob(
 }
 
 func (m *Manager) resolveFileContentsOfErrors(
-	username string,
-	mainModuleFilename string,
-	mainModuleCode string,
+	source homescript.InputProgram,
 	errors []types.HmsError,
+	context types.ExecutionContext,
 ) (map[string]string, error) {
 	fileContents := make(map[string]string)
 
 	for _, err := range errors {
-		if err.Span.Filename == mainModuleFilename {
+		if err.Span.Filename == source.Filename {
 			continue
 		}
 
-		script, found, dbErr := m.GetPersonalScriptById(err.Span.Filename, username)
-		if dbErr != nil {
-			return nil, dbErr
-		}
-		if !found {
-			spew.Dump(err.DiagnosticError)
-			panic(fmt.Sprintf("Homescript with ID %s owned by user %s was not found", err.Span.Filename, username)) // TODO: no panic
+		var code string
+
+		if context.Username() != nil {
+			script, found, dbErr := m.GetScriptById(err.Span.Filename, *context.Username())
+			if dbErr != nil {
+				return nil, dbErr
+			}
+			if !found {
+				spew.Dump(err.DiagnosticError)
+				panic(fmt.Sprintf("Homescript with ID %s owned by user %s was not found", err.Span.Filename, *context.Username()))
+			}
+			code = script.Data.Code
+		} else {
+			script, found, dbErr := m.GetScriptById(err.Span.Filename, "") // TODO: this will probably not work
+			if dbErr != nil {
+				return nil, dbErr
+			}
+			if !found {
+				spew.Dump(err.DiagnosticError)
+				panic(fmt.Sprintf("Homescript with ID %s was not found", err.Span.Filename))
+			}
+			code = script.Data.Code
 		}
 
-		fileContents[err.Span.Filename] = script.Data.Code
+		fileContents[err.Span.Filename] = code
 	}
 
-	fileContents[mainModuleFilename] = mainModuleCode
+	fileContents[source.Filename] = source.ProgramText
 
 	return fileContents, nil
 }
 
 func (m *Manager) Analyze(
-	username string,
-	filename string,
-	code string,
-	programKind types.HMS_PROGRAM_KIND,
-	driverData *driverTypes.DriverInvocationIDs,
-) (map[string]ast.AnalyzedProgram, types.HmsRes, error) {
+	input homescript.InputProgram,
+	context types.ExecutionContext,
+) (map[string]ast.AnalyzedProgram, types.HmsDiagnosticsContainer, error) {
 	analyzedModules, diagnostics, syntaxErrors := homescript.Analyze(
-		homescript.InputProgram{
-			Filename:    filename,
-			ProgramText: code,
-		},
+		input,
 		analyzerScopeAdditions(),
-		newAnalyzerHost(username, programKind, driverData),
+		newAnalyzerHost(context),
 	)
 
 	errors := make([]types.HmsError, 0)
@@ -220,93 +227,119 @@ func (m *Manager) Analyze(
 		})
 	}
 
-	fileContents, err := m.resolveFileContentsOfErrors(
-		username,
-		filename,
-		code,
-		errors,
-	)
-	if err != nil {
-		return nil, types.HmsRes{}, err
+	if !success {
+
 	}
 
-	return analyzedModules, types.HmsRes{
-		Errors:       errors,
-		FileContents: fileContents,
-		Success:      success,
+	fileContents, err := m.resolveFileContentsOfErrors(
+		homescript.InputProgram{
+			ProgramText: input.ProgramText,
+			Filename:    input.Filename,
+		},
+		errors,
+		context,
+	)
+	if err != nil {
+		return nil, types.HmsDiagnosticsContainer{}, err
+	}
+
+	return analyzedModules, types.HmsDiagnosticsContainer{
+		ContainsError: !success,
+		Diagnostics:   errors,
+		FileContents:  fileContents,
 	}, nil
 }
 
 func (m *Manager) AnalyzeById(
 	id string,
 	username string,
-	programKind types.HMS_PROGRAM_KIND,
-	driverData *driverTypes.DriverInvocationIDs,
-) (map[string]ast.AnalyzedProgram, types.HmsRes, error) {
+	input homescript.InputProgram,
+	context types.ExecutionContext,
+) (map[string]ast.AnalyzedProgram, types.HmsDiagnosticsContainer, error) {
 	hms, found, err := m.GetPersonalScriptById(id, username)
 	if err != nil {
-		return nil, types.HmsRes{}, err
+		return nil, types.HmsDiagnosticsContainer{}, err
 	}
 	if !found {
 		panic(fmt.Sprintf("Homescript with ID %s owned by user %s was not found", id, username)) // TODO: no panic
 	}
 
-	return m.Analyze(username, id, hms.Data.Code, programKind, driverData)
+	// username, id, hms.Data.Code, programKind, driverData
+	return m.Analyze(
+		homescript.InputProgram{
+			ProgramText: hms.Data.Code,
+			Filename:    hms.Data.Id,
+		},
+		types.NewExecutionContextUser(
+			username,
+			make(map[string]string),
+		),
+	)
 }
 
+// type ProgramIdentifier struct {
+// 	Filename string
+// 	Code     string
+// }
+
 func (m *Manager) Run(
-	programKind types.HMS_PROGRAM_KIND,
-	driverData *driverTypes.DriverInvocationIDs,
-	username string,
-	filename *string,
-	code string,
-	initiator types.HomescriptInitiator,
-	cancelCtx context.Context,
-	cancelCtxFunc context.CancelFunc,
-	idChan *chan uint64,
-	args map[string]string,
+	invocation types.ProgramInvocation,
+	context types.ExecutionContext,
+	cancelation types.Cancelation,
+	// idChan *chan uint64,
 	outputWriter io.Writer,
-	automationContext *types.AutomationContext,
-	// If this is left non-empty, an additional function is called after `init`.
-	functionInvocation *runtime.FunctionInvocation,
-	singletonsToLoad map[string]value.Value,
-) (types.HmsRes, types.HmsRunResultContext, error) {
+) (types.HmsRes, error) {
 	// TODO: handle arguments
 
 	// TODO: the @ symbol cannot be used in IDs?
 	// FIX: implement this uniqueness properly
-	programID := fmt.Sprintf("live@%d", time.Now().Nanosecond())
-	if filename != nil {
-		programID = *filename
-	}
+	// programID := fmt.Sprintf("live@%d", time.Now().Nanosecond())
+	// if filename != nil {
+	// 	programID = *filename
+	// }
 
-	logger.Trace(fmt.Sprintf("Homescript '%s' of user '%s' is being analyzed...", programID, username))
+	// logger.Trace(fmt.Sprintf("Homescript '%s' of user '%s' is being analyzed...", programID, username))
 
-	modules, res, err := m.Analyze(username, programID, code, programKind, driverData)
+	// modules, res, err := m.Analyze(username, programID, code, programKind, driverData)
+	modules, res, err := m.Analyze(
+		invocation.Identifier,
+		context,
+	)
 	if err != nil {
-		return types.HmsRes{}, types.HmsRunResultContext{}, err
+		return types.HmsRes{}, err
 	}
 
-	if !res.Success {
-		return res, types.HmsRunResultContext{}, nil
+	if !res.ContainsError {
+		return types.HmsRes{
+			Errors:             &res,
+			Singletons:         map[string]value.Value{},
+			ReturnValue:        nil,
+			CalledFunctionSpan: errors.Span{},
+		}, nil
 	}
 
-	logger.Trace(fmt.Sprintf("Homescript '%s' of user '%s' is being compiled...", programID, username))
+	// logger.Trace(fmt.Sprintf("Homescript '%s' of user '%s' is being compiled...", programID, username))
 
 	jobID := m.AllocJobId()
 
 	executor := NewInterpreterExecutor(
 		jobID,
-		programID,
-		username,
 		outputWriter,
-		args,
-		automationContext,
-		cancelCtxFunc,
-		singletonsToLoad,
+		context,
 	)
 
-	compOut, err := m.Compile(modules, programID, username, driverData, executor)
+	// executor := NewInterpreterExecutor(
+	// 	jobID,
+	// 	programID,
+	// 	username,
+	// 	outputWriter,
+	// 	args,
+	// 	automationContext,
+	// 	cancelCtxFunc,
+	// 	singletonsToLoad,
+	// )
+
+	compOut, err := m.Compile(modules, programID, username)
 	if err != nil {
 		return types.HmsRes{}, types.HmsRunResultContext{}, err
 	}
@@ -316,20 +349,6 @@ func (m *Manager) Run(
 	}
 
 	logger.Debug(fmt.Sprintf("Homescript '%s' of user '%s' is executing...", programID, username))
-
-	// interpreter := interpreter.NewInterpreter(
-	// 	CALL_STACK_LIMIT_SIZE,
-	// 	newInterpreterExecutor(
-	// 		username,
-	// 		outputWriter,
-	// 		args,
-	// 		automationContext,
-	// 		cancelCtxFunc,
-	// 	),
-	// 	modules,
-	// 	interpreterScopeAdditions(),
-	// 	&cancelCtx,
-	// )
 
 	vm := runtime.NewVM(
 		compOut,
@@ -486,44 +505,22 @@ func (m *Manager) Run(
 }
 
 // Executes a given Homescript from the database and returns its output, exit-code and possible error
-func (m *Manager) RunById(
-	programKind types.HMS_PROGRAM_KIND,
-	driverData *driverTypes.DriverInvocationIDs,
-	hmsId string,
-	username string,
-	initiator types.HomescriptInitiator,
-	cancelCtx context.Context,
-	cancelCtxFunc context.CancelFunc,
-	idChan *chan uint64,
-	args map[string]string,
+func (m *Manager) RunUserScript(
+	programID, username string,
+	function *runtime.FunctionInvocation,
+	cancelation types.Cancelation,
 	outputWriter io.Writer,
-	automationContext *types.AutomationContext,
-	functionInvocation *runtime.FunctionInvocation,
-	singletonsToLoad map[string]value.Value,
-) (types.HmsRes, types.HmsRunResultContext, error) {
-	script, found, err := m.GetPersonalScriptById(hmsId, username)
+) (types.HmsRes, error) {
+	script, found, err := m.GetPersonalScriptById(programID, username)
 	if err != nil {
-		return types.HmsRes{}, types.HmsRunResultContext{}, err
+		return types.HmsRes{}, err
 	}
 	if !found {
-		panic(fmt.Sprintf("Homescript with ID %s owned by user %s was not found", hmsId, username)) // TODO: no panic
+		return types.HmsRes{}, fmt.Errorf("Homescript with ID `%s` owned by user `%s` was not found", programID, username)
 	}
 
-	return m.Run(
-		programKind,
-		driverData,
-		username,
-		&hmsId,
-		script.Data.Code,
-		initiator,
-		cancelCtx,
-		cancelCtxFunc,
-		idChan,
-		args,
-		outputWriter,
-		automationContext,
-		functionInvocation,
-		singletonsToLoad,
+	m.Run(
+		invocation,
 	)
 }
 

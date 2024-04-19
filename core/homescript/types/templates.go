@@ -13,10 +13,3 @@ type Template interface {
 	Kind() TemplateKind
 	GetSpec() ast.TemplateSpec
 }
-
-type HMS_PROGRAM_KIND uint8
-
-const (
-	HMS_PROGRAM_KIND_NORMAL HMS_PROGRAM_KIND = iota
-	HMS_PROGRAM_KIND_DEVICE_DRIVER
-)

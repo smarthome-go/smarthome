@@ -302,7 +302,8 @@ func (m *MqttManager) Unsubscribe(topic string) error {
 
 	old, exists := m.Body.Subscriptions.Set[topic]
 	if !exists {
-		panic("Cannot unsubscribe from a topic without subscriptions")
+		logger.Errorf("Cannot unsubscribe from a topic (%s) without subscriptions", topic)
+		return nil
 	}
 	if old.Consumers == 0 {
 		panic("Cannot unsubscribe from a topic with 0 consumers")

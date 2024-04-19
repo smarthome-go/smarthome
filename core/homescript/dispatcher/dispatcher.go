@@ -127,12 +127,16 @@ func (i *InstanceT) registerInternal(info dispatcherTypes.RegisterInfo) (dispatc
 			}
 
 			if infoIter.Function.CallMode.Kind() == dispatcherTypes.CallModeKindAdaptive && infoIter.ProgramID == info.ProgramID {
+				i.DoneRegistrations.Lock.RUnlock()
+
 				// Remove this old registration.
 				if err := i.Unregister(id); err != nil {
 					i.DoneRegistrations.Lock.RUnlock()
 					return 0, err
 				}
+
 				logger.Debugf("Unregistered old ADAPTIVE job with id %d\n", id)
+				i.DoneRegistrations.Lock.RLock()
 			}
 		}
 
@@ -143,8 +147,18 @@ func (i *InstanceT) registerInternal(info dispatcherTypes.RegisterInfo) (dispatc
 
 	switch trigger := info.Trigger.(type) {
 	case dispatcherTypes.CallBackTriggerMqtt:
+		// Filter out any empty topics.
+		topics := make([]string, 0)
+		for _, topic := range trigger.Topics {
+			if topic == "" {
+				continue
+			}
+
+			topics = append(topics, topic)
+		}
+
 		// TODO: maybe check that a program cannot register twice.
-		if err := i.Mqtt.Subscribe(trigger.Topics, i.mqttCallBack); err != nil {
+		if err := i.Mqtt.Subscribe(topics, i.mqttCallBack); err != nil {
 			// Delete allocated ID again. TODO: make deletion on failure more robust -> refactor code
 			i.DoneRegistrations.Lock.Lock()
 			delete(i.DoneRegistrations.Set, id)
@@ -156,7 +170,7 @@ func (i *InstanceT) registerInternal(info dispatcherTypes.RegisterInfo) (dispatc
 		i.DoneRegistrations.Lock.Lock()
 		i.DoneRegistrations.Set[id] = info
 
-		for _, topic := range trigger.Topics {
+		for _, topic := range topics {
 			old, found := i.DoneRegistrations.MqttRegistrations[topic]
 			if !found {
 				i.DoneRegistrations.MqttRegistrations[topic] = make([]dispatcherTypes.RegistrationID, 0)

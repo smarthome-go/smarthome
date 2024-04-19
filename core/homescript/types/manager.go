@@ -4,17 +4,13 @@ import (
 	"context"
 	"io"
 
+	"github.com/smarthome-go/homescript/v3/homescript"
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
 	driverTypes "github.com/smarthome-go/smarthome/core/device/driver/types"
 )
-
-type ProgramInvocation struct {
-	ProgramID string
-	DriverIDs *driverTypes.DriverInvocationIDs
-}
 
 type Job struct {
 	Username        string
@@ -27,62 +23,55 @@ type Job struct {
 	SupportsKill    bool
 }
 
+type ProgramInvocation struct {
+	Identifier         homescript.InputProgram
+	FunctionInvocation runtime.FunctionInvocation
+	SingletonsToLoad   map[string]value.Value
+}
+
+type Cancelation struct {
+	Context    context.Context
+	CancelFunc context.CancelFunc
+}
+
 type Manager interface {
 	GetPersonalScriptById(homescriptID string, username string) (database.Homescript, bool, error)
 
 	Analyze(
-		username string,
-		filename string,
-		code string,
-		programKind HMS_PROGRAM_KIND,
-		driverData *driverTypes.DriverInvocationIDs,
+		invocation ProgramInvocation,
+		context ExecutionContext,
 	) (map[string]ast.AnalyzedProgram, HmsRes, error)
 
-	AnalyzeById(
-		id string,
-		username string,
-		programKind HMS_PROGRAM_KIND,
-		driverData *driverTypes.DriverInvocationIDs,
+	AnalyzeUserScript(
+		programID, username string,
+		invocation ProgramInvocation,
 	) (map[string]ast.AnalyzedProgram, HmsRes, error)
 
 	Run(
-		programKind HMS_PROGRAM_KIND,
-		driverData *driverTypes.DriverInvocationIDs,
-		username string,
-		filename *string,
-		code string,
-		initiator HomescriptInitiator,
-		cancelCtx context.Context,
-		cancelCtxFunc context.CancelFunc,
-		idChan *chan uint64,
-		args map[string]string,
+		invocation ProgramInvocation,
+		context ExecutionContext,
+		cancelation Cancelation,
+		// idChan *chan uint64,
 		outputWriter io.Writer,
-		automationContext *AutomationContext,
-		// If this is left non-empty, an additional function is called after `init`.
-		functionInvocation *runtime.FunctionInvocation,
-		singletonsToLoad map[string]value.Value,
-	) (HmsRes, HmsRunResultContext, error)
+	) (HmsRes, error)
 
-	RunById(
-		programKind HMS_PROGRAM_KIND,
-		driverData *driverTypes.DriverInvocationIDs,
-		hmsID string,
-		username string,
-		initiator HomescriptInitiator,
-		cancelCtx context.Context,
-		cancelCtxFunc context.CancelFunc,
-		idChan *chan uint64,
-		args map[string]string,
+	RunUserScript(
+		programID, username string,
+		invocation ProgramInvocation,
+		cancelation Cancelation,
 		outputWriter io.Writer,
-		automationContext *AutomationContext,
-		// If this is left non-empty, an additional function is called after `init`.
-		functionInvocation *runtime.FunctionInvocation,
-		singletonsToLoad map[string]value.Value,
-	) (HmsRes, HmsRunResultContext, error)
+	) (HmsRes, error)
+
+	RunDriverSsript(
+		driverIDs driverTypes.DriverInvocationIDs,
+		invocation ProgramInvocation,
+		cancelation Cancelation,
+		outputWriter io.Writer,
+	) (HmsRes, error)
 
 	GetJobList() []Job
 	GetJobById(jobID uint64) (Job, bool)
 	KillAllId(hmsID string) (count uint64, success bool)
 
-	InvalidateCompileCacheEntry(ids ProgramInvocation)
+	InvalidateCompileCacheEntry(programID string)
 }

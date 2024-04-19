@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/smarthome-go/homescript/v3/homescript"
 	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 
@@ -58,15 +60,17 @@ func (d *DriverManager) invokeDriverGeneric(
 	vendorId,
 	modelId string,
 	functionInvocation FunctionCall,
-) (types.HmsRunResultContext, []types.HmsError, error) {
+) (types.HmsRes, error) {
 	driver, found, err := database.GetDeviceDriver(vendorId, modelId)
 	if err != nil {
-		return types.HmsRunResultContext{}, nil, err
+		return types.HmsRes{}, err
 	}
 
 	if !found {
 		panic(fmt.Sprintf("Driver `%s:%s` not found in the database", vendorId, modelId))
 	}
+
+	// TODO: attaching to existing VM or syncing state accross instances
 
 	var outputBuffer bytes.Buffer
 
@@ -85,6 +89,14 @@ func (d *DriverManager) invokeDriverGeneric(
 	}
 	contextSingletons[DriverSingletonIdent] = driverSingleton
 
+	if driverCtx.DeviceId != nil && driver.SingletonJSON != nil {
+		disp, err := driverSingleton.Display()
+		if err != nil {
+			panic(err)
+		}
+		log.Printf("Loaded driver singleton for device ID `%s` from database: `%s`", *driverCtx.DeviceId, disp)
+	}
+
 	// Load device singleton if possible.
 	var deviceSingleton value.Value
 	if driverCtx.DeviceId != nil {
@@ -94,6 +106,12 @@ func (d *DriverManager) invokeDriverGeneric(
 			panic(fmt.Sprintf("Device singleton of `%s` not found in store", deviceId))
 		}
 		contextSingletons[DriverDeviceSingletonIdent] = deviceSingleton
+
+		disp, err := deviceSingleton.Display()
+		if err != nil {
+			panic(err)
+		}
+		log.Printf("Loaded driver singleton for device ID `%s` from database: %s", *driverCtx.DeviceId, disp)
 	}
 
 	var deviceId string
@@ -101,26 +119,37 @@ func (d *DriverManager) invokeDriverGeneric(
 		deviceId = *driverCtx.DeviceId
 	}
 
-	hmsRes, resultContext, err := d.Hms.Run(
-		types.HMS_PROGRAM_KIND_DEVICE_DRIVER,
-		&driverTypes.DriverInvocationIDs{
-			DeviceID: deviceId,
-			VendorID: vendorId,
-			ModelID:  modelId,
+	d.Hms.Run(
+		types.ProgramInvocation{
+			Identifier: homescript.InputProgram{
+				ProgramText: "",
+				Filename:    filename,
+			},
+			FunctionInvocation: runtime.FunctionInvocation{},
+			SingletonsToLoad:   map[string]value.Value{},
 		},
-		"", // TODO: fix username requirement.
-		&filename,
-		driver.HomescriptCode,
-		types.InitiatorAPI,
-		cancelCtx,
-		cancelFunc,
-		nil,
-		make(map[string]string),
-		&outputBuffer,
-		nil,
-		&functionInvocation.Invocation,
-		contextSingletons,
 	)
+
+	// hmsRes, resultContext, err := d.Hms.Run(
+	// 	types.HMS_PROGRAM_KIND_DEVICE_DRIVER,
+	// 	&driverTypes.DriverInvocationIDs{
+	// 		DeviceID: deviceId,
+	// 		VendorID: vendorId,
+	// 		ModelID:  modelId,
+	// 	},
+	// 	"", // TODO: fix username requirement.
+	// 	&filename,
+	// 	driver.HomescriptCode,
+	// 	types.InitiatorAPI,
+	// 	cancelCtx,
+	// 	cancelFunc,
+	// 	nil,
+	// 	make(map[string]string),
+	// 	&outputBuffer,
+	// 	nil,
+	// 	&functionInvocation.Invocation,
+	// 	contextSingletons,
+	// )
 
 	if err != nil {
 		return types.HmsRunResultContext{}, nil, err
@@ -185,6 +214,7 @@ func (d DriverManager) InvokeDriverFunc(
 
 	// TODO: add context support
 	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel = context.WithTimeout(ctx, time.Second*10)
 
 	runResult, hmsErrs, dbErr := d.invokeDriverGeneric(
 		ctx,

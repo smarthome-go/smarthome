@@ -6,5 +6,5 @@ import (
 )
 
 type AutomationManager interface {
-	RunAllAutomationsWithTrigger(username string, trigger database.AutomationTrigger, context types.AutomationContext)
+	RunAllAutomationsWithTrigger(username string, trigger database.AutomationTrigger, context types.ExecutionContextAutomation)
 }

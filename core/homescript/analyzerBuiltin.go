@@ -9,7 +9,6 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	pAst "github.com/smarthome-go/homescript/v3/homescript/parser/ast"
 	"github.com/smarthome-go/smarthome/core/device/driver"
-	driverTypes "github.com/smarthome-go/smarthome/core/device/driver/types"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
@@ -18,11 +17,7 @@ import (
 var knownObjectTypeAnnotations = []string{driver.DRIVER_FIELD_REQUIRED_ANNOTATION}
 
 type analyzerHost struct {
-	username string
-	// Depending on the program kind, the post-validation hook performs specific validations.
-	programKind types.HMS_PROGRAM_KIND
-
-	driverData *driverTypes.DriverInvocationIDs
+	context types.ExecutionContext
 }
 
 func (analyzerHost) GetKnownObjectTypeFieldAnnotations() []string {
@@ -30,14 +25,10 @@ func (analyzerHost) GetKnownObjectTypeFieldAnnotations() []string {
 }
 
 func newAnalyzerHost(
-	username string,
-	programKind types.HMS_PROGRAM_KIND,
-	driverData *driverTypes.DriverInvocationIDs,
+	context types.ExecutionContext,
 ) analyzerHost {
 	return analyzerHost{
-		username:    username,
-		programKind: programKind,
-		driverData:  driverData,
+		context: context,
 	}
 }
 
@@ -46,12 +37,10 @@ func (self analyzerHost) PostValidationHook(
 	mainModule string,
 	analyzer *analyzer.Analyzer,
 ) []diagnostic.Diagnostic {
-	switch self.programKind {
+	switch self.context.Kind() {
 	case types.HMS_PROGRAM_KIND_DEVICE_DRIVER:
-		// fmt.Printf("post validation driver hook: %s: %s\n", self.driverData.VendorId, self.driverData.ModelId)
-
 		info, diagnostics := driver.ExtractDriverInfo(analyzedModules, mainModule, true)
-		fmt.Printf("post-validation: INFO: %v\n", info)
+		logger.Tracef("[Driver] Post-validation: INFO: %v\n", info)
 		return diagnostics
 	case types.HMS_PROGRAM_KIND_NORMAL:
 		// TODO: is there something to implement?
