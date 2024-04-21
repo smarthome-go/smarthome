@@ -21,6 +21,7 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/device/driver"
+	driverTypes "github.com/smarthome-go/smarthome/core/device/driver/types"
 	dispatcherTypes "github.com/smarthome-go/smarthome/core/homescript/dispatcher/types"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 	"github.com/smarthome-go/smarthome/core/scheduler"
@@ -298,15 +299,11 @@ func (i *InstanceT) CallBack(info dispatcherTypes.RegisterInfo, meta CallBackMet
 		go i.allocatingCall(
 			info,
 			meta,
-			callMode.Username,
+			callMode.Context,
 		)
 	case dispatcherTypes.CallModeAdaptive:
 		for _, job := range i.Hms.GetJobList() {
-			if job.HmsID == nil {
-				continue
-			}
-
-			if *job.HmsID == info.ProgramID {
+			if job.HmsID == info.ProgramID {
 				i.AttachingCall(info, job.JobID, meta)
 				return
 			}
@@ -317,7 +314,7 @@ func (i *InstanceT) CallBack(info dispatcherTypes.RegisterInfo, meta CallBackMet
 		go i.allocatingCall(
 			info,
 			meta,
-			callMode.Username,
+			callMode.AllocatingFallback.Context,
 		)
 	case dispatcherTypes.CallModeAttaching:
 		go i.AttachingCall(info, callMode.HMSJobID, meta)
@@ -329,7 +326,7 @@ func (i *InstanceT) CallBack(info dispatcherTypes.RegisterInfo, meta CallBackMet
 func (i *InstanceT) allocatingCall(
 	info dispatcherTypes.RegisterInfo,
 	meta CallBackMeta,
-	username string,
+	execContext types.ExecutionContext,
 ) {
 	logger.Tracef("Performing allocating call for program `%s`...\n", info.ProgramID)
 	cancelCtx, cancelFnc := context.WithCancel(context.Background())
@@ -348,10 +345,15 @@ func (i *InstanceT) allocatingCall(
 	var err error
 	var res types.HmsRes
 
-	if info.DriverTriplet != nil {
-		// panic("Fill in values of the driver triplet")
+	switch c := execContext.(type) {
+	case types.ExecutionContextDriver:
 		hmsRes, errTemp := driver.Manager.InvokeDriverFunc(
-			*info.DriverTriplet,
+			driverTypes.DriverInvocationIDs{
+				// TODO: can this break if there is no device???
+				DeviceID: *c.DeviceID,
+				VendorID: c.DriverVendor,
+				ModelID:  c.DriverModel,
+			},
 			driver.FunctionCall{
 				Invocation: invocation,
 			},
@@ -364,23 +366,14 @@ func (i *InstanceT) allocatingCall(
 			ReturnValue:        nil,
 			CalledFunctionSpan: herrors.Span{},
 		}
-	} else {
+	default:
+		if c.Username() == nil {
+			panic("Can only dispatch to driver or user environment")
+		}
+
 		resTemp, errTemp := i.Hms.RunUserScript(
-			// types.HMS_PROGRAM_KIND_NORMAL, // TODO: fix this!
-			// nil,
-			// info.ProgramID,
-			// username,
-			// types.InitiatorAPI,
-			// cancel,
-			// cancelFnc,
-			// nil,
-			// nil,
-			// &buffer,
-			// nil,
-			// &invocation,
-			// nil,
 			info.ProgramID,
-			username,
+			*c.Username(),
 			nil,
 			types.Cancelation{
 				Context:    cancelCtx,
@@ -394,15 +387,19 @@ func (i *InstanceT) allocatingCall(
 	}
 
 	if err != nil {
-		panic(err.Error())
+		logger.Errorf("Failed to run dispatcher target HMS: %s\n", err.Error())
+		cancelFnc()
+		return
 	}
 
 	if res.Errors.ContainsError {
+		// TODO: better way to handle errors: maybe system log or admin user notication?
 		spew.Dump(res.Errors)
 		panic("HMS crashed on invocation")
 	}
 
 	spew.Dump(res)
+	cancelFnc()
 }
 
 type MqttMessage struct {

@@ -13,9 +13,9 @@ import (
 )
 
 type Job struct {
-	Username        string
+	Context         ExecutionContext
 	JobID           uint64
-	HmsID           *string
+	HmsID           string
 	Initiator       HomescriptInitiator
 	CancelCtx       context.CancelFunc
 	VM              *runtime.VM
@@ -38,13 +38,15 @@ type Manager interface {
 	GetPersonalScriptById(homescriptID string, username string) (database.Homescript, bool, error)
 
 	Analyze(
-		program homescript.InputProgram,
+		input homescript.InputProgram,
 		context ExecutionContext,
-	) (map[string]ast.AnalyzedProgram, HmsRes, error)
+	) (map[string]ast.AnalyzedProgram, HmsDiagnosticsContainer, error)
 
 	AnalyzeUserScript(
 		programID, username string,
 	) (map[string]ast.AnalyzedProgram, HmsRes, error)
+
+	// TODO: create functions which load the source code (and required metadata) based on an execution context.
 
 	Run(
 		invocation ProgramInvocation,

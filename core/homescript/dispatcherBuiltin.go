@@ -1,7 +1,6 @@
 package homescript
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -9,6 +8,7 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/homescript/dispatcher"
 	"github.com/smarthome-go/smarthome/core/homescript/dispatcher/types"
+	hmsTypes "github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
 func (self interpreterExecutor) RegisterTrigger(
@@ -17,147 +17,140 @@ func (self interpreterExecutor) RegisterTrigger(
 	span errors.Span,
 	args []value.Value,
 ) error {
-	return self.registerTriggerOverride(callbackFunctionIdent, eventTriggerIdent, span, args, nil, nil)
-}
-
-func (self interpreterExecutor) registerTriggerOverride(
-	callbackFunctionIdent string,
-	eventTriggerIdent string,
-	span errors.Span,
-	args []value.Value,
-	callmodeOverride *types.CallMode,
-	// driverTiplet *driverTypes.DriverInvocationIDs,
-) error {
-	// TODO: also refactor this
-	id, err := registerTriggerOverride(
-		callbackFunctionIdent,
-		eventTriggerIdent,
-		span,
-		args,
-		callmodeOverride,
-		self.username,
-		self.programID,
-		&self.jobID,
-		driverTiplet,
-	)
+	var registrationID types.RegistrationID
+	var err error
+	switch eventTriggerIdent {
+	case "message":
+		registrationID, err = registerTriggerMessage(
+			callbackFunctionIdent,
+			nil,
+			self.programID,
+			args,
+			self.context,
+		)
+	case "minute":
+		registrationID, err = registerTriggerMinute(
+			callbackFunctionIdent,
+			self.programID,
+			self.jobID,
+			args,
+			self.context,
+		)
+	default:
+		panic("Encountered unimplemented trigger function")
+	}
 
 	if err != nil {
 		return err
 	}
 
-	*self.registrations = append(*self.registrations, id)
+	*self.registrations = append(*self.registrations, registrationID)
 
 	return nil
 }
 
-// TODO: think about a better argument structure here.
-func registerTriggerOverride(
-	// callbackFunctionIdent string,
-	// eventTriggerIdent string,
-	// span errors.Span,
-	// args []value.Value,
-	// callmodeOverride *types.CallMode,
-	// username string,
-	// programID string,
-	// jobID *uint64,
-	// driverTiplet *driverTypes.DriverInvocationIDs,
-	foo int,
+func registerTriggerMessage(
+	callbackFunctionIdent string,
+	callmodeOverride *types.CallMode,
+	programID string,
+	args []value.Value,
+	context hmsTypes.ExecutionContext,
 ) (types.RegistrationID, error) {
-	switch eventTriggerIdent {
-	case "message":
-		topicsStrList := make([]string, 0)
+	topicsStrList := make([]string, 0)
 
-		topicList := args[0].(value.ValueList).Values
-		for _, item := range *topicList {
-			topicsStrList = append(topicsStrList, (*item).(value.ValueString).Inner)
-		}
-
-		callmode := types.CallMode(types.CallModeAdaptive{
-			Username: username,
-		})
-
-		if callmodeOverride != nil {
-			callmode = *callmodeOverride
-		}
-
-		id, err := dispatcher.Instance.Register(
-			types.RegisterInfo{
-				ProgramID: programID,
-				Function: &types.CalledFunction{
-					Ident:          callbackFunctionIdent,
-					IdentIsLiteral: false,
-					CallMode:       callmode,
-				},
-				Trigger: types.CallBackTriggerMqtt{
-					Topics: topicsStrList,
-				},
-				DriverTriplet: driverTiplet,
-			},
-			// NOTE: Annotations should never fail silently.
-			types.ToleranceRetry,
-		)
-
-		if err != nil {
-			return 0, err
-		}
-
-		return id, nil
-	case "minute":
-		panic("Why does this even exist?")
-
-		stringArgs := make([]string, len(args))
-		for idx, arg := range args {
-			argVString, err := arg.Display()
-			if err != nil {
-				panic((*err).Message())
-			}
-			stringArgs[idx] = argVString
-		}
-
-		logger.Tracef(
-			"Registered trigger `minute` with callback fn `%s` and args `[%s]`",
-			callbackFunctionIdent,
-			strings.Join(stringArgs, ", "),
-		)
-
-		minutes := args[0].(value.ValueInt).Inner
-		now := time.Now()
-		then := now.Add(time.Minute * time.Duration(minutes))
-
-		callmode := types.CallMode(types.CallModeAttaching{
-			HMSJobID: *jobID,
-		})
-
-		if callmodeOverride != nil {
-			callmode = *callmodeOverride
-		}
-
-		id, err := dispatcher.Instance.Register(
-			types.RegisterInfo{
-				ProgramID: programID,
-				Function: &types.CalledFunction{
-					Ident:          callbackFunctionIdent,
-					IdentIsLiteral: false,
-					CallMode:       callmode,
-				},
-				Trigger: types.CallBackTriggerAtTime{
-					Hour:         uint8(then.Hour()),
-					Minute:       uint8(then.Minute()),
-					Second:       uint8(then.Second()),
-					Mode:         types.OnlyOnceTriggerTimeMode,
-					RegisteredAt: time.Now(),
-				},
-			},
-			// NOTE: annotations should never fail silently.
-			types.ToleranceRetry,
-		)
-
-		if err != nil {
-			return 0, err
-		}
-
-		return id, nil
-	default:
-		panic(fmt.Sprintf("Unknown event trigger ident: `%s`", eventTriggerIdent))
+	topicList := args[0].(value.ValueList).Values
+	for _, item := range *topicList {
+		topicsStrList = append(topicsStrList, (*item).(value.ValueString).Inner)
 	}
+
+	callMode := types.CallMode(types.CallModeAdaptive{
+		AllocatingFallback: types.CallModeAllocating{
+			Context: context,
+		},
+	})
+
+	if callmodeOverride != nil {
+		callMode = *callmodeOverride
+	}
+
+	id, err := dispatcher.Instance.Register(
+		types.RegisterInfo{
+			ProgramID: programID,
+			Function: &types.CalledFunction{
+				Ident:          callbackFunctionIdent,
+				IdentIsLiteral: false,
+				CallMode:       callMode,
+			},
+			Trigger: nil,
+		},
+		// TODO: maybe make this a `toleranceFunc` to only retry on specific failures
+		types.ToleranceRetry,
+	)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
+}
+
+func registerTriggerMinute(
+	callbackFunctionIdent string,
+	programID string,
+
+	// This is required as this trigger does not make sense in annotations.
+	// Therefore, this trigger only works with the attaching calling mode.
+	jobID uint64,
+
+	args []value.Value,
+	context hmsTypes.ExecutionContext,
+) (types.RegistrationID, error) {
+	stringArgs := make([]string, len(args))
+	for idx, arg := range args {
+		argVString, err := arg.Display()
+		if err != nil {
+			panic((*err).Message())
+		}
+		stringArgs[idx] = argVString
+	}
+
+	logger.Tracef(
+		"Registered trigger `minute` with callback fn `%s` and args `[%s]`",
+		callbackFunctionIdent,
+		strings.Join(stringArgs, ", "),
+	)
+
+	minutes := args[0].(value.ValueInt).Inner
+	now := time.Now()
+	then := now.Add(time.Minute * time.Duration(minutes))
+
+	callmode := types.CallMode(types.CallModeAttaching{
+		HMSJobID: jobID,
+	})
+
+	id, err := dispatcher.Instance.Register(
+		types.RegisterInfo{
+			ProgramID: programID,
+			Function: &types.CalledFunction{
+				Ident:          callbackFunctionIdent,
+				IdentIsLiteral: false,
+				CallMode:       callmode,
+			},
+			Trigger: types.CallBackTriggerAtTime{
+				Hour:         uint8(then.Hour()),
+				Minute:       uint8(then.Minute()),
+				Second:       uint8(then.Second()),
+				Mode:         types.OnlyOnceTriggerTimeMode,
+				RegisteredAt: time.Now(),
+			},
+		},
+		// NOTE: annotations should never fail silently.
+		types.ToleranceRetry,
+	)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
 }

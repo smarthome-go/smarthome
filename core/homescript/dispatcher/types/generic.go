@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	driverTypes "github.com/smarthome-go/smarthome/core/device/driver/types"
+	hmsTypes "github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
 type CallModeKind uint8
@@ -27,7 +27,7 @@ type CallMode interface {
 //
 
 type CallModeAllocating struct {
-	Username string
+	Context hmsTypes.ExecutionContext
 }
 
 func (c CallModeAllocating) Kind() CallModeKind { return CallModeKindAllocating }
@@ -37,8 +37,8 @@ func (c CallModeAllocating) Kind() CallModeKind { return CallModeKindAllocating 
 //
 
 type CallModeAdaptive struct {
-	// TODO: why is this required
-	Username string
+	// The execution context is required for spawning a new HMS process.
+	AllocatingFallback CallModeAllocating
 }
 
 func (c CallModeAdaptive) Kind() CallModeKind { return CallModeKindAdaptive }
@@ -108,10 +108,8 @@ func (self CallBackTriggerAtTime) Kind() CallBackTriggerKind { return AtTimeCall
 
 type RegisterInfo struct {
 	ProgramID string
-	// This is != nil if the target of the dispatch is a driver.
-	DriverTriplet *driverTypes.DriverInvocationIDs
-	Function      *CalledFunction
-	Trigger       CallBackTrigger
+	Function  *CalledFunction
+	Trigger   CallBackTrigger
 }
 
 type Dispatcher interface {

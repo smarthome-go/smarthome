@@ -103,33 +103,42 @@ func (m *Manager) AllocJobId() uint64 {
 }
 
 func (m *Manager) PushJob(
-	username string,
+	context types.ExecutionContext,
 	initiator types.HomescriptInitiator,
 	cancelCtxFunc context.CancelFunc,
-	hmsId *string,
+	hmsID string,
 	vm *runtime.VM,
 	entryModuleName string,
 	supportsKill bool,
 ) uint64 {
 	id := m.AllocJobId()
-	m.setJob(id, username, initiator, cancelCtxFunc, hmsId, vm, entryModuleName, supportsKill)
+	m.setJob(
+		id,
+		hmsID,
+		initiator,
+		cancelCtxFunc,
+		vm,
+		entryModuleName,
+		supportsKill,
+		context,
+	)
 	return id
 }
 
 func (m *Manager) setJob(
-	id uint64,
-	username string,
+	jobID uint64,
+	hmsId string,
 	initiator types.HomescriptInitiator,
 	cancelCtxFunc context.CancelFunc,
-	hmsId *string,
 	vm *runtime.VM,
 	entryModuleName string,
 	supportsKill bool,
+	context types.ExecutionContext,
 ) {
 	m.Lock.Lock()
-	m.Jobs[id] = types.Job{
-		Username:        username,
-		JobID:           id,
+	m.Jobs[jobID] = types.Job{
+		Context:         context,
+		JobID:           jobID,
 		HmsID:           hmsId,
 		Initiator:       initiator,
 		CancelCtx:       cancelCtxFunc,
@@ -155,7 +164,7 @@ func (m *Manager) resolveFileContentsOfErrors(
 		var code string
 
 		if context.Username() != nil {
-			script, found, dbErr := m.GetScriptById(err.Span.Filename, *context.Username())
+			script, found, dbErr := m.GetPersonalScriptById(err.Span.Filename, *context.Username())
 			if dbErr != nil {
 				return nil, dbErr
 			}
@@ -165,7 +174,7 @@ func (m *Manager) resolveFileContentsOfErrors(
 			}
 			code = script.Data.Code
 		} else {
-			script, found, dbErr := m.GetScriptById(err.Span.Filename, "") // TODO: this will probably not work
+			script, found, dbErr := m.GetScriptById(err.Span.Filename) // TODO: this will probably not work
 			if dbErr != nil {
 				return nil, dbErr
 			}
@@ -250,18 +259,29 @@ func (m *Manager) Analyze(
 	}, nil
 }
 
+// TODO: create a function named `retrieveCodeFromContext` which performs the correct database calls to load code for any specific execution context.
+// This function is then used for analyzebycontext and runbycontext
+
 func (m *Manager) AnalyzeById(
-	id string,
-	username string,
-	input homescript.InputProgram,
+	filename string,
 	context types.ExecutionContext,
 ) (map[string]ast.AnalyzedProgram, types.HmsDiagnosticsContainer, error) {
-	hms, found, err := m.GetPersonalScriptById(id, username)
-	if err != nil {
-		return nil, types.HmsDiagnosticsContainer{}, err
-	}
-	if !found {
-		panic(fmt.Sprintf("Homescript with ID %s owned by user %s was not found", id, username)) // TODO: no panic
+	var code string
+
+	switch c := context.(type) {
+	case types.ExecutionContextDriver:
+	default:
+		if c.Username() == nil {
+			panic("Can only invoke analyzer on driver or user environments")
+		}
+
+		hms, found, err := m.GetPersonalScriptById(filename, *c.Username())
+		if err != nil {
+			return nil, types.HmsDiagnosticsContainer{}, err
+		}
+		if !found {
+			panic(fmt.Sprintf("Homescript with ID %s owned by user %s was not found", filename, username)) // TODO: no panic
+		}
 	}
 
 	// username, id, hms.Data.Code, programKind, driverData
@@ -270,10 +290,7 @@ func (m *Manager) AnalyzeById(
 			ProgramText: hms.Data.Code,
 			Filename:    hms.Data.Id,
 		},
-		types.NewExecutionContextUser(
-			username,
-			make(map[string]string),
-		),
+		context,
 	)
 }
 
@@ -309,10 +326,10 @@ func (m *Manager) Run(
 		return types.HmsRes{}, err
 	}
 
-	if !res.ContainsError {
+	if res.ContainsError {
 		return types.HmsRes{
-			Errors:             &res,
-			Singletons:         map[string]value.Value{},
+			Errors:             res,
+			Singletons:         nil,
 			ReturnValue:        nil,
 			CalledFunctionSpan: errors.Span{},
 		}, nil
@@ -324,6 +341,7 @@ func (m *Manager) Run(
 
 	executor := NewInterpreterExecutor(
 		jobID,
+		invocation.Identifier.Filename,
 		outputWriter,
 		context,
 	)
@@ -339,22 +357,22 @@ func (m *Manager) Run(
 	// 	singletonsToLoad,
 	// )
 
-	compOut, err := m.Compile(modules, programID, username)
+	compOut, err := m.Compile(modules, invocation.Identifier.Filename)
 	if err != nil {
-		return types.HmsRes{}, types.HmsRunResultContext{}, err
+		return types.HmsRes{}, err
 	}
 
 	if printDebugASM {
 		fmt.Println(compOut.AsmString())
 	}
 
-	logger.Debug(fmt.Sprintf("Homescript '%s' of user '%s' is executing...", programID, username))
+	// logger.Debug(fmt.Sprintf("Homescript '%s' of user '%s' is executing...", programID, username))
 
 	vm := runtime.NewVM(
 		compOut,
 		executor,
-		&cancelCtx,
-		&cancelCtxFunc,
+		&cancelation.Context,
+		&cancelation.CancelFunc,
 		interpreterScopeAdditions(),
 		VM_LIMITS,
 	)

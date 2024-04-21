@@ -24,7 +24,6 @@ func newManagerCompileCache() ManagerCompileCache {
 func (m *Manager) Compile(
 	modules map[string]ast.AnalyzedProgram,
 	entryPointModule string,
-	username string,
 ) (compiler.CompileOutput, error) {
 	// Try to use a cached version.
 	m.CompileCache.Lock.RLock()
