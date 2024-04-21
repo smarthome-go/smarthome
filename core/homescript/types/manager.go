@@ -13,14 +13,11 @@ import (
 )
 
 type Job struct {
-	Context         ExecutionContext
-	JobID           uint64
-	HmsID           string
-	Initiator       HomescriptInitiator
-	CancelCtx       context.CancelFunc
-	VM              *runtime.VM
-	EntryModuleName string
-	SupportsKill    bool
+	Context   ExecutionContext
+	JobID     uint64
+	HmsID     string
+	CancelCtx context.CancelFunc
+	VM        *runtime.VM
 }
 
 type ProgramInvocation struct {
@@ -43,16 +40,21 @@ type Manager interface {
 	) (map[string]ast.AnalyzedProgram, HmsDiagnosticsContainer, error)
 
 	AnalyzeUserScript(
-		programID, username string,
-	) (map[string]ast.AnalyzedProgram, HmsRes, error)
+		context ExecutionContextUser,
+	) (map[string]ast.AnalyzedProgram, HmsDiagnosticsContainer, error)
 
 	// TODO: create functions which load the source code (and required metadata) based on an execution context.
 
-	Run(
+	AnalyzeDriver(
+		context ExecutionContextDriver,
+	) (map[string]ast.AnalyzedProgram, HmsDiagnosticsContainer, error)
+
+	RunGeneric(
 		invocation ProgramInvocation,
 		context ExecutionContext,
 		cancelation Cancelation,
-		// idChan *chan uint64,
+		// This is required for the asynchronous runtime.
+		idChan *chan uint64,
 		outputWriter io.Writer,
 	) (HmsRes, error)
 
@@ -61,6 +63,7 @@ type Manager interface {
 		function *runtime.FunctionInvocation,
 		cancelation Cancelation,
 		outputWriter io.Writer,
+		idChan *chan uint64,
 	) (HmsRes, error)
 
 	RunDriverScript(

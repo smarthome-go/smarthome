@@ -16,7 +16,9 @@ import (
 	"github.com/smarthome-go/smarthome/server/middleware"
 )
 
+// BUG: is this even correct?
 const megabyte = 1000000
+const wsTimeout = 10 * time.Second
 
 // Messages sent by the server
 type HMSMessageTXErr struct {
@@ -44,9 +46,10 @@ const (
 
 // Messages sent by the client
 type HmsMessageRXInit struct {
-	Kind  HMSMessageKindRX `json:"kind"`
-	HMSID string           `json:"payload"`
-	Args  []HomescriptArg  `json:"args"`
+	Kind     HMSMessageKindRX `json:"kind"`
+	HMSID    string           `json:"hmsID"`
+	IsDriver bool             `json:"isDriver"`
+	Args     []HomescriptArg  `json:"args"`
 }
 
 type HmsMessageRXKill struct {
@@ -129,28 +132,23 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 		args[arg.Key] = arg.Value
 	}
 
-	// Start running the code
+	// Start running the code.
 	res := make(chan types.HmsRes)
-
 	idChan := make(chan uint64)
 
 	go func(writer io.Writer, results *chan types.HmsRes, idChan *chan uint64) {
 		ctx, cancel := context.WithCancel(context.Background())
 
-		res, _, err := homescript.HmsManager.RunById(
-			types.HMS_PROGRAM_KIND_NORMAL,
-			nil,
+		res, err := homescript.HmsManager.RunUserScript(
 			request.HMSID,
 			username,
-			types.InitiatorAPI,
-			ctx,
-			cancel,
-			idChan,
-			args,
+			nil,
+			types.Cancelation{
+				Context:    ctx,
+				CancelFunc: cancel,
+			},
 			outWriter,
-			nil,
-			nil,
-			nil,
+			idChan,
 		)
 
 		if err != nil {
@@ -173,7 +171,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 	jobId := <-idChan
 
 	go func() {
-		// Check if the script should be killed
+		// Check if the script should be killed.
 		ws.SetReadLimit(100 * megabyte)
 		if err := ws.SetReadDeadline(time.Now().Add(time.Minute)); err != nil {
 			return
@@ -201,17 +199,14 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 			}
 			wsMutex.Unlock()
 		}
-		// Kill the Homescript
-		log.Trace("Killing script via Websocket...")
-		// cancel()
+
+		log.Trace("Killing script from Websocket...")
 		homescript.HmsManager.Kill(jobId)
-		log.Trace("Killed script via Websocket")
 	}()
 
-	// Stream the stdout
 	scanner := bufio.NewScanner(outReader)
-
 	killPipe := make(chan bool)
+
 	go func(kill chan bool) {
 		scanner.Split(bufio.ScanRunes)
 
@@ -284,15 +279,15 @@ outer:
 		case res := <-res:
 			killPipe <- true
 			wsMutex.Lock()
-			if err := ws.SetWriteDeadline(time.Now().Add(10 * time.Second)); err != nil {
+			if err := ws.SetWriteDeadline(time.Now().Add(wsTimeout)); err != nil {
 				return
 			}
 
 			if err := ws.WriteJSON(HMSMessageTXRes{
 				Kind:         MessageKindResults,
-				Errors:       res.Errors,
-				FileContents: res.FileContents,
-				Success:      res.Success,
+				Errors:       res.Errors.Diagnostics,
+				FileContents: res.Errors.FileContents,
+				Success:      !res.Errors.ContainsError,
 			}); err != nil {
 				return
 			}
@@ -303,14 +298,14 @@ outer:
 		}
 	}
 	wsMutex.Lock()
-	if err := ws.SetWriteDeadline(time.Now().Add(10 * time.Second)); err != nil {
+	if err := ws.SetWriteDeadline(time.Now().Add(wsTimeout)); err != nil {
 		return
 	}
 	if err := ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "")); err != nil {
 		return
 	}
 	wsMutex.Unlock()
-	// Give the client a grace period to close the connection
-	time.Sleep(300 * time.Millisecond)
+	// Give the client a grace period to close the connection.
+	time.Sleep(time.Second)
 	ws.Close()
 }

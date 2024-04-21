@@ -201,6 +201,7 @@ func AutomationRunnerFunc(id uint, automationCtx types.ExecutionContextAutomatio
 			CancelFunc: cancel,
 		},
 		&bytes.Buffer{},
+		nil,
 	)
 
 	if err != nil {

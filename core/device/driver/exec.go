@@ -174,9 +174,10 @@ func (d *DriverManager) invokeDriverGeneric(
 				Diagnostics:   errorList,
 				FileContents:  res.Errors.FileContents,
 			},
-			Singletons:         nil,
-			ReturnValue:        nil,
-			CalledFunctionSpan: errors.Span{},
+			Singletons:  nil,
+			ReturnValue: nil,
+			// TODO: called function span
+			// CalledFunctionSpan: errors.Span{},
 		}, nil
 	}
 

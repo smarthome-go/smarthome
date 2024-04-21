@@ -12,9 +12,11 @@ import (
 
 	"github.com/gorilla/mux"
 
+	hms "github.com/smarthome-go/homescript/v3/homescript"
+	"github.com/smarthome-go/homescript/v3/homescript/runtime"
+	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core"
 	"github.com/smarthome-go/smarthome/core/database"
-	driverTypes "github.com/smarthome-go/smarthome/core/device/driver/types"
 	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 	"github.com/smarthome-go/smarthome/server/middleware"
@@ -71,7 +73,6 @@ type HomescriptIdRunRequest struct {
 	IsWidget bool            `json:"isWidget"`
 }
 
-// Runs any given Homescript given its id
 func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(w, r)
@@ -86,13 +87,14 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
 		return
 	}
-	// Fill the arguments using the request
+
+	// Fill the arguments using the request.
 	args := make(map[string]string, 0)
 	for _, arg := range request.Args {
 		args[arg.Key] = arg.Value
 	}
 
-	hmsData, found, err := homescript.HmsManager.GetPersonalScriptById(request.Id, username)
+	_, found, err := homescript.HmsManager.GetPersonalScriptById(request.Id, username)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "could not retrieve Homescript from database", Error: "database failure"})
@@ -104,47 +106,39 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	initiator := types.InitiatorAPI
-	if request.IsWidget {
-		initiator = types.InitiatorWidget
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
-
-	// Run the Homescript
 	var outputBuffer bytes.Buffer
-	res, _, err := homescript.HmsManager.Run(
-		types.HMS_PROGRAM_KIND_NORMAL,
-		nil,
+
+	res, err := homescript.HmsManager.RunUserScript(
+		request.Id,
 		username,
-		&request.Id,
-		hmsData.Data.Code,
-		initiator,
-		ctx,
-		cancel,
 		nil,
-		args,
+		types.Cancelation{
+			Context:    ctx,
+			CancelFunc: cancel,
+		},
 		&outputBuffer,
-		nil,
-		nil,
 		nil,
 	)
 
-	// TODO: check error
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "an error occured during Homescript execution", Error: "backend failure"})
+		return
+	}
 
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
-			Success:      res.Success,
+			Success:      !res.Errors.ContainsError,
 			Output:       outputBuffer.String(),
-			FileContents: res.FileContents,
-			Errors:       res.Errors,
+			FileContents: res.Errors.FileContents,
+			Errors:       res.Errors.Diagnostics,
 		}); err != nil {
 		log.Error(err.Error())
 		Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
 	}
 }
 
-// Lints any given Homescript given its id
 func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(w, r)
@@ -176,18 +170,15 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	programKind := types.HMS_PROGRAM_KIND_NORMAL
-	if hmsData.Data.Type == database.HOMESCRIPT_TYPE_DRIVER {
-		programKind = types.HMS_PROGRAM_KIND_DEVICE_DRIVER
-	}
-
-	// Lint the Homescript
 	_, res, err := homescript.HmsManager.Analyze(
-		username,
-		request.Id,
-		hmsData.Data.Code,
-		programKind,
-		nil,
+		hms.InputProgram{
+			ProgramText: hmsData.Data.Code,
+			Filename:    hmsData.Data.Id,
+		},
+		types.NewExecutionContextUser(
+			username,
+			args,
+		),
 	)
 
 	if err != nil {
@@ -198,7 +189,7 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
-			Success:      res.Success,
+			Success:      res.ContainsError,
 			Output:       "",
 			FileContents: res.FileContents,
 			Errors:       res.Diagnostics,
@@ -208,7 +199,6 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Runs any given Homescript as a string
 func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(w, r)
@@ -224,7 +214,7 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Fill the arguments using the request
+	// Fill the arguments using the request.
 	args := make(map[string]string, 0)
 	for _, arg := range request.Args {
 		args[arg.Key] = arg.Value
@@ -232,25 +222,29 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	// Run the Homescript
 	var outputBuffer bytes.Buffer
-	res, _, err := homescript.HmsManager.Run(
-		types.HMS_PROGRAM_KIND_NORMAL,
+	res, err := homescript.HmsManager.RunGeneric(
+		types.ProgramInvocation{
+			Identifier: hms.InputProgram{
+				ProgramText: request.Code,
+				Filename:    fmt.Sprintf("live@%s", username),
+			},
+			FunctionInvocation: &runtime.FunctionInvocation{},
+			SingletonsToLoad:   map[string]value.Value{},
+		},
+		types.NewExecutionContextUser(
+			username,
+			args,
+		),
+		types.Cancelation{
+			Context:    ctx,
+			CancelFunc: cancel,
+		},
 		nil,
-		username,
-		nil,
-		request.Code,
-		types.InitiatorAPI,
-		ctx,
-		cancel,
-		nil,
-		args,
 		&outputBuffer,
-		nil,
-		nil,
-		nil,
 	)
 	output := outputBuffer.String()
+
 	// if len(output) > 100_000 {
 	// 	output = "Output too large"
 	// } TODO: maybe re-introduce such a limit
@@ -263,17 +257,16 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
-			Success:      res.Success,
+			Success:      !res.Errors.ContainsError,
 			Output:       output,
-			Errors:       res.Errors,
-			FileContents: res.FileContents,
+			Errors:       res.Errors.Diagnostics,
+			FileContents: res.Errors.FileContents,
 		}); err != nil {
 		log.Error(err.Error())
 		Res(w, Response{Success: false, Message: "could not encode response", Error: "could not encode response"})
 	}
 }
 
-// Lints a given Homescript string and checks it for errors
 func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(w, r)
@@ -289,19 +282,16 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Fill the arguments using the request
+	// Fill the arguments using the request.
 	args := make(map[string]string, 0)
 	for _, arg := range request.Args {
 		args[arg.Key] = arg.Value
 	}
 
-	programKind := types.HMS_PROGRAM_KIND_NORMAL
-	var driverMetadata *driverTypes.DriverInvocationIDs = nil
+	context := types.ExecutionContext(types.NewExecutionContextUser(username, args))
 
 	if request.IsDriver {
-		programKind = types.HMS_PROGRAM_KIND_DEVICE_DRIVER
-
-		_, validationErr, databaseErr := types.DriverFromHmsId(request.ModuleName)
+		driverData, validationErr, databaseErr := types.DriverFromHmsId(request.ModuleName)
 		if databaseErr != nil {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			Res(w, Response{Success: false, Message: "could not lint Homescript string", Error: "database error"})
@@ -314,21 +304,19 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// TODO: better way to do this?
-		driverMetadata = &driverTypes.DriverInvocationIDs{
-			DeviceID: "",
-			VendorID: "",
-			ModelID:  "",
-		}
+		context = types.NewExecutionContextDriver(
+			driverData.VendorId,
+			driverData.ModelId,
+			nil,
+		)
 	}
 
-	// Lint the Homescript
 	_, res, err := homescript.HmsManager.Analyze(
-		username,
-		request.ModuleName,
-		request.Code,
-		programKind,
-		driverMetadata,
+		hms.InputProgram{
+			ProgramText: request.Code,
+			Filename:    request.ModuleName,
+		},
+		context,
 	)
 
 	if err != nil {
@@ -339,7 +327,7 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewEncoder(w).Encode(
 		HomescriptResponse{
-			Success:      res.Success,
+			Success:      !res.ContainsError,
 			Errors:       res.Diagnostics,
 			FileContents: res.FileContents,
 		}); err != nil {
@@ -348,7 +336,6 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Returns a list of Homescripts which are owned by the current user
 func ListPersonalHomescripts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(w, r)
@@ -367,8 +354,6 @@ func ListPersonalHomescripts(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Returns a list of Homescripts which are owned by the current user
-// Additionally, each Homescript also contains its arguments
 func ListPersonalHomescriptsWithArgs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(w, r)
@@ -387,7 +372,6 @@ func ListPersonalHomescriptsWithArgs(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Creates a new Homescript
 func CreateNewHomescript(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(w, r)
@@ -470,7 +454,6 @@ func CreateNewHomescript(w http.ResponseWriter, r *http.Request) {
 	Res(w, Response{Success: true, Message: "successfully created new Homescript"})
 }
 
-// Deletes a Homescript by its Id, checks if it exists and if the user has permission to delete it
 func DeleteHomescriptById(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(w, r)
@@ -563,7 +546,6 @@ func ModifyHomescript(w http.ResponseWriter, r *http.Request) {
 	Res(w, Response{Success: true, Message: "successfully modified Homescript"})
 }
 
-// Modifies the code of a given Homescript
 func ModifyHomescriptCode(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(w, r)
@@ -599,7 +581,6 @@ func ModifyHomescriptCode(w http.ResponseWriter, r *http.Request) {
 	Res(w, Response{Success: true, Message: "successfully modified Homescript code"})
 }
 
-// Returns the metadata of an arbitrary Homescript-id to which the user has access to
 func GetUserHomescriptById(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(w, r)
@@ -630,7 +611,6 @@ func GetUserHomescriptById(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Kills a Homescript job given its id
 func KillJobById(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(w, r)
@@ -651,7 +631,7 @@ func KillJobById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	job, found := homescript.HmsManager.GetJobById(uint64(idInt))
-	if !found || job.Username != username {
+	if !found || job.Context.Username() == nil || *job.Context.Username() != username {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		Res(w, Response{Success: false, Message: "failed to kill Homescript job", Error: "invalid id provided"})
 		return

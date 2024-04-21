@@ -67,6 +67,7 @@ func (self *DriverManager) ExtractDriverInfoTotal(
 	homescriptCode string,
 ) (info DriverInfo, hmsErrors []diagnostic.Diagnostic, err error) {
 	// TODO: remove this hack for the filename
+	// TODO: use the ananlyze with context function here
 	filename := types.CreateDriverHmsId(database.DriverTuple{VendorID: vendorID, ModelID: modelID})
 
 	analyzed, res, err := self.Hms.Analyze(
@@ -84,10 +85,10 @@ func (self *DriverManager) ExtractDriverInfoTotal(
 		return DriverInfo{}, nil, err
 	}
 
-	if res.Errors.ContainsError {
+	if res.ContainsError {
 		// Only include actual errors, not other diagnostic messages
 		errors := make([]types.HmsError, 0)
-		for _, err := range res.Errors.Diagnostics {
+		for _, err := range res.Diagnostics {
 			if err.DiagnosticError != nil && err.DiagnosticError.Level != diagnostic.DiagnosticLevelError {
 				continue
 			}

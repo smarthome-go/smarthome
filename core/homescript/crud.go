@@ -7,6 +7,8 @@ import (
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
+// TODO: do some work in here to separate drivers and user code.
+
 // Returns a Homescript given its id
 // Returns Homescript, has been found, error
 // This also includes drivers and other types of Homescript.

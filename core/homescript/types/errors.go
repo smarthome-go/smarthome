@@ -25,7 +25,7 @@ type HmsRes struct {
 	// This is `nil` if no additional function was invoced or the called function did not return a value.
 	ReturnValue value.Value
 	// This is non zero-valued if an additional function is called.
-	// TODO: why is this required?
+	// Required so that errors caused by user-implementations can be correctly displayed.
 	CalledFunctionSpan errors.Span
 }
 
@@ -91,7 +91,3 @@ type HmsRuntimeInterrupt struct {
 func (e HmsRuntimeInterrupt) String() string {
 	return fmt.Sprintf("%s: %s", e.Kind, e.Message)
 }
-
-// NOTE: this is primarily required for the driver.
-// type HmsRunResultContext struct {
-// }

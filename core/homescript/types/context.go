@@ -23,6 +23,7 @@ type ExecutionContext interface {
 }
 
 type ExecutionContextUser struct {
+	Filename     string
 	UsernameData string
 	// Arguments entered by the user. (for instance via the web UI)
 	UserArguments map[string]string

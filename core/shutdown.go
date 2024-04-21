@@ -29,7 +29,7 @@ type shutdownJob struct {
 // Maximum time to wait until everything is shutdown
 const SHUTDOWN_TIMEOUT = time.Second * 20
 
-// Maximum allowed runtime for each boot automations
+// Maximum allowed runtime for automations
 const BOOT_AUTOMATION_MAX_RUNTIME = time.Second * 20
 
 func waitForHomescripts(ch *chan struct{}) {
@@ -64,11 +64,7 @@ func waitForHomescripts(ch *chan struct{}) {
 			if idx > 0 {
 				hmsList += ", "
 			}
-			id := "<unknown>"
-			if hms.HmsID != nil {
-				id = *hms.HmsID
-			}
-			hmsList += "`" + id + "`"
+			hmsList += fmt.Sprintf("`%s`", hms.HmsID)
 		}
 
 		waitForWhatText := "finish execution"
@@ -133,13 +129,23 @@ func RunBootAutomations(config database.ServerConfig) {
 
 		go func(jobId uint) {
 			maxRuntime := BOOT_AUTOMATION_MAX_RUNTIME
-			automation.AutomationRunnerFunc(jobId, types.AutomationContext{MaximumHMSRuntime: &maxRuntime})
+			automation.AutomationRunnerFunc(
+				jobId,
+				types.ExecutionContextAutomation{
+					UserContext: types.NewExecutionContextUser(
+						job.Owner,
+						nil,
+					),
+					NotificationContext: nil,
+					MaximumHMSRuntime:   &maxRuntime,
+				},
+			)
 		}(job.Id)
 	}
 }
 
 func runShutdownAutomations(ch *chan struct{}, config database.ServerConfig) {
-	// Signal that all shutdown automations have successfully completed
+	// Signal that all shutdown automations have successfully completed.
 	defer func() {
 		*ch <- struct{}{}
 	}()
@@ -164,7 +170,11 @@ func runShutdownAutomations(ch *chan struct{}, config database.ServerConfig) {
 		wg.Add(1)
 
 		go func(jobId uint) {
-			automation.AutomationRunnerFunc(jobId, types.AutomationContext{})
+			automation.AutomationRunnerFunc(jobId, types.ExecutionContextAutomation{
+				UserContext:         types.ExecutionContextUser{},
+				NotificationContext: &types.ExecutionContextNotification{},
+				MaximumHMSRuntime:   nil,
+			})
 			wg.Done()
 		}(job.Id)
 	}

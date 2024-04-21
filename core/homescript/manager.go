@@ -20,6 +20,8 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
+	"github.com/smarthome-go/smarthome/core/database"
+	driverTypes "github.com/smarthome-go/smarthome/core/device/driver/types"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
@@ -50,8 +52,8 @@ type Manager struct {
 
 // For external usage (can be marshaled)
 type ApiJob struct {
-	Jobid uint64  `json:"jobId"`
-	HmsId *string `json:"hmsId"`
+	Jobid uint64 `json:"jobId"`
+	HmsId string `json:"hmsId"`
 }
 
 var HmsManager Manager
@@ -104,22 +106,17 @@ func (m *Manager) AllocJobId() uint64 {
 
 func (m *Manager) PushJob(
 	context types.ExecutionContext,
-	initiator types.HomescriptInitiator,
 	cancelCtxFunc context.CancelFunc,
 	hmsID string,
 	vm *runtime.VM,
-	entryModuleName string,
 	supportsKill bool,
 ) uint64 {
 	id := m.AllocJobId()
 	m.setJob(
 		id,
 		hmsID,
-		initiator,
 		cancelCtxFunc,
 		vm,
-		entryModuleName,
-		supportsKill,
 		context,
 	)
 	return id
@@ -128,23 +125,17 @@ func (m *Manager) PushJob(
 func (m *Manager) setJob(
 	jobID uint64,
 	hmsId string,
-	initiator types.HomescriptInitiator,
 	cancelCtxFunc context.CancelFunc,
 	vm *runtime.VM,
-	entryModuleName string,
-	supportsKill bool,
 	context types.ExecutionContext,
 ) {
 	m.Lock.Lock()
 	m.Jobs[jobID] = types.Job{
-		Context:         context,
-		JobID:           jobID,
-		HmsID:           hmsId,
-		Initiator:       initiator,
-		CancelCtx:       cancelCtxFunc,
-		VM:              vm,
-		EntryModuleName: entryModuleName,
-		SupportsKill:    supportsKill,
+		Context:   context,
+		JobID:     jobID,
+		HmsID:     hmsId,
+		CancelCtx: cancelCtxFunc,
+		VM:        vm,
 	}
 	m.Lock.Unlock()
 }
@@ -197,6 +188,8 @@ func (m *Manager) Analyze(
 	input homescript.InputProgram,
 	context types.ExecutionContext,
 ) (map[string]ast.AnalyzedProgram, types.HmsDiagnosticsContainer, error) {
+	logger.Trace(fmt.Sprintf("Homescript `%s` is being analyzed...", input.Filename))
+
 	analyzedModules, diagnostics, syntaxErrors := homescript.Analyze(
 		input,
 		analyzerScopeAdditions(),
@@ -259,32 +252,19 @@ func (m *Manager) Analyze(
 	}, nil
 }
 
-// TODO: create a function named `retrieveCodeFromContext` which performs the correct database calls to load code for any specific execution context.
-// This function is then used for analyzebycontext and runbycontext
-
-func (m *Manager) AnalyzeById(
-	filename string,
-	context types.ExecutionContext,
+func (m *Manager) AnalyzeUserScript(
+	context types.ExecutionContextUser,
 ) (map[string]ast.AnalyzedProgram, types.HmsDiagnosticsContainer, error) {
-	var code string
-
-	switch c := context.(type) {
-	case types.ExecutionContextDriver:
-	default:
-		if c.Username() == nil {
-			panic("Can only invoke analyzer on driver or user environments")
-		}
-
-		hms, found, err := m.GetPersonalScriptById(filename, *c.Username())
-		if err != nil {
-			return nil, types.HmsDiagnosticsContainer{}, err
-		}
-		if !found {
-			panic(fmt.Sprintf("Homescript with ID %s owned by user %s was not found", filename, username)) // TODO: no panic
-		}
+	hms, found, err := m.GetPersonalScriptById(context.Filename, context.UsernameData)
+	if err != nil {
+		return nil, types.HmsDiagnosticsContainer{}, err
+	}
+	if !found {
+		return nil,
+			types.HmsDiagnosticsContainer{},
+			fmt.Errorf("Homescript with ID `%s` owned by user %s was not found", context.Filename, context.UsernameData)
 	}
 
-	// username, id, hms.Data.Code, programKind, driverData
 	return m.Analyze(
 		homescript.InputProgram{
 			ProgramText: hms.Data.Code,
@@ -294,31 +274,45 @@ func (m *Manager) AnalyzeById(
 	)
 }
 
-// type ProgramIdentifier struct {
-// 	Filename string
-// 	Code     string
-// }
+func (m *Manager) AnalyzeDriver(
+	context types.ExecutionContextDriver,
+) (map[string]ast.AnalyzedProgram, types.HmsDiagnosticsContainer, error) {
+	driver, found, err := database.GetDeviceDriver(
+		context.DriverVendor,
+		context.DriverModel,
+	)
 
-func (m *Manager) Run(
+	if err != nil {
+		return nil, types.HmsDiagnosticsContainer{}, err
+	}
+
+	if !found {
+		return nil,
+			types.HmsDiagnosticsContainer{},
+			fmt.Errorf("Driver `%s:%s` was not found", driver.VendorId, driver.ModelId)
+	}
+
+	return m.Analyze(
+		homescript.InputProgram{
+			ProgramText: driver.HomescriptCode,
+			Filename: types.CreateDriverHmsId(database.DriverTuple{
+				VendorID: driver.VendorId,
+				ModelID:  driver.ModelId,
+			}),
+		},
+		context,
+	)
+}
+
+func (m *Manager) RunGeneric(
 	invocation types.ProgramInvocation,
 	context types.ExecutionContext,
 	cancelation types.Cancelation,
-	// idChan *chan uint64,
+	// This is required for the asyncronous runtime.
+	idChan *chan uint64,
 	outputWriter io.Writer,
 ) (types.HmsRes, error) {
-	// TODO: handle arguments
-
-	// TODO: the @ symbol cannot be used in IDs?
-	// FIX: implement this uniqueness properly
-	// programID := fmt.Sprintf("live@%d", time.Now().Nanosecond())
-	// if filename != nil {
-	// 	programID = *filename
-	// }
-
-	// logger.Trace(fmt.Sprintf("Homescript '%s' of user '%s' is being analyzed...", programID, username))
-
-	// modules, res, err := m.Analyze(username, programID, code, programKind, driverData)
-	modules, res, err := m.Analyze(
+	modules, analyzerRes, err := m.Analyze(
 		invocation.Identifier,
 		context,
 	)
@@ -326,36 +320,18 @@ func (m *Manager) Run(
 		return types.HmsRes{}, err
 	}
 
-	if res.ContainsError {
+	if analyzerRes.ContainsError {
 		return types.HmsRes{
-			Errors:             res,
+			Errors:             analyzerRes,
 			Singletons:         nil,
 			ReturnValue:        nil,
 			CalledFunctionSpan: errors.Span{},
 		}, nil
 	}
 
-	// logger.Trace(fmt.Sprintf("Homescript '%s' of user '%s' is being compiled...", programID, username))
+	logger.Tracef("Homescript `%s` is being compiled...", invocation.Identifier.Filename)
 
 	jobID := m.AllocJobId()
-
-	executor := NewInterpreterExecutor(
-		jobID,
-		invocation.Identifier.Filename,
-		outputWriter,
-		context,
-	)
-
-	// executor := NewInterpreterExecutor(
-	// 	jobID,
-	// 	programID,
-	// 	username,
-	// 	outputWriter,
-	// 	args,
-	// 	automationContext,
-	// 	cancelCtxFunc,
-	// 	singletonsToLoad,
-	// )
 
 	compOut, err := m.Compile(modules, invocation.Identifier.Filename)
 	if err != nil {
@@ -366,7 +342,14 @@ func (m *Manager) Run(
 		fmt.Println(compOut.AsmString())
 	}
 
-	// logger.Debug(fmt.Sprintf("Homescript '%s' of user '%s' is executing...", programID, username))
+	logger.Debugf("Homescript `%s` is executing...", invocation.Identifier.Filename)
+
+	executor := NewInterpreterExecutor(
+		jobID,
+		invocation.Identifier.Filename,
+		outputWriter,
+		context,
+	)
 
 	vm := runtime.NewVM(
 		compOut,
@@ -377,33 +360,39 @@ func (m *Manager) Run(
 		VM_LIMITS,
 	)
 
-	// supportsKill := modules[entryModuleName].SupportsEvent("kill")
+	m.setJob(
+		jobID,
+		invocation.Identifier.Filename,
+		cancelation.CancelFunc,
+		&vm,
+		context,
+	)
 
-	m.setJob(jobID, username, initiator, cancelCtxFunc, filename, &vm, programID, true)
 	defer func() {
-		// TODO: does this work?
 		executor.Free()
 		m.removeJob(jobID)
 	}()
 
-	// send the id to the id channel (only if it exists)
+	// Send the id to the id channel (only if it exists).
 	if idChan != nil {
 		*idChan <- jobID
 	}
 
 	// If there is no explicit invocation, call the `main` function.
-	if functionInvocation == nil {
-		functionInvocation = &runtime.FunctionInvocation{
-			Function: compiler.MainFunctionIdent,
-			Args:     []value.Value{},
-			FunctionSignature: runtime.FunctionInvocationSignature{
-				Params:     []runtime.FunctionInvocationSignatureParam{},
-				ReturnType: ast.NewNullType(errors.Span{}),
-			},
-		}
+	functionInvocation := runtime.FunctionInvocation{
+		Function: compiler.MainFunctionIdent,
+		Args:     []value.Value{},
+		FunctionSignature: runtime.FunctionInvocationSignature{
+			Params:     []runtime.FunctionInvocationSignatureParam{},
+			ReturnType: ast.NewNullType(errors.Span{}),
+		},
 	}
 
-	spawnResult := vm.SpawnSync(*functionInvocation, nil)
+	if invocation.FunctionInvocation != nil {
+		functionInvocation = *invocation.FunctionInvocation
+	}
+
+	spawnResult := vm.SpawnSync(*invocation.FunctionInvocation, nil)
 
 	if spawnResult.Exception != nil {
 		i := spawnResult.Exception.Interrupt
@@ -457,9 +446,13 @@ func (m *Manager) Run(
 		}
 
 		if isErr {
-			fileContentsTemp, err := m.resolveFileContentsOfErrors(username, programID, code, errors)
+			fileContentsTemp, err := m.resolveFileContentsOfErrors(
+				invocation.Identifier,
+				errors,
+				context,
+			)
 			if err != nil {
-				return types.HmsRes{}, types.HmsRunResultContext{}, err
+				return types.HmsRes{}, err
 			}
 
 			fileContents = fileContentsTemp
@@ -484,17 +477,22 @@ func (m *Manager) Run(
 
 			logger.Trace()
 
-			logger.Debug(fmt.Sprintf("Homescript '%s' of user '%s' failed: %s", programID, username, errMsg))
+			logger.Debug(fmt.Sprintf("Homescript `%s` failed: %s", invocation.Identifier.Filename, errMsg))
 		}
 
 		return types.HmsRes{
-			Success:      !isErr,
-			Errors:       errors,
-			FileContents: fileContents,
-		}, types.HmsRunResultContext{}, nil
+			Errors: types.HmsDiagnosticsContainer{
+				ContainsError: true,
+				Diagnostics:   errors,
+				FileContents:  fileContents,
+			},
+			Singletons:  nil,
+			ReturnValue: nil,
+			// CalledFunctionSpan: span,
+		}, nil
 	}
 
-	logger.Debug(fmt.Sprintf("Homescript '%s' of user '%s' executed successfully", programID, username))
+	logger.Debug(fmt.Sprintf("Homescript `%s` executed successfully", invocation.Identifier.Filename))
 
 	// Stores the original (non-mangled) singletons of the entry module.
 	singletons := make(map[string]value.Value)
@@ -503,31 +501,41 @@ func (m *Manager) Run(
 	}
 
 	calledFunctionSpan := errors.Span{}
-	if functionInvocation != nil {
+	if invocation.FunctionInvocation != nil {
 		calledFunctionSpan = vm.SourceMap(runtime.CallFrame{
 			Function:           vm.Program.Mappings.Functions[functionInvocation.Function],
 			InstructionPointer: 0,
 		})
 	}
 
+	fileContentsTemp, err := m.resolveFileContentsOfErrors(
+		invocation.Identifier,
+		analyzerRes.Diagnostics,
+		context,
+	)
+	if err != nil {
+		return types.HmsRes{}, err
+	}
+
 	return types.HmsRes{
-			Success:      true,
-			Errors:       make([]types.HmsError, 0),
-			FileContents: make(map[string]string),
+		Errors: types.HmsDiagnosticsContainer{
+			ContainsError: false,
+			Diagnostics:   analyzerRes.Diagnostics,
+			FileContents:  fileContentsTemp,
 		},
-		types.HmsRunResultContext{
-			Singletons:         singletons,
-			ReturnValue:        spawnResult.ReturnValue,
-			CalledFunctionSpan: calledFunctionSpan,
-		}, nil
+		Singletons:         singletons,
+		ReturnValue:        spawnResult.ReturnValue,
+		CalledFunctionSpan: calledFunctionSpan,
+	}, nil
 }
 
-// Executes a given Homescript from the database and returns its output, exit-code and possible error
+// TODO: maybe add argument support
 func (m *Manager) RunUserScript(
 	programID, username string,
 	function *runtime.FunctionInvocation,
 	cancelation types.Cancelation,
 	outputWriter io.Writer,
+	idChan *chan uint64,
 ) (types.HmsRes, error) {
 	script, found, err := m.GetPersonalScriptById(programID, username)
 	if err != nil {
@@ -537,9 +545,32 @@ func (m *Manager) RunUserScript(
 		return types.HmsRes{}, fmt.Errorf("Homescript with ID `%s` owned by user `%s` was not found", programID, username)
 	}
 
-	m.Run(
-		invocation,
+	return m.RunGeneric(
+		types.ProgramInvocation{
+			Identifier: homescript.InputProgram{
+				ProgramText: script.Data.Id,
+				Filename:    script.Data.Code,
+			},
+			FunctionInvocation: function,
+			SingletonsToLoad:   map[string]value.Value{},
+		},
+		types.NewExecutionContextUser(
+			username,
+			nil,
+		),
+		cancelation,
+		idChan,
+		outputWriter,
 	)
+}
+
+func (m *Manager) RunDriverScript(
+	driverIDs driverTypes.DriverInvocationIDs,
+	invocation runtime.FunctionInvocation,
+	cancelation types.Cancelation,
+	outputWriter io.Writer,
+) (types.HmsRes, error) {
+	return types.HmsRes{}, nil
 }
 
 // Removes an arbitrary job from the job list
@@ -583,7 +614,7 @@ func (m *Manager) KillAllId(hmsId string) (count uint64, success bool) {
 	m.Lock.Lock()
 	defer m.Lock.Unlock()
 	for _, job := range m.Jobs {
-		if job.HmsID == nil || *job.HmsID != hmsId {
+		if job.HmsID != hmsId {
 			continue
 		}
 
@@ -656,7 +687,7 @@ func (m *Manager) GetUserDirectJobs(username string) []ApiJob {
 
 	for _, job := range allJobs {
 		// Skip any jobs which are not executed by the specified user
-		if job.Username != username {
+		if job.Context.Username() == nil || *job.Context.Username() != username {
 			continue
 		}
 

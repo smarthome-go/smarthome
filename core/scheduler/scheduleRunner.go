@@ -81,7 +81,7 @@ func scheduleRunnerFunc(id uint, m SchedulerManager) {
 
 		filename := fmt.Sprintf("@schedule-%d", id)
 
-		res, err := m.hms.Run(
+		res, err := m.hms.RunGeneric(
 			types.ProgramInvocation{
 				Identifier: homescript.InputProgram{
 					ProgramText: job.Data.HomescriptCode,
@@ -98,6 +98,7 @@ func scheduleRunnerFunc(id uint, m SchedulerManager) {
 				Context:    ctx,
 				CancelFunc: cancel,
 			},
+			nil,
 			&bytes.Buffer{},
 		)
 
@@ -150,6 +151,7 @@ func scheduleRunnerFunc(id uint, m SchedulerManager) {
 				CancelFunc: cancel,
 			},
 			&bytes.Buffer{},
+			nil,
 		)
 
 		if err != nil {

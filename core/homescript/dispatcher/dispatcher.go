@@ -380,6 +380,7 @@ func (i *InstanceT) allocatingCall(
 				CancelFunc: cancelFnc,
 			},
 			&buffer,
+			nil,
 		)
 
 		res = resTemp

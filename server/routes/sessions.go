@@ -74,8 +74,19 @@ func tokenLoginHandler(w http.ResponseWriter, r *http.Request) {
 	log.Debug(fmt.Sprintf("User `%s` logged in successfully using an access-token", tokenData.User))
 	go event.Info("Successful login", fmt.Sprintf("User `%s` logged in using an access-token", tokenData.User))
 
-	// Run any login hooks
-	go automation.Manager.RunAllAutomationsWithTrigger(tokenData.User, database.TriggerOnLogin, types.AutomationContext{})
+	// Run any login hooks.
+	go automation.Manager.RunAllAutomationsWithTrigger(
+		tokenData.User,
+		database.TriggerOnLogin,
+		types.ExecutionContextAutomation{
+			UserContext: types.NewExecutionContextUser(
+				tokenData.User,
+				nil,
+			),
+			NotificationContext: nil,
+			MaximumHMSRuntime:   nil,
+		},
+	)
 }
 
 // Accepts a json request like `{"username": "user", "password":"password"}`
@@ -117,7 +128,18 @@ func userLoginHandler(w http.ResponseWriter, r *http.Request) {
 	go event.Info("Successful login", fmt.Sprintf("User %s logged in", loginRequest.Username))
 
 	// Run any login hooks
-	go automation.Manager.RunAllAutomationsWithTrigger(loginRequest.Username, database.TriggerOnLogin, types.AutomationContext{})
+	go automation.Manager.RunAllAutomationsWithTrigger(
+		loginRequest.Username,
+		database.TriggerOnLogin,
+		types.ExecutionContextAutomation{
+			UserContext: types.NewExecutionContextUser(
+				loginRequest.Username,
+				nil,
+			),
+			NotificationContext: nil,
+			MaximumHMSRuntime:   nil,
+		},
+	)
 }
 
 // invalidates the user session and then redirects back to the login page
@@ -145,5 +167,16 @@ func logoutGetHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/login", http.StatusFound)
 
 	// Run any logout hooks
-	go automation.Manager.RunAllAutomationsWithTrigger(username, database.TriggerOnLogout, types.AutomationContext{})
+	go automation.Manager.RunAllAutomationsWithTrigger(
+		username,
+		database.TriggerOnLogout,
+		types.ExecutionContextAutomation{
+			UserContext: types.NewExecutionContextUser(
+				username,
+				nil,
+			),
+			NotificationContext: nil,
+			MaximumHMSRuntime:   nil,
+		},
+	)
 }
