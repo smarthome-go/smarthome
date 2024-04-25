@@ -6,6 +6,7 @@ import (
 
 	"github.com/smarthome-go/homescript/v3/homescript"
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
+	"github.com/smarthome-go/homescript/v3/homescript/compiler"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
@@ -23,7 +24,7 @@ type Job struct {
 type ProgramInvocation struct {
 	Identifier         homescript.InputProgram
 	FunctionInvocation *runtime.FunctionInvocation
-	SingletonsToLoad   map[string]value.Value
+	LoadedSingletons   map[string]value.Value
 }
 
 type Cancelation struct {
@@ -73,9 +74,16 @@ type Manager interface {
 		outputWriter io.Writer,
 	) (HmsRes, error)
 
+	Compile(
+		modules map[string]ast.AnalyzedProgram,
+		entryPointModule string,
+	) (compiler.CompileOutput, error)
+
 	GetJobList() []Job
 	GetJobById(jobID uint64) (Job, bool)
 	KillAllId(hmsID string) (count uint64, success bool)
 
 	InvalidateCompileCacheEntry(programID string)
+
+	ListHomescripts(includeDrivers bool) ([]database.Homescript, error)
 }

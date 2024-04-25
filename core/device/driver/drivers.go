@@ -106,7 +106,7 @@ func (d DriverManager) ListDriversWithoutStoredValues() ([]RichDriver, error) {
 			ValidationErrors: make([]diagnostic.Diagnostic, 0),
 		}
 
-		driverInfo, validationErrors, err := d.extractInfoFromDriver(driver.VendorId, driver.ModelId, driver.HomescriptCode)
+		driverInfo, validationErrors, err := d.extractInfoFromDriver(driver.VendorID, driver.ModelID, driver.HomescriptCode)
 		if err != nil {
 			return nil, err
 		}
@@ -132,18 +132,18 @@ func (d DriverManager) ListDriversWithStoredConfig() ([]RichDriver, error) {
 
 	for idx, driver := range drivers {
 		if !driver.IsValid {
-			log.Tracef("Skipping driver `%s:%s` in list with stored values: driver is not valid", driver.Driver.VendorId, driver.Driver.ModelId)
+			log.Tracef("Skipping driver `%s:%s` in list with stored values: driver is not valid", driver.Driver.VendorID, driver.Driver.ModelID)
 			continue
 		}
 
 		val, found := DriverStore[database.DriverTuple{
-			VendorID: driver.Driver.VendorId,
-			ModelID:  driver.Driver.ModelId,
+			VendorID: driver.Driver.VendorID,
+			ModelID:  driver.Driver.ModelID,
 		}]
 
 		// This should not happen: a zero value for every driver-spec is created automatically.
 		if !found {
-			panic(fmt.Sprintf("Configuration entry not found for driver `%s:%s`", driver.Driver.VendorId, driver.Driver.ModelId))
+			panic(fmt.Sprintf("Configuration entry not found for driver `%s:%s`", driver.Driver.VendorID, driver.Driver.ModelID))
 		}
 
 		// TODO: deal with non-settings fields.
@@ -167,8 +167,8 @@ func (d DriverManager) CreateDriver(vendorID, modelID, name, version string, hms
 	}
 
 	driverData := database.DeviceDriver{
-		VendorId:       vendorID,
-		ModelId:        modelID,
+		VendorID:       vendorID,
+		ModelID:        modelID,
 		Name:           name,
 		Version:        version,
 		HomescriptCode: hmsCodeToUse,

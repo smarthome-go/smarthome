@@ -44,6 +44,7 @@ type InstanceT struct {
 	Mqtt                 *MqttManager
 	DoneRegistrations    dispatcherTypes.Registrations
 	PendingRegistrations PendingQueue
+	Lock                 sync.Mutex
 }
 
 var Instance InstanceT
@@ -58,10 +59,12 @@ func InitInstance(hms types.Manager, mqtt *MqttManager) {
 			MqttRegistrations:      make(map[string][]dispatcherTypes.RegistrationID),
 			SchedulerRegistrations: make(map[string]dispatcherTypes.RegistrationID),
 		},
+		PendingRegistrations: NewQueue(),
 	}
 }
 
 func (self *InstanceT) MQTTStatus() error {
+	self.Lock.Lock()
 	return self.Mqtt.Status()
 }
 
@@ -349,8 +352,7 @@ func (i *InstanceT) allocatingCall(
 	case types.ExecutionContextDriver:
 		hmsRes, errTemp := driver.Manager.InvokeDriverFunc(
 			driverTypes.DriverInvocationIDs{
-				// TODO: can this break if there is no device???
-				DeviceID: *c.DeviceID,
+				DeviceID: c.DeviceID,
 				VendorID: c.DriverVendor,
 				ModelID:  c.DriverModel,
 			},
@@ -395,11 +397,13 @@ func (i *InstanceT) allocatingCall(
 
 	if res.Errors.ContainsError {
 		// TODO: better way to handle errors: maybe system log or admin user notication?
-		spew.Dump(res.Errors)
+		for _, error := range res.Errors.Diagnostics {
+			fmt.Println(error.String())
+		}
+
 		panic("HMS crashed on invocation")
 	}
 
-	spew.Dump(res)
 	cancelFnc()
 }
 

@@ -45,6 +45,7 @@ type MqttManagerBody struct {
 }
 
 type MqttManager struct {
+	// Lock sync.Mutex
 	Body MqttManagerBody
 
 	// This is set by the parent (the dispatcher) to be triggered once
@@ -78,8 +79,15 @@ func (m *MqttManager) connectionEstablishedHandler(client mqtt.Client) {
 	logger.Debug("MQTT connection established")
 }
 
+func InitModule() {
+	if logger.GetLevel() <= logrus.TraceLevel {
+		mqtt.DEBUG = log.New(os.Stderr, "", 0)
+		mqtt.ERROR = log.New(os.Stderr, "", 0)
+	}
+}
+
 func NewMqttManager(config database.MqttConfig, retryHook func() error) (m *MqttManager, e error) {
-	manager := MqttManager{
+	Manager = MqttManager{
 		Body: MqttManagerBody{
 			Subscriptions: Subscriptions{
 				Set:  make(map[string]Subscription),
@@ -92,11 +100,9 @@ func NewMqttManager(config database.MqttConfig, retryHook func() error) (m *Mqtt
 		TriggerTryPendingRegistrations: retryHook,
 	}
 
-	if err := manager.init(); err != nil {
-		return &manager, err
+	if err := Manager.init(); err != nil {
+		return &Manager, err
 	}
-
-	Manager = manager
 
 	return &Manager, nil
 }
@@ -126,32 +132,37 @@ func (m *MqttManager) init() error {
 	opts.SetConnectionLostHandler(m.connectionLostHandler)
 	opts.SetOnConnectHandler(m.connectionEstablishedHandler)
 
-	if m.Body.Client == nil {
-		m.Body.Client = mqtt.NewClient(opts)
-	}
+	client := mqtt.NewClient(opts)
 
-	if token := m.Body.Client.Connect(); token.Wait() && token.Error() != nil {
+	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		return token.Error()
 	}
 
-	if token := m.Body.Client.Publish(MqttHealthCheckTopic, MqttQOS, false, ""); token.Error() != nil {
+	start := time.Now()
+
+	// TODO: configure timeout here
+	for !client.IsConnected() && time.Since(start) < time.Second*10 {
+		logger.Trace("[MQTT manager] Waiting for connection...")
+		time.Sleep(time.Second)
+	}
+
+	if token := client.Publish(MqttHealthCheckTopic, MqttQOS, false, ""); token.Error() != nil {
 		return token.Error()
 	}
 
 	m.Body.Initialized = true
-
-	if logger.GetLevel() <= logrus.TraceLevel {
-		mqtt.DEBUG = log.New(os.Stderr, "", 0)
-		mqtt.ERROR = log.New(os.Stderr, "", 0)
-	}
 
 	logger.Infof("Initialized MQTT subsystem for broker `%s@%s`", m.Body.Config.Username, m.Body.Config.Host)
 
 	return nil
 }
 
+func (m *MqttManager) IsConnected() bool {
+	return m.Body.Initialized && m.Body.Client != nil && m.Body.Client.IsConnected()
+}
+
 func (m *MqttManager) Status() error {
-	if !m.Body.Initialized || m.Body.Client == nil || !m.Body.Client.IsConnected() {
+	if !m.IsConnected() {
 		if err := m.init(); err != nil {
 			return err
 		}
@@ -182,7 +193,9 @@ func (m *MqttManager) Reload() error {
 		return err
 	}
 
-	if m.Body.Config.Enabled {
+	enabled := m.Body.Config.Enabled
+
+	if enabled {
 		if err := m.resubscribeNonTracing(); err != nil {
 			return err
 		}
@@ -195,6 +208,7 @@ func (m *MqttManager) reloadOnReconnect() error {
 	if !m.Body.Config.Enabled {
 		return nil
 	}
+
 	m.unsubscribeAllSubscriptionsNonTracing()
 	return m.resubscribeNonTracing()
 }
@@ -205,7 +219,10 @@ func (m *MqttManager) unsubscribeAllSubscriptionsNonTracing() {
 	defer m.Body.Subscriptions.Lock.Unlock()
 
 	for topicName := range m.Body.Subscriptions.Set {
-		if err := m.unsubscribeWithoutTracing(topicName); err != nil {
+		m.Body.Subscriptions.Lock.Unlock()
+		err := m.unsubscribeWithoutTracing(topicName)
+		m.Body.Subscriptions.Lock.Lock()
+		if err != nil {
 			logger.Warn("Failed to unsubscribe from old topic", err.Error())
 		}
 	}
@@ -216,7 +233,8 @@ func (m *MqttManager) resubscribeNonTracing() error {
 	defer m.Body.Subscriptions.Lock.Unlock()
 
 	for topicName, subscription := range m.Body.Subscriptions.Set {
-		if err := m.subscribeWithoutTracing([]string{topicName}, subscription.CallbackFn); err != nil {
+		err := m.subscribeWithoutTracing([]string{topicName}, subscription.CallbackFn)
+		if err != nil {
 			logger.Errorf("Failed to reload MQTT manager: %s", err.Error())
 			return err
 		}
@@ -263,8 +281,10 @@ func (m *MqttManager) Subscribe(topics []string, callBack mqtt.MessageHandler) e
 		return err
 	}
 
+	m.Body.Subscriptions.Lock.Lock()
+	defer m.Body.Subscriptions.Lock.Unlock()
+
 	for _, topic := range topics {
-		m.Body.Subscriptions.Lock.Lock()
 		old, exists := m.Body.Subscriptions.Set[topic]
 		if !exists {
 			m.Body.Subscriptions.Set[topic] = Subscription{
@@ -277,7 +297,6 @@ func (m *MqttManager) Subscribe(topics []string, callBack mqtt.MessageHandler) e
 			m.Body.Subscriptions.Set[topic] = old
 			logger.Tracef("New consumer for topic `%s`, new count: %d", topic, old.Consumers)
 		}
-		m.Body.Subscriptions.Lock.Unlock()
 	}
 
 	return nil
@@ -293,12 +312,12 @@ func (m *MqttManager) unsubscribeWithoutTracing(topic string) error {
 }
 
 func (m *MqttManager) Unsubscribe(topic string) error {
+	m.Body.Subscriptions.Lock.Lock()
+	defer m.Body.Subscriptions.Lock.Unlock()
+
 	if !m.Body.Initialized {
 		return errors.New(notInitializedErrMsg)
 	}
-
-	m.Body.Subscriptions.Lock.Lock()
-	defer m.Body.Subscriptions.Lock.Unlock()
 
 	old, exists := m.Body.Subscriptions.Set[topic]
 	if !exists {
@@ -314,9 +333,11 @@ func (m *MqttManager) Unsubscribe(topic string) error {
 	logger.Tracef("Deleted one subscription of topic `%s`, new consumer count: %d", topic, old.Consumers)
 
 	if old.Consumers == 0 {
-		if err := m.unsubscribeWithoutTracing(topic); err != nil {
+		err := m.unsubscribeWithoutTracing(topic)
+		if err != nil {
 			return err
 		}
+
 		delete(m.Body.Subscriptions.Set, topic)
 		logger.Tracef("Deleted all subscriptions of topic `%s`", topic)
 	} else {

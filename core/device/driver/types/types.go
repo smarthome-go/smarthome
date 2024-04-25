@@ -1,7 +1,7 @@
 package types
 
 type DriverInvocationIDs struct {
-	DeviceID string
+	DeviceID *string
 	VendorID string
 	ModelID  string
 }

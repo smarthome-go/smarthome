@@ -39,7 +39,7 @@ func ModifyHomescriptCode(id string, owner string, newCode string) (found bool, 
 			return false, validationErr
 		}
 
-		return driver.Manager.ModifyCode(driverData.VendorId, driverData.ModelId, newCode)
+		return driver.Manager.ModifyCode(driverData.VendorID, driverData.ModelID, newCode)
 	default:
 		panic(fmt.Sprintf("BUG warning: a new Homescript type was added without updating this code"))
 	}

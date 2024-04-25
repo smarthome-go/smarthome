@@ -28,6 +28,19 @@ const (
 var DeviceStore map[string]value.ValueObject = make(map[string]value.ValueObject)
 var DriverStore map[database.DriverTuple]value.ValueObject = make(map[database.DriverTuple]value.ValueObject)
 
+func GetDeviceSingleton(deviceId string) (value.ValueObject, bool) {
+	val, found := DeviceStore[deviceId]
+	return val, found
+}
+
+func GetDriverSingleton(vendor, model string) (value.ValueObject, bool) {
+	val, found := DriverStore[database.DriverTuple{
+		VendorID: vendor,
+		ModelID:  model,
+	}]
+	return val, found
+}
+
 // This package contains the storage backend implementation for per-driver / per-device configuration data.
 //
 //	1. The user sends a JSON configuration string
@@ -70,15 +83,15 @@ func (d DriverManager) StoreDriverSingletonConfigUpdate(
 		return err
 	}
 
+	// TODO: work on this.
 	devices, err := database.ListAllDevices()
 	if err != nil {
 		return err
 	}
 
 	for _, dev := range devices {
-		fmt.Printf("DEVICE: %s\n", dev.ID)
-		// TODO: trigger a re-registration of any triggers.
-		panic("TODO: not implemented")
+		log.Warnf("============ NOT IMPLEMENTED: handling singleton updates for device: %s", dev.ID)
+		// TODO: trigger a re-registration of any triggers. (only if there are changes.)
 	}
 
 	return nil
@@ -147,7 +160,7 @@ func (d DriverManager) StoreDeviceSingletonConfigUpdate(
 	)
 
 	// TODO: trigger re-registration of any triggers.
-	panic("TODO: not implemented")
+	log.Warn("============================== TODO: not implemented =============================")
 
 	return StoreDeviceSingletonBackend(deviceID, withOldValues)
 }
@@ -269,14 +282,14 @@ func (d DriverManager) PopulateValueCache() error {
 
 	for _, driver := range drivers {
 		// Load type information for this driver.
-		information, hmsErrs, err := d.extractInfoFromDriver(driver.VendorId, driver.ModelId, driver.HomescriptCode)
+		information, hmsErrs, err := d.extractInfoFromDriver(driver.VendorID, driver.ModelID, driver.HomescriptCode)
 		if err != nil {
 			return err
 		}
 
 		// Just skip this driver, its value will never be required anyways.
 		if len(hmsErrs) > 0 {
-			log.Tracef("Skipping default value instantiation of driver `%s:%s`", driver.VendorId, driver.ModelId)
+			log.Tracef("Skipping default value instantiation of driver `%s:%s`", driver.VendorID, driver.ModelID)
 			continue
 		}
 
@@ -289,19 +302,19 @@ func (d DriverManager) PopulateValueCache() error {
 			unmarshaledValue := value.TypeAwareUnmarshalValue(unmarshaledJSON, information.DriverConfig.Info.HmsType)
 
 			DriverStore[database.DriverTuple{
-				VendorID: driver.VendorId,
-				ModelID:  driver.ModelId,
+				VendorID: driver.VendorID,
+				ModelID:  driver.ModelID,
 			}] = (*unmarshaledValue).(value.ValueObject)
 		} else {
 			DriverStore[database.DriverTuple{
-				VendorID: driver.VendorId,
-				ModelID:  driver.ModelId,
+				VendorID: driver.VendorID,
+				ModelID:  driver.ModelID,
 			}] = value.ObjectZeroValue(information.DriverConfig.Info.HmsType)
 		}
 
 		// Populate each device which uses this driver.
 		for _, device := range devices {
-			if device.VendorID != driver.VendorId || device.ModelID != driver.ModelId {
+			if device.VendorID != driver.VendorID || device.ModelID != driver.ModelID {
 				continue
 			}
 

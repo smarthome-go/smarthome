@@ -17,8 +17,8 @@ type DriverTuple struct {
 // TODO: change this so that there is no user owning the device driver script
 
 type DeviceDriver struct {
-	VendorId       string  `json:"vendorId"`
-	ModelId        string  `json:"modelId"`
+	VendorID       string  `json:"vendorId"`
+	ModelID        string  `json:"modelId"`
 	Name           string  `json:"name"`
 	Version        string  `json:"version"`
 	HomescriptCode string  `json:"homescriptCode"`
@@ -83,8 +83,8 @@ func CreateNewDeviceDriver(driverData DeviceDriver) error {
 
 	// Create the device driver
 	if _, err = query.Exec(
-		driverData.VendorId,
-		driverData.ModelId,
+		driverData.VendorID,
+		driverData.ModelID,
 		driverData.Name,
 		driverData.Version,
 		driverData.HomescriptCode,
@@ -119,8 +119,8 @@ func ModifyDeviceDriver(newData DeviceDriver) error {
 		newData.Version,
 		newData.HomescriptCode,
 		newData.SingletonJSON,
-		newData.VendorId,
-		newData.ModelId,
+		newData.VendorID,
+		newData.ModelID,
 	); err != nil {
 		log.Error("Failed to update device driver: executing query failed: ", err.Error())
 		return err
@@ -257,8 +257,8 @@ func ListDeviceDrivers() ([]DeviceDriver, error) {
 	for res.Next() {
 		var driver DeviceDriver
 		err := res.Scan(
-			&driver.VendorId,
-			&driver.ModelId,
+			&driver.VendorID,
+			&driver.ModelID,
 			&driver.Name,
 			&driver.Version,
 			&driver.HomescriptCode,
@@ -270,6 +270,7 @@ func ListDeviceDrivers() ([]DeviceDriver, error) {
 		}
 		drivers = append(drivers, driver)
 	}
+
 	return drivers, nil
 }
 
@@ -291,12 +292,12 @@ func GetDeviceDriver(vendorId string, modelId string) (DeviceDriver, bool, error
 	defer query.Close()
 
 	var driver DeviceDriver
-	driver.VendorId = vendorId
-	driver.ModelId = modelId
+	driver.VendorID = vendorId
+	driver.ModelID = modelId
 
 	if err := query.QueryRow(
-		driver.VendorId,
-		driver.ModelId,
+		driver.VendorID,
+		driver.ModelID,
 	).Scan(
 		&driver.Name,
 		&driver.Version,

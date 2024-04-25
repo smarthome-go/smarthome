@@ -79,7 +79,7 @@ func tokenLoginHandler(w http.ResponseWriter, r *http.Request) {
 		tokenData.User,
 		database.TriggerOnLogin,
 		types.ExecutionContextAutomation{
-			UserContext: types.NewExecutionContextUser(
+			UserContext: types.NewExecutionContextUserNoFilename(
 				tokenData.User,
 				nil,
 			),
@@ -132,7 +132,7 @@ func userLoginHandler(w http.ResponseWriter, r *http.Request) {
 		loginRequest.Username,
 		database.TriggerOnLogin,
 		types.ExecutionContextAutomation{
-			UserContext: types.NewExecutionContextUser(
+			UserContext: types.NewExecutionContextUserNoFilename(
 				loginRequest.Username,
 				nil,
 			),
@@ -171,7 +171,7 @@ func logoutGetHandler(w http.ResponseWriter, r *http.Request) {
 		username,
 		database.TriggerOnLogout,
 		types.ExecutionContextAutomation{
-			UserContext: types.NewExecutionContextUser(
+			UserContext: types.NewExecutionContextUserNoFilename(
 				username,
 				nil,
 			),

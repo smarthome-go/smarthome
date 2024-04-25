@@ -33,8 +33,24 @@ func (u ExecutionContextUser) Kind() HMS_CONTEXT_KIND      { return HMS_PROGRAM_
 func (u ExecutionContextUser) Username() *string           { return &u.UsernameData }
 func (u ExecutionContextUser) UserArgs() map[string]string { return u.UserArguments }
 
-func NewExecutionContextUser(username string, userArguments map[string]string) ExecutionContextUser {
+func NewExecutionContextUser(
+	filename string,
+	username string,
+	userArguments map[string]string,
+) ExecutionContextUser {
 	return ExecutionContextUser{
+		Filename:      filename,
+		UsernameData:  username,
+		UserArguments: userArguments,
+	}
+}
+
+func NewExecutionContextUserNoFilename(
+	username string,
+	userArguments map[string]string,
+) ExecutionContextUser {
+	return ExecutionContextUser{
+		Filename:      "",
 		UsernameData:  username,
 		UserArguments: userArguments,
 	}

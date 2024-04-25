@@ -49,7 +49,7 @@ func GetSources(username string, ids []string) (sources map[string]string, found
 		return nil, false, err
 	}
 
-	// If the user has rights to modify and view drivers, also include drivers
+	// If the user has rights to modify and view drivers, also include drivers.
 	hasDriverPermission, err := database.UserHasPermission(username, database.PermissionSystemConfig)
 	if err != nil {
 		return nil, false, err
@@ -63,7 +63,7 @@ func GetSources(username string, ids []string) (sources map[string]string, found
 		sources[key] = val
 	}
 
-	// Try to parse the driver ids
+	// Try to parse the driver ids.
 	remaining := make([]database.DriverTuple, 0)
 
 	for _, id := range ids {
@@ -104,6 +104,7 @@ func ListHms(includeDrivers bool) ([]database.Homescript, error) {
 	}
 
 	if !includeDrivers {
+		logger.Trace("Hms listing: skipping drivers")
 		return base, nil
 	}
 
@@ -117,8 +118,8 @@ func ListHms(includeDrivers bool) ([]database.Homescript, error) {
 			Owner: "", // TODO: who owns this?
 			Data: database.HomescriptData{
 				Id: types.CreateDriverHmsId(database.DriverTuple{
-					VendorID: driver.VendorId,
-					ModelID:  driver.ModelId,
+					VendorID: driver.VendorID,
+					ModelID:  driver.ModelID,
 				}),
 				Name:                driver.Name,
 				Description:         fmt.Sprintf("Hardware driver '%s'", driver.Name),
@@ -149,16 +150,13 @@ func ListPersonal(username string) ([]database.Homescript, error) {
 		return nil, err
 	}
 
-	output := make([]database.Homescript, 0)
-	copy(output, base)
-
 	for _, script := range base {
 		if script.Owner != username {
 			continue
 		}
 
-		output = append(output, script)
+		base = append(base, script)
 	}
 
-	return output, nil
+	return base, nil
 }

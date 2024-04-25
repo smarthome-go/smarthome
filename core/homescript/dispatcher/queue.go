@@ -1,6 +1,10 @@
 package dispatcher
 
-import dispatcherTypes "github.com/smarthome-go/smarthome/core/homescript/dispatcher/types"
+import (
+	"sync"
+
+	dispatcherTypes "github.com/smarthome-go/smarthome/core/homescript/dispatcher/types"
+)
 
 //
 // Queue.
@@ -8,9 +12,19 @@ import dispatcherTypes "github.com/smarthome-go/smarthome/core/homescript/dispat
 
 type PendingQueue struct {
 	internal []dispatcherTypes.RegisterInfo
+	lock     sync.Mutex
+}
+
+func NewQueue() PendingQueue {
+	return PendingQueue{
+		internal: make([]dispatcherTypes.RegisterInfo, 0),
+		lock:     sync.Mutex{},
+	}
 }
 
 func (q *PendingQueue) Enqueue(add dispatcherTypes.RegisterInfo) {
+	q.lock.Lock()
+	defer q.lock.Unlock()
 	q.internal = append(q.internal, add)
 }
 
@@ -20,12 +34,18 @@ func (q *PendingQueue) Dequeue() *dispatcherTypes.RegisterInfo {
 		return nil
 	}
 
+	q.lock.Lock()
+	defer q.lock.Unlock()
+
 	q.internal = q.internal[1:]
 
 	return first
 }
 
 func (q *PendingQueue) First() *dispatcherTypes.RegisterInfo {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+
 	if len(q.internal) == 0 {
 		return nil
 	}
@@ -35,6 +55,9 @@ func (q *PendingQueue) First() *dispatcherTypes.RegisterInfo {
 }
 
 func (q *PendingQueue) IsEmpty() bool {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+
 	return len(q.internal) == 0
 }
 

@@ -133,6 +133,7 @@ func RunBootAutomations(config database.ServerConfig) {
 				jobId,
 				types.ExecutionContextAutomation{
 					UserContext: types.NewExecutionContextUser(
+						job.Data.HomescriptId,
 						job.Owner,
 						nil,
 					),

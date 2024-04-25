@@ -428,7 +428,11 @@
             currentExecutionCount++
             currentExecutionHandles++
             // Send the code to execute
-            conn.send(JSON.stringify({ kind: 'init', payload: currentData.data.data.data.id, args }))
+            conn.send(JSON.stringify({
+                kind: 'init',
+                hmsID: currentData.data.data.data.id,
+                args,
+            }))
         }
 
         conn.onclose = () => {

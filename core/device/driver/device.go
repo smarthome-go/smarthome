@@ -183,7 +183,7 @@ func (d DriverManager) EnrichDevice(device database.ShallowDevice, fittingDriver
 	)
 
 	invocationID := driverTypes.DriverInvocationIDs{
-		DeviceID: device.ID,
+		DeviceID: &device.ID,
 		VendorID: device.VendorID,
 		ModelID:  device.ModelID,
 	}
@@ -441,8 +441,8 @@ func (d DriverManager) RebuildCache() error {
 
 	for _, driver := range drivers {
 		CachedDriverMeta[database.DriverTuple{
-			VendorID: driver.Driver.VendorId,
-			ModelID:  driver.Driver.ModelId,
+			VendorID: driver.Driver.VendorID,
+			ModelID:  driver.Driver.ModelID,
 		}] = driver.ExtractedInfo
 	}
 
@@ -461,7 +461,7 @@ func (d DriverManager) EnrichDevicesList(input []database.ShallowDevice) ([]Rich
 		var fittingDriver RichDriver
 
 		for _, driver := range drivers {
-			if driver.Driver.VendorId == device.VendorID && driver.Driver.ModelId == device.ModelID {
+			if driver.Driver.VendorID == device.VendorID && driver.Driver.ModelID == device.ModelID {
 				fittingDriver = driver
 				break
 			}
@@ -616,7 +616,7 @@ func (d DriverManager) CreateDevice(
 		return false, nil, nil
 	}
 
-	driverInfo, validationErrors, err := d.extractInfoFromDriver(driver.VendorId, driver.ModelId, driver.HomescriptCode)
+	driverInfo, validationErrors, err := d.extractInfoFromDriver(driver.VendorID, driver.ModelID, driver.HomescriptCode)
 	if err != nil {
 		return false, nil, err
 	}

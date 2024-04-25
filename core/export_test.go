@@ -37,8 +37,8 @@ func TestExportGeneration(t *testing.T) {
 	}))
 
 	testDriver := database.DeviceDriver{
-		VendorId:       "go",
-		ModelId:        "test",
+		VendorID:       "go",
+		ModelID:        "test",
 		Name:           "Golang-Test",
 		Version:        "0.0.1",
 		HomescriptCode: homescript.DefaultDriverHomescriptCode,
@@ -71,8 +71,8 @@ func TestExportGeneration(t *testing.T) {
 		"big_lamp",
 		"Big Lamp",
 		"living_room",
-		testDriver.VendorId,
-		testDriver.ModelId,
+		testDriver.VendorID,
+		testDriver.ModelID,
 	)
 
 	assert.True(t, driverFound)
@@ -84,8 +84,8 @@ func TestExportGeneration(t *testing.T) {
 		"desk_lamp",
 		"Desk Lamp",
 		"living_room",
-		testDriver.VendorId,
-		testDriver.ModelId,
+		testDriver.VendorID,
+		testDriver.ModelID,
 	)
 
 	assert.True(t, driverFound)

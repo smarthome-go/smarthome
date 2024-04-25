@@ -89,15 +89,15 @@ func (d *DriverManager) invokeDriverGeneric(
 	contextSingletons[DriverSingletonIdent] = driverSingleton
 
 	if driverCtx.DeviceId != nil && driver.SingletonJSON != nil {
-		disp, err := driverSingleton.Display()
+		disp, err := driverSingleton.DisplayFlat()
 		if err != nil {
 			panic(err)
 		}
-		log.Printf("Loaded driver singleton for device ID `%s` from database: `%s`", *driverCtx.DeviceId, disp)
+		log.Debugf("Loaded driver singleton for device ID `%s` from database: `%s`", *driverCtx.DeviceId, disp)
 	}
 
 	// Load device singleton if possible.
-	var deviceSingleton value.Value
+	var deviceSingleton value.ValueObject
 	if driverCtx.DeviceId != nil {
 		deviceId := *driverCtx.DeviceId
 		deviceSingleton, found = DeviceStore[deviceId]
@@ -106,11 +106,12 @@ func (d *DriverManager) invokeDriverGeneric(
 		}
 		contextSingletons[DriverDeviceSingletonIdent] = deviceSingleton
 
-		disp, err := deviceSingleton.Display()
+		disp, err := deviceSingleton.DisplayFlat()
 		if err != nil {
 			panic(err)
 		}
-		log.Printf("Loaded driver singleton for device ID `%s` from database: %s", *driverCtx.DeviceId, disp)
+
+		log.Debugf("Loaded driver singleton for device ID `%s` from database: %s", *driverCtx.DeviceId, disp)
 	}
 
 	var deviceId string
@@ -120,7 +121,7 @@ func (d *DriverManager) invokeDriverGeneric(
 
 	res, err := d.Hms.RunDriverScript(
 		driverTypes.DriverInvocationIDs{
-			DeviceID: deviceId,
+			DeviceID: &deviceId,
 			VendorID: vendorId,
 			ModelID:  modelId,
 		},
@@ -157,7 +158,7 @@ func (d *DriverManager) invokeDriverGeneric(
 		return types.HmsRes{}, err
 	}
 
-	if !res.Errors.ContainsError {
+	if res.Errors.ContainsError {
 		errorList := make([]types.HmsError, 0)
 
 		// Filter out any non-error messages.
@@ -189,7 +190,7 @@ func (d *DriverManager) invokeDriverGeneric(
 
 	// Save driver singleton state after VM has terminated.
 	driverMarshaled, _ := value.MarshalValue(driverSingletonAfter, false)
-	if err := d.StoreDriverSingletonConfigUpdate(driver.VendorId, driver.ModelId, driverMarshaled); err != nil {
+	if err := d.StoreDriverSingletonConfigUpdate(driver.VendorID, driver.ModelID, driverMarshaled); err != nil {
 		return types.HmsRes{}, err
 	}
 
@@ -220,8 +221,8 @@ func (d DriverManager) InvokeDriverFunc(
 	ids driverTypes.DriverInvocationIDs,
 	call FunctionCall,
 ) (types.HmsRes, error) {
-	if ids.VendorID == "" || ids.ModelID == "" || ids.DeviceID == "" {
-		panic("One or more ids in the driver triplet were empty")
+	if ids.VendorID == "" || ids.ModelID == "" || ids.DeviceID == nil {
+		panic("One or more ids in the driver-device triplet were empty or <nil>")
 	}
 
 	// TODO: add context support
@@ -232,7 +233,7 @@ func (d DriverManager) InvokeDriverFunc(
 		ctx,
 		cancel,
 		DriverContext{
-			DeviceId: &ids.DeviceID,
+			DeviceId: ids.DeviceID,
 		},
 		ids.VendorID,
 		ids.ModelID,

@@ -68,7 +68,7 @@ func (m NotificationManager) Notify(
 			username,
 			database.TriggerOnNotification,
 			types.ExecutionContextAutomation{
-				UserContext: types.NewExecutionContextUser(
+				UserContext: types.NewExecutionContextUserNoFilename(
 					username,
 					nil,
 				),

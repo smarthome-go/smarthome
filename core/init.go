@@ -19,9 +19,29 @@ func OnMqttRetryHook() error {
 	return dispatcher.Instance.RegisterPending()
 }
 
+func InitDevices() error {
+	// Compile every driver's source code (register any triggers if existent)
+	// TODO: implement this in a better way
+	// devices, err := driver.Manager.ListAllDevicesRich()
+	// if err != nil {
+	// 	return err
+	// }
+
+	// for idx, device := range devices {
+	// 	fmt.Printf("=== %02d | (%s) %s\n", idx, device.Shallow.DeviceType, device.Shallow.Name)
+	// 	fmt.Printf("\t -> errors=%v\n", device.Extractions.HmsErrors)
+	// }
+
+	dispatcher.Instance.RegisterDriverAnnotations()
+
+	return nil
+}
+
 func Init(config database.ServerConfig) error {
 	// Homescript Manager initialization
 	hmsManager := homescript.InitManager()
+
+	dispatcher.InitModule()
 
 	// Mqtt manager initialization
 	mqttManager, err := dispatcher.NewMqttManager(config.Mqtt, OnMqttRetryHook)
@@ -35,10 +55,6 @@ func Init(config database.ServerConfig) error {
 	// Homescript driver initialization
 	driver.InitManager(hmsManager)
 	if err := driver.Manager.PopulateValueCache(); err != nil {
-		return err
-	}
-
-	if err := driver.Manager.InitDevices(); err != nil {
 		return err
 	}
 
@@ -62,6 +78,18 @@ func Init(config database.ServerConfig) error {
 	if err := hardware.StartPowerUsageSnapshotScheduler(); err != nil {
 		return fmt.Errorf("Failed to start periodic power usage snapshot scheduler: %s", err.Error())
 	}
+
+	//
+	// Devices.
+	//
+
+	if err := InitDevices(); err != nil {
+		return err
+	}
+
+	//
+	// END Devices.
+	//
 
 	return nil
 }

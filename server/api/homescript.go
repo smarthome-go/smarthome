@@ -176,6 +176,7 @@ func LintHomescriptId(w http.ResponseWriter, r *http.Request) {
 			Filename:    hmsData.Data.Id,
 		},
 		types.NewExecutionContextUser(
+			hmsData.Data.Id,
 			username,
 			args,
 		),
@@ -221,18 +222,20 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-
+	filename := fmt.Sprintf("live@%s", username)
 	var outputBuffer bytes.Buffer
+
 	res, err := homescript.HmsManager.RunGeneric(
 		types.ProgramInvocation{
 			Identifier: hms.InputProgram{
 				ProgramText: request.Code,
-				Filename:    fmt.Sprintf("live@%s", username),
+				Filename:    filename,
 			},
 			FunctionInvocation: &runtime.FunctionInvocation{},
-			SingletonsToLoad:   map[string]value.Value{},
+			LoadedSingletons:   map[string]value.Value{},
 		},
 		types.NewExecutionContextUser(
+			filename,
 			username,
 			args,
 		),
@@ -288,7 +291,9 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 		args[arg.Key] = arg.Value
 	}
 
-	context := types.ExecutionContext(types.NewExecutionContextUser(username, args))
+	context := types.ExecutionContext(
+		types.NewExecutionContextUser(request.ModuleName, username, args),
+	)
 
 	if request.IsDriver {
 		driverData, validationErr, databaseErr := types.DriverFromHmsId(request.ModuleName)
@@ -305,8 +310,8 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 		}
 
 		context = types.NewExecutionContextDriver(
-			driverData.VendorId,
-			driverData.ModelId,
+			driverData.VendorID,
+			driverData.ModelID,
 			nil,
 		)
 	}

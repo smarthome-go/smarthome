@@ -28,6 +28,7 @@ const DRIVER_DEVICE_SINGLETON_IDENT = "Device"
 
 const DRIVER_FIELD_REQUIRED_ANNOTATION = "setting"
 
+// TODO: make this const
 var DriverSingletonIdent = fmt.Sprintf("%s%s", lexer.SINGLETON_TOKEN, DRIVER_SINGLETON_IDENT)
 var DriverDeviceSingletonIdent = fmt.Sprintf("%s%s", lexer.SINGLETON_TOKEN, DRIVER_DEVICE_SINGLETON_IDENT)
 var DriverFieldRequiredAnnotation = fmt.Sprintf("%s%s", lexer.TYPE_ANNOTATION_TOKEN, DRIVER_FIELD_REQUIRED_ANNOTATION)
@@ -43,22 +44,6 @@ func InitManager(hmsManager types.Manager) {
 	Manager = DriverManager{
 		Hms: hmsManager,
 	}
-}
-
-func (m *DriverManager) InitDevices() error {
-	// Compile every driver's source code (register any triggers if existent)
-	// TODO: implement this in a better way
-	devices, err := m.ListAllDevicesRich()
-	if err != nil {
-		return err
-	}
-
-	for idx, device := range devices {
-		fmt.Printf("=== %02d | (%s) %s\n", idx, device.Shallow.DeviceType, device.Shallow.Name)
-		fmt.Printf("\t -> errors=%v\n", device.Extractions.HmsErrors)
-	}
-
-	return nil
 }
 
 func (self *DriverManager) ExtractDriverInfoTotal(
@@ -324,11 +309,8 @@ func ExtractDriverInfo(
 }
 
 func requireTemplateImplementation(singleton ast.AnalyzedSingletonTypeDefinition, templateIdent string, usecase string) *diagnostic.Diagnostic {
-	fmt.Printf("Checking singleton `%s`: %v\n", singleton.Ident, singleton.ImplementsTemplates)
-
 	containsImpl := false
 	for _, implementedTempl := range singleton.ImplementsTemplates {
-		fmt.Printf("found impl: %v\n", implementedTempl)
 		if implementedTempl.Template.Ident() == templateIdent {
 			containsImpl = true
 			break
@@ -383,8 +365,6 @@ func typeToConfigField(from ast.Type, topLevel bool, contextSpan errors.Span) (C
 		diagnostics := make([]diagnostic.Diagnostic, 0)
 		obj := from.(ast.ObjectType)
 		fields := make([]ConfigFieldItem, 0)
-
-		fmt.Printf("object top level: %v\n", topLevel)
 
 		for _, field := range obj.ObjFields {
 			// If this field does not have the required annotation, do not add it

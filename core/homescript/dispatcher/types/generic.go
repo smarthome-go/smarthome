@@ -117,8 +117,8 @@ type Dispatcher interface {
 	UnRegister(RegisterInfo) error
 }
 
-const mQTTProtocol = "tcp"
+const mqttProtocol = "tcp"
 
 func MakeBrokerURI(host string, port uint16) string {
-	return fmt.Sprintf("%s://%s:%d", mQTTProtocol, host, port)
+	return fmt.Sprintf("%s://%s:%d", mqttProtocol, host, port)
 }

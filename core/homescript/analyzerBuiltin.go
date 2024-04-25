@@ -27,6 +27,10 @@ func (analyzerHost) GetKnownObjectTypeFieldAnnotations() []string {
 func newAnalyzerHost(
 	context types.ExecutionContext,
 ) analyzerHost {
+	if context == nil {
+		panic("Context cannot be <nil>")
+	}
+
 	return analyzerHost{
 		context: context,
 	}
@@ -39,11 +43,10 @@ func (self analyzerHost) PostValidationHook(
 ) []diagnostic.Diagnostic {
 	switch self.context.Kind() {
 	case types.HMS_PROGRAM_KIND_DEVICE_DRIVER:
-		info, diagnostics := driver.ExtractDriverInfo(analyzedModules, mainModule, true)
-		logger.Tracef("[Driver] Post-validation: INFO: %v\n", info)
+		_, diagnostics := driver.ExtractDriverInfo(analyzedModules, mainModule, true)
 		return diagnostics
 	default:
-		// TODO: is there something to implement?
+		// Do nothing for this kind.
 	}
 
 	return nil

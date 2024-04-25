@@ -21,6 +21,7 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/runtime"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/device/driver"
 	driverTypes "github.com/smarthome-go/smarthome/core/device/driver/types"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
@@ -229,10 +230,6 @@ func (m *Manager) Analyze(
 		})
 	}
 
-	if !success {
-
-	}
-
 	fileContents, err := m.resolveFileContentsOfErrors(
 		homescript.InputProgram{
 			ProgramText: input.ProgramText,
@@ -289,15 +286,15 @@ func (m *Manager) AnalyzeDriver(
 	if !found {
 		return nil,
 			types.HmsDiagnosticsContainer{},
-			fmt.Errorf("Driver `%s:%s` was not found", driver.VendorId, driver.ModelId)
+			fmt.Errorf("Driver `%s:%s` was not found", driver.VendorID, driver.ModelID)
 	}
 
 	return m.Analyze(
 		homescript.InputProgram{
 			ProgramText: driver.HomescriptCode,
 			Filename: types.CreateDriverHmsId(database.DriverTuple{
-				VendorID: driver.VendorId,
-				ModelID:  driver.ModelId,
+				VendorID: driver.VendorID,
+				ModelID:  driver.ModelID,
 			}),
 		},
 		context,
@@ -321,6 +318,8 @@ func (m *Manager) RunGeneric(
 	}
 
 	if analyzerRes.ContainsError {
+		logger.Tracef("Homescript `%s` contains semantic errors: %s", invocation.Identifier.Filename, analyzerRes.Diagnostics)
+
 		return types.HmsRes{
 			Errors:             analyzerRes,
 			Singletons:         nil,
@@ -338,16 +337,14 @@ func (m *Manager) RunGeneric(
 		return types.HmsRes{}, err
 	}
 
-	if printDebugASM {
-		fmt.Println(compOut.AsmString())
-	}
-
 	logger.Debugf("Homescript `%s` is executing...", invocation.Identifier.Filename)
 
 	executor := NewInterpreterExecutor(
 		jobID,
 		invocation.Identifier.Filename,
 		outputWriter,
+		cancelation,
+		invocation.LoadedSingletons,
 		context,
 	)
 
@@ -392,7 +389,7 @@ func (m *Manager) RunGeneric(
 		functionInvocation = *invocation.FunctionInvocation
 	}
 
-	spawnResult := vm.SpawnSync(*invocation.FunctionInvocation, nil)
+	spawnResult := vm.SpawnSync(functionInvocation, nil)
 
 	if spawnResult.Exception != nil {
 		i := spawnResult.Exception.Interrupt
@@ -502,9 +499,24 @@ func (m *Manager) RunGeneric(
 
 	calledFunctionSpan := errors.Span{}
 	if invocation.FunctionInvocation != nil {
+		function := functionInvocation.Function
+
+		if !functionInvocation.LiteralName {
+			functionTemp, found := vm.Program.Mappings.Functions[functionInvocation.Function]
+			if !found {
+				panic(fmt.Sprintf(
+					"Could not find mapping for function `%s` in %v",
+					functionInvocation.Function,
+					vm.Program.Mappings.Functions,
+				))
+			}
+
+			function = functionTemp
+		}
+
 		calledFunctionSpan = vm.SourceMap(runtime.CallFrame{
-			Function:           vm.Program.Mappings.Functions[functionInvocation.Function],
-			InstructionPointer: 0,
+			Function:           function,
+			InstructionPointer: 1,
 		})
 	}
 
@@ -548,13 +560,14 @@ func (m *Manager) RunUserScript(
 	return m.RunGeneric(
 		types.ProgramInvocation{
 			Identifier: homescript.InputProgram{
-				ProgramText: script.Data.Id,
-				Filename:    script.Data.Code,
+				ProgramText: script.Data.Code,
+				Filename:    script.Data.Id,
 			},
 			FunctionInvocation: function,
-			SingletonsToLoad:   map[string]value.Value{},
+			LoadedSingletons:   map[string]value.Value{},
 		},
 		types.NewExecutionContextUser(
+			programID,
 			username,
 			nil,
 		),
@@ -570,7 +583,58 @@ func (m *Manager) RunDriverScript(
 	cancelation types.Cancelation,
 	outputWriter io.Writer,
 ) (types.HmsRes, error) {
-	return types.HmsRes{}, nil
+	driverData, found, err := database.GetDeviceDriver(driverIDs.VendorID, driverIDs.ModelID)
+	if err != nil {
+		return types.HmsRes{}, err
+	}
+	if !found {
+		return types.HmsRes{}, fmt.Errorf("Driver with ID `%s:%s` was not found", driverData.VendorID, driverData.ModelID)
+	}
+
+	hmsID := types.CreateDriverHmsId(database.DriverTuple{
+		VendorID: driverData.VendorID,
+		ModelID:  driverData.ModelID,
+	})
+
+	singletons := make(map[string]value.Value)
+
+	// Load device singleton if required.
+	if driverIDs.DeviceID != nil {
+		deviceSingleton, found := driver.GetDeviceSingleton(*driverIDs.DeviceID)
+		if !found {
+			panic(fmt.Sprintf("Could not load singleton for device `%s`", *driverIDs.DeviceID))
+		}
+
+		// TODO: this enables concurrent access, how to prevent races?
+		singletons[driver.DriverDeviceSingletonIdent] = deviceSingleton
+	}
+
+	driverSingleton, found := driver.GetDriverSingleton(driverData.VendorID, driverData.ModelID)
+	if !found {
+		panic(fmt.Sprintf("Could not load singleton for driver `%s:%s`", driverData.VendorID, driverData.ModelID))
+	}
+
+	// TODO: this enables concurrent access, how to prevent races?
+	singletons[driver.DriverSingletonIdent] = driverSingleton
+
+	return m.RunGeneric(
+		types.ProgramInvocation{
+			Identifier: homescript.InputProgram{
+				ProgramText: driverData.HomescriptCode,
+				Filename:    hmsID,
+			},
+			FunctionInvocation: &invocation,
+			LoadedSingletons:   singletons,
+		},
+		types.NewExecutionContextDriver(
+			driverData.VendorID,
+			driverData.ModelID,
+			driverIDs.DeviceID,
+		),
+		cancelation,
+		nil,
+		outputWriter,
+	)
 }
 
 // Removes an arbitrary job from the job list
@@ -702,4 +766,8 @@ func (m *Manager) GetUserDirectJobs(username string) []ApiJob {
 		})
 	}
 	return jobs
+}
+
+func (m *Manager) ListHomescripts(includeDrivers bool) ([]database.Homescript, error) {
+	return ListHms(includeDrivers)
 }

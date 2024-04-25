@@ -65,29 +65,20 @@ func NewInterpreterExecutor(
 	// args map[string]string,
 	// automationContext *types.AutomationContext,
 	// cancelCtxFunc context.CancelFunc,
-	// singletonsToLoad map[string]value.Value,
+	cancelation types.Cancelation,
+	singletons map[string]value.Value,
 	context types.ExecutionContext,
 ) interpreterExecutor {
 	registrations := make([]dispatcherT.RegistrationID, 0)
-
-	// return interpreterExecutor{
-	// 	registrations:     &registrations,
-	// 	jobID:             jobID,
-	// 	programID:         programID,
-	// 	username:          username,
-	// 	ioWriter:          writer,
-	// 	args:              args,
-	// 	automationContext: automationContext,
-	// 	cancelCtxFunc:     cancelCtxFunc,
-	// 	singletonsToLoad:  singletonsToLoad,
-	// }
 
 	return interpreterExecutor{
 		registrations: &registrations,
 		jobID:         jobID,
 		programID:     programID,
 		ioWriter:      writer,
+		singletons:    singletons,
 		context:       context,
+		cancelation:   cancelation,
 	}
 }
 
@@ -102,7 +93,7 @@ func (self interpreterExecutor) LoadSingleton(singletonIdent, moduleName string)
 	value, available := self.singletons[singletonIdent]
 
 	if !available {
-		logger.Warnf("Singleton `%s` could not be loaded from: %v", singletonIdent, self.singletons)
+		panic(fmt.Sprintf("Singleton `%s` could not be loaded from: %v", singletonIdent, self.singletons))
 	}
 
 	disp, e := value.Display()

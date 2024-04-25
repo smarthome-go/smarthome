@@ -88,9 +88,9 @@ func scheduleRunnerFunc(id uint, m SchedulerManager) {
 					Filename:    filename,
 				},
 				FunctionInvocation: nil,
-				SingletonsToLoad:   map[string]value.Value{},
+				LoadedSingletons:   map[string]value.Value{},
 			},
-			types.NewExecutionContextUser(
+			types.NewExecutionContextUserNoFilename(
 				job.Owner,
 				nil,
 			),

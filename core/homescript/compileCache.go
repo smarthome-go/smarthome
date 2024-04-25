@@ -1,6 +1,7 @@
 package homescript
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
@@ -27,12 +28,13 @@ func (m *Manager) Compile(
 ) (compiler.CompileOutput, error) {
 	// Try to use a cached version.
 	m.CompileCache.Lock.RLock()
-	cached, valid := m.CompileCache.Cache[entryPointModule]
+	// cached, valid := m.CompileCache.Cache[entryPointModule]
 	m.CompileCache.Lock.RUnlock()
 
-	if valid {
+	// TODO: implement actual caching
+	if false {
 		logger.Tracef("Using compilation cache for program `%s`...\n", entryPointModule)
-		return cached, nil
+		// return cached, nil
 	}
 
 	// Otherwise, trigger a rebuild.
@@ -42,6 +44,10 @@ func (m *Manager) Compile(
 	compOut, err := comp.Compile()
 	if err != nil {
 		return compiler.CompileOutput{}, err
+	}
+
+	if printDebugASM {
+		fmt.Println(compOut.AsmString())
 	}
 
 	m.CompileCache.Lock.Lock()
