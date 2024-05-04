@@ -48,10 +48,7 @@ func initLoggers() {
 			fmt.Printf("Invalid log level from environment variable: '%s'. Using TRACE\n", newLogLevel)
 		}
 	}
-	logTemp, err := utils.NewLogger(logLevel)
-	if err != nil {
-		panic(err.Error())
-	}
+	logTemp := utils.NewLogger(logLevel)
 
 	// Initialize module loggers
 	log = logTemp

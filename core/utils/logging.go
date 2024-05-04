@@ -5,7 +5,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func NewLogger(logLevel logrus.Level) (*logrus.Logger, error) {
+func NewLogger(logLevel logrus.Level) *logrus.Logger {
 	// Create new logger
 	logger := logrus.New()
 	logger.SetLevel(logLevel)
@@ -22,5 +22,5 @@ func NewLogger(logLevel logrus.Level) (*logrus.Logger, error) {
 		&logrus.JSONFormatter{PrettyPrint: false},
 	)
 	logger.Hooks.Add(hook)
-	return logger, nil
+	return logger
 }
