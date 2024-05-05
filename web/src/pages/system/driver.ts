@@ -18,6 +18,7 @@ export interface DriverData {
     name:           string;
     version:        string;
     homescriptCode: string;
+    dirty: boolean;
 }
 
 export interface DriverInfoCollection {

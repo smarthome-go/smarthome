@@ -44,7 +44,7 @@ type InstanceT struct {
 	Mqtt                 *MqttManager
 	DoneRegistrations    dispatcherTypes.Registrations
 	PendingRegistrations PendingQueue
-	Lock                 sync.Mutex
+	// Lock                 sync.Mutex
 }
 
 var Instance InstanceT
@@ -64,7 +64,6 @@ func InitInstance(hms types.Manager, mqtt *MqttManager) {
 }
 
 func (self *InstanceT) MQTTStatus() error {
-	self.Lock.Lock()
 	return self.Mqtt.Status()
 }
 

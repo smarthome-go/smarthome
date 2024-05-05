@@ -9,6 +9,7 @@ import (
 
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/device/driver"
+	"github.com/smarthome-go/smarthome/core/homescript/dispatcher"
 )
 
 type DeviceDriverRequest struct {
@@ -290,4 +291,37 @@ func DeleteDeviceDriver(w http.ResponseWriter, r *http.Request) {
 	}
 
 	Res(w, Response{Success: true, Message: "successfully deleted driver"})
+}
+
+func ReloadDeviceDriver(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request DeviceDriverRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+
+	driver, exists, err := database.GetDeviceDriver(request.VendorID, request.ModelID)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to reload driver: could not validate existence", Error: "database failure"})
+		return
+	}
+
+	if !exists {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to reload driver", Error: "not found / permission denied: no data is associated to this vendor + model ID"})
+		return
+	}
+
+	if err := dispatcher.Instance.ReloadDriver(driver); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to reload driver", Error: err.Error()})
+		return
+	}
+
+	Res(w, Response{Success: true, Message: "successfully reloaded driver"})
 }

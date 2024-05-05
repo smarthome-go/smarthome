@@ -35,130 +35,185 @@ func (i *InstanceT) RegisterDriverAnnotations() error {
 		return err
 	}
 
-	devices, err := database.ListAllDevices()
-	if err != nil {
-		return err
-	}
-
 	for _, driver := range drivers {
-		for _, device := range devices {
-			if device.VendorID != driver.VendorID || device.ModelID != driver.ModelID {
-				continue
-			}
-
-			context := types.NewExecutionContextDriver(
-				driver.VendorID,
-				driver.ModelID,
-				&device.ID,
-			)
-
-			filename := types.CreateDriverHmsId(database.DriverTuple{
-				VendorID: driver.VendorID,
-				ModelID:  driver.ModelID,
-			})
-
-			program, diagnostics, err := i.Hms.Analyze(
-				homescript.InputProgram{
-					ProgramText: driver.HomescriptCode,
-					Filename:    filename,
-				},
-				context,
-			)
-
-			if err != nil {
-				return err
-			}
-
-			// Skip further extraction of this device.
-			if diagnostics.ContainsError {
-				logger.Errorf(
-					"Could not process driver annotation: driver `%s:%s` extraction failed.",
-					driver.VendorID,
-					driver.ModelID,
-				)
-
-				//
-				// TODO: when to retry?
-				//
-
-				continue
-			}
-
-			compileOutput, err := i.Hms.Compile(program, filename)
-			if err != nil {
-				return err
-			}
-
-			for annotationFn, annotation := range compileOutput.Annotations {
-				fmt.Printf("============= %v\n", annotation)
-				for _, item := range annotation.Items {
-					switch itemS := item.(type) {
-					case compiler.IdentCompiledAnnotation:
-					case compiler.TriggerCompiledAnnotation:
-						ident := itemS.ArgumentFunctionIdent
-						args, err := i.ExtractDriverTriggerAnnotationArgs(itemS,
-							&HomescriptOrDriver{
-								IsDriver: true,
-								//nolint:exhaustruct
-								Homescript: database.Homescript{},
-								Device: DeviceTarget{
-									DeviceID: device.ID,
-									Driver:   driver,
-								},
-							},
-							ident,
-							context,
-						)
-						if err != nil {
-							return err
-						}
-
-						// Transform the argument list to a string list.
-						untypedList := args[0].(value.ValueList).Values
-
-						topics := make([]string, len(*untypedList))
-						for idx, arg := range *untypedList {
-							topics[idx] = (*arg).(value.ValueString).Inner
-						}
-
-						if err := i.RegisterTriggerAnnotation(
-							types.CreateDriverHmsId(database.DriverTuple{
-								VendorID: device.VendorID,
-								ModelID:  device.ModelID,
-							}),
-							context,
-							dispatcherTypes.CalledFunction{
-								Ident:          annotationFn.UnmangledFunction,
-								IdentIsLiteral: false,
-								// TODO: decide on the callmode
-								CallMode: dispatcherTypes.CallModeAllocating{
-									Context: context,
-								},
-							},
-							topics,
-						); err != nil {
-							// TODO: what kind of error is this?
-							// Is this fatal?
-							return err
-						}
-					}
-				}
-			}
+		if err := i.ReloadDriver(driver); err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
+func (i *InstanceT) ReloadDriver(driver database.DeviceDriver) error {
+	devices, err := database.ListAllDevices()
+	if err != nil {
+		return err
+	}
+
+	for _, device := range devices {
+		if device.VendorID != driver.VendorID || device.ModelID != driver.ModelID {
+			continue
+		}
+
+		if err := i.RegisterDevice(driver, device.ID); err != nil {
+			logger.Errorf("Failed to register device: %s", err.Error())
+			return err
+		}
+	}
+
+	if err := database.ModifyDeviceDriverDirty(driver.VendorID, driver.ModelID, false); err != nil {
+		return err
+	}
+
+	logger.Infof("Successfully reloaded driver `%s:%s`", driver.VendorID, driver.ModelID)
+
+	return nil
+}
+
+func (i *InstanceT) RegisterDevice(driver database.DeviceDriver, deviceID string) error {
+	//
+	// First step: unregister any dispatcher hooks which are attached to this device.
+	//
+
+	i.DoneRegistrations.Lock.Lock()
+	doneRegs := i.DoneRegistrations.Set
+	i.DoneRegistrations.Lock.Unlock()
+
+	for id, reg := range doneRegs {
+		var ctx types.ExecutionContext
+
+		switch mode := reg.Function.CallMode.(type) {
+		case dispatcherTypes.CallModeAllocating:
+			ctx = mode.Context
+		case dispatcherTypes.CallModeAdaptive:
+			ctx = mode.AllocatingFallback.Context
+		case dispatcherTypes.CallModeAttaching:
+			continue
+		}
+
+		if ctx.Kind() != types.HMS_PROGRAM_KIND_DEVICE_DRIVER {
+			continue
+		}
+
+		driverCtx := ctx.(types.ExecutionContextDriver)
+		if driverCtx.DriverVendor != driver.VendorID ||
+			driverCtx.DriverModel != driver.ModelID ||
+			// NOTE: deref is ok because the support for running drivers without devices attached will be removed soon.
+			*driverCtx.DeviceID != deviceID {
+			continue
+		}
+
+		if err := i.Unregister(id); err != nil {
+			return err
+		}
+
+		logger.Tracef("[driver register] Removed previous dispatcher registration `%d`", id)
+	}
+
+	context := types.NewExecutionContextDriver(
+		driver.VendorID,
+		driver.ModelID,
+		&deviceID,
+	)
+
+	filename := types.CreateDriverHmsId(database.DriverTuple{
+		VendorID: driver.VendorID,
+		ModelID:  driver.ModelID,
+	})
+
+	program, diagnostics, err := i.Hms.Analyze(
+		homescript.InputProgram{
+			ProgramText: driver.HomescriptCode,
+			Filename:    filename,
+		},
+		context,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	// Skip further extraction of this device.
+	if diagnostics.ContainsError {
+		return fmt.Errorf(
+			"Could not process driver annotation: driver `%s:%s` extraction failed",
+			driver.VendorID,
+			driver.ModelID,
+		)
+	}
+
+	compileOutput, err := i.Hms.Compile(program, filename)
+	if err != nil {
+		return err
+	}
+
+	for annotationFn, annotation := range compileOutput.Annotations {
+		fmt.Printf("============= %v\n", annotation)
+		for _, item := range annotation.Items {
+			switch itemS := item.(type) {
+			case compiler.IdentCompiledAnnotation:
+			case compiler.TriggerCompiledAnnotation:
+				ident := itemS.ArgumentFunctionIdent
+				args, err := i.ExtractDriverTriggerAnnotationArgs(itemS,
+					&HomescriptOrDriver{
+						IsDriver: true,
+						//nolint:exhaustruct
+						Homescript: database.Homescript{},
+						Device: DeviceTarget{
+							DeviceID: deviceID,
+							Driver:   driver,
+						},
+					},
+					ident,
+					context,
+				)
+				if err != nil {
+					return err
+				}
+
+				// Transform the argument list to a string list.
+				untypedList := args[0].(value.ValueList).Values
+
+				topics := make([]string, len(*untypedList))
+				for idx, arg := range *untypedList {
+					topics[idx] = (*arg).(value.ValueString).Inner
+				}
+
+				if err := i.RegisterTriggerAnnotation(
+					types.CreateDriverHmsId(database.DriverTuple{
+						VendorID: driver.VendorID,
+						ModelID:  driver.ModelID,
+					}),
+					dispatcherTypes.CalledFunction{
+						Ident:          annotationFn.UnmangledFunction,
+						IdentIsLiteral: false,
+						// TODO: decide on the callmode
+						CallMode: dispatcherTypes.CallModeAllocating{
+							Context: context,
+						},
+					},
+					topics,
+				); err != nil {
+					// TODO: what kind of error is this?
+					// Is this fatal?
+					return err
+				}
+			}
+		}
+	}
+
+	logger.Infof("Successfully registered device `%s`", deviceID)
+	return nil
+}
+
 func (i *InstanceT) RegisterTriggerAnnotation(
 	programID string,
-	executionContext types.ExecutionContext,
 	callback dispatcherTypes.CalledFunction,
 	mqttTopics []string,
 ) error {
 	_, err := i.Register(
 		dispatcherTypes.RegisterInfo{
-			ProgramID: "",
+			ProgramID: programID,
 			Function:  &callback,
 			Trigger: dispatcherTypes.CallBackTriggerMqtt{
 				Topics: mqttTopics,

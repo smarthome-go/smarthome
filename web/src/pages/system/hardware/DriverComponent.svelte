@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Button from "@smui/button";
+    import Button, { Label, Icon } from "@smui/button";
     import type { DriverData, FetchedDriver } from "../driver";
     import DynamicConfigurator from "../../../components/Homescript/DynamicConfigurator.svelte";
     import { createEventDispatcher, onMount } from "svelte";
@@ -7,6 +7,7 @@
     import IconButton from "@smui/icon-button";
     import DriverInfo from "./DriverInfo.svelte";
     import Ripple from '@smui/ripple'
+    // import IconButton from '@smui/icon-button'
     import { createSnackbar } from "../../../global";
 
     export let driver: FetchedDriver = null
@@ -96,8 +97,33 @@
                 let msg  = await res.json()
                 throw `${msg.message}: ${msg.error}`
             }
+
+            driver.driver.dirty = true
         } catch (err) {
              $createSnackbar(`Saving driver configuration failed: ${err}`)
+        }
+    }
+
+    async function reloadDriver() {
+        try {
+            let res = await fetch(
+                '/api/system/hardware/driver/reload', {
+                    method: "POST",
+                    body: JSON.stringify({
+                            vendorId: driver.driver.vendorId,
+                            modelId: driver.driver.modelId
+                    })
+                }
+            )
+
+            if (res.status !== 200) {
+                let msg  = await res.json()
+                throw `${msg.message}: ${msg.error}`
+            }
+
+            driver.driver.dirty = false;
+        } catch (err) {
+             $createSnackbar(`Reloading driver failed: ${err}`)
         }
     }
 
@@ -134,6 +160,13 @@
 <div class="driver">
     <div class="driver__top">
         <span class="driver__top__name">{driver.driver.name}</span>
+        <span class="driver__top__id text-hint">
+            <span><code>{driver.driver.vendorId}:{driver.driver.modelId}</code></span>
+            <i class="material-icons driver__top__id__icon">
+                power
+            </i>
+        </span>
+
         <div class="driver__top__meta">
             <span class="driver__top__meta__type">
                 Input
@@ -162,28 +195,29 @@
                 on:click={openInfo}
                 on:keydown={openInfo}
             >
-                <span>Homescript</span>
+                <span>Homescript {driver.validationErrors.length === 0 ? 'OK' : 'ERR'}</span>
             </div>
             <!-- Driver Integrity -->
             <div
                 class="driver__health__chip"
                 use:Ripple={{ surface: true }}
-                class:ok={true}
+                class:ok={false}
                 on:click={openInfo}
                 on:keydown={openInfo}
             >
-                <span>Integrity</span>
+                <span>TODO: Integrity</span>
             </div>
         </div>
 
         <div class="driver__bottom">
-            <span class="driver__bottom__id text-hint">
-                <span><code>{driver.driver.vendorId}:{driver.driver.modelId}</code></span>
-                <i class="material-icons driver__bottom__id__icon">
-                    power
-                </i>
-            </span>
-            <div class="bottom__buttons">
+            {#if driver.driver.dirty}
+                <Button id="reload-button" variant="raised" on:click={reloadDriver}>
+                    <Label>Reload</Label>
+                    <Icon class="material-icons">sync_problem</Icon>
+                </Button>
+            {/if}
+
+            <div class="driver__bottom__right">
                 <IconButton class="material-icons" on:click={editDriverShow}>edit</IconButton>
                 <IconButton class="material-icons" on:click={openInfo}>info</IconButton>
             </div>
@@ -206,6 +240,11 @@
 
         background-color: var(--clr-height-1-3);
 
+        :global #reload-button {
+            --mdc-theme-primary: var(--clr-error);
+            font-weight: bold;
+        }
+
         &__top {
             display: flex;
             flex-direction: column;
@@ -213,6 +252,17 @@
 
             &__name {
                 font-weight: bold;
+            }
+
+            &__id {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                font-size: 0.9rem;
+
+                &__icon {
+                    font-size: 1.2rem;
+                }
             }
 
             &__meta {
@@ -251,7 +301,7 @@
                 display: flex;
                 align-items: center;
                 gap: 0.4rem;
-                max-width: 5rem;
+                max-width: 6.5rem;
                 color: var(--clr-error);
 
                 &.capability {
@@ -273,24 +323,8 @@
 
         &__bottom {
             display: flex;
-            gap: 0.5rem;
             align-items: center;
             justify-content: space-between;
-
-            &__buttons {
-                display: flex;
-            }
-
-            &__id {
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                font-size: 0.9rem;
-
-                &__icon {
-                    font-size: 1.2rem;
-                }
-            }
         }
     }
 </style>

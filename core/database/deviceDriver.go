@@ -23,6 +23,8 @@ type DeviceDriver struct {
 	Version        string  `json:"version"`
 	HomescriptCode string  `json:"homescriptCode"`
 	SingletonJSON  *string `json:"singletonJson"`
+	// Useful for tracking if a driver needs to be restarted.
+	Dirty bool `json:"dirty"`
 }
 
 // Creates the table containing device driver code and metadata
@@ -38,6 +40,7 @@ func createDeviceDriverTable() error {
 		Version				VARCHAR(%d) NOT NULL,
 		HomescriptCode		LONGTEXT NOT NULL,
 		SingletonJson		JSON,
+		Dirty				BOOL,
 		PRIMARY KEY (VendorId, ModelId)
 	)
 	`,
@@ -71,9 +74,10 @@ func CreateNewDeviceDriver(driverData DeviceDriver) error {
 		Name,
 		Version,
 		HomescriptCode,
-		SingletonJson
+		SingletonJson,
+		Dirty
 	)
-	VALUES(?, ?, ?, ?, ?, ?)
+	VALUES(?, ?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		log.Error("Failed to create new device driver: preparing query failed: ", err.Error())
@@ -89,6 +93,7 @@ func CreateNewDeviceDriver(driverData DeviceDriver) error {
 		driverData.Version,
 		driverData.HomescriptCode,
 		driverData.SingletonJSON,
+		driverData.Dirty,
 	); err != nil {
 		log.Error("Failed to create new device driver: executing query failed: ", err.Error())
 		return err
@@ -105,7 +110,8 @@ func ModifyDeviceDriver(newData DeviceDriver) error {
 		Name=?,
 		Version=?,
 		HomescriptCode=?,
-		SingletonJson=?
+		SingletonJson=?,
+		Dirty=?
 	WHERE VendorId=? AND ModelId=?
 	`)
 	if err != nil {
@@ -119,6 +125,7 @@ func ModifyDeviceDriver(newData DeviceDriver) error {
 		newData.Version,
 		newData.HomescriptCode,
 		newData.SingletonJSON,
+		newData.Dirty,
 		newData.VendorID,
 		newData.ModelID,
 	); err != nil {
@@ -157,8 +164,8 @@ func ModifyDeviceDriverSingletonJSON(vendorId string, modelId string, newJson *s
 	return nil
 }
 
-// Modifies the code of a given device driver
-// Returns `true` if the driver was found and modified
+// Modifies the code of a given device driver.
+// Returns `true` if the driver was found and modified.
 func ModifyDeviceDriverCode(vendorId string, modelId string, newCode string) (bool, error) {
 	query, err := db.Prepare(`
 	UPDATE deviceDriver
@@ -189,6 +196,29 @@ func ModifyDeviceDriverCode(vendorId string, modelId string, newCode string) (bo
 	}
 
 	return rows > 0, nil
+}
+
+func ModifyDeviceDriverDirty(vendorId string, modelId string, dirty bool) error {
+	query, err := db.Prepare(`
+	UPDATE deviceDriver
+	SET Dirty=? WHERE VendorId=? AND ModelId=?
+	`)
+	if err != nil {
+		log.Error("Failed to update device driver code: preparing query failed: ", err.Error())
+		return err
+	}
+	defer query.Close()
+
+	if _, err := query.Exec(
+		dirty,
+		vendorId,
+		modelId,
+	); err != nil {
+		log.Error("Failed to update device driver dirty: executing query failed: ", err.Error())
+		return err
+	}
+
+	return nil
 }
 
 func GetDriverSources(ids []DriverTuple) (drivers map[DriverTuple]string, allFound bool, err error) {
@@ -239,7 +269,8 @@ func ListDeviceDrivers() ([]DeviceDriver, error) {
 		deviceDriver.Name,
 		deviceDriver.Version,
 		deviceDriver.HomescriptCode,
-		deviceDriver.SingletonJSON
+		deviceDriver.SingletonJSON,
+		deviceDriver.Dirty
 	FROM deviceDriver
 	`)
 	if err != nil {
@@ -263,6 +294,7 @@ func ListDeviceDrivers() ([]DeviceDriver, error) {
 			&driver.Version,
 			&driver.HomescriptCode,
 			&driver.SingletonJSON,
+			&driver.Dirty,
 		)
 		if err != nil {
 			log.Error("Failed to list Homescript of user: scanning results failed: ", err.Error())
@@ -280,7 +312,8 @@ func GetDeviceDriver(vendorId string, modelId string) (DeviceDriver, bool, error
 		deviceDriver.Name,
 		deviceDriver.Version,
 		deviceDriver.HomescriptCode,
-		deviceDriver.SingletonJSON
+		deviceDriver.SingletonJSON,
+		deviceDriver.Dirty
 	FROM deviceDriver
 	WHERE deviceDriver.VendorId=?
 	AND deviceDriver.ModelId=?
@@ -303,6 +336,7 @@ func GetDeviceDriver(vendorId string, modelId string) (DeviceDriver, bool, error
 		&driver.Version,
 		&driver.HomescriptCode,
 		&driver.SingletonJSON,
+		&driver.Dirty,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return DeviceDriver{}, false, nil

@@ -261,6 +261,7 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/system/hardware/driver/modify", mdl.ApiAuth(mdl.Perm(api.ModifyDeviceDriver, database.PermissionSystemConfig))).Methods("PUT")
 	r.HandleFunc("/api/system/hardware/driver/configure", mdl.ApiAuth(mdl.Perm(api.ConfigureDeviceDriver, database.PermissionSystemConfig))).Methods("PUT")
 	r.HandleFunc("/api/system/hardware/driver/delete", mdl.ApiAuth(mdl.Perm(api.DeleteDeviceDriver, database.PermissionSystemConfig))).Methods("DELETE")
+	r.HandleFunc("/api/system/hardware/driver/reload", mdl.ApiAuth(mdl.Perm(api.ReloadDeviceDriver, database.PermissionSystemConfig))).Methods("POST")
 	// TODO: add driver support
 
 	// Logging

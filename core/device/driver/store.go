@@ -89,6 +89,12 @@ func (d DriverManager) StoreDriverSingletonConfigUpdate(
 		return err
 	}
 
+	// TODO: only make the driver dirty if the change originates from the web.
+	// TODO: only trigger this if there were changes.
+	if err := MakeDriverDirty(vendorID, modelID, true); err != nil {
+		return err
+	}
+
 	for _, dev := range devices {
 		log.Warnf("============ NOT IMPLEMENTED: handling singleton updates for device: %s", dev.ID)
 		// TODO: trigger a re-registration of any triggers. (only if there are changes.)
@@ -161,6 +167,9 @@ func (d DriverManager) StoreDeviceSingletonConfigUpdate(
 
 	// TODO: trigger re-registration of any triggers.
 	log.Warn("============================== TODO: not implemented =============================")
+	if err := MakeDriverDirty(device.VendorID, device.ModelID, true); err != nil {
+		return err
+	}
 
 	return StoreDeviceSingletonBackend(deviceID, withOldValues)
 }
@@ -186,6 +195,22 @@ func StoreDeviceSingletonBackend(deviceID string, val value.ValueObject) error {
 	DeviceStore[deviceID] = val
 	return nil
 }
+
+func MakeDriverDirty(vendorID, modelID string, dirty bool) error {
+	// TODO: only do this if the driver actually uses trigger statements.
+
+	if dirty {
+		log.Debugf("Marking device driver `%s:%s` as dirty, it needs reloading...", vendorID, modelID)
+	}
+
+	if err := database.ModifyDeviceDriverDirty(vendorID, modelID, dirty); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //
 // Generic, for both.

@@ -12,8 +12,8 @@ import (
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
-// A list of `known` object type annotations
-// The analyzer uses these in order to sanity-check every annotation
+// A list of `known` object type annotations.
+// The analyzer uses these in order to sanity-check every annotation.
 var knownObjectTypeAnnotations = []string{driver.DRIVER_FIELD_REQUIRED_ANNOTATION}
 
 type analyzerHost struct {
@@ -46,7 +46,27 @@ func (self analyzerHost) PostValidationHook(
 		_, diagnostics := driver.ExtractDriverInfo(analyzedModules, mainModule, true)
 		return diagnostics
 	default:
-		// Do nothing for this kind.
+		// Forbid `trigger` annotations in non-drivers.
+		for _, mod := range analyzedModules {
+			for _, fn := range mod.Functions {
+				for _, ann := range fn.Annotation.Items {
+					switch ann.(type) {
+					case ast.AnalyzedAnnotationItemTrigger:
+						return []diagnostic.Diagnostic{
+							diagnostic.Diagnostic{
+								Level:   diagnostic.DiagnosticLevelError,
+								Message: "Trigger annotations are not allowed in user programs",
+								Notes: []string{
+									"To use trigger annotations, create a driver Homescript",
+								},
+								Span: ann.Span(),
+							},
+						}
+					default:
+					}
+				}
+			}
+		}
 	}
 
 	return nil

@@ -509,7 +509,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				// TODO: use a macro here?
 				if self.context.Username() == nil {
 					return nil, value.NewVMFatalException(
-						"The usage of the `exec` function in a non-user environment is not possible",
+						"The usage of the `storage` functions in a non-user environment is not possible",
 						value.Vm_HostErrorKind,
 						span,
 					)
@@ -536,7 +536,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				// TODO: use a macro here?
 				if self.context.Username() == nil {
 					return nil, value.NewVMFatalException(
-						"The usage of the `exec` function in a non-user environment is not possible",
+						"The usage of the `storage` functions in a non-user environment is not possible",
 						value.Vm_HostErrorKind,
 						span,
 					)
@@ -567,7 +567,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				// TODO: use a macro here?
 				if self.context.Username() == nil {
 					return nil, value.NewVMFatalException(
-						"The usage of the `exec` function in a non-user environment is not possible",
+						"The usage of the `remind` function in a non-user environment is not possible",
 						value.Vm_HostErrorKind,
 						span,
 					)
@@ -647,28 +647,23 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 		case "http":
 			return *value.NewValueObject(map[string]*value.Value{
 				"get": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
-					if self.context.Username() == nil {
-						return nil, value.NewVMFatalException(
-							"The usage of the `exec` function in a non-user environment is not possible",
-							value.Vm_HostErrorKind,
-							span,
-						)
-					}
+					if self.context.Username() != nil {
+						hasPermission, err := database.UserHasPermission(*self.context.Username(), database.PermissionHomescriptNetwork)
+						if err != nil {
+							return nil, value.NewVMFatalException(
+								fmt.Sprintf("Could not send GET request: failed to validate user's permissions: %s", err.Error()),
+								value.Vm_HostErrorKind,
+								span,
+							)
+						}
+						if !hasPermission {
+							return nil, value.NewVMFatalException(
+								fmt.Sprintf("will not send GET request: you lack permission to access the network via homescript. If this is unintentional, contact your administrator"),
+								value.Vm_HostErrorKind,
+								span,
+							)
+						}
 
-					hasPermission, err := database.UserHasPermission(*self.context.Username(), database.PermissionHomescriptNetwork)
-					if err != nil {
-						return nil, value.NewVMFatalException(
-							fmt.Sprintf("Could not send GET request: failed to validate user's permissions: %s", err.Error()),
-							value.Vm_HostErrorKind,
-							span,
-						)
-					}
-					if !hasPermission {
-						return nil, value.NewVMFatalException(
-							fmt.Sprintf("will not send GET request: you lack permission to access the network via homescript. If this is unintentional, contact your administrator"),
-							value.Vm_HostErrorKind,
-							span,
-						)
 					}
 
 					url := args[0].(value.ValueString).Inner
@@ -722,30 +717,22 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 					}), nil
 				}),
 				"generic": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
-					if self.context.Username() == nil {
-						return nil, value.NewVMFatalException(
-							"The usage of the `exec` function in a non-user environment is not possible",
-							value.Vm_HostErrorKind,
-							span,
-						)
-					}
-
-					// TODO: fix this by running drivers without a user tag.
-					// Check permissions and request building beforehand
-					hasPermission, err := database.UserHasPermission(*executor.(interpreterExecutor).context.Username(), database.PermissionHomescriptNetwork)
-					if err != nil {
-						return nil, value.NewVMFatalException(
-							fmt.Sprintf("Could not perform request: failed to validate your permissions: %s", err.Error()),
-							value.Vm_HostErrorKind,
-							span,
-						)
-					}
-					if !hasPermission {
-						return nil, value.NewVMFatalException(
-							fmt.Sprintf("Will not perform request: lacking permission to access the network via Homescript. If this is unintentional, contact your administrator"),
-							value.Vm_HostErrorKind,
-							span,
-						)
+					if self.context.Username() != nil {
+						hasPermission, err := database.UserHasPermission(*executor.(interpreterExecutor).context.Username(), database.PermissionHomescriptNetwork)
+						if err != nil {
+							return nil, value.NewVMFatalException(
+								fmt.Sprintf("Could not perform request: failed to validate your permissions: %s", err.Error()),
+								value.Vm_HostErrorKind,
+								span,
+							)
+						}
+						if !hasPermission {
+							return nil, value.NewVMFatalException(
+								fmt.Sprintf("Will not perform request: lacking permission to access the network via Homescript. If this is unintentional, contact your administrator"),
+								value.Vm_HostErrorKind,
+								span,
+							)
+						}
 					}
 
 					url := args[0].(value.ValueString).Inner
@@ -844,17 +831,13 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 	case "log":
 		switch toImport {
 		case "logger":
-			if self.context.Username() == nil {
-				return nil, false
-			}
-
-			testPermissions := func(username string, span errors.Span) *value.VmInterrupt {
+			testPermissions := func(username *string, span errors.Span) *value.VmInterrupt {
 				return nil
 			}
 
 			if self.context.Username() != nil {
-				testPermissions = func(username string, span errors.Span) *value.VmInterrupt {
-					hasPermission, err := database.UserHasPermission(*self.context.Username(), database.PermissionLogging)
+				testPermissions = func(username *string, span errors.Span) *value.VmInterrupt {
+					hasPermission, err := database.UserHasPermission(*username, database.PermissionLogging)
 					if err != nil {
 						return value.NewVMFatalException(err.Error(), value.Vm_HostErrorKind, span)
 					}
@@ -869,7 +852,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				"trace": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 					title := args[0].(value.ValueString).Inner
 					description := args[1].(value.ValueString).Inner
-					if i := testPermissions(*executor.(interpreterExecutor).context.Username(), span); i != nil {
+					if i := testPermissions(executor.(interpreterExecutor).context.Username(), span); i != nil {
 						return nil, i
 					}
 					event.Trace(title, description)
@@ -878,7 +861,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				"debug": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 					title := args[0].(value.ValueString).Inner
 					description := args[1].(value.ValueString).Inner
-					if i := testPermissions(*executor.(interpreterExecutor).context.Username(), span); i != nil {
+					if i := testPermissions(executor.(interpreterExecutor).context.Username(), span); i != nil {
 						return nil, i
 					}
 					event.Debug(title, description)
@@ -887,7 +870,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				"info": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 					title := args[0].(value.ValueString).Inner
 					description := args[1].(value.ValueString).Inner
-					if i := testPermissions(*self.context.Username(), span); i != nil {
+					if i := testPermissions(self.context.Username(), span); i != nil {
 						return nil, i
 					}
 					event.Info(title, description)
@@ -896,7 +879,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				"warn": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 					title := args[0].(value.ValueString).Inner
 					description := args[1].(value.ValueString).Inner
-					if i := testPermissions(*self.context.Username(), span); i != nil {
+					if i := testPermissions(self.context.Username(), span); i != nil {
 						return nil, i
 					}
 					event.Warn(title, description)
@@ -905,7 +888,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				"error": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 					title := args[0].(value.ValueString).Inner
 					description := args[1].(value.ValueString).Inner
-					if i := testPermissions(*self.context.Username(), span); i != nil {
+					if i := testPermissions(self.context.Username(), span); i != nil {
 						return nil, i
 					}
 					event.Error(title, description)
@@ -914,7 +897,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				"fatal": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 					title := args[0].(value.ValueString).Inner
 					description := args[1].(value.ValueString).Inner
-					if i := testPermissions(*self.context.Username(), span); i != nil {
+					if i := testPermissions(self.context.Username(), span); i != nil {
 						return nil, i
 					}
 					event.Fatal(title, description)
@@ -947,7 +930,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 				if self.context.Username() == nil {
 					return nil, value.NewVMFatalException(
-						"The usage of the `exec` function in a non-user environment is not possible",
+						"The usage of the `scheduler` functions in a non-user environment is not possible",
 						value.Vm_HostErrorKind,
 						span,
 					)
@@ -980,7 +963,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 				if self.context.Username() == nil {
 					return nil, value.NewVMFatalException(
-						"The usage of the `exec` function in a non-user environment is not possible",
+						"The usage of the `scheduler` functions in a non-user environment is not possible",
 						value.Vm_HostErrorKind,
 						span,
 					)
@@ -1019,7 +1002,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 				if self.context.Username() == nil {
 					return nil, value.NewVMFatalException(
-						"The usage of the `exec` function in a non-user environment is not possible",
+						"The usage of the `scheulder` functions in a non-user environment is not possible",
 						value.Vm_HostErrorKind,
 						span,
 					)
