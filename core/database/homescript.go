@@ -339,8 +339,10 @@ func ListAllHomescripts() ([]Homescript, error) {
 			log.Error("Failed to list Homescript: scanning results failed: ", err.Error())
 			return nil, err
 		}
+
 		homescriptList = append(homescriptList, homescript)
 	}
+
 	return homescriptList, nil
 }
 

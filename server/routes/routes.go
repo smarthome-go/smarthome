@@ -73,8 +73,8 @@ func NewRouter() *mux.Router {
 	// TODO: implement this using the power API that is implemented later
 	// TODO: also implement a sensor / input API
 	// r.HandleFunc("/api/power/states", api.GetPowerStates).Methods("GET")
-	// r.HandleFunc("/api/power/usage/day", api.GetPowerDrawFrom24Hours).Methods("GET")
-	// r.HandleFunc("/api/power/usage/all", mdl.ApiAuth(api.GetPowerDrawAll)).Methods("GET")
+	r.HandleFunc("/api/power/usage/day", api.GetPowerDrawFrom24Hours).Methods("GET")
+	r.HandleFunc("/api/power/usage/all", mdl.ApiAuth(api.GetPowerDrawAll)).Methods("GET")
 	// r.HandleFunc("/api/power/set", mdl.ApiAuth(mdl.Perm(api.PowerPostHandler, database.PermissionPower))).Methods("POST")
 
 	// Rooms
@@ -99,13 +99,8 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/devices/configure", mdl.ApiAuth(mdl.Perm(api.ConfigureDevice, database.PermissionModifyRooms))).Methods("PUT")
 
 	// TODO: Device actions???
-	r.HandleFunc("/api/devices/action/power",
-		mdl.ApiAuth(mdl.Perm(api.DeviceActionHandlerFactory(driver.DriverActionKindSetPower), database.PermissionPower)),
-	).Methods("POST")
-
-	r.HandleFunc("/api/devices/action/dim",
-		mdl.ApiAuth(mdl.Perm(api.DeviceActionHandlerFactory(driver.DriverActionKindDim), database.PermissionPower)),
-	).Methods("POST")
+	r.HandleFunc("/api/devices/action/power", mdl.ApiAuth(mdl.Perm(api.DeviceActionHandlerFactory(driver.DriverActionKindSetPower), database.PermissionPower))).Methods("POST")
+	r.HandleFunc("/api/devices/action/dim", mdl.ApiAuth(mdl.Perm(api.DeviceActionHandlerFactory(driver.DriverActionKindDim), database.PermissionPower))).Methods("POST")
 
 	// Cameras
 	r.HandleFunc("/api/camera/add", mdl.ApiAuth(mdl.Perm(api.CreateCamera, database.PermissionModifyRooms))).Methods("POST")

@@ -6,10 +6,16 @@ import (
 
 	"github.com/go-co-op/gocron"
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/device/driver"
 	"github.com/smarthome-go/smarthome/core/event"
 )
 
-// This file's functions are being used for calculating new power usage summaries (which is triggered on every switch power change)
+// TODO: make this file non-deprecated.
+
+// This file's functions are being used for calculating
+// new power usage summaries (which is triggered on every switch power change).
+
+const savePowerUsageEveryNMinute = 2
 
 // Just like the equivalent in the database module
 // except the time is represented using Unix-millis
@@ -22,16 +28,17 @@ type PowerDrawDataPointUnixMillis struct {
 
 // Takes a slice of power data points as an input and outputs it whilst filtering the data for semantic and visual imperfections, such as redundant measurements
 func filterPowerData(input []database.PowerDataPoint) (newData []database.PowerDataPoint, iDsToBeDeleted []uint64) {
-	// Step 1: filter out redundant measurements
-	// Calculate the length once (for performance)
+	// Step 1: filter out redundant measurements.
+	// Calculate the length once (for performance).
 	dataPoints := len(input)
-	// Contains the final, filtered data
+	// Contains the final, filtered data.
 	newData = make([]database.PowerDataPoint, 0)
-	// Specifies which ids can be safely deleted from the data set (the filtered out data)
+	// Specifies which ids can be safely deleted from the data set (the filtered out data).
 	iDsToBeDeleted = make([]uint64, 0)
-	// Filter out the data
+
+	// Filter out the data.
 	for pointIndex, point := range input {
-		// Check if one lookback and one lookahead is possible
+		// Check if one lookback and one lookahead is possible.
 		if /* Lookback is not possible*/ pointIndex-1 < 0 || /* Lookahead is not possible */ pointIndex+1 > dataPoints-1 {
 			newData = append(newData, point)
 			continue
@@ -44,67 +51,67 @@ func filterPowerData(input []database.PowerDataPoint) (newData []database.PowerD
 		}
 		newData = append(newData, point)
 	}
+
 	return newData, iDsToBeDeleted
 }
 
-// Takes a snapshot of the current power states and transforms them into a power data point
-// Returns `onData`, `offData` and an `error`
-// TODO: account for real power reporting of a device
-func generateSnapshot() (database.PowerDrawData, database.PowerDrawData, error) {
-	// Get the current power states
-	// powerStates, err := database.GetPowerStates()
-	// if err != nil {
-	// 	return database.PowerDrawData{}, database.PowerDrawData{}, err
-	// }
+// Takes a snapshot of the current power states and transforms them into a power data point.
+func generateSnapshot() (onData database.PowerDrawData, offData database.PowerDrawData, err error) {
+	// Will hold the sum off the power draw of all switches,
+	// regardless of whether they are active or disabled.
+	var totalWatts uint = 0
 
-	// Will hold the sum off the power draw of all switches, regardless of whether they are active or disabled
-	var totalWatts uint16 = 0
-	// Collects information about the active switches
-	onData := database.PowerDrawData{
-		SwitchCount: 0,
-		Watts:       0,
-		Percent:     0,
+	// Loop over all devices and try to query power.
+	devices, err := driver.Manager.ListAllDevicesRich()
+	if err != nil {
+		return database.PowerDrawData{}, database.PowerDrawData{}, err
 	}
-	// Collects information about the deactivated switches
-	offData := database.PowerDrawData{
-		SwitchCount: 0,
-		Watts:       0,
-		Percent:     0,
-	}
-	// Loop over all switches
-	// for _, sw := range powerStates {
-	// 	// If the current switch is active, account for in int the `onData`
-	// 	if sw.PowerOn {
-	// 		onData.SwitchCount++           // Increment the switch count of all active switches by one
-	// 		onData.Watts += uint(sw.Watts) // Add the power draw of the current switch to the total of the active switches
-	// 	} else {
-	// 		offData.SwitchCount++           // Increment the switch count of all passive switches by one
-	// 		offData.Watts += uint(sw.Watts) // Add the power draw of the current switch to the total of the passive switches
-	// 	}
-	// 	// Regardless of the power state, increment the total watt count
-	// 	totalWatts += sw.Watts
-	// }
 
-	// NOTE: If the total watts are equal to 0, stop here and do not calculate the percent (it will lead to errors)
+	for _, dev := range devices {
+		if !dev.Extractions.Config.Capabilities.Has(driver.DeviceCapabilityPower) {
+			continue
+		}
+
+		// If the current switch is active, account for in int the `onData`.
+		if dev.Extractions.PowerInformation.State {
+			onData.SwitchCount++
+			// Increment the switch count of all active switches by one.
+			// Add the power draw of the current switch to the total of the active switches.
+			onData.Watts += uint(dev.Extractions.PowerInformation.PowerDrawWatts)
+		} else {
+			offData.SwitchCount++
+			// Increment the switch count of all passive switches by one.
+			// Add the power draw of the current switch to the total of the passive switches.
+			offData.Watts += uint(dev.Extractions.PowerInformation.PowerDrawWatts)
+		}
+
+		// Regardless of the power state, increment the total watt count.
+		totalWatts += dev.Extractions.PowerInformation.PowerDrawWatts
+	}
+
+	// NOTE: If the total watts are equal to 0,
+	// stop here and do not calculate the percent (it will lead to errors).
 	if totalWatts == 0 {
 		return onData, offData, nil
 	}
 
-	// After the on + off data has been calculated, leverage the grand total watt count in order to calculate the individual percent numbers
+	// After the on + off data has been calculated,
+	// leverage the grand total watt count in order to calculate the individual percent numbers.
 	onData.Percent = float64(onData.Watts) / float64(totalWatts) * 100
 	offData.Percent = float64(offData.Watts) / float64(totalWatts) * 100
 
 	return onData, offData, nil
 }
 
-// Takes a snapshot of the current power draw and inserts it into the database
+// Takes a snapshot of the current power draw and inserts it into the database.
 func SaveCurrentPowerUsage() error {
-	// Generate a snapshot
+	// Generate a snapshot.
 	onData, offData, err := generateSnapshot()
 	if err != nil {
 		return err
 	}
-	// Insert the snapshot data into the database
+
+	// Insert the snapshot data into the database.
 	if _, err = database.AddPowerUsagePoint(
 		onData,
 		offData,
@@ -112,12 +119,14 @@ func SaveCurrentPowerUsage() error {
 	); err != nil {
 		return err
 	}
-	// Filter the data after the insertion and delete redundant data records
+
+	// Filter the data after the insertion and delete redundant data records.
 	powerUsageData, err := database.GetPowerUsageRecords(24)
 	if err != nil {
 		return err
 	}
-	// Delete the redundant records one by one
+
+	// Delete the redundant records one by one.
 	_, toBeDeleted := filterPowerData(powerUsageData)
 	for _, record := range toBeDeleted {
 		if err := database.DeletePowerUsagePointById(record); err != nil {
@@ -125,6 +134,7 @@ func SaveCurrentPowerUsage() error {
 		}
 		log.Debug(fmt.Sprintf("Deleted redundant power usage data point from dataset. (ID: %d)", record))
 	}
+
 	return err
 }
 
@@ -148,7 +158,8 @@ func GetPowerUsageRecordsUnixMillis(maxAgeHours int) ([]PowerDrawDataPointUnixMi
 	if err != nil {
 		return nil, err
 	}
-	// Transform the data into a slice which uses the new struct
+
+	// Transform the data into a slice which uses the new struct.
 	returnValue := make([]PowerDrawDataPointUnixMillis, 0)
 	for _, record := range dbData {
 		returnValue = append(returnValue, PowerDrawDataPointUnixMillis{
@@ -158,13 +169,14 @@ func GetPowerUsageRecordsUnixMillis(maxAgeHours int) ([]PowerDrawDataPointUnixMi
 			Off:  record.Off,
 		})
 	}
+
 	return returnValue, err
 }
 
-// Sets up a scheduler which triggers the flushing of old power usage records
+// Sets up a scheduler which triggers a save of the current power usage.
 func StartPowerUsageSnapshotScheduler() error {
 	scheduler := gocron.NewScheduler(time.Local)
-	if _, err := scheduler.Every(1).Hours().Do(SaveCurrentPowerUsageWithLogs); err != nil {
+	if _, err := scheduler.Every(savePowerUsageEveryNMinute).Minute().Do(SaveCurrentPowerUsageWithLogs); err != nil {
 		return err
 	}
 	scheduler.StartAsync()

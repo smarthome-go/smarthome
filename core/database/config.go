@@ -5,12 +5,17 @@ import (
 )
 
 type ServerConfig struct {
-	AutomationEnabled    bool       `json:"automationEnabled"`    // Sets the global state of the server's automation system
-	LockDownMode         bool       `json:"lockDownMode"`         // If enabled, the server is unable to change power states and will not allow power actions
-	OpenWeatherMapApiKey string     `json:"openWeatherMapApiKey"` // Specifies the OpenWeatherMap API key
-	Latitude             float32    `json:"latitude"`             // Specifies the physical location of the Smarthome server
-	Longitude            float32    `json:"longitude"`            // Latitude and longitude are being used for calculating the sunset / sunrise times and for OpenWeatherMap's weather service
-	Mqtt                 MqttConfig `json:"mqtt"`
+	// Sets the global state of the server's automation system
+	AutomationEnabled bool `json:"automationEnabled"`
+	// If enabled, the server is unable to change power states and will not allow power actions
+	LockDownMode bool `json:"lockDownMode"`
+	// Specifies the OpenWeatherMap API key, if left empty, open weather will be disabled
+	OpenWeatherMapApiKey string `json:"openWeatherMapApiKey"`
+	// Specifies the physical location of the Smarthome server
+	Latitude float32 `json:"latitude"`
+	// Latitude and longitude are being used for calculating the sunset / sunrise times and for OpenWeatherMap's weather service
+	Longitude float32    `json:"longitude"`
+	Mqtt      MqttConfig `json:"mqtt"`
 }
 
 type MqttConfig struct {
