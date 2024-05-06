@@ -49,6 +49,7 @@
         isWidget: false,
         schedulerEnabled: false,
         workspace: 'default',
+        type: 'NORMAL'
     }
 
     // Using a copied `buffer` for the active script
@@ -293,7 +294,6 @@
                 ...hmsExecutionResults,
                 {
                     response: hmsRes,
-                    code: selectedData.code,
                     modeRun: true,
                 },
             ]
@@ -312,7 +312,6 @@
                 ...hmsExecutionResults,
                 {
                     response: hmsRes,
-                    code: selectedData.code,
                     modeRun: false,
                 },
             ]

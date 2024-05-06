@@ -12,7 +12,7 @@
 
     // Data is bound to display the result
     export let data: homescriptResponseWrapper
-    $: console.log(`DATA: `, data)
+    $: console.log(`DATA: `, data.response)
 </script>
 
 <Dialog

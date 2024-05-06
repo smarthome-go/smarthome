@@ -18,8 +18,10 @@
             .replaceAll('\n', '<br>')
     }
 
+    // TODO: add modern version.
+
     function errToHtml(err: homescriptError, data: hmsResWrapper): string {
-        const fromContents = data.fileContents.get(err.span.filename)
+        const fromContents = data.fileContents[err.span.filename]
 
         let code = fromContents
         let missingSources = false
