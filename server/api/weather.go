@@ -32,6 +32,18 @@ func GetWeather(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func GetWeatherStatus(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	_, err := weather.GetCurrentWeather()
+	if err != nil {
+		if err.Error() == "invalid api key" {
+			w.WriteHeader(http.StatusPaymentRequired)
+			return
+		}
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // Used as a fallback when the normal weather fails (due to network conditions)
 func GetCachedWeather(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")

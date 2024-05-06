@@ -217,6 +217,7 @@ func NewRouter() *mux.Router {
 	// Weather
 	r.HandleFunc("/api/weather/key/modify", mdl.ApiAuth(mdl.Perm(api.UpdateOpenWeatherMapApiKey, database.PermissionSystemConfig))).Methods("PUT")
 	r.HandleFunc("/api/weather", mdl.ApiAuth(api.GetWeather)).Methods("GET")
+	r.HandleFunc("/api/weather/status", mdl.ApiAuth(api.GetWeatherStatus)).Methods("GET")
 	r.HandleFunc("/api/weather/cached", mdl.ApiAuth(api.GetCachedWeather)).Methods("GET")
 
 	// Cache Purging

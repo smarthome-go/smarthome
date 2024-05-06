@@ -9,8 +9,21 @@
     import Box from './Box.svelte'
     import Progress from '../../components/Progress.svelte'
     import { runHomescriptById } from '../../homescript'
+    import { onMount } from 'svelte';
 
+
+    async function weatherStatus(): Promise<boolean> {
+        let res = (await fetch("/api/weather/status")).status
+        return res == 204
+    }
+
+    let weatherShown = false
     let homescripts = undefined
+
+    onMount(async () => {
+        weatherShown = await weatherStatus()
+    })
+
 </script>
 
 <Page>
@@ -21,7 +34,11 @@
         {#if $data && hasPermissionSync('homescript')}
             <QuickActions bind:homescripts />
         {/if}
-        <Weather />
+
+        {#if weatherShown}
+            <Weather />
+        {/if}
+
         {#if ($data && hasPermissionSync('automation')) || hasPermissionSync('scheduler')}
             <AutomationsSchedules />
         {/if}
