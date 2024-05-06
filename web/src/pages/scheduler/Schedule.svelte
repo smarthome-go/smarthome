@@ -1,6 +1,6 @@
 <script lang="ts">
     import IconButton from "@smui/icon-button/src/IconButton.svelte";
-    import { lintHomescriptCode } from "../../homescript";
+    import { lintHomescriptCode, type homescriptError } from "../../homescript";
     import { createEventDispatcher, onMount } from "svelte";
     import ConfirmDeletion from "./dialogs/ConfirmDeletion.svelte";
     import EditSchedule from "./dialogs/EditSchedule.svelte";
@@ -48,6 +48,20 @@
         }
 
         setTimeout(updateTimeUntilExecutionText, 1000);
+    }
+
+    function displayErr(err: homescriptError): string {
+        if (err.syntaxError) {
+            return "SyntaxError"
+        }
+
+        if (err.diagnosticError) {
+            return "SemanticError"
+        }
+
+        if (err.runtimeError) {
+            return "RuntimeError"
+        }
     }
 
     // Start the time updater
@@ -117,7 +131,7 @@
                         {#await lintHomescriptCode($homescripts.find((h) => h.data.id === data.data.homescriptTargetId).data.code, [], "", false)}
                             <Progress type="circular" loading={true} />
                         {:then res}
-                            {res.success ? "Working" : res.errors[0].kind}
+                            {res.success ? "Working" : displayErr(res.errors[0])}
                             <i
                                 class="material-icons"
                                 class:passing={res.success}
@@ -138,7 +152,7 @@
                         {#await lintHomescriptCode(data.data.homescriptCode, [], '', false)}
                             <Progress type="circular" loading={true} />
                         {:then res}
-                            {res.success ? "Working" : res.errors[0].kind}
+                            {res.success ? "Working" : displayErr(res.errors[0])}
                             <i
                                 class="material-icons"
                                 class:passing={res.success}

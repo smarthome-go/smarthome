@@ -47,10 +47,12 @@ func (m SchedulerManager) startSavedSchedules() error {
 	}
 	for _, schedule := range schedules {
 		// Prepare the job for go-cron
-		schedulerJob := m.scheduler.Every(1).Day().At(fmt.Sprintf("%02d:%02d", schedule.Data.Hour, schedule.Data.Minute))
+		schedulerJob := m.scheduler.Every(1).Day().At(
+			fmt.Sprintf("%02d:%02d", schedule.Data.Hour, schedule.Data.Minute),
+		)
 		schedulerJob.Tag(fmt.Sprintf("%d", schedule.Id))
 		schedulerJob.LimitRunsTo(1)
-		if _, err := schedulerJob.Do(scheduleRunnerFunc, schedule.Id); err != nil {
+		if _, err := schedulerJob.Do(scheduleRunnerFunc, schedule.Id, &m); err != nil {
 			log.Error("Failed to activates saved schedules: could not register cronjob: ", err.Error())
 			return err
 		}

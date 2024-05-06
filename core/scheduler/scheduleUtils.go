@@ -27,10 +27,12 @@ func (m SchedulerManager) CreateNewScheduleInternal(
 	schedulerJob := m.scheduler.Every(1).Day().At(fmt.Sprintf("%02d:%02d", hour, minute))
 	schedulerJob.Tag(scheduleTag)
 	schedulerJob.LimitRunsTo(1)
+
 	if _, err := schedulerJob.Do(callBack, callbackArgs...); err != nil {
 		log.Error("Failed to create new schedule: could not register cron job: ", err.Error())
 		return err
 	}
+
 	log.Trace(fmt.Sprintf("Successfully added and setup schedule '%s'", scheduleTag))
 	return nil
 }
@@ -49,6 +51,7 @@ func (m SchedulerManager) CreateNewSchedule(data database.ScheduleData, owner st
 		fmt.Sprint(newScheduleID),
 		scheduleRunnerFunc,
 		newScheduleID,
+		&m,
 	); err != nil {
 		return 0, err
 	}

@@ -21,7 +21,7 @@ const SCHEDULE_MAXIMUM_HOMESCRIPT_RUNTIME = time.Minute * 10
 // If the user's schedulers are currently disabled
 // the job runner will still be executed and remove the current scheduler but without running the homescript
 // Error handling works in a similar way to the runner of the automation system
-func scheduleRunnerFunc(id uint, m SchedulerManager) {
+func scheduleRunnerFunc(id uint, m *SchedulerManager) {
 	job, jobFound, err := database.GetScheduleById(id)
 	if err != nil {
 		log.Error(fmt.Sprintf("Failed to run schedule '%s': database failure whilst retrieving job information: %s", job.Data.Name, err.Error()))
@@ -172,7 +172,7 @@ func scheduleRunnerFunc(id uint, m SchedulerManager) {
 			)
 			return
 		}
-		if !res.Errors.ContainsError {
+		if res.Errors.ContainsError {
 			log.Error("Executing schedule's Homescript failed: ", res.Errors.Diagnostics[0])
 			if _, err := notify.Manager.Notify(
 				owner.Username,
