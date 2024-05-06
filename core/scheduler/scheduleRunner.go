@@ -121,7 +121,7 @@ func scheduleRunnerFunc(id uint, m *SchedulerManager) {
 			return
 		}
 
-		if !res.Errors.ContainsError {
+		if res.Errors.ContainsError {
 			log.Error("Executing schedule's Homescript failed: ", res.Errors.Diagnostics[0])
 			if _, err := notify.Manager.Notify(
 				owner.Username,
@@ -172,12 +172,16 @@ func scheduleRunnerFunc(id uint, m *SchedulerManager) {
 			)
 			return
 		}
+
 		if res.Errors.ContainsError {
 			log.Error("Executing schedule's Homescript failed: ", res.Errors.Diagnostics[0])
 			if _, err := notify.Manager.Notify(
 				owner.Username,
 				"Schedule Failed",
-				fmt.Sprintf("Schedule '%s' failed due to Homescript execution error: %s", job.Data.Name, res.Errors.Diagnostics[0]),
+				fmt.Sprintf(
+					"Schedule '%s' failed due to Homescript execution error: %s",
+					job.Data.Name, res.Errors.Diagnostics[0],
+				),
 				notify.NotificationLevelError,
 				true,
 			); err != nil {

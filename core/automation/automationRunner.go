@@ -222,7 +222,8 @@ func AutomationRunnerFunc(id uint, automationCtx types.ExecutionContextAutomatio
 		}
 		return
 	}
-	if !res.Errors.ContainsError {
+
+	if res.Errors.ContainsError {
 		log.Warn(fmt.Sprintf("Automation '%s' failed during the execution of Homescript: '%s', which terminated abnormally", job.Data.Name, job.Data.HomescriptId))
 		event.Error(
 			"Automation Failed",
@@ -248,6 +249,7 @@ func AutomationRunnerFunc(id uint, automationCtx types.ExecutionContextAutomatio
 		}
 		return
 	}
+
 	event.Debug(
 		"Automation Executed Successfully",
 		fmt.Sprintf("Automation `%s` (%d) of user '%s' has executed successfully.", job.Data.Name, id, job.Owner),
