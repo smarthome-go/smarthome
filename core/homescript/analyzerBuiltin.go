@@ -49,6 +49,10 @@ func (self analyzerHost) PostValidationHook(
 		// Forbid `trigger` annotations in non-drivers.
 		for _, mod := range analyzedModules {
 			for _, fn := range mod.Functions {
+				if fn.Annotation == nil {
+					continue
+				}
+
 				for _, ann := range fn.Annotation.Items {
 					switch ann.(type) {
 					case ast.AnalyzedAnnotationItemTrigger:
