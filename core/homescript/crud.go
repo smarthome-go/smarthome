@@ -150,12 +150,14 @@ func ListPersonal(username string) ([]database.Homescript, error) {
 		return nil, err
 	}
 
+	output := make([]database.Homescript, 0)
+
 	for _, script := range base {
 		if script.Owner != username {
 			continue
 		}
 
-		base = append(base, script)
+		output = append(output, script)
 	}
 
 	return base, nil
