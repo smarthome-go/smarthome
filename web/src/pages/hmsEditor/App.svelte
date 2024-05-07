@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Split from 'split-grid'
+    import Split, { type SplitInstance } from 'split-grid'
     import Page from '../../Page.svelte'
     import { createSnackbar } from '../../global'
     import { lintHomescriptCode } from '../../homescript'
@@ -29,9 +29,6 @@
 
     // Specifies whether the argument prompt dialog should be open or closed
     let argumentsPromptOpen = false
-
-    // Specifies whether the alternate layout (larger terminal) should be active or not
-    let layoutAlt = false
 
     // Specifies if additional linter information should be shown
     // This raises the lint-level to `info`
@@ -533,23 +530,13 @@
     }
 
 
+    let split: SplitInstance = null
+
     // Load the Homescript-list at the beginning
     onMount(async () => {
-        // Resizing setup.
-        Split({
-            onDragEnd: updateTerminalSizeAfterDrag,
-            onDragStart: blurTerminalOnDrag,
-            columnMinSizes: { 0: 50, 2: 50, 4: 50 },
-            columnGutters: [
-            {
-                track: 1,
-                element: document.querySelector('.container__gutter-1'),
-            },
-            {
-                track: 3,
-                element: document.querySelector('.container__gutter-3'),
-            }
-            ],
+        let onMobile = window.matchMedia("(max-width: 47rem)")
+        onMobile.addEventListener("change", () => {
+            registerMobile(onMobile)
         })
 
         // Used for initially setting the active script via URL query
@@ -564,8 +551,81 @@
 
         currentScript = selectedFromQuery
 
-        updateTerminalSizeAfterDrag('column', 3)
+        registerMobile(onMobile)
     })
+
+    function registerDesktop(mediaQuery: MediaQueryList) {
+        if (mediaQuery.matches) {
+            return
+        }
+
+        if (split !== null)
+            split.destroy()
+
+        console.log("Register desktop...")
+
+        // Resizing setup.
+        split = Split({
+            onDragEnd: updateTerminalSizeAfterDrag,
+            onDragStart: blurTerminalOnDrag,
+
+            columnMinSizes: { 0: 50, 2: 50, 4: 50 },
+            columnGutters: [
+            {
+                track: 1,
+                element: document.querySelector('.container__gutter-1'),
+            },
+            {
+                track: 3,
+                element: document.querySelector('.container__gutter-3'),
+            }
+            ],
+        })
+
+        updateTerminalSizeAfterDrag('column', 3)
+    }
+
+    let container: HTMLDivElement = null
+    const GUTTER_WIDTH = 5;
+
+    function registerMobile(mediaQuery: MediaQueryList) {
+        // TODO: solve this!
+
+        if (!mediaQuery.matches) {
+            registerDesktop(mediaQuery)
+            return
+        }
+
+        if (split !== null)
+            split.destroy()
+
+
+        // container.style.gridTemplateRows = `2.5fr ${GUTTER_WIDTH} 9fr ${GUTTER_WIDTH} 350px`
+
+        console.log("Register mobile...")
+
+        split = Split({
+            rowMinSizes: { 0: 50, 2: 50, 4: 50 },
+
+            gridTemplateRows: `2.5fr 9fr 350px`,
+
+            onDragStart: (direction, track) => {
+            },
+            onDragEnd: (direction, track) => {
+            },
+
+            rowGutters: [
+            {
+                track: 1,
+                element: document.querySelector('.container__gutter-1'),
+            },
+            {
+                track: 3,
+                element: document.querySelector('.container__gutter-3'),
+            }
+            ],
+        })
+    }
 </script>
 
 {#if argumentsPromptOpen && homescripts.find(h => h.data.data.data.id === currentScript).data.arguments.length > 0}
@@ -611,9 +671,6 @@
                 {/if}
             </div>
             <div id="header__buttons">
-                <IconButton class="material-icons" on:click={() => (layoutAlt = !layoutAlt)}
-                    >vertical_split</IconButton
-                >
                 <IconButton
                     class="material-icons"
                     on:click={saveCurrent}
@@ -623,7 +680,7 @@
             </div>
         </div>
 
-        <div class="container">
+        <div class="container" bind:this={container}>
             <div class="container__left" class:resizing={editorLeftResizing}>
                 <EditorLeft
                     bind:currentData
@@ -634,7 +691,7 @@
 
             <div class="container__gutter-col container__gutter-1"></div>
 
-            <div class="container__editor" class:alt={layoutAlt}>
+            <div class="container__editor">
                 {#if homescriptsLoaded}
                 <HmsEditor
                     on:lint={(e) => displayLintResult(e.detail)}
@@ -648,7 +705,7 @@
 
             <div class="container__gutter-col container__gutter-3"></div>
 
-            <div class="container__terminal" class:alt={layoutAlt} bind:this={terminalDiv} class:resizing={terminalResizing}>
+            <div class="container__terminal" bind:this={terminalDiv} class:resizing={terminalResizing}>
                 <div class="container__terminal__header mdc-elevation--z2">
                     <div class="container__terminal__header__left">
                         <IconButton
@@ -788,19 +845,19 @@
         display: grid;
         grid-template-columns: 2.5fr $gutter-width 9fr $gutter-width 350px;
 
+        @include mobile {
+            grid-template-rows: 2.5fr $gutter-width 9fr $gutter-width 350px;
+            grid-template-columns: unset;
+            height: calc(100vh - 9rem);
+        }
+
         overflow: hidden;
         height: calc(100vh - 3.67rem);
 
-        @include mobile {
-            //height: calc(100vh - 9rem);
-        }
-
-        // @include widescreen {
-            // flex-direction: row;
-        // }
 
         &__gutter-col {
             grid-row: 1/-1;
+
             cursor: col-resize;
             background: repeating-linear-gradient(
                 45deg,
@@ -813,10 +870,20 @@
 
         &__gutter-1 {
             grid-column: 2;
+
+            @include mobile {
+                grid-row: 2;
+                grid-column: unset;
+            }
         }
 
         &__gutter-3 {
             grid-column: 4;
+
+            @include mobile {
+                grid-row: 4;
+                grid-column: unset;
+            }
         }
 
         @mixin on-resize {

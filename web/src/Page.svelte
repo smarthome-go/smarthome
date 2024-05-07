@@ -83,6 +83,10 @@
         &.slimNav {
             margin-left: 5.125rem;
             transition: margin-left 0.3s;
+
+            @include mobile {
+                margin-left: 0;
+            }
         }
     }
 </style>
