@@ -559,7 +559,7 @@
             return
         }
 
-        if (split !== null)
+        if (split)
             split.destroy()
 
         console.log("Register desktop...")
@@ -596,7 +596,7 @@
             return
         }
 
-        if (split !== null)
+        if (split)
             split.destroy()
 
 
@@ -605,9 +605,8 @@
         console.log("Register mobile...")
 
         split = Split({
-            rowMinSizes: { 0: 50, 2: 50, 4: 50 },
-
-            gridTemplateRows: `2.5fr 9fr 350px`,
+            rowMinSizes: { 0: 30, 2: 50, 4: 55 },
+            gridTemplateRows: `1fr 8px 4fr 8px 1fr`,
 
             onDragStart: (direction, track) => {
             },
@@ -848,11 +847,11 @@
         @include mobile {
             grid-template-rows: 2.5fr $gutter-width 9fr $gutter-width 350px;
             grid-template-columns: unset;
-            height: calc(100vh - 9rem);
+            height: calc(100vh - 6.9rem);
         }
 
-        overflow: hidden;
         height: calc(100vh - 3.67rem);
+        //overflow: hidden;
 
 
         &__gutter-col {
@@ -901,6 +900,10 @@
         &__left {
             display: flex;
             flex-direction: column;
+
+            @include mobile {
+                overflow-y: auto;
+            }
 
             @include on-resize;
         }
