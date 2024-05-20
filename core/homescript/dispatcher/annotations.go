@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/smarthome-go/homescript/v3/homescript"
@@ -35,16 +36,24 @@ func (i *InstanceT) RegisterDriverAnnotations() error {
 		return err
 	}
 
+	errs := make([]string, 0)
+
 	for _, driver := range drivers {
 		if err := i.ReloadDriver(driver); err != nil {
-			return err
+			errs = append(errs, err.Error())
 		}
+	}
+
+	if len(errs) != 0 {
+		return fmt.Errorf("Could not reload drivers: %s", strings.Join(errs, "; "))
 	}
 
 	return nil
 }
 
 func (i *InstanceT) ReloadDriver(driver database.DeviceDriver) error {
+	errCnt := 0
+
 	devices, err := database.ListAllDevices()
 	if err != nil {
 		return err
@@ -57,7 +66,7 @@ func (i *InstanceT) ReloadDriver(driver database.DeviceDriver) error {
 
 		if err := i.RegisterDevice(driver, device.ID); err != nil {
 			logger.Errorf("Failed to register device: %s", err.Error())
-			return err
+			errCnt++
 		}
 	}
 
@@ -66,6 +75,10 @@ func (i *InstanceT) ReloadDriver(driver database.DeviceDriver) error {
 	}
 
 	logger.Infof("Successfully reloaded driver `%s:%s`", driver.VendorID, driver.ModelID)
+
+	if errCnt != 0 {
+		return fmt.Errorf("%d device(s) could not be registered", errCnt)
+	}
 
 	return nil
 }
@@ -81,6 +94,10 @@ func (i *InstanceT) RegisterDevice(driver database.DeviceDriver, deviceID string
 
 	for id, reg := range doneRegs {
 		var ctx types.ExecutionContext
+
+		if reg.Function == nil || reg.Function.CallMode == nil {
+			continue
+		}
 
 		switch mode := reg.Function.CallMode.(type) {
 		case dispatcherTypes.CallModeAllocating:
@@ -175,8 +192,19 @@ func (i *InstanceT) RegisterDevice(driver database.DeviceDriver, deviceID string
 				untypedList := args[0].(value.ValueList).Values
 
 				topics := make([]string, len(*untypedList))
+				containsEmpty := false
 				for idx, arg := range *untypedList {
-					topics[idx] = (*arg).(value.ValueString).Inner
+					vString := (*arg).(value.ValueString).Inner
+					topics[idx] = vString
+
+					if vString == "" && !containsEmpty {
+						containsEmpty = true
+					}
+				}
+
+				// Sanity-check the arguments.
+				if len(topics) == 0 || containsEmpty {
+					return fmt.Errorf("Empty lists or empty strings are not allowed as topics")
 				}
 
 				if err := i.RegisterTriggerAnnotation(

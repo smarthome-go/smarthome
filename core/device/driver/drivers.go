@@ -283,25 +283,36 @@ outer:
 // Apart from actually modifying the code of the driver in the DB,
 // the saved singleton state of this driver and all dependent devices must be rebuilt.
 func (d DriverManager) ModifyCode(vendorID, modelID, newCode string) (found bool, dbErr error) {
-	// Try to create default JSON from schema.
+	// Try to create default JSON from schema. TODO: why default: ???
 	// This can fail if the Homescript code is invalid.
 	configInfo, hmsErrs, err := d.extractInfoFromDriver(vendorID, modelID, newCode)
 	if err != nil {
 		return false, err
 	}
 
-	objVal := value.ValueObject{FieldsInternal: make(map[string]*value.Value)}
-	// Do not overwrite everything, calculate a new stored value.
+	// Only apply transactions if there are no errors in the code.
+	// Otherwise, the stored data of every singleton would be erased as soon as there is an error.
 	if hmsErrs != nil {
+		log.Debugf("[singleton] Not updating singleton stores of driver / devices due to errors in new code")
+		return true, nil
+	}
+
+	objVal := value.ValueObject{FieldsInternal: make(map[string]*value.Value)}
+
+	// TODO: add proper error handling in here:
+	// - check if there is an erorr and return early
+	// - otherwise (no error) load the current data and perform the patches on it.
+
+	if hmsErrs == nil {
 		old := DriverStore[database.DriverTuple{
 			VendorID: vendorID,
 			ModelID:  modelID,
 		}]
 		objVal = (*ApplyNewSchemaOnObjData(old, configInfo.DriverConfig.Info.HmsType)).(value.ValueObject)
-	}
 
-	if err := StoreDriverSingletonBackend(vendorID, modelID, objVal); err != nil {
-		return false, err
+		if err := StoreDriverSingletonBackend(vendorID, modelID, objVal); err != nil {
+			return false, err
+		}
 	}
 
 	// Also patch every device that uses this driver.

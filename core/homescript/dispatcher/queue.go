@@ -24,8 +24,8 @@ func NewQueue() PendingQueue {
 
 func (q *PendingQueue) Enqueue(add dispatcherTypes.RegisterInfo) {
 	q.lock.Lock()
-	defer q.lock.Unlock()
 	q.internal = append(q.internal, add)
+	q.lock.Unlock()
 }
 
 func (q *PendingQueue) Dequeue() *dispatcherTypes.RegisterInfo {
@@ -35,9 +35,8 @@ func (q *PendingQueue) Dequeue() *dispatcherTypes.RegisterInfo {
 	}
 
 	q.lock.Lock()
-	defer q.lock.Unlock()
-
 	q.internal = q.internal[1:]
+	q.lock.Unlock()
 
 	return first
 }
@@ -66,6 +65,9 @@ func (q *PendingQueue) IsEmpty() bool {
 //
 
 func (i *InstanceT) RegisterPending() error {
+	// i.PendingRegistrations.lock.Lock()
+	// defer i.PendingRegistrations.lock.Unlock()
+
 	logger.Debug("Trying to register pending registrations...")
 
 	var generalErr error
@@ -104,6 +106,12 @@ func (i *InstanceT) Register(
 	}
 
 	// Retry this registration if feasible.
+	// i.PendingRegistrations.lock.Lock()
+	// defer i.PendingRegistrations.lock.Unlock()
+
 	i.PendingRegistrations.Enqueue(info)
+
+	// panic("b")
+
 	return 0, err
 }

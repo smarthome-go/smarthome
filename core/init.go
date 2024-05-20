@@ -3,6 +3,7 @@ package core
 import (
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/smarthome-go/smarthome/core/automation"
 	"github.com/smarthome-go/smarthome/core/database"
@@ -15,7 +16,25 @@ import (
 	"github.com/smarthome-go/smarthome/services/reminder"
 )
 
+var dispatcherInitialized = struct {
+	lock  sync.Mutex
+	value bool
+}{
+	lock:  sync.Mutex{},
+	value: false,
+}
+
 func OnMqttRetryHook() error {
+	dispatcherInitialized.lock.Lock()
+	initialized := dispatcherInitialized.value
+	dispatcherInitialized.lock.Unlock()
+
+	if !initialized {
+		return nil
+	}
+
+	// TODO: weird mutex errors, use a channel, it would be better!
+
 	return dispatcher.Instance.RegisterPending()
 }
 
@@ -32,9 +51,7 @@ func InitDevices() error {
 	// 	fmt.Printf("\t -> errors=%v\n", device.Extractions.HmsErrors)
 	// }
 
-	dispatcher.Instance.RegisterDriverAnnotations()
-
-	return nil
+	return dispatcher.Instance.RegisterDriverAnnotations()
 }
 
 func Init(config database.ServerConfig) error {
@@ -50,7 +67,13 @@ func Init(config database.ServerConfig) error {
 	}
 
 	// Homescript dispatcher initialization
-	dispatcher.InitInstance(hmsManager, mqttManager)
+	if err := dispatcher.InitInstance(hmsManager, mqttManager); err != nil {
+		return fmt.Errorf("Failed to initialize HMS dispatcher: %s", err.Error())
+	}
+
+	dispatcherInitialized.lock.Lock()
+	dispatcherInitialized.value = true
+	dispatcherInitialized.lock.Unlock()
 
 	// Homescript driver initialization
 	driver.InitManager(hmsManager)
@@ -84,7 +107,7 @@ func Init(config database.ServerConfig) error {
 	//
 
 	if err := InitDevices(); err != nil {
-		return err
+		log.Errorf("Failed to initialize all devices, using best effort attempt: %s", err.Error())
 	}
 
 	//

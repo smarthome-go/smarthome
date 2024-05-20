@@ -44,12 +44,16 @@ type InstanceT struct {
 	Mqtt                 *MqttManager
 	DoneRegistrations    dispatcherTypes.Registrations
 	PendingRegistrations PendingQueue
-	// Lock                 sync.Mutex
+
+	// Used to prevent runaway retries
+	LastRegistrationErrorTime time.Time
 }
+
+const ErrorCooldown = time.Second
 
 var Instance InstanceT
 
-func InitInstance(hms types.Manager, mqtt *MqttManager) {
+func InitInstance(hms types.Manager, mqtt *MqttManager) error {
 	Instance = InstanceT{
 		Hms:  hms,
 		Mqtt: mqtt,
@@ -59,8 +63,15 @@ func InitInstance(hms types.Manager, mqtt *MqttManager) {
 			MqttRegistrations:      make(map[string][]dispatcherTypes.RegistrationID),
 			SchedulerRegistrations: make(map[string]dispatcherTypes.RegistrationID),
 		},
-		PendingRegistrations: NewQueue(),
+		PendingRegistrations:      NewQueue(),
+		LastRegistrationErrorTime: time.Time{},
 	}
+
+	if err := Instance.Mqtt.init(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (self *InstanceT) MQTTStatus() error {
@@ -92,15 +103,16 @@ func (i *InstanceT) generatePotentialID() dispatcherTypes.RegistrationID {
 }
 
 func (i *InstanceT) AllocRegistrationID() dispatcherTypes.RegistrationID {
+	i.DoneRegistrations.Lock.Lock()
+	defer i.DoneRegistrations.Lock.Unlock()
+
 	for {
 		potential := i.generatePotentialID()
-		i.DoneRegistrations.Lock.Lock()
 		_, invalid := i.DoneRegistrations.Set[potential]
 
 		if !invalid {
 			// nolint:exhaustruct
 			i.DoneRegistrations.Set[potential] = dispatcherTypes.RegisterInfo{}
-			i.DoneRegistrations.Lock.Unlock()
 			return potential
 		}
 	}
@@ -123,27 +135,23 @@ func (i *InstanceT) registerInternal(info dispatcherTypes.RegisterInfo) (dispatc
 
 	if info.Function.CallMode.Kind() == dispatcherTypes.CallModeKindAdaptive {
 		i.DoneRegistrations.Lock.RLock()
+		registrations := i.DoneRegistrations.Set
+		i.DoneRegistrations.Lock.RUnlock()
 
-		for id, infoIter := range i.DoneRegistrations.Set {
+		for id, infoIter := range registrations {
 			if infoIter.Function == nil {
 				panic("Function may not be <nil>")
 			}
 
 			if infoIter.Function.CallMode.Kind() == dispatcherTypes.CallModeKindAdaptive && infoIter.ProgramID == info.ProgramID {
-				i.DoneRegistrations.Lock.RUnlock()
-
 				// Remove this old registration.
 				if err := i.Unregister(id); err != nil {
-					i.DoneRegistrations.Lock.RUnlock()
 					return 0, err
 				}
 
 				logger.Debugf("Unregistered old ADAPTIVE job with id %d\n", id)
-				i.DoneRegistrations.Lock.RLock()
 			}
 		}
-
-		i.DoneRegistrations.Lock.RUnlock()
 	}
 
 	id := i.AllocRegistrationID()
@@ -215,7 +223,6 @@ func (i *InstanceT) registerInternal(info dispatcherTypes.RegisterInfo) (dispatc
 
 func (i *InstanceT) Unregister(id dispatcherTypes.RegistrationID) error {
 	i.DoneRegistrations.Lock.Lock()
-	defer i.DoneRegistrations.Lock.Unlock()
 
 	_, valid := i.DoneRegistrations.Set[id]
 	if !valid {
@@ -226,8 +233,11 @@ func (i *InstanceT) Unregister(id dispatcherTypes.RegistrationID) error {
 
 	var unregisterErr error
 
+	mqttRegistrations := i.DoneRegistrations.MqttRegistrations
+	i.DoneRegistrations.Lock.Unlock()
+
 	// Also delete all references in MQTT.
-	for topic, ids := range i.DoneRegistrations.MqttRegistrations {
+	for topic, ids := range mqttRegistrations {
 		if slices.Contains[[]dispatcherTypes.RegistrationID](ids, id) {
 			if err := i.Mqtt.Unsubscribe(topic); err != nil && unregisterErr == nil {
 				unregisterErr = err
@@ -235,7 +245,9 @@ func (i *InstanceT) Unregister(id dispatcherTypes.RegistrationID) error {
 
 			if len(ids) == 1 {
 				// Remove entire topic from map.
+				i.DoneRegistrations.Lock.Lock()
 				delete(i.DoneRegistrations.MqttRegistrations, topic)
+				i.DoneRegistrations.Lock.Unlock()
 				continue
 			}
 
@@ -247,7 +259,9 @@ func (i *InstanceT) Unregister(id dispatcherTypes.RegistrationID) error {
 				newSlice = append(newSlice, idToCheck)
 			}
 
+			i.DoneRegistrations.Lock.Lock()
 			i.DoneRegistrations.MqttRegistrations[topic] = newSlice
+			i.DoneRegistrations.Lock.Unlock()
 		}
 	}
 
@@ -420,6 +434,7 @@ func (i *InstanceT) mqttCallBack(_ mqtt.Client, message mqtt.Message) {
 
 	i.DoneRegistrations.Lock.RLock()
 	defer i.DoneRegistrations.Lock.RUnlock()
+
 	for _, registrationID := range i.DoneRegistrations.MqttRegistrations[topic] {
 		registration, found := i.DoneRegistrations.Set[registrationID]
 		if !found {

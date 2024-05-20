@@ -33,7 +33,7 @@ const jobIDNumDigits = 16
 
 // Only for debugging.
 
-const printDebugASM = true
+const printDebugASM = false
 
 var VM_LIMITS = runtime.CoreLimits{
 	CallStackMaxSize: 128,
