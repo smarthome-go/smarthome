@@ -25,7 +25,7 @@
     export let hasErrors: boolean
 </script>
 
-<div class="device mdc-elevation--z3" class:wide={isWide} class:tall={isTall} class:errors={hasErrors}>
+<div class="device mdc-elevation--z3" class:wide={isWide} class:tall={isTall} class:errors={hasErrors} class:loading>
     <div class="device__top" class:errors={hasErrors}>
         <slot name="top"></slot>
 
@@ -68,10 +68,13 @@
         padding: 0.5rem;
         display: flex;
         flex-direction: column;
+        transition-property: filter;
+        transition-duration: .1s;
+        transition-timing-function: ease-in-out;
 
         &.tall {
             height: auto;
-            min-height: 3.3rem;
+            min-height: 10rem;
         }
 
         &.wide {
@@ -95,6 +98,11 @@
         &.errors {
             height: auto;
             background-color: var(--clr-height-0-3);
+        }
+
+        &.loading {
+            @include device_error;
+            filter: saturate(10%)
         }
 
         &__top {

@@ -13,10 +13,11 @@
     import EditRoom from './dialogs/room/EditRoom.svelte'
     import LocalSettings from './dialogs/room/LocalSettings.svelte'
     import AddDevice from './dialogs/device/AddDevice.svelte'
-    import { loading, powerCamReloadEnabled } from './main'
+    import { requests, powerCamReloadEnabled } from './main'
     import Device from './Device.svelte'
     import type { Room } from '../../room';
     import type { CreateDeviceRequest, HydratedDeviceResponse, ModifyDeviceRequest } from '../../device';
+    import type { DriverDeviceCapabilitiesInfo } from '../../driver';
 
     // If set to true, a camera-reload is triggered
     let reloadCameras = false
@@ -51,14 +52,36 @@
     // Determines if additional buttons for editing rooms should be visible
     let hasEditPermission: boolean
     let hasViewCamerasPermission: boolean
-    onMount(async () => {
-        hasEditPermission = await hasPermission('modifyRooms')
-        hasViewCamerasPermission = await hasPermission('viewCameras')
-    })
+
+    let loading = false;
+    $: loading = $requests > 0
+
+    let capabilities: DriverDeviceCapabilitiesInfo[] = null
+
+    // Fetches the available drivers and the capabilities of their devices.
+    async function loadDriverDeviceCapabilities() {
+        $requests++
+        try {
+            const res = await ( await fetch("/api/devices/capabilities")).json()
+            if (res.success === false) throw "Could not fetch driver device capabilities"
+
+            const driverList = res as DriverDeviceCapabilitiesInfo[]
+            capabilities = driverList
+
+            // const roomId = window.localStorage.getItem('current_room')
+            // const room = roomId === null ? undefined : rooms.find(r => r.data.id === roomId)
+            // currentRoom = room === undefined ? rooms[0] : room
+
+        } catch (e) {
+            $createSnackbar(e)
+        }
+
+        $requests--
+    }
 
     // Fetches the available rooms.
     async function loadRooms(updateExisting = false) {
-        $loading = true
+        $requests++
         try {
             const personalOrAllSegment = (await hasPermission('modifyRooms')) ? 'all' : 'personal'
             const res = await ( await fetch( `/api/room/list/${personalOrAllSegment}`)).json()
@@ -83,12 +106,12 @@
             ])
         }
         while (rooms === undefined) await sleep(10)
-        $loading = false
+        $requests--
     }
 
     // Adds a room
     async function addRoom(id: string, name: string, description: string) {
-        $loading = true
+        $requests++
         try {
             const res = await (
                 await fetch(`/api/room/add`, {
@@ -116,12 +139,13 @@
         } catch (err) {
             $createSnackbar(`Failed to create room: ${err}`)
         }
-        $loading = false
+
+        $requests--
     }
 
     // Adds a device.
     async function addDevice(req: CreateDeviceRequest) {
-        $loading = true
+        $requests++
 
         try {
             req.roomId = currentRoom.data.id
@@ -158,12 +182,14 @@
         } catch (err) {
             $createSnackbar(`Could not create device: ${err}`)
         }
-        $loading = false
+
+        $requests--
     }
 
     // Adds a camera
     async function addCamera(id: string, name: string, url: string) {
-        $loading = true
+        $requests++
+
         try {
             const res = await (
                 await fetch('/api/camera/add', {
@@ -187,12 +213,14 @@
         } catch (err) {
             $createSnackbar(`Could not create camera: ${err}`)
         }
-        $loading = false
+
+        $requests--
     }
 
     // Deletes a camera
     async function deleteCamera(id: string) {
-        $loading = true
+        $requests++
+
         try {
             const res = await (
                 await fetch('/api/camera/delete', {
@@ -206,12 +234,14 @@
         } catch (err) {
             $createSnackbar(`Could not delete camera: ${err}`)
         }
-        $loading = false
+
+        $requests--
     }
 
     // Deletes a device.
     async function deleteDevice(id: string) {
-        $loading = true
+        $requests++
+
         try {
             const res = await (
                 await fetch('/api/devices/delete', {
@@ -225,12 +255,14 @@
         } catch (err) {
             $createSnackbar(`Could not delete device: ${err}`)
         }
-        $loading = false
+
+        $requests--
     }
 
 
     async function modifyDevice(data: HydratedDeviceResponse) {
-        $loading = true
+        $requests++
+
         try {
             let request: ModifyDeviceRequest = {
                 id: data.shallow.id,
@@ -258,8 +290,16 @@
             }
             $createSnackbar(`Could not edit device: ${err}`)
         }
-        $loading = false
+
+        $requests--
     }
+
+    onMount(async () => {
+        // This call is non-blocking on purpose.
+        loadDriverDeviceCapabilities()
+        hasEditPermission = await hasPermission('modifyRooms')
+        hasViewCamerasPermission = await hasPermission('viewCameras')
+    })
 </script>
 
 <Page>
@@ -310,7 +350,7 @@
                 >add</IconButton
             >
         {/if}
-        <Progress id="loader" bind:loading={$loading} />
+        <Progress id="loader" bind:loading={loading} />
     </div>
 
     <div id="content">
@@ -330,15 +370,23 @@
                 </div>
             {:else}
                 <!-- TODO: pack smaller devices into 'chunks' or 'groups' OR allow the user to pick an order? -->
-                {#each currentRoom !== undefined ? currentRoom.devices : [] as device (device.id)}
-                    <Device
-                        bind:shallow={device}
-                        on:delete={() => deleteDevice(device.id)}
-                        on:modify={(e) => modifyDevice(e.detail)}
-                        on:powerChange={() => (reloadCameras = $powerCamReloadEnabled)}
-                        on:powerChangeDone={() => (reloadCameras = false)}
-                    />
-                {/each}
+                {#if capabilities != null}
+                    {#each currentRoom !== undefined ? currentRoom.devices : [] as device (device.id)}
+                        <Device
+                            capabilities={
+                                capabilities.find(
+                                    c => c.modelId === device.modelId
+                                    && c.vendorId === device.vendorId
+                                ).capabilities
+                            }
+                            bind:shallow={device}
+                            on:delete={() => deleteDevice(device.id)}
+                            on:modify={(e) => modifyDevice(e.detail)}
+                            on:powerChange={() => (reloadCameras = $powerCamReloadEnabled)}
+                            on:powerChangeDone={() => (reloadCameras = false)}
+                        />
+                    {/each}
+                {/if}
                 {#if hasEditPermission}
                     <div id="add-device" class="switch mdc-elevation--z3">
                         <span>Add Device</span>

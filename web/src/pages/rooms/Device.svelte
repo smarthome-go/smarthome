@@ -1,8 +1,8 @@
 <script lang="ts">
-    import IconButton from '@smui/icon-button'
+    // import IconButton from '@smui/icon-button'
     import Switch from '@smui/switch'
     import { createEventDispatcher, onMount } from 'svelte'
-    import Progress from '../../components/Progress.svelte'
+    // import Progress from '../../components/Progress.svelte'
     import { createSnackbar, hasPermission, sleep } from '../../global'
     import EditDevice from './dialogs/device/EditDevice.svelte'
     import DeviceInfo from './dialogs/device/DeviceInfo.svelte'
@@ -10,7 +10,7 @@
     import type { DeviceExtractions, HydratedDeviceResponse, ShallowDeviceResponse } from '../../device';
     import Slider from '@smui/slider';
     import FormField from '@smui/form-field';
-    import Button, { Label, Icon } from '@smui/button';
+    // import Button, { Label, Icon } from '@smui/button';
     // import Terminal from '../../components/Homescript/ExecutionResultPopup/Terminal.svelte'
     import ExecutionResultPopup from '../../components/Homescript/ExecutionResultPopup/ExecutionResultPopup.svelte'
     import GenericDevice from './GenericDevice.svelte';
@@ -48,7 +48,16 @@
         sensors: [],
     }
 
+    export let capabilities: DeviceCapability[] = []
+    $: capabilities = extractions.config.capabilities
+
+
+    let localStorageKey = `amount_of_sliders_for_device_id__${shallow.id}`
+
     async function loadExtractions() {
+        // TODO: bug
+        requests++
+
         try {
             let res = await fetch(`/api/devices/extract/${shallow.id}`)
             let responseJson = await res.json()
@@ -59,13 +68,23 @@
                 throw(responseJson)
             }
 
-            extractions = (responseJson as HydratedDeviceResponse).extractions
+            const extractionsTemp = (responseJson as HydratedDeviceResponse).extractions
             shallow = (responseJson as HydratedDeviceResponse).shallow
+
             console.dir(extractions)
+
+            // Write the amount of sliders into the cache for smoother loading.
+            if (extractionsTemp.dimmables != null) {
+                writeNumSliders(extractionsTemp.dimmables.length)
+            }
+
             extractionsLoaded = true
+            extractions = extractionsTemp
         } catch (err) {
             $createSnackbar(`Failed to hydrate device: ${err}`)
         }
+
+        requests--
     }
 
     // export let data: DeviceResponse = {
@@ -100,10 +119,6 @@
 
     // Determines if edit button should be shown
     let hasEditPermission: boolean
-    onMount(async () => {
-        hasEditPermission = await hasPermission('modifyRooms')
-        await loadExtractions()
-    })
 
     let isWide = hasEditPermission
 
@@ -231,12 +246,40 @@
 
     let errorsOpen = false
 
-    function hasCapability(self: DeviceExtractions, capability: DeviceCapability): boolean { return self.config.capabilities !== null && self.config.capabilities.includes(capability) }
+    function hasCapability(self: DeviceCapability[], capability: DeviceCapability): boolean {
+        return self !== null && self.includes(capability)
+    }
 
     let hasErrors = false
     $: hasErrors = errors !== null && errors.length > 0
 
+    function writeNumSliders(num: number) {
+        window.localStorage.setItem(localStorageKey, num.toString())
+    }
+
     async function mount() {
+        let numSlidersRaw = window.localStorage.getItem(localStorageKey)
+        if (numSlidersRaw == null) {
+            writeNumSliders(0)
+            numSlidersRaw = '0';
+        }
+
+        const numSliders = parseInt(numSlidersRaw)
+        for (let i = 0; i < numSliders; i++) {
+            extractions.dimmables.push({
+                value: 0,
+                label: "loading...",
+                range: {
+                    lower: 0,
+                    upper: 100,
+                }
+            })
+        }
+
+
+        hasEditPermission = await hasPermission('modifyRooms')
+        await loadExtractions()
+
         canFetchSources = (await hasPermission('modifyServerConfig')) && (await hasPermission('homescript'))
         console.log(`Configured error display: user can fetch sources: ${canFetchSources}`)
     }
@@ -257,14 +300,15 @@
 
 <GenericDevice
     name={shallow.name}
+    {loading}
     {hasEditPermission}
-    isTall={hasCapability(extractions, 'dimmable') || hasCapability(extractions, 'sensor')}
+    isTall={hasCapability(capabilities, 'dimmable') || hasCapability(capabilities, 'sensor')}
     on:info_show={() => deviceInfoOpen = true}
     on:edit_show={showEditDevice}
     {hasErrors}
 >
     <div slot='top'>
-        {#if hasCapability(extractions, 'power')}
+        {#if hasCapability(capabilities, 'power')}
             <div class="device__power">
                 <Switch icons={false} bind:checked={extractions.powerInformation.state} on:SMUISwitch:change={toggle} />
             </div>
@@ -272,7 +316,7 @@
     </div>
 
     <div slot='extend'>
-        {#if hasCapability(extractions, 'dimmable')}
+        {#if hasCapability(capabilities, 'dimmable')}
             <div class="device__dim">
                 {#each extractions.dimmables as dimmable}
                     <div class="device__dim__sep"/>
@@ -283,6 +327,9 @@
                                 <FormField align="start" style="display: flex;">
                                     <!-- TODO: does this also update the value??? -->
                                     <Slider
+                                        min={dimmable.range.lower}
+                                        max={dimmable.range.upper}
+                                        step={1}
                                         style="flex-grow: 1;"
                                         bind:value={dimmable.value}
                                         on:SMUISlider:change={(e) => dim(e.detail.value, dimmable.label)}
@@ -298,7 +345,7 @@
             </div>
         {/if}
 
-        {#if hasCapability(extractions, 'sensor')}
+        {#if hasCapability(capabilities, 'sensor')}
             <div class="device__sensor">
                 {#if extractions.sensors !== null}
                     {#each extractions.sensors as sensor}

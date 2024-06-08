@@ -4,7 +4,7 @@ import type { ConfigSpecWrapper } from '../../driver'
 import type { homescriptError } from 'src/homescript'
 
 
-export const loading: Writable<boolean> = writable(false)
+export const requests: Writable<number> = writable(0)
 
 // Specifies whether the cameras will reload every 10 seconds
 export const periodicCamReloadEnabled: Writable<boolean> = writable(

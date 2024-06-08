@@ -4,8 +4,8 @@
     import Textfield from '@smui/textfield'
     import CharacterCounter from '@smui/textfield/character-counter'
     import { createSnackbar } from '../../../../global'
-    import { loading } from '../../main'
-    import type { Room } from '../../main'
+    import { requests } from '../../main'
+    import type { Room } from '../../../../room'
 
     export let open = false
     let deleteOpen = false
@@ -20,7 +20,8 @@
     export let rooms: Room[]
 
     async function modifyRoom() {
-        $loading = true
+        $requests++
+
         try {
             const res = await (
                 await fetch('/api/room/modify', {
@@ -44,11 +45,13 @@
         } catch (err) {
             $createSnackbar(`Failed to modify room: ${err}`)
         }
-        $loading = false
+
+        $requests--
     }
 
     async function deleteRoom() {
-        $loading = true
+        $requests++
+
         try {
             const res = await (
                 await fetch('/api/room/delete', {
@@ -63,7 +66,8 @@
         } catch (err) {
             $createSnackbar(`Failed to delete room: ${err}`)
         }
-        $loading = false
+
+        $requests--
     }
 </script>
 

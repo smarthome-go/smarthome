@@ -1,5 +1,11 @@
 export type DeviceCapability = 'base' | 'power' | 'dimmable' | 'sensor'
 
+export interface DriverDeviceCapabilitiesInfo {
+    vendorId: string,
+    modelId: string,
+    capabilities: DeviceCapability[],
+}
+
 export interface ConfigSpecWrapper {
     capabilities: DeviceCapability[]
     info: ConfigSpecWrapperInner

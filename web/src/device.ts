@@ -39,10 +39,15 @@ export interface DeviceDimmableRange {
     upper: number,
 }
 
+export interface DimmableRange {
+    lower: number,
+    upper: number,
+}
+
 export interface DeviceDimmable {
     value: number,
     label: string,
-    range: Range
+    range: DimmableRange
 }
 
 export interface DeviceSensor {
