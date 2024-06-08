@@ -472,8 +472,6 @@ func (m *Manager) RunGeneric(
 				errMsg = errors[0].String()
 			}
 
-			logger.Trace()
-
 			logger.Debug(fmt.Sprintf("Homescript `%s` failed: %s", invocation.Identifier.Filename, errMsg))
 		}
 

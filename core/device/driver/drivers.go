@@ -58,6 +58,47 @@ func (d DriverManager) extractInfoFromDriver(
 	return driverInfo, make([]diagnostic.Diagnostic, 0), nil
 }
 
+type DriverCapabilityInfo struct {
+	VendorID           string                          `json:"vendorId"`
+	ModelID            string                          `json:"modelId"`
+	DeviceCapabilities CapabilitySet[DeviceCapability] `json:"capabilities"`
+}
+
+func (d DriverManager) ListDriverDeviceCapabilities() ([]DriverCapabilityInfo, error) {
+	drivers, err := database.ListDeviceDrivers()
+	if err != nil {
+		return nil, err
+	}
+
+	infos := make([]DriverCapabilityInfo, 0)
+
+	for _, driver := range drivers {
+		driverInfo, hmsErr, err := d.ExtractDriverInfoTotal(
+			driver.VendorID,
+			driver.ModelID,
+			driver.HomescriptCode,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		capabilities := driverInfo.DeviceConfig.Capabilities
+
+		if hmsErr != nil {
+			log.Errorf("Driver capability extraction failed: %s", hmsErr[0].Message)
+			capabilities = CapabilitySet[DeviceCapability]{DeviceCapabilityBase}
+		}
+
+		infos = append(infos, DriverCapabilityInfo{
+			VendorID:           driver.VendorID,
+			ModelID:            driver.ModelID,
+			DeviceCapabilities: capabilities,
+		})
+	}
+
+	return infos, nil
+}
+
 func (d DriverManager) GetDriverWithInfos(vendorID, modelID string) (RichDriver, bool, error) {
 	rawDriver, found, err := database.GetDeviceDriver(vendorID, modelID)
 	if err != nil {

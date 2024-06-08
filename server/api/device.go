@@ -111,6 +111,21 @@ func GetUserDevicesRich(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Lists all drivers and their device capabilities, no auth required.
+func ListDriverDeviceCapabilities(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	deviceCapabilities, err := driver.Manager.ListDriverDeviceCapabilities()
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "database error", Error: "database error"})
+		return
+	}
+	if err := json.NewEncoder(w).Encode(deviceCapabilities); err != nil {
+		log.Error(err.Error())
+		Res(w, Response{Success: false, Message: "failed to get driver capabilities", Error: "could not encode content"})
+	}
+}
+
 func ExtractUserDevice(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	username, err := middleware.GetUserFromCurrentSession(w, r)

@@ -68,7 +68,7 @@ func Init(config database.ServerConfig) error {
 
 	// Homescript dispatcher initialization
 	if err := dispatcher.InitInstance(hmsManager, mqttManager); err != nil {
-		return fmt.Errorf("Failed to initialize HMS dispatcher: %s", err.Error())
+		log.Errorf("Failed to initialize HMS dispatcher: %s", err.Error())
 	}
 
 	dispatcherInitialized.lock.Lock()
