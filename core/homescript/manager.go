@@ -539,7 +539,7 @@ func (m *Manager) RunGeneric(
 	}, nil
 }
 
-// TODO: maybe add argument support
+// TODO: Add argument support
 func (m *Manager) RunUserScript(
 	programID, username string,
 	function *runtime.FunctionInvocation,

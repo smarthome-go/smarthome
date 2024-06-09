@@ -311,6 +311,20 @@ func (self analyzerHost) GetBuiltinImport(
 				),
 				Template: &ast.TemplateSpec{},
 			}, true, true
+		case "exec_user":
+			return analyzer.BuiltinImport{
+				Type: ast.NewFunctionType(
+					ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("username", span), ast.NewStringType(span), nil),
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("script_id", span), ast.NewStringType(span), nil),
+						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("arguments", span), ast.NewOptionType(ast.NewAnyObjectType(span), span), nil),
+					}),
+					span,
+					ast.NewNullType(span),
+					span,
+				),
+				Template: &ast.TemplateSpec{},
+			}, true, true
 		}
 		return analyzer.BuiltinImport{}, true, false
 	case "location":

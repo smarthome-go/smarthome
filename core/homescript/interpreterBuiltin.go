@@ -223,6 +223,124 @@ func (self interpreterExecutor) LoadSingleton(singletonIdent, moduleName string)
 // 	})
 // }
 
+func (self interpreterExecutor) execHelper(
+	username,
+	programID string,
+	arguments map[string]string,
+	span errors.Span,
+) (*value.Value, *value.VmInterrupt) {
+	res, err := HmsManager.RunUserScript(
+		programID,
+		username,
+		nil,
+		self.cancelation,
+		self.ioWriter,
+		nil,
+	)
+
+	if err != nil {
+		return nil, value.NewVMThrowInterrupt(
+			span,
+			fmt.Sprintf("Failed to run program: `%s`", err.Error()),
+		)
+	}
+
+	if !res.Errors.ContainsError {
+		message := ""
+
+		for _, err := range res.Errors.Diagnostics {
+			if err.SyntaxError != nil {
+				message = err.SyntaxError.Message
+				break
+			}
+			if err.DiagnosticError != nil && err.DiagnosticError.Level == diagnostic.DiagnosticLevelError {
+				message = err.DiagnosticError.Message
+				break
+			}
+			if err.RuntimeInterrupt != nil {
+				message = err.RuntimeInterrupt.Message
+				break
+			}
+		}
+
+		return nil, value.NewVMThrowInterrupt(
+			span,
+			fmt.Sprintf("Invoked program crashed: `%s`", message),
+		)
+	}
+
+	return value.NewValueNull(), nil
+}
+
+const execFnIdent = "exec"
+const execUserFnIdent = "exec_user"
+
+func (self interpreterExecutor) execBuiltin(usernameNeedsToBeSpecified bool) value.Value {
+	return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
+		var username *string
+		// This will be 1 if the username is being read as the first argument.
+		argumentIndexOffset := 0
+
+		switch usernameNeedsToBeSpecified {
+		case true:
+			if self.context.Kind() == types.HMS_PROGRAM_KIND_USER {
+				return nil, value.NewVMFatalException(
+					fmt.Sprintf("The usage of the `%s` function in a user environment is not allowed", execUserFnIdent),
+					value.Vm_HostErrorKind,
+					span,
+				)
+			}
+
+			usernameStr := args[0].(value.ValueString).Inner
+			username = &usernameStr
+			argumentIndexOffset = 1
+		case false:
+			if self.context.Username() == nil {
+				return nil, value.NewVMFatalException(
+					fmt.Sprintf("The usage of the `%s` function in a non-user environment is not possible", execFnIdent),
+					value.Vm_HostErrorKind,
+					span,
+				)
+			}
+		}
+
+		if username == nil {
+			panic("Encountered internal bug: `username` cannot be <nil> at this point")
+		}
+
+		programID := args[argumentIndexOffset+0].(value.ValueString).Inner
+		argOpt := args[argumentIndexOffset+1].(value.ValueOption)
+
+		arguments := make(map[string]string)
+		if argOpt.IsSome() {
+			argFields := (*argOpt.Inner).(value.ValueAnyObject).FieldsInternal
+			for key, value := range argFields {
+				disp, i := (*value).Display()
+				if i != nil {
+					return nil, i
+				}
+				arguments[key] = disp
+			}
+		}
+
+		// TODO: remove this once argument support is implemented.
+		if len(arguments) != 0 {
+			return nil, value.NewVMFatalException(
+				"BUG: Argument support is not implemented yet",
+				value.Vm_HostErrorKind,
+				span,
+			)
+		}
+
+		return self.execHelper(
+			*username,
+			programID,
+			arguments,
+			span,
+		)
+	})
+}
+
 // if it exists, returns a value which is part of the host builtin modules
 func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport string) (val value.Value, found bool) {
 	switch moduleName {
@@ -237,75 +355,10 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 		}
 	case "hms":
 		switch toImport {
-		case "exec":
-			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
-				// TODO: use a macro here?
-				if self.context.Username() == nil {
-					return nil, value.NewVMFatalException(
-						"The usage of the `exec` function in a non-user environment is not possible",
-						value.Vm_HostErrorKind,
-						span,
-					)
-				}
-
-				programID := args[0].(value.ValueString).Inner
-				argOpt := args[1].(value.ValueOption)
-
-				arguments := make(map[string]string)
-
-				if argOpt.IsSome() {
-					argFields := (*argOpt.Inner).(value.ValueAnyObject).FieldsInternal
-					for key, value := range argFields {
-						disp, i := (*value).Display()
-						if i != nil {
-							return nil, i
-						}
-						arguments[key] = disp
-					}
-				}
-
-				res, err := HmsManager.RunUserScript(
-					programID,
-					*self.context.Username(),
-					nil,
-					self.cancelation,
-					self.ioWriter,
-					nil,
-				)
-
-				if err != nil {
-					return nil, value.NewVMThrowInterrupt(
-						span,
-						err.Error(),
-					)
-				}
-
-				if !res.Errors.ContainsError {
-					message := ""
-
-					for _, err := range res.Errors.Diagnostics {
-						if err.SyntaxError != nil {
-							message = err.SyntaxError.Message
-							break
-						}
-						if err.DiagnosticError != nil && err.DiagnosticError.Level == diagnostic.DiagnosticLevelError {
-							message = err.DiagnosticError.Message
-							break
-						}
-						if err.RuntimeInterrupt != nil {
-							message = err.RuntimeInterrupt.Message
-							break
-						}
-					}
-
-					return nil, value.NewVMThrowInterrupt(
-						span,
-						message,
-					)
-				}
-
-				return value.NewValueNull(), nil
-			}), true
+		case execFnIdent:
+			return self.execBuiltin(false), true
+		case execUserFnIdent:
+			return self.execBuiltin(true), true
 		}
 		return nil, false
 	case "location":
