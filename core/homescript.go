@@ -12,34 +12,35 @@ import (
 // Modifies the code of a given Homescript.
 // This function also handles dispatching to the correct storage backend, meaning
 // that a driver script updates the driver and a normal script updates in the `homescripts` table.
-func ModifyHomescriptCode(id string, owner string, newCode string) (found bool, err error) {
-	// Determine whether this is a driver script or a normal script
+func ModifyHomescriptCode(id string, owner string, newCode string) (found bool, validationErr error, err error) {
+	// Determine whether this is a driver script or a normal script.
 	script, found, err := homescript.HmsManager.GetPersonalScriptById(id, owner)
 	if err != nil {
-		return false, err
+		return false, nil, err
 	}
 
 	if !found {
-		return false, nil
+		return false, nil, nil
 	}
 
 	switch script.Data.Type {
 	case database.HOMESCRIPT_TYPE_NORMAL:
 		if err := database.ModifyHomescriptCode(id, owner, newCode); err != nil {
-			return false, err
+			return false, nil, err
 		}
-		return true, nil
+		return true, nil, nil
 	case database.HOMESCRIPT_TYPE_DRIVER:
 		driverData, validationErr, dbErr := types.DriverFromHmsId(id)
 		if dbErr != nil {
-			return false, dbErr
+			return false, nil, dbErr
 		}
 
 		if validationErr != nil {
-			return false, validationErr
+			return false, validationErr, nil
 		}
 
-		return driver.Manager.ModifyCode(driverData.VendorID, driverData.ModelID, newCode)
+		found, validationErr, err := driver.Manager.ModifyCode(driverData.VendorID, driverData.ModelID, newCode)
+		return found, validationErr, err
 	default:
 		panic(fmt.Sprintf("BUG warning: a new Homescript type was added without updating this code"))
 	}

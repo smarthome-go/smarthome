@@ -166,7 +166,7 @@ func ModifyDeviceDriverSingletonJSON(vendorId string, modelId string, newJson *s
 
 // Modifies the code of a given device driver.
 // Returns `true` if the driver was found and modified.
-func ModifyDeviceDriverCode(vendorId string, modelId string, newCode string) (bool, error) {
+func ModifyDeviceDriverCode(vendorId string, modelId string, newCode string) error {
 	query, err := db.Prepare(`
 	UPDATE deviceDriver
 	SET
@@ -175,27 +175,20 @@ func ModifyDeviceDriverCode(vendorId string, modelId string, newCode string) (bo
 	`)
 	if err != nil {
 		log.Error("Failed to update device driver code: preparing query failed: ", err.Error())
-		return false, err
+		return err
 	}
 	defer query.Close()
 
-	res, err := query.Exec(
+	if _, err := query.Exec(
 		newCode,
 		vendorId,
 		modelId,
-	)
-	if err != nil {
+	); err != nil {
 		log.Error("Failed to update device driver code: executing query failed: ", err.Error())
-		return false, err
+		return err
 	}
 
-	rows, err := res.RowsAffected()
-	if err != nil {
-		log.Error("Failed to update device driver code: getting rows affected failed: ", err.Error())
-		return false, err
-	}
-
-	return rows > 0, nil
+	return nil
 }
 
 func ModifyDeviceDriverDirty(vendorId string, modelId string, dirty bool) error {

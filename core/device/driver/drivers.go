@@ -323,19 +323,29 @@ outer:
 
 // Apart from actually modifying the code of the driver in the DB,
 // the saved singleton state of this driver and all dependent devices must be rebuilt.
-func (d DriverManager) ModifyCode(vendorID, modelID, newCode string) (found bool, dbErr error) {
+func (d DriverManager) ModifyCode(vendorID, modelID, newCode string) (found bool, codeErr error, dbErr error) {
 	// Try to create default JSON from schema. TODO: why default: ???
 	// This can fail if the Homescript code is invalid.
 	configInfo, hmsErrs, err := d.extractInfoFromDriver(vendorID, modelID, newCode)
 	if err != nil {
-		return false, err
+		return false, nil, err
+	}
+
+	if err = database.ModifyDeviceDriverCode(
+		vendorID,
+		modelID,
+		newCode,
+	); err != nil {
+		return false, nil, err
 	}
 
 	// Only apply transactions if there are no errors in the code.
 	// Otherwise, the stored data of every singleton would be erased as soon as there is an error.
-	if hmsErrs != nil {
-		log.Debugf("[singleton] Not updating singleton stores of driver / devices due to errors in new code")
-		return true, nil
+	// NOTE: the code should be saved however.
+	// Therefore, the code is saved before this.
+	if len(hmsErrs) > 0 {
+		log.Debugf("[singleton] Not updating singleton stores of driver / devices due to errors in new code: %s", hmsErrs[0].Message)
+		return false, fmt.Errorf("Refusing to save broken code"), nil
 	}
 
 	objVal := value.ValueObject{FieldsInternal: make(map[string]*value.Value)}
@@ -344,16 +354,14 @@ func (d DriverManager) ModifyCode(vendorID, modelID, newCode string) (found bool
 	// - check if there is an erorr and return early
 	// - otherwise (no error) load the current data and perform the patches on it.
 
-	if hmsErrs == nil {
-		old := DriverStore[database.DriverTuple{
-			VendorID: vendorID,
-			ModelID:  modelID,
-		}]
-		objVal = (*ApplyNewSchemaOnObjData(old, configInfo.DriverConfig.Info.HmsType)).(value.ValueObject)
+	old := DriverStore[database.DriverTuple{
+		VendorID: vendorID,
+		ModelID:  modelID,
+	}]
+	objVal = (*ApplyNewSchemaOnObjData(old, configInfo.DriverConfig.Info.HmsType)).(value.ValueObject)
 
-		if err := StoreDriverSingletonBackend(vendorID, modelID, objVal); err != nil {
-			return false, err
-		}
+	if err := StoreDriverSingletonBackend(vendorID, modelID, objVal); err != nil {
+		return false, nil, err
 	}
 
 	// Also patch every device that uses this driver.
@@ -363,8 +371,9 @@ func (d DriverManager) ModifyCode(vendorID, modelID, newCode string) (found bool
 
 	devices, err := database.ListAllDevices()
 	if err != nil {
-		return false, err
+		return false, nil, err
 	}
+
 	for _, device := range devices {
 		if device.VendorID != vendorID || device.ModelID != modelID {
 			continue
@@ -372,23 +381,11 @@ func (d DriverManager) ModifyCode(vendorID, modelID, newCode string) (found bool
 		oldDeviceData := DeviceStore[device.ID]
 		newDeviceData := (*ApplyNewSchemaOnObjData(oldDeviceData, configInfo.DeviceConfig.Info.HmsType)).(value.ValueObject)
 		if err := StoreDeviceSingletonBackend(device.ID, newDeviceData); err != nil {
-			return false, err
+			return false, nil, err
 		}
 	}
 
-	found, err = database.ModifyDeviceDriverCode(
-		vendorID,
-		modelID,
-		newCode,
-	)
-	if err != nil {
-		return false, err
-	}
-	if !found {
-		return false, nil
-	}
-
-	return true, nil
+	return true, nil, nil
 }
 
 // TODO: a lot of overlapping code!

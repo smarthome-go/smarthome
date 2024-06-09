@@ -566,14 +566,21 @@ func ModifyHomescriptCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	found, err := core.ModifyHomescriptCode(
+	found, validationErr, err := core.ModifyHomescriptCode(
 		request.Id,
 		username,
 		request.Code,
 	)
+
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "failed to modify Homescript code", Error: "database failure"})
+		return
+	}
+
+	if validationErr != nil {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "Validation failed", Error: validationErr.Error()})
 		return
 	}
 
