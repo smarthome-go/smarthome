@@ -146,7 +146,7 @@ docker-push:
 docker: cleanall web docker-prepare
 	docker buildx create --use
 
-	sudo docker buildx build \
+	docker buildx build \
 		-t $(docker_repo):$(version)-arm \
 		-t $(docker_repo):latest-arm \
 		--platform=linux/arm \
@@ -154,7 +154,7 @@ docker: cleanall web docker-prepare
 		-f ./docker/container/Dockerfile \
 		./docker/container/
 
-	sudo docker buildx build \
+	docker buildx build \
 		-t $(docker_repo):$(version)-arm64 \
 		-t $(docker_repo):latest-arm64 \
 		--platform=linux/arm64 \

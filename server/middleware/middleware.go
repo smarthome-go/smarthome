@@ -38,13 +38,12 @@ func GetUserFromCurrentSession(w http.ResponseWriter, r *http.Request) (string, 
 			return "", err
 		}
 		if !validCredentials {
-			// this should not happen
-			// Either a session or query will be valid (middleware.AuthRequired checks for this requirement)
+			// This should not happen.
+			// Either a session or query will be valid (middleware.AuthRequired checks for this requirement).
 			log.Error("failed to get username from query")
 			return "", errors.New("failed to get username from query")
 		}
 		return username, nil
-
 	}
 	usernameTemp, ok := session.Values["username"]
 	if !ok {
