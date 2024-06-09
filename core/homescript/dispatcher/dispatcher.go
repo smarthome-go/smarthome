@@ -74,13 +74,13 @@ func InitInstance(hms types.Manager, mqtt *MqttManager) error {
 	return nil
 }
 
-func (self *InstanceT) MQTTStatus() error {
-	return self.Mqtt.Status()
+func (i *InstanceT) MQTTStatus() error {
+	return i.Mqtt.Status()
 }
 
-func (self *InstanceT) Reload(mqttConfig database.MqttConfig) error {
-	self.Mqtt.setConfig(mqttConfig)
-	return self.Mqtt.Reload()
+func (i *InstanceT) Reload(mqttConfig database.MqttConfig) error {
+	i.Mqtt.setConfig(mqttConfig)
+	return i.Mqtt.Reload()
 }
 
 // TODO: same as for the HMS manager, join these two functions.

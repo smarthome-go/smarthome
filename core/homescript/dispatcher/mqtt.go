@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"sync"
 	"time"
 
@@ -39,22 +40,71 @@ type MqttManagerBody struct {
 	Initialized   bool
 }
 
+//
+// BEGIN TRACING MUTEX.
+//
+
+const runtimeCallerFailedMsg = "Getting caller function at runtime failed"
+
+type TracingRWMutex struct {
+	Internal *sync.RWMutex
+}
+
+func (m TracingRWMutex) Lock() {
+	_, file, line, ok := runtime.Caller(1)
+	if !ok {
+		panic(runtimeCallerFailedMsg)
+	}
+	logger.Tracef("Called `Lock()` from %s:%d", file, line)
+	m.Internal.Lock()
+}
+
+func (m TracingRWMutex) Unlock() {
+	_, file, line, ok := runtime.Caller(1)
+	if !ok {
+		panic(runtimeCallerFailedMsg)
+	}
+	logger.Tracef("Called `Unlock()` from %s:%d", file, line)
+	m.Internal.Unlock()
+}
+
+func (m TracingRWMutex) RLock() {
+	_, file, line, ok := runtime.Caller(1)
+	if !ok {
+		panic(runtimeCallerFailedMsg)
+	}
+	logger.Tracef("Called `RLock()` from %s:%d", file, line)
+	m.Internal.RLock()
+}
+
+func (m TracingRWMutex) RUnlock() {
+	_, file, line, ok := runtime.Caller(1)
+	if !ok {
+		panic(runtimeCallerFailedMsg)
+	}
+	logger.Tracef("Called `RUnlock()` from %s:%d", file, line)
+	m.Internal.RUnlock()
+}
+
+//
+// END TRACING MUTEX.
+//
+
 type MqttManager struct {
-	// Lock sync.Mutex
 	Body struct {
-		Lock    sync.RWMutex
+		Lock    TracingRWMutex
 		Content MqttManagerBody
 	}
 
-	// This is set by the parent (the dispatcher) to be triggered once
-	// there is an event worthy of triggering all pending registrations to be retried.
+	// Is being called from the outside if the outside knows that some things, which could have caused the initial
+	// error, changed.
 	TriggerTryPendingRegistrations func() error
 }
 
 var Manager MqttManager
 
-func (m *MqttManager) messageHandler(_ mqtt.Client, msg mqtt.Message) {
-	panic("Unreachable: fallback on default message handler")
+func (m *MqttManager) messageHandler(_ mqtt.Client, _ mqtt.Message) {
+	panic("Unreachable: fallback on default message handler, this callback function is overwritten")
 }
 
 func (m *MqttManager) connectionLostHandler(_ mqtt.Client, err error) {
@@ -91,10 +141,12 @@ func InitModule() {
 func NewMqttManager(config database.MqttConfig, retryHook func() error) (m *MqttManager, e error) {
 	Manager = MqttManager{
 		Body: struct {
-			Lock    sync.RWMutex
+			Lock    TracingRWMutex
 			Content MqttManagerBody
 		}{
-			Lock: sync.RWMutex{},
+			Lock: TracingRWMutex{
+				Internal: &sync.RWMutex{},
+			},
 			Content: MqttManagerBody{
 				Subscriptions: make(map[string]Subscription),
 				Client:        nil,
@@ -176,20 +228,31 @@ func (m *MqttManager) IsConnected() bool {
 }
 
 func (m *MqttManager) Status() error {
-	m.Body.Lock.Lock()
-	defer m.Body.Lock.Unlock()
+	m.Body.Lock.RLock()
+	isConnected := m.IsConnected()
+	m.Body.Lock.RUnlock()
 
-	if !m.IsConnected() {
-		if err := m.init(); err != nil {
+	if !isConnected {
+		err := m.init()
+		if err != nil {
 			return err
 		}
 
-		if m.Body.Content.Client == nil || !m.Body.Content.Client.IsConnected() {
+		m.Body.Lock.RLock()
+		isNotConnected := m.Body.Content.Client == nil || !m.Body.Content.Client.IsConnected()
+		m.Body.Lock.RUnlock()
+
+		if isNotConnected {
 			return fmt.Errorf("Not connected to broker")
 		}
 	}
 
-	if token := m.Body.Content.Client.Publish(MqttHealthCheckTopic, MqttQOS, false, ""); token.Error() != nil {
+	m.Body.Lock.Lock()
+	token := m.Body.Content.Client.Publish(MqttHealthCheckTopic, MqttQOS, false, "")
+	token.Wait()
+	m.Body.Lock.Unlock()
+
+	if token.Error() != nil {
 		return token.Error()
 	}
 
@@ -200,20 +263,24 @@ func (m *MqttManager) Reload() error {
 	m.unsubscribeAllSubscriptionsNonTracing()
 
 	m.Body.Lock.Lock()
-	defer m.Body.Lock.Unlock()
 
 	// Purge old connection.
 	if m.Body.Content.Client != nil {
 		m.Body.Content.Client.Disconnect(MqttDisconnectTimeoutMillis)
 	}
 
+	m.Body.Lock.Unlock()
+
 	// Apply new config and connect.
 	if err := m.init(); err != nil {
+		// nolint:goconst
 		logger.Errorf("Failed to reload MQTT manager: %s", err.Error())
 		return err
 	}
 
+	m.Body.Lock.RLock()
 	enabled := m.Body.Content.Config.Enabled
+	m.Body.Lock.RUnlock()
 
 	if enabled {
 		if err := m.resubscribeNonTracing(); err != nil {
@@ -238,14 +305,13 @@ func (m *MqttManager) reloadOnReconnect() error {
 }
 
 func (m *MqttManager) unsubscribeAllSubscriptionsNonTracing() {
-	// Unsubsribe from old old topics to all topics that were previously subscribed to.
+	// Unsubsribe from old topics to all topics that were previously subscribed to.
 	m.Body.Lock.Lock()
-	defer m.Body.Lock.Unlock()
+	subscriptions := m.Body.Content.Subscriptions
+	m.Body.Lock.Unlock()
 
-	for topicName := range m.Body.Content.Subscriptions {
-		m.Body.Lock.Unlock()
+	for topicName := range subscriptions {
 		err := m.unsubscribeWithoutTracing(topicName)
-		m.Body.Lock.Lock()
 		if err != nil {
 			logger.Warn("Failed to unsubscribe from old topic", err.Error())
 		}
@@ -254,9 +320,10 @@ func (m *MqttManager) unsubscribeAllSubscriptionsNonTracing() {
 
 func (m *MqttManager) resubscribeNonTracing() error {
 	m.Body.Lock.Lock()
-	defer m.Body.Lock.Unlock()
+	subscriptions := m.Body.Content.Subscriptions
+	m.Body.Lock.Unlock()
 
-	for topic, subscription := range m.Body.Content.Subscriptions {
+	for topic, subscription := range subscriptions {
 		fmt.Printf("~~~~~~~~~~~~~~~~> %s\n", topic)
 
 		err := m.subscribeWithoutTracing([]string{topic}, subscription.CallbackFn)
@@ -271,19 +338,29 @@ func (m *MqttManager) resubscribeNonTracing() error {
 
 func (m *MqttManager) Shutdown() error {
 	m.Body.Lock.Lock()
-	defer m.Body.Lock.Unlock()
+	initialized := m.Body.Content.Initialized
+	m.Body.Lock.Unlock()
 
-	if !m.Body.Content.Initialized {
+	if !initialized {
 		return nil
 	}
 
-	for topic := range m.Body.Content.Subscriptions {
-		if token := m.Body.Content.Client.Unsubscribe(topic); token.Wait() && token.Error() != nil {
+	subscriptions := m.Body.Content.Subscriptions
+	for topic := range subscriptions {
+		m.Body.Lock.Lock()
+		token := m.Body.Content.Client.Unsubscribe(topic)
+		token.Wait()
+		m.Body.Lock.Unlock()
+
+		if token.Error() != nil {
 			return token.Error()
 		}
 	}
 
+	m.Body.Lock.Lock()
 	m.Body.Content.Client.Disconnect(MqttDisconnectTimeoutMillis)
+	m.Body.Lock.Unlock()
+
 	return nil
 }
 
@@ -302,9 +379,11 @@ func (m *MqttManager) subscribeWithoutTracing(topics []string, callBack mqtt.Mes
 	}
 
 	m.Body.Lock.Lock()
-	defer m.Body.Lock.Unlock()
+	token := m.Body.Content.Client.SubscribeMultiple(topicsArgs, callBack)
+	token.Wait()
+	m.Body.Lock.Unlock()
 
-	if token := m.Body.Content.Client.SubscribeMultiple(topicsArgs, callBack); token.Wait() && token.Error() != nil {
+	if token.Error() != nil {
 		logger.Errorf("Could not subscribe to MQTT topics `%v`: %s", topics, token.Error())
 		return token.Error()
 	}
