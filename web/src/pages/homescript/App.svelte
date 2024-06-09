@@ -132,11 +132,14 @@
     async function modifyCurrentHomescript() {
         $loading = true
         try {
+            let request = structuredClone(selectedData)
+            delete request.type
+
             let res = await (
                 await fetch('/api/homescript/modify', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(selectedData),
+                    body: JSON.stringify(request),
                 })
             ).json()
             if (!res.success) throw Error(res.error)

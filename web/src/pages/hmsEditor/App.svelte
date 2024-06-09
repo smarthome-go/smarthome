@@ -236,6 +236,8 @@
         e.returnValue = true;
     })
 
+    let lastSaveHadError = false
+
     // Sends a `save` request to the server, also updates the GUI display of unsaved changes to saved
     async function saveCurrent() {
         if (!currentData.unsaved) return
@@ -261,8 +263,15 @@
 
             // Commit this change
             setBooleanPropertyOnHms('unsaved', false)
+
+
+            if (lastSaveHadError) {
+                lastSaveHadError = false
+                $createSnackbar("Saved successfully")
+            }
         } catch (err) {
             $createSnackbar(`Failed to save '${currentScript}': ${err}`)
+            lastSaveHadError = true
         }
         otherLoading = false
     }

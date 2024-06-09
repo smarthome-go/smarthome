@@ -111,6 +111,7 @@
 
     let requests = 0
     let loading = false
+    let isInitialLoad = false
 
     // Is bound to the `editSwitch` in order to pass an event to a child
     let showEditDevice: () => void
@@ -258,6 +259,8 @@
     }
 
     async function mount() {
+        isInitialLoad = true
+
         let numSlidersRaw = window.localStorage.getItem(localStorageKey)
         if (numSlidersRaw == null) {
             writeNumSliders(0)
@@ -282,6 +285,8 @@
 
         canFetchSources = (await hasPermission('modifyServerConfig')) && (await hasPermission('homescript'))
         console.log(`Configured error display: user can fetch sources: ${canFetchSources}`)
+
+        isInitialLoad = false
     }
 
     onMount(mount)
@@ -301,6 +306,7 @@
 <GenericDevice
     name={shallow.name}
     {loading}
+    {isInitialLoad}
     {hasEditPermission}
     isTall={hasCapability(capabilities, 'dimmable') || hasCapability(capabilities, 'sensor')}
     on:info_show={() => deviceInfoOpen = true}
