@@ -13,7 +13,6 @@ import (
 	"github.com/gorilla/mux"
 
 	hms "github.com/smarthome-go/homescript/v3/homescript"
-	"github.com/smarthome-go/homescript/v3/homescript/runtime"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core"
 	"github.com/smarthome-go/smarthome/core/database"
@@ -231,7 +230,7 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 				ProgramText: request.Code,
 				Filename:    filename,
 			},
-			FunctionInvocation: &runtime.FunctionInvocation{},
+			FunctionInvocation: nil,
 			LoadedSingletons:   map[string]value.Value{},
 		},
 		types.NewExecutionContextUser(
@@ -304,7 +303,7 @@ func LintHomescriptString(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if validationErr != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			Res(w, Response{Success: false, Message: "could not lint Homescript string", Error: fmt.Sprintf("validation error: %s", validationErr.Error())})
 			return
 		}
