@@ -2,10 +2,24 @@
 version: '3.7'
 
 services:
+  # Development MQTT server.
+  mqtt-broker:
+    stdin_open: true
+    tty: true
+    image: eclipse-mosquitto:latest
+    restart: unless-stopped
+    user: mosquitto
+    volumes:
+      - "./docker/mosquitto_config:/mosquitto/config"
+      - "./docker/mosquitto_data:/mosquitto/data"
+    ports:
+      - 1883:1883
+      - 9001:9001
+
   # App database for development
   smarthome-mariadb:
     image: mariadb
-    container_name: smarthome-mariadb
+    container_name: smarthome-mariadb-dev
     restart: unless-stopped
     environment:
       - MYSQL_ROOT_PASSWORD=password

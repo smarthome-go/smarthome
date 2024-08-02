@@ -70,6 +70,15 @@ release: cleanall lint test build docker
 gh-release:
 	gh release create v$(version) ./build/*.tar.gz -F ./docs/CHANGELOG.md -t 'Smarthome v$(version)'  --prerelease
 
+# Start the development docker compose stack.
+dev:
+	mkdir -p ./docker/mosquitto_data
+	mkdir -p ./docker/mosquitto_config
+
+	cp ./docker/mosquitto.conf ./docker/mosquitto_config/mosquitto.conf
+
+	docker-compose -f ./docker-compose-dev.yml up -d
+
 # Starts the vite development server
 vite-dev:
 	cd web && npm run dev
