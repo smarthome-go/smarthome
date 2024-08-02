@@ -21,14 +21,16 @@
     // TODO: add modern version.
 
     function errToHtml(err: homescriptError, data: hmsResWrapper): string {
-        const fromContents = data.fileContents[err.span.filename]
+        const filename = err.span.filename
+        // BUG: this is sometimes a map, sometimes an object.
+        const fromContents = data.fileContents.get(filename)
 
         let code = fromContents
         let missingSources = false
 
-        if (fromContents === undefined || fromContents === null) {
-            // throw("Missing Homescript sources for this error")
-            console.log("No sources")
+        if (!fromContents) {
+            console.log(`No sources: this error=${filename}`)
+            console.dir(data.fileContents)
             missingSources = true
         }
 
@@ -44,7 +46,7 @@
             message = err.diagnosticError.message
             notes = err.diagnosticError.notes
                 .map(n => `<span class='cyan bold'>- note:</span> ${n}`)
-                .join('')
+                .join('<br/>')
 
             switch (err.diagnosticError.kind) {
                 case 0:
