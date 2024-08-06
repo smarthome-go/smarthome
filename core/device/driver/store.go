@@ -167,6 +167,10 @@ func (d DriverManager) StoreDeviceSingletonConfigUpdate(
 
 	// TODO: trigger re-registration of any triggers.
 	log.Warn("============================== TODO: not implemented =============================")
+
+	//
+	// Ignore any internal fields.
+	//
 	if err := MakeDriverDirty(device.VendorID, device.ModelID, true); err != nil {
 		return err
 	}

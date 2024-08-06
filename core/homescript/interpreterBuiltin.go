@@ -1238,6 +1238,10 @@ func interpreterScopeAdditions() map[string]value.Value {
 
 				var out any
 
+				if arg == nil {
+					panic(fmt.Sprintf("One (or) more arguments to the `fmt` function were <nil> (pos=%d), (all=%v)", idx, args))
+				}
+
 				switch arg.Kind() {
 				case value.NullValueKind:
 					out = "null"

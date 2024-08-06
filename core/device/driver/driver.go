@@ -118,6 +118,7 @@ func ExtractDriverInfo(
 	mainModule string,
 	emitWarnings bool,
 ) (DriverInfo, []diagnostic.Diagnostic) {
+	log.Tracef("Extracting driver information from `%s`...", mainModule)
 	diagnostics := make([]diagnostic.Diagnostic, 0)
 
 	driverSingleton, driverSingletonFound := ast.AnalyzedSingletonTypeDefinition{}, false

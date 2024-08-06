@@ -20,6 +20,7 @@ const MqttPingTimeout time.Duration = time.Second
 const MqttDisconnectTimeoutMillis uint = 250
 const MqttQOS byte = 0x2
 const MqttHealthCheckTopic = "healthcheck"
+const mqttAllowVerbose = false
 
 // Error messages.
 
@@ -132,7 +133,7 @@ func (m *MqttManager) connectionEstablishedHandler(client mqtt.Client) {
 }
 
 func InitModule() {
-	if logger.GetLevel() == logrus.TraceLevel {
+	if logger.GetLevel() == logrus.TraceLevel && mqttAllowVerbose {
 		mqtt.DEBUG = log.New(os.Stderr, "", 0)
 		mqtt.ERROR = log.New(os.Stderr, "", 0)
 	}

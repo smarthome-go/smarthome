@@ -13,13 +13,20 @@ type AnalyzerDriverMetadata struct {
 }
 
 const DRIVER_ID_PREFIX = "@driver"
+const COUNT_SEGMENTS = 3
 
 func ParseHmsToDriver(id string) (driver database.DriverTuple, validationErr error) {
 	delimiter := ":"
 	split := strings.Split(id, delimiter)
 
-	if len(split) != 3 {
-		return database.DriverTuple{}, fmt.Errorf("Expected 3 segments split by `%s`, found %d", delimiter, len(split))
+	if len(split) != COUNT_SEGMENTS {
+		return database.DriverTuple{}, fmt.Errorf(
+			"Expected %d segments split by `%s`, found %d: `%s`",
+			COUNT_SEGMENTS,
+			delimiter,
+			len(split),
+			id,
+		)
 	}
 
 	if split[0] != DRIVER_ID_PREFIX {

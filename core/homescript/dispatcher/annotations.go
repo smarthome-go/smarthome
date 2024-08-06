@@ -39,6 +39,7 @@ func (i *InstanceT) RegisterDriverAnnotations() error {
 	errs := make([]string, 0)
 
 	for _, driver := range drivers {
+		logger.Tracef("    => Registering driver `%s:%s`", driver.VendorID, driver.ModelID)
 		if err := i.ReloadDriver(driver); err != nil {
 			errs = append(errs, err.Error())
 		}
@@ -88,9 +89,15 @@ func (i *InstanceT) RegisterDevice(driver database.DeviceDriver, deviceID string
 	// First step: unregister any dispatcher hooks which are attached to this device.
 	//
 
+	logger.Tracef("Registering device `%s:%s` (%s)...", driver.VendorID, driver.ModelID, deviceID)
+
 	i.DoneRegistrations.Lock.Lock()
 	doneRegs := i.DoneRegistrations.Set
 	i.DoneRegistrations.Lock.Unlock()
+
+	//
+	// Unregister all old registrations.
+	//
 
 	for id, reg := range doneRegs {
 		var ctx types.ExecutionContext
