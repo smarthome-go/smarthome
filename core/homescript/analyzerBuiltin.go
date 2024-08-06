@@ -46,8 +46,18 @@ func (self analyzerHost) PostValidationHook(
 		_, diagnostics := driver.ExtractDriverInfo(analyzedModules, mainModule, true)
 		return diagnostics
 	default:
-		// Forbid `trigger` annotations in non-drivers.
+		// Forbid `trigger` annotations and singletons in non-driver code.
+		diagnostics := make([]diagnostic.Diagnostic, 0)
 		for _, mod := range analyzedModules {
+			for _, singleton := range mod.Singletons {
+				diagnostics = append(diagnostics, diagnostic.Diagnostic{
+					Level:   diagnostic.DiagnosticLevelError,
+					Message: "Singletons are not allowed in user programs",
+					Notes:   []string{"To use singletons, create a driver Homescript"},
+					Span:    singleton.Span(),
+				})
+			}
+
 			for _, fn := range mod.Functions {
 				if fn.Annotation == nil {
 					continue
@@ -56,7 +66,7 @@ func (self analyzerHost) PostValidationHook(
 				for _, ann := range fn.Annotation.Items {
 					switch ann.(type) {
 					case ast.AnalyzedAnnotationItemTrigger:
-						return []diagnostic.Diagnostic{
+						diagnostics = append(diagnostics,
 							diagnostic.Diagnostic{
 								Level:   diagnostic.DiagnosticLevelError,
 								Message: "Trigger annotations are not allowed in user programs",
@@ -65,15 +75,14 @@ func (self analyzerHost) PostValidationHook(
 								},
 								Span: ann.Span(),
 							},
-						}
+						)
 					default:
 					}
 				}
 			}
 		}
+		return diagnostics
 	}
-
-	return nil
 }
 
 func mqttCallbackFn(span errors.Span) ast.Type {

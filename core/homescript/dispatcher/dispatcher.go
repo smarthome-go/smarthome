@@ -238,7 +238,7 @@ func (i *InstanceT) Unregister(id dispatcherTypes.RegistrationID) error {
 
 	// Also delete all references in MQTT.
 	for topic, ids := range mqttRegistrations {
-		if slices.Contains[[]dispatcherTypes.RegistrationID](ids, id) {
+		if slices.Contains(ids, id) {
 			if err := i.Mqtt.Unsubscribe(topic); err != nil && unregisterErr == nil {
 				unregisterErr = err
 			}
