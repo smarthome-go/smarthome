@@ -27,7 +27,6 @@ import (
 )
 
 const maxLinesErrMessage = 20
-const KillEventFunction = "kill"
 const KillEventMaxRuntime = 5 * time.Second
 const jobIDNumDigits = 16
 
@@ -308,6 +307,7 @@ func (m *Manager) RunGeneric(
 	// This is required for the asyncronous runtime.
 	idChan *chan uint64,
 	outputWriter io.Writer,
+	shouldProcessAnnotations bool,
 ) (types.HmsRes, error) {
 	modules, analyzerRes, err := m.Analyze(
 		invocation.Identifier,
@@ -332,7 +332,10 @@ func (m *Manager) RunGeneric(
 
 	jobID := m.AllocJobId()
 
-	compOut, err := m.Compile(modules, invocation.Identifier.Filename)
+	compOut, err := m.Compile(
+		modules,
+		invocation.Identifier.Filename,
+	)
 	if err != nil {
 		return types.HmsRes{}, err
 	}
@@ -347,6 +350,29 @@ func (m *Manager) RunGeneric(
 		invocation.LoadedSingletons,
 		context,
 	)
+
+	//
+	// If this is a top-level user script, extract annotations first.
+	//
+
+	if shouldProcessAnnotations {
+		logger.Trace("Processing annotations...")
+		triggers, err := m.ProcessAnnotations(compOut, context)
+		if err != nil {
+			return types.HmsRes{}, fmt.Errorf("annotations: %s", err.Error())
+		}
+
+		for _, trigger := range triggers {
+			if err := executor.RegisterTrigger(
+				trigger.CalledFnIdentMangled,
+				trigger.Trigger,
+				trigger.Span,
+				trigger.Args,
+			); err != nil {
+				return types.HmsRes{}, fmt.Errorf("trigger: %s", err.Error())
+			}
+		}
+	}
 
 	vm := runtime.NewVM(
 		compOut,
@@ -366,7 +392,9 @@ func (m *Manager) RunGeneric(
 	)
 
 	defer func() {
+		fmt.Println(":bef")
 		executor.Free()
+		fmt.Println(":after")
 		m.removeJob(jobID)
 	}()
 
@@ -527,6 +555,8 @@ func (m *Manager) RunGeneric(
 		return types.HmsRes{}, err
 	}
 
+	fmt.Println("====== a ======")
+
 	return types.HmsRes{
 		Errors: types.HmsDiagnosticsContainer{
 			ContainsError: false,
@@ -539,13 +569,61 @@ func (m *Manager) RunGeneric(
 	}, nil
 }
 
-// TODO: Add argument support
-func (m *Manager) RunUserScript(
+func (m *Manager) RunUserCode(
+	code, filename, username string,
+	function *runtime.FunctionInvocation,
+	cancelation types.Cancelation,
+	outputWriter io.Writer,
+	idChan *chan uint64,
+) (types.HmsRes, error) {
+	return m.RunUserCodeTweakable(
+		code,
+		filename,
+		username,
+		function,
+		cancelation,
+		outputWriter,
+		idChan,
+		true,
+	)
+}
+
+func (m *Manager) RunUserCodeTweakable(
+	code, filename, username string,
+	function *runtime.FunctionInvocation,
+	cancelation types.Cancelation,
+	outputWriter io.Writer,
+	idChan *chan uint64,
+	processAnnotations bool,
+) (types.HmsRes, error) {
+	return m.RunGeneric(
+		types.ProgramInvocation{
+			Identifier: homescript.InputProgram{
+				ProgramText: code,
+				Filename:    filename,
+			},
+			FunctionInvocation: function,
+			LoadedSingletons:   map[string]value.Value{},
+		},
+		types.NewExecutionContextUser(
+			filename,
+			username,
+			nil,
+		),
+		cancelation,
+		idChan,
+		outputWriter,
+		processAnnotations,
+	)
+}
+
+func (m *Manager) RunUserScriptTweakable(
 	programID, username string,
 	function *runtime.FunctionInvocation,
 	cancelation types.Cancelation,
 	outputWriter io.Writer,
 	idChan *chan uint64,
+	processAnnotations bool,
 ) (types.HmsRes, error) {
 	script, found, err := m.GetPersonalScriptById(programID, username)
 	if err != nil {
@@ -555,23 +633,34 @@ func (m *Manager) RunUserScript(
 		return types.HmsRes{}, fmt.Errorf("Homescript with ID `%s` owned by user `%s` was not found", programID, username)
 	}
 
-	return m.RunGeneric(
-		types.ProgramInvocation{
-			Identifier: homescript.InputProgram{
-				ProgramText: script.Data.Code,
-				Filename:    script.Data.Id,
-			},
-			FunctionInvocation: function,
-			LoadedSingletons:   map[string]value.Value{},
-		},
-		types.NewExecutionContextUser(
-			programID,
-			username,
-			nil,
-		),
+	return m.RunUserCodeTweakable(
+		script.Data.Code,
+		script.Data.Id,
+		username,
+		function,
 		cancelation,
-		idChan,
 		outputWriter,
+		idChan,
+		processAnnotations,
+	)
+}
+
+// TODO: Add argument support
+func (m *Manager) RunUserScript(
+	programID, username string,
+	function *runtime.FunctionInvocation,
+	cancelation types.Cancelation,
+	outputWriter io.Writer,
+	idChan *chan uint64,
+) (types.HmsRes, error) {
+	return m.RunUserScriptTweakable(
+		programID,
+		username,
+		function,
+		cancelation,
+		outputWriter,
+		idChan,
+		true,
 	)
 }
 
@@ -632,6 +721,7 @@ func (m *Manager) RunDriverScript(
 		cancelation,
 		nil,
 		outputWriter,
+		false,
 	)
 }
 
@@ -690,37 +780,77 @@ func (m *Manager) KillAllId(hmsId string) (count uint64, success bool) {
 }
 
 func (m *Manager) killJob(job types.Job) {
-	logger.Trace("Dispatching sigTerm to HMS interpreter channel...")
-
-	_, killFnExists := job.VM.Program.Mappings.Functions[KillEventFunction]
-	canceled := false
 	cancelMtx := sync.Mutex{}
 
-	if killFnExists {
-		// Give timeout of 10 secs
-		go func() {
-			time.Sleep(KillEventMaxRuntime)
+	executor := job.VM.Executor.(interpreterExecutor)
+	killCallbacks := executor.onKillCallbackFuncs
+	numsOfRunningKillHandlers := len(*killCallbacks)
 
-			defer cancelMtx.Unlock()
+	logger.Tracef("Dispatching sigTerm to HMS interpreter channel: (%d kill handlers)...", numsOfRunningKillHandlers)
+
+	if numsOfRunningKillHandlers > 0 {
+		// Give timeout of X secs to kill gracefully.
+		start := time.Now()
+
+		// Execute all kill functions in this execution unit.
+		for _, mangledFn := range *killCallbacks {
+			go func() {
+				onFinish := make(chan struct{})
+
+				core := job.VM.SpawnAsync(runtime.FunctionInvocation{
+					Function:    mangledFn,
+					LiteralName: true,
+					Args:        []value.Value{},
+					FunctionSignature: runtime.FunctionInvocationSignature{
+						Params:     []runtime.FunctionInvocationSignatureParam{},
+						ReturnType: ast.NewNullType(errors.Span{}),
+					},
+				},
+					nil,
+					onFinish,
+				)
+
+				logger.Tracef("Invoking cancel func `%s` started on core %d...", mangledFn, core.Corenum)
+
+				// Wait until this core finishes.
+				<-onFinish
+
+				logger.Tracef("Cancel func `%s`finished", mangledFn)
+
+				cancelMtx.Lock()
+				numsOfRunningKillHandlers--
+				cancelMtx.Unlock()
+			}()
+		}
+
+		for {
 			cancelMtx.Lock()
-			if !canceled {
-				logger.Debugf("Job %d did not quit on time, terminating kill event...", job.JobID)
-				job.CancelCtx()
+			runningHandlers := numsOfRunningKillHandlers
+			cancelMtx.Unlock()
+
+			job.VM.Cores.Lock.RLock()
+			amountCores := len(job.VM.Cores.Cores)
+			job.VM.Cores.Lock.RUnlock()
+
+			if runningHandlers == 0 && amountCores == 0 {
+				logger.Tracef("All kill events finished for ID `%s` (numActCores = %d)", executor.programID, amountCores)
+				// job.CancelCtx()
+				break
 			}
-		}()
 
-		job.VM.SpawnSync(runtime.FunctionInvocation{
-			Function: KillEventFunction,
-			Args:     []value.Value{},
-			FunctionSignature: runtime.FunctionInvocationSignature{
-				Params:     []runtime.FunctionInvocationSignatureParam{},
-				ReturnType: ast.NewNullType(errors.Span{}),
-			},
-		}, nil)
+			if time.Since(start) > KillEventMaxRuntime {
+				logger.Debugf(
+					"Job %d did not quit on time (%d handlers still running), terminating kill event...",
+					job.JobID,
+					numsOfRunningKillHandlers,
+				)
+				job.CancelCtx()
+				break
+			}
 
-		cancelMtx.Lock()
-		canceled = true
-		cancelMtx.Unlock()
+			time.Sleep(1 * time.Second)
+			logger.Tracef("Waiting for %d funcs (%d cores) in `%s` before termination", runningHandlers, amountCores, executor.programID)
+		}
 	} else {
 		job.CancelCtx()
 	}

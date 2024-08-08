@@ -42,6 +42,9 @@ type interpreterExecutor struct {
 	context types.ExecutionContext
 
 	cancelation types.Cancelation
+
+	// Mangled names of the functions that are to be called when this program is killed.
+	onKillCallbackFuncs *[]string
 }
 
 func (self interpreterExecutor) Free() error {
@@ -70,15 +73,17 @@ func NewInterpreterExecutor(
 	context types.ExecutionContext,
 ) interpreterExecutor {
 	registrations := make([]dispatcherT.RegistrationID, 0)
+	onKillCallbackFuncs := make([]string, 0)
 
 	return interpreterExecutor{
-		registrations: &registrations,
-		jobID:         jobID,
-		programID:     programID,
-		ioWriter:      writer,
-		singletons:    singletons,
-		context:       context,
-		cancelation:   cancelation,
+		registrations:       &registrations,
+		jobID:               jobID,
+		programID:           programID,
+		ioWriter:            writer,
+		singletons:          singletons,
+		context:             context,
+		cancelation:         cancelation,
+		onKillCallbackFuncs: &onKillCallbackFuncs,
 	}
 }
 

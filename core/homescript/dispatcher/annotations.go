@@ -1,20 +1,12 @@
 package dispatcher
 
 import (
-	"bytes"
-	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/smarthome-go/homescript/v3/homescript"
-	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
-	"github.com/smarthome-go/homescript/v3/homescript/compiler"
-	"github.com/smarthome-go/homescript/v3/homescript/errors"
-	"github.com/smarthome-go/homescript/v3/homescript/runtime"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
-	driverTypes "github.com/smarthome-go/smarthome/core/device/driver/types"
 	dispatcherTypes "github.com/smarthome-go/smarthome/core/homescript/dispatcher/types"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
@@ -171,69 +163,50 @@ func (i *InstanceT) RegisterDevice(driver database.DeviceDriver, deviceID string
 		return err
 	}
 
-	for annotationFn, annotation := range compileOutput.Annotations {
-		fmt.Printf("============= %v\n", annotation)
-		for _, item := range annotation.Items {
-			switch itemS := item.(type) {
-			case compiler.IdentCompiledAnnotation:
-			case compiler.TriggerCompiledAnnotation:
-				ident := itemS.ArgumentFunctionIdent
-				args, err := i.ExtractDriverTriggerAnnotationArgs(itemS,
-					&HomescriptOrDriver{
-						IsDriver: true,
-						//nolint:exhaustruct
-						Homescript: database.Homescript{},
-						Device: DeviceTarget{
-							DeviceID: deviceID,
-							Driver:   driver,
-						},
-					},
-					ident,
-					context,
-				)
-				if err != nil {
-					return err
+	triggers, err := i.Hms.ProcessAnnotations(
+		compileOutput,
+		context,
+	)
+
+	for _, trigger := range triggers {
+		switch trigger.Trigger {
+		case types.TriggerMqttMessageIdent:
+			topics := make([]string, len(trigger.Args))
+			containsEmpty := false
+			for idx, arg := range trigger.Args {
+				vString := arg.(value.ValueString).Inner
+				topics[idx] = vString
+
+				if vString == "" && !containsEmpty {
+					containsEmpty = true
 				}
+			}
 
-				// Transform the argument list to a string list.
-				untypedList := args[0].(value.ValueList).Values
+			// Sanity-check the arguments.
+			if len(topics) == 0 || containsEmpty {
+				return fmt.Errorf("Empty lists or empty strings are not allowed as topics")
+			}
 
-				topics := make([]string, len(*untypedList))
-				containsEmpty := false
-				for idx, arg := range *untypedList {
-					vString := (*arg).(value.ValueString).Inner
-					topics[idx] = vString
-
-					if vString == "" && !containsEmpty {
-						containsEmpty = true
-					}
-				}
-
-				// Sanity-check the arguments.
-				if len(topics) == 0 || containsEmpty {
-					return fmt.Errorf("Empty lists or empty strings are not allowed as topics")
-				}
-
-				if err := i.RegisterTriggerAnnotation(
-					types.CreateDriverHmsId(database.DriverTuple{
-						VendorID: driver.VendorID,
-						ModelID:  driver.ModelID,
-					}),
-					dispatcherTypes.CalledFunction{
-						Ident:          annotationFn.UnmangledFunction,
-						IdentIsLiteral: false,
-						// TODO: decide on the callmode
-						CallMode: dispatcherTypes.CallModeAllocating{
+			if err := i.RegisterMqttTriggerAnnotation(
+				types.CreateDriverHmsId(database.DriverTuple{
+					VendorID: driver.VendorID,
+					ModelID:  driver.ModelID,
+				}),
+				dispatcherTypes.CalledFunction{
+					Ident:          trigger.CalledFnIdentMangled,
+					IdentIsLiteral: false,
+					CallMode: dispatcherTypes.CallModeAdaptive{
+						AllocatingFallback: dispatcherTypes.CallModeAllocating{
 							Context: context,
 						},
 					},
-					topics,
-				); err != nil {
-					// TODO: what kind of error is this?
-					// Is this fatal?
-					return err
-				}
+				},
+				topics,
+			); err != nil {
+				return err
 			}
+		default:
+			continue
 		}
 	}
 
@@ -241,7 +214,7 @@ func (i *InstanceT) RegisterDevice(driver database.DeviceDriver, deviceID string
 	return nil
 }
 
-func (i *InstanceT) RegisterTriggerAnnotation(
+func (i *InstanceT) RegisterMqttTriggerAnnotation(
 	programID string,
 	callback dispatcherTypes.CalledFunction,
 	mqttTopics []string,
@@ -258,73 +231,4 @@ func (i *InstanceT) RegisterTriggerAnnotation(
 	)
 
 	return err
-}
-
-func (i *InstanceT) ExtractDriverTriggerAnnotationArgs(
-	annotation compiler.TriggerCompiledAnnotation,
-	target *HomescriptOrDriver,
-	targetFunctionName string,
-	executionContext types.ExecutionContext,
-) ([]value.Value, error) {
-	logger.Tracef(
-		"Processing trigger annotation with target `%s:%s` for function `%s`...",
-		target.Device.Driver.VendorID,
-		target.Device.Driver.ModelID,
-		targetFunctionName,
-	)
-
-	buffer := bytes.Buffer{}
-	startTrigger := time.Now()
-
-	const maxRuntime = time.Second * 2
-	ctx, cancelFunc := context.WithTimeout(context.Background(), maxRuntime)
-
-	res, err := i.Hms.RunDriverScript(
-		driverTypes.DriverInvocationIDs{
-			DeviceID: &target.Device.DeviceID,
-			VendorID: target.Device.Driver.VendorID,
-			ModelID:  target.Device.Driver.ModelID,
-		},
-		runtime.FunctionInvocation{
-			Function:    annotation.ArgumentFunctionIdent,
-			LiteralName: true,
-			Args:        []value.Value{},
-			FunctionSignature: runtime.FunctionInvocationSignature{
-				Params:     []runtime.FunctionInvocationSignatureParam{},
-				ReturnType: ast.NewListType(ast.NewAnyType(errors.Span{}), errors.Span{}),
-			},
-		},
-		types.Cancelation{
-			Context:    ctx,
-			CancelFunc: cancelFunc,
-		},
-		&buffer,
-	)
-
-	if res.Errors.ContainsError {
-		panic(res.Errors.Diagnostics)
-	}
-
-	argList := res.ReturnValue.(value.ValueList)
-
-	disp, erR := argList.Display()
-	if err != nil {
-		panic((*erR).Message())
-	}
-
-	fmt.Printf(
-		"====> (%v) FN = `%s:%s` | ARGS = `%s`\n",
-		time.Since(startTrigger),
-		annotation.CallbackFnIdent,
-		annotation.ArgumentFunctionIdent,
-		disp,
-	)
-
-	// Make args.
-	args := make([]value.Value, len(*argList.Values))
-	for idx, src := range *argList.Values {
-		args[idx] = *src
-	}
-
-	return args, nil
 }

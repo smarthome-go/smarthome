@@ -2,6 +2,8 @@ package homescript
 
 import (
 	"fmt"
+	"slices"
+	"strings"
 
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer"
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
@@ -64,18 +66,22 @@ func (self analyzerHost) PostValidationHook(
 				}
 
 				for _, ann := range fn.Annotation.Items {
-					switch ann.(type) {
+					switch item := ann.(type) {
 					case ast.AnalyzedAnnotationItemTrigger:
-						diagnostics = append(diagnostics,
-							diagnostic.Diagnostic{
-								Level:   diagnostic.DiagnosticLevelError,
-								Message: "Trigger annotations are not allowed in user programs",
-								Notes: []string{
-									"To use trigger annotations, create a driver Homescript",
+						triggerIdent := item.TriggerSource.Ident()
+						if slices.Contains(types.ForbiddenUserTriggers, triggerIdent) {
+							diagnostics = append(diagnostics,
+								diagnostic.Diagnostic{
+									Level:   diagnostic.DiagnosticLevelError,
+									Message: "This trigger source can not be used in user programs",
+									Notes: []string{
+										fmt.Sprintf("To use the trigger source `%s`, create a driver Homescript", triggerIdent),
+										fmt.Sprintf("The following trigger sources cannot be used in user mode: %s", strings.Join(types.ForbiddenUserTriggers, ",")),
+									},
+									Span: ann.Span(),
 								},
-								Span: ann.Span(),
-							},
-						)
+							)
+						}
 					default:
 					}
 				}
@@ -128,7 +134,28 @@ func (self analyzerHost) GetBuiltinImport(
 		}
 
 		switch valueName {
-		case "minute":
+		case types.TriggerKillIdent:
+			return analyzer.BuiltinImport{
+				Trigger: &analyzer.TriggerFunction{
+					TriggerFnType: ast.NewFunctionType(
+						ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)),
+						span,
+						ast.NewNullType(span),
+						span,
+					).(ast.FunctionType),
+					CallbackFnType: ast.NewFunctionType(
+						ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)),
+						span,
+						ast.NewNullType(span),
+						span,
+					).(ast.FunctionType),
+					Connective: pAst.OnTriggerDispatchKeyword,
+					ImportedAt: span,
+				},
+				Type:     nil,
+				Template: nil,
+			}, true, true
+		case types.TriggerMinuteIdent:
 			return analyzer.BuiltinImport{
 				Trigger: &analyzer.TriggerFunction{
 					TriggerFnType: ast.NewFunctionType(
@@ -223,7 +250,7 @@ func (self analyzerHost) GetBuiltinImport(
 	case "mqtt":
 		if kind == pAst.IMPORT_KIND_TRIGGER {
 			switch valueName {
-			case "message":
+			case types.TriggerMqttMessageIdent:
 				return analyzer.BuiltinImport{
 					Type:     nil,
 					Template: nil,

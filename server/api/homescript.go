@@ -13,7 +13,6 @@ import (
 	"github.com/gorilla/mux"
 
 	hms "github.com/smarthome-go/homescript/v3/homescript"
-	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/homescript"
@@ -224,26 +223,17 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 	filename := fmt.Sprintf("live@%s", username)
 	var outputBuffer bytes.Buffer
 
-	res, err := homescript.HmsManager.RunGeneric(
-		types.ProgramInvocation{
-			Identifier: hms.InputProgram{
-				ProgramText: request.Code,
-				Filename:    filename,
-			},
-			FunctionInvocation: nil,
-			LoadedSingletons:   map[string]value.Value{},
-		},
-		types.NewExecutionContextUser(
-			filename,
-			username,
-			args,
-		),
+	res, err := homescript.HmsManager.RunUserCode(
+		request.Code,
+		filename,
+		username,
+		nil,
 		types.Cancelation{
 			Context:    ctx,
 			CancelFunc: cancel,
 		},
-		nil,
 		&outputBuffer,
+		nil,
 	)
 	output := outputBuffer.String()
 

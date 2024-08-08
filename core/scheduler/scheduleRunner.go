@@ -100,6 +100,7 @@ func scheduleRunnerFunc(id uint, m *SchedulerManager) {
 			},
 			nil,
 			&bytes.Buffer{},
+			true,
 		)
 
 		if err != nil {

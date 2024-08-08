@@ -4,6 +4,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/homescript/dispatcher"
@@ -12,7 +13,7 @@ import (
 )
 
 func (self interpreterExecutor) RegisterTrigger(
-	callbackFunctionIdent string,
+	callbackFunctionIdentMangled string,
 	eventTriggerIdent string,
 	span errors.Span,
 	args []value.Value,
@@ -20,22 +21,24 @@ func (self interpreterExecutor) RegisterTrigger(
 	var registrationID types.RegistrationID
 	var err error
 	switch eventTriggerIdent {
-	case "message":
+	case hmsTypes.TriggerMqttMessageIdent:
 		registrationID, err = registerTriggerMessage(
-			callbackFunctionIdent,
+			callbackFunctionIdentMangled,
 			nil,
 			self.programID,
 			args,
 			self.context,
 		)
-	case "minute":
+	case hmsTypes.TriggerMinuteIdent:
 		registrationID, err = registerTriggerMinute(
-			callbackFunctionIdent,
+			callbackFunctionIdentMangled,
 			self.programID,
 			self.jobID,
 			args,
 			self.context,
 		)
+	case hmsTypes.TriggerKillIdent:
+		self.registerTriggerKill(callbackFunctionIdentMangled)
 	default:
 		panic("Encountered unimplemented trigger function")
 	}
@@ -49,8 +52,13 @@ func (self interpreterExecutor) RegisterTrigger(
 	return nil
 }
 
+func (self *interpreterExecutor) registerTriggerKill(callbackFunctionMangled string) {
+	*self.onKillCallbackFuncs = append(*self.onKillCallbackFuncs, callbackFunctionMangled)
+	spew.Dump(self.onKillCallbackFuncs)
+}
+
 func registerTriggerMessage(
-	callbackFunctionIdent string,
+	callbackFunctionIdentMangled string,
 	callmodeOverride *types.CallMode,
 	programID string,
 	args []value.Value,
@@ -77,7 +85,7 @@ func registerTriggerMessage(
 		types.RegisterInfo{
 			ProgramID: programID,
 			Function: &types.CalledFunction{
-				Ident:          callbackFunctionIdent,
+				Ident:          callbackFunctionIdentMangled,
 				IdentIsLiteral: false,
 				CallMode:       callMode,
 			},
@@ -95,7 +103,7 @@ func registerTriggerMessage(
 }
 
 func registerTriggerMinute(
-	callbackFunctionIdent string,
+	callbackFunctionIdentMangled string,
 	programID string,
 
 	// This is required as this trigger does not make sense in annotations.
@@ -116,7 +124,7 @@ func registerTriggerMinute(
 
 	logger.Tracef(
 		"Registered trigger `minute` with callback fn `%s` and args `[%s]`",
-		callbackFunctionIdent,
+		callbackFunctionIdentMangled,
 		strings.Join(stringArgs, ", "),
 	)
 
@@ -132,7 +140,7 @@ func registerTriggerMinute(
 		types.RegisterInfo{
 			ProgramID: programID,
 			Function: &types.CalledFunction{
-				Ident:          callbackFunctionIdent,
+				Ident:          callbackFunctionIdentMangled,
 				IdentIsLiteral: false,
 				CallMode:       callmode,
 			},

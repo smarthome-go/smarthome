@@ -226,6 +226,7 @@ func (i *InstanceT) Unregister(id dispatcherTypes.RegistrationID) error {
 
 	_, valid := i.DoneRegistrations.Set[id]
 	if !valid {
+		i.DoneRegistrations.Lock.Unlock()
 		return fmt.Errorf("Cannot unregister registration with ID %d: not registered", id)
 	}
 
@@ -304,7 +305,10 @@ func (i *InstanceT) AttachingCall(
 		LiteralName:       info.Function.IdentIsLiteral,
 		Args:              meta.Args,
 		FunctionSignature: meta.FunctionSignature,
-	}, nil)
+	},
+		nil,
+		nil,
+	)
 
 	// TODO: WHAT to do with this core.
 }

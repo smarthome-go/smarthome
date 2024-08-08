@@ -35,6 +35,11 @@ type Cancelation struct {
 type Manager interface {
 	GetPersonalScriptById(homescriptID string, username string) (database.Homescript, bool, error)
 
+	ProcessAnnotations(
+		compileOutput compiler.CompileOutput,
+		context ExecutionContext,
+	) (triggers []TriggerAnnotation, err error)
+
 	Analyze(
 		input homescript.InputProgram,
 		context ExecutionContext,
@@ -57,6 +62,24 @@ type Manager interface {
 		// This is required for the asynchronous runtime.
 		idChan *chan uint64,
 		outputWriter io.Writer,
+		shouldProcessAnnotations bool,
+	) (HmsRes, error)
+
+	RunUserCode(
+		code, filename, username string,
+		function *runtime.FunctionInvocation,
+		cancelation Cancelation,
+		outputWriter io.Writer,
+		idChan *chan uint64,
+	) (HmsRes, error)
+
+	RunUserCodeTweakable(
+		code, filename, username string,
+		function *runtime.FunctionInvocation,
+		cancelation Cancelation,
+		outputWriter io.Writer,
+		idChan *chan uint64,
+		processAnnotations bool,
 	) (HmsRes, error)
 
 	RunUserScript(
@@ -65,6 +88,15 @@ type Manager interface {
 		cancelation Cancelation,
 		outputWriter io.Writer,
 		idChan *chan uint64,
+	) (HmsRes, error)
+
+	RunUserScriptTweakable(
+		programID, username string,
+		function *runtime.FunctionInvocation,
+		cancelation Cancelation,
+		outputWriter io.Writer,
+		idChan *chan uint64,
+		processAnnotations bool,
 	) (HmsRes, error)
 
 	RunDriverScript(
