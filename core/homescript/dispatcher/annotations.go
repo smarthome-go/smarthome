@@ -171,10 +171,13 @@ func (i *InstanceT) RegisterDevice(driver database.DeviceDriver, deviceID string
 	for _, trigger := range triggers {
 		switch trigger.Trigger {
 		case types.TriggerMqttMessageIdent:
-			topics := make([]string, len(trigger.Args))
 			containsEmpty := false
-			for idx, arg := range trigger.Args {
-				vString := arg.(value.ValueString).Inner
+
+			argList := trigger.Args[0].(value.ValueList).Values
+			topics := make([]string, len(*argList))
+
+			for idx, arg := range *argList {
+				vString := (*arg).(value.ValueString).Inner
 				topics[idx] = vString
 
 				if vString == "" && !containsEmpty {
