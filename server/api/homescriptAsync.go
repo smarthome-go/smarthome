@@ -98,11 +98,11 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 
 	// Receive the code and args to run
 	ws.SetReadLimit(100 * megabyte)
-	if err := ws.SetReadDeadline(time.Now().Add(time.Minute)); err != nil {
+	if err := ws.SetReadDeadline(time.Time{}); err != nil {
 		return
 	}
 	ws.SetPongHandler(func(string) error {
-		return ws.SetReadDeadline(time.Now().Add(time.Minute))
+		return ws.SetReadDeadline(time.Time{})
 	})
 	var request HmsMessageRXInit
 	if err := ws.ReadJSON(&request); err != nil {
@@ -111,6 +111,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 			Kind:    MessageKindErr,
 			Message: fmt.Sprintf("invalid init request: %s", err.Error()),
 		}); err != nil {
+			wsMutex.Unlock()
 			return
 		}
 		wsMutex.Unlock()
@@ -122,6 +123,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 			Kind:    MessageKindErr,
 			Message: fmt.Sprintf("invalid init request kind: %s", request.Kind),
 		}); err != nil {
+			wsMutex.Unlock()
 			return
 		}
 		wsMutex.Unlock()
@@ -151,12 +153,17 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 			idChan,
 		)
 
+		fmt.Println("================ a ==============")
+
+		log.Tracef("WS homescript (%s) finished.", request.HMSID)
+
 		if err != nil {
 			wsMutex.Lock()
 			if err := ws.WriteJSON(HMSMessageTXErr{
 				Kind:    MessageKindErr,
 				Message: fmt.Sprintf("Could not run Homescript: internal error: %s", err.Error()),
 			}); err != nil {
+				wsMutex.Unlock()
 				return
 			}
 			ws.Close()
@@ -165,7 +172,9 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 		}
 		outWriter.Close()
 
+		fmt.Println("block before res")
 		*results <- res
+		fmt.Println("block finished res")
 	}(outWriter, &res, &idChan)
 
 	jobId := <-idChan
@@ -173,10 +182,10 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		// Check if the script should be killed.
 		ws.SetReadLimit(100 * megabyte)
-		if err := ws.SetReadDeadline(time.Now().Add(time.Minute)); err != nil {
+		if err := ws.SetReadDeadline(time.Time{}); err != nil {
 			return
 		}
-		ws.SetPongHandler(func(string) error { return ws.SetReadDeadline(time.Now().Add(time.Minute)) })
+		ws.SetPongHandler(func(string) error { return ws.SetReadDeadline(time.Time{}) })
 		var request HmsMessageRXKill
 		if err := ws.ReadJSON(&request); err != nil {
 			wsMutex.Lock()
@@ -184,17 +193,20 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 				Kind:    MessageKindErr,
 				Message: fmt.Sprintf("invalid kill message: `%s`\n", err.Error()),
 			}); err != nil {
+				wsMutex.Unlock()
 				return
 			}
 			wsMutex.Unlock()
 			return
 		}
+
 		if request.Kind != MessageKindKill {
 			wsMutex.Lock()
 			if err := ws.WriteJSON(HMSMessageTXErr{
 				Kind:    MessageKindErr,
 				Message: fmt.Sprintf("invalid kill request kind: `%s`\n", request.Kind),
 			}); err != nil {
+				wsMutex.Unlock()
 				return
 			}
 			wsMutex.Unlock()
@@ -202,6 +214,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 
 		log.Trace("Killing script from Websocket...")
 		homescript.HmsManager.Kill(jobId)
+		log.Trace("Killed script from Websocket...")
 	}()
 
 	scanner := bufio.NewScanner(outReader)
@@ -262,6 +275,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 				Kind:    MessageKindStdOut,
 				Payload: string(scanner.Bytes()),
 			}); err != nil {
+				wsMutex.Unlock()
 				return
 			}
 
@@ -280,6 +294,7 @@ outer:
 			killPipe <- true
 			wsMutex.Lock()
 			if err := ws.SetWriteDeadline(time.Now().Add(wsTimeout)); err != nil {
+				wsMutex.Unlock()
 				return
 			}
 
@@ -289,6 +304,7 @@ outer:
 				FileContents: res.Errors.FileContents,
 				Success:      !res.Errors.ContainsError,
 			}); err != nil {
+				wsMutex.Unlock()
 				return
 			}
 			wsMutex.Unlock()
@@ -299,13 +315,20 @@ outer:
 	}
 	wsMutex.Lock()
 	if err := ws.SetWriteDeadline(time.Now().Add(wsTimeout)); err != nil {
+		wsMutex.Unlock()
 		return
 	}
-	if err := ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "")); err != nil {
+	if err := ws.WriteMessage(
+		websocket.CloseMessage,
+		websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""),
+	); err != nil {
+		wsMutex.Unlock()
 		return
 	}
-	wsMutex.Unlock()
+
 	// Give the client a grace period to close the connection.
 	time.Sleep(time.Second)
 	ws.Close()
+
+	wsMutex.Unlock()
 }
