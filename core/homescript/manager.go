@@ -879,7 +879,7 @@ func (m *Manager) GetUserDirectJobs(username string) []ApiJob {
 
 	for _, job := range allJobs {
 		// Skip any jobs which are not executed by the specified user
-		if job.Context.Username() == nil || *job.Context.Username() != username {
+		if job.Context == nil || job.Context.Username() == nil || *job.Context.Username() != username {
 			continue
 		}
 
