@@ -85,6 +85,20 @@ func NewExecutionContextDriver(vendor, model string, deviceID *string) Execution
 
 type ExecutionContextAutomation struct {
 	UserContext ExecutionContextUser
+	Inner       ExecutionContextAutomationInner
+}
+
+func NewExecutionContextAutomation(
+	user ExecutionContextUser,
+	inner ExecutionContextAutomationInner,
+) ExecutionContextAutomation {
+	return ExecutionContextAutomation{
+		UserContext: user,
+		Inner:       inner,
+	}
+}
+
+type ExecutionContextAutomationInner struct {
 	// This is != nil if the trigger of the automation was a notification.
 	NotificationContext *ExecutionContextNotification
 

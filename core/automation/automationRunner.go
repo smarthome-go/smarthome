@@ -188,11 +188,11 @@ func AutomationRunnerFunc(id uint, automationCtx types.ExecutionContextAutomatio
 
 	// NOTE: If the automation context includes a maximum runtime, kill the script if it exceeds this timeout
 	ctx, cancel := context.WithCancel(context.Background())
-	if automationCtx.MaximumHMSRuntime != nil {
-		ctx, cancel = context.WithTimeout(context.Background(), *automationCtx.MaximumHMSRuntime)
+	if automationCtx.Inner.MaximumHMSRuntime != nil {
+		ctx, cancel = context.WithTimeout(context.Background(), *automationCtx.Inner.MaximumHMSRuntime)
 	}
 
-	res, err := Manager.Hms.RunUserScript(
+	res, err := Manager.Hms.RunUserScriptTweakable(
 		job.Data.HomescriptId,
 		job.Owner,
 		nil,
@@ -202,6 +202,8 @@ func AutomationRunnerFunc(id uint, automationCtx types.ExecutionContextAutomatio
 		},
 		&bytes.Buffer{},
 		nil,
+		false,
+		&automationCtx.Inner,
 	)
 
 	if err != nil {

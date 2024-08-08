@@ -19,7 +19,8 @@ import (
 var knownObjectTypeAnnotations = []string{driver.DRIVER_FIELD_REQUIRED_ANNOTATION}
 
 type analyzerHost struct {
-	context types.ExecutionContext
+	context     types.ExecutionContext
+	diagnostics []diagnostic.Diagnostic
 }
 
 func (analyzerHost) GetKnownObjectTypeFieldAnnotations() []string {
@@ -34,7 +35,8 @@ func newAnalyzerHost(
 	}
 
 	return analyzerHost{
-		context: context,
+		context:     context,
+		diagnostics: make([]diagnostic.Diagnostic, 0),
 	}
 }
 
@@ -42,14 +44,17 @@ func (self analyzerHost) PostValidationHook(
 	analyzedModules map[string]ast.AnalyzedProgram,
 	mainModule string,
 	analyzer *analyzer.Analyzer,
+	hasPreviousError bool,
 ) []diagnostic.Diagnostic {
+	diagnostics := self.diagnostics
+
 	switch self.context.Kind() {
 	case types.HMS_PROGRAM_KIND_DEVICE_DRIVER:
-		_, diagnostics := driver.ExtractDriverInfo(analyzedModules, mainModule, true)
+		_, diagnosticsDriver := driver.ExtractDriverInfo(analyzedModules, mainModule, true)
+		diagnostics = append(diagnostics, diagnosticsDriver...)
 		return diagnostics
 	default:
 		// Forbid `trigger` annotations and singletons in non-driver code.
-		diagnostics := make([]diagnostic.Diagnostic, 0)
 		for _, mod := range analyzedModules {
 			for _, singleton := range mod.Singletons {
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
@@ -683,21 +688,33 @@ func (self analyzerHost) GetBuiltinImport(
 			return analyzer.BuiltinImport{}, true, false
 		}
 	case "context":
+		notificationType := ast.NewObjectType([]ast.ObjectTypeField{
+			ast.NewObjectTypeField(pAst.NewSpannedIdent("id", span), ast.NewIntType(span), span),
+			ast.NewObjectTypeField(pAst.NewSpannedIdent("title", span), ast.NewStringType(span), span),
+			ast.NewObjectTypeField(pAst.NewSpannedIdent("description", span), ast.NewStringType(span), span),
+			ast.NewObjectTypeField(pAst.NewSpannedIdent("level", span), ast.NewIntType(span), span),
+		}, span)
+
 		switch valueName {
 		case "args":
 			return analyzer.BuiltinImport{
 				Type:     ast.NewAnyObjectType(span),
 				Template: &ast.TemplateSpec{},
 			}, true, true
+		case "Notification":
+			if kind != pAst.IMPORT_KIND_TYPE {
+				return analyzer.BuiltinImport{}, true, true
+			}
+
+			return analyzer.BuiltinImport{
+				Type:     notificationType,
+				Template: nil,
+				Trigger:  nil,
+			}, true, true
 		case "notification":
 			return analyzer.BuiltinImport{
-				Type: ast.NewObjectType([]ast.ObjectTypeField{
-					ast.NewObjectTypeField(pAst.NewSpannedIdent("id", span), ast.NewIntType(span), span),
-					ast.NewObjectTypeField(pAst.NewSpannedIdent("title", span), ast.NewStringType(span), span),
-					ast.NewObjectTypeField(pAst.NewSpannedIdent("description", span), ast.NewStringType(span), span),
-					ast.NewObjectTypeField(pAst.NewSpannedIdent("level", span), ast.NewIntType(span), span),
-				}, span),
-				Template: &ast.TemplateSpec{},
+				Type:     ast.NewOptionType(notificationType, span),
+				Template: nil,
 			}, true, true
 		}
 		return analyzer.BuiltinImport{}, true, false

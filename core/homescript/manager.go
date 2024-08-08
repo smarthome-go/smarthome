@@ -585,6 +585,7 @@ func (m *Manager) RunUserCode(
 		outputWriter,
 		idChan,
 		true,
+		nil,
 	)
 }
 
@@ -595,7 +596,22 @@ func (m *Manager) RunUserCodeTweakable(
 	outputWriter io.Writer,
 	idChan *chan uint64,
 	processAnnotations bool,
+	automationContext *types.ExecutionContextAutomationInner,
 ) (types.HmsRes, error) {
+	userContext := types.NewExecutionContextUser(
+		filename,
+		username,
+		nil,
+	)
+	context := types.ExecutionContext(userContext)
+
+	if automationContext != nil {
+		context = types.NewExecutionContextAutomation(
+			userContext,
+			*automationContext,
+		)
+	}
+
 	return m.RunGeneric(
 		types.ProgramInvocation{
 			Identifier: homescript.InputProgram{
@@ -605,11 +621,7 @@ func (m *Manager) RunUserCodeTweakable(
 			FunctionInvocation: function,
 			LoadedSingletons:   map[string]value.Value{},
 		},
-		types.NewExecutionContextUser(
-			filename,
-			username,
-			nil,
-		),
+		context,
 		cancelation,
 		idChan,
 		outputWriter,
@@ -624,6 +636,7 @@ func (m *Manager) RunUserScriptTweakable(
 	outputWriter io.Writer,
 	idChan *chan uint64,
 	processAnnotations bool,
+	automationContext *types.ExecutionContextAutomationInner,
 ) (types.HmsRes, error) {
 	script, found, err := m.GetPersonalScriptById(programID, username)
 	if err != nil {
@@ -642,6 +655,7 @@ func (m *Manager) RunUserScriptTweakable(
 		outputWriter,
 		idChan,
 		processAnnotations,
+		automationContext,
 	)
 }
 
@@ -661,6 +675,7 @@ func (m *Manager) RunUserScript(
 		outputWriter,
 		idChan,
 		true,
+		nil,
 	)
 }
 

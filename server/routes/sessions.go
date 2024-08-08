@@ -78,14 +78,16 @@ func tokenLoginHandler(w http.ResponseWriter, r *http.Request) {
 	go automation.Manager.RunAllAutomationsWithTrigger(
 		tokenData.User,
 		database.TriggerOnLogin,
-		types.ExecutionContextAutomation{
-			UserContext: types.NewExecutionContextUserNoFilename(
+		types.NewExecutionContextAutomation(
+			types.NewExecutionContextUserNoFilename(
 				tokenData.User,
 				nil,
 			),
-			NotificationContext: nil,
-			MaximumHMSRuntime:   nil,
-		},
+			types.ExecutionContextAutomationInner{
+				NotificationContext: nil,
+				MaximumHMSRuntime:   nil,
+			},
+		),
 	)
 }
 
@@ -131,14 +133,16 @@ func userLoginHandler(w http.ResponseWriter, r *http.Request) {
 	go automation.Manager.RunAllAutomationsWithTrigger(
 		loginRequest.Username,
 		database.TriggerOnLogin,
-		types.ExecutionContextAutomation{
-			UserContext: types.NewExecutionContextUserNoFilename(
+		types.NewExecutionContextAutomation(
+			types.NewExecutionContextUserNoFilename(
 				loginRequest.Username,
 				nil,
 			),
-			NotificationContext: nil,
-			MaximumHMSRuntime:   nil,
-		},
+			types.ExecutionContextAutomationInner{
+				NotificationContext: nil,
+				MaximumHMSRuntime:   nil,
+			},
+		),
 	)
 }
 
@@ -170,13 +174,15 @@ func logoutGetHandler(w http.ResponseWriter, r *http.Request) {
 	go automation.Manager.RunAllAutomationsWithTrigger(
 		username,
 		database.TriggerOnLogout,
-		types.ExecutionContextAutomation{
-			UserContext: types.NewExecutionContextUserNoFilename(
+		types.NewExecutionContextAutomation(
+			types.NewExecutionContextUserNoFilename(
 				username,
 				nil,
 			),
-			NotificationContext: nil,
-			MaximumHMSRuntime:   nil,
-		},
+			types.ExecutionContextAutomationInner{
+				NotificationContext: nil,
+				MaximumHMSRuntime:   nil,
+			},
+		),
 	)
 }

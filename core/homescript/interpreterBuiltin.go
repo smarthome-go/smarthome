@@ -347,7 +347,10 @@ func (self interpreterExecutor) execBuiltin(usernameNeedsToBeSpecified bool) val
 }
 
 // if it exists, returns a value which is part of the host builtin modules
-func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport string) (val value.Value, found bool) {
+func (self interpreterExecutor) GetBuiltinImport(
+	moduleName string,
+	toImport string,
+) (val value.Value, found bool) {
 	switch moduleName {
 	case "mqtt":
 		switch toImport {
@@ -968,19 +971,25 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 		case "args":
 			return *value.NewValueAnyObject(self.getArgs()), true
 		case "notification":
-			// If this program was triggered by a notification hook, do not allow notifications.
-			if self.context.Kind() == types.HMS_PROGRAM_KIND_AUTOMATION && self.context.(types.ExecutionContextAutomation).NotificationContext != nil {
-				return nil, false
+			// If this program was not triggered
+			if self.context.Kind() != types.HMS_PROGRAM_KIND_AUTOMATION {
+				panic(self.context.Kind())
+				return *value.NewNoneOption(), true
+			}
+
+			if self.context.(types.ExecutionContextAutomation).Inner.NotificationContext == nil {
+				panic("a")
 			}
 
 			automationContext := self.context.(types.ExecutionContextAutomation)
 
-			return *value.NewValueObject(map[string]*value.Value{
-				"id":          value.NewValueInt(int64(automationContext.NotificationContext.Id)),
-				"title":       value.NewValueString(automationContext.NotificationContext.Title),
-				"description": value.NewValueString(automationContext.NotificationContext.Description),
-				"level":       value.NewValueInt(int64(automationContext.NotificationContext.Level)),
-			}), true
+			return *value.NewValueOption(value.NewValueObject(map[string]*value.Value{
+				"id":          value.NewValueInt(int64(automationContext.Inner.NotificationContext.Id)),
+				"title":       value.NewValueString(automationContext.Inner.NotificationContext.Title),
+				"description": value.NewValueString(automationContext.Inner.NotificationContext.Description),
+				"level":       value.NewValueInt(int64(automationContext.Inner.NotificationContext.Level)),
+			})), true
+
 		}
 	case "scheduler":
 		switch toImport {
@@ -1140,7 +1149,7 @@ func (self interpreterExecutor) GetBuiltinImport(moduleName string, toImport str
 				// Only run notification hooks if this homescript was NOT triggered due to a notification
 				// this avoids unconditional recursion and thus prevents a crash.
 				runHooks := hmsExecutor.context.Kind() != types.HMS_PROGRAM_KIND_AUTOMATION ||
-					hmsExecutor.context.(types.ExecutionContextAutomation).NotificationContext == nil
+					hmsExecutor.context.(types.ExecutionContextAutomation).Inner.NotificationContext == nil
 
 				newId, err := notify.Manager.Notify(
 					*self.context.Username(),

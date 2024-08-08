@@ -67,14 +67,16 @@ func (m NotificationManager) Notify(
 		go m.Automation.RunAllAutomationsWithTrigger(
 			username,
 			database.TriggerOnNotification,
-			types.ExecutionContextAutomation{
-				UserContext: types.NewExecutionContextUserNoFilename(
+			types.NewExecutionContextAutomation(
+				types.NewExecutionContextUserNoFilename(
 					username,
 					nil,
 				),
-				NotificationContext: &notificationContext,
-				MaximumHMSRuntime:   nil,
-			},
+				types.ExecutionContextAutomationInner{
+					NotificationContext: &notificationContext,
+					MaximumHMSRuntime:   nil,
+				},
+			),
 		)
 	}
 

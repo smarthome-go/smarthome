@@ -131,15 +131,17 @@ func RunBootAutomations(config database.ServerConfig) {
 			maxRuntime := BOOT_AUTOMATION_MAX_RUNTIME
 			automation.AutomationRunnerFunc(
 				jobId,
-				types.ExecutionContextAutomation{
-					UserContext: types.NewExecutionContextUser(
+				types.NewExecutionContextAutomation(
+					types.NewExecutionContextUser(
 						job.Data.HomescriptId,
 						job.Owner,
 						nil,
 					),
-					NotificationContext: nil,
-					MaximumHMSRuntime:   &maxRuntime,
-				},
+					types.ExecutionContextAutomationInner{
+						NotificationContext: nil,
+						MaximumHMSRuntime:   &maxRuntime,
+					},
+				),
 			)
 		}(job.Id)
 	}
@@ -171,11 +173,20 @@ func runShutdownAutomations(ch *chan struct{}, config database.ServerConfig) {
 		wg.Add(1)
 
 		go func(jobId uint) {
-			automation.AutomationRunnerFunc(jobId, types.ExecutionContextAutomation{
-				UserContext:         types.ExecutionContextUser{},
-				NotificationContext: &types.ExecutionContextNotification{},
-				MaximumHMSRuntime:   nil,
-			})
+			automation.AutomationRunnerFunc(
+				jobId,
+				types.NewExecutionContextAutomation(
+					types.NewExecutionContextUser(
+						job.Data.HomescriptId,
+						job.Owner,
+						nil,
+					),
+					types.ExecutionContextAutomationInner{
+						NotificationContext: nil,
+						MaximumHMSRuntime:   nil,
+					},
+				),
+			)
 			wg.Done()
 		}(job.Id)
 	}

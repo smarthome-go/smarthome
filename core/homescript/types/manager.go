@@ -80,6 +80,7 @@ type Manager interface {
 		outputWriter io.Writer,
 		idChan *chan uint64,
 		processAnnotations bool,
+		automationContext *ExecutionContextAutomationInner,
 	) (HmsRes, error)
 
 	RunUserScript(
@@ -97,6 +98,7 @@ type Manager interface {
 		outputWriter io.Writer,
 		idChan *chan uint64,
 		processAnnotations bool,
+		automationContext *ExecutionContextAutomationInner,
 	) (HmsRes, error)
 
 	RunDriverScript(
