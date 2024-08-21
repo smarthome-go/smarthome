@@ -204,6 +204,7 @@ func AutomationRunnerFunc(id uint, automationCtx types.ExecutionContextAutomatio
 		nil,
 		false,
 		&automationCtx.Inner,
+		nil,
 	)
 
 	if err != nil {

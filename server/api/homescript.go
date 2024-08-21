@@ -117,6 +117,7 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 		},
 		&outputBuffer,
 		nil,
+		nil,
 	)
 
 	if err != nil {
@@ -233,6 +234,7 @@ func RunHomescriptString(w http.ResponseWriter, r *http.Request) {
 			CancelFunc: cancel,
 		},
 		&outputBuffer,
+		nil,
 		nil,
 	)
 	output := outputBuffer.String()

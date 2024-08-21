@@ -400,6 +400,7 @@ func (i *InstanceT) allocatingCall(
 			},
 			&buffer,
 			nil,
+			nil,
 		)
 
 		res = resTemp

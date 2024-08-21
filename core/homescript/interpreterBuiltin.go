@@ -24,6 +24,8 @@ import (
 	"github.com/smarthome-go/smarthome/services/weather"
 )
 
+const pollIterationSleepDuration = time.Millisecond * 10
+
 type interpreterExecutor struct {
 	// All `attaching` registrations in the dispatcher (these need to be revoked before the VM is deleted).
 	registrations *[]dispatcherT.RegistrationID
@@ -45,6 +47,9 @@ type interpreterExecutor struct {
 
 	// Mangled names of the functions that are to be called when this program is killed.
 	onKillCallbackFuncs *[]string
+
+	// Stdin buffer.
+	stdin *types.StdinBuffer
 }
 
 func (self interpreterExecutor) Free() error {
@@ -71,9 +76,14 @@ func NewInterpreterExecutor(
 	cancelation types.Cancelation,
 	singletons map[string]value.Value,
 	context types.ExecutionContext,
+	stdin *types.StdinBuffer,
 ) interpreterExecutor {
 	registrations := make([]dispatcherT.RegistrationID, 0)
 	onKillCallbackFuncs := make([]string, 0)
+
+	if stdin == nil {
+		stdin = types.NewStdinBuffer()
+	}
 
 	return interpreterExecutor{
 		registrations:       &registrations,
@@ -84,6 +94,7 @@ func NewInterpreterExecutor(
 		context:             context,
 		cancelation:         cancelation,
 		onKillCallbackFuncs: &onKillCallbackFuncs,
+		stdin:               stdin,
 	}
 }
 
@@ -241,6 +252,7 @@ func (self interpreterExecutor) execHelper(
 		self.cancelation,
 		self.ioWriter,
 		nil,
+		self.stdin,
 	)
 
 	if err != nil {
@@ -973,12 +985,11 @@ func (self interpreterExecutor) GetBuiltinImport(
 		case "notification":
 			// If this program was not triggered
 			if self.context.Kind() != types.HMS_PROGRAM_KIND_AUTOMATION {
-				panic(self.context.Kind())
 				return *value.NewNoneOption(), true
 			}
 
 			if self.context.(types.ExecutionContextAutomation).Inner.NotificationContext == nil {
-				panic("a")
+				return *value.NewNoneOption(), true
 			}
 
 			automationContext := self.context.(types.ExecutionContextAutomation)
@@ -1235,6 +1246,22 @@ func (e interpreterExecutor) genericPrinter(span errors.Span, args []value.Value
 	return nil
 }
 
+// func (self *interpreterExecutor) inputPoll() *string {
+// 	var returnValue *string = nil
+//
+// 	self.stdin.lock.RLock()
+// 	available := len(self.stdin.inputs) > 0
+// 	if available {
+// 		input := self.stdin.inputs[0]
+// 		self.stdin.inputs = self.stdin.inputs[1:]
+//
+// 		returnValue = &input
+// 	}
+// 	self.stdin.lock.RUnlock()
+//
+// 	return returnValue
+// }
+
 func interpreterScopeAdditions() map[string]value.Value {
 	// TODO: fill this
 	return map[string]value.Value{
@@ -1287,6 +1314,47 @@ func interpreterScopeAdditions() map[string]value.Value {
 		}),
 		"println": *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 			return value.NewValueNull(), executor.(interpreterExecutor).genericPrinter(span, args, true)
+		}),
+		// TODO: change this
+		printfnBuiltinIdent: *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
+			panic("not implemented")
+			return value.NewValueNull(), executor.(interpreterExecutor).genericPrinter(span, args, true)
+		}),
+		// TODO: implement this
+		inputBuiltinIdent: *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
+			exec := executor.(interpreterExecutor)
+
+			var retValue string
+
+			for {
+				if i := checkCancelation(cancelCtx, span); i != nil {
+					return nil, i
+				}
+
+				val := exec.stdin.Poll()
+				if val != nil {
+					retValue = *val
+					break
+				}
+
+				time.Sleep(pollIterationSleepDuration)
+			}
+
+			return value.NewValueString(retValue), nil
+		}),
+		// TODO: implement this
+		pollInputBuiltinIdent: *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
+			exec := executor.(interpreterExecutor)
+
+			val := exec.stdin.Poll()
+
+			returnValue := value.NewNoneOption()
+
+			if val != nil {
+				returnValue = value.NewValueOption(value.NewValueString(*val))
+			}
+
+			return returnValue, nil
 		}),
 		"time": *value.NewValueObject(map[string]*value.Value{
 			"sleep": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {

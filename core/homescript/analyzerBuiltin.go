@@ -835,6 +835,10 @@ func (self analyzerHost) ResolveCodeModule(moduleName string) (code string, modu
 	}
 }
 
+const printfnBuiltinIdent = "printfn"
+const inputBuiltinIdent = "input"
+const pollInputBuiltinIdent = "poll_input"
+
 // TODO: fill this
 func analyzerScopeAdditions() map[string]analyzer.Variable {
 	return map[string]analyzer.Variable{
@@ -869,6 +873,30 @@ func analyzerScopeAdditions() map[string]analyzer.Variable {
 				ast.NewVarArgsFunctionTypeParamKind([]ast.Type{}, ast.NewUnknownType()),
 				errors.Span{},
 				ast.NewNullType(errors.Span{}),
+				errors.Span{},
+			),
+		),
+		printfnBuiltinIdent: analyzer.NewBuiltinVar(
+			ast.NewFunctionType(
+				ast.NewVarArgsFunctionTypeParamKind([]ast.Type{}, ast.NewUnknownType()),
+				errors.Span{},
+				ast.NewNullType(errors.Span{}),
+				errors.Span{},
+			),
+		),
+		inputBuiltinIdent: analyzer.NewBuiltinVar(
+			ast.NewFunctionType(
+				ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)),
+				errors.Span{},
+				ast.NewStringType(errors.Span{}),
+				errors.Span{},
+			),
+		),
+		pollInputBuiltinIdent: analyzer.NewBuiltinVar(
+			ast.NewFunctionType(
+				ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)),
+				errors.Span{},
+				ast.NewOptionType(ast.NewStringType(errors.Span{}), errors.Span{}),
 				errors.Span{},
 			),
 		),

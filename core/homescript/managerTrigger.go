@@ -119,6 +119,7 @@ func (m *Manager) ExtractTriggerAnnotationArgs(
 			nil,
 			false,
 			nil,
+			nil,
 		)
 	case types.ExecutionContextAutomation:
 		panic("not implemented")

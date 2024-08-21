@@ -25,16 +25,19 @@ type HMSMessageTXErr struct {
 	Kind    HMSMessageKindTX `json:"kind"`
 	Message string           `json:"message"`
 }
+
 type HMSMessageTXOut struct {
 	Kind    HMSMessageKindTX `json:"kind"`
 	Payload string           `json:"payload"`
 }
+
 type HMSMessageTXRes struct {
 	Kind         HMSMessageKindTX  `json:"kind"`
 	Errors       []types.HmsError  `json:"errors"`
 	FileContents map[string]string `json:"fileContents"`
 	Success      bool              `json:"success"`
 }
+
 type HMSMessageKindTX string
 
 const (
@@ -45,23 +48,25 @@ const (
 )
 
 // Messages sent by the client
-type HmsMessageRXInit struct {
-	Kind     HMSMessageKindRX `json:"kind"`
-	HMSID    string           `json:"hmsID"`
-	IsDriver bool             `json:"isDriver"`
-	Args     []HomescriptArg  `json:"args"`
-}
-
-type HmsMessageRXKill struct {
+type HmsMessageRX struct {
 	Kind HMSMessageKindRX `json:"kind"`
+
+	// For init.
+	HMSID    string          `json:"hmsID"`
+	IsDriver bool            `json:"isDriver"`
+	Args     []HomescriptArg `json:"args"`
+
+	// Relatively generic, mosyly used for STDIN messages.
+	Payload string `json:"payload"`
 }
 
 type HMSMessageKindRX string
 
 const (
 	// Sent by the client
-	MessageKindInit HMSMessageKindRX = "init"
-	MessageKindKill HMSMessageKindRX = "kill"
+	MessageKindInit  HMSMessageKindRX = "init"
+	MessageKindKill  HMSMessageKindRX = "kill"
+	MessageKindStdin HMSMessageKindRX = "stdin"
 )
 
 func BufioScanAll(data []byte, atEOF bool) (advance int, token []byte, err error) {
@@ -104,7 +109,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 	ws.SetPongHandler(func(string) error {
 		return ws.SetReadDeadline(time.Time{})
 	})
-	var request HmsMessageRXInit
+	var request HmsMessageRX
 	if err := ws.ReadJSON(&request); err != nil {
 		wsMutex.Lock()
 		if err := ws.WriteJSON(HMSMessageTXErr{
@@ -117,6 +122,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 		wsMutex.Unlock()
 		return
 	}
+
 	if request.Kind != MessageKindInit {
 		wsMutex.Lock()
 		if err := ws.WriteJSON(HMSMessageTXErr{
@@ -137,6 +143,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 	// Start running the code.
 	res := make(chan types.HmsRes)
 	idChan := make(chan uint64)
+	stdin := types.NewStdinBuffer()
 
 	go func(writer io.Writer, results *chan types.HmsRes, idChan *chan uint64) {
 		ctx, cancel := context.WithCancel(context.Background())
@@ -151,6 +158,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 			},
 			outWriter,
 			idChan,
+			stdin,
 		)
 
 		fmt.Println("================ a ==============")
@@ -186,35 +194,45 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		ws.SetPongHandler(func(string) error { return ws.SetReadDeadline(time.Time{}) })
-		var request HmsMessageRXKill
-		if err := ws.ReadJSON(&request); err != nil {
-			wsMutex.Lock()
-			if err := ws.WriteJSON(HMSMessageTXErr{
-				Kind:    MessageKindErr,
-				Message: fmt.Sprintf("invalid kill message: `%s`\n", err.Error()),
-			}); err != nil {
+
+		for {
+			var request HmsMessageRX
+			if err := ws.ReadJSON(&request); err != nil {
+				wsMutex.Lock()
+				if err := ws.WriteJSON(HMSMessageTXErr{
+					Kind:    MessageKindErr,
+					Message: fmt.Sprintf("invalid kill message: `%s`\n", err.Error()),
+				}); err != nil {
+					wsMutex.Unlock()
+					return
+				}
 				wsMutex.Unlock()
 				return
 			}
-			wsMutex.Unlock()
-			return
-		}
 
-		if request.Kind != MessageKindKill {
-			wsMutex.Lock()
-			if err := ws.WriteJSON(HMSMessageTXErr{
-				Kind:    MessageKindErr,
-				Message: fmt.Sprintf("invalid kill request kind: `%s`\n", request.Kind),
-			}); err != nil {
+			switch request.Kind {
+			case MessageKindKill:
+				log.Trace("Killing script from Websocket...")
+				homescript.HmsManager.Kill(jobId)
+				log.Trace("Killed script from Websocket...")
+				return
+			case MessageKindStdin:
+				log.Tracef("Got HMS stdin: `%s`", request.Payload)
+				stdin.Send(request.Payload)
+				continue
+			default:
+				wsMutex.Lock()
+				if err := ws.WriteJSON(HMSMessageTXErr{
+					Kind:    MessageKindErr,
+					Message: fmt.Sprintf("invalid WS HMS request kind: `%s`\n", request.Kind),
+				}); err != nil {
+					wsMutex.Unlock()
+					return
+				}
 				wsMutex.Unlock()
 				return
 			}
-			wsMutex.Unlock()
 		}
-
-		log.Trace("Killing script from Websocket...")
-		homescript.HmsManager.Kill(jobId)
-		log.Trace("Killed script from Websocket...")
 	}()
 
 	scanner := bufio.NewScanner(outReader)

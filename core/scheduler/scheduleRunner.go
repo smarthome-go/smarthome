@@ -101,6 +101,7 @@ func scheduleRunnerFunc(id uint, m *SchedulerManager) {
 			nil,
 			&bytes.Buffer{},
 			true,
+			nil,
 		)
 
 		if err != nil {
@@ -152,6 +153,7 @@ func scheduleRunnerFunc(id uint, m *SchedulerManager) {
 				CancelFunc: cancel,
 			},
 			&bytes.Buffer{},
+			nil,
 			nil,
 		)
 

@@ -63,6 +63,7 @@ type Manager interface {
 		idChan *chan uint64,
 		outputWriter io.Writer,
 		shouldProcessAnnotations bool,
+		stdin *StdinBuffer,
 	) (HmsRes, error)
 
 	RunUserCode(
@@ -71,6 +72,7 @@ type Manager interface {
 		cancelation Cancelation,
 		outputWriter io.Writer,
 		idChan *chan uint64,
+		stdin *StdinBuffer,
 	) (HmsRes, error)
 
 	RunUserCodeTweakable(
@@ -81,6 +83,7 @@ type Manager interface {
 		idChan *chan uint64,
 		processAnnotations bool,
 		automationContext *ExecutionContextAutomationInner,
+		stdin *StdinBuffer,
 	) (HmsRes, error)
 
 	RunUserScript(
@@ -89,6 +92,7 @@ type Manager interface {
 		cancelation Cancelation,
 		outputWriter io.Writer,
 		idChan *chan uint64,
+		stdin *StdinBuffer,
 	) (HmsRes, error)
 
 	RunUserScriptTweakable(
@@ -99,6 +103,7 @@ type Manager interface {
 		idChan *chan uint64,
 		processAnnotations bool,
 		automationContext *ExecutionContextAutomationInner,
+		stdin *StdinBuffer,
 	) (HmsRes, error)
 
 	RunDriverScript(

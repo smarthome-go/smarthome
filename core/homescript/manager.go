@@ -308,6 +308,7 @@ func (m *Manager) RunGeneric(
 	idChan *chan uint64,
 	outputWriter io.Writer,
 	shouldProcessAnnotations bool,
+	stdin *types.StdinBuffer,
 ) (types.HmsRes, error) {
 	modules, analyzerRes, err := m.Analyze(
 		invocation.Identifier,
@@ -349,6 +350,7 @@ func (m *Manager) RunGeneric(
 		cancelation,
 		invocation.LoadedSingletons,
 		context,
+		stdin,
 	)
 
 	//
@@ -575,6 +577,7 @@ func (m *Manager) RunUserCode(
 	cancelation types.Cancelation,
 	outputWriter io.Writer,
 	idChan *chan uint64,
+	stdin *types.StdinBuffer,
 ) (types.HmsRes, error) {
 	return m.RunUserCodeTweakable(
 		code,
@@ -586,6 +589,7 @@ func (m *Manager) RunUserCode(
 		idChan,
 		true,
 		nil,
+		stdin,
 	)
 }
 
@@ -597,6 +601,7 @@ func (m *Manager) RunUserCodeTweakable(
 	idChan *chan uint64,
 	processAnnotations bool,
 	automationContext *types.ExecutionContextAutomationInner,
+	stdin *types.StdinBuffer,
 ) (types.HmsRes, error) {
 	userContext := types.NewExecutionContextUser(
 		filename,
@@ -626,6 +631,7 @@ func (m *Manager) RunUserCodeTweakable(
 		idChan,
 		outputWriter,
 		processAnnotations,
+		stdin,
 	)
 }
 
@@ -637,6 +643,7 @@ func (m *Manager) RunUserScriptTweakable(
 	idChan *chan uint64,
 	processAnnotations bool,
 	automationContext *types.ExecutionContextAutomationInner,
+	stdin *types.StdinBuffer,
 ) (types.HmsRes, error) {
 	script, found, err := m.GetPersonalScriptById(programID, username)
 	if err != nil {
@@ -656,6 +663,7 @@ func (m *Manager) RunUserScriptTweakable(
 		idChan,
 		processAnnotations,
 		automationContext,
+		stdin,
 	)
 }
 
@@ -666,6 +674,7 @@ func (m *Manager) RunUserScript(
 	cancelation types.Cancelation,
 	outputWriter io.Writer,
 	idChan *chan uint64,
+	stdin *types.StdinBuffer,
 ) (types.HmsRes, error) {
 	return m.RunUserScriptTweakable(
 		programID,
@@ -676,6 +685,7 @@ func (m *Manager) RunUserScript(
 		idChan,
 		true,
 		nil,
+		stdin,
 	)
 }
 
@@ -737,6 +747,7 @@ func (m *Manager) RunDriverScript(
 		nil,
 		outputWriter,
 		false,
+		nil,
 	)
 }
 

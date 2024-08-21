@@ -8,6 +8,7 @@
     import IconButton from '@smui/icon-button'
     import Select, { Option } from '@smui/select'
     import Progress from '../../components/Progress.svelte'
+    import Textfield from "@smui/textfield";
 
     // Custom HMS components
     import HmsEditor from '../../components/Homescript/HmsEditor/HmsEditor.svelte'
@@ -406,6 +407,20 @@
         otherLoading = false
     }
 
+    async function sendSTDIN(payload: str) {
+        otherLoading = true
+        try {
+            if (conn !== undefined) {
+                conn.send(JSON.stringify({ kind: 'stdin', payload }))
+            } else {
+                console.error('This is bad')
+            }
+        } catch (err) {
+            $createSnackbar(`Failed to send STDIN to current run'${currentScript}': ${err}`)
+        }
+        otherLoading = false
+    }
+
     let conn: WebSocket = undefined
     function runCodeWS(args: homescriptArgSubmit[]) {
         // Choose correct websocket protocol depending on the current context
@@ -634,6 +649,8 @@
             ],
         })
     }
+
+    let stdinBuffer = ""
 </script>
 
 {#if argumentsPromptOpen && homescripts.find(h => h.data.data.data.id === currentScript).data.arguments.length > 0}
@@ -764,6 +781,36 @@
                             <Terminal data={currentExecRes} {output} />
                         {/if}
                     <!-- {/if} -->
+                </div>
+                <div class="container__terminal__stdin">
+                    {#if currentExecRes !== undefined}
+                        <span class='text-disabled'>
+                            Start a program to use STDIN.
+                        </span>
+                    {:else}
+                    <Textfield
+                        bind:value={stdinBuffer}
+                        label="Send Input"
+                        on:keydown={(e) => {
+                            if (e["key"] === "Enter") {
+                                e.stopPropagation()
+                                sendSTDIN(stdinBuffer)
+                                stdinBuffer = ""
+                            }
+                            console.log(e)
+                        }}
+                    >
+                    </Textfield>
+                    <IconButton
+                        class="material-icons"
+                        on:click={e => {
+                            e.stopPropagation()
+                            sendSTDIN(stdinBuffer)
+                        }}
+                    >
+                        send
+                    </IconButton>
+                    {/if}
                 </div>
             </div>
         </div>
@@ -953,6 +1000,14 @@
                 // Required because otherwise, a lot of output would grow the terminal.
                 // However, the terminal should only grow when the user drags it.
                 max-width: 10rem;
+            }
+
+            &__stdin {
+                padding: .9rem 1.3rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                height: 4.5rem;
             }
         }
     }
