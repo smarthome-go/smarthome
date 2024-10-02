@@ -1,5 +1,4 @@
 # Docker-compose file used for creating development database instances
-version: '3.7'
 
 services:
   # Development MQTT server.

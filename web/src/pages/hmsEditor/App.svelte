@@ -407,7 +407,7 @@
         otherLoading = false
     }
 
-    async function sendSTDIN(payload: str) {
+    async function sendSTDIN(payload: string) {
         otherLoading = true
         try {
             if (conn !== undefined) {

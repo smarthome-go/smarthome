@@ -247,6 +247,10 @@ func (d DriverManager) InvokeDriverFunc(
 		panic("One or more ids in the driver-device triplet were empty or <nil>")
 	}
 
+	fmt.Println("===================================================")
+	fmt.Println(call.Invocation.Function)
+	fmt.Println("===================================================")
+
 	// TODO: add context support
 	ctx, cancel := context.WithCancel(context.Background())
 	ctx, cancel = context.WithTimeout(ctx, time.Second*10)

@@ -1,4 +1,3 @@
-version: '3.7'
 services:
   smarthome:
     image: mikmuellerdev/smarthome:0.12.0-alpha

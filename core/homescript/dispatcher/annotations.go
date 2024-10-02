@@ -168,6 +168,10 @@ func (i *InstanceT) RegisterDevice(driver database.DeviceDriver, deviceID string
 		context,
 	)
 
+	if err != nil {
+		return err
+	}
+
 	for _, trigger := range triggers {
 		switch trigger.Trigger {
 		case types.TriggerMqttMessageIdent:
@@ -197,7 +201,7 @@ func (i *InstanceT) RegisterDevice(driver database.DeviceDriver, deviceID string
 				}),
 				dispatcherTypes.CalledFunction{
 					Ident:          trigger.CalledFnIdentMangled,
-					IdentIsLiteral: false,
+					IdentIsLiteral: true,
 					CallMode: dispatcherTypes.CallModeAdaptive{
 						AllocatingFallback: dispatcherTypes.CallModeAllocating{
 							Context: context,

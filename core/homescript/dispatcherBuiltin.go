@@ -86,7 +86,7 @@ func registerTriggerMessage(
 			ProgramID: programID,
 			Function: &types.CalledFunction{
 				Ident:          callbackFunctionIdentMangled,
-				IdentIsLiteral: false,
+				IdentIsLiteral: true,
 				CallMode:       callMode,
 			},
 			Trigger: nil,
@@ -141,7 +141,7 @@ func registerTriggerMinute(
 			ProgramID: programID,
 			Function: &types.CalledFunction{
 				Ident:          callbackFunctionIdentMangled,
-				IdentIsLiteral: false,
+				IdentIsLiteral: true,
 				CallMode:       callmode,
 			},
 			Trigger: types.CallBackTriggerAtTime{
