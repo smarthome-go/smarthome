@@ -419,7 +419,7 @@ func (m *Manager) RunGeneric(
 		functionInvocation = *invocation.FunctionInvocation
 	}
 
-	spawnResult := vm.SpawnSync(functionInvocation, nil)
+	spawnResult := vm.SpawnSync(functionInvocation, nil, nil)
 
 	if spawnResult.Exception != nil {
 		i := spawnResult.Exception.Interrupt
@@ -832,6 +832,7 @@ func (m *Manager) killJob(job types.Job) {
 						ReturnType: ast.NewNullType(errors.Span{}),
 					},
 				},
+					nil,
 					nil,
 					onFinish,
 				)

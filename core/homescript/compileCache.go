@@ -47,7 +47,7 @@ func (m *Manager) Compile(
 	}
 
 	if printDebugASM {
-		fmt.Println(compOut.AsmString())
+		fmt.Println(compOut.AsmString(true))
 	}
 
 	m.CompileCache.Lock.Lock()
