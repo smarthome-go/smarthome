@@ -97,6 +97,8 @@ type MqttManager struct {
 		Content MqttManagerBody
 	}
 
+	ConnectionInProgressLock sync.Mutex
+
 	// Is being called from the outside if the outside knows that some things, which could have caused the initial
 	// error, changed.
 	TriggerTryPendingRegistrations func() error
@@ -158,6 +160,8 @@ func NewMqttManager(config database.MqttConfig, retryHook func() error) (m *Mqtt
 		TriggerTryPendingRegistrations: retryHook,
 	}
 
+	go Manager.MQTTKeepalive()
+
 	return &Manager, nil
 }
 
@@ -168,6 +172,9 @@ func (m *MqttManager) setConfig(config database.MqttConfig) {
 }
 
 func (m *MqttManager) init() error {
+	m.ConnectionInProgressLock.Lock()
+	defer m.ConnectionInProgressLock.Unlock()
+
 	m.Body.Lock.Lock()
 	defer m.Body.Lock.Unlock()
 	mqttEnabled := m.Body.Content.Config.Enabled
@@ -224,11 +231,25 @@ func (m *MqttManager) init() error {
 	return nil
 }
 
+func (m *MqttManager) MQTTKeepalive() {
+	for {
+		if err := m.Status(); err != nil {
+			logger.Errorf("MQTT could not be initialized: %s", err.Error())
+			time.Sleep(10 * time.Second)
+		} else {
+			time.Sleep(20 * time.Second)
+		}
+	}
+}
+
 func (m *MqttManager) IsConnected() bool {
 	return m.Body.Content.Initialized && m.Body.Content.Client != nil && m.Body.Content.Client.IsConnected()
 }
 
 func (m *MqttManager) Status() error {
+	m.ConnectionInProgressLock.Lock()
+	m.ConnectionInProgressLock.Unlock()
+
 	m.Body.Lock.RLock()
 	isConnected := m.IsConnected()
 	m.Body.Lock.RUnlock()

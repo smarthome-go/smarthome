@@ -69,6 +69,7 @@ type CallBackTriggerKind uint8
 const (
 	OnMqttCallBackTriggerKind CallBackTriggerKind = iota
 	AtTimeCallBackTriggerKind
+	OnDeviceActionTriggerKind
 )
 
 type CallBackTrigger interface {

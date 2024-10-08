@@ -8,6 +8,8 @@ import (
 const TriggerMqttMessageIdent = "message"
 const TriggerMinuteIdent = "minute"
 const TriggerKillIdent = "kill"
+const TriggerDeviceEvent = "device_event"
+const TriggerDeviceClassEvent = "device_class_event"
 
 // When a Homescript is executed in user mode, the user cannot use these triggers.
 var ForbiddenUserTriggers = []string{TriggerMqttMessageIdent, TriggerMinuteIdent}

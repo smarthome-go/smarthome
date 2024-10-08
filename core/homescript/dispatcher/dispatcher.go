@@ -42,6 +42,7 @@ func InitLogger(log *logrus.Logger) {
 type InstanceT struct {
 	Hms                  types.Manager
 	Mqtt                 *MqttManager
+	DeviceRules          map[dispatcherTypes.CallbackTriggerDeviceAction]dispatcherTypes.RegisterInfo
 	DoneRegistrations    dispatcherTypes.Registrations
 	PendingRegistrations PendingQueue
 
@@ -55,8 +56,9 @@ var Instance InstanceT
 
 func InitInstance(hms types.Manager, mqtt *MqttManager) error {
 	Instance = InstanceT{
-		Hms:  hms,
-		Mqtt: mqtt,
+		Hms:         hms,
+		Mqtt:        mqtt,
+		DeviceRules: make(map[dispatcherTypes.CallbackTriggerDeviceAction]dispatcherTypes.RegisterInfo),
 		DoneRegistrations: dispatcherTypes.Registrations{
 			Lock:                   sync.RWMutex{},
 			Set:                    make(map[dispatcherTypes.RegistrationID]dispatcherTypes.RegisterInfo),
@@ -214,6 +216,14 @@ func (i *InstanceT) registerInternal(info dispatcherTypes.RegisterInfo) (dispatc
 		i.DoneRegistrations.Set[id] = info
 		i.DoneRegistrations.SchedulerRegistrations[schedulerTag] = id
 		i.DoneRegistrations.Lock.Unlock()
+	case *dispatcherTypes.CallbackTriggerDeviceAction:
+		i.DoneRegistrations.Lock.Lock()
+		i.DoneRegistrations.Set[id] = info
+
+		old := i.DoneRegistrations.Device[*trigger]
+		i.DoneRegistrations.Device[*trigger] = append(old, id)
+
+		i.DoneRegistrations.Lock.Unlock()
 	default:
 		panic(fmt.Sprintf("Unreachable: introduced a new trigger type (%v) without updating this code", info.Trigger))
 	}
@@ -267,14 +277,39 @@ func (i *InstanceT) Unregister(id dispatcherTypes.RegistrationID) error {
 	}
 
 	// Delete reference in scheduler if required.
-	for tag, idToCheck := range i.DoneRegistrations.SchedulerRegistrations {
+	i.DoneRegistrations.Lock.RLock()
+	scheds := i.DoneRegistrations.SchedulerRegistrations
+	i.DoneRegistrations.Lock.RUnlock()
+	for tag, idToCheck := range scheds {
 		fmt.Printf("REGISTRATION: ===== %d", idToCheck)
 		if id == idToCheck {
 			if err := scheduler.Manager.RemoveScheduleInternal(tag); err != nil && unregisterErr == nil {
 				unregisterErr = err
 			}
+
+			i.DoneRegistrations.Lock.Lock()
 			delete(i.DoneRegistrations.SchedulerRegistrations, tag)
+			i.DoneRegistrations.Lock.Unlock()
 		}
+	}
+
+	// Delete reference in device events
+	i.DoneRegistrations.Lock.RLock()
+	device := i.DoneRegistrations.Device
+	i.DoneRegistrations.Lock.RUnlock()
+	for filter, assigned := range device {
+		newIDs := make([]dispatcherTypes.RegistrationID, 0)
+		for _, idToCheck := range assigned {
+			if id == idToCheck {
+				continue
+			}
+
+			newIDs = append(newIDs, idToCheck)
+		}
+
+		i.DoneRegistrations.Lock.Lock()
+		i.DoneRegistrations.Device[filter] = newIDs
+		i.DoneRegistrations.Lock.Unlock()
 	}
 
 	logger.Debugf("dispatcher: Unregistered ID %d", id)
@@ -481,4 +516,8 @@ func (i *InstanceT) timeCallBack(registration dispatcherTypes.RegisterInfo) {
 			ReturnType: ast.NewNullType(herrors.Span{}),
 		},
 	})
+}
+
+func (i *InstanceT) deviceCallBack(registration dispatcherTypes.RegisterInfo) {
+	panic("TODO: implement this")
 }

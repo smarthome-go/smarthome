@@ -278,12 +278,12 @@ func (self analyzerHost) GetBuiltinImport(
 							ast.NewNormalFunctionTypeParamKind(
 								[]ast.FunctionTypeParam{
 									ast.NewFunctionTypeParam(
-										pAst.NewSpannedIdent("topic", span),
+										pAst.NewSpannedIdent("payload", span),
 										ast.NewStringType(span),
 										nil,
 									),
 									ast.NewFunctionTypeParam(
-										pAst.NewSpannedIdent("payload", span),
+										pAst.NewSpannedIdent("topic", span),
 										ast.NewStringType(span),
 										nil,
 									),
@@ -416,6 +416,26 @@ func (self analyzerHost) GetBuiltinImport(
 		}
 		return analyzer.BuiltinImport{}, true, false
 	case "device":
+		deviceEventCallBack := ast.NewFunctionType(
+			ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+				ast.NewFunctionTypeParam(pAst.NewSpannedIdent("data", span), ast.NewAnyObjectType(span), nil),
+				ast.NewFunctionTypeParam(pAst.NewSpannedIdent("topic", span), ast.NewStringType(span), nil),
+			}),
+			span,
+			ast.NewNullType(span),
+			span,
+		).(ast.FunctionType)
+
+		deviceTriggerFilterParam := ast.NewFunctionTypeParam(
+			pAst.NewSpannedIdent("topics", span),
+			ast.NewOptionType(
+				ast.NewListType(ast.NewStringType(span),
+					span),
+				span,
+			),
+			nil,
+		)
+
 		switch valueName {
 		// TODO: port to device
 		// case "get_switch":
@@ -467,6 +487,84 @@ func (self analyzerHost) GetBuiltinImport(
 				),
 				Template: &ast.TemplateSpec{},
 			}, true, true
+		case types.TriggerDeviceEvent:
+			return analyzer.BuiltinImport{
+				Type:     nil,
+				Template: nil,
+				Trigger: &analyzer.TriggerFunction{
+					TriggerFnType: ast.NewFunctionType(
+						ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("device_id", span), ast.NewStringType(span), nil),
+							deviceTriggerFilterParam,
+						}),
+						span,
+						ast.NewNullType(span),
+						span,
+					).(ast.FunctionType), CallbackFnType: deviceEventCallBack,
+					Connective: pAst.OnTriggerDispatchKeyword,
+					ImportedAt: span,
+				},
+			}, true, true
+		case types.TriggerDeviceClassEvent:
+			return analyzer.BuiltinImport{
+				Type:     nil,
+				Template: nil,
+				Trigger: &analyzer.TriggerFunction{
+					TriggerFnType: ast.NewFunctionType(
+						ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("vendor", span), ast.NewStringType(span), nil),
+							ast.NewFunctionTypeParam(pAst.NewSpannedIdent("model", span), ast.NewStringType(span), nil),
+							deviceTriggerFilterParam,
+						}),
+						span,
+						ast.NewNullType(span),
+						span,
+					).(ast.FunctionType), CallbackFnType: deviceEventCallBack,
+					Connective: pAst.OnTriggerDispatchKeyword,
+					ImportedAt: span,
+				},
+			}, true, true
+		// case "devices":
+		// 	deviceType := ast.NewObjectType([]ast.ObjectTypeField{
+		// 		ast.NewObjectTypeField(pAst.NewSpannedIdent("id", span)),
+		// 	}, span)
+		//
+		// devices := make([]*value.Value, 0)
+		//
+		// var devicesRaw []database.Device
+		//
+		// if self.context.Username() != nil {
+		// 	devicesRawDB, err := database.ListUserDevices(*self.context.Username())
+		// 	if err != nil {
+		// 		panic("Database cannot fail here")
+		// 	}
+		//
+		// 	devicesRaw = devicesRawDB
+		// } else {
+		// 	devicesRawDB, err := database.ListAllDevices()
+		// 	if err != nil {
+		// 		panic("Database cannot fail here")
+		// 	}
+		//
+		// 	devicesRaw = devicesRawDB
+		// }
+		//
+		// for _, d := range devicesRaw {
+		// 	devices = append(devices, value.NewValueObject())
+		// }
+
+		// return analyzer.BuiltinImport{
+		// 	Type: ast.NewFunctionType(
+		// 		ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)),
+		// 		span,
+		// 		ast.NewListType(
+		// 			devices, span,
+		// 		),
+		// 		span,
+		// 	),
+		// 	Template: &ast.TemplateSpec{},
+		// 	Trigger:  &analyzer.TriggerFunction{},
+		// }, true, true
 		default:
 			return analyzer.BuiltinImport{}, true, false
 		}

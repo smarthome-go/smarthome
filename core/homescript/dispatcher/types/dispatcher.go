@@ -9,4 +9,5 @@ type Registrations struct {
 	Set                    map[RegistrationID]RegisterInfo
 	MqttRegistrations      map[string][]RegistrationID
 	SchedulerRegistrations map[string]RegistrationID
+	Device                 map[CallbackTriggerDeviceAction][]RegistrationID
 }

@@ -39,6 +39,12 @@ func (self interpreterExecutor) RegisterTrigger(
 		)
 	case hmsTypes.TriggerKillIdent:
 		self.registerTriggerKill(callbackFunctionIdentMangled)
+	case hmsTypes.TriggerDeviceEvent:
+		panic("HALLO")
+		registerTriggerDevice()
+	case hmsTypes.TriggerDeviceClassEvent:
+		panic("HALLO")
+		registerTriggerDevice()
 	default:
 		panic("Encountered unimplemented trigger function")
 	}
@@ -50,6 +56,10 @@ func (self interpreterExecutor) RegisterTrigger(
 	*self.registrations = append(*self.registrations, registrationID)
 
 	return nil
+}
+
+func registerTriggerDevice(deviceFilter DeviceFilter) {
+	panic("TODO")
 }
 
 func (self *interpreterExecutor) registerTriggerKill(callbackFunctionMangled string) {
