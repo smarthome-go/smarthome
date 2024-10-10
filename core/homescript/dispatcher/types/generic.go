@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"slices"
 	"time"
 
 	hmsTypes "github.com/smarthome-go/smarthome/core/homescript/types"
@@ -74,6 +75,7 @@ const (
 
 type CallBackTrigger interface {
 	Kind() CallBackTriggerKind
+	Eq(other CallBackTrigger) bool
 }
 
 // MQTT Trigger.
@@ -83,6 +85,29 @@ type CallBackTriggerMqtt struct {
 }
 
 func (self CallBackTriggerMqtt) Kind() CallBackTriggerKind { return OnMqttCallBackTriggerKind }
+func (self CallBackTriggerMqtt) Eq(other CallBackTrigger) bool {
+	if other.Kind() != OnMqttCallBackTriggerKind {
+		return false
+	}
+
+	otherM := other.(CallBackTriggerMqtt)
+
+	// Other is subset of self.
+	for _, topic := range otherM.Topics {
+		if !slices.Contains(self.Topics, topic) {
+			return false
+		}
+	}
+
+	// Self is subset of other.
+	for _, topic := range self.Topics {
+		if !slices.Contains(otherM.Topics, topic) {
+			return false
+		}
+	}
+
+	return true
+}
 
 // AtTime Trigger.
 
@@ -102,6 +127,19 @@ type CallBackTriggerAtTime struct {
 }
 
 func (self CallBackTriggerAtTime) Kind() CallBackTriggerKind { return AtTimeCallBackTriggerKind }
+func (self CallBackTriggerAtTime) Eq(other CallBackTrigger) bool {
+	if other.Kind() != AtTimeCallBackTriggerKind {
+		return false
+	}
+
+	otherT := other.(CallBackTriggerAtTime)
+
+	if otherT.Hour == self.Hour && otherT.Minute == self.Minute && otherT.Second == self.Second {
+		return true
+	}
+
+	return false
+}
 
 //
 // Dispatcher.

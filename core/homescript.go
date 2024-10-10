@@ -25,10 +25,9 @@ func ModifyHomescriptCode(id string, owner string, newCode string) (found bool, 
 
 	switch script.Data.Type {
 	case database.HOMESCRIPT_TYPE_NORMAL:
-		if err := database.ModifyHomescriptCode(id, owner, newCode); err != nil {
-			return false, nil, err
-		}
-		return true, nil, nil
+		validationErr, err := homescript.HmsManager.SaveUserCode(id, owner, newCode)
+
+		return true, validationErr, err
 	case database.HOMESCRIPT_TYPE_DRIVER:
 		driverData, validationErr, dbErr := types.DriverFromHmsId(id)
 		if dbErr != nil {

@@ -1,4 +1,4 @@
-package homescript
+package executor
 
 import (
 	"context"
@@ -9,15 +9,14 @@ import (
 	"time"
 
 	"github.com/go-ping/ping"
-	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/automation"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/device/driver"
 	"github.com/smarthome-go/smarthome/core/event"
+	"github.com/smarthome-go/smarthome/core/homescript/analyzer"
 	"github.com/smarthome-go/smarthome/core/homescript/dispatcher"
-	dispatcherT "github.com/smarthome-go/smarthome/core/homescript/dispatcher/types"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 	"github.com/smarthome-go/smarthome/core/scheduler"
 	"github.com/smarthome-go/smarthome/core/user/notify"
@@ -26,340 +25,11 @@ import (
 
 const pollIterationSleepDuration = time.Millisecond * 10
 
-type interpreterExecutor struct {
-	// All `attaching` registrations in the dispatcher (these need to be revoked before the VM is deleted).
-	registrations *[]dispatcherT.RegistrationID
-	// Other.
-	jobID     uint64
-	programID string
-
-	// username          string
-	ioWriter io.Writer
-	// args              map[string]string
-	// automationContext *types.AutomationContext
-	// cancelCtxFunc     context.CancelFunc
-
-	singletons map[string]value.Value
-
-	context types.ExecutionContext
-
-	cancelation types.Cancelation
-
-	// Mangled names of the functions that are to be called when this program is killed.
-	onKillCallbackFuncs *[]string
-
-	// Stdin buffer.
-	stdin *types.StdinBuffer
-}
-
-func (self interpreterExecutor) Free() error {
-	var errRes error = nil
-
-	for _, registration := range *self.registrations {
-		// Return the first error that is found
-		if err := dispatcher.Instance.Unregister(registration); err != nil && errRes == nil {
-			errRes = err
-		}
-	}
-
-	return errRes
-}
-
-func NewInterpreterExecutor(
-	jobID uint64,
-	programID string,
-	// username string,
-	writer io.Writer,
-	// args map[string]string,
-	// automationContext *types.AutomationContext,
-	// cancelCtxFunc context.CancelFunc,
-	cancelation types.Cancelation,
-	singletons map[string]value.Value,
-	context types.ExecutionContext,
-	stdin *types.StdinBuffer,
-) interpreterExecutor {
-	registrations := make([]dispatcherT.RegistrationID, 0)
-	onKillCallbackFuncs := make([]string, 0)
-
-	if stdin == nil {
-		stdin = types.NewStdinBuffer()
-	}
-
-	return interpreterExecutor{
-		registrations:       &registrations,
-		jobID:               jobID,
-		programID:           programID,
-		ioWriter:            writer,
-		singletons:          singletons,
-		context:             context,
-		cancelation:         cancelation,
-		onKillCallbackFuncs: &onKillCallbackFuncs,
-		stdin:               stdin,
-	}
-}
-
-func parseDate(year, month, day int) (time.Time, bool) {
-	t := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.Local)
-	y, m, d := t.Date()
-	return t, y == year && int(m) == month && d == day
-}
-
-func (self interpreterExecutor) LoadSingleton(singletonIdent, moduleName string) (val value.Value, valid bool, err error) {
-	logger.Tracef("Loading singleton `%s` from module `%s`", singletonIdent, moduleName)
-	value, available := self.singletons[singletonIdent]
-
-	if !available {
-		panic(fmt.Sprintf("Singleton `%s` could not be loaded from: %v", singletonIdent, self.singletons))
-	}
-
-	disp, e := value.Display()
-	if e != nil {
-		panic(e)
-	}
-
-	logger.Tracef("Successfully loaded singleton `%s` from module `%s`: %s", singletonIdent, moduleName, disp)
-
-	// TODO: maybe load these on demand?
-	return value, available, nil
-}
-
-// var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-// 	fmt.Printf("TOPIC: %s\n", msg.Topic())
-// 	fmt.Printf("MSG: %s\n", msg.Payload())
-// }
-//
-// func mqttSubscribe() value.Value {
-// 	return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
-// 		host := args[0].(value.ValueString).Inner
-// 		username := args[1].(value.ValueString).Inner
-// 		password := args[2].(value.ValueString).Inner
-//
-// 		topicArgsRaw := args[3].(value.ValueList).Values
-// 		topicArgs := make(map[string]byte)
-// 		for _, topic := range *topicArgsRaw {
-// 			topicStr := (*topic).(value.ValueString).Inner
-// 			topicArgs[topicStr] = 0
-// 		}
-// 		// callBackArg := args[1].(value.ValueVMFunction)
-//
-// 		spew.Dump(args)
-// 		// return value.NewValueNull(), nil
-//
-// 		mqtt.DEBUG = log.New(os.Stdout, "", 0)
-// 		mqtt.ERROR = log.New(os.Stdout, "", 0)
-// 		opts := mqtt.NewClientOptions().AddBroker(host).SetClientID("homescript-test-shome").SetUsername(username).SetPassword(password)
-//
-// 		opts.SetKeepAlive(60 * time.Second)
-// 		// Set the message callback handler
-// 		opts.SetDefaultPublishHandler(f)
-// 		opts.SetPingTimeout(1 * time.Second)
-//
-// 		c := mqtt.NewClient(opts)
-// 		if token := c.Connect(); token.Wait() && token.Error() != nil {
-// 			panic(token.Error())
-// 		}
-//
-// 		var callBack mqtt.MessageHandler = func(c mqtt.Client, m mqtt.Message) {
-// 			core := executor.(interpreterExecutor).vm.SpawnAsync(runtime.FunctionInvocation{
-// 				Function:    "mqtt_recv",
-// 				LiteralName: false,
-// 				Args: []value.Value{
-// 					*value.NewValueString(string(m.Topic())),
-// 					*value.NewValueString(string(m.Payload())),
-// 				},
-// 				FunctionSignature: runtime.FunctionInvocationSignatureFromType(mqttCallbackFn(span).(ast.FunctionType)),
-// 			}, nil)
-//
-// 			logger.Infof("Dispatched MQTT message to core %d", core.Corenum)
-// 		}
-//
-// 		logger.Infof("Subscribed to MQTT topics: `%v`", topicArgs)
-//
-// 		// Subscribe to a topic
-// 		if token := c.SubscribeMultiple(topicArgs, callBack); token.Wait() && token.Error() != nil {
-// 			fmt.Println(token.Error())
-// 			os.Exit(1)
-// 		}
-//
-// 		// Publish a message
-// 		// token := c.Publish("testtopic/1", 0, false, "Hello World")
-// 		// token.Wait()
-//
-// 		// time.Sleep(6 * time.Second)
-//
-// 		// Unscribe
-// 		// if token := c.Unsubscribe("testtopic/#"); token.Wait() && token.Error() != nil {
-// 		// 	fmt.Println(token.Error())
-// 		// 	os.Exit(1)
-// 		// }
-//
-// 		// Disconnect
-// 		// c.Disconnect(250)
-// 		// time.Sleep(1 * time.Second)
-//
-// 		return value.NewValueNull(), nil
-// 	})
-// }
-
-// func mqttPublish() value.Value {
-// 	return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
-// 		host := args[0].(value.ValueString).Inner
-// 		username := args[1].(value.ValueString).Inner
-// 		password := args[2].(value.ValueString).Inner
-// 		topic := args[3].(value.ValueString).Inner
-// 		payload := args[4].(value.ValueString).Inner
-//
-// 		// callBackArg := args[1].(value.ValueVMFunction)
-//
-// 		spew.Dump(args)
-// 		// return value.NewValueNull(), nil
-//
-// 		mqtt.DEBUG = log.New(os.Stdout, "", 0)
-// 		mqtt.ERROR = log.New(os.Stdout, "", 0)
-// 		opts := mqtt.NewClientOptions().AddBroker(host).SetClientID("homescript-test-shome").SetUsername(username).SetPassword(password)
-//
-// 		opts.SetKeepAlive(60 * time.Second)
-// 		// Set the message callback handler
-// 		opts.SetDefaultPublishHandler(f)
-// 		opts.SetPingTimeout(1 * time.Second)
-//
-// 		c := mqtt.NewClient(opts)
-// 		if token := c.Connect(); token.Wait() && token.Error() != nil {
-// 			panic(token.Error())
-// 		}
-//
-// 		// Publish a message
-// 		token := c.Publish(topic, 0, false, payload)
-// 		token.Wait()
-//
-// 		// Disconnect
-// 		c.Disconnect(250)
-//
-// 		return value.NewValueNull(), nil
-// 	})
-// }
-
-func (self interpreterExecutor) execHelper(
-	username,
-	programID string,
-	arguments map[string]string,
-	span errors.Span,
-) (*value.Value, *value.VmInterrupt) {
-	res, err := HmsManager.RunUserScript(
-		programID,
-		username,
-		nil,
-		self.cancelation,
-		self.ioWriter,
-		nil,
-		self.stdin,
-	)
-
-	if err != nil {
-		return nil, value.NewVMThrowInterrupt(
-			span,
-			fmt.Sprintf("Failed to run program: `%s`", err.Error()),
-		)
-	}
-
-	if !res.Errors.ContainsError {
-		message := ""
-
-		for _, err := range res.Errors.Diagnostics {
-			if err.SyntaxError != nil {
-				message = err.SyntaxError.Message
-				break
-			}
-			if err.DiagnosticError != nil && err.DiagnosticError.Level == diagnostic.DiagnosticLevelError {
-				message = err.DiagnosticError.Message
-				break
-			}
-			if err.RuntimeInterrupt != nil {
-				message = err.RuntimeInterrupt.Message
-				break
-			}
-		}
-
-		return nil, value.NewVMThrowInterrupt(
-			span,
-			fmt.Sprintf("Invoked program crashed: `%s`", message),
-		)
-	}
-
-	return value.NewValueNull(), nil
-}
-
 const execFnIdent = "exec"
 const execUserFnIdent = "exec_user"
 
-func (self interpreterExecutor) execBuiltin(usernameNeedsToBeSpecified bool) value.Value {
-	return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
-		var username *string
-		// This will be 1 if the username is being read as the first argument.
-		argumentIndexOffset := 0
-
-		switch usernameNeedsToBeSpecified {
-		case true:
-			if self.context.Kind() == types.HMS_PROGRAM_KIND_USER {
-				return nil, value.NewVMFatalException(
-					fmt.Sprintf("The usage of the `%s` function in a user environment is not allowed", execUserFnIdent),
-					value.Vm_HostErrorKind,
-					span,
-				)
-			}
-
-			usernameStr := args[0].(value.ValueString).Inner
-			username = &usernameStr
-			argumentIndexOffset = 1
-		case false:
-			if self.context.Username() == nil {
-				return nil, value.NewVMFatalException(
-					fmt.Sprintf("The usage of the `%s` function in a non-user environment is not possible", execFnIdent),
-					value.Vm_HostErrorKind,
-					span,
-				)
-			}
-		}
-
-		if username == nil {
-			panic("Encountered internal bug: `username` cannot be <nil> at this point")
-		}
-
-		programID := args[argumentIndexOffset+0].(value.ValueString).Inner
-		argOpt := args[argumentIndexOffset+1].(value.ValueOption)
-
-		arguments := make(map[string]string)
-		if argOpt.IsSome() {
-			argFields := (*argOpt.Inner).(value.ValueAnyObject).FieldsInternal
-			for key, value := range argFields {
-				disp, i := (*value).Display()
-				if i != nil {
-					return nil, i
-				}
-				arguments[key] = disp
-			}
-		}
-
-		// TODO: remove this once argument support is implemented.
-		if len(arguments) != 0 {
-			return nil, value.NewVMFatalException(
-				"BUG: Argument support is not implemented yet",
-				value.Vm_HostErrorKind,
-				span,
-			)
-		}
-
-		return self.execHelper(
-			*username,
-			programID,
-			arguments,
-			span,
-		)
-	})
-}
-
 // if it exists, returns a value which is part of the host builtin modules
-func (self interpreterExecutor) GetBuiltinImport(
+func (self InterpreterExecutor) GetBuiltinImport(
 	moduleName string,
 	toImport string,
 ) (val value.Value, found bool) {
@@ -376,9 +46,9 @@ func (self interpreterExecutor) GetBuiltinImport(
 	case "hms":
 		switch toImport {
 		case execFnIdent:
-			return self.execBuiltin(false), true
+			return self.execBuiltin(false, self.manager), true
 		case execUserFnIdent:
-			return self.execBuiltin(true), true
+			return self.execBuiltin(true, self.manager), true
 		}
 		return nil, false
 	case "location":
@@ -427,6 +97,16 @@ func (self interpreterExecutor) GetBuiltinImport(
 				}), nil
 			}), true
 		}
+	case "driver":
+		switch toImport {
+		case "measure_power":
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
+				driver.SaveCurrentPowerUsageWithLogs()
+				return nil, nil
+			}), true
+		default:
+			return nil, false
+		}
 	case "device":
 		switch toImport {
 		// case "get_switch":
@@ -451,6 +131,34 @@ func (self interpreterExecutor) GetBuiltinImport(
 		// 			"model_id":  value.NewValueString(sw.VendorId),
 		// 		})), nil
 		// 	}), true
+		case "emit":
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
+				topic := args[0].(value.ValueString).Inner
+				data := args[1]
+
+				if self.context.Kind() != types.HMS_PROGRAM_KIND_DEVICE_DRIVER {
+					panic("Illegal context kind")
+				}
+
+				ctx := self.context.(types.ExecutionContextDriver)
+
+				if err := dispatcher.Instance.EmitDeviceEvent(
+					database.DriverTuple{
+						VendorID: "",
+						ModelID:  "",
+					},
+					*ctx.DeviceID,
+					topic,
+					data,
+				); err != nil {
+					return nil, value.NewVMThrowInterrupt(
+						span,
+						fmt.Sprintf("Emit failure: %s", err.Error()),
+					)
+				}
+
+				return value.NewValueNull(), nil
+			}), true
 		case "set_power":
 			return *value.NewValueBuiltinFunction(func(
 				executor value.Executor,
@@ -594,7 +302,7 @@ func (self interpreterExecutor) GetBuiltinImport(
 					return nil, i
 				}
 
-				if err := database.InsertHmsStorageEntry(*executor.(interpreterExecutor).context.Username(), key, disp); err != nil {
+				if err := database.InsertHmsStorageEntry(*executor.(InterpreterExecutor).context.Username(), key, disp); err != nil {
 					return nil, value.NewVMFatalException(
 						fmt.Sprintf("Could not set storage: %s", err.Error()),
 						value.Vm_HostErrorKind,
@@ -617,7 +325,7 @@ func (self interpreterExecutor) GetBuiltinImport(
 
 				key := args[0].(value.ValueString).Inner
 
-				val, err := database.GetHmsStorageEntry(*executor.(interpreterExecutor).context.Username(), key)
+				val, err := database.GetHmsStorageEntry(*executor.(InterpreterExecutor).context.Username(), key)
 				if err != nil {
 					return nil, value.NewVMFatalException(
 						fmt.Sprintf("Could not set storage: %s", err.Error()),
@@ -674,7 +382,7 @@ func (self interpreterExecutor) GetBuiltinImport(
 					title,
 					description,
 					dueDate,
-					*executor.(interpreterExecutor).context.Username(),
+					*executor.(InterpreterExecutor).context.Username(),
 					database.ReminderPriority(priority),
 				)
 				if err != nil {
@@ -791,7 +499,7 @@ func (self interpreterExecutor) GetBuiltinImport(
 				}),
 				"generic": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 					if self.context.Username() != nil {
-						hasPermission, err := database.UserHasPermission(*executor.(interpreterExecutor).context.Username(), database.PermissionHomescriptNetwork)
+						hasPermission, err := database.UserHasPermission(*executor.(InterpreterExecutor).context.Username(), database.PermissionHomescriptNetwork)
 						if err != nil {
 							return nil, value.NewVMFatalException(
 								fmt.Sprintf("Could not perform request: failed to validate your permissions: %s", err.Error()),
@@ -925,7 +633,7 @@ func (self interpreterExecutor) GetBuiltinImport(
 				"trace": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 					title := args[0].(value.ValueString).Inner
 					description := args[1].(value.ValueString).Inner
-					if i := testPermissions(executor.(interpreterExecutor).context.Username(), span); i != nil {
+					if i := testPermissions(executor.(InterpreterExecutor).context.Username(), span); i != nil {
 						return nil, i
 					}
 					event.Trace(title, description)
@@ -934,7 +642,7 @@ func (self interpreterExecutor) GetBuiltinImport(
 				"debug": value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 					title := args[0].(value.ValueString).Inner
 					description := args[1].(value.ValueString).Inner
-					if i := testPermissions(executor.(interpreterExecutor).context.Username(), span); i != nil {
+					if i := testPermissions(executor.(InterpreterExecutor).context.Username(), span); i != nil {
 						return nil, i
 					}
 					event.Debug(title, description)
@@ -1155,7 +863,7 @@ func (self interpreterExecutor) GetBuiltinImport(
 				description := args[1].(value.ValueString).Inner
 				level := args[2].(value.ValueInt).Inner
 
-				hmsExecutor := executor.(interpreterExecutor)
+				hmsExecutor := executor.(InterpreterExecutor)
 
 				// Only run notification hooks if this homescript was NOT triggered due to a notification
 				// this avoids unconditional recursion and thus prevents a crash.
@@ -1185,7 +893,7 @@ func (self interpreterExecutor) GetBuiltinImport(
 	return nil, false
 }
 
-func (self interpreterExecutor) getArgs() map[string]*value.Value {
+func (self InterpreterExecutor) getArgs() map[string]*value.Value {
 	if self.context.UserArgs() == nil {
 		panic("Cannot access arguments in a non-user context")
 	}
@@ -1200,12 +908,12 @@ func (self interpreterExecutor) getArgs() map[string]*value.Value {
 }
 
 // returns the Homescript code of the requested module
-func (self interpreterExecutor) ResolveModuleCode(moduleName string) (code string, found bool, err error) {
+func (self InterpreterExecutor) ResolveModuleCode(moduleName string) (code string, found bool, err error) {
 	return "", false, nil
 }
 
 // Writes the given string (produced by a print function for instance) to any arbitrary source
-func (self interpreterExecutor) WriteStringTo(input string) error {
+func (self InterpreterExecutor) WriteStringTo(input string) error {
 	self.ioWriter.Write([]byte(input))
 	return nil
 }
@@ -1220,7 +928,7 @@ func checkCancelation(ctx *context.Context, span errors.Span) *value.VmInterrupt
 	}
 }
 
-func (e interpreterExecutor) genericPrinter(span errors.Span, args []value.Value, trailingNewLine bool) *value.VmInterrupt {
+func (e InterpreterExecutor) genericPrinter(span errors.Span, args []value.Value, trailingNewLine bool) *value.VmInterrupt {
 	output := make([]string, 0)
 	for _, arg := range args {
 		disp, i := arg.Display()
@@ -1262,7 +970,7 @@ func (e interpreterExecutor) genericPrinter(span errors.Span, args []value.Value
 // 	return returnValue
 // }
 
-func interpreterScopeAdditions() map[string]value.Value {
+func InterpreterScopeAdditions() map[string]value.Value {
 	// TODO: fill this
 	return map[string]value.Value{
 		"exit": *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
@@ -1310,19 +1018,19 @@ func interpreterScopeAdditions() map[string]value.Value {
 			return value.NewValueString(out), nil
 		}),
 		"print": *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
-			return value.NewValueNull(), executor.(interpreterExecutor).genericPrinter(span, args, false)
+			return value.NewValueNull(), executor.(InterpreterExecutor).genericPrinter(span, args, false)
 		}),
 		"println": *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
-			return value.NewValueNull(), executor.(interpreterExecutor).genericPrinter(span, args, true)
+			return value.NewValueNull(), executor.(InterpreterExecutor).genericPrinter(span, args, true)
 		}),
 		// TODO: change this
-		printfnBuiltinIdent: *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
+		analyzer.PrintfnBuiltinIdent: *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 			panic("not implemented")
-			return value.NewValueNull(), executor.(interpreterExecutor).genericPrinter(span, args, true)
+			return value.NewValueNull(), executor.(InterpreterExecutor).genericPrinter(span, args, true)
 		}),
 		// TODO: implement this
-		inputBuiltinIdent: *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
-			exec := executor.(interpreterExecutor)
+		analyzer.InputBuiltinIdent: *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
+			exec := executor.(InterpreterExecutor)
 
 			var retValue string
 
@@ -1343,8 +1051,8 @@ func interpreterScopeAdditions() map[string]value.Value {
 			return value.NewValueString(retValue), nil
 		}),
 		// TODO: implement this
-		pollInputBuiltinIdent: *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
-			exec := executor.(interpreterExecutor)
+		analyzer.PollInputBuiltinIdent: *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
+			exec := executor.(InterpreterExecutor)
 
 			val := exec.stdin.Poll()
 

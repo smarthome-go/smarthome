@@ -114,10 +114,12 @@ func (d DriverManager) GetDriverWithInfos(vendorID, modelID string) (RichDriver,
 		return RichDriver{}, false, err
 	}
 
+	ValueStoreLock.RLock()
 	configuration := DriverStore[database.DriverTuple{
 		VendorID: vendorID,
 		ModelID:  modelID,
 	}]
+	ValueStoreLock.RUnlock()
 
 	marshaled, _ := value.MarshalValue(configuration, false)
 
@@ -177,10 +179,12 @@ func (d DriverManager) ListDriversWithStoredConfig() ([]RichDriver, error) {
 			continue
 		}
 
+		ValueStoreLock.RLock()
 		val, found := DriverStore[database.DriverTuple{
 			VendorID: driver.Driver.VendorID,
 			ModelID:  driver.Driver.ModelID,
 		}]
+		ValueStoreLock.RUnlock()
 
 		// This should not happen: a zero value for every driver-spec is created automatically.
 		if !found {
@@ -201,6 +205,9 @@ func (d DriverManager) ListDriversWithStoredConfig() ([]RichDriver, error) {
 }
 
 func (d DriverManager) CreateDriver(vendorID, modelID, name, version string, hmsCode *string) (hmsErr error, dbErr error) {
+	ValueStoreLock.Lock()
+	defer ValueStoreLock.Unlock()
+
 	hmsCodeToUse := database.DefaultDriverHomescriptCode
 
 	if hmsCode != nil {
@@ -354,10 +361,12 @@ func (d DriverManager) ModifyCode(vendorID, modelID, newCode string) (found bool
 	// - check if there is an erorr and return early
 	// - otherwise (no error) load the current data and perform the patches on it.
 
+	ValueStoreLock.RLock()
 	old := DriverStore[database.DriverTuple{
 		VendorID: vendorID,
 		ModelID:  modelID,
 	}]
+	ValueStoreLock.RUnlock()
 	objVal = (*ApplyNewSchemaOnObjData(old, configInfo.DriverConfig.Info.HmsType)).(value.ValueObject)
 
 	if err := StoreDriverSingletonBackend(vendorID, modelID, objVal); err != nil {
@@ -378,7 +387,9 @@ func (d DriverManager) ModifyCode(vendorID, modelID, newCode string) (found bool
 		if device.VendorID != vendorID || device.ModelID != modelID {
 			continue
 		}
+		ValueStoreLock.RLock()
 		oldDeviceData := DeviceStore[device.ID]
+		ValueStoreLock.RUnlock()
 		newDeviceData := (*ApplyNewSchemaOnObjData(oldDeviceData, configInfo.DeviceConfig.Info.HmsType)).(value.ValueObject)
 		if err := StoreDeviceSingletonBackend(device.ID, newDeviceData); err != nil {
 			return false, nil, err

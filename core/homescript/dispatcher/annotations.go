@@ -1,9 +1,11 @@
 package dispatcher
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/smarthome-go/homescript/v3/homescript"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
@@ -71,6 +73,135 @@ func (i *InstanceT) ReloadDriver(driver database.DeviceDriver) error {
 
 	if errCnt != 0 {
 		return fmt.Errorf("%d device(s) could not be registered", errCnt)
+	}
+
+	return nil
+}
+
+func (i *InstanceT) RegisterUserScript(programID string, username string) error {
+	//
+	// First step: unregister any dispatcher hooks which are attached to this device.
+	//
+
+	logger.Tracef("Registering user script %s...", programID)
+
+	//
+	// Unregister all old registrations.
+	//
+
+	if err := i.UnregisterUserProgram(programID); err != nil {
+		return err
+	}
+
+	context := types.NewExecutionContextUser(
+		programID,
+		username,
+		nil,
+	)
+
+	program, diagnostics, err := i.Hms.AnalyzeUserScript(context)
+
+	if err != nil {
+		return err
+	}
+
+	// Skip further extraction of this device.
+	if diagnostics.ContainsError {
+		d := make([]string, 0)
+		for _, di := range diagnostics.Diagnostics {
+			d = append(d, di.String())
+		}
+
+		return fmt.Errorf(
+			"Could not process user annotation: user `%s`, script `%s` extraction failed: %s",
+			username,
+			programID,
+			strings.Join(d, ", "),
+		)
+	}
+
+	compileOutput, err := i.Hms.Compile(program, programID)
+	if err != nil {
+		return err
+	}
+
+	triggers, err := i.Hms.ProcessAnnotations(
+		compileOutput,
+		context,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	spew.Dump(triggers)
+
+	for _, trigger := range triggers {
+		switch trigger.Trigger {
+		case types.TriggerDeviceEvent:
+			containsEmpty := false
+
+			deviceID := trigger.Args[0].(value.ValueString).Inner
+
+			topicListRaw := trigger.Args[1].(value.ValueOption).Inner
+			var topics *[]string
+
+			if topicListRaw != nil {
+				values := *(*topicListRaw).(value.ValueList).Values
+				topicsR := make([]string, len(values))
+				topics = &topicsR
+
+				for idx, arg := range values {
+					vString := (*arg).(value.ValueString).Inner
+					(*topics)[idx] = vString
+
+					if vString == "" && !containsEmpty {
+						containsEmpty = true
+					}
+				}
+			}
+
+			// Sanity-check the arguments.
+			if len(*topics) == 0 || containsEmpty {
+				return errors.New("Empty lists or empty strings are not allowed as topics")
+			}
+
+			id, err := i.registerInternal(
+				dispatcherTypes.RegisterInfo{
+					ProgramID: programID,
+					Function: &dispatcherTypes.CalledFunction{
+						Ident:          trigger.CalledFnIdentMangled,
+						IdentIsLiteral: true,
+						CallMode: dispatcherTypes.CallModeAdaptive{
+							AllocatingFallback: dispatcherTypes.CallModeAllocating{
+								Context: context,
+							},
+						},
+					},
+					Trigger: dispatcherTypes.CallbackTriggerDeviceAction{
+						FilterKind: dispatcherTypes.DeviceFilterKind(dispatcherTypes.DeviceFilterIndividual{
+							ID: deviceID,
+						}),
+						Topics:        *topics,
+						TopicWildcard: topics == nil,
+					},
+				},
+			)
+
+			if err != nil {
+				return err
+			}
+
+			logger.Infof("Register user program: %d", id)
+
+			i.DoneRegistrations.Lock.Lock()
+			spew.Dump(i.DoneRegistrations.Device)
+			i.DoneRegistrations.Lock.Unlock()
+		case types.TriggerDeviceClassEvent:
+			panic("HI")
+		default:
+			continue
+		}
 	}
 
 	return nil

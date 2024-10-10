@@ -23,6 +23,9 @@ import (
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/device/driver"
 	driverTypes "github.com/smarthome-go/smarthome/core/device/driver/types"
+	"github.com/smarthome-go/smarthome/core/homescript/analyzer"
+	"github.com/smarthome-go/smarthome/core/homescript/dispatcher"
+	"github.com/smarthome-go/smarthome/core/homescript/executor"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
@@ -102,6 +105,18 @@ func (m *Manager) AllocJobId() uint64 {
 			return potential
 		}
 	}
+}
+
+func (m *Manager) SaveUserCode(id string, owner string, newCode string) (codeErr error, dbErr error) {
+	if err := database.ModifyHomescriptCode(id, owner, newCode); err != nil {
+		return nil, err
+	}
+
+	if err := dispatcher.Instance.RegisterUserScript(id, owner); err != nil {
+		return err, nil
+	}
+
+	return nil, nil
 }
 
 func (m *Manager) PushJob(
@@ -187,13 +202,17 @@ func (m *Manager) resolveFileContentsOfErrors(
 func (m *Manager) Analyze(
 	input homescript.InputProgram,
 	context types.ExecutionContext,
-) (map[string]ast.AnalyzedProgram, types.HmsDiagnosticsContainer, error) {
+) (
+	map[string]ast.AnalyzedProgram,
+	types.HmsDiagnosticsContainer,
+	error,
+) {
 	logger.Trace(fmt.Sprintf("Homescript `%s` is being analyzed...", input.Filename))
 
 	analyzedModules, diagnostics, syntaxErrors := homescript.Analyze(
 		input,
-		analyzerScopeAdditions(),
-		newAnalyzerHost(context),
+		analyzer.AnalyzerScopeAdditions(),
+		NewAnalyzerHost(context),
 	)
 
 	errors := make([]types.HmsError, 0)
@@ -343,7 +362,7 @@ func (m *Manager) RunGeneric(
 
 	logger.Debugf("Homescript `%s` is executing...", invocation.Identifier.Filename)
 
-	executor := NewInterpreterExecutor(
+	ex := executor.NewInterpreterExecutor(
 		jobID,
 		invocation.Identifier.Filename,
 		outputWriter,
@@ -351,13 +370,14 @@ func (m *Manager) RunGeneric(
 		invocation.LoadedSingletons,
 		context,
 		stdin,
+		m,
 	)
 
 	//
 	// If this is a top-level user script, extract annotations first.
 	//
 
-	if shouldProcessAnnotations {
+	if shouldProcessAnnotations && false {
 		logger.Trace("Processing annotations...")
 		triggers, err := m.ProcessAnnotations(compOut, context)
 		if err != nil {
@@ -365,7 +385,9 @@ func (m *Manager) RunGeneric(
 		}
 
 		for _, trigger := range triggers {
-			if err := executor.RegisterTrigger(
+			fmt.Printf("============== TRIGGER: %s\n", trigger)
+
+			if err := ex.RegisterTrigger(
 				trigger.CalledFnIdentMangled,
 				trigger.Trigger,
 				trigger.Span,
@@ -378,10 +400,10 @@ func (m *Manager) RunGeneric(
 
 	vm := runtime.NewVM(
 		compOut,
-		executor,
+		ex,
 		&cancelation.Context,
 		&cancelation.CancelFunc,
-		interpreterScopeAdditions(),
+		executor.InterpreterScopeAdditions(),
 		VM_LIMITS,
 	)
 
@@ -394,9 +416,7 @@ func (m *Manager) RunGeneric(
 	)
 
 	defer func() {
-		fmt.Println(":bef")
-		executor.Free()
-		fmt.Println(":after")
+		ex.Free()
 		m.removeJob(jobID)
 	}()
 
@@ -419,7 +439,30 @@ func (m *Manager) RunGeneric(
 		functionInvocation = *invocation.FunctionInvocation
 	}
 
-	spawnResult := vm.SpawnSync(functionInvocation, nil, nil)
+	debuggerOut := make(chan runtime.DebugOutput)
+	debuggerIn := make(chan struct{})
+
+	coreMain := vm.SpawnAsync(functionInvocation, &debuggerOut, &debuggerIn, nil)
+
+	if runtime.VM_DEBUGGER {
+		dbg := homescript.NewDebugger(
+			&debuggerOut,
+			&debuggerIn,
+			coreMain,
+			functionInvocation.Function,
+			compOut,
+		)
+
+		go dbg.DebuggerMainloop()
+	}
+
+	exceptionCore, interrupt := vm.Wait()
+	spawnResult := vm.HandleTermination(
+		coreMain,
+		functionInvocation,
+		interrupt,
+		exceptionCore,
+	)
 
 	if spawnResult.Exception != nil {
 		i := spawnResult.Exception.Interrupt
@@ -808,8 +851,8 @@ func (m *Manager) KillAllId(hmsId string) (count uint64, success bool) {
 func (m *Manager) killJob(job types.Job) {
 	cancelMtx := sync.Mutex{}
 
-	executor := job.VM.Executor.(interpreterExecutor)
-	killCallbacks := executor.onKillCallbackFuncs
+	ex := job.VM.Executor.(executor.InterpreterExecutor)
+	killCallbacks := ex.OnKillCallbackFuncs
 	numsOfRunningKillHandlers := len(*killCallbacks)
 
 	logger.Tracef("Dispatching sigTerm to HMS interpreter channel: (%d kill handlers)...", numsOfRunningKillHandlers)
@@ -860,7 +903,7 @@ func (m *Manager) killJob(job types.Job) {
 			job.VM.Cores.Lock.RUnlock()
 
 			if runningHandlers == 0 && amountCores == 0 {
-				logger.Tracef("All kill events finished for ID `%s` (numActCores = %d)", executor.programID, amountCores)
+				logger.Tracef("All kill events finished for ID `%s` (numActCores = %d)", ex.ProgramID, amountCores)
 				// job.CancelCtx()
 				break
 			}
@@ -876,7 +919,7 @@ func (m *Manager) killJob(job types.Job) {
 			}
 
 			time.Sleep(1 * time.Second)
-			logger.Tracef("Waiting for %d funcs (%d cores) in `%s` before termination", runningHandlers, amountCores, executor.programID)
+			logger.Tracef("Waiting for %d funcs (%d cores) in `%s` before termination", runningHandlers, amountCores, ex.ProgramID)
 		}
 	} else {
 		job.CancelCtx()

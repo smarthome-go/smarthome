@@ -1,7 +1,6 @@
-package homescript
+package executor
 
 import (
-	"strings"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
@@ -12,7 +11,7 @@ import (
 	hmsTypes "github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
-func (self interpreterExecutor) RegisterTrigger(
+func (self InterpreterExecutor) RegisterTrigger(
 	callbackFunctionIdentMangled string,
 	eventTriggerIdent string,
 	span errors.Span,
@@ -25,14 +24,14 @@ func (self interpreterExecutor) RegisterTrigger(
 		registrationID, err = registerTriggerMessage(
 			callbackFunctionIdentMangled,
 			nil,
-			self.programID,
+			self.ProgramID,
 			args,
 			self.context,
 		)
 	case hmsTypes.TriggerMinuteIdent:
 		registrationID, err = registerTriggerMinute(
 			callbackFunctionIdentMangled,
-			self.programID,
+			self.ProgramID,
 			self.jobID,
 			args,
 			self.context,
@@ -40,11 +39,16 @@ func (self interpreterExecutor) RegisterTrigger(
 	case hmsTypes.TriggerKillIdent:
 		self.registerTriggerKill(callbackFunctionIdentMangled)
 	case hmsTypes.TriggerDeviceEvent:
-		panic("HALLO")
-		registerTriggerDevice()
+		registrationID, err = registerTriggerSingleDevice(
+			callbackFunctionIdentMangled,
+			self.ProgramID,
+			self.jobID,
+			args,
+			self.context,
+		)
 	case hmsTypes.TriggerDeviceClassEvent:
 		panic("HALLO")
-		registerTriggerDevice()
+		// registerTriggerDevice()
 	default:
 		panic("Encountered unimplemented trigger function")
 	}
@@ -58,13 +62,125 @@ func (self interpreterExecutor) RegisterTrigger(
 	return nil
 }
 
-func registerTriggerDevice(deviceFilter DeviceFilter) {
-	panic("TODO")
+type DeviceFilter struct {
+	// TODO: add actual code here
 }
 
-func (self *interpreterExecutor) registerTriggerKill(callbackFunctionMangled string) {
-	*self.onKillCallbackFuncs = append(*self.onKillCallbackFuncs, callbackFunctionMangled)
-	spew.Dump(self.onKillCallbackFuncs)
+func registerTriggerSingleDevice(
+	callbackFunctionIdentMangled string,
+	programID string,
+	// This is required as this trigger does not make sense in annotations.
+	// Therefore, this trigger only works with the attaching calling mode.
+	jobID uint64,
+	args []value.Value,
+	context hmsTypes.ExecutionContext,
+) (types.RegistrationID, error) {
+	deviceID := args[0].(value.ValueString).Inner
+
+	topicsStrList := make([]string, 0)
+	topicList := args[1].(value.ValueOption).Inner
+	topicWildcard := true
+
+	if topicList != nil {
+		topicWildcard = false
+
+		for _, item := range *(*topicList).(value.ValueList).Values {
+			topicsStrList = append(topicsStrList, (*item).(value.ValueString).Inner)
+		}
+	}
+
+	callMode := types.CallMode(types.CallModeAdaptive{
+		AllocatingFallback: types.CallModeAllocating{
+			Context: context,
+		},
+	})
+
+	id, err := dispatcher.Instance.Register(
+		types.RegisterInfo{
+			ProgramID: programID,
+			Function: &types.CalledFunction{
+				Ident:          callbackFunctionIdentMangled,
+				IdentIsLiteral: true,
+				CallMode:       callMode,
+			},
+			Trigger: types.CallbackTriggerDeviceAction{
+				FilterKind: types.DeviceFilterKind(types.DeviceFilterIndividual{
+					ID: deviceID,
+				}),
+				Topics:        topicsStrList,
+				TopicWildcard: topicWildcard,
+			},
+		},
+		types.ToleranceRetry,
+	)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
+}
+
+func registerTriggerDeviceClass(
+	callbackFunctionIdentMangled string,
+	programID string,
+	// This is required as this trigger does not make sense in annotations.
+	// Therefore, this trigger only works with the attaching calling mode.
+	jobID uint64,
+	args []value.Value,
+	context hmsTypes.ExecutionContext,
+) (types.RegistrationID, error) {
+	vendor := args[0].(value.ValueString).Inner
+	model := args[1].(value.ValueString).Inner
+
+	topicsStrList := make([]string, 0)
+	topicList := args[2].(value.ValueOption).Inner
+	topicWildCard := true
+
+	if topicList != nil {
+		topicWildCard = false
+
+		for _, item := range *(*topicList).(value.ValueList).Values {
+			topicsStrList = append(topicsStrList, (*item).(value.ValueString).Inner)
+		}
+	}
+
+	callMode := types.CallMode(types.CallModeAdaptive{
+		AllocatingFallback: types.CallModeAllocating{
+			Context: context,
+		},
+	})
+
+	id, err := dispatcher.Instance.Register(
+		types.RegisterInfo{
+			ProgramID: programID,
+			Function: &types.CalledFunction{
+				Ident:          callbackFunctionIdentMangled,
+				IdentIsLiteral: true,
+				CallMode:       callMode,
+			},
+			Trigger: types.CallbackTriggerDeviceAction{
+				FilterKind: types.DeviceFilterKind(types.DeviceFilterClass{
+					Model:  model,
+					Vendor: vendor,
+				}),
+				Topics:        topicsStrList,
+				TopicWildcard: topicWildCard,
+			},
+		},
+		types.ToleranceRetry,
+	)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
+}
+
+func (self *InterpreterExecutor) registerTriggerKill(callbackFunctionMangled string) {
+	*self.OnKillCallbackFuncs = append(*self.OnKillCallbackFuncs, callbackFunctionMangled)
+	spew.Dump(self.OnKillCallbackFuncs)
 }
 
 func registerTriggerMessage(
@@ -98,6 +214,7 @@ func registerTriggerMessage(
 				Ident:          callbackFunctionIdentMangled,
 				IdentIsLiteral: true,
 				CallMode:       callMode,
+				// TODO: this is broken?
 			},
 			Trigger: nil,
 		},
@@ -132,11 +249,11 @@ func registerTriggerMinute(
 		stringArgs[idx] = argVString
 	}
 
-	logger.Tracef(
-		"Registered trigger `minute` with callback fn `%s` and args `[%s]`",
-		callbackFunctionIdentMangled,
-		strings.Join(stringArgs, ", "),
-	)
+	// logger.Tracef(
+	// 	"Registered trigger `minute` with callback fn `%s` and args `[%s]`",
+	// 	callbackFunctionIdentMangled,
+	// 	strings.Join(stringArgs, ", "),
+	// )
 
 	minutes := args[0].(value.ValueInt).Inner
 	now := time.Now()

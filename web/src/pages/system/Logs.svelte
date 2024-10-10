@@ -201,7 +201,12 @@
                                 </span></Cell
                             >
                             <Cell>{logEvent.name}</Cell>
-                            <Cell>{logEvent.description}</Cell>
+                            <Cell>
+                                {#each logEvent.description.split("\n") as line}
+                                    <code> {line} </code>
+                                    <br>
+                                {/each}
+                            </Cell>
                             <Cell>
                                 <IconButton
                                     size="button"

@@ -38,6 +38,23 @@ func OnMqttRetryHook() error {
 	return dispatcher.Instance.RegisterPending()
 }
 
+// TODO: this mostly works, but breaks right now
+
+func InitUserScripts() error {
+	scripts, err := database.ListAllHomescripts()
+	if err != nil {
+		return err
+	}
+
+	for _, script := range scripts {
+		if err := dispatcher.Instance.RegisterUserScript(script.Data.Id, script.Owner); err != nil {
+			log.Errorf("Failed to initialize user script (%s): %s", script.Data.Id, err.Error())
+		}
+	}
+
+	return nil
+}
+
 func InitDevices() error {
 	// Compile every driver's source code (register any triggers if existent)
 	// TODO: implement this in a better way
@@ -98,7 +115,7 @@ func Init(config database.ServerConfig) error {
 	// Hardware handler
 	hardware.Init()
 
-	if err := hardware.StartPowerUsageSnapshotScheduler(); err != nil {
+	if err := driver.StartPowerUsageSnapshotScheduler(); err != nil {
 		return fmt.Errorf("Failed to start periodic power usage snapshot scheduler: %s", err.Error())
 	}
 
@@ -108,6 +125,14 @@ func Init(config database.ServerConfig) error {
 
 	if err := InitDevices(); err != nil {
 		log.Errorf("Failed to initialize all devices, using best effort attempt: %s", err.Error())
+	}
+
+	//
+	// Init user scripts
+	//
+
+	if err := InitUserScripts(); err != nil {
+		log.Errorf("Failed to initialize all user programs, using best effort attempt: %s", err.Error())
 	}
 
 	//

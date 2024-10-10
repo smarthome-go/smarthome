@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/smarthome-go/smarthome/core/database"
-	hardware "github.com/smarthome-go/smarthome/core/hardware_deprecated"
+	"github.com/smarthome-go/smarthome/core/device/driver"
 	"github.com/smarthome-go/smarthome/core/user"
 )
 
@@ -150,7 +150,7 @@ func RunSetupStruct(setup SetupStruct) error {
 	}
 
 	// Remove redundant power data points
-	if err := hardware.SaveCurrentPowerUsage(); err != nil {
+	if err := driver.SaveCurrentPowerUsage(); err != nil {
 		return err
 	}
 	return nil

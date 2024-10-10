@@ -83,6 +83,20 @@ dev:
 vite-dev:
 	cd web && npm run dev
 
+PUB_TOPIC:="test"
+PUB_CONTENT:="placeholder"
+mqtt-pub:
+	mqttui -b mqtt://localhost \
+		-u test --password=password \
+		--insecure --client-id=tui-publish p $(PUB_TOPIC) $(PUB_CONTENT)
+
+SUB_TOPIC:="test"
+mqtt-sub:
+	mqttui -b mqtt://localhost \
+		-u test --password=password \
+		--insecure --client-id=tui-sub \
+		$(SUB_TOPIC)
+
 # Start the project to mock production
 # Generates the frontend web output first
 # then runs the go backend

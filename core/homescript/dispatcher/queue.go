@@ -65,9 +65,6 @@ func (q *PendingQueue) IsEmpty() bool {
 //
 
 func (i *InstanceT) RegisterPending() error {
-	// i.PendingRegistrations.lock.Lock()
-	// defer i.PendingRegistrations.lock.Unlock()
-
 	logger.Debug("Trying to register pending registrations...")
 
 	var generalErr error
@@ -106,12 +103,7 @@ func (i *InstanceT) Register(
 	}
 
 	// Retry this registration if feasible.
-	// i.PendingRegistrations.lock.Lock()
-	// defer i.PendingRegistrations.lock.Unlock()
-
 	i.PendingRegistrations.Enqueue(info)
-
-	// panic("b")
 
 	return 0, err
 }

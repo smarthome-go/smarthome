@@ -7,7 +7,7 @@ import (
 
 	"github.com/h2non/filetype"
 	"github.com/smarthome-go/smarthome/core/database"
-	hardware "github.com/smarthome-go/smarthome/core/hardware_deprecated"
+	"github.com/smarthome-go/smarthome/core/device/driver"
 	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/core/user"
 )
@@ -124,8 +124,8 @@ type SetupUserData struct {
 }
 
 type SetupCacheData struct {
-	WeatherHistory []SetupWeatherMeasurement               `json:"weatherHistory"`
-	PowerUsageData []hardware.PowerDrawDataPointUnixMillis `json:"powerUsageData"`
+	WeatherHistory []SetupWeatherMeasurement             `json:"weatherHistory"`
+	PowerUsageData []driver.PowerDrawDataPointUnixMillis `json:"powerUsageData"`
 }
 
 type SetupWeatherMeasurement struct {
@@ -371,7 +371,7 @@ func ExportConfig(
 	// Include cache data if desired
 	cacheData := SetupCacheData{
 		WeatherHistory: make([]SetupWeatherMeasurement, 0),
-		PowerUsageData: make([]hardware.PowerDrawDataPointUnixMillis, 0),
+		PowerUsageData: make([]driver.PowerDrawDataPointUnixMillis, 0),
 	}
 	if includedCacheData {
 		// Weather history
@@ -396,7 +396,7 @@ func ExportConfig(
 		cacheData.WeatherHistory = weatherHistoryOut
 
 		// Power usage data
-		powerData, err := hardware.GetPowerUsageRecordsUnixMillis(-1)
+		powerData, err := driver.GetPowerUsageRecordsUnixMillis(-1)
 		if err != nil {
 			return SetupStruct{}, err
 		}

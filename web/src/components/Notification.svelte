@@ -227,18 +227,18 @@
         width: 100%;
     }
 
-    :global table,
-    :global td,
-    :global th {
-        border: 1px solid var(--clr-text-disabled);
-    }
-
-    :global td {
-        padding: 0.2rem 0.5rem;
-    }
-
-    :global table {
-        width: 100%;
-        border-collapse: collapse;
-    }
+    /* :global table, */
+    /* :global td, */
+    /* :global th { */
+    /*     border: 1px solid var(--clr-text-disabled); */
+    /* } */
+    /**/
+    /* :global td { */
+    /*     padding: 0.2rem 0.5rem; */
+    /* } */
+    /**/
+    /* :global table { */
+    /*     width: 100%; */
+    /*     border-collapse: collapse; */
+    /* } */
 </style>

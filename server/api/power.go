@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/smarthome-go/smarthome/core/database"
-	hardware "github.com/smarthome-go/smarthome/core/hardware_deprecated"
+	"github.com/smarthome-go/smarthome/core/device/driver"
 )
 
 // TODO: replace with device interaction
@@ -22,7 +22,7 @@ func GetPowerDrawFrom24Hours(w http.ResponseWriter, r *http.Request) {
 	// Get the records from the last N hours.
 	const N = 24
 
-	powerUsageData, err := hardware.GetPowerUsageRecordsUnixMillis(N)
+	powerUsageData, err := driver.GetPowerUsageRecordsUnixMillis(N)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "could not get power usage data from the last 24 hours", Error: "database error"})
@@ -37,7 +37,7 @@ func GetPowerDrawFrom24Hours(w http.ResponseWriter, r *http.Request) {
 // Returns all power draw data points.
 func GetPowerDrawAll(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	powerUsageData, err := hardware.GetPowerUsageRecordsUnixMillis(-1)
+	powerUsageData, err := driver.GetPowerUsageRecordsUnixMillis(-1)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		Res(w, Response{Success: false, Message: "could not get complete power usage data", Error: "database error"})

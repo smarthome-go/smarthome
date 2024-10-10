@@ -3,6 +3,7 @@ package driver
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
@@ -27,6 +28,7 @@ const (
 // Maps a device-ID to the corresponding saved value.
 var DeviceStore map[string]value.ValueObject = make(map[string]value.ValueObject)
 var DriverStore map[database.DriverTuple]value.ValueObject = make(map[database.DriverTuple]value.ValueObject)
+var ValueStoreLock sync.RWMutex
 
 func GetDeviceSingleton(deviceId string) (value.ValueObject, bool) {
 	val, found := DeviceStore[deviceId]
@@ -196,7 +198,10 @@ func StoreDeviceSingletonBackend(deviceID string, val value.ValueObject) error {
 		return err
 	}
 
+	ValueStoreLock.Lock()
 	DeviceStore[deviceID] = val
+	ValueStoreLock.Unlock()
+
 	return nil
 }
 
@@ -297,6 +302,9 @@ func filterObjFieldsWithoutSetting(input value.ValueObject, singletonType ast.Ob
 // }
 
 func (d DriverManager) PopulateValueCache() error {
+	ValueStoreLock.Lock()
+	defer ValueStoreLock.Unlock()
+
 	// Retrieve devices list.
 	devices, err := database.ListAllDevices()
 	if err != nil {

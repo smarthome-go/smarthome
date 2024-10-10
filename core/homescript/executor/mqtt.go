@@ -1,4 +1,4 @@
-package homescript
+package executor
 
 import (
 	"context"
@@ -22,11 +22,11 @@ func mqttSubscribe() value.Value {
 		// BUG: this is definitely unsafe
 		fn := args[1].(value.ValueVMFunction).Ident
 
-		hmsExecutor := executor.(interpreterExecutor)
+		hmsExecutor := executor.(InterpreterExecutor)
 
 		id, err := dispatcher.Instance.Register(
 			dispatcherTypes.RegisterInfo{
-				ProgramID: hmsExecutor.programID,
+				ProgramID: hmsExecutor.ProgramID,
 				Function: &dispatcherTypes.CalledFunction{
 					Ident:          fn,
 					IdentIsLiteral: true,

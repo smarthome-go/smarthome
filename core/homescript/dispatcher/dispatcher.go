@@ -8,10 +8,10 @@ import (
 	"math"
 	"math/big"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -22,9 +22,11 @@ import (
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/device/driver"
 	driverTypes "github.com/smarthome-go/smarthome/core/device/driver/types"
+	"github.com/smarthome-go/smarthome/core/event"
 	dispatcherTypes "github.com/smarthome-go/smarthome/core/homescript/dispatcher/types"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 	"github.com/smarthome-go/smarthome/core/scheduler"
+	"github.com/smarthome-go/smarthome/core/user/notify"
 )
 
 const registrationIDNumDigits = 16
@@ -40,9 +42,9 @@ func InitLogger(log *logrus.Logger) {
 //
 
 type InstanceT struct {
-	Hms                  types.Manager
-	Mqtt                 *MqttManager
-	DeviceRules          map[dispatcherTypes.CallbackTriggerDeviceAction]dispatcherTypes.RegisterInfo
+	Hms  types.Manager
+	Mqtt *MqttManager
+	// DeviceRules          map[dispatcherTypes.CallbackTriggerDeviceAction]dispatcherTypes.RegisterInfo
 	DoneRegistrations    dispatcherTypes.Registrations
 	PendingRegistrations PendingQueue
 
@@ -56,14 +58,15 @@ var Instance InstanceT
 
 func InitInstance(hms types.Manager, mqtt *MqttManager) error {
 	Instance = InstanceT{
-		Hms:         hms,
-		Mqtt:        mqtt,
-		DeviceRules: make(map[dispatcherTypes.CallbackTriggerDeviceAction]dispatcherTypes.RegisterInfo),
+		Hms:  hms,
+		Mqtt: mqtt,
+		// DeviceRules: make(map[dispatcherTypes.CallbackTriggerDeviceAction]dispatcherTypes.RegisterInfo),
 		DoneRegistrations: dispatcherTypes.Registrations{
 			Lock:                   sync.RWMutex{},
 			Set:                    make(map[dispatcherTypes.RegistrationID]dispatcherTypes.RegisterInfo),
 			MqttRegistrations:      make(map[string][]dispatcherTypes.RegistrationID),
 			SchedulerRegistrations: make(map[string]dispatcherTypes.RegistrationID),
+			Device:                 make([]dispatcherTypes.DeviceRegistration, 0),
 		},
 		PendingRegistrations:      NewQueue(),
 		LastRegistrationErrorTime: time.Time{},
@@ -145,8 +148,10 @@ func (i *InstanceT) registerInternal(info dispatcherTypes.RegisterInfo) (dispatc
 				panic("Function may not be <nil>")
 			}
 
-			if infoIter.Function.CallMode.Kind() == dispatcherTypes.CallModeKindAdaptive && infoIter.ProgramID == info.ProgramID {
-				// Remove this old registration.
+			// Remove this old registration if it already exists.
+			if infoIter.Function.CallMode.Kind() == dispatcherTypes.CallModeKindAdaptive &&
+				infoIter.ProgramID == info.ProgramID &&
+				infoIter.Trigger.Eq(info.Trigger) {
 				if err := i.Unregister(id); err != nil {
 					return 0, err
 				}
@@ -216,12 +221,14 @@ func (i *InstanceT) registerInternal(info dispatcherTypes.RegisterInfo) (dispatc
 		i.DoneRegistrations.Set[id] = info
 		i.DoneRegistrations.SchedulerRegistrations[schedulerTag] = id
 		i.DoneRegistrations.Lock.Unlock()
-	case *dispatcherTypes.CallbackTriggerDeviceAction:
+	case dispatcherTypes.CallbackTriggerDeviceAction:
 		i.DoneRegistrations.Lock.Lock()
 		i.DoneRegistrations.Set[id] = info
 
-		old := i.DoneRegistrations.Device[*trigger]
-		i.DoneRegistrations.Device[*trigger] = append(old, id)
+		i.DoneRegistrations.Device = append(i.DoneRegistrations.Device, dispatcherTypes.DeviceRegistration{
+			ID:     id,
+			Action: trigger,
+		})
 
 		i.DoneRegistrations.Lock.Unlock()
 	default:
@@ -229,6 +236,26 @@ func (i *InstanceT) registerInternal(info dispatcherTypes.RegisterInfo) (dispatc
 	}
 
 	return id, nil
+}
+
+func (i *InstanceT) UnregisterUserProgram(id string) error {
+	i.DoneRegistrations.Lock.Lock()
+	set := i.DoneRegistrations.Set
+	i.DoneRegistrations.Lock.Unlock()
+
+	for k, v := range set {
+		if v.ProgramID != id {
+			continue
+		}
+
+		if err := i.Unregister(k); err != nil {
+			return err
+		}
+
+		logger.Tracef("[user register] Removed previous dispatcher registration `%d`", id)
+	}
+
+	return nil
 }
 
 func (i *InstanceT) Unregister(id dispatcherTypes.RegistrationID) error {
@@ -295,22 +322,22 @@ func (i *InstanceT) Unregister(id dispatcherTypes.RegistrationID) error {
 
 	// Delete reference in device events
 	i.DoneRegistrations.Lock.RLock()
-	device := i.DoneRegistrations.Device
+	devices := i.DoneRegistrations.Device
 	i.DoneRegistrations.Lock.RUnlock()
-	for filter, assigned := range device {
-		newIDs := make([]dispatcherTypes.RegistrationID, 0)
-		for _, idToCheck := range assigned {
-			if id == idToCheck {
-				continue
-			}
 
-			newIDs = append(newIDs, idToCheck)
+	newDevices := make([]dispatcherTypes.DeviceRegistration, 0)
+
+	for _, deviceTarget := range devices {
+		if deviceTarget.ID == id {
+			continue
 		}
 
-		i.DoneRegistrations.Lock.Lock()
-		i.DoneRegistrations.Device[filter] = newIDs
-		i.DoneRegistrations.Lock.Unlock()
+		newDevices = append(newDevices, deviceTarget)
 	}
+
+	i.DoneRegistrations.Lock.Lock()
+	i.DoneRegistrations.Device = newDevices
+	i.DoneRegistrations.Lock.Unlock()
 
 	logger.Debugf("dispatcher: Unregistered ID %d", id)
 
@@ -384,7 +411,7 @@ func (i *InstanceT) allocatingCall(
 	meta CallBackMeta,
 	execContext types.ExecutionContext,
 ) {
-	logger.Tracef("Performing allocating call for program `%s`...\n", info.ProgramID)
+	logger.Tracef("Performing allocating call to function `%s` for program `%s`...", info.Function.Ident, info.ProgramID)
 	cancelCtx, cancelFnc := context.WithCancel(context.Background())
 
 	invocation := runtime.FunctionInvocation{
@@ -394,10 +421,7 @@ func (i *InstanceT) allocatingCall(
 		FunctionSignature: meta.FunctionSignature,
 	}
 
-	spew.Dump(meta.FunctionSignature)
-
 	var buffer bytes.Buffer
-
 	var err error
 	var res types.HmsRes
 
@@ -426,15 +450,17 @@ func (i *InstanceT) allocatingCall(
 			panic("Can only dispatch to driver or user environment")
 		}
 
-		resTemp, errTemp := i.Hms.RunUserScript(
+		resTemp, errTemp := i.Hms.RunUserScriptTweakable(
 			info.ProgramID,
 			*c.Username(),
-			nil,
+			&invocation,
 			types.Cancelation{
 				Context:    cancelCtx,
 				CancelFunc: cancelFnc,
 			},
 			&buffer,
+			nil,
+			false,
 			nil,
 			nil,
 		)
@@ -451,11 +477,31 @@ func (i *InstanceT) allocatingCall(
 
 	if res.Errors.ContainsError {
 		// TODO: better way to handle errors: maybe system log or admin user notication?
+
+		message := make([]string, 0)
 		for _, error := range res.Errors.Diagnostics {
-			fmt.Println(error.String())
+			message = append(message, error.String())
 		}
 
-		panic("HMS crashed on invocation")
+		switch c := execContext.(type) {
+		case types.ExecutionContextUser:
+			if _, err := notify.Manager.Notify(
+				c.UsernameData,
+				fmt.Sprintf("Homescript `%s` Crashed", info.ProgramID),
+				fmt.Sprintf("```\n%s\n```", strings.Join(message, "\n")),
+				notify.NotificationLevelError,
+				true,
+			); err != nil {
+				logger.Errorf("Notify after invocation failure error: %s", err.Error())
+			}
+		case types.ExecutionContextDriver:
+			event.Error(fmt.Sprintf("Driver `%s` Failure", info.ProgramID), strings.Join(message, "\n"))
+		default:
+			for _, error := range res.Errors.Diagnostics {
+				fmt.Println(error.String())
+			}
+			logger.Errorf("Homescript `%s` crashed on dispatcher invocation", info.ProgramID)
+		}
 	}
 
 	cancelFnc()
@@ -464,6 +510,103 @@ func (i *InstanceT) allocatingCall(
 type MqttMessage struct {
 	Topic   string
 	Payload string
+}
+
+func (i *InstanceT) EmitDeviceEvent(
+	driver database.DriverTuple,
+	deviceID string,
+	topic string,
+	data value.Value,
+) error {
+	i.DoneRegistrations.Lock.RLock()
+	dev := i.DoneRegistrations.Device
+	i.DoneRegistrations.Lock.RUnlock()
+
+	for _, registration := range dev {
+		fmt.Printf("==================== CHK: %v\n", registration)
+
+		if !eventMatchesDevice(driver, deviceID, topic, registration.Action) {
+			continue
+		}
+
+		args := []value.Value{
+			*value.NewValueString(topic),
+			data,
+		}
+
+		dataDisp, _ := data.Display()
+		fmt.Printf("============ user device data: %v\n", dataDisp)
+
+		params := []runtime.FunctionInvocationSignatureParam{
+			{
+				Ident: "topic",
+				Type:  ast.NewStringType(herrors.Span{}),
+			},
+			{
+				Ident: "data",
+				Type:  ast.NewAnyType(herrors.Span{}),
+			},
+		}
+
+		if registration.Action.FilterKind.Kind() == dispatcherTypes.DeviceFilterKindClass {
+			args = append(args, *value.NewValueString(deviceID))
+
+			params = append(
+				params,
+				runtime.FunctionInvocationSignatureParam{
+					Ident: "device_id",
+					Type:  ast.NewStringType(herrors.Span{}),
+				},
+			)
+		}
+
+		info, found := i.DoneRegistrations.Set[registration.ID]
+		if !found {
+			panic("unreachable: internal state corruption")
+		}
+
+		i.CallBack(info, CallBackMeta{
+			Args: args,
+			FunctionSignature: runtime.FunctionInvocationSignature{
+				Params:     params,
+				ReturnType: ast.NewNullType(herrors.Span{}),
+			},
+		})
+	}
+
+	return nil
+}
+
+func eventMatchesDevice(
+	driver database.DriverTuple,
+	deviceID string,
+	topic string,
+	action dispatcherTypes.CallbackTriggerDeviceAction,
+) bool {
+	switch f := action.FilterKind.(type) {
+	case dispatcherTypes.DeviceFilterClass:
+		if !(f.Model == driver.ModelID && f.Vendor == driver.VendorID) {
+			return false
+		}
+	case dispatcherTypes.DeviceFilterIndividual:
+		if f.ID != deviceID {
+			return false
+		}
+	default:
+		panic("A new device filter was introduced without updating this code")
+	}
+
+	if action.TopicWildcard {
+		return true
+	}
+
+	for _, topicT := range action.Topics {
+		if topicT == topic {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (i *InstanceT) mqttCallBack(_ mqtt.Client, message mqtt.Message) {
@@ -484,8 +627,8 @@ func (i *InstanceT) mqttCallBack(_ mqtt.Client, message mqtt.Message) {
 
 		i.CallBack(registration, CallBackMeta{
 			Args: []value.Value{
-				*value.NewValueString(string(message.Payload())),
 				*value.NewValueString(message.Topic()),
+				*value.NewValueString(string(message.Payload())),
 			},
 			FunctionSignature: runtime.FunctionInvocationSignature{
 				Params: []runtime.FunctionInvocationSignatureParam{

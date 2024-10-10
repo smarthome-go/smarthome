@@ -67,7 +67,7 @@ func (e HmsError) String() string {
 	case e.DiagnosticError != nil:
 		return fmt.Sprintf("Semantic error at %s: `%s`", spanDisplay, e.DiagnosticError.Message)
 	case e.RuntimeInterrupt != nil:
-		return fmt.Sprintf("%s at %s: `%s`", e.RuntimeInterrupt, spanDisplay, e.RuntimeInterrupt.Message)
+		return fmt.Sprintf("RuntimeInterrupt at %s: `%s`", spanDisplay, e.RuntimeInterrupt.Message)
 	}
 
 	panic("Illegal HmsError")
