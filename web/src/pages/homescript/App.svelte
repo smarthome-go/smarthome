@@ -401,6 +401,12 @@
         // Load the currently running jobs
         $jobs = await getRunningJobs()
     })
+
+    let readOnly = false
+    $: readOnly = workspace === "@drivers"
+
+    $: console.log(readOnly)
+    $: console.log(workspace)
 </script>
 
 <AddHomescript
@@ -461,7 +467,7 @@
                 }}>refresh</IconButton
             >
             {#if $homescripts.length > 0}
-                <Button on:click={() => (addOpen = true)}>
+                <Button disabled={readOnly} on:click={() => (addOpen = true)}>
                     <Label>Script</Label>
                     <Icon class="material-icons">add</Icon>
                 </Button>
@@ -492,7 +498,7 @@
                 </h6>
             </div>
             {#if $hmsLoaded && selection !== '' && selectedData !== undefined && $homescripts.find(h => h.data.data.id === selection) !== undefined}
-                <Inputs bind:data={selectedData} bind:deleteOpen />
+                <Inputs {readOnly} bind:data={selectedData} bind:deleteOpen />
                 <div class="run">
                     <div class="run__title">
                         <span class="text-hint">Code Actions</span>
@@ -508,6 +514,7 @@
                         </Button>
                         {#if $jobs.filter(j => j.hmsId === selection).length > 0}
                             <Button
+                                disabled={readOnly}
                                 on:click={killCurrentJob}
                                 variant="outlined"
                             >
@@ -517,7 +524,7 @@
                         {:else}
                             <Button
                                 on:click={initCurrentRun}
-                                disabled={selectedDataChanged}
+                                disabled={selectedDataChanged || readOnly}
                                 variant="outlined"
                             >
                                 <Label>Run</Label>
@@ -526,7 +533,7 @@
                         {/if}
                         <Button
                             on:click={initCurrentLint}
-                            disabled={selectedDataChanged}
+                            disabled={selectedDataChanged || readOnly}
                             variant="outlined"
                         >
                             <Label>Check</Label>

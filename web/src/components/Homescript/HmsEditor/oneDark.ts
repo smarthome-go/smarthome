@@ -21,7 +21,7 @@ const highlightBackground = '#2c313a',
     red = '#e86671',
     grey = '#5c6370',
     yellow = '#e1bd79',
-    light_grey = '#848b98'
+    light_grey = 'rgba(255, 255, 255, 0.6)'
 
 export const oneDarkTheme = EditorView.theme({
     '*': {

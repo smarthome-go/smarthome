@@ -28,6 +28,8 @@
     let workspaces: string[] = []
     $: workspaces = [...new Set([...$homescripts.map(h => h.data.data.workspace), 'default'])]
 
+    export let readOnly = false
+
     async function createHomescriptArg(
         key: string,
         prompt: string,
@@ -127,6 +129,7 @@
             <Label>Cancel</Label>
         </Button>
         <Button
+            disabled={readOnly}
             on:click={() => {
                 workspaces = [...workspaces, newWorkspaceInputText]
                 data.workspace = newWorkspaceInputText
@@ -141,6 +144,7 @@
     <!-- Names and Text -->
     <div class="text">
         <Textfield
+            disabled={readOnly}
             bind:value={data.name}
             input$maxlength={30}
             label="Name"
@@ -153,6 +157,7 @@
             </svelte:fragment>
         </Textfield>
         <Textfield
+            disabled={readOnly}
             bind:value={data.description}
             label="Description"
             style="width: 100%;"
@@ -161,6 +166,7 @@
         <br />
         <br />
         <Autocomplete
+            disabled={readOnly}
             style="width: 100%"
             label="Select Workspace"
             options={workspaces}
@@ -182,11 +188,12 @@
         <div class="toggles-actions__toggles">
             <span class="text-hint">Selection and visibility</span>
             <div>
-                <Switch disabled={data.isWidget} bind:checked={data.schedulerEnabled} />
+                <Switch disabled={data.isWidget || readOnly} bind:checked={data.schedulerEnabled} />
                 <span class="text-hint">Show Selection</span>
             </div>
             <div>
                 <Switch
+                    disabled={readOnly}
                     bind:checked={data.isWidget}
                     on:SMUISwitch:change={() => {
                         data.schedulerEnabled = false
@@ -196,7 +203,7 @@
                 <span class="text-hint">Is Widget</span>
             </div>
             <div>
-                <Switch disabled={data.isWidget} bind:checked={data.quickActionsEnabled} />
+                <Switch disabled={data.isWidget || readOnly} bind:checked={data.quickActionsEnabled} />
                 <span class="text-hint">Quick actions </span>
             </div>
         </div>
@@ -204,13 +211,14 @@
         <div class="toggles-actions__actions">
             <span class="text-hint">Actions and theming</span>
             <Button
+                disabled={readOnly}
                 on:click={() => {
                     iconPickerOpen = true
                 }}
             >
                 Pick Icon
             </Button>
-            <Button on:click={() => (deleteOpen = true)}>
+            <Button disabled={readOnly} on:click={() => (deleteOpen = true)}>
                 <Label>Delete</Label>
                 <Icon class="material-icons">delete</Icon>
             </Button>
@@ -224,25 +232,27 @@
                 class:empty={$homescripts.find(h => h.data.data.id === data.id).arguments.length ===
                     0}
             >
-                {#if $homescripts.find(h => h.data.data.id === data.id).arguments.length === 0}
-                    <span class="text-disabled">No argument prompts set up.</span>
-                    <IconButton class="material-icons" on:click={() => (addArgOpen = true)}
-                        >add</IconButton
-                    >
-                {:else}
-                    {#each $homescripts.find(h => h.data.data.id === data.id).arguments as arg (arg.id)}
-                        <Argument
-                            on:delete={() => {
-                                deleteHomescriptArgument(arg.id)
-                            }}
-                            bind:data={arg}
-                        />
-                    {/each}
-                    <div class="argument">
+                {#if !readOnly}
+                    {#if $homescripts.find(h => h.data.data.id === data.id).arguments.length === 0}
+                        <span class="text-disabled">No argument prompts set up.</span>
                         <IconButton class="material-icons" on:click={() => (addArgOpen = true)}
                             >add</IconButton
                         >
-                    </div>
+                    {:else}
+                        {#each $homescripts.find(h => h.data.data.id === data.id).arguments as arg (arg.id)}
+                            <Argument
+                                on:delete={() => {
+                                    deleteHomescriptArgument(arg.id)
+                                }}
+                                bind:data={arg}
+                            />
+                        {/each}
+                        <div class="argument">
+                            <IconButton class="material-icons" on:click={() => (addArgOpen = true)}
+                                >add</IconButton
+                            >
+                        </div>
+                    {/if}
                 {/if}
             </div>
         </div>

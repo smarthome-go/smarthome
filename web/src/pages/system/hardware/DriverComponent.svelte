@@ -9,6 +9,7 @@
     import Ripple from '@smui/ripple'
     // import IconButton from '@smui/icon-button'
     import { createSnackbar } from "../../../global";
+    import { hmsEditorURLForId } from '../../../urls';
 
     export let driver: FetchedDriver = null
 
@@ -220,6 +221,13 @@
             <div class="driver__bottom__right">
                 <IconButton class="material-icons" on:click={editDriverShow}>edit</IconButton>
                 <IconButton class="material-icons" on:click={openInfo}>info</IconButton>
+                <Button
+                    href={hmsEditorURLForId(`@driver:${driver.driver.vendorId}:${driver.driver.modelId}`)}
+                    variant="outlined"
+                >
+                    <Label>Code</Label>
+                    <Icon class="material-icons">code</Icon>
+                </Button>
             </div>
         </div>
     </div>
@@ -325,6 +333,11 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+
+            &__right {
+                display: flex;
+                align-items: center;
+            }
         }
     }
 </style>
