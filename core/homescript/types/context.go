@@ -20,6 +20,7 @@ type ExecutionContext interface {
 	Kind() HMS_CONTEXT_KIND
 	Username() *string
 	UserArgs() map[string]string
+	Clone() ExecutionContext
 }
 
 type ExecutionContextUser struct {
@@ -32,6 +33,19 @@ type ExecutionContextUser struct {
 func (u ExecutionContextUser) Kind() HMS_CONTEXT_KIND      { return HMS_PROGRAM_KIND_USER }
 func (u ExecutionContextUser) Username() *string           { return &u.UsernameData }
 func (u ExecutionContextUser) UserArgs() map[string]string { return u.UserArguments }
+func (u ExecutionContextUser) Clone() ExecutionContext {
+	newMap := make(map[string]string)
+
+	for k, v := range u.UserArguments {
+		newMap[k] = v
+	}
+
+	return ExecutionContextUser{
+		Filename:      u.Filename,
+		UsernameData:  u.UsernameData,
+		UserArguments: newMap,
+	}
+}
 
 func NewExecutionContextUser(
 	filename string,
@@ -70,6 +84,19 @@ type ExecutionContextDriver struct {
 func (d ExecutionContextDriver) Kind() HMS_CONTEXT_KIND      { return HMS_PROGRAM_KIND_DEVICE_DRIVER }
 func (d ExecutionContextDriver) Username() *string           { return nil }
 func (d ExecutionContextDriver) UserArgs() map[string]string { return nil }
+func (d ExecutionContextDriver) Clone() ExecutionContext {
+	var id *string
+	if d.DeviceID != nil {
+		i := *d.DeviceID
+		id = &i
+	}
+
+	return ExecutionContextDriver{
+		DriverVendor: d.DriverVendor,
+		DriverModel:  d.DriverModel,
+		DeviceID:     id,
+	}
+}
 
 func NewExecutionContextDriver(vendor, model string, deviceID *string) ExecutionContextDriver {
 	return ExecutionContextDriver{
@@ -106,6 +133,26 @@ type ExecutionContextAutomationInner struct {
 	MaximumHMSRuntime *time.Duration
 }
 
+func (i ExecutionContextAutomationInner) Clone() ExecutionContextAutomationInner {
+	var n *ExecutionContextNotification
+
+	if i.NotificationContext != nil {
+		nT := (*i.NotificationContext).Clone()
+		n = &nT
+	}
+
+	var mrt *time.Duration
+	if i.MaximumHMSRuntime != nil {
+		mrtT := *i.MaximumHMSRuntime
+		mrt = &mrtT
+	}
+
+	return ExecutionContextAutomationInner{
+		NotificationContext: n,
+		MaximumHMSRuntime:   mrt,
+	}
+}
+
 type ExecutionContextNotification struct {
 	Id          uint
 	Title       string
@@ -113,6 +160,21 @@ type ExecutionContextNotification struct {
 	Level       uint8
 }
 
+func (n ExecutionContextNotification) Clone() ExecutionContextNotification {
+	return ExecutionContextNotification{
+		Id:          n.Id,
+		Title:       n.Title,
+		Description: n.Description,
+		Level:       n.Level,
+	}
+}
+
 func (a ExecutionContextAutomation) Kind() HMS_CONTEXT_KIND      { return HMS_PROGRAM_KIND_AUTOMATION }
 func (a ExecutionContextAutomation) Username() *string           { return &a.UserContext.UsernameData }
 func (a ExecutionContextAutomation) UserArgs() map[string]string { return a.UserContext.UserArguments }
+func (a ExecutionContextAutomation) Clone() ExecutionContext {
+	return ExecutionContextAutomation{
+		UserContext: a.UserContext.Clone().(ExecutionContextUser),
+		Inner:       a.Inner.Clone(),
+	}
+}

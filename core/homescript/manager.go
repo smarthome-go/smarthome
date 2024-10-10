@@ -213,6 +213,7 @@ func (m *Manager) Analyze(
 		input,
 		analyzer.AnalyzerScopeAdditions(),
 		NewAnalyzerHost(context),
+		context.Kind() != types.HMS_PROGRAM_KIND_DEVICE_DRIVER,
 	)
 
 	errors := make([]types.HmsError, 0)
@@ -385,8 +386,6 @@ func (m *Manager) RunGeneric(
 		}
 
 		for _, trigger := range triggers {
-			fmt.Printf("============== TRIGGER: %s\n", trigger)
-
 			if err := ex.RegisterTrigger(
 				trigger.CalledFnIdentMangled,
 				trigger.Trigger,
@@ -599,8 +598,6 @@ func (m *Manager) RunGeneric(
 	if err != nil {
 		return types.HmsRes{}, err
 	}
-
-	fmt.Println("====== a ======")
 
 	return types.HmsRes{
 		Errors: types.HmsDiagnosticsContainer{

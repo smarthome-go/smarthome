@@ -48,7 +48,7 @@ func InitUserScripts() error {
 
 	for _, script := range scripts {
 		if err := dispatcher.Instance.RegisterUserScript(script.Data.Id, script.Owner); err != nil {
-			log.Errorf("Failed to initialize user script (%s): %s", script.Data.Id, err.Error())
+			log.Debugf("Failed to initialize user script (%s): %s", script.Data.Id, err.Error())
 		}
 	}
 
@@ -84,7 +84,8 @@ func Init(config database.ServerConfig) error {
 	}
 
 	// Homescript dispatcher initialization
-	if err := dispatcher.InitInstance(hmsManager, mqttManager); err != nil {
+	disp, err := dispatcher.InitInstance(hmsManager, mqttManager)
+	if err != nil {
 		log.Errorf("Failed to initialize HMS dispatcher: %s", err.Error())
 	}
 
@@ -93,7 +94,7 @@ func Init(config database.ServerConfig) error {
 	dispatcherInitialized.lock.Unlock()
 
 	// Homescript driver initialization
-	driver.InitManager(hmsManager)
+	driver.InitManager(hmsManager, disp.DriverReloadCallBackFn, disp.DeviceReloadCallBackFn)
 	if err := driver.Manager.PopulateValueCache(); err != nil {
 		return err
 	}
@@ -124,7 +125,7 @@ func Init(config database.ServerConfig) error {
 	//
 
 	if err := InitDevices(); err != nil {
-		log.Errorf("Failed to initialize all devices, using best effort attempt: %s", err.Error())
+		log.Warnf("Failed to initialize all devices, using best effort attempt: %s", err.Error())
 	}
 
 	//

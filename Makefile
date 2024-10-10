@@ -136,7 +136,6 @@ build: setup web all linux clean
 # compiles the Go backend to an AMD64 binary and copies the
 # pre generated web output to a docker cache directory
 docker-prepare: web build
-
 	mkdir -p docker/container/cache/web
 	cp -r resources docker/container/cache/
 	cp -r web/dist docker/container/cache/web/
@@ -194,8 +193,10 @@ docker: cleanall web docker-prepare
 		./docker/container/
 
 # Generates the output files for the frontend web interface
-web: cleanweb
-	cd web && npm run build
+web: ./web/dist/
+
+./web/dist/: ./web/src ./web/html
+	cd ./web/ && npm run build
 
 # Build architectures
 linux: build/linux_arm.tar.gz build/linux_arm64.tar.gz build/linux_386.tar.gz build/linux_amd64.tar.gz
@@ -215,4 +216,3 @@ build/linux_arm.tar.gz: $(sources)
 build/linux_arm64.tar.gz: $(sources)
 	$(call build,linux,arm64,)
 	$(call tar,linux,arm64)
-

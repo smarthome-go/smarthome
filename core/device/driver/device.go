@@ -130,12 +130,6 @@ func (d DriverManager) ListPersonalDevicesShallow(username string) ([]database.S
 		return nil, err
 	}
 
-	fmt.Printf("%s\n=====\n", old)
-
-	for _, e := range unsorted {
-		fmt.Printf("%s\n", e.ID)
-	}
-
 	return unsorted, nil
 }
 

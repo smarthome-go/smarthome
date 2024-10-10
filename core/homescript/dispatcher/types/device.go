@@ -51,9 +51,17 @@ func (self CallbackTriggerDeviceAction) Eq(other CallBackTrigger) bool {
 
 	return false
 }
+func (self CallbackTriggerDeviceAction) Clone() CallBackTrigger {
+	return CallbackTriggerDeviceAction{
+		FilterKind:    self.FilterKind.Clone(),
+		Topics:        slices.Clone(self.Topics),
+		TopicWildcard: self.TopicWildcard,
+	}
+}
 
 type DeviceFilterKind interface {
 	Kind() DeviceFilterKindCode
+	Clone() DeviceFilterKind
 }
 
 type DeviceFilterClass struct {
@@ -65,10 +73,23 @@ func (c DeviceFilterClass) Kind() DeviceFilterKindCode {
 	return DeviceFilterKindClass
 }
 
+func (c DeviceFilterClass) Clone() DeviceFilterKind {
+	return DeviceFilterClass{
+		Model:  c.Model,
+		Vendor: c.Vendor,
+	}
+}
+
 type DeviceFilterIndividual struct {
 	ID string
 }
 
 func (i DeviceFilterIndividual) Kind() DeviceFilterKindCode {
 	return DeviceFilterKindID
+}
+
+func (i DeviceFilterIndividual) Clone() DeviceFilterKind {
+	return DeviceFilterIndividual{
+		ID: i.ID,
+	}
 }

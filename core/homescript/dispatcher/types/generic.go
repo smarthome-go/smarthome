@@ -21,6 +21,7 @@ const (
 
 type CallMode interface {
 	Kind() CallModeKind
+	Clone() CallMode
 }
 
 //
@@ -32,6 +33,11 @@ type CallModeAllocating struct {
 }
 
 func (c CallModeAllocating) Kind() CallModeKind { return CallModeKindAllocating }
+func (c CallModeAllocating) Clone() CallMode {
+	return CallModeAllocating{
+		Context: c.Context.Clone(),
+	}
+}
 
 //
 // Adaptive.
@@ -43,6 +49,11 @@ type CallModeAdaptive struct {
 }
 
 func (c CallModeAdaptive) Kind() CallModeKind { return CallModeKindAdaptive }
+func (c CallModeAdaptive) Clone() CallMode {
+	return CallModeAdaptive{
+		AllocatingFallback: c.AllocatingFallback.Clone().(CallModeAllocating),
+	}
+}
 
 //
 // Attaching.
@@ -54,11 +65,24 @@ type CallModeAttaching struct {
 }
 
 func (c CallModeAttaching) Kind() CallModeKind { return CallModeKindAttaching }
+func (c CallModeAttaching) Clone() CallMode {
+	return CallModeAttaching{
+		HMSJobID: c.HMSJobID,
+	}
+}
 
 type CalledFunction struct {
 	Ident          string
 	IdentIsLiteral bool
 	CallMode       CallMode
+}
+
+func (f CalledFunction) Clone() CalledFunction {
+	return CalledFunction{
+		Ident:          f.Ident,
+		IdentIsLiteral: f.IdentIsLiteral,
+		CallMode:       f.CallMode.Clone(),
+	}
 }
 
 //
@@ -76,6 +100,7 @@ const (
 type CallBackTrigger interface {
 	Kind() CallBackTriggerKind
 	Eq(other CallBackTrigger) bool
+	Clone() CallBackTrigger
 }
 
 // MQTT Trigger.
@@ -109,6 +134,12 @@ func (self CallBackTriggerMqtt) Eq(other CallBackTrigger) bool {
 	return true
 }
 
+func (self CallBackTriggerMqtt) Clone() CallBackTrigger {
+	return CallBackTriggerMqtt{
+		Topics: slices.Clone(self.Topics),
+	}
+}
+
 // AtTime Trigger.
 
 type TriggerTimeMode uint8
@@ -140,6 +171,15 @@ func (self CallBackTriggerAtTime) Eq(other CallBackTrigger) bool {
 
 	return false
 }
+func (self CallBackTriggerAtTime) Clone() CallBackTrigger {
+	return CallBackTriggerAtTime{
+		Hour:         self.Hour,
+		Minute:       self.Minute,
+		Second:       self.Second,
+		Mode:         self.Mode,
+		RegisteredAt: self.RegisteredAt,
+	}
+}
 
 //
 // Dispatcher.
@@ -149,6 +189,21 @@ type RegisterInfo struct {
 	ProgramID string
 	Function  *CalledFunction
 	Trigger   CallBackTrigger
+}
+
+func (i RegisterInfo) Clone() RegisterInfo {
+	var fn *CalledFunction
+	if i.Function != nil {
+		fnT := i.Function.Clone()
+		fn = &fnT
+	}
+	tr := i.Trigger.Clone()
+
+	return RegisterInfo{
+		ProgramID: i.ProgramID,
+		Function:  fn,
+		Trigger:   tr,
+	}
 }
 
 type Dispatcher interface {

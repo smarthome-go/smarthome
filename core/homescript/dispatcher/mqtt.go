@@ -102,6 +102,9 @@ type MqttManager struct {
 	// Is being called from the outside if the outside knows that some things, which could have caused the initial
 	// error, changed.
 	TriggerTryPendingRegistrations func() error
+
+	ShutdownChan      chan struct{}
+	ShutdownCompleted chan struct{}
 }
 
 var Manager MqttManager
@@ -142,7 +145,7 @@ func InitModule() {
 }
 
 func NewMqttManager(config database.MqttConfig, retryHook func() error) (m *MqttManager, e error) {
-	Manager = MqttManager{
+	m = &MqttManager{
 		Body: struct {
 			Lock    TracingRWMutex
 			Content MqttManagerBody
@@ -158,11 +161,15 @@ func NewMqttManager(config database.MqttConfig, retryHook func() error) (m *Mqtt
 			},
 		},
 		TriggerTryPendingRegistrations: retryHook,
+		ShutdownChan:                   make(chan struct{}),
+		ShutdownCompleted:              make(chan struct{}),
 	}
 
-	go Manager.MQTTKeepalive()
+	Manager = *m
 
-	return &Manager, nil
+	go m.MQTTKeepalive()
+
+	return m, nil
 }
 
 func (m *MqttManager) setConfig(config database.MqttConfig) {
@@ -233,12 +240,33 @@ func (m *MqttManager) init() error {
 
 func (m *MqttManager) MQTTKeepalive() {
 	for {
-		if err := m.Status(); err != nil {
-			logger.Errorf("MQTT could not be initialized: %s", err.Error())
-			time.Sleep(10 * time.Second)
-		} else {
-			time.Sleep(20 * time.Second)
+		select {
+		case <-m.ShutdownChan:
+			logger.Debug("Shutting down MQTT keepalive...")
+
+			m.Body.Lock.Lock()
+			if m.Body.Content.Client != nil {
+				m.Body.Content.Client.Disconnect(0)
+			}
+			m.Body.Lock.Unlock()
+
+			m.ShutdownCompleted <- struct{}{}
+
+			return
+		default:
 		}
+
+		if err := m.Status(); err != nil {
+			m.Body.Lock.RLock()
+			enabled := m.Body.Content.Config.Enabled
+			m.Body.Lock.RUnlock()
+
+			if enabled {
+				logger.Errorf("MQTT could not be initialized: %s", err.Error())
+			}
+		}
+
+		time.Sleep(5 * time.Second)
 	}
 }
 
@@ -335,7 +363,7 @@ func (m *MqttManager) unsubscribeAllSubscriptionsNonTracing() {
 	for topicName := range subscriptions {
 		err := m.unsubscribeWithoutTracing(topicName)
 		if err != nil {
-			logger.Warn("Failed to unsubscribe from old topic", err.Error())
+			logger.Warn("Failed to unsubscribe from old topic: ", err.Error())
 		}
 	}
 }
@@ -346,8 +374,6 @@ func (m *MqttManager) resubscribeNonTracing() error {
 	m.Body.Lock.Unlock()
 
 	for topic, subscription := range subscriptions {
-		fmt.Printf("~~~~~~~~~~~~~~~~> %s\n", topic)
-
 		err := m.subscribeWithoutTracing([]string{topic}, subscription.CallbackFn)
 		if err != nil {
 			logger.Errorf("Failed to reload MQTT manager: %s", err.Error())

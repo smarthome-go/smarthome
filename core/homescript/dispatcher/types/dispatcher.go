@@ -9,8 +9,20 @@ type Registrations struct {
 	Set                    map[RegistrationID]RegisterInfo
 	MqttRegistrations      map[string][]RegistrationID
 	SchedulerRegistrations map[string]RegistrationID
-	// NOTE: Kind of inefficient.
-	Device []DeviceRegistration
+	Device                 []DeviceRegistration
+}
+
+func (self *Registrations) Copy() map[RegistrationID]RegisterInfo {
+	clone := make(map[RegistrationID]RegisterInfo)
+
+	self.Lock.RLock()
+	defer self.Lock.RUnlock()
+
+	for k, v := range self.Set {
+		clone[k] = v.Clone()
+	}
+
+	return clone
 }
 
 type DeviceRegistration struct {

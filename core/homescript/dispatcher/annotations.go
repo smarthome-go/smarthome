@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/smarthome-go/homescript/v3/homescript"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
@@ -60,7 +59,7 @@ func (i *InstanceT) ReloadDriver(driver database.DeviceDriver) error {
 		}
 
 		if err := i.RegisterDevice(driver, device.ID); err != nil {
-			logger.Errorf("Failed to register device: %s", err.Error())
+			logger.Warnf("Failed to register device: %s", err.Error())
 			errCnt++
 		}
 	}
@@ -134,8 +133,6 @@ func (i *InstanceT) RegisterUserScript(programID string, username string) error 
 		return err
 	}
 
-	spew.Dump(triggers)
-
 	for _, trigger := range triggers {
 		switch trigger.Trigger {
 		case types.TriggerDeviceEvent:
@@ -193,10 +190,6 @@ func (i *InstanceT) RegisterUserScript(programID string, username string) error 
 			}
 
 			logger.Infof("Register user program: %d", id)
-
-			i.DoneRegistrations.Lock.Lock()
-			spew.Dump(i.DoneRegistrations.Device)
-			i.DoneRegistrations.Lock.Unlock()
 		case types.TriggerDeviceClassEvent:
 			panic("HI")
 		default:
@@ -215,14 +208,15 @@ func (i *InstanceT) RegisterDevice(driver database.DeviceDriver, deviceID string
 	logger.Tracef("Registering device `%s:%s` (%s)...", driver.VendorID, driver.ModelID, deviceID)
 
 	i.DoneRegistrations.Lock.Lock()
-	doneRegs := i.DoneRegistrations.Set
-	i.DoneRegistrations.Lock.Unlock()
+	defer i.DoneRegistrations.Lock.Unlock()
+
+	set := i.DoneRegistrations.Set
 
 	//
 	// Unregister all old registrations.
 	//
 
-	for id, reg := range doneRegs {
+	for id, reg := range set {
 		var ctx types.ExecutionContext
 
 		if reg.Function == nil || reg.Function.CallMode == nil {
@@ -250,7 +244,11 @@ func (i *InstanceT) RegisterDevice(driver database.DeviceDriver, deviceID string
 			continue
 		}
 
-		if err := i.Unregister(id); err != nil {
+		i.DoneRegistrations.Lock.Unlock()
+		err := i.Unregister(id)
+		i.DoneRegistrations.Lock.Lock()
+
+		if err != nil {
 			return err
 		}
 
@@ -325,7 +323,8 @@ func (i *InstanceT) RegisterDevice(driver database.DeviceDriver, deviceID string
 				return fmt.Errorf("Empty lists or empty strings are not allowed as topics")
 			}
 
-			if err := i.RegisterMqttTriggerAnnotation(
+			i.DoneRegistrations.Lock.Unlock()
+			err := i.RegisterMqttTriggerAnnotation(
 				types.CreateDriverHmsId(database.DriverTuple{
 					VendorID: driver.VendorID,
 					ModelID:  driver.ModelID,
@@ -340,7 +339,10 @@ func (i *InstanceT) RegisterDevice(driver database.DeviceDriver, deviceID string
 					},
 				},
 				topics,
-			); err != nil {
+			)
+			i.DoneRegistrations.Lock.Lock()
+
+			if err != nil {
 				return err
 			}
 		default:

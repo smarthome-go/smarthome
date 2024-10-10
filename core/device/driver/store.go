@@ -75,7 +75,7 @@ func (d DriverManager) StoreDriverSingletonConfigUpdate(
 	}]
 
 	fromJSONhms := value.TypeAwareUnmarshalValue(fromJSON, driver.ExtractedInfo.DriverConfig.Info.HmsType)
-	withOldValues := ApplyTransactionOnStored(
+	affetedASetting, withOldValues := ApplyTransactionOnStored(
 		oldValue,
 		(*fromJSONhms).(value.ValueObject),
 		driver.ExtractedInfo.DriverConfig.Info.HmsType,
@@ -86,20 +86,21 @@ func (d DriverManager) StoreDriverSingletonConfigUpdate(
 	}
 
 	// TODO: work on this.
-	devices, err := database.ListAllDevices()
-	if err != nil {
-		return err
-	}
+	// devices, err := database.ListAllDevices()
+	// if err != nil {
+	// 	return err
+	// }
 
-	// TODO: only make the driver dirty if the change originates from the web.
-	// TODO: only trigger this if there were changes.
-	if err := MakeDriverDirty(vendorID, modelID, true); err != nil {
-		return err
-	}
+	if affetedASetting {
+		log.Debugf("Driver `%s:%s` singleton update affected a `settings` field, triggering reload...", driver.Driver.VendorID, driver.Driver.ModelID)
+		// TODO: only make the driver dirty if the change originates from the web.
+		// TODO: only trigger this if there were changes.
+		// TLDR: only mark dirty if settings fields were altered.
+		if err := MakeDriverDirty(vendorID, modelID, true); err != nil {
+			return err
+		}
 
-	for _, dev := range devices {
-		log.Warnf("============ NOT IMPLEMENTED: handling singleton updates for device: %s", dev.ID)
-		// TODO: trigger a re-registration of any triggers. (only if there are changes.)
+		d.ReloadDriverCallBackFunc(driver.Driver)
 	}
 
 	return nil
@@ -161,20 +162,14 @@ func (d DriverManager) StoreDeviceSingletonConfigUpdate(
 
 	fromJSONhms := value.TypeAwareUnmarshalValue(fromJSON, driver.ExtractedInfo.DeviceConfig.Info.HmsType)
 
-	withOldValues := ApplyTransactionOnStored(
+	affetedASetting, withOldValues := ApplyTransactionOnStored(
 		oldValue,
 		(*fromJSONhms).(value.ValueObject),
 		driver.ExtractedInfo.DeviceConfig.Info.HmsType,
 	)
 
-	// TODO: trigger re-registration of any triggers.
-	log.Warn("============================== TODO: not implemented =============================")
-
-	//
-	// Ignore any internal fields.
-	//
-	if err := MakeDriverDirty(device.VendorID, device.ModelID, true); err != nil {
-		return err
+	if affetedASetting {
+		d.ReloadDeviceCallBackFunc(device.ID)
 	}
 
 	return StoreDeviceSingletonBackend(deviceID, withOldValues)
@@ -232,20 +227,29 @@ func ApplyTransactionOnStored(
 	oldVal value.ValueObject,
 	newVal value.ValueObject,
 	singletonType ast.ObjectType,
-) value.ValueObject {
+) (changedASettingsField bool, newValR value.ValueObject) {
 	// Use the old value as a starting point.
 	transformed := oldVal
 
 	for _, field := range singletonType.ObjFields {
 		if field.Annotation == nil || field.Annotation.Ident() != DriverFieldRequiredAnnotation {
 			// If this field is not a `@setting`, it can never be changed from the outside.
-			continue
+
+			newF, found := newVal.FieldsInternal[field.FieldName.Ident()]
+			if !found {
+				continue
+			}
+
+			if transformed.FieldsInternal[field.FieldName.Ident()] != newF {
+				changedASettingsField = true
+				transformed.FieldsInternal[field.FieldName.Ident()] = newF
+			}
 		}
 
 		transformed.FieldsInternal[field.FieldName.Ident()] = newVal.FieldsInternal[field.FieldName.Ident()]
 	}
 
-	return transformed
+	return changedASettingsField, transformed
 }
 
 func filterObjFieldsWithoutSetting(input value.ValueObject, singletonType ast.ObjectType) value.ValueObject {
@@ -276,31 +280,6 @@ func filterObjFieldsWithoutSetting(input value.ValueObject, singletonType ast.Ob
 	}
 }
 
-// func addZeroObjFieldsWithoutSettings(input value.ValueObject, singletonType ast.ObjectType) value.ValueObject {
-// 	patched := value.ValueObject{
-// 		FieldsInternal: input.FieldsInternal,
-// 	}
-//
-// 	for _, field := range singletonType.ObjFields {
-// 		// If this field does not exist on the value, fill it.
-// 		fieldExists := false
-// 		for fieldName := range input.FieldsInternal {
-// 			if fieldName == field.FieldName.Ident() {
-// 				fieldExists = true
-// 				break
-// 			}
-// 		}
-//
-// 		if fieldExists {
-// 			continue
-// 		}
-//
-// 		patched.FieldsInternal[field.FieldName.Ident()] = value.ZeroValue(field.Type)
-// 	}
-//
-// 	return patched
-// }
-
 func (d DriverManager) PopulateValueCache() error {
 	ValueStoreLock.Lock()
 	defer ValueStoreLock.Unlock()
@@ -326,8 +305,7 @@ func (d DriverManager) PopulateValueCache() error {
 
 		// Just skip this driver, its value will never be required anyways.
 		if len(hmsErrs) > 0 {
-			log.Tracef("Skipping default value instantiation of driver `%s:%s`", driver.VendorID, driver.ModelID)
-			continue
+			log.Tracef("Default value instantiation of driver `%s:%s` produced errors: %s", driver.VendorID, driver.ModelID, hmsErrs[0].Message)
 		}
 
 		if driver.SingletonJSON != nil {

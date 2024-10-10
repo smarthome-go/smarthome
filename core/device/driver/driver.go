@@ -34,15 +34,23 @@ var DriverDeviceSingletonIdent = fmt.Sprintf("%s%s", lexer.SINGLETON_TOKEN, DRIV
 var DriverFieldRequiredAnnotation = fmt.Sprintf("%s%s", lexer.TYPE_ANNOTATION_TOKEN, DRIVER_FIELD_REQUIRED_ANNOTATION)
 
 type DriverManager struct {
-	Hms types.Manager
+	Hms                      types.Manager
+	ReloadDriverCallBackFunc func(driver database.DeviceDriver)
+	ReloadDeviceCallBackFunc func(deviceID string)
 }
 
 // TODO: do this correctly
 var Manager DriverManager
 
-func InitManager(hmsManager types.Manager) {
+func InitManager(
+	hmsManager types.Manager,
+	driverCallback func(driver database.DeviceDriver),
+	deviceCallback func(id string),
+) {
 	Manager = DriverManager{
-		Hms: hmsManager,
+		Hms:                      hmsManager,
+		ReloadDriverCallBackFunc: driverCallback,
+		ReloadDeviceCallBackFunc: deviceCallback,
 	}
 }
 

@@ -153,12 +153,14 @@ func ListPersonal(username string) ([]database.Homescript, error) {
 	output := make([]database.Homescript, 0)
 
 	for _, script := range base {
-		if script.Owner != username {
-			continue
+		if script.Data.Type == database.HOMESCRIPT_TYPE_NORMAL {
+			if script.Owner != username {
+				continue
+			}
 		}
 
 		output = append(output, script)
 	}
 
-	return base, nil
+	return output, nil
 }

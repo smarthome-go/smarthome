@@ -56,7 +56,39 @@ const ErrorCooldown = time.Second
 
 var Instance InstanceT
 
-func InitInstance(hms types.Manager, mqtt *MqttManager) error {
+func (i *InstanceT) DriverReloadCallBackFn(driver database.DeviceDriver) {
+	if err := i.ReloadDriver(driver); err != nil {
+		logger.Errorf("Failed to reload device driver: %s", err.Error())
+	}
+}
+
+func (i *InstanceT) DeviceReloadCallBackFn(id string) {
+	device, found, err := database.GetDeviceById(id)
+	if err != nil {
+		return
+	}
+
+	if !found {
+		logger.Errorf("Could not reload device: `%s` does not exist", id)
+		return
+	}
+
+	driver, found, err := database.GetDeviceDriver(device.VendorID, device.ModelID)
+	if err != nil {
+		return
+	}
+
+	if !found {
+		logger.Errorf("Could not reload device: driver `%s:%s` does not exist", device.VendorID, device.ModelID)
+		return
+	}
+
+	if err := i.RegisterDevice(driver, id); err != nil {
+		logger.Errorf("Failed to reload device driver: %s", err.Error())
+	}
+}
+
+func InitInstance(hms types.Manager, mqtt *MqttManager) (*InstanceT, error) {
 	Instance = InstanceT{
 		Hms:  hms,
 		Mqtt: mqtt,
@@ -73,10 +105,10 @@ func InitInstance(hms types.Manager, mqtt *MqttManager) error {
 	}
 
 	if err := Instance.Mqtt.init(); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &Instance, nil
 }
 
 func (i *InstanceT) MQTTStatus() error {
@@ -141,7 +173,6 @@ func (i *InstanceT) registerInternal(info dispatcherTypes.RegisterInfo) (dispatc
 	if info.Function.CallMode.Kind() == dispatcherTypes.CallModeKindAdaptive {
 		i.DoneRegistrations.Lock.RLock()
 		registrations := i.DoneRegistrations.Set
-		i.DoneRegistrations.Lock.RUnlock()
 
 		for id, infoIter := range registrations {
 			if infoIter.Function == nil {
@@ -152,13 +183,21 @@ func (i *InstanceT) registerInternal(info dispatcherTypes.RegisterInfo) (dispatc
 			if infoIter.Function.CallMode.Kind() == dispatcherTypes.CallModeKindAdaptive &&
 				infoIter.ProgramID == info.ProgramID &&
 				infoIter.Trigger.Eq(info.Trigger) {
-				if err := i.Unregister(id); err != nil {
+
+				i.DoneRegistrations.Lock.RUnlock()
+				err := i.Unregister(id)
+				i.DoneRegistrations.Lock.RLock()
+
+				if err != nil {
+					i.DoneRegistrations.Lock.RUnlock()
 					return 0, err
 				}
 
 				logger.Debugf("Unregistered old ADAPTIVE job with id %d\n", id)
 			}
 		}
+
+		i.DoneRegistrations.Lock.RUnlock()
 	}
 
 	id := i.AllocRegistrationID()
@@ -241,20 +280,24 @@ func (i *InstanceT) registerInternal(info dispatcherTypes.RegisterInfo) (dispatc
 func (i *InstanceT) UnregisterUserProgram(id string) error {
 	i.DoneRegistrations.Lock.Lock()
 	set := i.DoneRegistrations.Set
-	i.DoneRegistrations.Lock.Unlock()
 
 	for k, v := range set {
 		if v.ProgramID != id {
 			continue
 		}
 
-		if err := i.Unregister(k); err != nil {
+		i.DoneRegistrations.Lock.Unlock()
+		err := i.Unregister(k)
+		i.DoneRegistrations.Lock.Lock()
+
+		if err != nil {
 			return err
 		}
 
 		logger.Tracef("[user register] Removed previous dispatcher registration `%d`", id)
 	}
 
+	i.DoneRegistrations.Lock.Unlock()
 	return nil
 }
 
@@ -308,7 +351,6 @@ func (i *InstanceT) Unregister(id dispatcherTypes.RegistrationID) error {
 	scheds := i.DoneRegistrations.SchedulerRegistrations
 	i.DoneRegistrations.Lock.RUnlock()
 	for tag, idToCheck := range scheds {
-		fmt.Printf("REGISTRATION: ===== %d", idToCheck)
 		if id == idToCheck {
 			if err := scheduler.Manager.RemoveScheduleInternal(tag); err != nil && unregisterErr == nil {
 				unregisterErr = err
@@ -523,8 +565,6 @@ func (i *InstanceT) EmitDeviceEvent(
 	i.DoneRegistrations.Lock.RUnlock()
 
 	for _, registration := range dev {
-		fmt.Printf("==================== CHK: %v\n", registration)
-
 		if !eventMatchesDevice(driver, deviceID, topic, registration.Action) {
 			continue
 		}
@@ -533,9 +573,6 @@ func (i *InstanceT) EmitDeviceEvent(
 			*value.NewValueString(topic),
 			data,
 		}
-
-		dataDisp, _ := data.Display()
-		fmt.Printf("============ user device data: %v\n", dataDisp)
 
 		params := []runtime.FunctionInvocationSignatureParam{
 			{

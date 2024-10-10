@@ -13,11 +13,11 @@ import (
 )
 
 type SetupStruct struct {
-	Users []SetupUser `json:"users"`
-	Rooms []SetupRoom `json:"rooms"`
-	// HardwareNodes       []SetupHardwareNode   `json:"hardwareNodes"`
-	ServerConfiguration database.ServerConfig `json:"serverConfiguration"`
-	CacheData           SetupCacheData        `json:"cacheData"`
+	Users               []SetupUser             `json:"users"`
+	Rooms               []SetupRoom             `json:"rooms"`
+	Drivers             []database.DeviceDriver `json:"drivers"`
+	ServerConfiguration database.ServerConfig   `json:"serverConfiguration"`
+	CacheData           SetupCacheData          `json:"cacheData"`
 }
 
 type SetupRoom struct {
@@ -161,11 +161,12 @@ func ExportConfig(
 		roomDevices := make([]SetupDevice, 0)
 		for _, sw := range room.Devices {
 			roomDevices = append(roomDevices, SetupDevice{
-				DeviceType: sw.DeviceType,
-				Id:         sw.ID,
-				Name:       sw.Name,
-				VendorId:   sw.VendorID,
-				ModelId:    sw.ModelID,
+				DeviceType:    sw.DeviceType,
+				Id:            sw.ID,
+				Name:          sw.Name,
+				VendorId:      sw.VendorID,
+				ModelId:       sw.ModelID,
+				SingletonJSON: sw.SingletonJSON,
 			})
 		}
 
@@ -187,6 +188,15 @@ func ExportConfig(
 			Devices: roomDevices,
 			Cameras: roomCameras,
 		})
+	}
+
+	//
+	// Hardware drivers.
+	//
+
+	drivers, err := database.ListDeviceDrivers()
+	if err != nil {
+		return SetupStruct{}, err
 	}
 
 	// hwNodes, err := database.GetHardwareNodes()
@@ -243,6 +253,11 @@ func ExportConfig(
 		}
 		homescripts := make([]SetupHomescript, 0)
 		for _, hms := range homescriptsDB {
+			if hms.Data.Data.Type == database.HOMESCRIPT_TYPE_DRIVER {
+				log.Tracef("Skipping Homescript `%s` in export: is driver", hms.Data.Data.Id)
+				continue
+			}
+
 			args := make([]SetupHomescriptArg, 0)
 			for _, arg := range hms.Arguments {
 				args = append(args, SetupHomescriptArg{
@@ -404,10 +419,10 @@ func ExportConfig(
 	}
 
 	return SetupStruct{
-		Users: users,
-		Rooms: rooms,
-		// HardwareNodes:       hwNodesNew,
+		Users:               users,
+		Rooms:               rooms,
 		ServerConfiguration: serverConfig,
 		CacheData:           cacheData,
+		Drivers:             drivers,
 	}, nil
 }

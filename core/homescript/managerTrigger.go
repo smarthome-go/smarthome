@@ -3,7 +3,6 @@ package homescript
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
@@ -67,7 +66,6 @@ func (m *Manager) ExtractTriggerAnnotationArgs(
 	)
 
 	buffer := bytes.Buffer{}
-	startTrigger := time.Now()
 
 	const maxRuntime = time.Second * 2
 	ctx, cancelFunc := context.WithTimeout(context.Background(), maxRuntime)
@@ -125,24 +123,15 @@ func (m *Manager) ExtractTriggerAnnotationArgs(
 		panic("not implemented")
 	}
 
+	if err != nil {
+		panic(err.Error())
+	}
+
 	if res.Errors.ContainsError {
 		panic(res.Errors.Diagnostics)
 	}
 
 	argList := res.ReturnValue.(value.ValueList)
-
-	disp, erR := argList.Display()
-	if err != nil {
-		panic((*erR).Message())
-	}
-
-	fmt.Printf(
-		"====> (%v) FN = `%s:%s` | ARGS = `%s`\n",
-		time.Since(startTrigger),
-		annotation.CallbackFnIdent,
-		annotation.ArgumentFunctionIdent,
-		disp,
-	)
 
 	// Make args.
 	args := make([]value.Value, len(*argList.Values))

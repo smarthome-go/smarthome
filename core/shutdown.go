@@ -12,6 +12,7 @@ import (
 	"github.com/smarthome-go/smarthome/core/event"
 	hardware "github.com/smarthome-go/smarthome/core/hardware_deprecated"
 	"github.com/smarthome-go/smarthome/core/homescript"
+	"github.com/smarthome-go/smarthome/core/homescript/dispatcher"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
@@ -209,9 +210,36 @@ func Shutdown(terminateProcess bool) error {
 	return ShutdownWithConfig(config, terminateProcess)
 }
 
+func shutdownMQTT() {
+	log.Debug("Initiating MQTT shutdown...")
+	dispatcher.Manager.ShutdownChan <- struct{}{}
+
+	timeout := time.Second * 10
+	start := time.Now()
+
+outer:
+	for {
+		select {
+		case <-dispatcher.Manager.ShutdownCompleted:
+			break outer
+		default:
+			if time.Since(start) > timeout {
+				log.Warn("MQTT shutdown timeout exceeded")
+				break outer
+			}
+		}
+	}
+
+	log.Debug("MQTT shutdown complete")
+}
+
 func ShutdownWithConfig(config database.ServerConfig, terminateProcess bool) error {
 	var tasks = make([]shutdownJob, 0)
 	var error error
+
+	// Shutdown MQTT keepalive.
+	// BUG: this destroys everything.
+	// shutdownMQTT()
 
 	// Shutdown automations (it is not safe to do this concurrently with the background HMS jobs)
 	if err := automation.Manager.DeactivateAutomationSystem(config); err != nil {

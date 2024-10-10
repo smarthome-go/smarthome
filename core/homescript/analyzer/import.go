@@ -370,7 +370,7 @@ func GetImport(
 						ast.NewFunctionTypeParam(pAst.NewSpannedIdent("data", span), ast.NewAnyType(span), nil),
 					}),
 					span,
-					ast.NewBoolType(span),
+					ast.NewNullType(span),
 					span,
 				),
 				Template: &ast.TemplateSpec{},

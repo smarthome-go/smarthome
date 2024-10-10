@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/device/driver"
 	"github.com/smarthome-go/smarthome/core/user"
@@ -162,10 +163,10 @@ func runSetupStruct(setup SetupStruct) error {
 		log.Error("Aborting setup: could not update system configuration in database: ", err.Error())
 		return err
 	}
-	// if err := createHardwareNodesInDatabase(setup.HardwareNodes); err != nil {
-	// 	log.Error("Aborting setup: could not create hardware nodes in database: ", err.Error())
-	// 	return err
-	// }
+	if err := createDriversInDatabase(setup.Drivers); err != nil {
+		log.Error("Aborting setup: could not create drivers in database: ", err.Error())
+		return err
+	}
 	if err := createRoomsInDatabase(setup.Rooms); err != nil {
 		log.Error("Aborting setup: could not create rooms in database: ", err.Error())
 		return err
@@ -285,17 +286,22 @@ func createUsersInDatabase(users []SetupUser) error {
 		}
 
 		for _, homescript := range usr.Homescripts {
+			fmt.Printf("CREATING: %s for user %s...\n", homescript.Data.Id, usr.Data.Username)
+
 			// This function is used as drivers and other types of script should not be included
 			_, found, err := database.GetPersonalHomescriptById(
 				homescript.Data.Id,
 				usr.Data.Username,
 			)
+
 			if err != nil {
 				return err
 			}
+
 			if found {
 				return fmt.Errorf("cannot create Homescript: id `%s` is already taken", homescript.Data.Id)
 			}
+
 			if err := database.CreateNewHomescript(database.Homescript{
 				Owner: usr.Data.Username,
 				Data:  homescript.Data,
@@ -372,6 +378,18 @@ func createUsersInDatabase(users []SetupUser) error {
 	return nil
 }
 
+// Takes the specified `drivers` and creates according database entries.
+func createDriversInDatabase(drivers []database.DeviceDriver) error {
+	for _, d := range drivers {
+		if err := database.CreateNewDeviceDriver(d); err != nil {
+			return err
+		}
+		log.Tracef("[setup] Created driver `%s:%s`", d.VendorID, d.ModelID)
+	}
+
+	return nil
+}
+
 // Takes the specified `rooms` and creates according database entries
 func createRoomsInDatabase(rooms []SetupRoom) error {
 	for _, room := range rooms {
@@ -381,6 +399,7 @@ func createRoomsInDatabase(rooms []SetupRoom) error {
 		}
 
 		for _, device := range room.Devices {
+			spew.Dump(device.SingletonJSON)
 			if err := database.CreateDevice(database.ShallowDevice{
 				DeviceType:    device.DeviceType,
 				ID:            device.Id,
