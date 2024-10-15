@@ -140,8 +140,6 @@ func ExportConfiguration(w http.ResponseWriter, r *http.Request) {
 
 // Is used to import a configuration using the `setup.json` structure
 func ImportConfiguration(w http.ResponseWriter, r *http.Request) {
-	panic("TODO: this feature is currently broken")
-
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()

@@ -104,6 +104,16 @@ func generateSnapshot() (onData database.PowerDrawData, offData database.PowerDr
 
 // Takes a snapshot of the current power draw and inserts it into the database.
 func SaveCurrentPowerUsage() error {
+	config, _, err := database.GetServerConfiguration()
+	if err != nil {
+		return err
+	}
+
+	if config.LockDownMode {
+		log.Trace("Lockdown mode is enabled, not generating power snapshot")
+		return nil
+	}
+
 	// Generate a snapshot.
 	onData, offData, err := generateSnapshot()
 	if err != nil {

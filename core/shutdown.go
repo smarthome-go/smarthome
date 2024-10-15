@@ -237,9 +237,13 @@ func ShutdownWithConfig(config database.ServerConfig, terminateProcess bool) err
 	var tasks = make([]shutdownJob, 0)
 	var error error
 
+	if err := database.SetLockDownModeEnabled(false); err != nil {
+		return err
+	}
+
 	// Shutdown MQTT keepalive.
 	// BUG: this destroys everything.
-	// shutdownMQTT()
+	shutdownMQTT()
 
 	// Shutdown automations (it is not safe to do this concurrently with the background HMS jobs)
 	if err := automation.Manager.DeactivateAutomationSystem(config); err != nil {
@@ -294,6 +298,10 @@ func ShutdownWithConfig(config database.ServerConfig, terminateProcess bool) err
 
 	event.Info("System Shutdown", "System shutdown completed")
 	log.Info("Shutdown completed")
+
+	if err := database.SetLockDownModeEnabled(config.LockDownMode); err != nil {
+		return err
+	}
 
 	if terminateProcess {
 		os.Exit(0)

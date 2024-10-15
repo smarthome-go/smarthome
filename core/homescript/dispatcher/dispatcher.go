@@ -105,7 +105,7 @@ func InitInstance(hms types.Manager, mqtt *MqttManager) (*InstanceT, error) {
 	}
 
 	if err := Instance.Mqtt.init(); err != nil {
-		return nil, err
+		return &Instance, err
 	}
 
 	return &Instance, nil
@@ -176,7 +176,13 @@ func (i *InstanceT) registerInternal(info dispatcherTypes.RegisterInfo) (dispatc
 
 		for id, infoIter := range registrations {
 			if infoIter.Function == nil {
-				panic("Function may not be <nil>")
+				logger.Warnf("Dispatcher callback function is <nil> for program `%s`, cleaning up...", info.ProgramID)
+				i.DoneRegistrations.Lock.RUnlock()
+				if err := i.Unregister(id); err != nil {
+					logger.Warnf("Could not unregister `%s`: %s", info.ProgramID, err.Error())
+				}
+				i.DoneRegistrations.Lock.RLock()
+				continue
 			}
 
 			// Remove this old registration if it already exists.
@@ -291,10 +297,11 @@ func (i *InstanceT) UnregisterUserProgram(id string) error {
 		i.DoneRegistrations.Lock.Lock()
 
 		if err != nil {
+			i.DoneRegistrations.Lock.Unlock()
 			return err
 		}
 
-		logger.Tracef("[user register] Removed previous dispatcher registration `%d`", id)
+		logger.Tracef("[user register] Removed previous dispatcher registration `%s`", id)
 	}
 
 	i.DoneRegistrations.Lock.Unlock()
