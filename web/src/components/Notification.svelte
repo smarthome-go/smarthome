@@ -85,7 +85,7 @@
             >delete</IconButton
         >
         <h6>{name}</h6>
-        <p>
+        <p class='content'>
             {@html html}
         </p>
         <p class="date text-hint">
@@ -97,6 +97,23 @@
 </div>
 
 <style lang="scss">
+    .content {
+        :global table,
+        :global td,
+        :global th {
+            border: 1px solid var(--clr-text-disabled);
+        }
+
+        :global td {
+            padding: 0.2rem 0.5rem;
+        }
+
+        :global table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+    }
+
     .root {
         border-radius: 0.3rem;
         padding: 1rem;
@@ -226,19 +243,4 @@
         display: block;
         width: 100%;
     }
-
-    /* :global table, */
-    /* :global td, */
-    /* :global th { */
-    /*     border: 1px solid var(--clr-text-disabled); */
-    /* } */
-    /**/
-    /* :global td { */
-    /*     padding: 0.2rem 0.5rem; */
-    /* } */
-    /**/
-    /* :global table { */
-    /*     width: 100%; */
-    /*     border-collapse: collapse; */
-    /* } */
 </style>
