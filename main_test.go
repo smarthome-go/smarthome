@@ -9,9 +9,11 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/smarthome-go/smarthome/core"
+	"github.com/smarthome-go/smarthome/core/automation"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/homescript"
+	"github.com/smarthome-go/smarthome/core/scheduler"
 	"github.com/smarthome-go/smarthome/core/utils"
 	"github.com/smarthome-go/smarthome/server/api"
 	"github.com/smarthome-go/smarthome/server/middleware"
@@ -23,8 +25,7 @@ import (
 
 func TestServer(t *testing.T) {
 	// Create logger
-	log, err := utils.NewLogger(logrus.FatalLevel)
-	assert.NoError(t, err)
+	log := utils.NewLogger(logrus.FatalLevel)
 
 	// Initialize module loggers
 	core.InitLoggers(log)
@@ -70,11 +71,13 @@ func TestServer(t *testing.T) {
 
 	assert.NoError(t, database.SetAutomationSystemActivation(true))
 
+	hms := homescript.InitManager()
+
 	// Initializes the automation scheduler
-	assert.NoError(t, homescript.InitAutomations(serverConfig))
+	assert.NoError(t, automation.InitManager(hms, serverConfig))
 
 	// Initializes the normal scheduler
-	assert.NoError(t, homescript.InitScheduler())
+	assert.NoError(t, scheduler.InitManager(hms))
 
 	r := routes.NewRouter()
 	middleware.InitWithRandomKey()

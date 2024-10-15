@@ -19,7 +19,6 @@ linters:
     - durationcheck
     - errchkjson
     - errname
-    - execinquery
     - exportloopref
     #- forcetypeassert
     - funlen
@@ -28,7 +27,7 @@ linters:
     - godot
     - godox
     - gofmt
-    - gomnd
+    - mnd
     - gosec
     - gosmopolitan
     - importas
