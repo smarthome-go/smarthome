@@ -28,11 +28,14 @@
         Deletion may cause unintended consequences, these include:
         <ul class="consequences">
             <li>
-                Breaking Homescripts which use <code>exec('{data.id}')</code>
+                Breaking Homescripts which use <code>exec('{data.id}')</code> or <code>import foo from {data.id}</code>
             </li>
             <li>
                 Removing all automations which have '{data.id}' as their
                 target
+            </li>
+            <li>
+                Potentially breaking device functionality
             </li>
         </ul>
         Please only proceed if you are able to identify all consequences of your
