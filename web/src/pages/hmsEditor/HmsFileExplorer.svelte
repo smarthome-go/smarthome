@@ -2,6 +2,7 @@
     import HmsFileOption from './HmsFileOption.svelte';
     import type { EditorHms } from './types';
 
+    export let disabled = false
     export let homescripts: EditorHms[] = []
     export let currentScript: EditorHms = {
         unsaved: false,
@@ -73,6 +74,7 @@
                 <div class="explorer__workspaces__workspace__scripts">
                     {#each ws.scripts as script, index}
                         <HmsFileOption
+                            {disabled}
                             selected={currentScript.data.data.data.id === script.data.data.data.id}
                             endPiece={index === ws.scripts.length - 1}
                             bind:data={script}

@@ -311,7 +311,7 @@
     // If the current Homescript contains arguments, the function triggers the argument-prompt dialog opening
     // Ported from `src/pages/homescript/App.svelte`
     function initCurrentRun() {
-        if (homescripts.find(h => h.data.data.data.id === currentScript).data.arguments.length === 0) {
+        if (homescripts.find(h => h.data.data.data.id === currentData.data.data.data.id).data.arguments.length === 0) {
             runCurrentCode([])
             return
         }
@@ -442,12 +442,22 @@
         // Build the websocket URL from the components
         let url = `${protocol}//${location.host}/api/homescript/run/ws`
 
+        let initiatorID = currentData.data.data.data.id
+
         conn = new WebSocket(url)
 
         conn.onopen = () => {
             requestLoading = true
             currentExecutionCount++
             currentExecutionHandles++
+
+            // for (let s of homescripts) {
+            //     if (s.data.data.data.id !== initiatorID)
+            //         continue
+            //     s.running = true;
+            // }
+
+
             // Send the code to execute
             conn.send(JSON.stringify({
                 kind: 'init',
@@ -459,6 +469,7 @@
         conn.onclose = () => {
             conn = undefined
             currentExecutionHandles--
+
             if (requestLoading) {
                 $createSnackbar(`Websocket closed unexpectedly: connection lost`)
                 output = 'Connection lost'
@@ -708,6 +719,7 @@
         <div class="container" bind:this={container}>
             <div class="container__left" class:resizing={editorLeftResizing}>
                 <EditorLeft
+                    disabled={currentExecutionHandles > 0}
                     bind:currentData
                     bind:homescripts
                     {currentExecRes}

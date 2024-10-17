@@ -7,6 +7,7 @@
 
     export let selected: boolean = false
     export let endPiece: boolean = false
+    export let disabled = false
 
     $: console.log(data.unsaved)
 
@@ -39,6 +40,7 @@
 </script>
 
 <div
+    class:disabled
     class="fileOption"
     class:selected
     class:unsaved={data.unsaved}
@@ -131,6 +133,11 @@
 
         &.selected {
             background-color: var(--clr-height-2-6);
+        }
+
+        &.disabled {
+            filter: opacity(40%);
+            pointer-events: none;
         }
 
         &.unsaved {

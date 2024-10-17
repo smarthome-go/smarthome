@@ -7,12 +7,14 @@
     export let currentData: EditorHms | undefined = undefined
     export let homescripts: EditorHms[] = []
     export let currentExecRes: hmsResWrapper | undefined = undefined
+    export let disabled = false
 </script>
 
 
 <div class="files">
     <span class="text-hint mdc-elevation--z2 files__title">Files</span>
     <HmsFileExplorer
+        {disabled}
         bind:homescripts
         bind:currentScript={currentData}
     ></HmsFileExplorer>
