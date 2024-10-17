@@ -84,6 +84,7 @@
         &.tall {
             height: auto;
             min-height: 10rem;
+            grid-row-end: span 2;
         }
 
         &.wide {
