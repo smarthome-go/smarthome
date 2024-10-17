@@ -287,6 +287,11 @@ func ApplyNewSchemaOnData(oldData value.Value, newSchema ast.Type) (newData *val
 	case ast.ObjectTypeKind:
 		return ApplyNewSchemaOnObjData(oldData.(value.ValueObject), newSchema.(ast.ObjectType))
 	case ast.OptionTypeKind:
+		// Panic prevention: if there is any kind of corruption, just use `none`.
+		if oldData.Kind().TypeKind() != ast.OptionTypeKind {
+			return value.NewNoneOption()
+		}
+
 		oldOption := oldData.(value.ValueOption)
 		if oldOption.Inner == nil {
 			return value.NewNoneOption()
