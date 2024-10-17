@@ -10,6 +10,7 @@
         Snow: ['ac_unit', 'ac_unit'],
         Thunderstorm: ['thunderstorm', 'thunderstorm'],
         Drizzle: ['grain', 'grain'],
+        Fog: ['foggy', 'foggy']
     }
 
     let loading = false
