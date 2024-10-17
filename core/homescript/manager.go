@@ -618,6 +618,7 @@ func (m *Manager) RunUserCode(
 	outputWriter io.Writer,
 	idChan *chan uint64,
 	stdin *types.StdinBuffer,
+	args map[string]string,
 ) (types.HmsRes, error) {
 	return m.RunUserCodeTweakable(
 		code,
@@ -630,6 +631,7 @@ func (m *Manager) RunUserCode(
 		true,
 		nil,
 		stdin,
+		args,
 	)
 }
 
@@ -642,11 +644,12 @@ func (m *Manager) RunUserCodeTweakable(
 	processAnnotations bool,
 	automationContext *types.ExecutionContextAutomationInner,
 	stdin *types.StdinBuffer,
+	args map[string]string,
 ) (types.HmsRes, error) {
 	userContext := types.NewExecutionContextUser(
 		filename,
 		username,
-		nil,
+		args,
 	)
 	context := types.ExecutionContext(userContext)
 
@@ -684,6 +687,7 @@ func (m *Manager) RunUserScriptTweakable(
 	processAnnotations bool,
 	automationContext *types.ExecutionContextAutomationInner,
 	stdin *types.StdinBuffer,
+	args map[string]string,
 ) (types.HmsRes, error) {
 	script, found, err := m.GetPersonalScriptById(programID, username)
 	if err != nil {
@@ -704,6 +708,7 @@ func (m *Manager) RunUserScriptTweakable(
 		processAnnotations,
 		automationContext,
 		stdin,
+		args,
 	)
 }
 
@@ -715,6 +720,7 @@ func (m *Manager) RunUserScript(
 	outputWriter io.Writer,
 	idChan *chan uint64,
 	stdin *types.StdinBuffer,
+	args map[string]string,
 ) (types.HmsRes, error) {
 	return m.RunUserScriptTweakable(
 		programID,
@@ -726,6 +732,7 @@ func (m *Manager) RunUserScript(
 		true,
 		nil,
 		stdin,
+		args,
 	)
 }
 

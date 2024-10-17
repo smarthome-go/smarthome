@@ -16,6 +16,7 @@ import (
 )
 
 const MqttKeepAlive time.Duration = time.Second * 60
+const MqttConnectTimeout time.Duration = time.Second * 3
 const MqttPingTimeout time.Duration = time.Second
 const MqttDisconnectTimeoutMillis uint = 250
 const MqttQOS byte = 0x2
@@ -192,9 +193,10 @@ func (m *MqttManager) init() error {
 	}
 
 	logger.Debugf(
-		"Initializing MQTT subsystem for broker `%s@%s`...",
+		"Initializing MQTT subsystem for broker `%s@%s` (timeout: %v)...",
 		m.Body.Content.Config.Username,
 		m.Body.Content.Config.Host,
+		MqttConnectTimeout,
 	)
 
 	opts := mqtt.NewClientOptions().
@@ -206,6 +208,7 @@ func (m *MqttManager) init() error {
 		SetUsername(m.Body.Content.Config.Username).
 		SetPassword(m.Body.Content.Config.Password)
 
+	opts.SetConnectTimeout(MqttConnectTimeout)
 	opts.SetKeepAlive(MqttKeepAlive)
 	opts.SetPingTimeout(MqttPingTimeout)
 	opts.SetDefaultPublishHandler(m.messageHandler)

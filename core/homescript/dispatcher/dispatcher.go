@@ -512,6 +512,7 @@ func (i *InstanceT) allocatingCall(
 			false,
 			nil,
 			nil,
+			make(map[string]string),
 		)
 
 		res = resTemp

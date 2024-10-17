@@ -486,7 +486,7 @@
             top: auto;
         }
     }
-    
+
     #content {
         // On non-widescreen layouts, the room tabs might include a scrollbar which adds additional space
         min-height: calc(100vh - 63px);

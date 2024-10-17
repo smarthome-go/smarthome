@@ -205,6 +205,7 @@ func AutomationRunnerFunc(id uint, automationCtx types.ExecutionContextAutomatio
 		false,
 		&automationCtx.Inner,
 		nil,
+		make(map[string]string),
 	)
 
 	if err != nil {

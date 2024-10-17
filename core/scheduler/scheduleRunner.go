@@ -155,6 +155,7 @@ func scheduleRunnerFunc(id uint, m *SchedulerManager) {
 			&bytes.Buffer{},
 			nil,
 			nil,
+			make(map[string]string),
 		)
 
 		if err != nil {

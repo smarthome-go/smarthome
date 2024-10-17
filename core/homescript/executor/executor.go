@@ -43,7 +43,7 @@ type InterpreterExecutor struct {
 }
 
 func (self InterpreterExecutor) Free() error {
-	var errRes error = nil
+	var errRes error
 
 	for _, registration := range *self.registrations {
 		// Return the first error that is found
@@ -130,6 +130,7 @@ func (self InterpreterExecutor) execHelper(
 		self.ioWriter,
 		nil,
 		self.stdin,
+		arguments,
 	)
 
 	if err != nil {

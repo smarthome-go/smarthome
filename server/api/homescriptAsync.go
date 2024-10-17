@@ -159,6 +159,7 @@ func RunHomescriptByIDAsync(w http.ResponseWriter, r *http.Request) {
 			outWriter,
 			idChan,
 			stdin,
+			args,
 		)
 
 		log.Tracef("WS homescript (%s) finished.", request.HMSID)
