@@ -371,8 +371,9 @@
             {:else}
                 <!-- TODO: pack smaller devices into 'chunks' or 'groups' OR allow the user to pick an order? -->
                 {#if capabilities != null}
-                    {#each currentRoom !== undefined ? currentRoom.devices : [] as device (device.id)}
+                    {#each currentRoom !== undefined ? currentRoom.devices : [] as device, i (device.id)}
                         <Device
+                            style={''}
                             capabilities={
                                 capabilities.find(
                                     c => c.modelId === device.modelId
@@ -485,6 +486,7 @@
             top: auto;
         }
     }
+    
     #content {
         // On non-widescreen layouts, the room tabs might include a scrollbar which adds additional space
         min-height: calc(100vh - 63px);
@@ -504,17 +506,29 @@
             min-height: calc(100vh - 48px - 3.5rem);
         }
     }
+
     #devices {
         background-color: var(--clr-height-0-1);
         padding: 1.5rem;
         border-radius: 0.4rem;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-        align-content: flex-start;
         box-sizing: border-box;
         min-height: calc(100% - 16rem);
         flex-grow: 1;
+
+        display: grid;
+        grid-auto-rows: 5rem;
+        grid-auto-flow: row dense;
+
+        --grid-layout-gap: 1rem;
+        --grid-column-count: 6;
+        --grid-item--min-width: 15.75rem;
+
+        --gap-count: calc(var(--grid-column-count) - 1);
+        --total-gap-width: calc(var(--gap-count) * var(--grid-layout-gap));
+        --grid-item--max-width: calc((100% - var(--total-gap-width)) / var(--grid-column-count));
+
+        grid-template-columns: repeat(auto-fill, minmax(max(var(--grid-item--min-width), var(--grid-item--max-width)), 1fr));
+        grid-gap: var(--grid-layout-gap);
 
         h6 {
             margin: 1rem 0;
@@ -525,12 +539,16 @@
         }
 
         @include mobile {
+            display: flex;
+            gap: 1rem;
+            align-content: flex-start;
             flex-direction: column;
             flex-wrap: nowrap;
             align-content: unset;
             align-items: center;
         }
     }
+
     #cameras {
         background-color: var(--clr-height-0-1);
         height: 15rem;
@@ -563,11 +581,12 @@
             align-items: flex-start;
         }
     }
+
     #add-device,
     #add-camera {
         background-color: var(--clr-height-1-3);
         border-radius: 0.3rem;
-        width: 17rem;
+        min-width: 15rem;
         height: 3.3rem;
         padding: 0.5rem;
         display: flex;
@@ -585,6 +604,7 @@
             flex-wrap: wrap;
         }
     }
+
     // Needed in order to account for special dimensions of the camera-layout
     #add-camera {
         flex-shrink: 0;

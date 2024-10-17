@@ -24,9 +24,17 @@
     }
 
     export let hasErrors: boolean
+    export let style = ''
 </script>
 
-<div class="device mdc-elevation--z3" class:wide={isWide} class:tall={isTall} class:errors={hasErrors} class:loading={loading && isInitialLoad}>
+<div
+    class="device mdc-elevation--z3"
+    class:wide={isWide}
+    class:tall={isTall}
+    class:errors={hasErrors}
+    class:loading={loading && isInitialLoad}
+    style={style}
+    >
     <div class="device__top" class:errors={hasErrors}>
         <slot name="top"></slot>
 
@@ -64,7 +72,7 @@
     .device {
         background-color: var(--clr-height-1-3);
         border-radius: 0.3rem;
-        width: 15rem;
+        min-width: 15rem;
         height: 3.3rem;
         padding: 0.5rem;
         display: flex;

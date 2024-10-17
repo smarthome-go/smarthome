@@ -24,6 +24,8 @@
     let deviceInfoOpen = false
     let deviceEditOpen = false
 
+    export let style = ''
+
     export let shallow: ShallowDeviceResponse = {
         type: 'INPUT', id: '',
         name: '',
@@ -251,12 +253,36 @@
         return self !== null && self.includes(capability)
     }
 
+
+    function deviceHeight(ex: DeviceExtractions): number {
+        let height = 1;
+
+        for (let c of ex.config.capabilities) {
+            switch (c) {
+                case 'base':
+                    break
+                case 'dimmable':
+                    height += ex.dimmables.length
+                    break
+                case 'power':
+                    break
+                case 'sensor':
+                    height += ex.sensors.length
+                    break
+            }
+        }
+
+        return height
+    }
+
     let hasErrors = false
     $: hasErrors = errors !== null && errors.length > 0
 
     function writeNumSliders(num: number) {
         window.localStorage.setItem(localStorageKey, num.toString())
     }
+
+    let height = 0;
 
     async function mount() {
         isInitialLoad = true
@@ -286,6 +312,9 @@
         canFetchSources = (await hasPermission('modifyServerConfig')) && (await hasPermission('homescript'))
         console.log(`Configured error display: user can fetch sources: ${canFetchSources}`)
 
+        let height = deviceHeight(extractions)
+        style = `grid-row-end: span ${height};`
+
         isInitialLoad = false
     }
 
@@ -304,6 +333,7 @@
 {/if}
 
 <GenericDevice
+    {style}
     name={shallow.name}
     {loading}
     {isInitialLoad}
