@@ -596,7 +596,7 @@ func (d DriverManager) InvokeDriverDim(
 	)
 
 	if dbErr != nil || res.Errors.ContainsError {
-		return DriverActionDimOutput{}, nil, dbErr
+		return DriverActionDimOutput{}, res.Errors.Diagnostics, dbErr
 	}
 
 	// Re-calculate current power draw.
