@@ -23,6 +23,8 @@
 
     let deviceInfoOpen = false
     let deviceEditOpen = false
+    export let refreshCounter = 0
+    $: if (refreshCounter) { console.log("RELOAD"); loadExtractions() }
 
     export let style = ''
 

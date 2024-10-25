@@ -90,13 +90,16 @@
                 for (const room of rooms) {
                     room.devices = (res as Room[]).find(r => r.data.id === room.data.id).devices
                 }
+                currentRoom = currentRoom
             } else {
                 rooms = res
             }
+
             const roomId = window.localStorage.getItem('current_room')
             const room = roomId === null ? undefined : rooms.find(r => r.data.id === roomId)
             currentRoom = room === undefined ? rooms[0] : room
             loadedData = true
+            refreshCounter++
         } catch {
             $createSnackbar('Could not load rooms', [
                 {
@@ -294,6 +297,8 @@
         $requests--
     }
 
+    let refreshCounter = 0
+
     onMount(async () => {
         // This call is non-blocking on purpose.
         loadDriverDeviceCapabilities()
@@ -374,6 +379,7 @@
                     {#each currentRoom !== undefined ? currentRoom.devices : [] as device, i (device.id)}
                         <Device
                             style={''}
+                            {refreshCounter}
                             capabilities={
                                 capabilities.find(
                                     c => c.modelId === device.modelId

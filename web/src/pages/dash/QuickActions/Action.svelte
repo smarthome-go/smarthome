@@ -65,8 +65,14 @@
             hmsExecutionResults = [
                 ...hmsExecutionResults,
                 {
-                    response: hmsRes,
                     modeRun: true,
+                    response: {
+                        title: data.data.data.name,
+                        success: hmsRes.success,
+                        output: hmsRes.output,
+                        fileContents: new Map(),
+                        errors: hmsRes.errors,
+                    },
                 },
             ]
         } catch (err) {
@@ -88,10 +94,20 @@
 {/if}
 
 {#if hmsExecutionResults[0] !== undefined}
+
+                        <!-- bind:open={errorsOpen} -->
+                        <!-- data={{ -->
+                        <!--     modeRun: true, -->
+                        <!--     response: { -->
+                        <!--     }, -->
+                        <!-- }} -->
+                        <!-- on:close={() => { -->
+                        <!--     // This hack is required so that the window still remains scrollable after removal -->
+                        <!-- }} -->
+
     <ExecutionResultPopup
         open={hmsExecutionResults[0] !== undefined}
         data={hmsExecutionResults[0]}
-        scriptId={data.data.data.id}
         on:close={() => {
             // This hack is required so that the window still remains scrollable after removal
             setTimeout(() => (hmsExecutionResults = hmsExecutionResults.slice(1)), 1000)
