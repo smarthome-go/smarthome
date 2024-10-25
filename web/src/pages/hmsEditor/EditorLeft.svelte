@@ -1,7 +1,9 @@
 <script lang='ts'>
+    import IconButton from "@smui/icon-button";
     import HmsFileExplorer from "./HmsFileExplorer.svelte";
     import type { EditorHms } from "./types";
     import type { hmsResWrapper } from "./websocket";
+    import { createEventDispatcher } from "svelte";
 
 
     export let currentData: EditorHms | undefined = undefined
@@ -10,9 +12,7 @@
     export let disabled = false
 </script>
 
-
 <div class="files">
-    <span class="text-hint mdc-elevation--z2 files__title">Files</span>
     <HmsFileExplorer
         {disabled}
         bind:homescripts
@@ -57,7 +57,13 @@
         display: flex;
         flex-direction: column;
 
+        &.hidden {
+            width: 0;
+        }
+
         &__title {
+            display: flex;
+            align-items: center;
             padding: .3rem .8rem;
         }
     }

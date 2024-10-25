@@ -31,10 +31,6 @@
     // Specifies whether the argument prompt dialog should be open or closed
     let argumentsPromptOpen = false
 
-    // Specifies if additional linter information should be shown
-    // This raises the lint-level to `info`
-    let showLintInfo = true
-
     // Is set to true when a script is linted or executed
     let requestLoading = false
 
@@ -241,6 +237,11 @@
 
     // Sends a `save` request to the server, also updates the GUI display of unsaved changes to saved
     async function saveCurrent() {
+        if (!currentExecRes.success) {
+            $createSnackbar("Cannot save broken code.")
+            return
+        }
+
         if (!currentData.unsaved) return
         otherLoading = true
         try {
@@ -339,7 +340,7 @@
         let errs = res.errors
 
         // If hint and info diagnostics should be hidden, do it here
-        if (!showLintInfo)
+        if (!config.showInfo)
             errs = errs.filter(d => {
                 if (d.diagnosticError !== null) {
                     if (d.diagnosticError.kind <= 1) {
@@ -567,8 +568,46 @@
 
     let split: SplitInstance = null
 
+    interface EditorConfig {
+        leftHidden: boolean,
+        showInfo: boolean
+    }
+
+    let config: EditorConfig = {
+        leftHidden: false,
+        showInfo: false,
+    }
+    let configLoaded = false
+
+
+    $: if (configLoaded) writeEditorConfig(config)
+
+    const editorConfigKey = 'hmsEditorConfig'
+
+    function loadEditorConfig(): EditorConfig {
+        let configRaw = localStorage.getItem(editorConfigKey)
+        if (!configRaw) {
+            const conf = {
+                leftHidden: false,
+                showInfo: false,
+            }
+
+            writeEditorConfig(conf)
+            return conf
+        }
+
+        return JSON.parse(configRaw)
+    }
+
+    function writeEditorConfig(config: EditorConfig) {
+        localStorage.setItem(editorConfigKey, JSON.stringify(config))
+    }
+
     // Load the Homescript-list at the beginning
     onMount(async () => {
+        config = loadEditorConfig()
+        configLoaded = true
+
         let onMobile = window.matchMedia("(max-width: 47rem)")
         onMobile.addEventListener("change", () => {
             registerMobile(onMobile)
@@ -617,11 +656,17 @@
             ],
         })
 
+        if (config.leftHidden)
+            container.style.gridTemplateColumns = GRID_TEMPLATE_LEFT_HIDDEN
+
         updateTerminalSizeAfterDrag('column', 3)
     }
 
     let container: HTMLDivElement = null
+    let container_left: HTMLDivElement = null
     const GUTTER_WIDTH = 5;
+
+    const GRID_TEMPLATE_LEFT_HIDDEN = '0rem 5px 9fr 5px 350px'
 
     function registerMobile(mediaQuery: MediaQueryList) {
         // TODO: solve this!
@@ -640,7 +685,7 @@
         console.log("Register mobile...")
 
         split = Split({
-            rowMinSizes: { 0: 30, 2: 50, 4: 55 },
+            rowMinSizes: { 0: 50, 2: 50, 4: 55 },
             gridTemplateRows: `1fr 8px 4fr 8px 1fr`,
 
             onDragStart: (direction, track) => {
@@ -710,23 +755,42 @@
                 <IconButton
                     class="material-icons"
                     on:click={saveCurrent}
-                    disabled={currentData.unsaved}>save</IconButton
-                >
+                    disabled={!currentData.unsaved}>
+                    save
+                </IconButton>
                 <Progress type="circular" bind:loading={otherLoading} />
             </div>
         </div>
 
         <div class="container" bind:this={container}>
-            <div class="container__left" class:resizing={editorLeftResizing}>
-                <EditorLeft
-                    disabled={currentExecutionHandles > 0}
-                    bind:currentData
-                    bind:homescripts
-                    {currentExecRes}
-                />
+            <div class="container__left" class:hidden={config.leftHidden} class:resizing={editorLeftResizing}>
+                <div class='container__left__hide' class:hidden={config.leftHidden}>
+                    <IconButton
+                        class='material-icons'
+                        size='button'
+                        on:click={() => { config.leftHidden = !config.leftHidden; if (config.leftHidden) { container.style.gridTemplateColumns = GRID_TEMPLATE_LEFT_HIDDEN } else { container.style.gridTemplateColumns = '1fr 5px 9fr 5px 350px' } }}
+                        >
+                        menu
+                    </IconButton>
+
+                    {#if !config.leftHidden}
+                        <span class="text-hint mdc-elevation--z2 files__title">
+                            Files
+                        </span>
+                    {/if}
+                </div>
+
+                {#if !config.leftHidden}
+                    <EditorLeft
+                        disabled={currentExecutionHandles > 0}
+                        bind:currentData
+                        bind:homescripts
+                        {currentExecRes}
+                    />
+                {/if}
             </div>
 
-            <div class="container__gutter-col container__gutter-1"></div>
+            <div class:hidden={config.leftHidden} class="container__gutter-col container__gutter-1"></div>
 
             <div class="container__editor">
                 {#if homescriptsLoaded}
@@ -734,7 +798,7 @@
                     on:lint={(e) => displayLintResult(e.detail)}
                     bind:moduleName={currentData.data.data.data.id}
                     bind:code={currentData.data.data.data.code}
-                    {showLintInfo}
+                    showLintInfo={config.showInfo}
                     isDriver={currentData.data.data.data.type === 'DRIVER'}
                 />
                 {/if}
@@ -777,7 +841,7 @@
                     </div>
                     <div class="container__terminal__header__right">
                         <FormField>
-                            <Checkbox bind:checked={showLintInfo} />
+                            <Checkbox bind:checked={config.showInfo} />
                             <span slot="label">show info</span>
                         </FormField>
                     </div>
@@ -795,7 +859,7 @@
                     <!-- {/if} -->
                 </div>
                 <div class="container__terminal__stdin">
-                    {#if currentExecRes !== undefined}
+                    {#if (!currentExecRes || !currentExecRes.modeRun) && currentExecutionHandles === 0 }
                         <span class='text-disabled'>
                             Start a program to use STDIN.
                         </span>
@@ -933,6 +997,11 @@
                 $gutter-color1 2px,
                 $gutter-color1 $gutter-width
             );
+
+            &.hidden {
+                background: none;
+                background-color: #282c34;
+            }
         }
 
         &__gutter-1 {
@@ -968,6 +1037,33 @@
         &__left {
             display: flex;
             flex-direction: column;
+
+            &.hidden {
+                background-color: #282c34;
+            }
+
+            &__hide {
+                display: flex;
+                align-items: center;
+                padding: .25rem 0;
+                gap: .2.5rem;
+
+                &.hidden {
+                    width: 3rem;
+                    z-index: 10;
+                    justify-content: center;
+                    background-color: rgba(0, 0, 0, 0.5);
+                    border-radius: 50%;
+                    width: 2.5rem;
+                    height: 2rem;
+                    transform: translateX(4px);
+
+                    /* backdrop-filter: blur(5px); */
+                    transition-property: transform background-color backdrop-filter;
+                    transition-duration: 100ms;
+                    transition-timing-function: ease-in-out;
+                }
+            }
 
             @include mobile {
                 overflow-y: auto;
