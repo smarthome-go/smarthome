@@ -1,0 +1,4 @@
+:8083 {
+    reverse_proxy /api/* localhost:8082
+    reverse_proxy localhost:5173
+}

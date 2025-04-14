@@ -15,7 +15,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/smarthome-go/homescript/v3/homescript"
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
-	"github.com/smarthome-go/homescript/v3/homescript/compiler"
 	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime"
@@ -426,7 +425,7 @@ func (m *Manager) RunGeneric(
 
 	// If there is no explicit invocation, call the `main` function.
 	functionInvocation := runtime.FunctionInvocation{
-		Function: compiler.MainFunctionIdent,
+		Function: ast.MainFunctionIdent,
 		Args:     []value.Value{},
 		FunctionSignature: runtime.FunctionInvocationSignature{
 			Params:     []runtime.FunctionInvocationSignatureParam{},
