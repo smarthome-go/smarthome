@@ -129,7 +129,7 @@ cleanall: clean
 
 # Builds the Go backend and the frontend web interface
 # Produces the `build` directory, which contains release-ready tarballs
-build: setup web all linux clean
+build: setup web all linux
 
 # Prepares the local filesystem for a Docker build
 # Mostly copies precompiled dependencies to the docker cache directory

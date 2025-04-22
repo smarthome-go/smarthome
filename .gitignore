@@ -34,6 +34,7 @@ log
 # Setup files
 data/config/setup.json
 data/config/setup.json.old
+docker/mosquitto_data
 
 # go coverage file
 coverage.html
