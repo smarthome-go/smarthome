@@ -171,6 +171,7 @@ func (d DriverManager) EnrichDevice(device database.ShallowDevice, fittingDriver
 	hmsErrors := types.HmsErrorsFromDiagnostics(fittingDriver.ValidationErrors)
 
 	storedDeviceValue := DeviceStore[device.ID]
+	fmt.Printf(" === = = = = = Stored device value: %v\n", storedDeviceValue)
 	savedConfig, _ := value.MarshalValue(
 		filterObjFieldsWithoutSetting(storedDeviceValue, fittingDriver.ExtractedInfo.DeviceConfig.Info.HmsType),
 		false,

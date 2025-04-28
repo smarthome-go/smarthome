@@ -39,7 +39,7 @@ func (i *InstanceT) RegisterDriverAnnotations() error {
 	}
 
 	if len(errs) != 0 {
-		return fmt.Errorf("Could not reload drivers: %s", strings.Join(errs, "; "))
+		return fmt.Errorf("could not reload drivers: %s", strings.Join(errs, "; "))
 	}
 
 	return nil
@@ -281,7 +281,7 @@ func (i *InstanceT) RegisterDevice(driver database.DeviceDriver, deviceID string
 	// Skip further extraction of this device.
 	if diagnostics.ContainsError {
 		return fmt.Errorf(
-			"Could not process driver annotation: driver `%s:%s` extraction failed",
+			"could not process driver annotation: driver `%s:%s` extraction failed",
 			driver.VendorID,
 			driver.ModelID,
 		)
@@ -320,7 +320,7 @@ func (i *InstanceT) RegisterDevice(driver database.DeviceDriver, deviceID string
 
 			// Sanity-check the arguments.
 			if len(topics) == 0 || containsEmpty {
-				return fmt.Errorf("Empty lists or empty strings are not allowed as topics")
+				return fmt.Errorf("empty lists or empty strings are not allowed as topics")
 			}
 
 			i.DoneRegistrations.Lock.Unlock()
@@ -350,6 +350,7 @@ func (i *InstanceT) RegisterDevice(driver database.DeviceDriver, deviceID string
 		}
 	}
 
+	// TODO: fixup any database <-> singleton mismatches caused by corruptions.
 	logger.Infof("Successfully registered device `%s`", deviceID)
 	return nil
 }

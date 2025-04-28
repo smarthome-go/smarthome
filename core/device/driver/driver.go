@@ -2,6 +2,7 @@ package driver
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/sirupsen/logrus"
 	"github.com/smarthome-go/homescript/v3/homescript"
@@ -33,7 +34,13 @@ var DriverSingletonIdent = fmt.Sprintf("%s%s", lexer.SINGLETON_TOKEN, DRIVER_SIN
 var DriverDeviceSingletonIdent = fmt.Sprintf("%s%s", lexer.SINGLETON_TOKEN, DRIVER_DEVICE_SINGLETON_IDENT)
 var DriverFieldRequiredAnnotation = fmt.Sprintf("%s%s", lexer.TYPE_ANNOTATION_TOKEN, DRIVER_FIELD_REQUIRED_ANNOTATION)
 
+type DriverMangerInit struct {
+	Lock  sync.Mutex
+	Value bool
+}
+
 type DriverManager struct {
+	Initialized              DriverMangerInit
 	Hms                      types.Manager
 	ReloadDriverCallBackFunc func(driver database.DeviceDriver)
 	ReloadDeviceCallBackFunc func(deviceID string)
@@ -48,10 +55,20 @@ func InitManager(
 	deviceCallback func(id string),
 ) {
 	Manager = DriverManager{
+		Initialized: DriverMangerInit{
+			Lock:  sync.Mutex{},
+			Value: false,
+		},
 		Hms:                      hmsManager,
 		ReloadDriverCallBackFunc: driverCallback,
 		ReloadDeviceCallBackFunc: deviceCallback,
 	}
+}
+
+func (self *DriverManager) IsInitialized() bool {
+	self.Initialized.Lock.Lock()
+	defer self.Initialized.Lock.Unlock()
+	return self.Initialized.Value
 }
 
 func (self *DriverManager) ExtractDriverInfoTotal(

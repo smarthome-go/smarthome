@@ -115,6 +115,11 @@ func SaveCurrentPowerUsage() error {
 	}
 
 	// Generate a snapshot.
+	if !Manager.IsInitialized() {
+		log.Trace("Power usage manager is not initialized, not generating power snapshot")
+		return nil
+	}
+
 	onData, offData, err := generateSnapshot()
 	if err != nil {
 		return err

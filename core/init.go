@@ -58,17 +58,31 @@ func InitUserScripts() error {
 func InitDevices() error {
 	// Compile every driver's source code (register any triggers if existent)
 	// TODO: implement this in a better way
-	// devices, err := driver.Manager.ListAllDevicesRich()
-	// if err != nil {
-	// 	return err
-	// }
+	devices, err := driver.Manager.ListAllDevicesRich()
+	if err != nil {
+		return err
+	}
 
-	// for idx, device := range devices {
-	// 	fmt.Printf("=== %02d | (%s) %s\n", idx, device.Shallow.DeviceType, device.Shallow.Name)
-	// 	fmt.Printf("\t -> errors=%v\n", device.Extractions.HmsErrors)
-	// }
+	for idx, device := range devices {
+		fmt.Printf("=== %02d | (%s) %s\n", idx, device.Shallow.DeviceType, device.Shallow.Name)
+		fmt.Printf("\t -> errors=%v\n", device.Extractions.HmsErrors)
+	}
 
-	return dispatcher.Instance.RegisterDriverAnnotations()
+	// drivers, err := driver.Manager.List
+
+	// 	driver.Manager.InvokeValidateCheckDriver(types.DriverInvocationIDs{
+	// 		DeviceID: new(string),
+	// 		VendorID: "",
+	// 		ModelID:  "",
+	// 	})
+
+	err = dispatcher.Instance.RegisterDriverAnnotations()
+
+	driver.Manager.Initialized.Lock.Lock()
+	driver.Manager.Initialized.Value = true
+	driver.Manager.Initialized.Lock.Unlock()
+
+	return err
 }
 
 func Init(config database.ServerConfig) error {
@@ -94,10 +108,12 @@ func Init(config database.ServerConfig) error {
 	dispatcherInitialized.lock.Unlock()
 
 	// Homescript driver initialization
+	log.Debugf("Initializing driver manager...")
 	driver.InitManager(hmsManager, disp.DriverReloadCallBackFn, disp.DeviceReloadCallBackFn)
 	if err := driver.Manager.PopulateValueCache(); err != nil {
 		return err
 	}
+	log.Debugf("Value cache initialized.")
 
 	if err := automation.InitManager(hmsManager, config); err != nil {
 		return fmt.Errorf("Failed to activate automation system: %s", err.Error())
@@ -124,6 +140,7 @@ func Init(config database.ServerConfig) error {
 	// Devices.
 	//
 
+	log.Debug("Initializing devices...")
 	if err := InitDevices(); err != nil {
 		log.Warnf("Failed to initialize all devices, using best effort attempt: %s", err.Error())
 	}

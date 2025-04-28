@@ -108,6 +108,21 @@ func (d DriverManager) StoreDriverSingletonConfigUpdate(
 
 // This function just stores a value in the store backend without applying transformations on it.
 func StoreDriverSingletonBackend(vendorID, modelID string, val value.ValueObject) error {
+	if err := storeDriverSingletonBackendDB(vendorID, modelID, val); err != nil {
+		return err
+	}
+
+	ValueStoreLock.Lock()
+	DriverStore[database.DriverTuple{
+		VendorID: vendorID,
+		ModelID:  modelID,
+	}] = val
+	ValueStoreLock.Unlock()
+
+	return nil
+}
+
+func storeDriverSingletonBackendDB(vendorID, modelID string, val value.ValueObject) error {
 	marshaledInterface, _ := value.MarshalValue(val, false)
 
 	marshaledBytes, err := json.Marshal(marshaledInterface)
@@ -124,11 +139,6 @@ func StoreDriverSingletonBackend(vendorID, modelID string, val value.ValueObject
 	); err != nil {
 		return err
 	}
-
-	DriverStore[database.DriverTuple{
-		VendorID: vendorID,
-		ModelID:  modelID,
-	}] = val
 
 	return nil
 }
@@ -177,6 +187,18 @@ func (d DriverManager) StoreDeviceSingletonConfigUpdate(
 
 // This function just stores a value in the store backend without applying transformations on it.
 func StoreDeviceSingletonBackend(deviceID string, val value.ValueObject) error {
+	if err := storeDeviceSingletonBackendDB(deviceID, val); err != nil {
+		return err
+	}
+
+	ValueStoreLock.Lock()
+	DeviceStore[deviceID] = val
+	ValueStoreLock.Unlock()
+
+	return nil
+}
+
+func storeDeviceSingletonBackendDB(deviceID string, val value.ValueObject) error {
 	marshaledInterface, _ := value.MarshalValue(val, false)
 
 	marshaledBytes, err := json.Marshal(marshaledInterface)
@@ -192,10 +214,6 @@ func StoreDeviceSingletonBackend(deviceID string, val value.ValueObject) error {
 	); err != nil {
 		return err
 	}
-
-	ValueStoreLock.Lock()
-	DeviceStore[deviceID] = val
-	ValueStoreLock.Unlock()
 
 	return nil
 }
@@ -311,10 +329,17 @@ func (d DriverManager) PopulateValueCache() error {
 		if driver.SingletonJSON != nil {
 			var unmarshaledJSON any
 			if err := json.Unmarshal([]byte(*driver.SingletonJSON), &unmarshaledJSON); err != nil {
-				return fmt.Errorf("Could not parse driver JSON: %s", err.Error())
+				return fmt.Errorf("could not parse driver JSON: %s", err.Error())
 			}
 
 			unmarshaledValue := value.TypeAwareUnmarshalValue(unmarshaledJSON, information.DriverConfig.Info.HmsType)
+
+			unmarshaledValueStr, err := (*unmarshaledValue).Display()
+			if err != nil {
+				panic("Could not display unmarshaled value")
+			}
+
+			fmt.Printf("Driver `%s:%s` unmarshaled value: %v\n", driver.VendorID, driver.ModelID, unmarshaledValueStr)
 
 			DriverStore[database.DriverTuple{
 				VendorID: driver.VendorID,
@@ -338,11 +363,34 @@ func (d DriverManager) PopulateValueCache() error {
 				return err
 			}
 
+			valDisp, e := val.Display()
+			if e != nil {
+				panic("Could not display unmarshaled value")
+			}
+
+			fmt.Printf("Device `%s` unmarshaled value: %v | %s\n", device.ID, valDisp, information.DeviceConfig.Info.HmsType)
+
 			if !found {
 				panic(fmt.Sprintf("Device not found in database: `%s`", device.ID))
 			}
 
 			DeviceStore[device.ID] = val.(value.ValueObject)
+		}
+	}
+
+	// Commit the possible changes to the database.
+	for _, driver := range drivers {
+		if err := storeDriverSingletonBackendDB(driver.VendorID, driver.ModelID, DriverStore[database.DriverTuple{
+			VendorID: driver.VendorID,
+			ModelID:  driver.ModelID,
+		}]); err != nil {
+			return err
+		}
+	}
+
+	for _, device := range devices {
+		if err := storeDeviceSingletonBackendDB(device.ID, DeviceStore[device.ID]); err != nil {
+			return err
 		}
 	}
 
