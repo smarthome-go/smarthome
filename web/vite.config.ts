@@ -3,7 +3,7 @@ import { resolve } from 'path'
 import { defineConfig } from 'vite'
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
     plugins: [svelte()],
     build: {
         chunkSizeWarningLimit: 580,
@@ -42,4 +42,14 @@ export default defineConfig({
             }
         },
     },
-})
+    server: command === 'serve'
+        ? {
+            proxy: {
+                '/api': {
+                    target: 'http://localhost:8082',
+                    changeOrigin: true,
+                },
+            },
+        }
+        : undefined,
+}))
