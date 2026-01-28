@@ -194,6 +194,9 @@ func (self InterpreterExecutor) execBuiltin(usernameNeedsToBeSpecified bool, man
 					span,
 				)
 			}
+
+			// TODO: WTF!!!
+			username = self.context.Username()
 		}
 
 		if username == nil {
