@@ -9,7 +9,8 @@
     import Box from './Box.svelte'
     import Progress from '../../components/Progress.svelte'
     import { runHomescriptById } from '../../homescript'
-    import { onMount } from 'svelte';
+    import { onMount } from 'svelte'
+    import DummyBox from './DummyBox.svelte'
 
 
     async function weatherStatus(): Promise<boolean> {
@@ -31,16 +32,24 @@
         <PowerUsage />
         <!-- HACK: A note on performance: this can possibly be considered bad practice as this abuses svelte as a spin-lock -->
         <!-- A better alternative would be to use svelte await -->
-        {#if $data && hasPermissionSync('homescript')}
-            <QuickActions bind:homescripts />
+        {#if $data.loaded}
+            {#if hasPermissionSync('homescript')}
+                <QuickActions bind:homescripts />
+            {/if}
+        {:else}
+            <DummyBox title="Quick Actions" />
         {/if}
 
         {#if weatherShown}
             <Weather />
         {/if}
 
-        {#if ($data && hasPermissionSync('automation')) || hasPermissionSync('scheduler')}
-            <AutomationsSchedules />
+        {#if $data.loaded}
+            {#if hasPermissionSync('automation') || hasPermissionSync('scheduler')}
+                <AutomationsSchedules />
+            {/if}
+        {:else}
+            <DummyBox title="Schedules and Automations" />
         {/if}
         {#if $data && hasPermissionSync('reminder')}
             <Reminders />
