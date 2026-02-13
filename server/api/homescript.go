@@ -16,6 +16,7 @@ import (
 	"github.com/smarthome-go/smarthome/core"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/homescript"
+	hsAnalyzer "github.com/smarthome-go/smarthome/core/homescript/analyzer"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 	"github.com/smarthome-go/smarthome/server/middleware"
 )
@@ -69,6 +70,21 @@ type HomescriptIdRunRequest struct {
 	Id       string          `json:"id"`
 	Args     []HomescriptArg `json:"args"`
 	IsWidget bool            `json:"isWidget"`
+}
+
+func GetHomescriptDocs(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	data, err := hsAnalyzer.BuildDocsJSON(nil)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		Res(w, Response{Success: false, Message: "failed to build homescript docs", Error: err.Error()})
+		return
+	}
+
+	if _, err := w.Write(data); err != nil {
+		log.Error(err.Error())
+		Res(w, Response{Success: false, Message: "failed to write response", Error: "could not write response"})
+	}
 }
 
 func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
