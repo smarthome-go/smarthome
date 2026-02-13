@@ -1,19 +1,20 @@
-package automation
+package automation_test
 
 import (
 	"testing"
 
+	"github.com/smarthome-go/smarthome/core/automation"
 	"github.com/smarthome-go/smarthome/core/database"
 )
 
-func TestCreateAutomation(t *testing.T) {
+func CreateAutomationTest(t *testing.T) {
 	TestInit(t)
 
 	var hour uint = 2
 	var minute uint = 42
 	days := []uint8{3, 1, 4}
 
-	id, err := CreateNewAutomation(
+	id, err := automation.Manager.CreateNewAutomation(
 		"name",
 		"description",
 		"test",
@@ -52,7 +53,7 @@ func TestModifyAutomation(t *testing.T) {
 	var minute uint = 42
 	days := []uint8{3, 1, 4}
 
-	id, err := CreateNewAutomation(
+	id, err := automation.Manager.CreateNewAutomation(
 		"name",
 		"description",
 		"test",
@@ -69,7 +70,7 @@ func TestModifyAutomation(t *testing.T) {
 		return
 	}
 	cronExpression1 := "* * * * *"
-	if err := ModifyAutomationById(id, database.AutomationData{
+	if err := automation.Manager.ModifyAutomationById(id, database.AutomationData{
 		Name:                  "name2",
 		Description:           "description2",
 		TriggerCronExpression: &cronExpression1,
@@ -80,7 +81,7 @@ func TestModifyAutomation(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
-	temp, found, err := GetUserAutomationById("admin", id)
+	temp, found, err := automation.GetUserAutomationById("admin", id)
 	if err != nil {
 		t.Error(err.Error())
 		return
@@ -107,7 +108,7 @@ func TestRemoveAutomation(t *testing.T) {
 	var minute uint = 42
 	days := []uint8{3, 1, 4}
 
-	id, err := CreateNewAutomation(
+	id, err := automation.Manager.CreateNewAutomation(
 		"name",
 		"description",
 		"test",
@@ -132,7 +133,7 @@ func TestRemoveAutomation(t *testing.T) {
 		t.Errorf("Automation '%d' not found after creation", id)
 		return
 	}
-	if err := RemoveAutomation(id); err != nil {
+	if err := automation.Manager.RemoveAutomation(id); err != nil {
 		t.Errorf(err.Error())
 		return
 	}
@@ -153,7 +154,7 @@ func TestGetUserAutomations(t *testing.T) {
 	var minute uint = 42
 	days := []uint8{3, 1, 4}
 	for i := 0; i < 100; i++ {
-		_, err := CreateNewAutomation(
+		_, err := automation.Manager.CreateNewAutomation(
 			"name",
 			"description",
 			"test",
@@ -170,14 +171,14 @@ func TestGetUserAutomations(t *testing.T) {
 			return
 		}
 	}
-	automations, err := GetUserAutomations("admin")
+	automations, err := database.GetUserAutomations("admin")
 	if err != nil {
 		t.Error(err.Error())
 		return
 	}
 	// Matches every existent automation against the return value of `GetUserAutomationById`
 	for _, item := range automations {
-		fromDb, found, err := GetUserAutomationById("admin", item.Id)
+		fromDb, found, err := automation.GetUserAutomationById("admin", item.Id)
 		if err != nil {
 			t.Error(err.Error())
 			return
@@ -186,17 +187,17 @@ func TestGetUserAutomations(t *testing.T) {
 			t.Errorf("Automation '%d' could not be found after creation", item.Id)
 			return
 		}
-		if fromDb.Name != item.Name ||
-			fromDb.Description != item.Description ||
-			*fromDb.TriggerCronExpression != *item.TriggerCronExpression ||
-			fromDb.Enabled != item.Enabled ||
-			fromDb.HomescriptId != item.HomescriptId ||
-			fromDb.Trigger != item.Trigger ||
+		if fromDb.Name != item.Data.Name ||
+			fromDb.Description != item.Data.Description ||
+			*fromDb.TriggerCronExpression != *item.Data.TriggerCronExpression ||
+			fromDb.Enabled != item.Data.Enabled ||
+			fromDb.HomescriptId != item.Data.HomescriptId ||
+			fromDb.Trigger != item.Data.Trigger ||
 			fromDb.Owner != item.Owner {
 			t.Errorf("Adding and retrieving automations failed: values are not equal. want: %v got: %v", item, fromDb)
 			return
 		}
-		if err := RemoveAutomation(item.Id); err != nil {
+		if err := automation.Manager.RemoveAutomation(item.Id); err != nil {
 			t.Error(err.Error())
 			return
 		}

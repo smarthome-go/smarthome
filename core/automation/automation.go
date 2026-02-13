@@ -15,7 +15,7 @@ import (
 
 type AutomationManager struct {
 	// The underlying scheduler which will run all predefined automation jobs
-	automationScheduler *gocron.Scheduler
+	AutomationScheduler *gocron.Scheduler
 	Hms                 types.Manager
 }
 
@@ -23,12 +23,12 @@ var Manager AutomationManager
 
 func InitManager(hms types.Manager, config database.ServerConfig) error {
 	Manager = AutomationManager{
-		automationScheduler: &gocron.Scheduler{},
+		AutomationScheduler: &gocron.Scheduler{},
 		Hms:                 hms,
 	}
 
-	Manager.automationScheduler = gocron.NewScheduler(time.Local)
-	Manager.automationScheduler.TagsUnique()
+	Manager.AutomationScheduler = gocron.NewScheduler(time.Local)
+	Manager.AutomationScheduler.TagsUnique()
 	if config.AutomationEnabled {
 		if err := Manager.ActivateAutomationSystem(config); err != nil {
 			log.Error("Failed to activate automation system: could not activate persistent jobs: ", err.Error())
@@ -38,7 +38,7 @@ func InitManager(hms types.Manager, config database.ServerConfig) error {
 	} else {
 		log.Info("Skipping activation of automation system due to it being disabled")
 	}
-	Manager.automationScheduler.StartAsync()
+	Manager.AutomationScheduler.StartAsync()
 
 	return nil
 }

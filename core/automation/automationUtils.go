@@ -209,7 +209,7 @@ func (m AutomationManager) UnregisterAutomation(automationId uint, data database
 		// If the automation and the automation system are enabled, remove the underlying-job
 		if data.Enabled && config.AutomationEnabled {
 			// After the metadata has been changed, restart the scheduler
-			if err := m.automationScheduler.RemoveByTag(fmt.Sprint(automationId)); err != nil {
+			if err := m.AutomationScheduler.RemoveByTag(fmt.Sprint(automationId)); err != nil {
 				log.Error("Failed to unregister automation item: could not stop cron job: ", err.Error())
 				return err
 			}
@@ -258,14 +258,14 @@ func (m AutomationManager) RegisterAutomation(automationId uint, data database.A
 			newCronExpression = &cronExpression
 		}
 
-		automationJob := m.automationScheduler.Cron(*newCronExpression)
+		automationJob := m.AutomationScheduler.Cron(*newCronExpression)
 		automationJob.Tag(fmt.Sprint(automationId))
 		if _, err := automationJob.Do(AutomationRunnerFunc, automationId, types.ExecutionContextAutomation{}); err != nil {
 			log.Error("Failed to start automation, registering cron job failed: ", err.Error())
 			return err
 		}
 	case database.TriggerInterval:
-		automationJob := m.automationScheduler.Every(time.Second * time.Duration(*data.TriggerIntervalSeconds))
+		automationJob := m.AutomationScheduler.Every(time.Second * time.Duration(*data.TriggerIntervalSeconds))
 		automationJob.Tag(fmt.Sprint(automationId))
 		if _, err := automationJob.Do(AutomationRunnerFunc, automationId, types.ExecutionContextAutomation{}); err != nil {
 			log.Error("Failed to start automation, registering cron job failed: ", err.Error())

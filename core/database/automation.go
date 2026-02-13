@@ -70,6 +70,8 @@ type AutomationData struct {
 
 	//// Trigger-specific data ////
 
+	// Is used to store an additional offset when sunrise / sunset is used as the trigger.
+	TriggerSunLightOffsetMinutes *uint `json:"triggerSunLightOffsetMinutes"`
 	// Saves the underlying cron-expression to wrap the time and days of execution
 	TriggerCronExpression *string `json:"triggerCronExpression"`
 	// Saves the seconds of the continuous interval
@@ -101,6 +103,7 @@ func createAutomationTable() error {
 			'on_shutdown',
 			'on_boot'
 		),
+		TriggerSunLightOffsetMinutes INT UNSIGNED,
 		TriggerCronExpression VARCHAR(100),
 		TriggerInterval INT UNSIGNED,
 		PRIMARY KEY(Id),
@@ -131,10 +134,11 @@ func CreateNewAutomation(automation Automation) (uint, error) {
 		DisableOnce,
 		LastRun,
 		AutomationTrigger,
+		TriggerSunLightOffsetMinutes,
 		TriggerCronExpression,
 		TriggerInterval
 	)
-	VALUES(DEFAULT, ?, ?, ?, ?, ?, ?, DEFAULT, ?, ?, ?)
+	VALUES(DEFAULT, ?, ?, ?, ?, ?, ?, DEFAULT, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		log.Error("Failed to create new automation: preparing query failed: ", err.Error())
@@ -150,9 +154,9 @@ func CreateNewAutomation(automation Automation) (uint, error) {
 		automation.Data.Enabled,
 		automation.Data.DisableOnce,
 		automation.Data.Trigger,
+		automation.Data.TriggerSunLightOffsetMinutes,
 		automation.Data.TriggerCronExpression,
 		automation.Data.TriggerIntervalSeconds,
-		// time.Unix(0, 0),
 	)
 	if err != nil {
 		log.Error("Failed to create new automation: executing query failed: ", err.Error())
@@ -180,6 +184,7 @@ func GetAutomationById(id uint) (Automation, bool, error) {
 		DisableOnce,
 		LastRun,
 		AutomationTrigger,
+		TriggerSunLightOffsetMinutes,
 		TriggerCronExpression,
 		TriggerInterval
 	FROM automation
@@ -202,8 +207,9 @@ func GetAutomationById(id uint) (Automation, bool, error) {
 		&automation.Data.DisableOnce,
 		&lastRun,
 		&automation.Data.Trigger,
-		&automation.Data.TriggerCronExpression,  // TODO: can be null
-		&automation.Data.TriggerIntervalSeconds, // TODO: can be null
+		&automation.Data.TriggerSunLightOffsetMinutes, // TODO: can be null
+		&automation.Data.TriggerCronExpression,        // TODO: can be null
+		&automation.Data.TriggerIntervalSeconds,       // TODO: can be null
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return Automation{}, false, nil
@@ -234,6 +240,7 @@ func GetUserAutomations(username string) ([]Automation, error) {
 		DisableOnce,
 		LastRun,
 		AutomationTrigger,
+		TriggerSunLightOffsetMinutes,
 		TriggerCronExpression,
 		TriggerInterval
 	FROM automation
@@ -264,8 +271,9 @@ func GetUserAutomations(username string) ([]Automation, error) {
 			&automation.Data.DisableOnce,
 			&lastRun,
 			&automation.Data.Trigger,
-			&automation.Data.TriggerCronExpression,  // TODO: can be null
-			&automation.Data.TriggerIntervalSeconds, // TODO: can be null
+			&automation.Data.TriggerSunLightOffsetMinutes, // TODO: can be null
+			&automation.Data.TriggerCronExpression,        // TODO: can be null
+			&automation.Data.TriggerIntervalSeconds,       // TODO: can be null
 		); err != nil {
 			log.Error("Failed to list user automations: scanning for results failed: ", err.Error())
 			return nil, err
@@ -296,6 +304,7 @@ func GetAutomations() ([]Automation, error) {
 		DisableOnce,
 		LastRun,
 		AutomationTrigger,
+		triggerSunLightOffsetMinutes,
 		TriggerCronExpression,
 		TriggerInterval
 	FROM automation
@@ -320,8 +329,9 @@ func GetAutomations() ([]Automation, error) {
 			&automation.Data.DisableOnce,
 			&lastRun,
 			&automation.Data.Trigger,
-			&automation.Data.TriggerCronExpression,  // TODO: can be null
-			&automation.Data.TriggerIntervalSeconds, // TODO: can be null
+			&automation.Data.TriggerSunLightOffsetMinutes, // TODO: can be null
+			&automation.Data.TriggerCronExpression,        // TODO: can be null
+			&automation.Data.TriggerIntervalSeconds,       // TODO: can be null
 		); err != nil {
 			log.Error("Failed to list all automations: scanning for results failed: ", err.Error())
 			return nil, err
@@ -352,6 +362,7 @@ func ModifyAutomation(id uint, newItem AutomationData) error {
 		Enabled=?,
 		DisableOnce=?,
 		AutomationTrigger=?,
+		TriggerSunLightOffsetMinutes=?,
 		TriggerCronExpression=?,
 		TriggerInterval=?
 	WHERE Id=?
@@ -368,6 +379,7 @@ func ModifyAutomation(id uint, newItem AutomationData) error {
 		newItem.Enabled,
 		newItem.DisableOnce,
 		newItem.Trigger,
+		newItem.TriggerSunLightOffsetMinutes,
 		newItem.TriggerCronExpression,
 		newItem.TriggerIntervalSeconds,
 		id,

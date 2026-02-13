@@ -10,7 +10,6 @@ import (
 	"github.com/smarthome-go/smarthome/core/automation"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
-	hardware "github.com/smarthome-go/smarthome/core/hardware_deprecated"
 	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/core/homescript/dispatcher"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
@@ -83,10 +82,10 @@ func waitForPowerJobs(ch *chan struct{}) {
 		*ch <- struct{}{}
 	}()
 
-	for hardware.GetPendingJobCount() > 0 {
-		time.Sleep(time.Millisecond * 500)
-		log.Trace(fmt.Sprintf("Waiting for %d power jobs to finish...", hardware.GetPendingJobCount()))
-	}
+	// for hardware.GetPendingJobCount() > 0 {
+	// 	time.Sleep(time.Millisecond * 500)
+	// 	log.Trace(fmt.Sprintf("Waiting for %d power jobs to finish...", hardware.GetPendingJobCount()))
+	// }
 }
 
 func waitForJobsWithTimeout(tasks *[]shutdownJob, timeout time.Duration) error {

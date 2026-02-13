@@ -1,22 +1,52 @@
-package automation
+package automation_test
 
 import (
 	"fmt"
 	"testing"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
+	// "github.com/smarthome-go/smarthome/core/automation"
+
+	"github.com/smarthome-go/smarthome/core/automation"
 	"github.com/smarthome-go/smarthome/core/database"
-	"github.com/smarthome-go/smarthome/core/homescript/automation"
+	"github.com/smarthome-go/smarthome/core/homescript"
+	// "github.com/smarthome-go/smarthome/core/homescript/automation"
 )
+
+func initDB(args ...bool) error {
+	log := logrus.New()
+	log.Level = logrus.FatalLevel
+	database.InitLogger(log)
+	if err := database.Init(database.DatabaseConfig{
+		Username: "smarthome",
+		Password: "testing",
+		Hostname: "localhost",
+		Database: "smarthome",
+		Port:     3330,
+	}, "admin",
+	); err != nil {
+		return err
+	}
+	if len(args) > 0 {
+		if err := database.DeleteTables(); err != nil {
+			return err
+		}
+		time.Sleep(time.Second)
+		return initDB()
+	}
+	return nil
+}
 
 func removeAllAutomations(t *testing.T) {
 	automations, err := database.GetAutomations()
 	assert.NoError(t, err)
 
 	for _, autom := range automations {
-		assert.NoError(t, RemoveAutomation(autom.Id))
+		// TODO: is this intendet
+		assert.NoError(t, database.DeleteAutomationById(autom.Id))
 	}
 }
 
@@ -138,9 +168,9 @@ func TestAutomation(t *testing.T) {
 	days := []uint8{0, 1, 2, 3, 4, 5, 6}
 
 	// Normal automation
-	if _, err := CreateNewAutomation(
-		"Name",
-		"Description",
+	if _, err := automation.Manager.CreateNewAutomation(
+		"foo",
+		"bar",
 		"test",
 		"admin",
 		true,
@@ -195,9 +225,9 @@ func TestModificationToDifferentScript(t *testing.T) {
 	days := []uint8{0, 1, 2, 3, 4, 5, 6}
 
 	// Normal automation
-	id, err := CreateNewAutomation(
-		"Name",
-		"Description",
+	id, err := automation.Manager.CreateNewAutomation(
+		"foo",
+		"bar",
 		"test",
 		"admin",
 		true,
@@ -217,7 +247,7 @@ func TestModificationToDifferentScript(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
-	if err := ModifyAutomationById(id,
+	if err := automation.Manager.ModifyAutomationById(id,
 		database.AutomationData{
 			Name:                  "name",
 			Description:           "description",
@@ -271,7 +301,7 @@ func TestModificationToAbort(t *testing.T) {
 	days := []uint8{0, 1, 2, 3, 4, 5, 6}
 
 	// Normal automation
-	id, err := CreateNewAutomation(
+	id, err := automation.Manager.CreateNewAutomation(
 		"Name",
 		"Description",
 		"test",
@@ -290,7 +320,7 @@ func TestModificationToAbort(t *testing.T) {
 	// Gets the initial automation in order to copy its cron-expression
 	// The old cron-expression is required in order to preserve the time window in
 	// which the automation could be executed if the modification fails
-	automation, found, err := database.GetAutomationById(id)
+	a, found, err := database.GetAutomationById(id)
 	if err != nil {
 		t.Error(err.Error())
 		return
@@ -300,11 +330,11 @@ func TestModificationToAbort(t *testing.T) {
 		return
 	}
 	// Set its activation status to `disabled`
-	if err := ModifyAutomationById(id,
+	if err := automation.Manager.ModifyAutomationById(id,
 		database.AutomationData{
 			Name:                  "name",
 			Description:           "description",
-			TriggerCronExpression: automation.Data.TriggerCronExpression,
+			TriggerCronExpression: a.Data.TriggerCronExpression,
 			HomescriptId:          "test_abort",
 			Enabled:               false,
 			Trigger:               database.TriggerCron,
@@ -348,7 +378,7 @@ func TestStartInactiveAutomation(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Normal automation
-	_, err = CreateNewAutomation(
+	_, err = automation.Manager.CreateNewAutomation(
 		"Name",
 		"Description",
 		"test",
@@ -388,7 +418,7 @@ func SunRiseSet(t *testing.T) {
 	removeAllAutomations(t)
 	TestInit(t)
 
-	sunriseId, err := CreateNewAutomation(
+	sunriseId, err := automation.Manager.CreateNewAutomation(
 		"Name",
 		"Description",
 		"test",
@@ -404,7 +434,7 @@ func SunRiseSet(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
-	sunSetId, err := CreateNewAutomation(
+	sunSetId, err := automation.Manager.CreateNewAutomation(
 		"Name",
 		"Description",
 		"test",
@@ -439,10 +469,10 @@ func SunRiseSet(t *testing.T) {
 		return
 	}
 
-	sunriseJob, err := automationScheduler.FindJobsByTag(fmt.Sprint(sunrise.Id))
+	sunriseJob, err := automation.Manager.AutomationScheduler.FindJobsByTag(fmt.Sprint(sunrise.Id))
 	assert.NoError(t, err)
 
-	sunsetJob, err := automationScheduler.FindJobsByTag(fmt.Sprint(sunSet.Id))
+	sunsetJob, err := automation.Manager.AutomationScheduler.FindJobsByTag(fmt.Sprint(sunSet.Id))
 	assert.NoError(t, err)
 
 	config, found, err := database.GetServerConfiguration()
@@ -478,7 +508,7 @@ func TestUserDisabled(t *testing.T) {
 	assert.NoError(t, database.SetUserSchedulerEnabled("admin", false))
 
 	// Normal automation
-	if _, err := CreateNewAutomation(
+	if _, err := automation.Manager.CreateNewAutomation(
 		"Name",
 		"Description",
 		"test",
@@ -518,6 +548,11 @@ func TestUserDisabled(t *testing.T) {
 
 // Tests if the automation system can be initialized
 func TestInit(t *testing.T) {
+	// Delete database first
+	if err := initDB(true); err != nil {
+		t.Error(err.Error())
+	}
+
 	if err := createMockData(); err != nil {
 		t.Error(err.Error())
 		return
@@ -527,7 +562,8 @@ func TestInit(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, found)
 
-	if err := InitAutomations(config); err != nil {
+	hms := homescript.InitManager()
+	if err := automation.InitManager(hms, config); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -541,10 +577,10 @@ func TestActivate(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, found)
 
-	if err := DeactivateAutomationSystem(config); err != nil {
+	if err := automation.Manager.DeactivateAutomationSystem(config); err != nil {
 		t.Error(err.Error())
 	}
-	if err := ActivateAutomationSystem(config); err != nil {
+	if err := automation.Manager.ActivateAutomationSystem(config); err != nil {
 		t.Error(err.Error())
 	}
 }

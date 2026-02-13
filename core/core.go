@@ -4,7 +4,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/event"
-	hardware "github.com/smarthome-go/smarthome/core/hardware_deprecated"
 	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/core/user"
 )
@@ -17,7 +16,6 @@ func InitLoggers(logger *logrus.Logger) {
 
 	homescript.InitLogger(log)
 	database.InitLogger(log)
-	hardware.InitLogger(log)
 	event.InitLogger(log)
 	user.InitLogger(log)
 	log.Trace("Core loggers initialized")

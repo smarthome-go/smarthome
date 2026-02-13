@@ -34,7 +34,7 @@ func AutomationRunnerFunc(id uint, automationCtx types.ExecutionContextAutomatio
 			fmt.Sprintf("Automation with id: '%d' could not be executed because it could not be found in the database", id),
 		)
 		// Abort this automation in order to prevent future errors
-		if err := Manager.automationScheduler.RemoveByTag(fmt.Sprintf("%d", id)); err != nil {
+		if err := Manager.AutomationScheduler.RemoveByTag(fmt.Sprintf("%d", id)); err != nil {
 			log.Error("Failed to remove dangling automation: could not stop cron job: ", err.Error())
 			return
 		}

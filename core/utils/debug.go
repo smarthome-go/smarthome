@@ -5,25 +5,25 @@ import (
 	"time"
 
 	"github.com/smarthome-go/smarthome/core/database"
-	hardware "github.com/smarthome-go/smarthome/core/hardware_deprecated"
+	// hardware "github.com/smarthome-go/smarthome/core/hardware_deprecated"
 	"github.com/smarthome-go/smarthome/core/homescript"
 )
 
 type DebugInfo struct {
-	ServerVersion          string                     `json:"version"`
-	DatabaseOnline         bool                       `json:"databaseOnline"`
-	DatabaseStats          database.DBStatus          `json:"databaseStats"`
-	CpuCores               uint8                      `json:"cpuCores"`
-	Goroutines             uint16                     `json:"goroutines"`
-	GoVersion              string                     `json:"goVersion"`
-	MemoryUsage            uint16                     `json:"memoryUsage"`
-	PowerJobCount          uint16                     `json:"powerJobCount"`
-	PowerJobWithErrorCount uint16                     `json:"lastPowerJobErrorCount"`
-	PowerJobs              []hardware.DeviceOutputJob `json:"powerJobs"`
-	PowerJobResults        []hardware.JobResult       `json:"powerJobResults"`
-	HardwareNodesCount     uint8                      `json:"hardwareNodesCount"`
-	HardwareNodesOnline    uint8                      `json:"hardwareNodesOnline"`
-	HardwareNodesEnabled   uint8                      `json:"hardwareNodesEnabled"`
+	ServerVersion  string            `json:"version"`
+	DatabaseOnline bool              `json:"databaseOnline"`
+	DatabaseStats  database.DBStatus `json:"databaseStats"`
+	CpuCores       uint8             `json:"cpuCores"`
+	Goroutines     uint16            `json:"goroutines"`
+	GoVersion      string            `json:"goVersion"`
+	MemoryUsage    uint16            `json:"memoryUsage"`
+	// PowerJobCount          uint16            `json:"powerJobCount"`
+	// PowerJobWithErrorCount uint16 `json:"lastPowerJobErrorCount"`
+	// PowerJobs              []hardware.DeviceOutputJob `json:"powerJobs"`
+	// PowerJobResults        []hardware.JobResult       `json:"powerJobResults"`
+	// HardwareNodesCount     uint8                      `json:"hardwareNodesCount"`
+	// HardwareNodesOnline    uint8                      `json:"hardwareNodesOnline"`
+	// HardwareNodesEnabled   uint8                      `json:"hardwareNodesEnabled"`
 	// Nodes                  []database.HardwareNode    `json:"hardwareNodes"`
 	HomescriptJobCount uint       `json:"homescriptJobCount"`
 	Time               serverTime `json:"time"`
@@ -66,17 +66,17 @@ func SysInfo() DebugInfo {
 
 	err := database.CheckDatabase()
 	return DebugInfo{
-		ServerVersion:          Version,
-		DatabaseOnline:         err == nil,
-		DatabaseStats:          database.GetDatabaseStats(),
-		CpuCores:               uint8(runtime.NumCPU()),
-		Goroutines:             uint16(runtime.NumGoroutine()),
-		GoVersion:              runtime.Version(),
-		MemoryUsage:            uint16(memoryStats.Alloc / 1024 / 1024),
-		PowerJobCount:          uint16(hardware.GetPendingJobCount()),
-		PowerJobs:              hardware.GetPendingJobs(),
-		PowerJobResults:        hardware.GetResults(),
-		PowerJobWithErrorCount: hardware.GetJobsWithErrorInHandler(),
+		ServerVersion:  Version,
+		DatabaseOnline: err == nil,
+		DatabaseStats:  database.GetDatabaseStats(),
+		CpuCores:       uint8(runtime.NumCPU()),
+		Goroutines:     uint16(runtime.NumGoroutine()),
+		GoVersion:      runtime.Version(),
+		MemoryUsage:    uint16(memoryStats.Alloc / 1024 / 1024),
+		// PowerJobCount:          uint16(hardware.GetPendingJobCount()),
+		// PowerJobs:              hardware.GetPendingJobs(),
+		// PowerJobResults:        hardware.GetResults(),
+		// PowerJobWithErrorCount: hardware.GetJobsWithErrorInHandler(),
 		// HardwareNodesCount:     uint8(len(nodes)),
 		// HardwareNodesOnline:    uint8(nodesOnline),
 		// HardwareNodesEnabled:   uint8(nodesEnabled),

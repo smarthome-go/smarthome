@@ -1,6 +1,7 @@
 package analyzer
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -29,12 +30,15 @@ type builtinImportDocs struct {
 
 func BuildDocsJSON(context types.ExecutionContext) ([]byte, error) {
 	entries := buildBuiltinImportDocs(context)
-	data, err := json.MarshalIndent(builtinImportDocs{Entries: entries}, "", "  ")
-	if err != nil {
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
+	encoder.SetIndent("", "  ")
+	encoder.SetEscapeHTML(false)
+	if err := encoder.Encode(builtinImportDocs{Entries: entries}); err != nil {
 		return nil, fmt.Errorf("marshal builtin import docs: %w", err)
 	}
 
-	return data, nil
+	return bytes.TrimRight(buf.Bytes(), "\n"), nil
 }
 
 func BuildDocs(context types.ExecutionContext, outputPath string) error {

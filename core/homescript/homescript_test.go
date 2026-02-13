@@ -8,8 +8,8 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/device/driver"
 	"github.com/smarthome-go/smarthome/core/event"
-	"github.com/smarthome-go/smarthome/core/hardware"
 	"github.com/smarthome-go/smarthome/core/user"
 )
 
@@ -19,15 +19,13 @@ func TestMain(m *testing.M) {
 	InitLogger(log)
 	event.InitLogger(log)
 	user.InitLogger(log)
-	hardware.InitLogger(log)
-	hardware.Init()
 	InitManager()
 	if err := initDB(true); err != nil {
 		panic(err.Error())
 	}
 
 	// Homescript driver value cache initialization
-	if err := PopulateValueCache(); err != nil {
+	if err := driver.Manager.PopulateValueCache(); err != nil {
 		panic(err.Error())
 	}
 
@@ -57,259 +55,6 @@ func initDB(args ...bool) error {
 	return nil
 }
 
-// TODO: implement these tests again
-
-// func TestRun(t *testing.T) {
-// 	assert.NoError(t, initDB(true))
-//
-// 	// Create a mock switch and room
-// 	if err := database.CreateRoom(database.RoomData{Id: "test"}); err != nil {
-// 		t.Error(err.Error())
-// 		return
-// 	}
-// 	if err := database.CreateDevice("test", "", "test", 0, nil); err != nil {
-// 		t.Error(err.Error())
-// 		return
-// 	}
-// 	if err := database.AddUser(database.FullUser{
-// 		Username: "test",
-// 	}); err != nil {
-// 		t.Error(err.Error())
-// 		return
-// 	}
-// 	// Add homescript which will be later used for exec
-// 	if err := database.CreateNewHomescript(database.Homescript{
-// 		Owner: "admin",
-// 		Data: database.HomescriptData{
-// 			Id:   "test",
-// 			Code: "print(ARGS.key);",
-// 		},
-// 	}); err != nil {
-// 		t.Error(err.Error())
-// 		return
-// 	}
-// 	if err := database.CreateNewHomescript(database.Homescript{
-// 		Owner: "test",
-// 		Data: database.HomescriptData{
-// 			Id:   "test2",
-// 			Code: "print('exec should not work')",
-// 		},
-// 	}); err != nil {
-// 		t.Error(err.Error())
-// 		return
-// 	}
-// 	table := []struct {
-// 		Code   string
-// 		Result struct {
-// 			Output     string
-// 			Code       int
-// 			FirstError string
-// 		}
-// 	}{
-// 		{
-// 			Code: "println(user);",
-// 			Result: struct {
-// 				Output     string
-// 				Code       int
-// 				FirstError string
-// 			}{
-// 				Output:     "admin\n",
-// 				Code:       0,
-// 				FirstError: "",
-// 			},
-// 		},
-// 		{
-// 			Code: "println('Hello World');",
-// 			Result: struct {
-// 				Output     string
-// 				Code       int
-// 				FirstError string
-// 			}{
-// 				Output:     "Hello World\n",
-// 				Code:       0,
-// 				FirstError: "",
-// 			},
-// 		},
-// 		{
-// 			Code: "println('Hello World';",
-// 			Result: struct {
-// 				Output     string
-// 				Code       int
-// 				FirstError string
-// 			}{
-// 				Output:     "",
-// 				Code:       1,
-// 				FirstError: "Unclosed function call: Expected r-paren, found semicolon",
-// 			},
-// 		},
-// 		{
-// 			Code: "switch('test', on); println(get_switch('test').power);",
-// 			Result: struct {
-// 				Output     string
-// 				Code       int
-// 				FirstError string
-// 			}{
-// 				Output:     "",
-// 				Code:       1,
-// 				FirstError: "Failed to set power: hardware error: There are no hardware nodes, power state unaffected",
-// 			},
-// 		},
-// 		{
-// 			Code: "switch('test', off); println(get_switch('test').power);",
-// 			Result: struct {
-// 				Output     string
-// 				Code       int
-// 				FirstError string
-// 			}{
-// 				Output:     "",
-// 				Code:       1,
-// 				FirstError: "Failed to set power: hardware error: There are no hardware nodes, power state unaffected",
-// 			},
-// 		},
-// 		{
-// 			Code: "switch('does_not_exist', on);",
-// 			Result: struct {
-// 				Output     string
-// 				Code       int
-// 				FirstError string
-// 			}{
-// 				Output:     "",
-// 				Code:       1,
-// 				FirstError: "Failed to set power: switch 'does_not_exist' does not exist",
-// 			},
-// 		},
-// 		{
-// 			Code: "print(get_switch('does_not_exist'));",
-// 			Result: struct {
-// 				Output     string
-// 				Code       int
-// 				FirstError string
-// 			}{
-// 				Output:     "",
-// 				Code:       1,
-// 				FirstError: "switch 'does_not_exist' was not found",
-// 			},
-// 		},
-// 		{
-// 			Code: "notify('', '', 1);",
-// 			Result: struct {
-// 				Output     string
-// 				Code       int
-// 				FirstError string
-// 			}{
-// 				Output:     "",
-// 				Code:       0,
-// 				FirstError: "",
-// 			},
-// 		},
-// 		{
-// 			Code: "notify('', '', 2);",
-// 			Result: struct {
-// 				Output     string
-// 				Code       int
-// 				FirstError string
-// 			}{
-// 				Output:     "",
-// 				Code:       0,
-// 				FirstError: "",
-// 			},
-// 		},
-// 		{
-// 			Code: "notify('', '', 3);",
-// 			Result: struct {
-// 				Output     string
-// 				Code       int
-// 				FirstError string
-// 			}{
-// 				Output:     "",
-// 				Code:       0,
-// 				FirstError: "",
-// 			},
-// 		},
-// 		{
-// 			Code: "notify('', '', 4);",
-// 			Result: struct {
-// 				Output     string
-// 				Code       int
-// 				FirstError string
-// 			}{
-// 				Output:     "",
-// 				Code:       1,
-// 				FirstError: "notification level has to be one of 1, 2, or 3, got 4",
-// 			},
-// 		},
-// 		{
-// 			Code: "print(exec('test'));",
-// 			Result: struct {
-// 				Output     string
-// 				Code       int
-// 				FirstError string
-// 			}{
-// 				Output:     "",
-// 				Code:       1,
-// 				FirstError: "TypeError: object has no member named key (1:12)",
-// 			},
-// 		},
-// 		{
-// 			Code: "print(exec('test', 'key' => 'value').value);",
-// 			Result: struct {
-// 				Output     string
-// 				Code       int
-// 				FirstError string
-// 			}{
-// 				Output:     "valuenull",
-// 				Code:       0,
-// 				FirstError: "",
-// 			},
-// 		},
-// 		{
-// 			Code: "exec('test2');",
-// 			Result: struct {
-// 				Output     string
-// 				Code       int
-// 				FirstError string
-// 			}{
-// 				Output:     "",
-// 				Code:       1,
-// 				FirstError: "invalid Homescript id: no data associated with id",
-// 			},
-// 		},
-// 	}
-// 	for _, test := range table {
-// 		var buffer bytes.Buffer
-// 		res := HmsManager.Run(
-// 			"admin",
-// 			"testing",
-// 			test.Code,
-// 			make(map[string]string, 0),
-// 			make([]string, 0),
-// 			InitiatorInternal,
-// 			make(chan int),
-// 			&buffer,
-// 			nil,
-// 			make(map[string]homescript.Value),
-// 		)
-// 		if len(res.Errors) > 0 {
-// 			if res.Errors[0].Message != test.Result.FirstError {
-// 				t.Errorf("Unmatched error: want: %s got: %s", test.Result.FirstError, res.Errors[0].Message)
-// 				return
-// 			}
-// 		} else if test.Result.FirstError != "" {
-// 			t.Errorf("Expected abundant error: expected: %s, got none", test.Result.FirstError)
-// 			return
-// 		}
-// 		if res.ExitCode != test.Result.Code {
-// 			t.Errorf("Unexpected exit code. want: `%d` got: `%d`", test.Result.Code, res.ExitCode)
-// 			return
-// 		}
-// 		output := buffer.String()
-// 		if output != test.Result.Output {
-// 			t.Errorf("Unexpected output: want: `%s` got: `%s`", test.Result.Output, output)
-// 			return
-// 		}
-// 	}
-// }
-//
 // // Is used in order to test the recursion detector and call stack implementation
 // func TestRecursion(t *testing.T) {
 // 	/* Recursive code */

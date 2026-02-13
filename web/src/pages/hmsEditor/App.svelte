@@ -21,6 +21,7 @@
     import HmsFileExplorer from './HmsFileExplorer.svelte';
     import type { EditorHms } from './types';
     import EditorLeft from './EditorLeft.svelte';
+    import HomescriptDocViewerDialog from './HomescriptDocViewerDialog.svelte'
 
     /*
        General variables
@@ -30,6 +31,7 @@
 
     // Specifies whether the argument prompt dialog should be open or closed
     let argumentsPromptOpen = false
+    let docsOpen = false
 
     // Is set to true when a script is linted or executed
     let requestLoading = false
@@ -722,6 +724,8 @@
     />
 {/if}
 
+<HomescriptDocViewerDialog bind:open={docsOpen} />
+
 <Page persistentSlimNav={true}>
     {#if err404}
         <div id="error404">
@@ -752,6 +756,9 @@
                 {/if}
             </div>
             <div id="header__buttons">
+                <Button on:click={() => (docsOpen = true)}>
+                    <Label>Docs</Label>
+                </Button>
                 <IconButton
                     class="material-icons"
                     on:click={saveCurrent}

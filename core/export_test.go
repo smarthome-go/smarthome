@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"github.com/smarthome-go/smarthome/core/automation"
 	"github.com/smarthome-go/smarthome/core/database"
+	"github.com/smarthome-go/smarthome/core/device/driver"
 	"github.com/smarthome-go/smarthome/core/event"
 	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/core/user"
@@ -24,7 +26,10 @@ func TestExportGeneration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, found)
 
-	assert.NoError(t, homescript.InitAutomations(config))
+	m := homescript.InitManager()
+	err = automation.InitManager(m, config)
+	assert.NoError(t, err)
+
 	///
 	/// Part 1: Mock data creation
 	///
@@ -41,20 +46,11 @@ func TestExportGeneration(t *testing.T) {
 		ModelID:        "test",
 		Name:           "Golang-Test",
 		Version:        "0.0.1",
-		HomescriptCode: homescript.DefaultDriverHomescriptCode,
+		HomescriptCode: database.DefaultDriverHomescriptCode,
 		SingletonJSON:  nil,
 	}
 
 	assert.NoError(t, database.CreateNewDeviceDriver(testDriver))
-
-	// TODO: remove this.
-	// Create Hardware nodes
-	// testNode := database.HardwareNode{
-	// 	Name:    "Living Room",
-	// 	Url:     "http://10.0.0.1:7000",
-	// 	Token:   "secret_t0ken",
-	// 	Enabled: true,
-	// }
 
 	// assert.NoError(t, database.CreateHardwareNode(testNode))
 
@@ -66,31 +62,32 @@ func TestExportGeneration(t *testing.T) {
 	}))
 
 	// Create devices
-	driverFound, hmsErr, dbErr := homescript.CreateDevice(
+	driverFound, hmsErr, dbErr := driver.Manager.CreateDevice(
 		database.DEVICE_TYPE_OUTPUT,
-		"big_lamp",
-		"Big Lamp",
+		"bed_lamp",
+		"Bed Lamp",
 		"living_room",
-		testDriver.VendorID,
-		testDriver.ModelID,
+		"foo",
+		"baz",
 	)
 
 	assert.True(t, driverFound)
-	assert.NoError(t, dbErr)
 	assert.NoError(t, hmsErr)
+	assert.NoError(t, dbErr)
 
-	driverFound, hmsErr, dbErr = homescript.CreateDevice(
-		database.DEVICE_TYPE_OUTPUT,
-		"desk_lamp",
-		"Desk Lamp",
-		"living_room",
-		testDriver.VendorID,
-		testDriver.ModelID,
+	dbErr = database.CreateDevice(
+		database.ShallowDevice{
+			DeviceType:    database.DEVICE_TYPE_OUTPUT,
+			ID:            "desk_lamp",
+			Name:          "Desk Lamp",
+			RoomID:        "living_room",
+			VendorID:      "foo",
+			ModelID:       "bar",
+			SingletonJSON: "",
+		},
 	)
 
-	assert.True(t, driverFound)
 	assert.NoError(t, dbErr)
-	assert.NoError(t, hmsErr)
 
 	// Create cameras
 	assert.NoError(t, database.CreateCamera(database.Camera{
@@ -185,7 +182,7 @@ func TestExportGeneration(t *testing.T) {
 	}))
 	// Create automation
 	var interval uint = 42
-	_, err = homescript.CreateNewAutomation(
+	_, err = automation.Manager.CreateNewAutomation(
 		"My Automation",
 		"This is a description",
 		"automation_homescript",

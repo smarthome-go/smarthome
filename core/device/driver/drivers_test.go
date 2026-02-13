@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/smarthome-go/smarthome/core/database"
+	driverTypes "github.com/smarthome-go/smarthome/core/device/driver/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,7 +17,7 @@ func TestDefaultDriverHmsCode(t *testing.T) {
 	vendorID := fmt.Sprintf("%s_vendor", driverBaseID)
 	const modelID = "default_test"
 
-	hmsErr, dbErr := CreateDriver(
+	hmsErr, dbErr := Manager.CreateDriver(
 		vendorID,
 		modelID,
 		"Default Driver",
@@ -41,7 +42,7 @@ func TestDefaultDriverHmsCode(t *testing.T) {
 	deviceID := fmt.Sprintf("dev_%s", driverBaseID)
 
 	// Create a device for that driver.
-	driverFound, hmsErr, dbErr := CreateDevice(
+	driverFound, hmsErr, dbErr := Manager.CreateDevice(
 		database.DEVICE_TYPE_OUTPUT,
 		deviceID,
 		"Default Driver Device",
@@ -56,9 +57,9 @@ func TestDefaultDriverHmsCode(t *testing.T) {
 
 	// Run the driver.
 	// TODO: allow invocation without being tied to a device.
-	hmsErrs, dbErr := InvokeValidateCheckDriver(
-		DriverInvocationIDs{
-			DeviceID: deviceID,
+	hmsErrs, dbErr := Manager.InvokeValidateCheckDriver(
+		driverTypes.DriverInvocationIDs{
+			DeviceID: &deviceID,
 			VendorID: vendorID,
 			ModelID:  modelID,
 		},

@@ -8,7 +8,6 @@ import (
 	"github.com/smarthome-go/smarthome/core/automation"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/device/driver"
-	hardware "github.com/smarthome-go/smarthome/core/hardware_deprecated"
 	"github.com/smarthome-go/smarthome/core/homescript"
 	"github.com/smarthome-go/smarthome/core/homescript/dispatcher"
 	"github.com/smarthome-go/smarthome/core/scheduler"
@@ -128,9 +127,6 @@ func Init(config database.ServerConfig) error {
 	if err := reminder.InitSchedule(); err != nil {
 		return fmt.Errorf("Failed to activate reminder scheduler: %s", err.Error())
 	}
-
-	// Hardware handler
-	hardware.Init()
 
 	if err := driver.StartPowerUsageSnapshotScheduler(); err != nil {
 		return fmt.Errorf("Failed to start periodic power usage snapshot scheduler: %s", err.Error())

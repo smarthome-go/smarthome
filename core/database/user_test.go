@@ -29,10 +29,10 @@ func createUserMockData() error {
 	if err := CreateRoom(RoomData{ID: "delete_me"}); err != nil {
 		return err
 	}
-	// Create a switch
-	if err := CreateDevice("delete_me", "", "delete_me", 0, nil); err != nil {
-		return err
-	}
+	// // Create a switch
+	// if err := CreateDevice(ShallowDevice{}); err != nil {
+	// 	return err
+	// }
 	// Give the user switch permission
 	if _, err := AddUserDevicePermission("delete_me", "delete_me"); err != nil {
 		return err

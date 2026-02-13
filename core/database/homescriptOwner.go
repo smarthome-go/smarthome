@@ -78,7 +78,7 @@ func removeHomescriptOwner(username, homescriptId string) (aRowWasRemoved bool, 
 
 	rows, err := res.RowsAffected()
 	if err != nil {
-		log.Errorf("Failed to remove HMS permission: getting rows affected failed", err.Error())
+		log.Errorf("Failed to remove HMS permission: getting rows affected failed: %s", err.Error())
 		return false, err
 	}
 
@@ -121,7 +121,7 @@ func listHomescriptIdsOfUser(username string) ([]string, error) {
 	`)
 
 	if err != nil {
-		log.Errorf("Failed to list homescript IDs of user: preparing query failed", err.Error())
+		log.Errorf("Failed to list homescript IDs of user: preparing query failed: %s", err.Error())
 		return nil, err
 	}
 
@@ -129,7 +129,7 @@ func listHomescriptIdsOfUser(username string) ([]string, error) {
 
 	res, err := query.Query(username)
 	if err != nil {
-		log.Errorf("Failed to list homescript IDs of user: executing query failed", err.Error())
+		log.Errorf("Failed to list homescript IDs of user: executing query failed: %s", err.Error())
 		return nil, err
 	}
 
@@ -137,7 +137,7 @@ func listHomescriptIdsOfUser(username string) ([]string, error) {
 	for res.Next() {
 		var buf string
 		if err := res.Scan(&buf); err != nil {
-			log.Errorf("Failed to list homescript IDs of user: scanning query results failed", err.Error())
+			log.Errorf("Failed to list homescript IDs of user: scanning query results failed: %s", err.Error())
 			return nil, err
 		}
 		output = append(output, buf)

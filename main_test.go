@@ -35,6 +35,8 @@ func TestServer(t *testing.T) {
 	routes.InitLogger(log)
 	templates.InitLogger(log)
 	reminder.InitLogger(log)
+	automation.InitLogger(log)
+	scheduler.InitLogger(log)
 
 	// Simulates a typical server startup
 
