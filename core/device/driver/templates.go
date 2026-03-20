@@ -105,6 +105,8 @@ const DeviceFunctionSetPower = "set_power"
 const DeviceFunctionSetDim = "dim"
 const DeviceFunctionReportDim = "report_dim"
 const DeviceFunctionDim = "dim"
+const DeviceFunctionSetColor = "set_color"
+const DeviceFunctionReportColor = "report_color"
 
 // TODO: maybe own submodule for templates?
 
@@ -208,6 +210,45 @@ func DeviceSetPowerSignature(span errors.Span) ast.TemplateMethod {
 }
 
 //
+// Color signature
+//
+
+func rgbObjType(span errors.Span) ast.Type {
+	return ast.NewObjectType([]ast.ObjectTypeField{
+		ast.NewObjectTypeField(pAst.NewSpannedIdent("r", span), ast.NewIntType(span), span),
+		ast.NewObjectTypeField(pAst.NewSpannedIdent("g", span), ast.NewIntType(span), span),
+		ast.NewObjectTypeField(pAst.NewSpannedIdent("b", span), ast.NewIntType(span), span),
+	}, span)
+}
+
+func DeviceReportColorSignature(span errors.Span) ast.TemplateMethod {
+	return ast.TemplateMethod{
+		Signature: ast.NewFunctionType(
+			ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)),
+			span,
+			rgbObjType(span),
+			span,
+		).(ast.FunctionType),
+		Modifier: pAst.FN_MODIFIER_PUB,
+	}
+}
+
+func DeviceSetColorSignature(span errors.Span) ast.TemplateMethod {
+	return ast.TemplateMethod{
+		Signature: ast.NewFunctionType(
+			ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+				ast.NewFunctionTypeParam(
+					pAst.NewSpannedIdent("color", span),
+					rgbObjType(span),
+					nil,
+				),
+			}), span, ast.NewNullType(span), span,
+		).(ast.FunctionType),
+		Modifier: pAst.FN_MODIFIER_PUB,
+	}
+}
+
+//
 // Generic dimmer implementation
 //
 
@@ -302,6 +343,13 @@ func deviceTemplate(span errors.Span) DeviceTemplate {
 					},
 					ConflictsWithCapabilities: []ast.TemplateConflict{},
 				},
+				"color": {
+					RequiresMethods: []string{
+						DeviceFunctionSetColor,
+						DeviceFunctionReportColor,
+					},
+					ConflictsWithCapabilities: []ast.TemplateConflict{},
+				},
 				"sensor": {
 					RequiresMethods: []string{
 						DeviceFunctionReportSensorReadings,
@@ -317,6 +365,7 @@ func deviceTemplate(span errors.Span) DeviceTemplate {
 			"base":     DeviceCapabilityBase,
 			"power":    DeviceCapabilityPower,
 			"dimmable": DeviceCapabilityDimmable,
+			"color":    DeviceCapabilityColor,
 			"sensor":   DeviceCapabilitySensor,
 		},
 	}

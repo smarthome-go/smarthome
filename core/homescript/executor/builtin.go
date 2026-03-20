@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -424,6 +426,56 @@ func (self InterpreterExecutor) GetBuiltinImport(
 				}
 				stats := pinger.Statistics()
 				return value.NewValueBool(stats.PacketsRecv > 0), nil // If at least 1 packet was received back, the host is considered online
+			}), true
+		case "udp_send":
+			return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
+				if self.context.Username() != nil {
+					hasPermission, err := database.UserHasPermission(*self.context.Username(), database.PermissionHomescriptNetwork)
+					if err != nil {
+						return nil, value.NewVMFatalException(
+							fmt.Sprintf("Could not send UDP packet: failed to validate user's permissions: %s", err.Error()),
+							value.Vm_HostErrorKind,
+							span,
+						)
+					}
+					if !hasPermission {
+						return nil, value.NewVMFatalException(
+							"will not send UDP packet: you lack permission to access the network via homescript. If this is unintentional, contact your administrator",
+							value.Vm_HostErrorKind,
+							span,
+						)
+					}
+				}
+
+				host := args[0].(value.ValueString).Inner
+				port := args[1].(value.ValueInt).Inner
+				data := args[2].(value.ValueString).Inner
+
+				if port < 1 || port > 65535 {
+					return nil, value.NewVMThrowInterrupt(
+						span,
+						fmt.Sprintf("Port must be between 1 and 65535, got %d", port),
+					)
+				}
+
+				address := net.JoinHostPort(host, strconv.FormatInt(port, 10))
+				conn, err := (&net.Dialer{}).DialContext(*cancelCtx, "udp", address)
+				if err != nil {
+					return nil, value.NewVMThrowInterrupt(
+						span,
+						err.Error(),
+					)
+				}
+				defer conn.Close()
+
+				if _, err := conn.Write([]byte(data)); err != nil {
+					return nil, value.NewVMThrowInterrupt(
+						span,
+						err.Error(),
+					)
+				}
+
+				return value.NewValueNull(), nil
 			}), true
 		case "http":
 			return *value.NewValueObject(map[string]*value.Value{

@@ -8,6 +8,7 @@ const (
 	DeviceCapabilityBase     DeviceCapability = "base"
 	DeviceCapabilityPower    DeviceCapability = "power"
 	DeviceCapabilityDimmable DeviceCapability = "dimmable"
+	DeviceCapabilityColor    DeviceCapability = "color"
 	DeviceCapabilitySensor   DeviceCapability = "sensor"
 )
 

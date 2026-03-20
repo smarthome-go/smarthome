@@ -15,6 +15,7 @@ type DeviceActionrequestBody struct {
 	// Or use separate API endpoint for each intent?
 	Power *driver.DriverSetPowerInput `json:"power"`
 	Dim   *driver.DriverDimInput      `json:"dim"`
+	Color *driver.DriverColorInput    `json:"color"`
 }
 
 func DeviceActionHandlerFactory(action driver.DriverActionKind) func(w http.ResponseWriter, r *http.Request) {
@@ -34,6 +35,7 @@ func DeviceActionHandlerFactory(action driver.DriverActionKind) func(w http.Resp
 			request.DeviceID,
 			request.Power,
 			request.Dim,
+			request.Color,
 		)
 
 		if backendErr != nil {

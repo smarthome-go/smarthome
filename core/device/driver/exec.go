@@ -9,6 +9,8 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 
+	// "github.com/smarthome-go/homescript/v3/homescript/interpreter/value"
+
 	"github.com/smarthome-go/homescript/v3/homescript/runtime"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/database"
@@ -251,7 +253,7 @@ func (d *DriverManager) invokeDriverGeneric(
 // TDOO: maybe implement a function factory to create those almost identical functions more ideomatically.
 //
 
-func (d DriverManager) InvokeDriverFunc(
+func (d *DriverManager) InvokeDriverFunc(
 	ids driverTypes.DriverInvocationIDs,
 	call FunctionCall,
 ) (types.HmsRes, error) {
@@ -281,7 +283,7 @@ func (d DriverManager) InvokeDriverFunc(
 	return runResult, nil
 }
 
-func (d DriverManager) InvokeValidateCheckDriver(ids driverTypes.DriverInvocationIDs) ([]types.HmsError, error) {
+func (d *DriverManager) InvokeValidateCheckDriver(ids driverTypes.DriverInvocationIDs) ([]types.HmsError, error) {
 	res, err := d.InvokeDriverFunc(
 		ids,
 		FunctionCall{
@@ -364,7 +366,7 @@ func (d DriverManager) InvokeDriverReportSensors(
 	return readings, nil, nil
 }
 
-func (d DriverManager) InvokeDriverReportPowerState(
+func (d *DriverManager) InvokeDriverReportPowerState(
 	ids driverTypes.DriverInvocationIDs,
 ) (DriverActionGetPowerStateOutput, []types.HmsError, error) {
 	ret, err := d.InvokeDriverFunc(
@@ -389,7 +391,7 @@ func (d DriverManager) InvokeDriverReportPowerState(
 	}, nil, nil
 }
 
-func (d DriverManager) InvokeDriverReportPowerDraw(
+func (d *DriverManager) InvokeDriverReportPowerDraw(
 	ids driverTypes.DriverInvocationIDs,
 ) (DriverActionGetPowerDrawOutput, []types.HmsError, error) {
 	ret, err := d.InvokeDriverFunc(
@@ -434,7 +436,7 @@ func (d DriverManager) InvokeDriverReportPowerDraw(
 	}, nil, nil
 }
 
-func (d DriverManager) InvokeDriverSetPower(
+func (d *DriverManager) InvokeDriverSetPower(
 	deviceID,
 	vendorID,
 	modelID string,
@@ -474,6 +476,123 @@ func (d DriverManager) InvokeDriverSetPower(
 	return DriverActionPowerOutput{
 		Changed: runResult.ReturnValue.(value.ValueBool).Inner,
 	}, nil, nil
+}
+
+//
+// Get Color
+//
+
+func rgbHelper(valueRaw value.Value, span errors.Span) (uint8, []types.HmsError, error) {
+	v := valueRaw.(value.ValueInt).Inner
+
+	if v > 255 || v < 0 {
+		return 0, []types.HmsError{
+			{
+				SyntaxError:     nil,
+				DiagnosticError: nil,
+				RuntimeInterrupt: &types.HmsRuntimeInterrupt{
+					Kind: "driver",
+					Message: fmt.Sprintf(
+						"Device function `%s` should return RGB value in 0..=255, but returned %d",
+						DeviceFunctionReportColor,
+						v,
+					),
+				},
+				Span: span,
+			},
+		}, nil
+	}
+
+	return uint8(v), nil, nil
+}
+
+func (d *DriverManager) InvokeDriverReportColor(
+	ids driverTypes.DriverInvocationIDs,
+) (DriverActionReportColorOutput, []types.HmsError, error) {
+	ret, err := d.InvokeDriverFunc(
+		ids,
+		FunctionCall{
+			Invocation: runtime.FunctionInvocation{
+				Function: DeviceFunctionReportColor,
+				Args:     []value.Value{},
+				FunctionSignature: runtime.FunctionInvocationSignatureFromType(
+					DeviceReportColorSignature(errors.Span{}).Signature,
+				),
+			},
+		},
+	)
+
+	if err != nil || ret.Errors.ContainsError {
+		return DriverActionReportColorOutput{}, ret.Errors.Diagnostics, err
+	}
+
+	colorReturn := ret.ReturnValue.(value.ValueObject).FieldsInternal
+
+	r, errR, errR1 := rgbHelper(*colorReturn["r"], ret.CalledFunctionSpan)
+	if errR != nil || errR1 != nil {
+		return DriverActionReportColorOutput{}, errR, errR1
+	}
+
+	g, errG, errG1 := rgbHelper(*colorReturn["g"], ret.CalledFunctionSpan)
+	if errG != nil || errG1 != nil {
+		return DriverActionReportColorOutput{}, errG, errG1
+	}
+
+	b, errB, errB1 := rgbHelper(*colorReturn["b"], ret.CalledFunctionSpan)
+	if errB != nil || errB1 != nil {
+		return DriverActionReportColorOutput{}, errB, errB1
+	}
+
+	return DriverActionReportColorOutput{
+		R: r,
+		G: g,
+		B: b,
+	}, nil, nil
+}
+
+//
+// Set Color
+//
+
+func (d *DriverManager) InvokeDriverSetColor(
+	deviceID,
+	vendorID,
+	modelID string,
+	colorAction DriverActionSetColor,
+) (DriverActionSetColorOutput, []types.HmsError, error) {
+	// TODO: add context support
+	ctx, cancel := context.WithCancel(context.Background())
+
+	runResult, dbErr := d.invokeDriverGeneric(
+		ctx,
+		cancel,
+		DriverContext{
+			DeviceId: &deviceID,
+		},
+		vendorID,
+		modelID,
+		FunctionCall{
+			Invocation: runtime.FunctionInvocation{
+				Function: DeviceFunctionSetPower,
+				Args: []value.Value{
+					*value.NewValueObject(map[string]*value.Value{
+						"r": value.NewValueInt(int64(colorAction.R)),
+						"g": value.NewValueInt(int64(colorAction.G)),
+						"b": value.NewValueInt(int64(colorAction.B)),
+					}),
+				},
+				FunctionSignature: runtime.FunctionInvocationSignatureFromType(
+					DeviceSetColorSignature(errors.Span{}).Signature,
+				),
+			},
+		},
+	)
+
+	if dbErr != nil || runResult.Errors.ContainsError {
+		return DriverActionSetColorOutput{}, runResult.Errors.Diagnostics, dbErr
+	}
+
+	return DriverActionSetColorOutput{}, nil, nil
 }
 
 //

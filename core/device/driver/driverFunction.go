@@ -21,6 +21,8 @@ const (
 	DriverActionKindReportPowerDraw
 	DriverActionKindReportDim
 	DriverActionKindDim
+	DriverActionKindReportColor
+	DriverActionKindSetColor
 )
 
 type DriverAction interface {
@@ -167,4 +169,45 @@ type DriverActionDimOutput struct {
 
 func (self DriverActionDimOutput) Kind() DriverActionKind {
 	return DriverActionKindDim
+}
+
+//
+// Report Color
+//
+
+type DriverActionReportColor struct{}
+
+func (self DriverActionReportColor) Kind() DriverActionKind {
+	return DriverActionKindReportColor
+}
+
+type DriverActionReportColorOutput struct {
+	R uint8 `json:"r"`
+	G uint8 `json:"g"`
+	B uint8 `json:"b"`
+}
+
+func (self DriverActionReportColorOutput) Kind() DriverActionKind {
+	return DriverActionKindReportColor
+}
+
+//
+// Set Color
+//
+
+type DriverActionSetColor struct {
+	R uint8
+	G uint8
+	B uint8
+}
+
+func (self DriverActionSetColor) Kind() DriverActionKind {
+	return DriverActionKindSetColor
+}
+
+type DriverActionSetColorOutput struct {
+}
+
+func (self DriverActionSetColorOutput) Kind() DriverActionKind {
+	return DriverActionKindSetColor
 }

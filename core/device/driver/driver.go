@@ -185,6 +185,7 @@ func ExtractDriverInfo(
 				if impl.SingletonIdent.Ident() == DriverDeviceSingletonIdent {
 					template := deviceTemplate(herrors.Span{})
 					for ident := range impl.FinalCapabilities {
+						// TODO: no validation at all?!
 						deviceCapabilities = append(deviceCapabilities, template.Capabilities[ident])
 					}
 

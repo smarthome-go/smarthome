@@ -523,6 +523,21 @@ var builtinImportHandlers = map[types.ImportKey]importHandler{
 			Template: &ast.TemplateSpec{},
 		}, true
 	},
+	{ModuleName: "net", ValueName: "udp_send"}: func(_ types.ExecutionContext, span errors.Span, _ pAst.IMPORT_KIND) (analyzer.BuiltinImport, bool) {
+		return analyzer.BuiltinImport{
+			Type: ast.NewFunctionType(
+				ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("host", span), ast.NewStringType(span), nil),
+					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("port", span), ast.NewIntType(span), nil),
+					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("data", span), ast.NewStringType(span), nil),
+				}),
+				span,
+				ast.NewNullType(span),
+				span,
+			),
+			Template: &ast.TemplateSpec{},
+		}, true
+	},
 	{ModuleName: "net", ValueName: "HttpResponse"}: func(_ types.ExecutionContext, span errors.Span, _ pAst.IMPORT_KIND) (analyzer.BuiltinImport, bool) {
 		return analyzer.BuiltinImport{
 			Type:     httpResponseType(span),

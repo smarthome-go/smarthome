@@ -25,6 +25,12 @@ type DriverDimInput struct {
 	Label string `json:"label"`
 }
 
+type DriverColorInput struct {
+	R uint8 `json:"r"`
+	G uint8 `json:"g"`
+	B uint8 `json:"b"`
+}
+
 //
 // Action responses.
 //
@@ -37,7 +43,13 @@ type ActionResponse struct {
 
 // TODO: make this function signature better
 // Use interfaces here
-func (d DriverManager) DeviceAction(action DriverActionKind, deviceID string, Power *DriverSetPowerInput, Dim *DriverDimInput) (
+func (d *DriverManager) DeviceAction(
+	action DriverActionKind,
+	deviceID string,
+	Power *DriverSetPowerInput,
+	Dim *DriverDimInput,
+	Color *DriverColorInput,
+) (
 	res ActionResponse,
 	deviceFound bool,
 	httpErr error,
@@ -90,6 +102,23 @@ func (d DriverManager) DeviceAction(action DriverActionKind, deviceID string, Po
 			device.VendorID,
 			device.ModelID,
 			DriverActionPower{State: Power.State},
+		)
+	case DriverActionKindSetColor:
+		if Color == nil {
+			return ActionResponse{},
+				true,
+				errors.New("Color action field is missing even though it is required"),
+				nil
+		}
+		out, hmsErrs, err = d.InvokeDriverSetColor(
+			device.ID,
+			device.VendorID,
+			device.ModelID,
+			DriverActionSetColor{
+				R: Color.R,
+				G: Color.G,
+				B: Color.B,
+			},
 		)
 	default:
 		panic(fmt.Sprintf("A new device action kind was added without updating this code: `%d`", action))

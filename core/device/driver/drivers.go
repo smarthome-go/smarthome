@@ -64,7 +64,7 @@ type DriverCapabilityInfo struct {
 	DeviceCapabilities CapabilitySet[DeviceCapability] `json:"capabilities"`
 }
 
-func (d DriverManager) ListDriverDeviceCapabilities() ([]DriverCapabilityInfo, error) {
+func (d *DriverManager) ListDriverDeviceCapabilities() ([]DriverCapabilityInfo, error) {
 	drivers, err := database.ListDeviceDrivers()
 	if err != nil {
 		return nil, err
@@ -99,7 +99,7 @@ func (d DriverManager) ListDriverDeviceCapabilities() ([]DriverCapabilityInfo, e
 	return infos, nil
 }
 
-func (d DriverManager) GetDriverWithInfos(vendorID, modelID string) (RichDriver, bool, error) {
+func (d *DriverManager) GetDriverWithInfos(vendorID, modelID string) (RichDriver, bool, error) {
 	rawDriver, found, err := database.GetDeviceDriver(vendorID, modelID)
 	if err != nil {
 		return RichDriver{}, false, err
@@ -132,7 +132,7 @@ func (d DriverManager) GetDriverWithInfos(vendorID, modelID string) (RichDriver,
 	}, true, nil
 }
 
-func (d DriverManager) ListDriversWithoutStoredValues() ([]RichDriver, error) {
+func (d *DriverManager) ListDriversWithoutStoredValues() ([]RichDriver, error) {
 	defaultDrivers, err := database.ListDeviceDrivers()
 	if err != nil {
 		return nil, err
@@ -167,7 +167,7 @@ func (d DriverManager) ListDriversWithoutStoredValues() ([]RichDriver, error) {
 	return richDrivers, nil
 }
 
-func (d DriverManager) ListDriversWithStoredConfig() ([]RichDriver, error) {
+func (d *DriverManager) ListDriversWithStoredConfig() ([]RichDriver, error) {
 	drivers, err := d.ListDriversWithoutStoredValues()
 	if err != nil {
 		return nil, err
@@ -204,7 +204,7 @@ func (d DriverManager) ListDriversWithStoredConfig() ([]RichDriver, error) {
 	return drivers, nil
 }
 
-func (d DriverManager) CreateDriver(vendorID, modelID, name, version string, hmsCode *string) (hmsErr error, dbErr error) {
+func (d *DriverManager) CreateDriver(vendorID, modelID, name, version string, hmsCode *string) (hmsErr error, dbErr error) {
 	ValueStoreLock.Lock()
 	defer ValueStoreLock.Unlock()
 
@@ -335,7 +335,7 @@ outer:
 
 // Apart from actually modifying the code of the driver in the DB,
 // the saved singleton state of this driver and all dependent devices must be rebuilt.
-func (d DriverManager) ModifyCode(vendorID, modelID, newCode string) (found bool, codeErr error, dbErr error) {
+func (d *DriverManager) ModifyCode(vendorID, modelID, newCode string) (found bool, codeErr error, dbErr error) {
 	// Try to create default JSON from schema. TODO: why default: ???
 	// This can fail if the Homescript code is invalid.
 	configInfo, hmsErrs, err := d.extractInfoFromDriver(vendorID, modelID, newCode)
@@ -405,7 +405,7 @@ func (d DriverManager) ModifyCode(vendorID, modelID, newCode string) (found bool
 }
 
 // TODO: a lot of overlapping code!
-func (d DriverManager) ValidateDeviceConfigurationChange(deviceId string, newConfig interface{}) (found bool, validateErr error, dbErr error) {
+func (d *DriverManager) ValidateDeviceConfigurationChange(deviceId string, newConfig interface{}) (found bool, validateErr error, dbErr error) {
 	device, found, err := database.GetDeviceById(deviceId)
 	if err != nil {
 		return false, nil, err
@@ -460,7 +460,7 @@ func (d DriverManager) ValidateDeviceConfigurationChange(deviceId string, newCon
 	return true, nil, nil
 }
 
-func (d DriverManager) ValidateDriverConfigurationChange(vendorID, modelID string, newConfig interface{}) (found bool, validateErr error, dbErr error) {
+func (d *DriverManager) ValidateDriverConfigurationChange(vendorID, modelID string, newConfig interface{}) (found bool, validateErr error, dbErr error) {
 	driver, found, err := database.GetDeviceDriver(vendorID, modelID)
 	if err != nil {
 		return false, nil, err
