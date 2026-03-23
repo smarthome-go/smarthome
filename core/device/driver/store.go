@@ -247,7 +247,7 @@ func ApplyTransactionOnStored(
 	singletonType ast.ObjectType,
 ) (changedASettingsField bool, newValR value.ValueObject) {
 	// Use the old value as a starting point.
-	transformed := oldVal
+	transformed := (*oldVal.Clone()).(value.ValueObject) // NOTE: prevents data-race
 
 	for _, field := range singletonType.ObjFields {
 		if field.Annotation == nil || field.Annotation.Ident() != DriverFieldRequiredAnnotation {

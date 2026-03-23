@@ -573,7 +573,7 @@ func (d *DriverManager) InvokeDriverSetColor(
 		modelID,
 		FunctionCall{
 			Invocation: runtime.FunctionInvocation{
-				Function: DeviceFunctionSetPower,
+				Function: DeviceFunctionSetColor,
 				Args: []value.Value{
 					*value.NewValueObject(map[string]*value.Value{
 						"r": value.NewValueInt(int64(colorAction.R)),

@@ -213,7 +213,7 @@ func DeviceSetPowerSignature(span errors.Span) ast.TemplateMethod {
 // Color signature
 //
 
-func rgbObjType(span errors.Span) ast.Type {
+func RgbColorType(span errors.Span) ast.Type {
 	return ast.NewObjectType([]ast.ObjectTypeField{
 		ast.NewObjectTypeField(pAst.NewSpannedIdent("r", span), ast.NewIntType(span), span),
 		ast.NewObjectTypeField(pAst.NewSpannedIdent("g", span), ast.NewIntType(span), span),
@@ -226,7 +226,7 @@ func DeviceReportColorSignature(span errors.Span) ast.TemplateMethod {
 		Signature: ast.NewFunctionType(
 			ast.NewNormalFunctionTypeParamKind(make([]ast.FunctionTypeParam, 0)),
 			span,
-			rgbObjType(span),
+			RgbColorType(span),
 			span,
 		).(ast.FunctionType),
 		Modifier: pAst.FN_MODIFIER_PUB,
@@ -239,7 +239,7 @@ func DeviceSetColorSignature(span errors.Span) ast.TemplateMethod {
 			ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
 				ast.NewFunctionTypeParam(
 					pAst.NewSpannedIdent("color", span),
-					rgbObjType(span),
+					RgbColorType(span),
 					nil,
 				),
 			}), span, ast.NewNullType(span), span,
@@ -320,6 +320,8 @@ func deviceTemplate(span errors.Span) DeviceTemplate {
 				DeviceFunctionReportPowerState:     DeviceReportPowerStateSignature(span),
 				DeviceFunctionReportPowerDraw:      DeviceReportPowerDrawSignature(span),
 				DeviceFunctionSetPower:             DeviceSetPowerSignature(span),
+				DeviceFunctionReportColor:          DeviceReportColorSignature(span),
+				DeviceFunctionSetColor:             DeviceSetColorSignature(span),
 				DeviceFunctionReportDim:            DeviceReportDimSignature(span),
 				DeviceFunctionSetDim:               DeviceDimSignature(span),
 			},

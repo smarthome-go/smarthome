@@ -14,6 +14,7 @@ export interface DeviceExtractions {
     hmsErrors: homescriptError[];
     config: ConfigSpecWrapper,
     powerInformation: DevicePowerInformation,
+    color: DeviceColor | null,
     dimmables: DeviceDimmable[],
     sensors: DeviceSensor[],
 }
@@ -48,6 +49,12 @@ export interface DeviceDimmable {
     value: number,
     label: string,
     range: DimmableRange
+}
+
+export interface DeviceColor {
+    r: number,
+    g: number,
+    b: number,
 }
 
 export interface DeviceSensor {

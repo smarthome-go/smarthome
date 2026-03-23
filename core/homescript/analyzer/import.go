@@ -177,6 +177,16 @@ var builtinImportHandlers = map[types.ImportKey]importHandler{
 			Template: nil,
 		}, true
 	},
+	{ModuleName: "driver", ValueName: "Color"}: func(_ types.ExecutionContext, span errors.Span, kind pAst.IMPORT_KIND) (analyzer.BuiltinImport, bool) {
+		if kind != pAst.IMPORT_KIND_TYPE {
+			return analyzer.BuiltinImport{}, false
+		}
+
+		return analyzer.BuiltinImport{
+			Type:     driver.RgbColorType(span),
+			Template: nil,
+		}, true
+	},
 	{ModuleName: "mqtt", ValueName: types.TriggerMqttMessageIdent}: func(_ types.ExecutionContext, span errors.Span, kind pAst.IMPORT_KIND) (analyzer.BuiltinImport, bool) {
 		if kind != pAst.IMPORT_KIND_TRIGGER {
 			return analyzer.BuiltinImport{}, false

@@ -1,4 +1,4 @@
-export type DeviceCapability = 'base' | 'power' | 'dimmable' | 'sensor'
+export type DeviceCapability = 'base' | 'power' | 'dimmable' | 'sensor' | 'color'
 
 export interface DriverDeviceCapabilitiesInfo {
     vendorId: string,

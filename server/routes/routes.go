@@ -102,6 +102,7 @@ func NewRouter() *mux.Router {
 	// TODO: Device actions???
 	r.HandleFunc("/api/devices/action/power", mdl.ApiAuth(mdl.Perm(api.DeviceActionHandlerFactory(driver.DriverActionKindSetPower), database.PermissionPower))).Methods("POST")
 	r.HandleFunc("/api/devices/action/dim", mdl.ApiAuth(mdl.Perm(api.DeviceActionHandlerFactory(driver.DriverActionKindDim), database.PermissionPower))).Methods("POST")
+	r.HandleFunc("/api/devices/action/color", mdl.ApiAuth(mdl.Perm(api.DeviceActionHandlerFactory(driver.DriverActionKindSetColor), database.PermissionPower))).Methods("POST")
 
 	// Cameras
 	r.HandleFunc("/api/camera/add", mdl.ApiAuth(mdl.Perm(api.CreateCamera, database.PermissionModifyRooms))).Methods("POST")

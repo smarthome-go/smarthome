@@ -1,13 +1,20 @@
 <script lang="ts">
     import Ripple from "@smui/ripple";
+    import { createEventDispatcher } from "svelte";
     import { v4 as uuidv4 } from "uuid";
     export let value = "#ffffff";
 
     const id = `${new Date().getTime()}-${uuidv4()}`;
+    const dispatch = createEventDispatcher<{ change: { value: string } }>();
+
+    function handleChange(event: Event) {
+        const target = event.target as HTMLInputElement;
+        dispatch("change", { value: target.value });
+    }
 </script>
 
 <span>
-    <input bind:value type="color" name="color" {id} />
+    <input bind:value type="color" name="color" {id} on:change={handleChange} />
     <label use:Ripple={{ surface: true }} for={id}>PICK COLOR</label>
 </span>
 

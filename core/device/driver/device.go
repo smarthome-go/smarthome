@@ -32,6 +32,7 @@ type DeviceExtractions struct {
 
 	// Device-specific information.
 	PowerInformation    DevicePowerInformation                   `json:"powerInformation"`
+	ColorInformation    *DriverActionReportColorOutput           `json:"color,omitempty"`
 	DimmableInformation []DriverActionReportDimOutput            `json:"dimmables"`
 	SensorReadings      []DriverActionReportSensorReadingsOutput `json:"sensors"`
 }
@@ -238,6 +239,19 @@ func (d DriverManager) EnrichDevice(device database.ShallowDevice, fittingDriver
 		dimmableInformation = dimmableInformationTemp
 	}
 
+	var colorInformation *DriverActionReportColorOutput
+	if fittingDriver.DeviceSupports(DeviceCapabilityColor) {
+		colorTemp, hmsErrs, err := d.InvokeDriverReportColor(invocationID)
+		if err != nil {
+			return RichDevice{}, err
+		}
+		if hmsErrs != nil {
+			hmsErrors = append(hmsErrors, hmsErrs...)
+		}
+
+		colorInformation = &colorTemp
+	}
+
 	var sensorReadings []DriverActionReportSensorReadingsOutput
 	if fittingDriver.DeviceSupports(DeviceCapabilitySensor) {
 		readingsTemp, hmsErrs, err := d.InvokeDriverReportSensors(invocationID)
@@ -268,6 +282,7 @@ func (d DriverManager) EnrichDevice(device database.ShallowDevice, fittingDriver
 				State:          powerStateInfo.State,
 				PowerDrawWatts: powerDrawInfo.Watts,
 			},
+			ColorInformation:    colorInformation,
 			DimmableInformation: dimmableInformation,
 			SensorReadings:      sensorReadings,
 		},

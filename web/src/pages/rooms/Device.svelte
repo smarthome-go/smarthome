@@ -7,13 +7,14 @@
     import EditDevice from './dialogs/device/EditDevice.svelte'
     import DeviceInfo from './dialogs/device/DeviceInfo.svelte'
     import Ripple from '@smui/ripple'
-    import type { DeviceExtractions, HydratedDeviceResponse, ShallowDeviceResponse } from '../../device';
+    import type { DeviceColor, DeviceExtractions, HydratedDeviceResponse, ShallowDeviceResponse } from '../../device';
     import Slider from '@smui/slider';
     import FormField from '@smui/form-field';
     // import Button, { Label, Icon } from '@smui/button';
     // import Terminal from '../../components/Homescript/ExecutionResultPopup/Terminal.svelte'
     import ExecutionResultPopup from '../../components/Homescript/ExecutionResultPopup/ExecutionResultPopup.svelte'
     import GenericDevice from './GenericDevice.svelte';
+    import ColorPicker from '../../components/ColorPicker.svelte';
 
     import type { DeviceCapability, ValidationError } from '../../driver';
     import type { homescriptError } from '../../homescript';
@@ -48,6 +49,7 @@
             state: false,
             powerDrawWatts: 0
         },
+        color: null,
         dimmables: [],
         sensors: [],
     }
@@ -57,6 +59,28 @@
 
 
     let localStorageKey = `amount_of_sliders_for_device_id__${shallow.id}`
+    let colorHex = '#ffffff'
+    let colorReady = false
+    let colorLastSent = ''
+
+    function rgbToHex(color: DeviceColor): string {
+        let toHex = (value: number) => Math.max(0, Math.min(255, value)).toString(16).padStart(2, '0')
+        return `#${toHex(color.r)}${toHex(color.g)}${toHex(color.b)}`
+    }
+
+    function hexToRgb(hex: string): DeviceColor | null {
+        let cleaned = hex.startsWith('#') ? hex.slice(1) : hex
+        if (cleaned.length !== 6) {
+            return null
+        }
+        let r = parseInt(cleaned.slice(0, 2), 16)
+        let g = parseInt(cleaned.slice(2, 4), 16)
+        let b = parseInt(cleaned.slice(4, 6), 16)
+        if ([r, g, b].some((value) => Number.isNaN(value))) {
+            return null
+        }
+        return { r, g, b }
+    }
 
     async function loadExtractions() {
         // TODO: bug
@@ -80,6 +104,14 @@
             // Write the amount of sliders into the cache for smoother loading.
             if (extractionsTemp.dimmables != null) {
                 writeNumSliders(extractionsTemp.dimmables.length)
+            }
+
+            colorReady = false
+            if (hasCapability(extractionsTemp.config.capabilities, 'color')) {
+                let nextColor = extractionsTemp.color ? rgbToHex(extractionsTemp.color) : '#ffffff'
+                colorHex = nextColor
+                colorLastSent = nextColor
+                colorReady = true
             }
 
             extractionsLoaded = true
@@ -198,6 +230,54 @@
         dispatch('dimDone', null)
     }
 
+    async function setColor(hex: string) {
+        let rgb = hexToRgb(hex)
+        if (rgb == null) {
+            $createSnackbar(`Invalid color value '${hex}'`)
+            return
+        }
+        dispatch('color', null)
+        requests++
+        try {
+            const res = await (
+                await fetch('/api/devices/action/color', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        deviceId: shallow.id,
+                        color: rgb,
+                    }),
+                })
+            ).json()
+
+            if (!res.success) {
+                errors = []
+                for (let error of (res.hmsErrors as homescriptError[])) {
+                    pushUserError(error)
+                }
+            }
+        } catch (err) {
+            $createSnackbar(
+                `Failed to set device '${shallow.name}' color to ${hex}: ${err}`,
+            )
+        }
+        await sleep(500)
+        requests--
+        dispatch('colorDone', null)
+    }
+
+    function onColorChange(event: CustomEvent<{ value: string }>) {
+        if (!colorReady) {
+            return
+        }
+        let nextColor = event.detail.value
+        if (nextColor === colorLastSent) {
+            return
+        }
+        colorLastSent = nextColor
+        setColor(nextColor)
+    }
+
     let homescriptCode: Map<string, string> = new Map()
     let sourcesUpToDate = false
 
@@ -265,6 +345,9 @@
                     break
                 case 'dimmable':
                     height += ex.dimmables.length
+                    break
+                case 'color':
+                    height += 1
                     break
                 case 'power':
                     break
@@ -340,7 +423,7 @@
     {loading}
     {isInitialLoad}
     {hasEditPermission}
-    isTall={hasCapability(capabilities, 'dimmable') || hasCapability(capabilities, 'sensor')}
+    isTall={hasCapability(capabilities, 'dimmable') || hasCapability(capabilities, 'sensor') || hasCapability(capabilities, 'color')}
     on:info_show={() => deviceInfoOpen = true}
     on:edit_show={showEditDevice}
     {hasErrors}
@@ -380,6 +463,24 @@
                         </div>
                     </div>
                 {/each}
+            </div>
+        {/if}
+
+        {#if hasCapability(capabilities, 'color')}
+            <div class="device__color">
+                <div class="device__color__sep"/>
+                <div class="device__color__item">
+                    <span class="device__color__item__name text-hint">Color</span>
+                    <div class="device__color__item__body">
+                        <div class="device__color__item__body__left">
+                            <div
+                                class="device__color__preview"
+                                style:background-color={colorHex}
+                            />
+                            <ColorPicker bind:value={colorHex} on:change={onColorChange} />
+                        </div>
+                    </div>
+                </div>
             </div>
         {/if}
 
@@ -546,6 +647,58 @@
                     }
                 }
             }
+        }
+
+        &__color {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 0;
+
+            &__sep {
+                @include separator;
+            }
+
+            &__item {
+                background-color: var(--clr-height-1-3);
+                border-radius: 0.3rem;
+                padding: 0.8rem;
+                padding-left: 0;
+                display: flex;
+                flex-direction: column;
+
+                &__name {
+                    font-size: .65rem;
+                    margin-bottom: -.5rem;
+                    padding-left: .85rem;
+                }
+
+                &__body {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    &__left {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                        width: 100%;
+                        justify-content: center;
+                    }
+
+                    &__right {
+                        display: none;
+                    }
+                }
+            }
+        }
+
+        &__color__preview {
+            width: 1.4rem;
+            height: 1.4rem;
+            border-radius: 50%;
+            background-color: #ffffff;
+            border: 1px solid var(--clr-height-3-6);
+            flex-shrink: 0;
         }
     }
 </style>
