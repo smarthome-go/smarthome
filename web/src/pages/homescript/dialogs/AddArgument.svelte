@@ -16,7 +16,7 @@
     // Input data
     let argKey = "";
     let prompt = "";
-    let inputType: "string" | "number" | "boolean" = "string";
+    let inputType: "string" | "number" | "boolean" | "rgb_color" = "string";
     let display:
         | "type_default"
         | "string_switches"

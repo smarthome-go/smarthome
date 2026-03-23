@@ -10,6 +10,7 @@
     import List, { Graphic, Item } from '@smui/list'
     import Radio from '@smui/radio'
     import FormField from '@smui/form-field'
+    import ColorPicker from '../../ColorPicker.svelte'
 
     // Keeps track of whether the dialog should be open or not
     export let open = false
@@ -63,6 +64,7 @@
         // Reset all placeholders to their default value
         booleanPlaceholder = false
         numberPlaceholder = 0
+        colorPlaceholder = '#ffffff'
 
         currentArgumentIndex++
     }
@@ -75,6 +77,7 @@
     // Placeholders for conversion
     let numberPlaceholder = 0
     let booleanPlaceholder = false
+    let colorPlaceholder = '#ffffff'
 
     // Conversion functions
     function updateFromNumber() {
@@ -91,6 +94,41 @@
 
     function updateFromBoolean() {
         argumentsWithValues[currentArgumentIndex].value = booleanPlaceholder.toString()
+    }
+
+    function hexToRgbString(hex: string): string | null {
+        let cleaned = hex.startsWith('#') ? hex.slice(1) : hex
+        if (cleaned.length !== 6) {
+            return null
+        }
+        let r = parseInt(cleaned.slice(0, 2), 16)
+        let g = parseInt(cleaned.slice(2, 4), 16)
+        let b = parseInt(cleaned.slice(4, 6), 16)
+        if ([r, g, b].some((value) => Number.isNaN(value))) {
+            return null
+        }
+        return `${r},${g},${b}`
+    }
+
+    function rgbStringToHex(value: string): string | null {
+        let parts = value.split(',').map((v) => v.trim())
+        if (parts.length !== 3) {
+            return null
+        }
+        let nums = parts.map((v) => Number.parseInt(v, 10))
+        if (nums.some((v) => Number.isNaN(v))) {
+            return null
+        }
+        let toHex = (num: number) => Math.max(0, Math.min(255, num)).toString(16).padStart(2, '0')
+        return `#${toHex(nums[0])}${toHex(nums[1])}${toHex(nums[2])}`
+    }
+
+    function updateFromColor() {
+        let rgbValue = hexToRgbString(colorPlaceholder)
+        if (rgbValue == null) {
+            return
+        }
+        argumentsWithValues[currentArgumentIndex].value = rgbValue
     }
 
     // Change listeners to trigger conversion
@@ -116,6 +154,13 @@
         booleanPlaceholder !== undefined
     )
         updateFromBoolean()
+
+    $: if (
+        currentArg.inputType === 'rgb_color' &&
+        argumentsWithValues.length > 0 &&
+        colorPlaceholder !== undefined
+    )
+        updateFromColor()
 
     /*
         //// Switches ////
@@ -151,9 +196,25 @@
     */
     $: if (open) createArgsWithValue()
     function createArgsWithValue() {
-        for (let arg of args) argumentsWithValues.push({ key: arg.argKey, value: '' })
-        if (args[0].inputType === 'boolean') {
-            updateFromBoolean()
+        argumentsWithValues = args.map((arg) => {
+            if (arg.inputType === 'rgb_color') {
+                return { key: arg.argKey, value: '255,255,255' }
+            }
+            return { key: arg.argKey, value: '' }
+        })
+        if (args.length === 0) {
+            return
+        }
+        if (args[0].inputType === 'boolean') updateFromBoolean()
+        if (args[0].inputType === 'number') updateFromNumber()
+        if (args[0].inputType === 'rgb_color') updateFromColor()
+    }
+
+    $: if (argumentsWithValues.length > 0 && currentArg.inputType === 'rgb_color') {
+        let currentValue = argumentsWithValues[currentArgumentIndex]?.value ?? ''
+        let hexValue = rgbStringToHex(currentValue)
+        if (hexValue !== null) {
+            colorPlaceholder = hexValue
         }
     }
 </script>
@@ -176,7 +237,8 @@
             <div
                 class="inputs"
                 class:centered={currentArg.display === 'number_hour' ||
-                    currentArg.display === 'number_minute'}
+                    currentArg.display === 'number_minute' ||
+                    currentArg.inputType === 'rgb_color'}
             >
                 {#if currentArg.inputType === 'string'}
                     {#if currentArg.display === 'type_default'}
@@ -267,6 +329,14 @@
                             {/each}
                         </List>
                     {/if}
+                {:else if currentArg.inputType === 'rgb_color'}
+                    <div class="color-input">
+                        <div
+                            class="color-input__preview"
+                            style:background-color={colorPlaceholder}
+                        />
+                        <ColorPicker bind:value={colorPlaceholder} />
+                    </div>
                 {/if}
             </div>
         {/if}
@@ -313,6 +383,19 @@
         &.selection {
             padding-right: 24px;
             padding-bottom: 20px;
+        }
+    }
+
+    .color-input {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+
+        &__preview {
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            border: 1px solid var(--clr-height-3-6);
         }
     }
 </style>

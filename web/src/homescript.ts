@@ -107,7 +107,7 @@ export interface homescriptArgData {
     homescriptId: string
     prompt: string
     mdIcon: string
-    inputType: 'string' | 'number' | 'boolean'
+    inputType: 'string' | 'number' | 'boolean' | 'rgb_color'
     display: 'type_default' | 'string_switches' | 'boolean_yes_no' | 'boolean_on_off' | 'number_hour' | 'number_minute'
 }
 
@@ -121,16 +121,17 @@ export interface DisplayOpt {
         | 'number_hour'
         | 'number_minute'
     label: string
-    type: 'string' | 'number' | 'boolean'
+    type: 'string' | 'number' | 'boolean' | 'rgb_color'
 }
 
 // Used for displaying the options for `inputType` and `display`
-export const inputTypeOpts = ['string', 'number', 'boolean']
+export const inputTypeOpts = ['string', 'number', 'boolean', 'rgb_color']
 export const displayOpts: DisplayOpt[] = [
     // Default display
     { identifier: 'type_default', label: 'Type default', type: 'string' },
     { identifier: 'type_default', label: 'Type default', type: 'number' },
     { identifier: 'type_default', label: 'Type default', type: 'boolean' },
+    { identifier: 'type_default', label: 'Color picker', type: 'rgb_color' },
     // Switch listing as string
     {
         identifier: 'string_switches',

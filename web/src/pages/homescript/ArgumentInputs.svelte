@@ -8,6 +8,13 @@
 
     // Is bound externally in order to allow editing
     export let data: homescriptArgData;
+
+    const inputTypeLabels: Record<string, string> = {
+        string: "String",
+        number: "Number",
+        boolean: "Boolean",
+        rgb_color: "RGB color",
+    };
 </script>
 
 <div>
@@ -17,7 +24,7 @@
     <div class="selectors">
         <Select bind:value={data.inputType} label="Input data-type">
             {#each inputTypeOpts as type}
-                <Option value={type}>{type}</Option>
+                <Option value={type}>{inputTypeLabels[type] ?? type}</Option>
             {/each}
         </Select>
         <Select bind:value={data.display} label="Display style">

@@ -33,7 +33,7 @@
     async function createHomescriptArg(
         key: string,
         prompt: string,
-        inputType: 'string' | 'number' | 'boolean',
+        inputType: 'string' | 'number' | 'boolean' | 'rgb_color',
         display:
             | 'type_default'
             | 'string_switches'

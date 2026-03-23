@@ -11,9 +11,10 @@ type HmsArgInputType string
 // Type conversion is handled by the target Homescript
 // These types act as a hint for the user and are required for the GUI to display an adequate input
 var (
-	String  HmsArgInputType = "string"
-	Number  HmsArgInputType = "number"
-	Boolean HmsArgInputType = "boolean"
+	String   HmsArgInputType = "string"
+	Number   HmsArgInputType = "number"
+	Boolean  HmsArgInputType = "boolean"
+	RgbColor HmsArgInputType = "rgb_color"
 )
 
 type HmsArgDisplay string
@@ -55,7 +56,8 @@ func createHomescriptArgTable() error {
 		InputType ENUM(
 			'string',
 			'number',
-			'boolean'
+			'boolean',
+			'rgb_color'
 		),
 		Display ENUM(
 			'type_default',

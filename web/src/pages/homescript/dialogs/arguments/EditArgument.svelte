@@ -32,7 +32,7 @@
     let argKeyBefore: string;
     let promptBefore: string;
     let mdIconBefore: string;
-    let inputTypeBefore: "string" | "number" | "boolean";
+    let inputTypeBefore: "string" | "number" | "boolean" | "rgb_color";
     let displayBefore:
         | "type_default"
         | "string_switches"
