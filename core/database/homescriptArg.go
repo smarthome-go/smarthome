@@ -167,6 +167,10 @@ func ListAllHomescriptArgsOfUser(username string) ([]HomescriptArg, error) {
 		}
 		args = append(args, currentArg)
 	}
+	if err := res.Err(); err != nil {
+		log.Error("Failed to list HomescriptArgs of user: result iteration failed: ", err.Error())
+		return nil, err
+	}
 	return args, nil
 }
 
@@ -211,6 +215,10 @@ func ListArgsOfHomescript(homescriptId string) ([]HomescriptArg, error) {
 			return nil, err
 		}
 		args = append(args, currentArg)
+	}
+	if err := res.Err(); err != nil {
+		log.Error("Failed to list HomescriptArgs of script: result iteration failed: ", err.Error())
+		return nil, err
 	}
 	return args, nil
 }

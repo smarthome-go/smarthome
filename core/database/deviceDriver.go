@@ -228,6 +228,7 @@ func GetDriverSources(ids []DriverTuple) (drivers map[DriverTuple]string, allFou
 		log.Errorf("Could not list driver sources: preparing query failed: %s\n", err.Error())
 		return nil, false, err
 	}
+	defer query.Close()
 
 	for _, id := range ids {
 		row := query.QueryRow(id.VendorID, id.ModelID)
@@ -277,7 +278,7 @@ func ListDeviceDrivers() ([]DeviceDriver, error) {
 		return nil, err
 	}
 	defer res.Close()
-	var drivers []DeviceDriver = make([]DeviceDriver, 0)
+	drivers := make([]DeviceDriver, 0)
 	for res.Next() {
 		var driver DeviceDriver
 		err := res.Scan(
@@ -294,6 +295,10 @@ func ListDeviceDrivers() ([]DeviceDriver, error) {
 			return nil, err
 		}
 		drivers = append(drivers, driver)
+	}
+	if err := res.Err(); err != nil {
+		log.Error("Failed to list device drivers: result iteration failed: ", err.Error())
+		return nil, err
 	}
 
 	return drivers, nil

@@ -115,21 +115,21 @@ func Init(config database.ServerConfig) error {
 	log.Debugf("Value cache initialized.")
 
 	if err := automation.InitManager(hmsManager, config); err != nil {
-		return fmt.Errorf("Failed to activate automation system: %s", err.Error())
+		return fmt.Errorf("failed to activate automation system: %s", err.Error())
 	}
 
 	notify.InitManager(hmsManager, automation.Manager)
 
 	if err := scheduler.InitManager(hmsManager); err != nil {
-		return fmt.Errorf("Failed to activate scheduler system: %s", err.Error())
+		return fmt.Errorf("failed to activate scheduler system: %s", err.Error())
 	}
 
 	if err := reminder.InitSchedule(); err != nil {
-		return fmt.Errorf("Failed to activate reminder scheduler: %s", err.Error())
+		return fmt.Errorf("failed to activate reminder scheduler: %s", err.Error())
 	}
 
 	if err := driver.StartPowerUsageSnapshotScheduler(); err != nil {
-		return fmt.Errorf("Failed to start periodic power usage snapshot scheduler: %s", err.Error())
+		return fmt.Errorf("failed to start periodic power usage snapshot scheduler: %s", err.Error())
 	}
 
 	//
@@ -166,7 +166,7 @@ func Reload() error {
 	}
 
 	if !found {
-		msg := "Could not reload core: no server config present"
+		msg := "could not reload core: no server config present"
 		log.Error(msg)
 		return errors.New(msg)
 	}

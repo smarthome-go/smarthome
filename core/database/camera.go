@@ -123,6 +123,10 @@ func ListCameras() ([]Camera, error) {
 		}
 		cameras = append(cameras, camera)
 	}
+	if err := res.Err(); err != nil {
+		log.Error("Failed to list cameras: result iteration failed: ", err.Error())
+		return nil, err
+	}
 	return cameras, nil
 }
 
@@ -151,6 +155,10 @@ func ListCamerasRedacted() ([]RedactedCamera, error) {
 			return nil, err
 		}
 		cameras = append(cameras, camera)
+	}
+	if err := res.Err(); err != nil {
+		log.Error("Failed to list all cameras (redacted): result iteration failed: ", err.Error())
+		return nil, err
 	}
 	return cameras, nil
 }
@@ -194,6 +202,10 @@ func ListUserCamerasQuery(username string) ([]Camera, error) {
 			return nil, err
 		}
 		cameras = append(cameras, camera)
+	}
+	if err := res.Err(); err != nil {
+		log.Error("Could not list user cameras: result iteration failed: ", err.Error())
+		return nil, err
 	}
 	return cameras, nil
 }

@@ -40,7 +40,7 @@ type DriverActionOutputPayload interface {
 type DriverActionHealthCheck struct {
 }
 
-func (self DriverActionHealthCheck) Kind() DriverActionKind {
+func (action DriverActionHealthCheck) Kind() DriverActionKind {
 	return DriverActionKindHealthCheck
 }
 
@@ -49,7 +49,7 @@ type DriverActionHealthCheckOutput struct {
 	Errors  []string
 }
 
-func (self DriverActionHealthCheckOutput) Kind() DriverActionKind {
+func (action DriverActionHealthCheckOutput) Kind() DriverActionKind {
 	return DriverActionKindHealthCheck
 }
 
@@ -64,7 +64,7 @@ type DriverActionReportSensorReadingsOutput struct {
 	Unit        string `json:"unit"`
 }
 
-func (self DriverActionReportSensorReadingsOutput) Kind() DriverActionKind {
+func (action DriverActionReportSensorReadingsOutput) Kind() DriverActionKind {
 	return DriverActionKindReportSensorReadings
 }
 
@@ -74,7 +74,7 @@ func (self DriverActionReportSensorReadingsOutput) Kind() DriverActionKind {
 
 type DriverActionGetPowerState struct{}
 
-func (self DriverActionGetPowerState) Kind() DriverActionKind {
+func (action DriverActionGetPowerState) Kind() DriverActionKind {
 	return DriverActionKindReportPowerState
 }
 
@@ -82,7 +82,7 @@ type DriverActionGetPowerStateOutput struct {
 	State bool `json:"state"`
 }
 
-func (self DriverActionGetPowerStateOutput) Kind() DriverActionKind {
+func (action DriverActionGetPowerStateOutput) Kind() DriverActionKind {
 	return DriverActionKindReportPowerState
 }
 
@@ -92,7 +92,7 @@ func (self DriverActionGetPowerStateOutput) Kind() DriverActionKind {
 
 type DriverActionGetPowerDraw struct{}
 
-func (self DriverActionGetPowerDraw) Kind() DriverActionKind {
+func (action DriverActionGetPowerDraw) Kind() DriverActionKind {
 	return DriverActionKindReportPowerDraw
 }
 
@@ -100,7 +100,7 @@ type DriverActionGetPowerDrawOutput struct {
 	Watts uint `json:"watts"`
 }
 
-func (self DriverActionGetPowerDrawOutput) Kind() DriverActionKind {
+func (action DriverActionGetPowerDrawOutput) Kind() DriverActionKind {
 	return DriverActionKindReportPowerDraw
 }
 
@@ -112,7 +112,7 @@ type DriverActionPower struct {
 	State bool
 }
 
-func (self DriverActionPower) Kind() DriverActionKind {
+func (action DriverActionPower) Kind() DriverActionKind {
 	return DriverActionKindSetPower
 }
 
@@ -120,7 +120,7 @@ type DriverActionPowerOutput struct {
 	Changed bool `json:"changed"`
 }
 
-func (self DriverActionPowerOutput) Kind() DriverActionKind {
+func (action DriverActionPowerOutput) Kind() DriverActionKind {
 	return DriverActionKindSetPower
 }
 
@@ -130,7 +130,7 @@ func (self DriverActionPowerOutput) Kind() DriverActionKind {
 
 type DriverActionReportDim struct{}
 
-func (self DriverActionReportDim) Kind() DriverActionKind {
+func (action DriverActionReportDim) Kind() DriverActionKind {
 	return DriverActionKindReportDim
 }
 
@@ -146,7 +146,7 @@ type DriverActionReportDimOutput struct {
 	Range DriverActionReportRange `json:"range"`
 }
 
-func (self DriverActionReportDimOutput) Kind() DriverActionKind {
+func (action DriverActionReportDimOutput) Kind() DriverActionKind {
 	return DriverActionKindReportDim
 }
 
@@ -159,7 +159,7 @@ type DriverActionDim struct {
 	Label string
 }
 
-func (self DriverActionDim) Kind() DriverActionKind {
+func (action DriverActionDim) Kind() DriverActionKind {
 	return DriverActionKindDim
 }
 
@@ -167,7 +167,7 @@ type DriverActionDimOutput struct {
 	Changed bool `json:"changed"`
 }
 
-func (self DriverActionDimOutput) Kind() DriverActionKind {
+func (action DriverActionDimOutput) Kind() DriverActionKind {
 	return DriverActionKindDim
 }
 
@@ -177,7 +177,7 @@ func (self DriverActionDimOutput) Kind() DriverActionKind {
 
 type DriverActionReportColor struct{}
 
-func (self DriverActionReportColor) Kind() DriverActionKind {
+func (action DriverActionReportColor) Kind() DriverActionKind {
 	return DriverActionKindReportColor
 }
 
@@ -187,7 +187,7 @@ type DriverActionReportColorOutput struct {
 	B uint8 `json:"b"`
 }
 
-func (self DriverActionReportColorOutput) Kind() DriverActionKind {
+func (action DriverActionReportColorOutput) Kind() DriverActionKind {
 	return DriverActionKindReportColor
 }
 
@@ -201,13 +201,13 @@ type DriverActionSetColor struct {
 	B uint8
 }
 
-func (self DriverActionSetColor) Kind() DriverActionKind {
+func (action DriverActionSetColor) Kind() DriverActionKind {
 	return DriverActionKindSetColor
 }
 
 type DriverActionSetColorOutput struct {
 }
 
-func (self DriverActionSetColorOutput) Kind() DriverActionKind {
+func (action DriverActionSetColorOutput) Kind() DriverActionKind {
 	return DriverActionKindSetColor
 }

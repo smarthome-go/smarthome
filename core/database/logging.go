@@ -169,5 +169,9 @@ func GetLogs() ([]LogEvent, error) {
 			logs = append(logs, logItem)
 		}
 	}
-	return logs, err
+	if err := res.Err(); err != nil {
+		log.Error("Could not list all logs: result iteration failed: ", err.Error())
+		return nil, err
+	}
+	return logs, nil
 }

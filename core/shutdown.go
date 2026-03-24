@@ -203,7 +203,7 @@ func Shutdown(terminateProcess bool) error {
 	}
 
 	if !found {
-		return errors.New("Could not shutdown: not server configuration found")
+		return errors.New("could not shutdown: no server configuration found")
 	}
 
 	return ShutdownWithConfig(config, terminateProcess)
@@ -211,6 +211,11 @@ func Shutdown(terminateProcess bool) error {
 
 func shutdownMQTT() {
 	log.Debug("Initiating MQTT shutdown...")
+	if dispatcher.Manager == nil {
+		log.Debug("MQTT manager not initialized: skipping MQTT shutdown")
+		return
+	}
+
 	dispatcher.Manager.ShutdownChan <- struct{}{}
 
 	timeout := time.Second * 10

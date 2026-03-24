@@ -100,6 +100,10 @@ func ListUsers() ([]User, error) {
 		}
 		userList = append(userList, user)
 	}
+	if err := res.Err(); err != nil {
+		log.Error("Could not list users: result iteration failed: ", err.Error())
+		return nil, err
+	}
 	return userList, nil
 }
 

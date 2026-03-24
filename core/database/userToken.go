@@ -99,6 +99,10 @@ func GetUserTokensOfUser(username string) ([]UserToken, error) {
 		}
 		tokens = append(tokens, row)
 	}
+	if err := res.Err(); err != nil {
+		log.Error("Failed to get user tokens of user: result iteration failed: ", err.Error())
+		return nil, err
+	}
 	return tokens, nil
 }
 

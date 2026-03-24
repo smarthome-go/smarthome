@@ -10,7 +10,7 @@ import (
 //
 
 func createHomescriptOwnerTable() error {
-	_, err := db.Query(fmt.Sprintf(`
+	if _, err := db.Exec(fmt.Sprintf(`
 	CREATE TABLE
 	IF NOT EXISTS
 	homescriptPermission(
@@ -20,8 +20,7 @@ func createHomescriptOwnerTable() error {
 		REFERENCES user(Username),
 		FOREIGN KEY (HomescriptId)
 		REFERENCES homescript(Id)
-	)`, HOMESCRIPT_ID_LEN))
-	if err != nil {
+	)`, HOMESCRIPT_ID_LEN)); err != nil {
 		log.Error("Failed to create homescript permissions table: Executing query failed: ", err.Error())
 		return err
 	}
@@ -132,6 +131,7 @@ func listHomescriptIdsOfUser(username string) ([]string, error) {
 		log.Errorf("Failed to list homescript IDs of user: executing query failed: %s", err.Error())
 		return nil, err
 	}
+	defer res.Close()
 
 	output := make([]string, 0)
 	for res.Next() {
@@ -141,6 +141,10 @@ func listHomescriptIdsOfUser(username string) ([]string, error) {
 			return nil, err
 		}
 		output = append(output, buf)
+	}
+	if err := res.Err(); err != nil {
+		log.Errorf("Failed to list homescript IDs of user: result iteration failed: %s", err.Error())
+		return nil, err
 	}
 
 	return output, nil

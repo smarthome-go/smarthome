@@ -42,10 +42,10 @@ type InterpreterExecutor struct {
 	manager types.Manager
 }
 
-func (self InterpreterExecutor) Free() error {
+func (exec InterpreterExecutor) Free() error {
 	var errRes error
 
-	for _, registration := range *self.registrations {
+	for _, registration := range *exec.registrations {
 		// Return the first error that is found
 		if err := dispatcher.Instance.Unregister(registration); err != nil && errRes == nil {
 			errRes = err
@@ -67,7 +67,7 @@ func NewInterpreterExecutor(
 	singletons map[string]value.Value,
 	context types.ExecutionContext,
 	stdin *types.StdinBuffer,
-	mananger types.Manager,
+	manager types.Manager,
 ) InterpreterExecutor {
 	registrations := make([]dispatcherT.RegistrationID, 0)
 	onKillCallbackFuncs := make([]string, 0)
@@ -86,7 +86,7 @@ func NewInterpreterExecutor(
 		cancelation:         cancelation,
 		OnKillCallbackFuncs: &onKillCallbackFuncs,
 		stdin:               stdin,
-		manager:             mananger,
+		manager:             manager,
 	}
 }
 
@@ -96,12 +96,12 @@ func parseDate(year, month, day int) (time.Time, bool) {
 	return t, y == year && int(m) == month && d == day
 }
 
-func (self InterpreterExecutor) LoadSingleton(singletonIdent, moduleName string) (val value.Value, valid bool, err error) {
+func (exec InterpreterExecutor) LoadSingleton(singletonIdent, moduleName string) (val value.Value, valid bool, err error) {
 	// logger.Tracef("Loading singleton `%s` from module `%s`", singletonIdent, moduleName)
-	value, available := self.singletons[singletonIdent]
+	value, available := exec.singletons[singletonIdent]
 
 	if !available {
-		panic(fmt.Sprintf("Singleton `%s` could not be loaded from: %v", singletonIdent, self.singletons))
+		panic(fmt.Sprintf("Singleton `%s` could not be loaded from: %v", singletonIdent, exec.singletons))
 	}
 
 	// disp, e := value.Display()
@@ -115,7 +115,7 @@ func (self InterpreterExecutor) LoadSingleton(singletonIdent, moduleName string)
 	return value, available, nil
 }
 
-func (self InterpreterExecutor) execHelper(
+func (exec InterpreterExecutor) execHelper(
 	username,
 	programID string,
 	arguments map[string]string,
@@ -126,10 +126,10 @@ func (self InterpreterExecutor) execHelper(
 		programID,
 		username,
 		nil,
-		self.cancelation,
-		self.ioWriter,
+		exec.cancelation,
+		exec.ioWriter,
 		nil,
-		self.stdin,
+		exec.stdin,
 		arguments,
 	)
 
@@ -167,7 +167,7 @@ func (self InterpreterExecutor) execHelper(
 	return value.NewValueNull(), nil
 }
 
-func (self InterpreterExecutor) execBuiltin(usernameNeedsToBeSpecified bool, manager types.Manager) value.Value {
+func (exec InterpreterExecutor) execBuiltin(usernameNeedsToBeSpecified bool, manager types.Manager) value.Value {
 	return *value.NewValueBuiltinFunction(func(executor value.Executor, cancelCtx *context.Context, span errors.Span, args ...value.Value) (*value.Value, *value.VmInterrupt) {
 		var username *string
 		// This will be 1 if the username is being read as the first argument.
@@ -175,7 +175,7 @@ func (self InterpreterExecutor) execBuiltin(usernameNeedsToBeSpecified bool, man
 
 		switch usernameNeedsToBeSpecified {
 		case true:
-			if self.context.Kind() == types.HMS_PROGRAM_KIND_USER {
+			if exec.context.Kind() == types.HMS_PROGRAM_KIND_USER {
 				return nil, value.NewVMFatalException(
 					fmt.Sprintf("The usage of the `%s` function in a user environment is not allowed", execUserFnIdent),
 					value.Vm_HostErrorKind,
@@ -187,7 +187,7 @@ func (self InterpreterExecutor) execBuiltin(usernameNeedsToBeSpecified bool, man
 			username = &usernameStr
 			argumentIndexOffset = 1
 		case false:
-			if self.context.Username() == nil {
+			if exec.context.Username() == nil {
 				return nil, value.NewVMFatalException(
 					fmt.Sprintf("The usage of the `%s` function in a non-user environment is not possible", execFnIdent),
 					value.Vm_HostErrorKind,
@@ -196,7 +196,7 @@ func (self InterpreterExecutor) execBuiltin(usernameNeedsToBeSpecified bool, man
 			}
 
 			// TODO: WTF!!!
-			username = self.context.Username()
+			username = exec.context.Username()
 		}
 
 		if username == nil {
@@ -227,7 +227,7 @@ func (self InterpreterExecutor) execBuiltin(usernameNeedsToBeSpecified bool, man
 			)
 		}
 
-		return self.execHelper(
+		return exec.execHelper(
 			*username,
 			programID,
 			arguments,

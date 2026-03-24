@@ -111,6 +111,10 @@ func ListRooms() ([]RoomData, error) {
 		}
 		rooms = append(rooms, roomTemp)
 	}
+	if err := res.Err(); err != nil {
+		log.Error("Failed to list rooms: result iteration failed: ", err.Error())
+		return nil, err
+	}
 	return rooms, nil
 }
 
@@ -183,6 +187,10 @@ func ListPersonalRoomData(username string) ([]RoomData, error) {
 			return nil, err
 		}
 		rooms = append(rooms, roomTemp)
+	}
+	if err := res.Err(); err != nil {
+		log.Error("Failed to list personal room data: result iteration failed: ", err.Error())
+		return nil, err
 	}
 	return rooms, nil
 }

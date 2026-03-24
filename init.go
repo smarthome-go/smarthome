@@ -106,8 +106,9 @@ func runWebServer(configStruct core.Config, serverConfig database.ServerConfig) 
 	ctx = context.WithValue(ctx, ShutdownContextKey, shutdownCtx)
 
 	server := http.Server{
-		Addr:        fmt.Sprintf(":%d", port),
-		BaseContext: func(l net.Listener) context.Context { return ctx },
+		Addr:              fmt.Sprintf(":%d", port),
+		BaseContext:       func(l net.Listener) context.Context { return ctx },
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 	server.RegisterOnShutdown(cancel)
 

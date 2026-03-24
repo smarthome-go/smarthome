@@ -134,6 +134,7 @@ func GetPowerUsageRecords(maxAgeHours int) ([]PowerDataPoint, error) {
 		log.Error("Failed to get power usage records: executing query failed: ", err.Error())
 		return nil, err
 	}
+	defer res.Close()
 	// Append the results to the output slice
 	records := make([]PowerDataPoint, 0)
 	for res.Next() {
@@ -159,14 +160,18 @@ func GetPowerUsageRecords(maxAgeHours int) ([]PowerDataPoint, error) {
 		// Validate that the scanned time is valid
 		if !rowTime.Valid {
 			log.Error("Failed to get power usage records: time value is invalid")
-			return nil, fmt.Errorf("Failed to get power usage records: time value is invalid")
+			return nil, fmt.Errorf("failed to get power usage records: time value is invalid")
 		}
 		// If the time is valid, set it in the actual row
 		row.Time = rowTime.Time
 		// Append the row to the output
 		records = append(records, row)
 	}
-	return records, err
+	if err := res.Err(); err != nil {
+		log.Error("Failed to get power usage records: result iteration failed: ", err.Error())
+		return nil, err
+	}
+	return records, nil
 }
 
 // Deletes power statistics which are older than x hours

@@ -51,6 +51,10 @@ func GetUserCameraPermissions(username string) ([]string, error) {
 		}
 		permissions = append(permissions, permission)
 	}
+	if err := res.Err(); err != nil {
+		log.Error("Could get userCameraPermissions. Result iteration failed: ", err.Error())
+		return permissions, err
+	}
 	return permissions, nil
 }
 

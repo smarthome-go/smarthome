@@ -108,7 +108,7 @@
                     font-size: .8rem;
                     line-height: 1em;
                     background-color: var(--clr-height-1-2);
-                    text-overflow: elipsis;
+                    text-overflow: ellipsis;
                     overflow: hidden;
 
                     i {

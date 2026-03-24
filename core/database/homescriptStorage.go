@@ -85,6 +85,7 @@ func DeleteHomescriptStorageOfUser(username string) error {
 		log.Error(fmt.Sprintf("Could not delete all homescript storage entries of user `%s`: Preparing query failed: %s", username, err.Error()))
 		return err
 	}
+	defer query.Close()
 
 	if _, err := query.Exec(username); err != nil {
 		log.Error(fmt.Sprintf("Could not delete all homescript storage entries of user `%s`: Executing query failed: %s", username, err.Error()))
@@ -104,11 +105,13 @@ func GetPersonalHomescriptStorage(username string) (map[string]string, error) {
 		log.Error(fmt.Sprintf("Could not get homescript storage entries of user `%s`: Preparing query failed: %s", username, err.Error()))
 		return nil, err
 	}
+	defer query.Close()
 	res, err := query.Query(username)
 	if err != nil {
 		log.Error(fmt.Sprintf("Could not get homescript storage entries of user `%s`: Executing query failed: %s", username, err.Error()))
 		return nil, err
 	}
+	defer res.Close()
 
 	output := make(map[string]string)
 
@@ -122,6 +125,10 @@ func GetPersonalHomescriptStorage(username string) (map[string]string, error) {
 		}
 
 		output[key] = value
+	}
+	if err := res.Err(); err != nil {
+		log.Error(fmt.Sprintf("Could not get homescript storage entries of user `%s`: Result iteration failed: %s", username, err.Error()))
+		return nil, err
 	}
 
 	return output, nil

@@ -69,6 +69,7 @@ func (m *Manager) ExtractTriggerAnnotationArgs(
 
 	const maxRuntime = time.Second * 2
 	ctx, cancelFunc := context.WithTimeout(context.Background(), maxRuntime)
+	defer cancelFunc()
 
 	var res types.HmsRes
 	var err error

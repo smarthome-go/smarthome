@@ -15,7 +15,7 @@
     // Is bound externally and provides an abstraction over the dialog's behaviour
     export let open = false;
     $: if (open) {
-        // Automatically open the file picker when the dialog is opened from the outsite
+        // Automatically open the file picker when the dialog is opened from the outside
         fileInput.click();
         // Set the outer API to false again
         open = false;

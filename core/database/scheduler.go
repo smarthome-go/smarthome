@@ -224,6 +224,10 @@ func GetUserSchedules(username string) ([]Schedule, error) {
 		// Append the row to the list
 		schedules = append(schedules, schedule)
 	}
+	if err := res.Err(); err != nil {
+		log.Error("Failed to list user schedules: result iteration failed: ", err.Error())
+		return nil, err
+	}
 	return schedules, nil
 }
 
@@ -282,6 +286,10 @@ func GetSchedules() ([]Schedule, error) {
 
 		// Append the row to the results
 		schedules = append(schedules, schedule)
+	}
+	if err := res.Err(); err != nil {
+		log.Error("Failed to list schedules: result iteration failed: ", err.Error())
+		return nil, err
 	}
 	return schedules, nil
 }

@@ -91,7 +91,7 @@ func TestFlushPowerUsagePoints(t *testing.T) {
 		assert.NoError(t, err)
 		// Must wait around 5 Seconds for the point's time to be considered old (safety measure to be sure)
 		time.Sleep(time.Second * 5)
-		// Delete recors again, this time those older than 1 hour (should be none due to previous deletion)
+		// Delete records again, this time those older than 1 hour (should be none due to previous deletion)
 		affectedRows, err := FlushPowerUsageRecords(1)
 		assert.NoError(t, err)
 		if affectedRows > 0 {

@@ -109,8 +109,8 @@ type CallBackTriggerMqtt struct {
 	Topics []string
 }
 
-func (self CallBackTriggerMqtt) Kind() CallBackTriggerKind { return OnMqttCallBackTriggerKind }
-func (self CallBackTriggerMqtt) Eq(other CallBackTrigger) bool {
+func (trigger CallBackTriggerMqtt) Kind() CallBackTriggerKind { return OnMqttCallBackTriggerKind }
+func (trigger CallBackTriggerMqtt) Eq(other CallBackTrigger) bool {
 	if other.Kind() != OnMqttCallBackTriggerKind {
 		return false
 	}
@@ -119,13 +119,13 @@ func (self CallBackTriggerMqtt) Eq(other CallBackTrigger) bool {
 
 	// Other is subset of self.
 	for _, topic := range otherM.Topics {
-		if !slices.Contains(self.Topics, topic) {
+		if !slices.Contains(trigger.Topics, topic) {
 			return false
 		}
 	}
 
 	// Self is subset of other.
-	for _, topic := range self.Topics {
+	for _, topic := range trigger.Topics {
 		if !slices.Contains(otherM.Topics, topic) {
 			return false
 		}
@@ -134,9 +134,9 @@ func (self CallBackTriggerMqtt) Eq(other CallBackTrigger) bool {
 	return true
 }
 
-func (self CallBackTriggerMqtt) Clone() CallBackTrigger {
+func (trigger CallBackTriggerMqtt) Clone() CallBackTrigger {
 	return CallBackTriggerMqtt{
-		Topics: slices.Clone(self.Topics),
+		Topics: slices.Clone(trigger.Topics),
 	}
 }
 
@@ -157,27 +157,27 @@ type CallBackTriggerAtTime struct {
 	RegisteredAt time.Time
 }
 
-func (self CallBackTriggerAtTime) Kind() CallBackTriggerKind { return AtTimeCallBackTriggerKind }
-func (self CallBackTriggerAtTime) Eq(other CallBackTrigger) bool {
+func (t CallBackTriggerAtTime) Kind() CallBackTriggerKind { return AtTimeCallBackTriggerKind }
+func (t CallBackTriggerAtTime) Eq(other CallBackTrigger) bool {
 	if other.Kind() != AtTimeCallBackTriggerKind {
 		return false
 	}
 
 	otherT := other.(CallBackTriggerAtTime)
 
-	if otherT.Hour == self.Hour && otherT.Minute == self.Minute && otherT.Second == self.Second {
+	if otherT.Hour == t.Hour && otherT.Minute == t.Minute && otherT.Second == t.Second {
 		return true
 	}
 
 	return false
 }
-func (self CallBackTriggerAtTime) Clone() CallBackTrigger {
+func (t CallBackTriggerAtTime) Clone() CallBackTrigger {
 	return CallBackTriggerAtTime{
-		Hour:         self.Hour,
-		Minute:       self.Minute,
-		Second:       self.Second,
-		Mode:         self.Mode,
-		RegisteredAt: self.RegisteredAt,
+		Hour:         t.Hour,
+		Minute:       t.Minute,
+		Second:       t.Second,
+		Mode:         t.Mode,
+		RegisteredAt: t.RegisteredAt,
 	}
 }
 

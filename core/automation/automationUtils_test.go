@@ -134,7 +134,7 @@ func TestRemoveAutomation(t *testing.T) {
 		return
 	}
 	if err := automation.Manager.RemoveAutomation(id); err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 		return
 	}
 	_, found, err = database.GetAutomationById(id)

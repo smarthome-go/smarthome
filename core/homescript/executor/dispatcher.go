@@ -11,7 +11,7 @@ import (
 	hmsTypes "github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
-func (self InterpreterExecutor) RegisterTrigger(
+func (exec InterpreterExecutor) RegisterTrigger(
 	callbackFunctionIdentMangled string,
 	eventTriggerIdent string,
 	span errors.Span,
@@ -24,27 +24,27 @@ func (self InterpreterExecutor) RegisterTrigger(
 		registrationID, err = registerTriggerMessage(
 			callbackFunctionIdentMangled,
 			nil,
-			self.ProgramID,
+			exec.ProgramID,
 			args,
-			self.context,
+			exec.context,
 		)
 	case hmsTypes.TriggerMinuteIdent:
 		registrationID, err = registerTriggerMinute(
 			callbackFunctionIdentMangled,
-			self.ProgramID,
-			self.jobID,
+			exec.ProgramID,
+			exec.jobID,
 			args,
-			self.context,
+			exec.context,
 		)
 	case hmsTypes.TriggerKillIdent:
-		self.registerTriggerKill(callbackFunctionIdentMangled)
+		exec.registerTriggerKill(callbackFunctionIdentMangled)
 	case hmsTypes.TriggerDeviceEvent:
 		registrationID, err = registerTriggerSingleDevice(
 			callbackFunctionIdentMangled,
-			self.ProgramID,
-			self.jobID,
+			exec.ProgramID,
+			exec.jobID,
 			args,
-			self.context,
+			exec.context,
 		)
 	case hmsTypes.TriggerDeviceClassEvent:
 		panic("HALLO")
@@ -57,7 +57,7 @@ func (self InterpreterExecutor) RegisterTrigger(
 		return err
 	}
 
-	*self.registrations = append(*self.registrations, registrationID)
+	*exec.registrations = append(*exec.registrations, registrationID)
 
 	return nil
 }
@@ -178,9 +178,9 @@ func registerTriggerDeviceClass(
 	return id, nil
 }
 
-func (self *InterpreterExecutor) registerTriggerKill(callbackFunctionMangled string) {
-	*self.OnKillCallbackFuncs = append(*self.OnKillCallbackFuncs, callbackFunctionMangled)
-	spew.Dump(self.OnKillCallbackFuncs)
+func (exec *InterpreterExecutor) registerTriggerKill(callbackFunctionMangled string) {
+	*exec.OnKillCallbackFuncs = append(*exec.OnKillCallbackFuncs, callbackFunctionMangled)
+	spew.Dump(exec.OnKillCallbackFuncs)
 }
 
 func registerTriggerMessage(
@@ -190,13 +190,6 @@ func registerTriggerMessage(
 	args []value.Value,
 	context hmsTypes.ExecutionContext,
 ) (types.RegistrationID, error) {
-	topicsStrList := make([]string, 0)
-
-	topicList := args[0].(value.ValueList).Values
-	for _, item := range *topicList {
-		topicsStrList = append(topicsStrList, (*item).(value.ValueString).Inner)
-	}
-
 	callMode := types.CallMode(types.CallModeAdaptive{
 		AllocatingFallback: types.CallModeAllocating{
 			Context: context,

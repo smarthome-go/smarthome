@@ -55,7 +55,7 @@ func BuildDocs(context types.ExecutionContext, outputPath string) error {
 		return fmt.Errorf("create docs directory: %w", err)
 	}
 
-	if err := os.WriteFile(outputPath, data, 0o644); err != nil {
+	if err := os.WriteFile(outputPath, data, 0o600); err != nil {
 		return fmt.Errorf("write docs file: %w", err)
 	}
 

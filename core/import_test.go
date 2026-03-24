@@ -142,7 +142,7 @@ func TestRunSetup(t *testing.T) {
 	if err := os.WriteFile(
 		SetupPath,
 		content,
-		0755,
+		0600,
 	); err != nil {
 		t.Error(err.Error())
 		return
@@ -193,7 +193,7 @@ func TestReadBrokenSetupFile(t *testing.T) {
 	if err := os.WriteFile(
 		SetupPath,
 		[]byte("invalid_content"),
-		0755,
+		0600,
 	); err != nil {
 		t.Error(err.Error())
 		return

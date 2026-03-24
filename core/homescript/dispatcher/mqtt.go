@@ -108,7 +108,7 @@ type MqttManager struct {
 	ShutdownCompleted chan struct{}
 }
 
-var Manager MqttManager
+var Manager *MqttManager
 
 func (m *MqttManager) messageHandler(_ mqtt.Client, _ mqtt.Message) {
 	panic("Unreachable: fallback on default message handler, this callback function is overwritten")
@@ -166,7 +166,7 @@ func NewMqttManager(config database.MqttConfig, retryHook func() error) (m *Mqtt
 		ShutdownCompleted:              make(chan struct{}),
 	}
 
-	Manager = *m
+	Manager = m
 
 	go m.MQTTKeepalive()
 
@@ -278,9 +278,6 @@ func (m *MqttManager) IsConnected() bool {
 }
 
 func (m *MqttManager) Status() error {
-	m.ConnectionInProgressLock.Lock()
-	m.ConnectionInProgressLock.Unlock()
-
 	m.Body.Lock.RLock()
 	isConnected := m.IsConnected()
 	m.Body.Lock.RUnlock()
@@ -296,7 +293,7 @@ func (m *MqttManager) Status() error {
 		m.Body.Lock.RUnlock()
 
 		if isNotConnected {
-			return fmt.Errorf("Not connected to broker")
+			return fmt.Errorf("not connected to broker")
 		}
 	}
 
@@ -358,7 +355,7 @@ func (m *MqttManager) reloadOnReconnect() error {
 }
 
 func (m *MqttManager) unsubscribeAllSubscriptionsNonTracing() {
-	// Unsubsribe from old topics to all topics that were previously subscribed to.
+	// Unsubscribe from old topics to all topics that were previously subscribed to.
 	m.Body.Lock.Lock()
 	subscriptions := m.Body.Content.Subscriptions
 	m.Body.Lock.Unlock()

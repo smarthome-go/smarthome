@@ -287,6 +287,10 @@ func GetUserAutomations(username string) ([]Automation, error) {
 
 		automations = append(automations, automation)
 	}
+	if err := res.Err(); err != nil {
+		log.Error("Failed to list user automations: result iteration failed: ", err.Error())
+		return nil, err
+	}
 	return automations, nil
 }
 
@@ -345,6 +349,10 @@ func GetAutomations() ([]Automation, error) {
 		}
 
 		automations = append(automations, automation)
+	}
+	if err := res.Err(); err != nil {
+		log.Error("Failed to list all automations: result iteration failed: ", err.Error())
+		return nil, err
 	}
 	return automations, nil
 }

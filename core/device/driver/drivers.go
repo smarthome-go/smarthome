@@ -23,11 +23,11 @@ type RichDriver struct {
 	ValidationErrors []diagnostic.Diagnostic `json:"validationErrors"`
 }
 
-func (self RichDriver) DeviceSupports(check DeviceCapability) bool {
-	return self.ExtractedInfo.DeviceConfig.Capabilities.Has(check)
+func (driver RichDriver) DeviceSupports(check DeviceCapability) bool {
+	return driver.ExtractedInfo.DeviceConfig.Capabilities.Has(check)
 }
 
-func (d DriverManager) extractInfoFromDriver(
+func (d *DriverManager) extractInfoFromDriver(
 	vendorID string,
 	modelID string,
 	homescriptCode string,
@@ -357,13 +357,11 @@ func (d *DriverManager) ModifyCode(vendorID, modelID, newCode string) (found boo
 	// Therefore, the code is saved before this.
 	if len(hmsErrs) > 0 {
 		log.Debugf("[singleton] Not updating singleton stores of driver / devices due to errors in new code: %s", hmsErrs[0].Message)
-		return false, fmt.Errorf("Refusing to save broken code"), nil
+		return false, fmt.Errorf("refusing to save broken code"), nil
 	}
 
-	objVal := value.ValueObject{FieldsInternal: make(map[string]*value.Value)}
-
 	// TODO: add proper error handling in here:
-	// - check if there is an erorr and return early
+	// - check if there is an error and return early
 	// - otherwise (no error) load the current data and perform the patches on it.
 
 	ValueStoreLock.RLock()
@@ -372,7 +370,7 @@ func (d *DriverManager) ModifyCode(vendorID, modelID, newCode string) (found boo
 		ModelID:  modelID,
 	}]
 	ValueStoreLock.RUnlock()
-	objVal = (*ApplyNewSchemaOnObjData(old, configInfo.DriverConfig.Info.HmsType)).(value.ValueObject)
+	objVal := (*ApplyNewSchemaOnObjData(old, configInfo.DriverConfig.Info.HmsType)).(value.ValueObject)
 
 	if err := StoreDriverSingletonBackend(vendorID, modelID, objVal); err != nil {
 		return false, nil, err
@@ -454,7 +452,7 @@ func (d *DriverManager) ValidateDeviceConfigurationChange(deviceId string, newCo
 		if len(stackStr) > 0 {
 			stackDisp = fmt.Sprintf("field `%s`: ", strings.Join(stackStr, ""))
 		}
-		return false, fmt.Errorf("Invalid new configuration: %s%s", stackDisp, msg), nil
+		return false, fmt.Errorf("invalid new configuration: %s%s", stackDisp, msg), nil
 	}
 
 	return true, nil, nil
@@ -499,7 +497,7 @@ func (d *DriverManager) ValidateDriverConfigurationChange(vendorID, modelID stri
 		if len(stackStr) > 0 {
 			stackDisp = fmt.Sprintf("field `%s`: ", strings.Join(stackStr, ""))
 		}
-		return false, fmt.Errorf("Invalid new configuration: %s%s", stackDisp, msg), nil
+		return false, fmt.Errorf("invalid new configuration: %s%s", stackDisp, msg), nil
 	}
 
 	return true, nil, nil

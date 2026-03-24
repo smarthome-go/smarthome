@@ -71,7 +71,7 @@ func (d *DriverManager) invokeDriverGeneric(
 		panic(fmt.Sprintf("Driver `%s:%s` not found in the database", vendorId, modelId))
 	}
 
-	// TODO: attaching to existing VM or syncing state accross instances
+	// TODO: attaching to existing VM or syncing state across instances
 
 	var outputBuffer bytes.Buffer
 
@@ -250,7 +250,7 @@ func (d *DriverManager) invokeDriverGeneric(
 //
 
 //
-// TDOO: maybe implement a function factory to create those almost identical functions more ideomatically.
+// TODO: maybe implement a function factory to create those almost identical functions more idiomatically.
 //
 
 func (d *DriverManager) InvokeDriverFunc(
@@ -262,8 +262,8 @@ func (d *DriverManager) InvokeDriverFunc(
 	}
 
 	// TODO: add context support
-	ctx, cancel := context.WithCancel(context.Background())
-	ctx, cancel = context.WithTimeout(ctx, time.Second*10)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
 
 	runResult, dbErr := d.invokeDriverGeneric(
 		ctx,
@@ -304,7 +304,7 @@ func (d *DriverManager) InvokeValidateCheckDriver(ids driverTypes.DriverInvocati
 	return nil, nil
 }
 
-func (d DriverManager) InvokeDriverReportSensors(
+func (d *DriverManager) InvokeDriverReportSensors(
 	ids driverTypes.DriverInvocationIDs,
 ) ([]DriverActionReportSensorReadingsOutput, []types.HmsError, error) {
 	ret, err := d.InvokeDriverFunc(
@@ -616,7 +616,7 @@ func normalizeRange(input value.ValueRange) (lower, upper int64) {
 	return start, end
 }
 
-func (d DriverManager) InvokeDriverReportDimmable(
+func (d *DriverManager) InvokeDriverReportDimmable(
 	ids driverTypes.DriverInvocationIDs,
 ) ([]DriverActionReportDimOutput, []types.HmsError, error) {
 	res, err := d.InvokeDriverFunc(
@@ -683,7 +683,7 @@ func (d DriverManager) InvokeDriverReportDimmable(
 	return dimmables, nil, nil
 }
 
-func (d DriverManager) InvokeDriverDim(
+func (d *DriverManager) InvokeDriverDim(
 	deviceID,
 	vendorID,
 	modelID string,

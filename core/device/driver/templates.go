@@ -40,12 +40,12 @@ type DeviceTemplate struct {
 	Capabilities map[string]DeviceCapability
 }
 
-func (self DeviceTemplate) Kind() types.TemplateKind {
+func (template DeviceTemplate) Kind() types.TemplateKind {
 	return types.TemplateKindDevice
 }
 
-func (self DeviceTemplate) GetSpec() ast.TemplateSpec {
-	return self.Spec
+func (template DeviceTemplate) GetSpec() ast.TemplateSpec {
+	return template.Spec
 }
 
 type DriverTemplate struct {
@@ -54,12 +54,12 @@ type DriverTemplate struct {
 	Capabilities map[string]DriverCapability
 }
 
-func (self DriverTemplate) Kind() types.TemplateKind {
+func (template DriverTemplate) Kind() types.TemplateKind {
 	return types.TemplateKindDriver
 }
 
-func (self DriverTemplate) GetSpec() ast.TemplateSpec {
-	return self.Spec
+func (template DriverTemplate) GetSpec() ast.TemplateSpec {
+	return template.Spec
 }
 
 func driverTemplate(span errors.Span) DriverTemplate {

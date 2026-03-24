@@ -54,7 +54,7 @@ func GetDriverSingleton(vendor, model string) (value.ValueObject, bool) {
 // This function exists alongside its backend because invoking this function BEFORE new HMS code is saved in the DB
 // would revert the schema changes that it is intended to write, as it pulls data from the DB
 // which at this point resides in an outdated state.
-func (d DriverManager) StoreDriverSingletonConfigUpdate(
+func (d *DriverManager) StoreDriverSingletonConfigUpdate(
 	vendorID string,
 	modelID string,
 	fromJSON any,
@@ -146,7 +146,7 @@ func storeDriverSingletonBackendDB(vendorID, modelID string, val value.ValueObje
 // This function exists alongside its backend because invoking this function BEFORE new HMS code is saved in the DB
 // would revert the schema changes that it is intended  to write, as it pulls data from the DB
 // which at this point resides in an outdated state.
-func (d DriverManager) StoreDeviceSingletonConfigUpdate(
+func (d *DriverManager) StoreDeviceSingletonConfigUpdate(
 	deviceID string,
 	fromJSON any,
 ) error {
@@ -298,7 +298,7 @@ func filterObjFieldsWithoutSetting(input value.ValueObject, singletonType ast.Ob
 	}
 }
 
-func (d DriverManager) PopulateValueCache() error {
+func (d *DriverManager) PopulateValueCache() error {
 	ValueStoreLock.Lock()
 	defer ValueStoreLock.Unlock()
 

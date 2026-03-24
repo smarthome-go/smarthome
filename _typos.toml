@@ -3,4 +3,10 @@ extend-exclude = [
   "web/public/assets/icons.json",
   "/web/src/components/Homescript/HmsEditor/index.js",
   "/web/src/components/Homescript/HmsEditor/index.cjs",
+  "/web/src/pages/hmsEditor/index.js",
+  "/web/src/pages/hmsEditor/index.cjs",
+  "/docker/databases/data/mosquitto.db",
 ]
+
+[default.extend-words]
+mosquitto = "mosquitto"

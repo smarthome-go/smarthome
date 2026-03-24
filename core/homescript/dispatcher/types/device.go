@@ -19,43 +19,45 @@ type CallbackTriggerDeviceAction struct {
 	TopicWildcard bool
 }
 
-func (self CallbackTriggerDeviceAction) Kind() CallBackTriggerKind { return OnDeviceActionTriggerKind }
-func (self CallbackTriggerDeviceAction) Eq(other CallBackTrigger) bool {
+func (action CallbackTriggerDeviceAction) Kind() CallBackTriggerKind {
+	return OnDeviceActionTriggerKind
+}
+func (action CallbackTriggerDeviceAction) Eq(other CallBackTrigger) bool {
 	if other.Kind() != OnDeviceActionTriggerKind {
 		return false
 	}
 
 	otherD := other.(CallbackTriggerDeviceAction)
 
-	if otherD.TopicWildcard != self.TopicWildcard {
+	if otherD.TopicWildcard != action.TopicWildcard {
 		return false
 	}
 
-	if self.Topics == nil {
+	if action.Topics == nil {
 		return true
 	}
 
 	//  Other is a subset of self.
-	for _, t := range otherD.Topics {
-		if !slices.Contains(self.Topics, t) {
+	for _, topic := range otherD.Topics {
+		if !slices.Contains(action.Topics, topic) {
 			return false
 		}
 	}
 
 	//  Self is a subset of other.
-	for _, t := range self.Topics {
-		if !slices.Contains(otherD.Topics, t) {
+	for _, topic := range action.Topics {
+		if !slices.Contains(otherD.Topics, topic) {
 			return false
 		}
 	}
 
 	return false
 }
-func (self CallbackTriggerDeviceAction) Clone() CallBackTrigger {
+func (action CallbackTriggerDeviceAction) Clone() CallBackTrigger {
 	return CallbackTriggerDeviceAction{
-		FilterKind:    self.FilterKind.Clone(),
-		Topics:        slices.Clone(self.Topics),
-		TopicWildcard: self.TopicWildcard,
+		FilterKind:    action.FilterKind.Clone(),
+		Topics:        slices.Clone(action.Topics),
+		TopicWildcard: action.TopicWildcard,
 	}
 }
 

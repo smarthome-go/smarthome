@@ -82,7 +82,7 @@ func (m AutomationManager) CreateNewAutomation(
 	}
 
 	if err := m.RegisterAutomation(newAutomationId, automationData.Data, serverConfig); err != nil {
-		return 0, fmt.Errorf("Could not create new automation: registering job failed: %s", err.Error())
+		return 0, fmt.Errorf("could not create new automation: registering job failed: %s", err.Error())
 	}
 
 	log.Debug(fmt.Sprintf("Created new automation '%s' for user '%s' with trigger '%v'.", name, owner, trigger))
@@ -326,18 +326,18 @@ func (m AutomationManager) UpdateJobTime(id uint, config database.ServerConfig) 
 	// Retrieve the current job in order to get its current cron-expression (for the days)
 	job, found, err := database.GetAutomationById(id)
 	if err != nil {
-		return fmt.Errorf("Could not update launch time: database failure: %s", err.Error())
+		return fmt.Errorf("could not update launch time: database failure: %s", err.Error())
 	}
 	if !found {
-		return errors.New("Could not update launch time: invalid id supplied")
+		return errors.New("could not update launch time: invalid id supplied")
 	}
 
 	if err := m.UnregisterAutomation(id, job.Data, config); err != nil {
-		return fmt.Errorf("Could not update launch time: unregistering failed: %s", err.Error())
+		return fmt.Errorf("could not update launch time: unregistering failed: %s", err.Error())
 	}
 
 	if err := m.RegisterAutomation(id, job.Data, config); err != nil {
-		return fmt.Errorf("Could not update launch time: registering failed: %s", err.Error())
+		return fmt.Errorf("could not update launch time: registering failed: %s", err.Error())
 	}
 
 	log.Trace(fmt.Sprintf("Successfully updated the next execution time of automation '%d'", id))

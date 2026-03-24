@@ -1,8 +1,8 @@
 package user
 
 import (
-	"crypto/md5"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 
@@ -50,6 +50,6 @@ func generateRandomToken() (token string, err error) {
 	if _, err := rand.Read(seed); err != nil {
 		return "", err
 	}
-	hash := md5.Sum(seed)
+	hash := sha256.Sum256(seed)
 	return hex.EncodeToString(hash[:]), nil
 }

@@ -21,7 +21,7 @@ func ParseHmsToDriver(id string) (driver database.DriverTuple, validationErr err
 
 	if len(split) != COUNT_SEGMENTS {
 		return database.DriverTuple{}, fmt.Errorf(
-			"Expected %d segments split by `%s`, found %d: `%s`",
+			"expected %d segments split by `%s`, found %d: `%s`",
 			COUNT_SEGMENTS,
 			delimiter,
 			len(split),
@@ -30,7 +30,7 @@ func ParseHmsToDriver(id string) (driver database.DriverTuple, validationErr err
 	}
 
 	if split[0] != DRIVER_ID_PREFIX {
-		return database.DriverTuple{}, fmt.Errorf("Expected `%s`, found `%s`", DRIVER_ID_PREFIX, split[0])
+		return database.DriverTuple{}, fmt.Errorf("expected `%s`, found `%s`", DRIVER_ID_PREFIX, split[0])
 	}
 
 	vendorId := split[1]
@@ -56,7 +56,7 @@ func DriverFromHmsId(id string) (driver database.DeviceDriver, validationErr err
 	if !found {
 		return database.DeviceDriver{},
 			fmt.Errorf(
-				"Could not determine driver from HMS ID `%s`, driver `%s:%s` not found",
+				"could not determine driver from HMS ID `%s`, driver `%s:%s` not found",
 				id,
 				tuple.VendorID,
 				tuple.ModelID,

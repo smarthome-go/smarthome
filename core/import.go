@@ -30,7 +30,7 @@ func readSetupFile() (SetupStruct, bool, error) {
 	if err := os.WriteFile(
 		fmt.Sprintf("%s.old", SetupPath),
 		content,
-		0755,
+		0600,
 	); err != nil {
 		return SetupStruct{}, false, err
 	}
@@ -122,7 +122,7 @@ func getServerConfiguration() (database.ServerConfig, error) {
 	}
 
 	if !found {
-		return database.ServerConfig{}, errors.New("Server configuration was not found")
+		return database.ServerConfig{}, errors.New("server configuration was not found")
 	}
 	return config, nil
 }

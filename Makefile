@@ -2,11 +2,14 @@
 appname := smarthome
 workingdir := smarthome
 sources := $(wildcard *.go)
+tmpdir ?= /tmp
+goenv := GOCACHE=$(tmpdir)/go-build
+SKIP_WEB_LINT ?= 0
 # Do not edit manually, use the `version` target to change the
 # version programmatically in all places
 version := 0.13.0-alpha
 
-build = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -ldflags "-s -w" -v -o $(appname) $(4)
+build = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) $(goenv) go build -ldflags "-s -w" -v -o $(appname) $(4)
 # TODO: eliminate usage of workingdir
 tar = mkdir -p build && cd ../ && tar -cvzf ./$(appname)_$(1)_$(2).tar.gz $(workingdir)/$(appname) $(workingdir)/web/dist $(workingdir)/web/html $(workingdir)/resources && mv $(appname)_$(1)_$(2).tar.gz $(workingdir)/build
 
@@ -29,10 +32,12 @@ deps:
 # Lints most of the source code
 # Used before a release
 lint:
-	golangci-lint run
-	go vet
+	XDG_CACHE_HOME=$(tmpdir)/xdg-cache GOCACHE=$(tmpdir)/go-build golangci-lint run
+	$(goenv) go vet
 	typos
+ifeq ($(SKIP_WEB_LINT),0)
 	cd web && npm run lint
+endif
 
 
 # Run a normal integration and unit test procedure
@@ -41,7 +46,7 @@ test:
 	touch web/dist/html/testing.html
 	# Prevents server panic
 
-	go test -v -p 1 ./... --timeout=10000s
+	$(goenv) go test -v -p 1 ./... --timeout=10000s
 	# Tests should be run one after another due to deletion of the database at every test start
 	rm -rf web/dist/html/testing.html
 
@@ -51,7 +56,7 @@ vtest:
 	touch web/dist/html/testing.html
 	# Prevents server panic
 
-	go test -v -p 1 ./... -coverprofile=coverage.out
+	$(goenv) go test -v -p 1 ./... -coverprofile=coverage.out
 	go tool cover --html=coverage.out -o coverage.html
 	rm -rf web/dist/html/testing.html
 

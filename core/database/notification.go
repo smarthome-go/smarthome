@@ -193,5 +193,9 @@ func GetUserNotifications(username string) ([]Notification, error) {
 		notificationItem.Date = notificationTime.Time
 		notifications = append(notifications, notificationItem)
 	}
+	if err := res.Err(); err != nil {
+		log.Error("Failed to get notifications: result iteration failed: ", err.Error())
+		return nil, err
+	}
 	return notifications, nil
 }

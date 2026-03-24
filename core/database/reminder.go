@@ -152,6 +152,10 @@ func GetUserReminders(username string) ([]Reminder, error) {
 
 		reminders = append(reminders, reminder)
 	}
+	if err := res.Err(); err != nil {
+		log.Error("Failed to get user reminders: result iteration failed: ", err.Error())
+		return nil, err
+	}
 	return reminders, nil
 }
 

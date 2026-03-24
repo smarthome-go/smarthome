@@ -1,7 +1,7 @@
 package user
 
 import (
-	"crypto/md5"
+	"crypto/sha256"
 	"fmt"
 	"os"
 
@@ -39,7 +39,7 @@ func GetUserAvatar(username string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Atttempt to read the file into a byte slice
+	// Attempt to read the file into a byte slice
 	fileBytes, err := os.ReadFile(filepath)
 	if err != nil {
 		// Standard error handling
@@ -78,7 +78,7 @@ func UploadAvatar(
 		return err
 	}
 	// generates a unique hash based on the username and filename combination
-	hashPrefix := md5.Sum([]byte(fmt.Sprintf("%s%s", username, filename)))
+	hashPrefix := sha256.Sum256([]byte(fmt.Sprintf("%s%s", username, filename)))
 	filepath := fmt.Sprintf("./data/avatar/%x_%s", hashPrefix, filename)
 	// If the filepath is equal, the hash did not change which means that the file is equal and will not be written to disk again
 	if filepath == filepathBefore {

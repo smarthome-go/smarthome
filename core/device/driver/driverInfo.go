@@ -30,8 +30,8 @@ type DriverInfo struct {
 
 type CapabilitySet[T comparable] []T
 
-func (self CapabilitySet[T]) Has(check T) bool {
-	for _, elem := range self {
+func (set CapabilitySet[T]) Has(check T) bool {
+	for _, elem := range set {
 		if elem == check {
 			return true
 		}
@@ -40,12 +40,12 @@ func (self CapabilitySet[T]) Has(check T) bool {
 	return false
 }
 
-func (self *CapabilitySet[T]) Add(add T) {
-	if self.Has(add) {
+func (set *CapabilitySet[T]) Add(add T) {
+	if set.Has(add) {
 		return
 	}
 
-	*self = append(*self, add)
+	*set = append(*set, add)
 }
 
 //
@@ -72,12 +72,12 @@ type CONFIG_FIELD_TYPE string
 
 const (
 	CONFIG_FIELD_TYPE_INT    CONFIG_FIELD_TYPE = "INT"
-	CONFIG_FIELD_TYPE_FLOAT                    = "FLOAT"
-	CONFIG_FIELD_TYPE_BOOL                     = "BOOL"
-	CONFIG_FIELD_TYPE_STRING                   = "STRING"
-	CONFIG_FIELD_TYPE_LIST                     = "LIST"
-	CONFIG_FIELD_TYPE_STRUCT                   = "STRUCT"
-	CONFIG_FIELD_TYPE_OPTION                   = "OPTION"
+	CONFIG_FIELD_TYPE_FLOAT  CONFIG_FIELD_TYPE = "FLOAT"
+	CONFIG_FIELD_TYPE_BOOL   CONFIG_FIELD_TYPE = "BOOL"
+	CONFIG_FIELD_TYPE_STRING CONFIG_FIELD_TYPE = "STRING"
+	CONFIG_FIELD_TYPE_LIST   CONFIG_FIELD_TYPE = "LIST"
+	CONFIG_FIELD_TYPE_STRUCT CONFIG_FIELD_TYPE = "STRUCT"
+	CONFIG_FIELD_TYPE_OPTION CONFIG_FIELD_TYPE = "OPTION"
 )
 
 type ConfigFieldDescriptor interface {
@@ -92,8 +92,8 @@ type ConfigFieldDescriptorAtom struct {
 	Type CONFIG_FIELD_TYPE `json:"type"`
 }
 
-func (self ConfigFieldDescriptorAtom) Kind() CONFIG_FIELD_TYPE {
-	return self.Type
+func (descriptor ConfigFieldDescriptorAtom) Kind() CONFIG_FIELD_TYPE {
+	return descriptor.Type
 }
 
 type ConfigFieldDescriptorWithInner struct {
@@ -101,7 +101,7 @@ type ConfigFieldDescriptorWithInner struct {
 	Inner ConfigFieldDescriptor `json:"inner"`
 }
 
-func (self ConfigFieldDescriptorWithInner) Kind() CONFIG_FIELD_TYPE {
+func (descriptor ConfigFieldDescriptorWithInner) Kind() CONFIG_FIELD_TYPE {
 	return CONFIG_FIELD_TYPE_LIST
 }
 
@@ -119,6 +119,6 @@ type ConfigFieldItem struct {
 	Type ConfigFieldDescriptor `json:"type"`
 }
 
-func (self ConfigFieldDescriptorStruct) Kind() CONFIG_FIELD_TYPE {
+func (descriptor ConfigFieldDescriptorStruct) Kind() CONFIG_FIELD_TYPE {
 	return CONFIG_FIELD_TYPE_STRUCT
 }

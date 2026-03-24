@@ -176,6 +176,10 @@ func GetUserPermissions(username string) ([]string, error) {
 		}
 		permissions = append(permissions, permission)
 	}
+	if err := res.Err(); err != nil {
+		log.Error("Could get user permissions. Result iteration failed: ", err.Error())
+		return nil, err
+	}
 	return permissions, nil
 }
 

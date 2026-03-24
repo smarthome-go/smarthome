@@ -12,13 +12,13 @@ type Registrations struct {
 	Device                 []DeviceRegistration
 }
 
-func (self *Registrations) Copy() map[RegistrationID]RegisterInfo {
+func (r *Registrations) Copy() map[RegistrationID]RegisterInfo {
 	clone := make(map[RegistrationID]RegisterInfo)
 
-	self.Lock.RLock()
-	defer self.Lock.RUnlock()
+	r.Lock.RLock()
+	defer r.Lock.RUnlock()
 
-	for k, v := range self.Set {
+	for k, v := range r.Set {
 		clone[k] = v.Clone()
 	}
 

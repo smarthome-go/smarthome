@@ -60,6 +60,11 @@ func NotifyUser(w http.ResponseWriter, r *http.Request) {
 		notify.NotificationLevel(request.Priority),
 		true,
 	)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to add notification", Error: "could not create notification"})
+		return
+	}
 
 	if err := json.NewEncoder(w).Encode(NotificationIdBody{Id: newId}); err != nil {
 		Res(w, Response{Success: false, Message: "failed to add notification", Error: "could not encode response"})

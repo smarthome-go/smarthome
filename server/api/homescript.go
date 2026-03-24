@@ -139,7 +139,7 @@ func RunHomescriptId(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		Res(w, Response{Success: false, Message: "an error occured during Homescript execution", Error: "backend failure"})
+		Res(w, Response{Success: false, Message: "an error occurred during Homescript execution", Error: "backend failure"})
 		return
 	}
 

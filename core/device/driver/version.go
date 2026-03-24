@@ -18,7 +18,7 @@ const delimiter = "."
 func ParseDriverVersion(source string) (SemanticVersion, error) {
 	split := strings.Split(source, delimiter)
 	if len(split) != semVerSegments {
-		return SemanticVersion{}, fmt.Errorf("Expected exactly 3 version components, got %d", len(split))
+		return SemanticVersion{}, fmt.Errorf("expected exactly 3 version components, got %d", len(split))
 	}
 
 	parsedValues := make([]uint64, semVerSegments)
@@ -31,14 +31,17 @@ func ParseDriverVersion(source string) (SemanticVersion, error) {
 		parsedValues[idx] = parsed
 	}
 
-	//nolint:exhaustruct
-	return SemanticVersion{}, nil
+	return SemanticVersion{
+		Major: parsedValues[0],
+		Minor: parsedValues[1],
+		Patch: parsedValues[2],
+	}, nil
 }
 
-func (self SemanticVersion) String() string {
+func (version SemanticVersion) String() string {
 	output := make([]string, semVerSegments)
-	output[0] = fmt.Sprint(self.Major)
-	output[1] = fmt.Sprint(self.Minor)
-	output[2] = fmt.Sprint(self.Patch)
+	output[0] = fmt.Sprint(version.Major)
+	output[1] = fmt.Sprint(version.Minor)
+	output[2] = fmt.Sprint(version.Patch)
 	return strings.Join(output, delimiter)
 }

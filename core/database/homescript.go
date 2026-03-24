@@ -12,7 +12,7 @@ type HOMESCRIPT_TYPE string
 
 const (
 	HOMESCRIPT_TYPE_NORMAL HOMESCRIPT_TYPE = "NORMAL"
-	HOMESCRIPT_TYPE_DRIVER                 = "DRIVER"
+	HOMESCRIPT_TYPE_DRIVER HOMESCRIPT_TYPE = "DRIVER"
 )
 
 const HOMESCRIPT_ID_LEN = 150
@@ -198,6 +198,7 @@ func GetHmsSources(username string, ids []string) (sources map[string]string, al
 		log.Errorf("Failed to get Homescript sources: could not execute query: %s", err.Error())
 		return nil, false, err
 	}
+	defer res.Close()
 
 	sources = make(map[string]string)
 	for res.Next() {
@@ -222,6 +223,10 @@ func GetHmsSources(username string, ids []string) (sources map[string]string, al
 		}
 
 		sources[id] = code
+	}
+	if err := res.Err(); err != nil {
+		log.Errorf("Failed to get Homescript sources: result iteration failed: %s", err.Error())
+		return nil, false, err
 	}
 
 	for _, id := range ids {
@@ -261,7 +266,7 @@ func ListHomescriptOfUser(username string) ([]Homescript, error) {
 		return nil, err
 	}
 	defer res.Close()
-	var homescriptList []Homescript = make([]Homescript, 0)
+	homescriptList := make([]Homescript, 0)
 	for res.Next() {
 		var homescript Homescript
 		err := res.Scan(
@@ -285,6 +290,10 @@ func ListHomescriptOfUser(username string) ([]Homescript, error) {
 			return nil, err
 		}
 		homescriptList = append(homescriptList, homescript)
+	}
+	if err := res.Err(); err != nil {
+		log.Error("Failed to list Homescript of user: result iteration failed: ", err.Error())
+		return nil, err
 	}
 	return homescriptList, nil
 }
@@ -316,7 +325,7 @@ func ListAllHomescripts() ([]Homescript, error) {
 		return nil, err
 	}
 	defer res.Close()
-	var homescriptList []Homescript = make([]Homescript, 0)
+	homescriptList := make([]Homescript, 0)
 	for res.Next() {
 		var homescript Homescript
 		err := res.Scan(
@@ -341,6 +350,10 @@ func ListAllHomescripts() ([]Homescript, error) {
 		}
 
 		homescriptList = append(homescriptList, homescript)
+	}
+	if err := res.Err(); err != nil {
+		log.Error("Failed to list Homescript: result iteration failed: ", err.Error())
+		return nil, err
 	}
 
 	return homescriptList, nil

@@ -277,7 +277,7 @@ func (m *Manager) AnalyzeUserScript(
 	if !found {
 		return nil,
 			types.HmsDiagnosticsContainer{},
-			fmt.Errorf("Homescript with ID `%s` owned by user %s was not found", context.Filename, context.UsernameData)
+			fmt.Errorf("homescript with ID `%s` owned by user %s was not found", context.Filename, context.UsernameData)
 	}
 
 	return m.Analyze(
@@ -304,7 +304,7 @@ func (m *Manager) AnalyzeDriver(
 	if !found {
 		return nil,
 			types.HmsDiagnosticsContainer{},
-			fmt.Errorf("Driver `%s:%s` was not found", driver.VendorID, driver.ModelID)
+			fmt.Errorf("driver `%s:%s` was not found", driver.VendorID, driver.ModelID)
 	}
 
 	return m.Analyze(
@@ -323,7 +323,7 @@ func (m *Manager) RunGeneric(
 	invocation types.ProgramInvocation,
 	context types.ExecutionContext,
 	cancelation types.Cancelation,
-	// This is required for the asyncronous runtime.
+	// This is required for the asynchronous runtime.
 	idChan *chan uint64,
 	outputWriter io.Writer,
 	shouldProcessAnnotations bool,
@@ -414,7 +414,9 @@ func (m *Manager) RunGeneric(
 	)
 
 	defer func() {
-		ex.Free()
+		if err := ex.Free(); err != nil {
+			logger.Warnf("Failed to free executor for job %d: %s", jobID, err.Error())
+		}
 		m.removeJob(jobID)
 	}()
 
@@ -693,7 +695,7 @@ func (m *Manager) RunUserScriptTweakable(
 		return types.HmsRes{}, err
 	}
 	if !found {
-		return types.HmsRes{}, fmt.Errorf("Homescript with ID `%s` owned by user `%s` was not found", programID, username)
+		return types.HmsRes{}, fmt.Errorf("homescript with ID `%s` owned by user `%s` was not found", programID, username)
 	}
 
 	return m.RunUserCodeTweakable(
@@ -746,7 +748,7 @@ func (m *Manager) RunDriverScript(
 		return types.HmsRes{}, err
 	}
 	if !found {
-		return types.HmsRes{}, fmt.Errorf("Driver with ID `%s:%s` was not found", driverData.VendorID, driverData.ModelID)
+		return types.HmsRes{}, fmt.Errorf("driver with ID `%s:%s` was not found", driverData.VendorID, driverData.ModelID)
 	}
 
 	hmsID := types.CreateDriverHmsId(database.DriverTuple{

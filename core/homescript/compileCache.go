@@ -27,10 +27,6 @@ func (m *Manager) Compile(
 	entryPointModule string,
 ) (compiler.CompileOutput, error) {
 	// Try to use a cached version.
-	m.CompileCache.Lock.RLock()
-	// cached, valid := m.CompileCache.Cache[entryPointModule]
-	m.CompileCache.Lock.RUnlock()
-
 	// TODO: implement actual caching
 	if false {
 		logger.Tracef("Using compilation cache for program `%s`...\n", entryPointModule)

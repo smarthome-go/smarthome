@@ -78,7 +78,7 @@ func (d *DriverManager) DeviceAction(
 		if Dim == nil {
 			return ActionResponse{},
 				true,
-				errors.New("Dim action field is missing even though it is required"),
+				errors.New("dim action field is missing even though it is required"),
 				nil
 		}
 		out, hmsErrs, err = d.InvokeDriverDim(
@@ -94,7 +94,7 @@ func (d *DriverManager) DeviceAction(
 		if Power == nil {
 			return ActionResponse{},
 				true,
-				errors.New("Power action field is missing even though it is required"),
+				errors.New("power action field is missing even though it is required"),
 				nil
 		}
 		out, hmsErrs, err = d.InvokeDriverSetPower(
@@ -107,7 +107,7 @@ func (d *DriverManager) DeviceAction(
 		if Color == nil {
 			return ActionResponse{},
 				true,
-				errors.New("Color action field is missing even though it is required"),
+				errors.New("color action field is missing even though it is required"),
 				nil
 		}
 		out, hmsErrs, err = d.InvokeDriverSetColor(

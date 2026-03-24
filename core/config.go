@@ -77,7 +77,7 @@ func createNewConfigFile() (Config, error) {
 		log.Error("Failed to create new config file: creating data directory failed: ", err.Error())
 		return Config{}, err
 	}
-	if err = os.WriteFile(fmt.Sprintf("%s/config.json", configPath), fileContent, 0755); err != nil {
+	if err = os.WriteFile(fmt.Sprintf("%s/config.json", configPath), fileContent, 0600); err != nil {
 		log.Error("Failed to write file to disk: ", err.Error())
 		return Config{}, err
 	}

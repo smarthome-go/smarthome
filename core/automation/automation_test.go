@@ -45,7 +45,7 @@ func removeAllAutomations(t *testing.T) {
 	assert.NoError(t, err)
 
 	for _, autom := range automations {
-		// TODO: is this intendet
+		// TODO: is this intended
 		assert.NoError(t, database.DeleteAutomationById(autom.Id))
 	}
 }
@@ -163,8 +163,8 @@ func TestAutomation(t *testing.T) {
 	err := database.InsertHmsStorageEntry("admin", "AUTOMATION_RAN", "false")
 	assert.NoError(t, err)
 
-	var hour uint = uint(then.Hour())
-	var minute uint = uint(then.Minute())
+	hour := uint(then.Hour())
+	minute := uint(then.Minute())
 	days := []uint8{0, 1, 2, 3, 4, 5, 6}
 
 	// Normal automation
@@ -220,8 +220,8 @@ func TestModificationToDifferentScript(t *testing.T) {
 	err := database.InsertHmsStorageEntry("admin", "AUTOMATION_RAN", "false")
 	assert.NoError(t, err)
 
-	var hour uint = uint(then.Hour())
-	var minute uint = uint(then.Minute())
+	hour := uint(then.Hour())
+	minute := uint(then.Minute())
 	days := []uint8{0, 1, 2, 3, 4, 5, 6}
 
 	// Normal automation
@@ -296,8 +296,8 @@ func TestModificationToAbort(t *testing.T) {
 	err := database.InsertHmsStorageEntry("admin", "AUTOMATION_RAN", "false")
 	assert.NoError(t, err)
 
-	var hour uint = uint(then.Hour())
-	var minute uint = uint(then.Minute())
+	hour := uint(then.Hour())
+	minute := uint(then.Minute())
 	days := []uint8{0, 1, 2, 3, 4, 5, 6}
 
 	// Normal automation
@@ -367,8 +367,8 @@ func TestModificationToAbort(t *testing.T) {
 func TestStartInactiveAutomation(t *testing.T) {
 	now := time.Now()
 	then := now.Add(time.Minute)
-	var hour uint = uint(then.Hour())
-	var minute uint = uint(then.Minute())
+	hour := uint(then.Hour())
+	minute := uint(then.Minute())
 	days := []uint8{0, 1, 2, 3, 4, 5, 6}
 
 	removeAllAutomations(t)

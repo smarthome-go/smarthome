@@ -259,7 +259,7 @@ func (i *InstanceT) registerInternal(info dispatcherTypes.RegisterInfo) (dispatc
 			delete(i.DoneRegistrations.Set, id)
 			i.DoneRegistrations.Lock.Unlock()
 
-			return 0, fmt.Errorf("Could not register time: %s", err.Error())
+			return 0, fmt.Errorf("could not register time: %s", err.Error())
 		}
 
 		i.DoneRegistrations.Lock.Lock()
@@ -314,7 +314,7 @@ func (i *InstanceT) Unregister(id dispatcherTypes.RegistrationID) error {
 	_, valid := i.DoneRegistrations.Set[id]
 	if !valid {
 		i.DoneRegistrations.Lock.Unlock()
-		return fmt.Errorf("Cannot unregister registration with ID %d: not registered", id)
+		return fmt.Errorf("cannot unregister registration with ID %d: not registered", id)
 	}
 
 	delete(i.DoneRegistrations.Set, id)
@@ -526,7 +526,7 @@ func (i *InstanceT) allocatingCall(
 	}
 
 	if res.Errors.ContainsError {
-		// TODO: better way to handle errors: maybe system log or admin user notication?
+		// TODO: better way to handle errors: maybe system log or admin user notification?
 
 		message := make([]string, 0)
 		for _, error := range res.Errors.Diagnostics {
@@ -630,7 +630,7 @@ func eventMatchesDevice(
 ) bool {
 	switch f := action.FilterKind.(type) {
 	case dispatcherTypes.DeviceFilterClass:
-		if !(f.Model == driver.ModelID && f.Vendor == driver.VendorID) {
+		if f.Model != driver.ModelID || f.Vendor != driver.VendorID {
 			return false
 		}
 	case dispatcherTypes.DeviceFilterIndividual:

@@ -9,7 +9,7 @@ type DEVICE_TYPE string
 
 const (
 	DEVICE_TYPE_INPUT  DEVICE_TYPE = "INPUT"
-	DEVICE_TYPE_OUTPUT             = "OUTPUT"
+	DEVICE_TYPE_OUTPUT DEVICE_TYPE = "OUTPUT"
 )
 
 var DEVICE_TYPE_MAP = map[string]DEVICE_TYPE{
@@ -254,6 +254,10 @@ func ListAllDevices() ([]ShallowDevice, error) {
 
 		devices = append(devices, device)
 	}
+	if err := res.Err(); err != nil {
+		log.Error("Could not list devices: result iteration failed: ", err.Error())
+		return nil, err
+	}
 
 	return devices, nil
 }
@@ -286,6 +290,7 @@ func ListUserDevicesQuery(username string) ([]ShallowDevice, error) {
 		log.Error("Could not list user devices: executing query failed: ", err.Error())
 		return nil, err
 	}
+	defer res.Close()
 
 	devices := make([]ShallowDevice, 0)
 	for res.Next() {
@@ -305,6 +310,10 @@ func ListUserDevicesQuery(username string) ([]ShallowDevice, error) {
 		}
 
 		devices = append(devices, device)
+	}
+	if err := res.Err(); err != nil {
+		log.Error("Could not list user devices: result iteration failed: ", err.Error())
+		return nil, err
 	}
 
 	return devices, nil

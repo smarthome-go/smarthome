@@ -76,6 +76,7 @@ func GetWeatherDataRecords(maxAgeMinutes int) ([]WeatherMeasurement, error) {
 		log.Error("Failed to get weather data records: executing failed: ", err.Error())
 		return nil, err
 	}
+	defer res.Close()
 
 	results := make([]WeatherMeasurement, 0)
 	for res.Next() {
@@ -95,6 +96,10 @@ func GetWeatherDataRecords(maxAgeMinutes int) ([]WeatherMeasurement, error) {
 		}
 		// Append the current row to the results
 		results = append(results, row)
+	}
+	if err := res.Err(); err != nil {
+		log.Error("Failed to get weather data records: result iteration failed: ", err.Error())
+		return nil, err
 	}
 	return results, nil
 }

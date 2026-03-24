@@ -43,11 +43,13 @@ func ListAllScheduleDeviceJobs() ([]ScheduleDeviceJob, error) {
 		log.Error("Failed to list all schedule device jobs: preparing query failed: ", err.Error())
 		return nil, err
 	}
+	defer query.Close()
 	res, err := query.Query()
 	if err != nil {
 		log.Error("Failed to list all schedule device jobs: executing query failed: ", err.Error())
 		return nil, err
 	}
+	defer res.Close()
 	deviceJobs := make([]ScheduleDeviceJob, 0)
 	for res.Next() {
 		var jobRow ScheduleDeviceJob
@@ -60,6 +62,10 @@ func ListAllScheduleDeviceJobs() ([]ScheduleDeviceJob, error) {
 			return nil, err
 		}
 		deviceJobs = append(deviceJobs, jobRow)
+	}
+	if err := res.Err(); err != nil {
+		log.Error("Failed to list all schedule device jobs: result iteration failed: ", err.Error())
+		return nil, err
 	}
 	return deviceJobs, nil
 }
@@ -80,11 +86,13 @@ func ListUserScheduleDeviceJobs(username string) ([]ScheduleDeviceJob, error) {
 		log.Error("Failed to list user schedule device jobs: preparing query failed: ", err.Error())
 		return nil, err
 	}
+	defer query.Close()
 	res, err := query.Query(username)
 	if err != nil {
 		log.Error("Failed to list user schedule device jobs: executing query failed: ", err.Error())
 		return nil, err
 	}
+	defer res.Close()
 	deviceJobs := make([]ScheduleDeviceJob, 0)
 	for res.Next() {
 		var deviceRow ScheduleDeviceJob
@@ -97,6 +105,10 @@ func ListUserScheduleDeviceJobs(username string) ([]ScheduleDeviceJob, error) {
 			return nil, err
 		}
 		deviceJobs = append(deviceJobs, deviceRow)
+	}
+	if err := res.Err(); err != nil {
+		log.Error("Failed to list user schedule device jobs: result iteration failed: ", err.Error())
+		return nil, err
 	}
 	return deviceJobs, nil
 }
@@ -114,11 +126,13 @@ func ListDeviceJobsOfSchedule(scheduleId uint) ([]ScheduleDeviceJobData, error) 
 		log.Error("Failed to list device jobs of schedule: preparing query failed: ", err.Error())
 		return nil, err
 	}
+	defer query.Close()
 	res, err := query.Query(scheduleId)
 	if err != nil {
 		log.Error("Failed to list device jobs of schedule: executing query failed: ", err.Error())
 		return nil, err
 	}
+	defer res.Close()
 	deviceJobs := make([]ScheduleDeviceJobData, 0)
 	for res.Next() {
 		var jobRow ScheduleDeviceJobData
@@ -130,6 +144,10 @@ func ListDeviceJobsOfSchedule(scheduleId uint) ([]ScheduleDeviceJobData, error) 
 			return nil, err
 		}
 		deviceJobs = append(deviceJobs, jobRow)
+	}
+	if err := res.Err(); err != nil {
+		log.Error("Failed to list device jobs of schedule: result iteration failed: ", err.Error())
+		return nil, err
 	}
 	return deviceJobs, nil
 }
@@ -154,6 +172,7 @@ func CreateNewScheduleDeviceJob(
 		log.Error("Failed to create new schedule device job: preparing query failed: ", err.Error())
 		return 0, err
 	}
+	defer query.Close()
 	res, err := query.Exec(
 		scheduleId,
 		deviceId,
@@ -183,6 +202,7 @@ func DeleteAllDeviceJobsFromSchedule(scheduleId uint) error {
 		log.Error("Failed to delete all device jobs from schedule: preparing query failed: ", err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err := query.Exec(scheduleId); err != nil {
 		log.Error("Failed to delete all device jobs from schedule: executing query failed: ", err.Error())
 		return err
@@ -206,6 +226,7 @@ func DeleteDeviceJobFromSchedule(
 		log.Error(`Failed to delete device job from schedule: preparing query failed: `, err.Error())
 		return err
 	}
+	defer query.Close()
 	if _, err := query.Exec(
 		deviceId,
 		scheduleId,

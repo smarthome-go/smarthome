@@ -9,7 +9,6 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
 	"github.com/smarthome-go/homescript/v3/homescript/diagnostic"
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
-	herrors "github.com/smarthome-go/homescript/v3/homescript/errors"
 	"github.com/smarthome-go/homescript/v3/homescript/lexer"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
@@ -65,13 +64,13 @@ func InitManager(
 	}
 }
 
-func (self *DriverManager) IsInitialized() bool {
-	self.Initialized.Lock.Lock()
-	defer self.Initialized.Lock.Unlock()
-	return self.Initialized.Value
+func (manager *DriverManager) IsInitialized() bool {
+	manager.Initialized.Lock.Lock()
+	defer manager.Initialized.Lock.Unlock()
+	return manager.Initialized.Value
 }
 
-func (self *DriverManager) ExtractDriverInfoTotal(
+func (manager *DriverManager) ExtractDriverInfoTotal(
 	vendorID string,
 	modelID string,
 	homescriptCode string,
@@ -80,7 +79,7 @@ func (self *DriverManager) ExtractDriverInfoTotal(
 	// TODO: use the ananlyze with context function here
 	filename := types.CreateDriverHmsId(database.DriverTuple{VendorID: vendorID, ModelID: modelID})
 
-	analyzed, res, err := self.Hms.Analyze(
+	analyzed, res, err := manager.Hms.Analyze(
 		homescript.InputProgram{
 			ProgramText: homescriptCode,
 			Filename:    filename,
@@ -161,7 +160,7 @@ func ExtractDriverInfo(
 			// Map HMS capabilities to driver capabilities.
 			for _, impl := range analyzed[mainModule].ImplBlocks {
 				if impl.SingletonIdent.Ident() == DriverSingletonIdent {
-					template := driverTemplate(herrors.Span{})
+					template := driverTemplate(errors.Span{})
 					for ident := range impl.FinalCapabilities {
 						driverCapabilities = append(driverCapabilities, template.Capabilities[ident])
 					}
@@ -183,7 +182,7 @@ func ExtractDriverInfo(
 			// Map HMS capabilities to device capabilities.
 			for _, impl := range analyzed[mainModule].ImplBlocks {
 				if impl.SingletonIdent.Ident() == DriverDeviceSingletonIdent {
-					template := deviceTemplate(herrors.Span{})
+					template := deviceTemplate(errors.Span{})
 					for ident := range impl.FinalCapabilities {
 						// TODO: no validation at all?!
 						deviceCapabilities = append(deviceCapabilities, template.Capabilities[ident])
@@ -204,11 +203,11 @@ func ExtractDriverInfo(
 			Message: fmt.Sprintf("Singleton `%s` not found", DriverSingletonIdent),
 			Notes: []string{
 				fmt.Sprintf("A singleton named `%s` is required for every driver implementation", DriverDeviceSingletonIdent),
-				fmt.Sprintf("This singleton can be declared like this: `TODO, add final syntax`"),
+				"This singleton can be declared like this: `TODO, add final syntax`",
 			},
-			Span: herrors.Span{
-				Start:    herrors.Location{},
-				End:      herrors.Location{},
+			Span: errors.Span{
+				Start:    errors.Location{},
+				End:      errors.Location{},
 				Filename: mainModule,
 			},
 		})
@@ -220,11 +219,11 @@ func ExtractDriverInfo(
 			Message: fmt.Sprintf("Singleton `%s` not found", DriverDeviceSingletonIdent),
 			Notes: []string{
 				fmt.Sprintf("A singleton named `%s` is required for every driver implementation", DriverDeviceSingletonIdent),
-				fmt.Sprintf("This singleton can be declared like this: `TODO, add final syntax`"),
+				"This singleton can be declared like this: `TODO, add final syntax`",
 			},
-			Span: herrors.Span{
-				Start:    herrors.Location{},
-				End:      herrors.Location{},
+			Span: errors.Span{
+				Start:    errors.Location{},
+				End:      errors.Location{},
 				Filename: mainModule,
 			},
 		})
@@ -462,6 +461,6 @@ func typeToConfigField(from ast.Type, topLevel bool, contextSpan errors.Span) (C
 			Inner: inner,
 		}, nil, err
 	default:
-		return nil, nil, fmt.Errorf("Cannot derive user configuration from type `%s`", from)
+		return nil, nil, fmt.Errorf("cannot derive user configuration from type `%s`", from)
 	}
 }

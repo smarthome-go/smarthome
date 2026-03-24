@@ -91,7 +91,7 @@ func (m AutomationManager) DeactivateAutomationSystem(config database.ServerConf
 
 	for _, automation := range automations {
 		if err := m.UnregisterAutomation(automation.Id, automation.Data, config); err != nil {
-			return fmt.Errorf("Could not deactivate automation system: failed to unregister automation %d: %s", automation.Id, err.Error())
+			return fmt.Errorf("could not deactivate automation system: failed to unregister automation %d: %s", automation.Id, err.Error())
 		}
 	}
 

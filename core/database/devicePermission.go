@@ -6,7 +6,7 @@ import (
 
 // Stores the n:m relation between the user and their device-permissions
 func createHasDevicePermissionTable() error {
-	_, err := db.Query(`
+	if _, err := db.Exec(`
 	CREATE TABLE
 	IF NOT EXISTS
 	hasDevicePermission(
@@ -16,8 +16,7 @@ func createHasDevicePermissionTable() error {
 		REFERENCES user(Username),
 		FOREIGN KEY (Device)
 		REFERENCES device(Id)
-	)`)
-	if err != nil {
+	)`); err != nil {
 		log.Error("Failed to create device permissions table: Executing query failed: ", err.Error())
 		return err
 	}
@@ -154,6 +153,10 @@ func GetUserDevicePermissions(username string) ([]string, error) {
 		}
 		permissions = append(permissions, permission)
 	}
+	if err := res.Err(); err != nil {
+		log.Error("Could get user device permissions. Result iteration failed: ", err.Error())
+		return permissions, err
+	}
 	return permissions, nil
 }
 
@@ -169,6 +172,7 @@ func UserHasDevicePermissionQuery(username string, deviceId string) (bool, error
 		log.Error("Failed to test user device permission: preparing query failed: ", err.Error())
 		return false, err
 	}
+	defer query.Close()
 	if err := query.QueryRow(username, deviceId).Scan(&deviceId); err != nil {
 		if err == sql.ErrNoRows {
 			return false, nil

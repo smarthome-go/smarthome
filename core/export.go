@@ -149,7 +149,7 @@ func ExportConfig(
 		return SetupStruct{}, err
 	}
 	if !found {
-		return SetupStruct{}, fmt.Errorf("No configuration could be found")
+		return SetupStruct{}, fmt.Errorf("no configuration could be found")
 	}
 	// Rooms configuration
 	roomsDB, err := ListAllRoomsWithData(false) // camera URLs shall not be redacted

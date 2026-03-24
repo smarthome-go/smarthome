@@ -112,7 +112,7 @@ func (i *InstanceT) RegisterUserScript(programID string, username string) error 
 		}
 
 		return fmt.Errorf(
-			"Could not process user annotation: user `%s`, script `%s` extraction failed: %s",
+			"could not process user annotation: user `%s`, script `%s` extraction failed: %s",
 			username,
 			programID,
 			strings.Join(d, ", "),
@@ -160,7 +160,7 @@ func (i *InstanceT) RegisterUserScript(programID string, username string) error 
 
 			// Sanity-check the arguments.
 			if len(*topics) == 0 || containsEmpty {
-				return errors.New("Empty lists or empty strings are not allowed as topics")
+				return errors.New("empty lists or empty strings are not allowed as topics")
 			}
 
 			id, err := i.registerInternal(

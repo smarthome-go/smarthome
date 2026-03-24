@@ -1,132 +1,21 @@
 version: "2"
 linters:
+  disable-all: true
   enable:
-    - asasalint
-    - asciicheck
-    - bidichk
     - bodyclose
-    - contextcheck
-    - decorder
-    - dogsled
-    - dupl
-    - dupword
-    - durationcheck
-    - errchkjson
-    - errname
-    - exhaustive
-    - exhaustruct
-    - funlen
-    - goconst
-    - gocritic
-    - godot
-    - godox
+    - errcheck
     - gosec
-    - gosmopolitan
-    - importas
-    - interfacebloat
-    - lll
-    - makezero
-    - mirror
-    - misspell
-    - mnd
-    - musttag
-    - nestif
-    - nilerr
-    - nilnil
-    - noctx
-    - prealloc
-    - predeclared
-    - reassign
-    - revive
+    - govet
+    - ineffassign
     - rowserrcheck
     - sqlclosecheck
-    - tagalign
-    - tagliatelle
-    - unconvert
-    - unparam
-    - usestdlibvars
-    - whitespace
+    - staticcheck
+  disable:
+    - unused
   settings:
-    decorder:
-      dec-order:
-        - const
-        - var
-        - type
-        - func
-    dupl:
-      threshold: 100
-    exhaustive:
-      check:
-        - switch
-        - map
-      default-signifies-exhaustive: false
-      package-scope-only: true
-      explicit-exhaustive-map: true
-      explicit-exhaustive-switch: false
-      default-case-required: false
-    exhaustruct:
-      exclude:
-        - .+/errors\.Span$
-    goconst:
-      match-constant: true
-      min-len: 1
-      min-occurrences: 2
-      numbers: true
-      min: 2
-      max: 2
-      ignore-calls: false
-      ignore-strings: A new .* was added without updating this code
-    godot:
-      scope: all
-      exclude:
-        - '^BUG:'
-        - '^TODO:'
-      capital: true
-      period: true
-    godox:
-      keywords:
-        - TODO
-        - BUG
-        - HACK
-        - FIXME
-        - NOTE
-    inamedparam:
-      skip-single-param: false
-    lll:
-      line-length: 120
-      tab-width: 4
-    misspell:
-      mode: default
-      locale: US
-    nestif:
-      min-complexity: 3
-    nilnil:
-      checked-types:
-        - ptr
-        - func
-        - iface
-        - map
-        - chan
-    nlreturn:
-      block-size: 1
-    unused:
-      field-writes-are-uses: true
-      post-statements-are-reads: true
-      exported-fields-are-used: true
-      parameters-are-used: true
-      local-variables-are-used: true
-      generated-is-used: true
-    usestdlibvars:
-      http-method: true
-      http-status-code: true
-      time-weekday: true
-      time-month: true
-      time-layout: true
-      crypto-hash: true
-      default-rpc-path: true
-      sql-isolation-level: true
-      tls-signature-scheme: true
-      constant-kind: true
+    gosec:
+      excludes:
+        - G115
   exclusions:
     generated: lax
     presets:

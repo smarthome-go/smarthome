@@ -42,7 +42,7 @@ type DevicePowerInformation struct {
 	PowerDrawWatts uint `json:"powerDrawWatts"`
 }
 
-func (d DriverManager) shallowSorter(input *[]database.ShallowDevice) error {
+func (d *DriverManager) shallowSorter(input *[]database.ShallowDevice) error {
 	needsRebuild := false
 
 	for _, dev := range *input {
@@ -102,7 +102,7 @@ func deviceSorter(a, b ConfigInfoWrapperDevice) int {
 	return 0
 }
 
-func (d DriverManager) ListAllDevicesShallow() ([]database.ShallowDevice, error) {
+func (d *DriverManager) ListAllDevicesShallow() ([]database.ShallowDevice, error) {
 	unsorted, err := database.ListAllDevices()
 	if err != nil {
 		return nil, err
@@ -115,7 +115,7 @@ func (d DriverManager) ListAllDevicesShallow() ([]database.ShallowDevice, error)
 	return unsorted, nil
 }
 
-func (d DriverManager) ListPersonalDevicesShallow(username string) ([]database.ShallowDevice, error) {
+func (d *DriverManager) ListPersonalDevicesShallow(username string) ([]database.ShallowDevice, error) {
 	unsorted, err := database.ListUserDevices(username)
 	if err != nil {
 		return nil, err
@@ -134,7 +134,7 @@ func (d DriverManager) ListPersonalDevicesShallow(username string) ([]database.S
 	return unsorted, nil
 }
 
-func (d DriverManager) ListAllDevicesRich() ([]RichDevice, error) {
+func (d *DriverManager) ListAllDevicesRich() ([]RichDevice, error) {
 	raw, err := database.ListAllDevices()
 	if err != nil {
 		return nil, err
@@ -143,7 +143,7 @@ func (d DriverManager) ListAllDevicesRich() ([]RichDevice, error) {
 	return d.EnrichDevicesList(raw)
 }
 
-func (d DriverManager) ListPersonalDevicesRich(username string) ([]RichDevice, error) {
+func (d *DriverManager) ListPersonalDevicesRich(username string) ([]RichDevice, error) {
 	raw, err := database.ListUserDevices(username)
 	if err != nil {
 		return nil, err
@@ -152,7 +152,7 @@ func (d DriverManager) ListPersonalDevicesRich(username string) ([]RichDevice, e
 	return d.EnrichDevicesList(raw)
 }
 
-func (d DriverManager) EnrichDeviceAll(deviceID string) (RichDevice, bool, error) {
+func (d *DriverManager) EnrichDeviceAll(deviceID string) (RichDevice, bool, error) {
 	device, found, err := database.GetDeviceById(deviceID)
 	if err != nil || !found {
 		return RichDevice{}, found, err
@@ -168,7 +168,7 @@ func (d DriverManager) EnrichDeviceAll(deviceID string) (RichDevice, bool, error
 	return richDevice, true, err
 }
 
-func (d DriverManager) EnrichDevice(device database.ShallowDevice, fittingDriver RichDriver) (RichDevice, error) {
+func (d *DriverManager) EnrichDevice(device database.ShallowDevice, fittingDriver RichDriver) (RichDevice, error) {
 	hmsErrors := types.HmsErrorsFromDiagnostics(fittingDriver.ValidationErrors)
 
 	storedDeviceValue := DeviceStore[device.ID]
@@ -442,7 +442,7 @@ func (d DriverManager) EnrichDevice(device database.ShallowDevice, fittingDriver
 var CachedDriverMeta map[database.DriverTuple]DriverInfo = make(map[database.DriverTuple]DriverInfo)
 
 // TODO: only run this function on drivers which actually changed
-func (d DriverManager) RebuildCache() error {
+func (d *DriverManager) RebuildCache() error {
 	log.Debug("Rebuilding homescript driver metadata cache...")
 	drivers, err := d.ListDriversWithoutStoredValues()
 	if err != nil {
@@ -459,7 +459,7 @@ func (d DriverManager) RebuildCache() error {
 	return nil
 }
 
-func (d DriverManager) EnrichDevicesList(input []database.ShallowDevice) ([]RichDevice, error) {
+func (d *DriverManager) EnrichDevicesList(input []database.ShallowDevice) ([]RichDevice, error) {
 	drivers, err := d.ListDriversWithoutStoredValues()
 	if err != nil {
 		return nil, err
@@ -608,7 +608,7 @@ func (d DriverManager) EnrichDevicesList(input []database.ShallowDevice) ([]Rich
 // 1. Fetch the corresponding driver from the DB
 // 2. Generate a default JSON from the driver device singleton
 // 3. Create the new device.
-func (d DriverManager) CreateDevice(
+func (d *DriverManager) CreateDevice(
 	type_ database.DEVICE_TYPE,
 	id string,
 	name string,
@@ -632,7 +632,7 @@ func (d DriverManager) CreateDevice(
 	}
 
 	if len(validationErrors) > 0 {
-		return false, fmt.Errorf("Could not extract driver schema: %s", validationErrors[0].Message), nil
+		return false, fmt.Errorf("could not extract driver schema: %s", validationErrors[0].Message), nil
 	}
 
 	// Generate default JSON from driver info.
@@ -641,7 +641,7 @@ func (d DriverManager) CreateDevice(
 
 	marshaled, err := json.Marshal(defaultDeviceInterface)
 	if err != nil {
-		return false, fmt.Errorf("Failed to create JSON from configuration: %s", err.Error()), nil
+		return false, fmt.Errorf("failed to create JSON from configuration: %s", err.Error()), nil
 	}
 
 	// Create an entry in the store.
@@ -663,7 +663,7 @@ func (d DriverManager) CreateDevice(
 	return true, nil, nil
 }
 
-func (d DriverManager) SetDevicePower(deviceId string, power bool) (output DriverActionPowerOutput, deviceFound bool, hmsErr *types.HmsError, err error) {
+func (d *DriverManager) SetDevicePower(deviceId string, power bool) (output DriverActionPowerOutput, deviceFound bool, hmsErr *types.HmsError, err error) {
 	switchData, found, err := database.GetDeviceById(deviceId)
 	if err != nil {
 		return DriverActionPowerOutput{}, false, nil, err
@@ -691,7 +691,7 @@ func (d DriverManager) SetDevicePower(deviceId string, power bool) (output Drive
 	return output, true, nil, nil
 }
 
-func (d DriverManager) SetDeviceDim(deviceId string, function string, value int64) (output DriverActionDimOutput, deviceFound bool, hmsErr *types.HmsError, err error) {
+func (d *DriverManager) SetDeviceDim(deviceId string, function string, value int64) (output DriverActionDimOutput, deviceFound bool, hmsErr *types.HmsError, err error) {
 	switchData, found, err := database.GetDeviceById(deviceId)
 	if err != nil {
 		return DriverActionDimOutput{}, false, nil, err

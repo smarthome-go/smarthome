@@ -34,7 +34,10 @@ func fetchImageBytes(imgURL string, timeout int) ([]byte, error) {
 		}
 		imgURLStruct = imgURLStructTemp
 	default:
-		return nil, fmt.Errorf("Unsupported protocol error: Protocol: '%s' can not be used to fetch images. Please use 'http' or 'https' instead.", imgURLStruct.Scheme)
+		return nil, fmt.Errorf(
+			"unsupported protocol error: protocol '%s' cannot be used to fetch images; use 'http' or 'https' instead",
+			imgURLStruct.Scheme,
+		)
 	}
 	log.Trace(fmt.Sprintf("Initiating image fetching from: '%s'", imgURLStruct.Host))
 	client := http.Client{Timeout: time.Second * time.Duration(timeout)}
@@ -43,6 +46,7 @@ func fetchImageBytes(imgURL string, timeout int) ([]byte, error) {
 		log.Error("Failed to fetch image through proxy: ", err.Error())
 		return nil, err
 	}
+	defer response.Body.Close()
 	if response.StatusCode != 200 {
 		log.Error("Received non 200 response code\n")
 	}

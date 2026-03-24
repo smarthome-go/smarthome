@@ -38,7 +38,7 @@ func TestReadConfig(t *testing.T) {
 	if err := os.WriteFile(
 		fmt.Sprintf("%s/config.json", configPath),
 		[]byte("not_valid"),
-		0755,
+		0600,
 	); err != nil {
 		t.Error(err.Error())
 		return

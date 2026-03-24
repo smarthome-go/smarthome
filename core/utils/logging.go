@@ -17,7 +17,7 @@ func NewLogger(logLevel logrus.Level) *logrus.Logger {
 		logrus.ErrorLevel: "./log/error.log",
 		logrus.FatalLevel: "./log/error.log",
 	}
-	var hook *lfshook.LfsHook = lfshook.NewHook(
+	hook := lfshook.NewHook(
 		pathMap,
 		&logrus.JSONFormatter{PrettyPrint: false},
 	)

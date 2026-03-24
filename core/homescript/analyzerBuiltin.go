@@ -41,15 +41,15 @@ func NewAnalyzerHost(
 	}
 }
 
-func (self analyzerHost) PostValidationHook(
+func (host analyzerHost) PostValidationHook(
 	analyzedModules map[string]ast.AnalyzedProgram,
 	mainModule string,
 	analyzer *analyzer.Analyzer,
 	hasPreviousError bool,
 ) []diagnostic.Diagnostic {
-	diagnostics := self.diagnostics
+	diagnostics := host.diagnostics
 
-	switch self.context.Kind() {
+	switch host.context.Kind() {
 	case types.HMS_PROGRAM_KIND_DEVICE_DRIVER:
 		_, diagnosticsDriver := driver.ExtractDriverInfo(analyzedModules, mainModule, true)
 		diagnostics = append(diagnostics, diagnosticsDriver...)
@@ -98,14 +98,14 @@ func (self analyzerHost) PostValidationHook(
 	}
 }
 
-func (self analyzerHost) GetBuiltinImport(
+func (host analyzerHost) GetBuiltinImport(
 	moduleName string,
 	valueName string,
 	span errors.Span,
 	kind pAst.IMPORT_KIND,
 ) (result analyzer.BuiltinImport, moduleFound bool, valueFound bool) {
 	return a.GetImport(
-		self.context,
+		host.context,
 		moduleName,
 		valueName,
 		span,
@@ -113,11 +113,11 @@ func (self analyzerHost) GetBuiltinImport(
 	)
 }
 
-func (self analyzerHost) ResolveCodeModule(moduleName string) (code string, moduleFound bool, err error) {
+func (host analyzerHost) ResolveCodeModule(moduleName string) (code string, moduleFound bool, err error) {
 	logger.Trace(fmt.Sprintf("Resolving module `%s`", moduleName))
 
-	if self.context.Username() != nil {
-		script, found, err := HmsManager.GetPersonalScriptById(moduleName, *self.context.Username())
+	if host.context.Username() != nil {
+		script, found, err := HmsManager.GetPersonalScriptById(moduleName, *host.context.Username())
 		if err != nil || !found {
 			return "", found, err
 		}
