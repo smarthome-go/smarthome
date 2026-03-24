@@ -99,12 +99,18 @@
             const extractionsTemp = (responseJson as HydratedDeviceResponse).extractions
             shallow = (responseJson as HydratedDeviceResponse).shallow
 
+            const dimmables = coerceArray((extractionsTemp as { dimmables?: DeviceExtractions['dimmables'] | null }).dimmables)
+            const sensors = coerceArray((extractionsTemp as { sensors?: DeviceExtractions['sensors'] | null }).sensors)
+            const normalizedExtractions: DeviceExtractions = {
+                ...extractionsTemp,
+                dimmables,
+                sensors,
+            }
+
             console.dir(extractions)
 
             // Write the amount of sliders into the cache for smoother loading.
-            if (extractionsTemp.dimmables != null) {
-                writeNumSliders(extractionsTemp.dimmables.length)
-            }
+            writeNumSliders(dimmables.length)
 
             colorReady = false
             if (hasCapability(extractionsTemp.config.capabilities, 'color')) {
@@ -115,7 +121,7 @@
             }
 
             extractionsLoaded = true
-            extractions = extractionsTemp
+            extractions = normalizedExtractions
         } catch (err) {
             $createSnackbar(`Failed to hydrate device: ${err}`)
         }
@@ -335,16 +341,23 @@
         return self !== null && self.includes(capability)
     }
 
+    function coerceArray<T>(value: T[] | null | undefined): T[] {
+        return Array.isArray(value) ? value : []
+    }
+
 
     function deviceHeight(ex: DeviceExtractions): number {
         let height = 1;
+        const capabilities = Array.isArray(ex?.config?.capabilities) ? ex.config.capabilities : []
+        const dimmables = coerceArray((ex as { dimmables?: DeviceExtractions['dimmables'] | null }).dimmables)
+        const sensors = coerceArray((ex as { sensors?: DeviceExtractions['sensors'] | null }).sensors)
 
-        for (let c of ex.config.capabilities) {
+        for (let c of capabilities) {
             switch (c) {
                 case 'base':
                     break
                 case 'dimmable':
-                    height += ex.dimmables.length
+                    height += dimmables.length
                     break
                 case 'color':
                     height += 1
@@ -352,7 +365,7 @@
                 case 'power':
                     break
                 case 'sensor':
-                    height += ex.sensors.length
+                    height += sensors.length
                     break
             }
         }
@@ -362,12 +375,11 @@
 
     let hasErrors = false
     $: hasErrors = errors !== null && errors.length > 0
+    $: style = `grid-row-end: span ${Math.max(1, deviceHeight(extractions) + (hasErrors ? 1 : 0))};`
 
     function writeNumSliders(num: number) {
         window.localStorage.setItem(localStorageKey, num.toString())
     }
-
-    let height = 0;
 
     async function mount() {
         isInitialLoad = true
@@ -396,9 +408,6 @@
 
         canFetchSources = (await hasPermission('modifyServerConfig')) && (await hasPermission('homescript'))
         console.log(`Configured error display: user can fetch sources: ${canFetchSources}`)
-
-        let height = deviceHeight(extractions)
-        style = `grid-row-end: span ${height};`
 
         isInitialLoad = false
     }
