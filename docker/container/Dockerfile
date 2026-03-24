@@ -1,6 +1,6 @@
 FROM --platform=$BUILDPLATFORM alpine:3
 LABEL author="MikMuellerDev"
-LABEL version="0.13.0-alpha"
+LABEL version="0.13.1-alpha"
 
 COPY ./cache /app
 
