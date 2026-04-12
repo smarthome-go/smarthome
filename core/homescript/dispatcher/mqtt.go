@@ -30,6 +30,7 @@ const MqttRetryCooldown = time.Second * 60
 // Error messages.
 
 const notInitializedErrMsg = "MQTT subsystem is not initialized"
+
 var errMqttRetryCooldown = errors.New("mqtt retry cooldown active")
 
 // TODO: actually track subscriptions
@@ -104,10 +105,10 @@ type MqttManager struct {
 	}
 
 	ConnectionInProgressLock sync.Mutex
-	RetryBackoffLock          sync.Mutex
-	RetryErrorWindowStart     time.Time
-	RetryErrorCount           int
-	RetryCooldownUntil        time.Time
+	RetryBackoffLock         sync.Mutex
+	RetryErrorWindowStart    time.Time
+	RetryErrorCount          int
+	RetryCooldownUntil       time.Time
 
 	// Is being called from the outside if the outside knows that some things, which could have caused the initial
 	// error, changed.

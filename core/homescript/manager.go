@@ -442,7 +442,7 @@ func (m *Manager) RunGeneric(
 	logger.Tracef("HMS spawn: `%s` function `%s`", invocation.Identifier.Filename, functionInvocation.Function)
 	waitStart := time.Now()
 	coreMain := vm.SpawnAsync(functionInvocation, &debuggerOut, &debuggerIn, nil)
-	logger.Tracef("HMS spawned core %d for `%s` function `%s`", coreMain, invocation.Identifier.Filename, functionInvocation.Function)
+	logger.Tracef("HMS spawned core %d for `%s` function `%s`", coreMain.Corenum, invocation.Identifier.Filename, functionInvocation.Function)
 
 	if runtime.VM_DEBUGGER {
 		dbg := homescript.NewDebugger(
