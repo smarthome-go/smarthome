@@ -7,7 +7,7 @@ goenv := GOCACHE=$(tmpdir)/go-build
 SKIP_WEB_LINT ?= 0
 # Do not edit manually, use the `version` target to change the
 # version programmatically in all places
-version := 0.13.2-alpha
+version := 0.13.3-alpha
 
 build = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) $(goenv) go build -ldflags "-s -w" -v -o $(appname) $(4)
 # TODO: eliminate usage of workingdir
