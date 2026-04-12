@@ -68,7 +68,7 @@ func (i *InstanceT) ReloadDriver(driver database.DeviceDriver) error {
 		return err
 	}
 
-	logger.Infof("Successfully reloaded driver `%s:%s`", driver.VendorID, driver.ModelID)
+	logger.Debugf("Successfully reloaded driver `%s:%s`", driver.VendorID, driver.ModelID)
 
 	if errCnt != 0 {
 		return fmt.Errorf("%d device(s) could not be registered", errCnt)
@@ -189,7 +189,7 @@ func (i *InstanceT) RegisterUserScript(programID string, username string) error 
 				return err
 			}
 
-			logger.Infof("Register user program: %d", id)
+			logger.Tracef("Register user program: %d", id)
 		case types.TriggerDeviceClassEvent:
 			panic("HI")
 		default:
@@ -351,7 +351,7 @@ func (i *InstanceT) RegisterDevice(driver database.DeviceDriver, deviceID string
 	}
 
 	// TODO: fixup any database <-> singleton mismatches caused by corruptions.
-	logger.Infof("Successfully registered device `%s`", deviceID)
+	logger.Debugf("Successfully registered device `%s`", deviceID)
 	return nil
 }
 

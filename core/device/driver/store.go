@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
@@ -59,9 +60,13 @@ func (d *DriverManager) StoreDriverSingletonConfigUpdate(
 	modelID string,
 	fromJSON any,
 ) error {
+	start := time.Now()
+	log.Tracef("Storing driver singleton for `%s:%s`...", vendorID, modelID)
+
 	// TODO: need to patch the original value by only applying the changed fields.
 	driver, found, err := d.GetDriverWithInfos(vendorID, modelID)
 	if err != nil {
+		log.Errorf("Failed storing driver singleton for `%s:%s` after %s: %v", vendorID, modelID, time.Since(start), err)
 		return err
 	}
 
@@ -82,6 +87,7 @@ func (d *DriverManager) StoreDriverSingletonConfigUpdate(
 	)
 
 	if err := StoreDriverSingletonBackend(vendorID, modelID, withOldValues); err != nil {
+		log.Errorf("Failed storing driver singleton for `%s:%s` after %s: %v", vendorID, modelID, time.Since(start), err)
 		return err
 	}
 
@@ -103,6 +109,7 @@ func (d *DriverManager) StoreDriverSingletonConfigUpdate(
 		d.ReloadDriverCallBackFunc(driver.Driver)
 	}
 
+	log.Debugf("Stored driver singleton for `%s:%s` in %s", vendorID, modelID, time.Since(start))
 	return nil
 }
 
@@ -150,8 +157,11 @@ func (d *DriverManager) StoreDeviceSingletonConfigUpdate(
 	deviceID string,
 	fromJSON any,
 ) error {
+	start := time.Now()
+
 	device, found, err := database.GetDeviceById(deviceID)
 	if err != nil {
+		log.Errorf("Failed storing device singleton for `%s` after %s: %v", deviceID, time.Since(start), err)
 		return err
 	}
 
@@ -161,6 +171,7 @@ func (d *DriverManager) StoreDeviceSingletonConfigUpdate(
 
 	driver, found, err := d.GetDriverWithInfos(device.VendorID, device.ModelID)
 	if err != nil {
+		log.Errorf("Failed storing device singleton for `%s` after %s: %v", deviceID, time.Since(start), err)
 		return err
 	}
 
@@ -179,10 +190,17 @@ func (d *DriverManager) StoreDeviceSingletonConfigUpdate(
 	)
 
 	if affetedASetting {
+		log.Debugf("Device singleton update affected a settings field for `%s`; reloading device...", deviceID)
 		d.ReloadDeviceCallBackFunc(device.ID)
 	}
 
-	return StoreDeviceSingletonBackend(deviceID, withOldValues)
+	if err := StoreDeviceSingletonBackend(deviceID, withOldValues); err != nil {
+		log.Errorf("Failed storing device singleton for `%s` after %s: %v", deviceID, time.Since(start), err)
+		return err
+	}
+
+	log.Tracef("Stored device singleton for `%s` in %s", deviceID, time.Since(start))
+	return nil
 }
 
 // This function just stores a value in the store backend without applying transformations on it.
@@ -334,12 +352,13 @@ func (d *DriverManager) PopulateValueCache() error {
 
 			unmarshaledValue := value.TypeAwareUnmarshalValue(unmarshaledJSON, information.DriverConfig.Info.HmsType)
 
-			unmarshaledValueStr, err := (*unmarshaledValue).Display()
-			if err != nil {
-				panic("Could not display unmarshaled value")
-			}
+			// unmarshaledValueStr, err := (*unmarshaledValue).Display()
+			// if err != nil {
+			// 	panic("Could not display unmarshaled value")
+			// }
 
-			fmt.Printf("Driver `%s:%s` unmarshaled value: %v\n", driver.VendorID, driver.ModelID, unmarshaledValueStr)
+			// TODO: remove
+			// fmt.Printf("Driver `%s:%s` unmarshaled value: %v\n", driver.VendorID, driver.ModelID, unmarshaledValueStr)
 
 			DriverStore[database.DriverTuple{
 				VendorID: driver.VendorID,
@@ -363,12 +382,13 @@ func (d *DriverManager) PopulateValueCache() error {
 				return err
 			}
 
-			valDisp, e := val.Display()
-			if e != nil {
-				panic("Could not display unmarshaled value")
-			}
+			// TODO: remove
+			// valDisp, e := val.Display()
+			// if e != nil {
+			// 	panic("Could not display unmarshaled value")
+			// }
 
-			fmt.Printf("Device `%s` unmarshaled value: %v | %s\n", device.ID, valDisp, information.DeviceConfig.Info.HmsType)
+			// fmt.Printf("Device `%s` unmarshaled value: %v | %s\n", device.ID, valDisp, information.DeviceConfig.Info.HmsType)
 
 			if !found {
 				panic(fmt.Sprintf("Device not found in database: `%s`", device.ID))

@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/sirupsen/logrus"
 	"github.com/smarthome-go/homescript/v3/homescript"
 	"github.com/smarthome-go/homescript/v3/homescript/analyzer/ast"
@@ -174,7 +173,6 @@ func (m *Manager) resolveFileContentsOfErrors(
 				return nil, dbErr
 			}
 			if !found {
-				spew.Dump(err.DiagnosticError)
 				panic(fmt.Sprintf("Homescript with ID %s owned by user %s was not found", err.Span.Filename, *context.Username()))
 			}
 			code = script.Data.Code
@@ -184,7 +182,6 @@ func (m *Manager) resolveFileContentsOfErrors(
 				return nil, dbErr
 			}
 			if !found {
-				spew.Dump(err.DiagnosticError)
 				panic(fmt.Sprintf("Homescript with ID %s was not found", err.Span.Filename))
 			}
 			code = script.Data.Code
@@ -442,7 +439,10 @@ func (m *Manager) RunGeneric(
 	debuggerOut := make(chan runtime.DebugOutput)
 	debuggerIn := make(chan struct{})
 
+	logger.Tracef("HMS spawn: `%s` function `%s`", invocation.Identifier.Filename, functionInvocation.Function)
+	waitStart := time.Now()
 	coreMain := vm.SpawnAsync(functionInvocation, &debuggerOut, &debuggerIn, nil)
+	logger.Tracef("HMS spawned core %d for `%s` function `%s`", coreMain, invocation.Identifier.Filename, functionInvocation.Function)
 
 	if runtime.VM_DEBUGGER {
 		dbg := homescript.NewDebugger(
@@ -456,7 +456,14 @@ func (m *Manager) RunGeneric(
 		go dbg.DebuggerMainloop()
 	}
 
+	logger.Tracef("HMS waiting: `%s` function `%s`", invocation.Identifier.Filename, functionInvocation.Function)
 	exceptionCore, interrupt := vm.Wait()
+	logger.Tracef(
+		"HMS wait returned after %s: `%s` function `%s`",
+		time.Since(waitStart),
+		invocation.Identifier.Filename,
+		functionInvocation.Function,
+	)
 	spawnResult := vm.HandleTermination(
 		coreMain,
 		functionInvocation,
@@ -777,7 +784,19 @@ func (m *Manager) RunDriverScript(
 	// TODO: this enables concurrent access, how to prevent races?
 	singletons[driver.DriverSingletonIdent] = driverSingleton
 
-	return m.RunGeneric(
+	logger.Debugf(
+		"Running driver HMS `%s` (function `%s`, device `%s`)...",
+		hmsID,
+		invocation.Function,
+		func() string {
+			if driverIDs.DeviceID == nil {
+				return "<nil>"
+			}
+			return *driverIDs.DeviceID
+		}(),
+	)
+
+	res, err := m.RunGeneric(
 		types.ProgramInvocation{
 			Identifier: homescript.InputProgram{
 				ProgramText: driverData.HomescriptCode,
@@ -797,6 +816,20 @@ func (m *Manager) RunDriverScript(
 		false,
 		nil,
 	)
+
+	logger.Tracef(
+		"Driver HMS `%s` finished (function `%s`, device `%s`)",
+		hmsID,
+		invocation.Function,
+		func() string {
+			if driverIDs.DeviceID == nil {
+				return "<nil>"
+			}
+			return *driverIDs.DeviceID
+		}(),
+	)
+
+	return res, err
 }
 
 // Removes an arbitrary job from the job list

@@ -168,6 +168,13 @@ func (d *DriverManager) invokeDriverGeneric(
 		},
 		&outputBuffer,
 	)
+	log.Tracef(
+		"Driver HMS run returned for `%s:%s` device `%s` (function `%s`)",
+		vendorId,
+		modelId,
+		deviceId,
+		functionInvocation.Invocation.Function,
+	)
 
 	// hmsRes, resultContext, err := d.Hms.Run(
 	// 	types.HMS_PROGRAM_KIND_DEVICE_DRIVER,
@@ -261,6 +268,15 @@ func (d *DriverManager) InvokeDriverFunc(
 		panic("One or more ids in the driver-device triplet were empty or <nil>")
 	}
 
+	start := time.Now()
+	log.Debugf(
+		"Invoking driver function `%s` for device `%s` (driver %s:%s)...",
+		call.Invocation.Function,
+		*ids.DeviceID,
+		ids.VendorID,
+		ids.ModelID,
+	)
+
 	// TODO: add context support
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
@@ -277,8 +293,22 @@ func (d *DriverManager) InvokeDriverFunc(
 	)
 
 	if dbErr != nil {
+		log.Infof(
+			"Driver function `%s` for device `%s` failed after %s: %v",
+			call.Invocation.Function,
+			*ids.DeviceID,
+			time.Since(start),
+			dbErr,
+		)
 		return types.HmsRes{}, dbErr
 	}
+
+	log.Tracef(
+		"Driver function `%s` for device `%s` finished in %s",
+		call.Invocation.Function,
+		*ids.DeviceID,
+		time.Since(start),
+	)
 
 	return runResult, nil
 }

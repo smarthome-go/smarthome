@@ -3,7 +3,6 @@ package executor
 import (
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	"github.com/smarthome-go/homescript/v3/homescript/runtime/value"
 	"github.com/smarthome-go/smarthome/core/homescript/dispatcher"
@@ -180,7 +179,6 @@ func registerTriggerDeviceClass(
 
 func (exec *InterpreterExecutor) registerTriggerKill(callbackFunctionMangled string) {
 	*exec.OnKillCallbackFuncs = append(*exec.OnKillCallbackFuncs, callbackFunctionMangled)
-	spew.Dump(exec.OnKillCallbackFuncs)
 }
 
 func registerTriggerMessage(

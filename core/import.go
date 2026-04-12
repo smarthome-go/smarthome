@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/device/driver"
 	"github.com/smarthome-go/smarthome/core/user"
@@ -399,7 +398,6 @@ func createRoomsInDatabase(rooms []SetupRoom) error {
 		}
 
 		for _, device := range room.Devices {
-			spew.Dump(device.SingletonJSON)
 			if err := database.CreateDevice(database.ShallowDevice{
 				DeviceType:    device.DeviceType,
 				ID:            device.Id,

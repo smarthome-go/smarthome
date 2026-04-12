@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -22,10 +23,14 @@ const MqttDisconnectTimeoutMillis uint = 250
 const MqttQOS byte = 0x2
 const MqttHealthCheckTopic = "healthcheck"
 const mqttAllowVerbose = false
+const MqttErrorBurstWindow = time.Second * 10
+const MqttErrorBurstThreshold = 5
+const MqttRetryCooldown = time.Second * 60
 
 // Error messages.
 
 const notInitializedErrMsg = "MQTT subsystem is not initialized"
+var errMqttRetryCooldown = errors.New("mqtt retry cooldown active")
 
 // TODO: actually track subscriptions
 
@@ -99,6 +104,10 @@ type MqttManager struct {
 	}
 
 	ConnectionInProgressLock sync.Mutex
+	RetryBackoffLock          sync.Mutex
+	RetryErrorWindowStart     time.Time
+	RetryErrorCount           int
+	RetryCooldownUntil        time.Time
 
 	// Is being called from the outside if the outside knows that some things, which could have caused the initial
 	// error, changed.
@@ -145,6 +154,62 @@ func InitModule() {
 	}
 }
 
+func isChurnError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "not currently connected") ||
+		strings.Contains(msg, "connection lost") ||
+		strings.Contains(msg, "EOF")
+}
+
+func (m *MqttManager) recordRetryError(err error) {
+	if !isChurnError(err) {
+		return
+	}
+
+	m.RetryBackoffLock.Lock()
+	defer m.RetryBackoffLock.Unlock()
+
+	now := time.Now()
+	if m.RetryErrorWindowStart.IsZero() || now.Sub(m.RetryErrorWindowStart) > MqttErrorBurstWindow {
+		m.RetryErrorWindowStart = now
+		m.RetryErrorCount = 0
+	}
+
+	m.RetryErrorCount++
+
+	if m.RetryErrorCount >= MqttErrorBurstThreshold && now.After(m.RetryCooldownUntil) {
+		m.RetryCooldownUntil = now.Add(MqttRetryCooldown)
+		logger.Errorf(
+			"MQTT churn detected (%d errors in %s); pausing reconnect attempts for %s",
+			m.RetryErrorCount,
+			MqttErrorBurstWindow,
+			MqttRetryCooldown,
+		)
+	}
+}
+
+func (m *MqttManager) isRetryCooldownActive() (bool, time.Time) {
+	m.RetryBackoffLock.Lock()
+	defer m.RetryBackoffLock.Unlock()
+
+	if m.RetryCooldownUntil.IsZero() {
+		return false, time.Time{}
+	}
+
+	now := time.Now()
+	if now.After(m.RetryCooldownUntil) {
+		m.RetryCooldownUntil = time.Time{}
+		m.RetryErrorWindowStart = time.Time{}
+		m.RetryErrorCount = 0
+		return false, time.Time{}
+	}
+
+	return true, m.RetryCooldownUntil
+}
+
 func NewMqttManager(config database.MqttConfig, retryHook func() error) (m *MqttManager, e error) {
 	m = &MqttManager{
 		Body: struct {
@@ -180,6 +245,10 @@ func (m *MqttManager) setConfig(config database.MqttConfig) {
 }
 
 func (m *MqttManager) init() error {
+	if active, until := m.isRetryCooldownActive(); active {
+		return fmt.Errorf("%w until %s", errMqttRetryCooldown, until.Format(time.RFC3339))
+	}
+
 	m.ConnectionInProgressLock.Lock()
 	defer m.ConnectionInProgressLock.Unlock()
 
@@ -218,7 +287,8 @@ func (m *MqttManager) init() error {
 
 	client := mqtt.NewClient(opts)
 
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
+	if token := client.Connect(); token.WaitTimeout(MqttPingTimeout) && token.Error() != nil {
+		m.recordRetryError(token.Error())
 		return token.Error()
 	}
 
@@ -231,6 +301,7 @@ func (m *MqttManager) init() error {
 	}
 
 	if token := client.Publish(MqttHealthCheckTopic, MqttQOS, false, ""); token.Error() != nil {
+		m.recordRetryError(token.Error())
 		return token.Error()
 	}
 
@@ -264,7 +335,7 @@ func (m *MqttManager) MQTTKeepalive() {
 			enabled := m.Body.Content.Config.Enabled
 			m.Body.Lock.RUnlock()
 
-			if enabled {
+			if enabled && !errors.Is(err, errMqttRetryCooldown) {
 				logger.Errorf("MQTT could not be initialized: %s", err.Error())
 			}
 		}
@@ -278,6 +349,10 @@ func (m *MqttManager) IsConnected() bool {
 }
 
 func (m *MqttManager) Status() error {
+	if active, until := m.isRetryCooldownActive(); active {
+		return fmt.Errorf("%w until %s", errMqttRetryCooldown, until.Format(time.RFC3339))
+	}
+
 	m.Body.Lock.RLock()
 	isConnected := m.IsConnected()
 	m.Body.Lock.RUnlock()
@@ -285,6 +360,7 @@ func (m *MqttManager) Status() error {
 	if !isConnected {
 		err := m.init()
 		if err != nil {
+			m.recordRetryError(err)
 			return err
 		}
 
@@ -293,16 +369,22 @@ func (m *MqttManager) Status() error {
 		m.Body.Lock.RUnlock()
 
 		if isNotConnected {
-			return fmt.Errorf("not connected to broker")
+			err := fmt.Errorf("not connected to broker")
+			m.recordRetryError(err)
+			return err
 		}
 	}
 
 	m.Body.Lock.Lock()
 	token := m.Body.Content.Client.Publish(MqttHealthCheckTopic, MqttQOS, false, "")
-	token.Wait()
+	// token.Wait()
+	if !token.WaitTimeout(MqttPingTimeout) {
+		logger.Warnf("MQTT test publish not finished after %d", MqttPingTimeout)
+	}
 	m.Body.Lock.Unlock()
 
 	if token.Error() != nil {
+		m.recordRetryError(token.Error())
 		return token.Error()
 	}
 
@@ -342,6 +424,10 @@ func (m *MqttManager) Reload() error {
 }
 
 func (m *MqttManager) reloadOnReconnect() error {
+	if active, until := m.isRetryCooldownActive(); active {
+		return fmt.Errorf("%w until %s", errMqttRetryCooldown, until.Format(time.RFC3339))
+	}
+
 	m.Body.Lock.RLock()
 	mqttEnabled := m.Body.Content.Config.Enabled
 	m.Body.Lock.RUnlock()
@@ -397,7 +483,9 @@ func (m *MqttManager) Shutdown() error {
 	for topic := range subscriptions {
 		m.Body.Lock.Lock()
 		token := m.Body.Content.Client.Unsubscribe(topic)
-		token.Wait()
+		if !token.WaitTimeout(MqttPingTimeout) {
+			logger.Warnf("Unsubscribe did not succeed after %d", MqttPingTimeout)
+		}
 		m.Body.Lock.Unlock()
 
 		if token.Error() != nil {
@@ -415,10 +503,16 @@ func (m *MqttManager) Shutdown() error {
 func (m *MqttManager) subscribeWithoutTracing(topics []string, callBack mqtt.MessageHandler) error {
 	m.Body.Lock.Lock()
 	initialized := m.Body.Content.Initialized
+	client := m.Body.Content.Client
 	m.Body.Lock.Unlock()
 
 	if !initialized {
 		return errors.New(notInitializedErrMsg)
+	}
+	if client == nil || !client.IsConnected() {
+		err := fmt.Errorf("mqtt client not connected")
+		m.recordRetryError(err)
+		return err
 	}
 
 	topicsArgs := make(map[string]byte)
@@ -428,11 +522,14 @@ func (m *MqttManager) subscribeWithoutTracing(topics []string, callBack mqtt.Mes
 
 	m.Body.Lock.Lock()
 	token := m.Body.Content.Client.SubscribeMultiple(topicsArgs, callBack)
-	token.Wait()
+	if !token.WaitTimeout(MqttPingTimeout) {
+		logger.Warnf("Subscribe did not complete after %d", MqttPingTimeout)
+	}
 	m.Body.Lock.Unlock()
 
 	if token.Error() != nil {
 		logger.Errorf("Could not subscribe to MQTT topics `%v`: %s", topics, token.Error())
+		m.recordRetryError(token.Error())
 		return token.Error()
 	}
 
@@ -467,9 +564,16 @@ func (m *MqttManager) Subscribe(topics []string, callBack mqtt.MessageHandler) e
 
 func (m *MqttManager) unsubscribeWithoutTracing(topic string) error {
 	m.Body.Lock.Lock()
+	client := m.Body.Content.Client
 	defer m.Body.Lock.Unlock()
-	if token := m.Body.Content.Client.Unsubscribe(topic); token.Wait() && token.Error() != nil {
+	if client == nil || !client.IsConnected() {
+		err := fmt.Errorf("mqtt client not connected")
+		m.recordRetryError(err)
+		return err
+	}
+	if token := m.Body.Content.Client.Unsubscribe(topic); token.WaitTimeout(MqttPingTimeout) && token.Error() != nil {
 		logger.Errorf("Could not unsubscribe from MQTT topic `%s`: %s", topic, token.Error())
+		m.recordRetryError(token.Error())
 		return token.Error()
 	}
 
@@ -528,7 +632,9 @@ func (m *MqttManager) Publish(topic string, message string) error {
 	}
 
 	token := m.Body.Content.Client.Publish(topic, MqttQOS, false, message)
-	token.Wait()
+	if !token.WaitTimeout(MqttPingTimeout) {
+		logger.Errorf("Publish did not complete after %d", MqttPingTimeout)
+	}
 	if token.Error() != nil {
 		logger.Errorf("Could not publish to MQTT topic `%s`: %s", topic, token.Error())
 	}

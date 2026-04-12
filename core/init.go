@@ -85,6 +85,8 @@ func InitDevices() error {
 }
 
 func Init(config database.ServerConfig) error {
+	log.Debug("Intializing smarthome core...")
+
 	// Homescript Manager initialization
 	hmsManager := homescript.InitManager()
 
