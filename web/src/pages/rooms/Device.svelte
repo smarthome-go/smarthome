@@ -447,32 +447,34 @@
 
     <div slot='extend'>
         {#if hasCapability(capabilities, 'dimmable')}
-            <div class="device__dim">
-                {#each extractions.dimmables as dimmable}
-                    <div class="device__dim__sep"/>
-                    <div class="device__dim__item">
-                        <span class="device__dim__item__name text-hint">{dimmable.label}</span>
-                        <div class="device__dim__item__body">
-                            <div class="device__dim__item__body__left">
-                                <FormField align="start" style="display: flex;">
-                                    <!-- TODO: does this also update the value??? -->
-                                    <Slider
-                                        min={dimmable.range.lower}
-                                        max={dimmable.range.upper}
-                                        step={1}
-                                        style="flex-grow: 1;"
-                                        bind:value={dimmable.value}
-                                        on:SMUISlider:change={(e) => dim(e.detail.value, dimmable.label)}
-                                    />
-                                </FormField>
-                            </div>
-                            <div class="device__dim__item__body__right">
-                                <span class="status text-hint">{dimmable.value}</span>
+            {#key extractions.dimmables}
+                <div class="device__dim">
+                    {#each extractions.dimmables as dimmable}
+                        <div class="device__dim__sep"/>
+                        <div class="device__dim__item">
+                            <span class="device__dim__item__name text-hint">{dimmable.label}</span>
+                            <div class="device__dim__item__body">
+                                <div class="device__dim__item__body__left">
+                                    <FormField align="start" style="display: flex;">
+                                        <!-- TODO: does this also update the value??? -->
+                                        <Slider
+                                            min={dimmable.range.lower}
+                                            max={dimmable.range.upper}
+                                            step={1}
+                                            style="flex-grow: 1;"
+                                            bind:value={dimmable.value}
+                                            on:SMUISlider:change={(e) => dim(e.detail.value, dimmable.label)}
+                                        />
+                                    </FormField>
+                                </div>
+                                <div class="device__dim__item__body__right">
+                                    <span class="status text-hint">{dimmable.value}</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                {/each}
-            </div>
+                    {/each}
+                </div>
+            {/key}
         {/if}
 
         {#if hasCapability(capabilities, 'color')}

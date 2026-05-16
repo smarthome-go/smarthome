@@ -691,6 +691,38 @@ func (d *DriverManager) SetDevicePower(deviceId string, power bool) (output Driv
 	return output, true, nil, nil
 }
 
+func (d *DriverManager) SetDeviceColor(deviceId string, color DriverColorInput) (output DriverActionSetColorOutput, deviceFound bool, hmsErr *types.HmsError, err error) {
+	switchData, found, err := database.GetDeviceById(deviceId)
+	if err != nil {
+		return DriverActionSetColorOutput{}, false, nil, err
+	}
+
+	if !found {
+		return DriverActionSetColorOutput{}, false, nil, nil
+	}
+
+	output, hmsErrs, err := d.InvokeDriverSetColor(
+		deviceId,
+		switchData.VendorID,
+		switchData.ModelID,
+		DriverActionSetColor{
+			R: color.R,
+			G: color.G,
+			B: color.B,
+		},
+	)
+
+	if err != nil {
+		return DriverActionSetColorOutput{}, false, nil, err
+	}
+
+	if hmsErrs != nil {
+		return DriverActionSetColorOutput{}, false, &hmsErrs[0], nil
+	}
+
+	return output, true, nil, nil
+}
+
 func (d *DriverManager) SetDeviceDim(deviceId string, function string, value int64) (output DriverActionDimOutput, deviceFound bool, hmsErr *types.HmsError, err error) {
 	switchData, found, err := database.GetDeviceById(deviceId)
 	if err != nil {

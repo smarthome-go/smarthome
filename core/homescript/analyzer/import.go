@@ -355,6 +355,39 @@ var builtinImportHandlers = map[types.ImportKey]importHandler{
 			Template: &ast.TemplateSpec{},
 		}, true
 	},
+	// TODO: color
+	{ModuleName: "device", ValueName: "set_color"}: func(_ types.ExecutionContext, span errors.Span, _ pAst.IMPORT_KIND) (analyzer.BuiltinImport, bool) {
+		return analyzer.BuiltinImport{
+			Type: ast.NewFunctionType(
+				ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
+					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("device_id", span), ast.NewStringType(span), nil),
+					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("color", span), ast.NewObjectType(
+						[]ast.ObjectTypeField{
+							ast.NewObjectTypeField(
+								pAst.NewSpannedIdent("r", span),
+								ast.NewIntType(span),
+								span,
+							),
+							ast.NewObjectTypeField(
+								pAst.NewSpannedIdent("g", span),
+								ast.NewIntType(span),
+								span,
+							),
+							ast.NewObjectTypeField(
+								pAst.NewSpannedIdent("b", span),
+								ast.NewIntType(span),
+								span,
+							)},
+						span,
+					), nil),
+				}),
+				span,
+				ast.NewBoolType(span),
+				span,
+			),
+			Template: &ast.TemplateSpec{},
+		}, true
+	},
 	{ModuleName: "device", ValueName: "set_power"}: func(_ types.ExecutionContext, span errors.Span, _ pAst.IMPORT_KIND) (analyzer.BuiltinImport, bool) {
 		return analyzer.BuiltinImport{
 			Type: ast.NewFunctionType(

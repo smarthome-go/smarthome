@@ -196,6 +196,50 @@ func (exec InterpreterExecutor) GetBuiltinImport(
 
 				return value.NewValueBool(output.Changed), nil
 			}), true
+		case "set_color":
+			return *value.NewValueBuiltinFunction(func(
+				executor value.Executor,
+				cancelCtx *context.Context,
+				span errors.Span,
+				args ...value.Value,
+			) (*value.Value, *value.VmInterrupt) {
+				deviceId := args[0].(value.ValueString).Inner
+				color := args[1].(value.ValueObject).FieldsInternal
+				colorR := (*color["r"]).(value.ValueInt).Inner
+				colorG := (*color["g"]).(value.ValueInt).Inner
+				colorB := (*color["b"]).(value.ValueInt).Inner
+
+				_, deviceFound, hmsErr, err := driver.Manager.SetDeviceColor(deviceId, driver.DriverColorInput{
+					R: uint8(colorR),
+					G: uint8(colorG),
+					B: uint8(colorB),
+				})
+				if err != nil {
+					return nil, value.NewVMFatalException(
+						fmt.Sprintf("Backend failure during power action: %s", err.Error()),
+						value.Vm_HostErrorKind,
+						span,
+					)
+				}
+
+				if hmsErr != nil {
+					return nil, value.NewVMThrowInterrupt(
+						span,
+						fmt.Sprintf("Device malfunction: %s", hmsErr.String()),
+					)
+				}
+
+				if !deviceFound {
+					return nil, value.NewVMThrowInterrupt(
+						span,
+						fmt.Sprintf("No such device: `%s`", deviceId),
+					)
+				}
+
+				// TODO: use output
+
+				return value.NewValueBool(false), nil
+			}), true
 		case "dim":
 			return *value.NewValueBuiltinFunction(func(
 				executor value.Executor,
