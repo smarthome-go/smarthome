@@ -14,8 +14,10 @@ build = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) $(goenv) go build -ldflags "-s -w" -
 tar = mkdir -p build && cd ../ && tar -cvzf ./$(appname)_$(1)_$(2).tar.gz $(workingdir)/$(appname) $(workingdir)/web/dist $(workingdir)/web/html $(workingdir)/resources && mv $(appname)_$(1)_$(2).tar.gz $(workingdir)/build
 
 docker_repo := mikmuellerdev/smarthome
+compose_project := $(notdir $(CURDIR))
+dev_database_volume := $(compose_project)_smarthome-data
 
-.PHONY: all linux
+.PHONY: all linux reset
 
 all:	linux
 
@@ -83,6 +85,12 @@ dev:
 	cp ./docker/mosquitto.conf ./docker/mosquitto_config/mosquitto.conf
 
 	docker-compose -f ./docker-compose-dev.yml up -d
+
+# Deletes the app development database.
+reset:
+	docker-compose -f ./docker-compose-dev.yml stop smarthome-mariadb
+	docker-compose -f ./docker-compose-dev.yml rm -f smarthome-mariadb
+	docker volume rm $(dev_database_volume)
 
 # Starts the vite development server
 vite-dev:

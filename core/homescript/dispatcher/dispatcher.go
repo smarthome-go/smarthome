@@ -219,6 +219,10 @@ func (i *InstanceT) registerInternal(info dispatcherTypes.RegisterInfo) (dispatc
 
 			topics = append(topics, topic)
 		}
+		if len(topics) == 0 {
+			i.FreeRegistrationID(id)
+			return 0, errors.New("cannot register MQTT trigger without topics")
+		}
 
 		// TODO: maybe check that a program cannot register twice.
 		if err := i.Mqtt.Subscribe(topics, i.mqttCallBack); err != nil {
@@ -654,6 +658,78 @@ func eventMatchesDevice(
 	return false
 }
 
+func mqttTopicMatch(filterParts []string, topicParts []string) bool {
+	if len(filterParts) == 0 {
+		return len(topicParts) == 0
+	}
+
+	if len(topicParts) == 0 {
+		return filterParts[0] == "#"
+	}
+
+	switch filterParts[0] {
+	case "#":
+		return true
+	case "+":
+		return mqttTopicMatch(filterParts[1:], topicParts[1:])
+	default:
+		if filterParts[0] != topicParts[0] {
+			return false
+		}
+		return mqttTopicMatch(filterParts[1:], topicParts[1:])
+	}
+}
+
+func mqttSubscriptionFilterParts(filter string) []string {
+	if strings.HasPrefix(filter, "$share/") {
+		parts := strings.Split(filter, "/")
+		if len(parts) <= 2 {
+			return []string{}
+		}
+		return parts[2:]
+	}
+
+	if strings.HasPrefix(filter, "$queue/") {
+		filter = strings.TrimPrefix(filter, "$queue/")
+	}
+
+	return strings.Split(filter, "/")
+}
+
+func mqttTopicMatchesFilter(filter string, topic string) bool {
+	return filter == topic || mqttTopicMatch(mqttSubscriptionFilterParts(filter), strings.Split(topic, "/"))
+}
+
+func (i *InstanceT) matchingMqttRegistrations(topic string) []dispatcherTypes.RegisterInfo {
+	i.DoneRegistrations.Lock.RLock()
+	defer i.DoneRegistrations.Lock.RUnlock()
+
+	registrations := make([]dispatcherTypes.RegisterInfo, 0)
+	seen := make(map[dispatcherTypes.RegistrationID]struct{})
+
+	for subscriptionFilter, registrationIDs := range i.DoneRegistrations.MqttRegistrations {
+		if !mqttTopicMatchesFilter(subscriptionFilter, topic) {
+			continue
+		}
+
+		for _, registrationID := range registrationIDs {
+			if _, found := seen[registrationID]; found {
+				continue
+			}
+			seen[registrationID] = struct{}{}
+
+			registration, found := i.DoneRegistrations.Set[registrationID]
+			if !found {
+				panic(fmt.Sprintf("Registered MQTT ID not found: %d", registrationID))
+			}
+
+			registrations = append(registrations, registration)
+		}
+	}
+
+	return registrations
+}
+
 func (i *InstanceT) mqttCallBack(_ mqtt.Client, message mqtt.Message) {
 	// Invoke all MQTT registrations for this topic.
 	topic := message.Topic()
@@ -661,15 +737,7 @@ func (i *InstanceT) mqttCallBack(_ mqtt.Client, message mqtt.Message) {
 
 	logger.Tracef("Mqtt Callback: topic: `%s`, payload: `%s`", topic, payload)
 
-	i.DoneRegistrations.Lock.RLock()
-	defer i.DoneRegistrations.Lock.RUnlock()
-
-	for _, registrationID := range i.DoneRegistrations.MqttRegistrations[topic] {
-		registration, found := i.DoneRegistrations.Set[registrationID]
-		if !found {
-			panic(fmt.Sprintf("Registered MQTT ID not found: %d", registrationID))
-		}
-
+	for _, registration := range i.matchingMqttRegistrations(topic) {
 		i.CallBack(registration, CallBackMeta{
 			Args: []value.Value{
 				*value.NewValueString(message.Topic()),

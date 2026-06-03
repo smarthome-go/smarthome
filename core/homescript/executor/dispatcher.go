@@ -188,6 +188,12 @@ func registerTriggerMessage(
 	args []value.Value,
 	context hmsTypes.ExecutionContext,
 ) (types.RegistrationID, error) {
+	topicsRaw := *args[0].(value.ValueList).Values
+	topicsActual := make([]string, len(topicsRaw))
+	for idx, v := range topicsRaw {
+		topicsActual[idx] = (*v).(value.ValueString).Inner
+	}
+
 	callMode := types.CallMode(types.CallModeAdaptive{
 		AllocatingFallback: types.CallModeAllocating{
 			Context: context,
@@ -205,9 +211,10 @@ func registerTriggerMessage(
 				Ident:          callbackFunctionIdentMangled,
 				IdentIsLiteral: true,
 				CallMode:       callMode,
-				// TODO: this is broken?
 			},
-			Trigger: nil,
+			Trigger: types.CallBackTriggerMqtt{
+				Topics: topicsActual,
+			},
 		},
 		// TODO: maybe make this a `toleranceFunc` to only retry on specific failures
 		types.ToleranceRetry,

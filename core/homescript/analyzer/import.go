@@ -214,12 +214,12 @@ var builtinImportHandlers = map[types.ImportKey]importHandler{
 					ast.NewNormalFunctionTypeParamKind(
 						[]ast.FunctionTypeParam{
 							ast.NewFunctionTypeParam(
-								pAst.NewSpannedIdent("payload", span),
+								pAst.NewSpannedIdent("topic", span),
 								ast.NewStringType(span),
 								nil,
 							),
 							ast.NewFunctionTypeParam(
-								pAst.NewSpannedIdent("topic", span),
+								pAst.NewSpannedIdent("payload", span),
 								ast.NewStringType(span),
 								nil,
 							),
@@ -239,12 +239,7 @@ var builtinImportHandlers = map[types.ImportKey]importHandler{
 			Type: ast.NewFunctionType(
 				ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{
 					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("topics", span), ast.NewListType(ast.NewStringType(span), span), nil),
-					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("callback", span), ast.NewFunctionType(
-						ast.NewNormalFunctionTypeParamKind([]ast.FunctionTypeParam{}),
-						span,
-						ast.NewNullType(span),
-						span,
-					), nil),
+					ast.NewFunctionTypeParam(pAst.NewSpannedIdent("callback", span), MqttCallbackFn(span), nil),
 				}),
 				span,
 				ast.NewNullType(span),

@@ -253,9 +253,10 @@ func (m *MqttManager) init() error {
 	m.ConnectionInProgressLock.Lock()
 	defer m.ConnectionInProgressLock.Unlock()
 
-	m.Body.Lock.Lock()
-	defer m.Body.Lock.Unlock()
-	mqttEnabled := m.Body.Content.Config.Enabled
+	m.Body.Lock.RLock()
+	config := m.Body.Content.Config
+	m.Body.Lock.RUnlock()
+	mqttEnabled := config.Enabled
 
 	if !mqttEnabled {
 		logger.Debugf("MQTT subsystem is disabled according to server config")
@@ -264,19 +265,19 @@ func (m *MqttManager) init() error {
 
 	logger.Debugf(
 		"Initializing MQTT subsystem for broker `%s@%s` (timeout: %v)...",
-		m.Body.Content.Config.Username,
-		m.Body.Content.Config.Host,
+		config.Username,
+		config.Host,
 		MqttConnectTimeout,
 	)
 
 	opts := mqtt.NewClientOptions().
 		AddBroker(types.MakeBrokerURI(
-			m.Body.Content.Config.Host,
-			m.Body.Content.Config.Port,
+			config.Host,
+			config.Port,
 		)).
 		SetClientID("homescript-smarthome").
-		SetUsername(m.Body.Content.Config.Username).
-		SetPassword(m.Body.Content.Config.Password)
+		SetUsername(config.Username).
+		SetPassword(config.Password)
 
 	opts.SetConnectTimeout(MqttConnectTimeout)
 	opts.SetKeepAlive(MqttKeepAlive)
@@ -287,6 +288,10 @@ func (m *MqttManager) init() error {
 	opts.SetOnConnectHandler(m.connectionEstablishedHandler)
 
 	client := mqtt.NewClient(opts)
+
+	m.Body.Lock.Lock()
+	m.Body.Content.Client = client
+	m.Body.Lock.Unlock()
 
 	if token := client.Connect(); token.WaitTimeout(MqttPingTimeout) && token.Error() != nil {
 		m.recordRetryError(token.Error())
@@ -301,14 +306,27 @@ func (m *MqttManager) init() error {
 		time.Sleep(time.Second)
 	}
 
-	if token := client.Publish(MqttHealthCheckTopic, MqttQOS, false, ""); token.Error() != nil {
+	if !client.IsConnected() {
+		err := fmt.Errorf("mqtt client not connected after %s", time.Since(start))
+		m.recordRetryError(err)
+		return err
+	}
+
+	token := client.Publish(MqttHealthCheckTopic, MqttQOS, false, "")
+	if !token.WaitTimeout(MqttPingTimeout) {
+		logger.Warnf("MQTT test publish not finished after %d", MqttPingTimeout)
+	}
+	if token.Error() != nil {
 		m.recordRetryError(token.Error())
 		return token.Error()
 	}
 
+	m.Body.Lock.Lock()
+	defer m.Body.Lock.Unlock()
+	m.Body.Content.Client = client
 	m.Body.Content.Initialized = true
 
-	logger.Infof("Initialized MQTT subsystem for broker `%s@%s`", m.Body.Content.Config.Username, m.Body.Content.Config.Host)
+	logger.Infof("Initialized MQTT subsystem for broker `%s@%s`", config.Username, config.Host)
 
 	return nil
 }
@@ -345,8 +363,15 @@ func (m *MqttManager) MQTTKeepalive() {
 	}
 }
 
-func (m *MqttManager) IsConnected() bool {
+func (m *MqttManager) isConnectedLocked() bool {
 	return m.Body.Content.Initialized && m.Body.Content.Client != nil && m.Body.Content.Client.IsConnected()
+}
+
+func (m *MqttManager) IsConnected() bool {
+	m.Body.Lock.RLock()
+	defer m.Body.Lock.RUnlock()
+
+	return m.isConnectedLocked()
 }
 
 func (m *MqttManager) Status() error {
@@ -355,7 +380,7 @@ func (m *MqttManager) Status() error {
 	}
 
 	m.Body.Lock.RLock()
-	isConnected := m.IsConnected()
+	isConnected := m.isConnectedLocked()
 	m.Body.Lock.RUnlock()
 
 	if !isConnected {

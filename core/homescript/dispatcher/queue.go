@@ -60,6 +60,13 @@ func (q *PendingQueue) IsEmpty() bool {
 	return len(q.internal) == 0
 }
 
+func (q *PendingQueue) Len() int {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+
+	return len(q.internal)
+}
+
 //
 // Dispatcher queue code.
 //
@@ -69,20 +76,23 @@ func (i *InstanceT) RegisterPending() error {
 
 	var generalErr error
 
-	for !i.PendingRegistrations.IsEmpty() {
-		current := i.PendingRegistrations.First()
+	pendingCount := i.PendingRegistrations.Len()
+	for attempt := 0; attempt < pendingCount; attempt++ {
+		current := i.PendingRegistrations.Dequeue()
+		if current == nil {
+			break
+		}
 
 		id, err := i.registerInternal(*current)
 		if err != nil {
 			if generalErr == nil {
 				generalErr = err
 			}
+			i.PendingRegistrations.Enqueue(*current)
 			continue
 		}
 
 		logger.Tracef("Successfully registered pending registration (new id: %d)\n", id)
-
-		i.PendingRegistrations.Dequeue()
 	}
 
 	return generalErr
