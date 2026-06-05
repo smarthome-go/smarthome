@@ -689,9 +689,7 @@ func mqttSubscriptionFilterParts(filter string) []string {
 		return parts[2:]
 	}
 
-	if strings.HasPrefix(filter, "$queue/") {
-		filter = strings.TrimPrefix(filter, "$queue/")
-	}
+	filter = strings.TrimPrefix(filter, "$queue/")
 
 	return strings.Split(filter, "/")
 }

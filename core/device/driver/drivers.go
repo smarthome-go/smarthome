@@ -114,12 +114,12 @@ func (d *DriverManager) GetDriverWithInfos(vendorID, modelID string) (RichDriver
 		return RichDriver{}, false, err
 	}
 
-	ValueStoreLock.RLock()
-	configuration := DriverStore[database.DriverTuple{
-		VendorID: vendorID,
-		ModelID:  modelID,
-	}]
-	ValueStoreLock.RUnlock()
+	configuration, found := GetDriverSingleton(vendorID, modelID)
+	if !found {
+		configuration = value.ValueObject{
+			FieldsInternal: make(map[string]*value.Value),
+		}
+	}
 
 	marshaled, _ := value.MarshalValue(configuration, false)
 
@@ -179,12 +179,7 @@ func (d *DriverManager) ListDriversWithStoredConfig() ([]RichDriver, error) {
 			continue
 		}
 
-		ValueStoreLock.RLock()
-		val, found := DriverStore[database.DriverTuple{
-			VendorID: driver.Driver.VendorID,
-			ModelID:  driver.Driver.ModelID,
-		}]
-		ValueStoreLock.RUnlock()
+		val, found := GetDriverSingleton(driver.Driver.VendorID, driver.Driver.ModelID)
 
 		// This should not happen: a zero value for every driver-spec is created automatically.
 		if !found {
@@ -364,12 +359,10 @@ func (d *DriverManager) ModifyCode(vendorID, modelID, newCode string) (found boo
 	// - check if there is an error and return early
 	// - otherwise (no error) load the current data and perform the patches on it.
 
-	ValueStoreLock.RLock()
-	old := DriverStore[database.DriverTuple{
-		VendorID: vendorID,
-		ModelID:  modelID,
-	}]
-	ValueStoreLock.RUnlock()
+	old, found := GetDriverSingleton(vendorID, modelID)
+	if !found {
+		old = value.ObjectZeroValue(configInfo.DriverConfig.Info.HmsType)
+	}
 	objVal := (*ApplyNewSchemaOnObjData(old, configInfo.DriverConfig.Info.HmsType)).(value.ValueObject)
 
 	if err := StoreDriverSingletonBackend(vendorID, modelID, objVal); err != nil {
@@ -390,9 +383,10 @@ func (d *DriverManager) ModifyCode(vendorID, modelID, newCode string) (found boo
 		if device.VendorID != vendorID || device.ModelID != modelID {
 			continue
 		}
-		ValueStoreLock.RLock()
-		oldDeviceData := DeviceStore[device.ID]
-		ValueStoreLock.RUnlock()
+		oldDeviceData, found := GetDeviceSingleton(device.ID)
+		if !found {
+			oldDeviceData = value.ObjectZeroValue(configInfo.DeviceConfig.Info.HmsType)
+		}
 		newDeviceData := (*ApplyNewSchemaOnObjData(oldDeviceData, configInfo.DeviceConfig.Info.HmsType)).(value.ValueObject)
 		if err := StoreDeviceSingletonBackend(device.ID, newDeviceData); err != nil {
 			return false, nil, err

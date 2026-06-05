@@ -123,13 +123,7 @@ func (d *DriverManager) invokeDriverGeneric(
 	contextSingletons := make(map[string]value.Value)
 
 	// Load driver singleton.
-	ValueStoreLock.RLock()
-	driverSingleton, found := DriverStore[database.DriverTuple{
-		VendorID: vendorId,
-		ModelID:  modelId,
-	}]
-
-	ValueStoreLock.RUnlock()
+	driverSingleton, found := GetDriverSingleton(vendorId, modelId)
 
 	if !found {
 		log.Warnf("Driver singleton of driver `%s:%s` not found in store, running fixes...", vendorId, modelId)
@@ -138,12 +132,7 @@ func (d *DriverManager) invokeDriverGeneric(
 			return types.HmsRes{}, fmt.Errorf("running fixes failed: %s", err.Error())
 		}
 
-		ValueStoreLock.RLock()
-		driverSingleton, found = DriverStore[database.DriverTuple{
-			VendorID: vendorId,
-			ModelID:  modelId,
-		}]
-		ValueStoreLock.RUnlock()
+		driverSingleton, found = GetDriverSingleton(vendorId, modelId)
 
 		if !found {
 			return types.HmsRes{}, fmt.Errorf("driver manager corruption fixes did not affect value cache (driver singleton)")
@@ -164,9 +153,7 @@ func (d *DriverManager) invokeDriverGeneric(
 	if driverCtx.DeviceId != nil {
 		deviceId := *driverCtx.DeviceId
 
-		ValueStoreLock.RLock()
-		deviceSingleton, found = DeviceStore[deviceId]
-		ValueStoreLock.RUnlock()
+		deviceSingleton, found = GetDeviceSingleton(deviceId)
 
 		if !found {
 			log.Warnf("Device singleton of device `%s` not found in store, running fixes...", deviceId)
@@ -175,9 +162,7 @@ func (d *DriverManager) invokeDriverGeneric(
 				return types.HmsRes{}, fmt.Errorf("running fixes failed: %s", err.Error())
 			}
 
-			ValueStoreLock.RLock()
-			deviceSingleton, found = DeviceStore[deviceId]
-			ValueStoreLock.RUnlock()
+			deviceSingleton, found = GetDeviceSingleton(deviceId)
 			if !found {
 				return types.HmsRes{}, fmt.Errorf("driver manager corruption fixes did not affect value cache (device singleton)")
 			}

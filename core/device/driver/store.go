@@ -31,17 +31,35 @@ var DeviceStore map[string]value.ValueObject = make(map[string]value.ValueObject
 var DriverStore map[database.DriverTuple]value.ValueObject = make(map[database.DriverTuple]value.ValueObject)
 var ValueStoreLock sync.RWMutex
 
+func cloneStoredValue(input value.ValueObject) value.ValueObject {
+	return (*input.Clone()).(value.ValueObject)
+}
+
 func GetDeviceSingleton(deviceId string) (value.ValueObject, bool) {
+	ValueStoreLock.RLock()
+	defer ValueStoreLock.RUnlock()
+
 	val, found := DeviceStore[deviceId]
-	return val, found
+	if !found {
+		return value.ValueObject{}, false
+	}
+
+	return cloneStoredValue(val), true
 }
 
 func GetDriverSingleton(vendor, model string) (value.ValueObject, bool) {
+	ValueStoreLock.RLock()
+	defer ValueStoreLock.RUnlock()
+
 	val, found := DriverStore[database.DriverTuple{
 		VendorID: vendor,
 		ModelID:  model,
 	}]
-	return val, found
+	if !found {
+		return value.ValueObject{}, false
+	}
+
+	return cloneStoredValue(val), true
 }
 
 // This package contains the storage backend implementation for per-driver / per-device configuration data.
@@ -74,12 +92,12 @@ func (d *DriverManager) StoreDriverSingletonConfigUpdate(
 		panic(fmt.Sprintf("Driver `%s:%s` to be stored not found", vendorID, modelID))
 	}
 
-	oldValue := DriverStore[database.DriverTuple{
-		VendorID: vendorID,
-		ModelID:  modelID,
-	}]
-
 	fromJSONhms := value.TypeAwareUnmarshalValue(fromJSON, driver.ExtractedInfo.DriverConfig.Info.HmsType)
+	oldValue, found := GetDriverSingleton(vendorID, modelID)
+	if !found {
+		oldValue = value.ObjectZeroValue(driver.ExtractedInfo.DriverConfig.Info.HmsType)
+	}
+
 	affetedASetting, withOldValues := ApplyTransactionOnStored(
 		oldValue,
 		(*fromJSONhms).(value.ValueObject),
@@ -123,7 +141,7 @@ func StoreDriverSingletonBackend(vendorID, modelID string, val value.ValueObject
 	DriverStore[database.DriverTuple{
 		VendorID: vendorID,
 		ModelID:  modelID,
-	}] = val
+	}] = cloneStoredValue(val)
 	ValueStoreLock.Unlock()
 
 	return nil
@@ -179,9 +197,11 @@ func (d *DriverManager) StoreDeviceSingletonConfigUpdate(
 		panic(fmt.Sprintf("Driver `%s:%s` to be stored not found", device.VendorID, device.ModelID))
 	}
 
-	oldValue := DeviceStore[deviceID]
-
 	fromJSONhms := value.TypeAwareUnmarshalValue(fromJSON, driver.ExtractedInfo.DeviceConfig.Info.HmsType)
+	oldValue, found := GetDeviceSingleton(deviceID)
+	if !found {
+		oldValue = value.ObjectZeroValue(driver.ExtractedInfo.DeviceConfig.Info.HmsType)
+	}
 
 	affetedASetting, withOldValues := ApplyTransactionOnStored(
 		oldValue,
@@ -210,7 +230,7 @@ func StoreDeviceSingletonBackend(deviceID string, val value.ValueObject) error {
 	}
 
 	ValueStoreLock.Lock()
-	DeviceStore[deviceID] = val
+	DeviceStore[deviceID] = cloneStoredValue(val)
 	ValueStoreLock.Unlock()
 
 	return nil

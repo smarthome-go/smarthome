@@ -171,8 +171,20 @@ func (d *DriverManager) EnrichDeviceAll(deviceID string) (RichDevice, bool, erro
 func (d *DriverManager) EnrichDevice(device database.ShallowDevice, fittingDriver RichDriver) (RichDevice, error) {
 	hmsErrors := types.HmsErrorsFromDiagnostics(fittingDriver.ValidationErrors)
 
-	storedDeviceValue := DeviceStore[device.ID]
-	fmt.Printf(" === = = = = = Stored device value: %v\n", storedDeviceValue)
+	storedDeviceValue, found := GetDeviceSingleton(device.ID)
+	if !found {
+		log.Warnf("Device singleton of device `%s` not found in store while enriching, running fixes...", device.ID)
+		if err := d.PopulateValueCache(); err != nil {
+			log.Errorf("Could not run fixes on corrupted driver manager state (device singleton): %s", err.Error())
+			return RichDevice{}, fmt.Errorf("running fixes failed: %s", err.Error())
+		}
+
+		storedDeviceValue, found = GetDeviceSingleton(device.ID)
+		if !found {
+			return RichDevice{}, fmt.Errorf("driver manager corruption fixes did not affect value cache (device singleton)")
+		}
+	}
+
 	savedConfig, _ := value.MarshalValue(
 		filterObjFieldsWithoutSetting(storedDeviceValue, fittingDriver.ExtractedInfo.DeviceConfig.Info.HmsType),
 		false,
@@ -645,7 +657,9 @@ func (d *DriverManager) CreateDevice(
 	}
 
 	// Create an entry in the store.
-	DeviceStore[id] = defaultDevice
+	ValueStoreLock.Lock()
+	DeviceStore[id] = cloneStoredValue(defaultDevice)
+	ValueStoreLock.Unlock()
 
 	// Create device in database.
 	if err := database.CreateDevice(database.ShallowDevice{
@@ -705,11 +719,7 @@ func (d *DriverManager) SetDeviceColor(deviceId string, color DriverColorInput) 
 		deviceId,
 		switchData.VendorID,
 		switchData.ModelID,
-		DriverActionSetColor{
-			R: color.R,
-			G: color.G,
-			B: color.B,
-		},
+		DriverActionSetColor(color),
 	)
 
 	if err != nil {
