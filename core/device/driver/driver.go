@@ -11,6 +11,7 @@ import (
 	"github.com/smarthome-go/homescript/v3/homescript/errors"
 	"github.com/smarthome-go/homescript/v3/homescript/lexer"
 	"github.com/smarthome-go/smarthome/core/database"
+	driverTypes "github.com/smarthome-go/smarthome/core/device/driver/types"
 	"github.com/smarthome-go/smarthome/core/homescript/types"
 )
 
@@ -43,6 +44,12 @@ type DriverManager struct {
 	Hms                      types.Manager
 	ReloadDriverCallBackFunc func(driver database.DeviceDriver)
 	ReloadDeviceCallBackFunc func(deviceID string)
+	DriverExecutionMutex     DriverExecutionMutex
+}
+
+type DriverExecutionMutex struct {
+	values map[driverTypes.DriverIDs]bool
+	lock   sync.RWMutex
 }
 
 // TODO: do this correctly
@@ -61,6 +68,10 @@ func InitManager(
 		Hms:                      hmsManager,
 		ReloadDriverCallBackFunc: driverCallback,
 		ReloadDeviceCallBackFunc: deviceCallback,
+		DriverExecutionMutex: DriverExecutionMutex{
+			values: map[driverTypes.DriverIDs]bool{},
+			lock:   sync.RWMutex{},
+		},
 	}
 }
 

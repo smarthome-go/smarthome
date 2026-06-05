@@ -52,6 +52,9 @@ type FunctionCall struct {
 // 	panic("Unreachable, there is at least one error if `Success` was `false`")
 // }
 
+// NOTE: after bugs surfaced where we run multiple driver-functions at the same time,
+// i have decided to limit this to max 1 driver function at the same time.
+// This is due to broken singleton locks
 func (d *DriverManager) invokeDriverGeneric(
 	// Termination handling
 	cancelCtx context.Context,
@@ -70,6 +73,45 @@ func (d *DriverManager) invokeDriverGeneric(
 	if !found {
 		panic(fmt.Sprintf("Driver `%s:%s` not found in the database", vendorId, modelId))
 	}
+
+	//
+	// Spin-lock: waiting until this driver action can run.
+	//
+	timeout := time.Second * 10
+	started := time.Now()
+
+	key := driverTypes.DriverIDs{
+		VendorID: vendorId,
+		ModelID:  modelId,
+	}
+
+	for {
+		canRun := true
+
+		d.DriverExecutionMutex.lock.Lock()
+		if _, exists := d.DriverExecutionMutex.values[key]; exists {
+			canRun = false
+		} else {
+			d.DriverExecutionMutex.values[key] = true
+		}
+		d.DriverExecutionMutex.lock.Unlock()
+
+		if canRun {
+			log.Debugf("[DRIVER] Acquired driver lock for %s:%s", vendorId, modelId)
+			break
+		}
+
+		if time.Since(started) > timeout {
+			return types.HmsRes{}, fmt.Errorf("Job did not start after %f seconds: timeout exceeded", timeout.Seconds())
+		}
+	}
+
+	defer func() {
+		log.Debugf("[DRIVER] Releasing driver lock for %s:%s", vendorId, modelId)
+		d.DriverExecutionMutex.lock.Lock()
+		delete(d.DriverExecutionMutex.values, key)
+		d.DriverExecutionMutex.lock.Unlock()
+	}()
 
 	// TODO: attaching to existing VM or syncing state across instances
 

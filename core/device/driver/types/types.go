@@ -6,6 +6,11 @@ type DriverInvocationIDs struct {
 	ModelID  string
 }
 
+type DriverIDs struct {
+	VendorID string
+	ModelID  string
+}
+
 //
 // Driver manager.
 //

@@ -99,7 +99,6 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/devices/delete", mdl.ApiAuth(mdl.Perm(api.DeleteDevice, database.PermissionModifyRooms))).Methods("DELETE")
 	r.HandleFunc("/api/devices/configure", mdl.ApiAuth(mdl.Perm(api.ConfigureDevice, database.PermissionModifyRooms))).Methods("PUT")
 
-	// TODO: Device actions???
 	r.HandleFunc("/api/devices/action/power", mdl.ApiAuth(mdl.Perm(api.DeviceActionHandlerFactory(driver.DriverActionKindSetPower), database.PermissionPower))).Methods("POST")
 	r.HandleFunc("/api/devices/action/dim", mdl.ApiAuth(mdl.Perm(api.DeviceActionHandlerFactory(driver.DriverActionKindDim), database.PermissionPower))).Methods("POST")
 	r.HandleFunc("/api/devices/action/color", mdl.ApiAuth(mdl.Perm(api.DeviceActionHandlerFactory(driver.DriverActionKindSetColor), database.PermissionPower))).Methods("POST")
