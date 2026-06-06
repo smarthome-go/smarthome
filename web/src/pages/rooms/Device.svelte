@@ -58,7 +58,7 @@
     $: capabilities = extractions.config.capabilities
 
 
-    let localStorageKey = `amount_of_sliders_for_device_id__${shallow.id}`
+    const cacheKey = `device_extractions__${shallow.id}`
     let colorHex = '#ffffff'
     let colorReady = false
     let colorLastSent = ''
@@ -82,8 +82,44 @@
         return { r, g, b }
     }
 
+    function cacheExtractions(data: DeviceExtractions) {
+        try {
+            window.localStorage.setItem(cacheKey, JSON.stringify(data))
+        } catch (_) {}
+    }
+
+    function loadCachedExtractions(): DeviceExtractions | null {
+        try {
+            const raw = window.localStorage.getItem(cacheKey)
+            if (raw == null) return null
+            return JSON.parse(raw) as DeviceExtractions
+        } catch (_) {
+            return null
+        }
+    }
+
+    function applyExtractions(extractionsTemp: DeviceExtractions) {
+        const dimmables = coerceArray((extractionsTemp as { dimmables?: DeviceExtractions['dimmables'] | null }).dimmables)
+        const sensors = coerceArray((extractionsTemp as { sensors?: DeviceExtractions['sensors'] | null }).sensors)
+        const normalizedExtractions: DeviceExtractions = {
+            ...extractionsTemp,
+            dimmables,
+            sensors,
+        }
+
+        colorReady = false
+        if (hasCapability(extractionsTemp.config.capabilities, 'color')) {
+            let nextColor = extractionsTemp.color ? rgbToHex(extractionsTemp.color) : '#ffffff'
+            colorHex = nextColor
+            colorLastSent = nextColor
+            colorReady = true
+        }
+
+        extractionsLoaded = true
+        extractions = normalizedExtractions
+    }
+
     async function loadExtractions() {
-        // TODO: bug
         requests++
 
         try {
@@ -99,29 +135,8 @@
             const extractionsTemp = (responseJson as HydratedDeviceResponse).extractions
             shallow = (responseJson as HydratedDeviceResponse).shallow
 
-            const dimmables = coerceArray((extractionsTemp as { dimmables?: DeviceExtractions['dimmables'] | null }).dimmables)
-            const sensors = coerceArray((extractionsTemp as { sensors?: DeviceExtractions['sensors'] | null }).sensors)
-            const normalizedExtractions: DeviceExtractions = {
-                ...extractionsTemp,
-                dimmables,
-                sensors,
-            }
-
-            console.dir(extractions)
-
-            // Write the amount of sliders into the cache for smoother loading.
-            writeNumSliders(dimmables.length)
-
-            colorReady = false
-            if (hasCapability(extractionsTemp.config.capabilities, 'color')) {
-                let nextColor = extractionsTemp.color ? rgbToHex(extractionsTemp.color) : '#ffffff'
-                colorHex = nextColor
-                colorLastSent = nextColor
-                colorReady = true
-            }
-
-            extractionsLoaded = true
-            extractions = normalizedExtractions
+            applyExtractions(extractionsTemp)
+            cacheExtractions(extractions)
         } catch (err) {
             $createSnackbar(`Failed to hydrate device: ${err}`)
         }
@@ -377,37 +392,18 @@
     $: hasErrors = errors !== null && errors.length > 0
     $: style = `grid-row-end: span ${Math.max(1, deviceHeight(extractions) + (hasErrors ? 1 : 0))};`
 
-    function writeNumSliders(num: number) {
-        window.localStorage.setItem(localStorageKey, num.toString())
-    }
-
     async function mount() {
         isInitialLoad = true
 
-        let numSlidersRaw = window.localStorage.getItem(localStorageKey)
-        if (numSlidersRaw == null) {
-            writeNumSliders(0)
-            numSlidersRaw = '0';
+        const cached = loadCachedExtractions()
+        if (cached != null) {
+            applyExtractions(cached)
         }
-
-        const numSliders = parseInt(numSlidersRaw)
-        for (let i = 0; i < numSliders; i++) {
-            extractions.dimmables.push({
-                value: 0,
-                label: "loading...",
-                range: {
-                    lower: 0,
-                    upper: 100,
-                }
-            })
-        }
-
 
         hasEditPermission = await hasPermission('modifyRooms')
         await loadExtractions()
 
         canFetchSources = (await hasPermission('modifyServerConfig')) && (await hasPermission('homescript'))
-        console.log(`Configured error display: user can fetch sources: ${canFetchSources}`)
 
         isInitialLoad = false
     }
