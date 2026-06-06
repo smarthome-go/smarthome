@@ -30,8 +30,10 @@ import (
 )
 
 const registrationIDNumDigits = 16
+const maxConcurrentCallbacks = 16
 
 var logger *logrus.Logger
+var callbackSemaphore = make(chan struct{}, maxConcurrentCallbacks)
 
 func InitLogger(log *logrus.Logger) {
 	logger = log
@@ -464,6 +466,15 @@ func (i *InstanceT) allocatingCall(
 	meta CallBackMeta,
 	execContext types.ExecutionContext,
 ) {
+	callbackSemaphore <- struct{}{}
+	defer func() { <-callbackSemaphore }()
+
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Errorf("Recovered panic in allocatingCall for `%s`: %v", info.ProgramID, r)
+		}
+	}()
+
 	logger.Tracef("Performing allocating call to function `%s` for program `%s`...", info.Function.Ident, info.ProgramID)
 	cancelCtx, cancelFnc := context.WithCancel(context.Background())
 
