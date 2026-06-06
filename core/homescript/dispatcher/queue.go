@@ -2,8 +2,16 @@ package dispatcher
 
 import (
 	"sync"
+	"time"
 
 	dispatcherTypes "github.com/smarthome-go/smarthome/core/homescript/dispatcher/types"
+)
+
+const (
+	pendingBatchSize       = 10
+	pendingBatchDelay      = 100 * time.Millisecond
+	pendingMaxRetryBackoff = 30 * time.Second
+	pendingBaseBackoff     = 500 * time.Millisecond
 )
 
 //
@@ -74,7 +82,12 @@ func (q *PendingQueue) Len() int {
 func (i *InstanceT) RegisterPending() error {
 	logger.Debug("Trying to register pending registrations...")
 
+	if !i.Mqtt.IsConnected() {
+		return nil
+	}
+
 	var generalErr error
+	consecutiveFailures := 0
 
 	pendingCount := i.PendingRegistrations.Len()
 	for attempt := 0; attempt < pendingCount; attempt++ {
@@ -89,10 +102,22 @@ func (i *InstanceT) RegisterPending() error {
 				generalErr = err
 			}
 			i.PendingRegistrations.Enqueue(*current)
+			consecutiveFailures++
+
+			backoff := pendingBaseBackoff * time.Duration(1<<min(consecutiveFailures, 6))
+			if backoff > pendingMaxRetryBackoff {
+				backoff = pendingMaxRetryBackoff
+			}
+			time.Sleep(backoff)
 			continue
 		}
 
+		consecutiveFailures = 0
 		logger.Tracef("Successfully registered pending registration (new id: %d)\n", id)
+
+		if attempt > 0 && attempt%pendingBatchSize == 0 {
+			time.Sleep(pendingBatchDelay)
+		}
 	}
 
 	return generalErr

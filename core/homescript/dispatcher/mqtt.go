@@ -110,6 +110,10 @@ type MqttManager struct {
 	RetryErrorCount          int
 	RetryCooldownUntil       time.Time
 
+	// When true, the connectionEstablishedHandler will not trigger pending registrations.
+	// This prevents the async callback from racing with the explicit boot-time registration pass.
+	BootPhase bool
+
 	// Is being called from the outside if the outside knows that some things, which could have caused the initial
 	// error, changed.
 	TriggerTryPendingRegistrations func() error
@@ -141,8 +145,10 @@ func (m *MqttManager) connectionEstablishedHandler(client mqtt.Client) {
 		logger.Errorf("Failed to reload MQTT dispatcher after connection was established: %s\n", err.Error())
 	}
 
-	if err := m.TriggerTryPendingRegistrations(); err != nil {
-		logger.Errorf("Failed to trigger parent reload after connection was established: %s\n", err.Error())
+	if !m.BootPhase {
+		if err := m.TriggerTryPendingRegistrations(); err != nil {
+			logger.Errorf("Failed to trigger parent reload after connection was established: %s\n", err.Error())
+		}
 	}
 
 	logger.Info("MQTT connection established")
@@ -227,6 +233,7 @@ func NewMqttManager(config database.MqttConfig, retryHook func() error) (m *Mqtt
 				Initialized:   false,
 			},
 		},
+		BootPhase:                      true,
 		TriggerTryPendingRegistrations: retryHook,
 		ShutdownChan:                   make(chan struct{}),
 		ShutdownCompleted:              make(chan struct{}),
@@ -237,6 +244,10 @@ func NewMqttManager(config database.MqttConfig, retryHook func() error) (m *Mqtt
 	go m.MQTTKeepalive()
 
 	return m, nil
+}
+
+func (m *MqttManager) EndBootPhase() {
+	m.BootPhase = false
 }
 
 func (m *MqttManager) setConfig(config database.MqttConfig) {
@@ -347,6 +358,11 @@ func (m *MqttManager) MQTTKeepalive() {
 
 			return
 		default:
+		}
+
+		if m.BootPhase {
+			time.Sleep(5 * time.Second)
+			continue
 		}
 
 		if err := m.Status(); err != nil {

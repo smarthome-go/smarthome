@@ -104,11 +104,11 @@ func InitInstance(hms types.Manager, mqtt *MqttManager) (*InstanceT, error) {
 		LastRegistrationErrorTime: time.Time{},
 	}
 
-	if err := Instance.Mqtt.init(); err != nil {
-		return &Instance, err
-	}
-
 	return &Instance, nil
+}
+
+func (i *InstanceT) ConnectMqtt() error {
+	return i.Mqtt.init()
 }
 
 func (i *InstanceT) MQTTStatus() error {

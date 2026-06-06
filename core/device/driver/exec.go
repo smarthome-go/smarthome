@@ -527,8 +527,7 @@ func (d *DriverManager) InvokeDriverSetPower(
 		return DriverActionPowerOutput{}, runResult.Errors.Diagnostics, dbErr
 	}
 
-	// Re-calculate current power draw.
-	SaveCurrentPowerUsageWithLogs()
+	go UpdateDevicePowerCache(deviceID, vendorID, modelID)
 
 	return DriverActionPowerOutput{
 		Changed: runResult.ReturnValue.(value.ValueBool).Inner,
@@ -775,8 +774,7 @@ func (d *DriverManager) InvokeDriverDim(
 		return DriverActionDimOutput{}, res.Errors.Diagnostics, dbErr
 	}
 
-	// Re-calculate current power draw.
-	SaveCurrentPowerUsageWithLogs()
+	go UpdateDevicePowerCache(deviceID, vendorID, modelID)
 
 	return DriverActionDimOutput{
 		Changed: res.ReturnValue.(value.ValueBool).Inner,

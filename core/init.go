@@ -32,8 +32,6 @@ func OnMqttRetryHook() error {
 		return nil
 	}
 
-	// TODO: weird mutex errors, use a channel, it would be better!
-
 	return dispatcher.Instance.RegisterPending()
 }
 
@@ -92,21 +90,17 @@ func Init(config database.ServerConfig) error {
 
 	dispatcher.InitModule()
 
-	// Mqtt manager initialization
+	// Mqtt manager initialization (connection deferred until after registrations are queued)
 	mqttManager, err := dispatcher.NewMqttManager(config.Mqtt, OnMqttRetryHook)
 	if err != nil {
-		log.Errorf("MQTT initialization failed: %s", err.Error())
+		log.Errorf("MQTT manager creation failed: %s", err.Error())
 	}
 
-	// Homescript dispatcher initialization
+	// Homescript dispatcher initialization (MQTT connection is deferred)
 	disp, err := dispatcher.InitInstance(hmsManager, mqttManager)
 	if err != nil {
 		log.Errorf("Failed to initialize HMS dispatcher: %s", err.Error())
 	}
-
-	dispatcherInitialized.lock.Lock()
-	dispatcherInitialized.value = true
-	dispatcherInitialized.lock.Unlock()
 
 	// Homescript driver initialization
 	log.Debugf("Initializing driver manager...")
@@ -135,7 +129,7 @@ func Init(config database.ServerConfig) error {
 	}
 
 	//
-	// Devices.
+	// Devices (registrations are queued as pending since MQTT is not connected yet).
 	//
 
 	log.Debug("Initializing devices...")
@@ -152,8 +146,22 @@ func Init(config database.ServerConfig) error {
 	}
 
 	//
-	// END Devices.
+	// Now connect MQTT and process all pending registrations in one coordinated pass.
 	//
+
+	dispatcherInitialized.lock.Lock()
+	dispatcherInitialized.value = true
+	dispatcherInitialized.lock.Unlock()
+
+	if err := disp.ConnectMqtt(); err != nil {
+		log.Errorf("MQTT connection failed: %s", err.Error())
+	} else {
+		if err := dispatcher.Instance.RegisterPending(); err != nil {
+			log.Warnf("Failed to register some pending MQTT subscriptions: %s", err.Error())
+		}
+	}
+
+	mqttManager.EndBootPhase()
 
 	return nil
 }
