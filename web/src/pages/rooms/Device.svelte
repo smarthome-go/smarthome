@@ -18,6 +18,7 @@
 
     import type { DeviceCapability, ValidationError } from '../../driver';
     import type { homescriptError } from '../../homescript';
+    import type { Room } from '../../room';
 
     // Event dispatcher
     const dispatch = createEventDispatcher()
@@ -54,6 +55,7 @@
         sensors: [],
     }
 
+    export let rooms: Room[] = []
     export let capabilities: DeviceCapability[] = []
     $: capabilities = extractions.config.capabilities
 
@@ -415,8 +417,10 @@
     <EditDevice
         on:delete={() => dispatch('delete', null)}
         on:modify={e => dispatch('modify', e.detail)}
+        on:move={() => dispatch('move', null)}
         bind:show={showEditDevice}
         data={ { shallow: shallow, extractions } }
+        {rooms}
     />
 
     <DeviceInfo bind:open={deviceInfoOpen} data={{shallow, extractions}} />

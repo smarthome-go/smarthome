@@ -148,6 +148,29 @@ func ModifyDeviceName(id string, name string) error {
 	return nil
 }
 
+// Modifies the room of a given device.
+func ModifyDeviceRoom(id string, roomId string) error {
+	query, err := db.Prepare(`
+	UPDATE device
+	SET
+		RoomId=?
+	WHERE Id=?
+	`)
+	if err != nil {
+		log.Error("Failed to modify device room: preparing query failed: ", err.Error())
+		return err
+	}
+
+	defer query.Close()
+
+	if _, err := query.Exec(roomId, id); err != nil {
+		log.Error("Failed to modify device room: executing query failed: ", err.Error())
+		return err
+	}
+
+	return nil
+}
+
 // Modifies the singleton JSON of a given device.
 func ModifyDeviceSingletonJSON(id string, newJson string) error {
 	query, err := db.Prepare(`

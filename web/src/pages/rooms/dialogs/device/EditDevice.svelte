@@ -3,6 +3,7 @@
     import Dialog, { Actions, Content, InitialFocus, Title } from '@smui/dialog'
     import Textfield from '@smui/textfield'
     import CharacterCounter from '@smui/textfield/character-counter'
+    import Select, { Option } from '@smui/select'
     import { createEventDispatcher } from 'svelte'
     import { loading } from './main'
     import type { HydratedDeviceResponse } from '../../../../device';
@@ -10,6 +11,7 @@
     import { hmsEditorURLForId } from '../../../../urls';
     import DynamicConfigurator from '../../../../components/Homescript/DynamicConfigurator.svelte'
     import { createSnackbar, hasPermission } from '../../../../global';
+    import type { Room } from '../../../../room';
 
     // Event dispatcher for deletion events
     const dispatch = createEventDispatcher()
@@ -18,11 +20,14 @@
     }
 
     let deleteOpen = false
+    let moveOpen = false
     let open = false
 
+    export let rooms: Room[] = []
     export let data: HydratedDeviceResponse = null
 
     let dataBefore: HydratedDeviceResponse
+    let moveTargetRoomId = ''
 
     export function show() {
         open = true
@@ -80,7 +85,53 @@
 
         $loading = false
     }
+
+    async function moveDevice() {
+        if (!moveTargetRoomId) return
+
+        $loading = true
+        try {
+            const res = await (
+                await fetch('/api/devices/move', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: data.shallow.id,
+                        roomId: moveTargetRoomId,
+                    }),
+                })
+            ).json()
+
+            if (!res.success) throw Error(res.error)
+
+            moveOpen = false
+            open = false
+            dispatch('move', null)
+        } catch (err) {
+            $createSnackbar(`Failed to move device: ${err}`)
+        }
+        $loading = false
+    }
 </script>
+
+<Dialog bind:open={moveOpen} aria-labelledby="move-title" aria-describedby="move-content">
+    <Title id="move-title">Move to Other Room</Title>
+    <Content id="move-content">
+        <Select bind:value={moveTargetRoomId} label="Target Room" style="width: 100%;">
+            {#each rooms.filter(r => r.data.id !== data.shallow.roomId) as room}
+                <Option value={room.data.id}>{room.data.name}</Option>
+            {/each}
+        </Select>
+    </Content>
+    <Actions>
+        <Button on:click={() => moveOpen = false}>
+            <Label>Cancel</Label>
+        </Button>
+        <Button on:click={moveDevice} disabled={!moveTargetRoomId}>
+            <Label>Move</Label>
+        </Button>
+    </Actions>
+</Dialog>
 
 <Dialog bind:open aria-labelledby="title" aria-describedby="content">
     <Dialog
@@ -132,7 +183,12 @@
             </Button>
         {/if}
 
-        <div id="delete">
+        <div id="actions">
+            <Button variant="outlined" on:click={() => (moveOpen = true)}>
+                <Icon class="material-icons">swap_horiz</Icon>
+                <Label>Move to Other Room</Label>
+            </Button>
+
             <Button variant="outlined" on:click={() => (deleteOpen = true)}>
                 <Icon class="material-icons">delete</Icon>
                 <Label>Delete</Label>
@@ -157,7 +213,10 @@
         padding: 0.1rem 0.5rem;
         border-radius: 0.3rem;
     }
-    #delete {
+    #actions {
         margin-top: 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
     }
 </style>

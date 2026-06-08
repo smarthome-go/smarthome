@@ -380,6 +380,7 @@
                         <Device
                             style={''}
                             {refreshCounter}
+                            {rooms}
                             capabilities={
                                 capabilities.find(
                                     c => c.modelId === device.modelId
@@ -389,6 +390,7 @@
                             bind:shallow={device}
                             on:delete={() => deleteDevice(device.id)}
                             on:modify={(e) => modifyDevice(e.detail)}
+                            on:move={() => loadRooms()}
                             on:powerChange={() => (reloadCameras = $powerCamReloadEnabled)}
                             on:powerChangeDone={() => (reloadCameras = false)}
                         />

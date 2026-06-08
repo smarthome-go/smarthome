@@ -96,6 +96,7 @@ func NewRouter() *mux.Router {
 
 	r.HandleFunc("/api/devices/add", mdl.ApiAuth(mdl.Perm(api.CreateDevice, database.PermissionModifyRooms))).Methods("POST")
 	r.HandleFunc("/api/devices/modify", mdl.ApiAuth(mdl.Perm(api.ModifyDevice, database.PermissionModifyRooms))).Methods("PUT")
+	r.HandleFunc("/api/devices/move", mdl.ApiAuth(mdl.Perm(api.MoveDevice, database.PermissionModifyRooms))).Methods("PUT")
 	r.HandleFunc("/api/devices/delete", mdl.ApiAuth(mdl.Perm(api.DeleteDevice, database.PermissionModifyRooms))).Methods("DELETE")
 	r.HandleFunc("/api/devices/configure", mdl.ApiAuth(mdl.Perm(api.ConfigureDevice, database.PermissionModifyRooms))).Methods("PUT")
 

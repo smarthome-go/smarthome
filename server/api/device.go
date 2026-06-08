@@ -29,6 +29,11 @@ type ModifyDeviceRequest struct {
 	Name string `json:"name"`
 }
 
+type MoveDeviceRequest struct {
+	Id     string `json:"id"`
+	RoomId string `json:"roomId"`
+}
+
 type ConfigureDeviceRequest struct {
 	ID   string      `json:"id"`
 	Data interface{} `json:"data"`
@@ -313,6 +318,50 @@ func ModifyDevice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	Res(w, Response{Success: true, Message: "successfully modified device"})
+}
+
+func MoveDevice(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var request MoveDeviceRequest
+	if err := decoder.Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
+		return
+	}
+
+	_, found, err := database.GetDeviceById(request.Id)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to move device", Error: "database failure"})
+		return
+	}
+	if !found {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to move device", Error: "no device with id exists"})
+		return
+	}
+
+	_, found, err = database.GetRoomDataById(request.RoomId)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to move device", Error: "database failure"})
+		return
+	}
+	if !found {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		Res(w, Response{Success: false, Message: "failed to move device", Error: "target room does not exist"})
+		return
+	}
+
+	if err := database.ModifyDeviceRoom(request.Id, request.RoomId); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		Res(w, Response{Success: false, Message: "failed to move device", Error: "database failure"})
+		return
+	}
+
+	Res(w, Response{Success: true, Message: "successfully moved device"})
 }
 
 func ConfigureDevice(w http.ResponseWriter, r *http.Request) {
