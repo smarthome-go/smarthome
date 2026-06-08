@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -112,7 +113,7 @@ type MqttManager struct {
 
 	// When true, the connectionEstablishedHandler will not trigger pending registrations.
 	// This prevents the async callback from racing with the explicit boot-time registration pass.
-	BootPhase bool
+	BootPhase atomic.Bool
 
 	// Is being called from the outside if the outside knows that some things, which could have caused the initial
 	// error, changed.
@@ -145,7 +146,7 @@ func (m *MqttManager) connectionEstablishedHandler(client mqtt.Client) {
 		logger.Errorf("Failed to reload MQTT dispatcher after connection was established: %s\n", err.Error())
 	}
 
-	if !m.BootPhase {
+	if !m.BootPhase.Load() {
 		if err := m.TriggerTryPendingRegistrations(); err != nil {
 			logger.Errorf("Failed to trigger parent reload after connection was established: %s\n", err.Error())
 		}
@@ -233,11 +234,11 @@ func NewMqttManager(config database.MqttConfig, retryHook func() error) (m *Mqtt
 				Initialized:   false,
 			},
 		},
-		BootPhase:                      true,
 		TriggerTryPendingRegistrations: retryHook,
 		ShutdownChan:                   make(chan struct{}),
 		ShutdownCompleted:              make(chan struct{}),
 	}
+	m.BootPhase.Store(true)
 
 	Manager = m
 
@@ -247,7 +248,7 @@ func NewMqttManager(config database.MqttConfig, retryHook func() error) (m *Mqtt
 }
 
 func (m *MqttManager) EndBootPhase() {
-	m.BootPhase = false
+	m.BootPhase.Store(false)
 }
 
 func (m *MqttManager) setConfig(config database.MqttConfig) {
@@ -360,7 +361,7 @@ func (m *MqttManager) MQTTKeepalive() {
 		default:
 		}
 
-		if m.BootPhase {
+		if m.BootPhase.Load() {
 			time.Sleep(5 * time.Second)
 			continue
 		}
