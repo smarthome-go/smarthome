@@ -681,5 +681,8 @@ func (m *MqttManager) Publish(topic string, message string) error {
 	if token.Error() != nil {
 		logger.Errorf("Could not publish to MQTT topic `%s`: %s", topic, token.Error())
 	}
-	return token.Error()
+
+	logger.Debugf("[MQTT] Publish on `%s`: %s", topic, message)
+
+	return nil
 }

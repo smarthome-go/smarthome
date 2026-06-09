@@ -266,7 +266,12 @@ func (d *DriverManager) invokeDriverGeneric(
 
 	// Save device singleton state after VM has terminated (if device was even loaded).
 	if driverCtx.DeviceId != nil {
-		deviceMarshaled, _ := value.MarshalValue(deviceSingleton, false)
+		deviceSingletonAfter, found := res.Singletons[DriverDeviceSingletonIdent]
+		if !found {
+			panic(fmt.Sprintf("Device singleton (`%s`) not found after driver execution", DriverDeviceSingletonIdent))
+		}
+
+		deviceMarshaled, _ := value.MarshalValue(deviceSingletonAfter, false)
 		if err := d.StoreDeviceSingletonConfigUpdate(*driverCtx.DeviceId, deviceMarshaled); err != nil {
 			return types.HmsRes{}, err
 		}
