@@ -1,4 +1,4 @@
-## Changelog for v0.15.1-alpha
+## Changelog for v0.15.2-alpha
 
 ### META
 
