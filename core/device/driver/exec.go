@@ -229,6 +229,13 @@ func (d *DriverManager) invokeDriverGeneric(
 	}
 
 	if res.Errors.ContainsError {
+		// Persist singleton state even though the run failed: driver code may
+		// deliberately mutate its state right before throwing, e.g. marking a
+		// device as unregistered when the underlying service reports errors.
+		if err := d.commitSingletonsAfterRun(driver.VendorID, driver.ModelID, driverCtx.DeviceId, res.Singletons, true); err != nil {
+			return types.HmsRes{}, err
+		}
+
 		errorList := make([]types.HmsError, 0)
 
 		// Filter out any non-error messages.
@@ -252,32 +259,51 @@ func (d *DriverManager) invokeDriverGeneric(
 		}, nil
 	}
 
-	// Get driver and device singleton.
-	driverSingletonAfter, found := res.Singletons[DriverSingletonIdent]
-	if !found {
-		panic(fmt.Sprintf("Driver singleton (`%s`) not found after driver execution", DriverSingletonIdent))
-	}
-
-	// Save driver singleton state after VM has terminated.
-	driverMarshaled, _ := value.MarshalValue(driverSingletonAfter, false)
-	if err := d.StoreDriverSingletonConfigUpdate(driver.VendorID, driver.ModelID, driverMarshaled); err != nil {
+	if err := d.commitSingletonsAfterRun(driver.VendorID, driver.ModelID, driverCtx.DeviceId, res.Singletons, false); err != nil {
 		return types.HmsRes{}, err
 	}
 
-	// Save device singleton state after VM has terminated (if device was even loaded).
-	if driverCtx.DeviceId != nil {
-		deviceSingletonAfter, found := res.Singletons[DriverDeviceSingletonIdent]
-		if !found {
-			panic(fmt.Sprintf("Device singleton (`%s`) not found after driver execution", DriverDeviceSingletonIdent))
-		}
+	return res, nil
+}
 
-		deviceMarshaled, _ := value.MarshalValue(deviceSingletonAfter, false)
-		if err := d.StoreDeviceSingletonConfigUpdate(*driverCtx.DeviceId, deviceMarshaled); err != nil {
-			return types.HmsRes{}, err
+// Saves the driver (and device, if one was loaded) singleton state after the VM has terminated.
+// For failed runs, missing singletons are skipped instead of causing a panic,
+// as the VM may have terminated before the singletons were initialized.
+func (d *DriverManager) commitSingletonsAfterRun(
+	vendorID, modelID string,
+	deviceID *string,
+	singletons map[string]value.Value,
+	runFailed bool,
+) error {
+	driverSingletonAfter, found := singletons[DriverSingletonIdent]
+	if !found && !runFailed {
+		panic(fmt.Sprintf("Driver singleton (`%s`) not found after driver execution", DriverSingletonIdent))
+	}
+
+	if found {
+		driverMarshaled, _ := value.MarshalValue(driverSingletonAfter, false)
+		if err := d.StoreDriverSingletonConfigUpdate(vendorID, modelID, driverMarshaled); err != nil {
+			return err
 		}
 	}
 
-	return res, nil
+	if deviceID == nil {
+		return nil
+	}
+
+	deviceSingletonAfter, found := singletons[DriverDeviceSingletonIdent]
+	if !found && !runFailed {
+		panic(fmt.Sprintf("Device singleton (`%s`) not found after driver execution", DriverDeviceSingletonIdent))
+	}
+
+	if found {
+		deviceMarshaled, _ := value.MarshalValue(deviceSingletonAfter, false)
+		if err := d.StoreDeviceSingletonConfigUpdate(*deviceID, deviceMarshaled); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 //
@@ -345,12 +371,12 @@ func (d *DriverManager) InvokeDriverFunc(
 	return runResult, nil
 }
 
-func (d *DriverManager) InvokeValidateCheckDriver(ids driverTypes.DriverInvocationIDs) ([]types.HmsError, error) {
+func (d *DriverManager) InvokeValidateCheckDevice(ids driverTypes.DriverInvocationIDs) ([]types.HmsError, error) {
 	res, err := d.InvokeDriverFunc(
 		ids,
 		FunctionCall{
 			Invocation: runtime.FunctionInvocation{
-				Function: DeviceFunctionValidateDriver,
+				Function: DeviceFunctionValidateDevice,
 				Args:     []value.Value{},
 				FunctionSignature: runtime.FunctionInvocationSignatureFromType(
 					deviceValidateDeviceOrDriverSignature(errors.Span{}).Signature,

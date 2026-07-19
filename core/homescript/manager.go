@@ -555,13 +555,22 @@ func (m *Manager) RunGeneric(
 			logger.Debug(fmt.Sprintf("Homescript `%s` failed: %s", invocation.Identifier.Filename, errMsg))
 		}
 
+		// Even though the run failed, extract the singleton state so that
+		// mutations which happened before the error are not lost.
+		singletons := make(map[string]value.Value)
+		for name, mangled := range compOut.Mappings.Singletons {
+			if global, found := vm.GetGlobals()[mangled]; found && global != nil {
+				singletons[name] = global
+			}
+		}
+
 		return types.HmsRes{
 			Errors: types.HmsDiagnosticsContainer{
 				ContainsError: true,
 				Diagnostics:   errors,
 				FileContents:  fileContents,
 			},
-			Singletons:  nil,
+			Singletons:  singletons,
 			ReturnValue: nil,
 			// CalledFunctionSpan: span,
 		}, nil

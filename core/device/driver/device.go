@@ -196,7 +196,7 @@ func (d *DriverManager) EnrichDevice(device database.ShallowDevice, fittingDrive
 		ModelID:  device.ModelID,
 	}
 
-	hmsErrs, err := d.InvokeValidateCheckDriver(invocationID)
+	hmsErrs, err := d.InvokeValidateCheckDevice(invocationID)
 	if err != nil {
 		return RichDevice{}, err
 	}

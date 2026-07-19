@@ -57,7 +57,7 @@ func TestDefaultDriverHmsCode(t *testing.T) {
 
 	// Run the driver.
 	// TODO: allow invocation without being tied to a device.
-	hmsErrs, dbErr := Manager.InvokeValidateCheckDriver(
+	hmsErrs, dbErr := Manager.InvokeValidateCheckDevice(
 		driverTypes.DriverInvocationIDs{
 			DeviceID: &deviceID,
 			VendorID: vendorID,

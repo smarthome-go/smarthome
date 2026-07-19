@@ -97,7 +97,6 @@ func driverTemplate(span errors.Span) DriverTemplate {
 //
 
 const DeviceFunctionValidateDevice = "validate_device"
-const DeviceFunctionValidateDriver = "validate_device"
 const DeviceFunctionReportSensorReadings = "report_sensor_readings"
 const DeviceFunctionReportPowerState = "report_power"
 const DeviceFunctionReportPowerDraw = "report_power_draw"
