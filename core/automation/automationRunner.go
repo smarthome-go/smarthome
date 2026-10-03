@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -109,12 +108,21 @@ func AutomationRunnerFunc(id uint, automationCtx types.ExecutionContextAutomatio
 	if job.Data.Trigger == database.TriggerSunrise || job.Data.Trigger == database.TriggerSunset {
 		serverConfig, found, err := database.GetServerConfiguration()
 		if err != nil || !found {
-			log.Fatal("Could not retrieve server configuration")
-			os.Exit(1)
+			// Do not take the entire server down just because the configuration
+			// could not be fetched: skip this run instead.
+			log.Error("Could not retrieve server configuration: skipping sunrise / sunset automation")
+			event.Error(
+				"Automation Failed",
+				fmt.Sprintf("Automation '%s' was skipped because the server configuration could not be retrieved", job.Data.Name),
+			)
+			return
 		}
 
-		// TODO: is this safe?
-		if time.Since(*job.Data.LastRun).Minutes() < 5 {
+		// Guard against re-generated jobs firing immediately: if this automation
+		// has already run recently, skip this run.
+		//
+		// Note: `LastRun` is `nil` until the automation has run once.
+		if job.Data.LastRun != nil && time.Since(*job.Data.LastRun).Minutes() < 5 {
 			event.Trace("Geological Time Automation Skipped", fmt.Sprintf("The automation `%s` with ID `%d` was skipped due to cooldown.", job.Data.Name, job.Id))
 			return
 		}

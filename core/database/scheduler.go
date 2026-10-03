@@ -279,8 +279,12 @@ func GetSchedules() ([]Schedule, error) {
 			log.Error("Failed to list schedules: scanning results of query failed: ", err.Error())
 			return nil, err
 		}
-		// Append all needed switch jobs to this row
+		// Append the switch jobs which belong to this schedule
+		schedule.Data.SwitchJobs = make([]ScheduleDeviceJobData, 0)
 		for _, switchJob := range switches {
+			if switchJob.ScheduleId != schedule.Id {
+				continue
+			}
 			schedule.Data.SwitchJobs = append(schedule.Data.SwitchJobs, switchJob.Data)
 		}
 

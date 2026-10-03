@@ -43,7 +43,7 @@ type DeleteDeviceRequest struct {
 	Id string `json:"id"`
 }
 
-// Returns a list of available devices as JSON to the user, no authentication required
+// Returns a list of available devices as JSON to the user
 func GetAllDevices(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	// TODO: also implement ordering???

@@ -909,8 +909,12 @@ func (m *Manager) killJob(job types.Job) {
 		start := time.Now()
 
 		// Execute all kill functions in this execution unit.
+		//
+		// Note: `mangledFn` is passed as an argument, because under the Go
+		// version used by this project, capturing the loop variable inside
+		// the closure would race with the remaining iterations.
 		for _, mangledFn := range *killCallbacks {
-			go func() {
+			go func(mangledFn string) {
 				onFinish := make(chan struct{})
 
 				core := job.VM.SpawnAsync(runtime.FunctionInvocation{
@@ -937,7 +941,7 @@ func (m *Manager) killJob(job types.Job) {
 				cancelMtx.Lock()
 				numsOfRunningKillHandlers--
 				cancelMtx.Unlock()
-			}()
+			}(mangledFn)
 		}
 
 		for {

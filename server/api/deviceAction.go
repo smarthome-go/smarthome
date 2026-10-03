@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/smarthome-go/smarthome/core/database"
 	"github.com/smarthome-go/smarthome/core/device/driver"
+	"github.com/smarthome-go/smarthome/server/middleware"
 )
 
 type DeviceActionrequestBody struct {
@@ -21,12 +23,34 @@ type DeviceActionrequestBody struct {
 func DeviceActionHandlerFactory(action driver.DriverActionKind) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+
+		username, err := middleware.GetUserFromCurrentSession(w, r)
+		if err != nil {
+			// `GetUserFromCurrentSession` already answered the request
+			return
+		}
+
 		decoder := json.NewDecoder(r.Body)
 		decoder.DisallowUnknownFields()
 		var request DeviceActionrequestBody
 		if err := decoder.Decode(&request); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			Res(w, Response{Success: false, Message: "bad request", Error: "invalid request body"})
+			return
+		}
+
+		// Validate that the user is allowed to interact with this device.
+		// Note: users with the `modifyRooms` permission implicitly have
+		// access to every device, see `database.UserHasDevicePermission`.
+		hasDevicePermission, err := database.UserHasDevicePermission(username, request.DeviceID)
+		if err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			Res(w, Response{Success: false, Message: "failed to execute device action", Error: "database failure"})
+			return
+		}
+		if !hasDevicePermission {
+			w.WriteHeader(http.StatusForbidden)
+			Res(w, Response{Success: false, Message: "failed to execute device action", Error: fmt.Sprintf("you lack permission to interact with the device `%s`", request.DeviceID)})
 			return
 		}
 

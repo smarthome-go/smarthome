@@ -227,6 +227,8 @@ func scheduleRunnerFunc(id uint, m *SchedulerManager) {
 					"Schedule Failure",
 					fmt.Sprintf("Schedule '%d' failed due to changed permissions.", id),
 				)
+				// Skip this switch job: the owner no longer has permission to use it
+				continue
 			}
 
 			switchData, found, err := database.GetDeviceById(switchJob.DeviceId)
