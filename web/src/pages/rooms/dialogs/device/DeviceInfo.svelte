@@ -1,36 +1,11 @@
 <script lang="ts">
     import Button, { Label } from '@smui/button'
     import Dialog, { Actions, Content, InitialFocus, Title } from '@smui/dialog'
-    import Progress from '../../../../../src/components/Progress.svelte'
-    // import { fetchHardwareNodes, loading, hardwareNodesLoaded, hardwareNodes } from './main'
     import type { HydratedDeviceResponse } from '../../../../device';
 
     export let open = false
 
     export let data: HydratedDeviceResponse = null
-
-    // export function show() {
-    //     open = true
-
-        // if (!$hardwareNodesLoaded) {
-        //     fetchHardwareNodes().then(() => {
-        //         setNodeLabel()
-        //     })
-        // } else {
-        //     setNodeLabel()
-
-    // function setNodeLabel() {
-    //     if (targetNode === null || targetNode === undefined) {
-    //         targetNodeLabel = 'None'
-    //     } else {
-    //         targetNodeLabel = $hardwareNodes.find(h => {
-    //             if (h === undefined || h === null) {
-    //                 return false
-    //             }
-    //             return h.url === targetNode
-    //         }).name
-    //     }
-    // }
 </script>
 
 <Dialog bind:open aria-labelledby="title" aria-describedby="content">
@@ -68,15 +43,6 @@
                 </li>
             {/if}
         </ul>
-        <!-- Name: {name} -->
-        <!-- <br /> -->
-        <!-- Watts: {watts} -->
-        <!-- <br /> -->
-        <!-- {#if $hardwareNodesLoaded} -->
-        <!--     Target Node: {targetNodeLabel} -->
-        <!-- {:else} -->
-        <!--     <Progress bind:loading={$loading} /> -->
-        <!-- {/if} -->
         <br />
     </Content>
     <Actions>

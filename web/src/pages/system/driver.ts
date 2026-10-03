@@ -39,7 +39,7 @@ export async function fetchDrivers(): Promise<FetchedDriver[]> {
     }
 }
 
-// Creates a new hardware node
+// Creates a new hardware driver
 export async function createDriver(data: CreateDriverReq) {
     try {
         const res = await (
@@ -52,6 +52,6 @@ export async function createDriver(data: CreateDriverReq) {
         if (res.success !== undefined && !res.success)
             throw Error(res.error);
     } catch (err) {
-        get(createSnackbar)(`Failed to create hardware driver node: ${err}`);
+        get(createSnackbar)(`Failed to create hardware driver: ${err}`);
     }
 }

@@ -32,11 +32,11 @@
 
 <Dialog
     bind:open
-    aria-labelledby="create-node-title"
-    aria-describedby="create-node-content"
+    aria-labelledby="create-driver-title"
+    aria-describedby="create-driver-content"
 >
-    <Title id="create-node-title">Create Hardware Driver</Title>
-    <Content id="create-node-content">
+    <Title id="create-driver-title">Create Hardware Driver</Title>
+    <Content id="create-driver-content">
         <Textfield
             bind:value={input.name}
             label="Name"

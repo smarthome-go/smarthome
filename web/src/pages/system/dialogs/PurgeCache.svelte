@@ -47,8 +47,8 @@
         </ul>
     </Content>
     <Actions>
-        <Button>
-            <Label on:click={purgeCache}>Purge</Label>
+        <Button on:click={purgeCache}>
+            <Label>Purge</Label>
         </Button>
         <Button defaultAction use={[InitialFocus]}>
             <Label>Cancel</Label>

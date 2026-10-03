@@ -62,13 +62,6 @@ type SetupUserProfilePicture struct {
 	FileExtension string `json:"fileExtension"`
 }
 
-type SetupHardwareNode struct {
-	Name    string `json:"name"`
-	Enabled bool   `json:"enabled"` // Can be used to temporarily deactivate a node in case of maintenance
-	Url     string `json:"url"`
-	Token   string `json:"token"`
-}
-
 type SetupAuthToken struct {
 	Token string `json:"token"`
 	Label string `json:"label"`
@@ -198,20 +191,6 @@ func ExportConfig(
 	if err != nil {
 		return SetupStruct{}, err
 	}
-
-	// hwNodes, err := database.GetHardwareNodes()
-	// if err != nil {
-	// 	return SetupStruct{}, err
-	// }
-	// hwNodesNew := make([]SetupHardwareNode, 0)
-	// for _, node := range hwNodes {
-	// 	hwNodesNew = append(hwNodesNew, SetupHardwareNode{
-	// 		Name:    node.Name,
-	// 		Enabled: node.Enabled,
-	// 		Token:   node.Token,
-	// 		Url:     node.Url,
-	// 	})
-	// }
 
 	usersTemp, err := database.ListUsers()
 	if err != nil {

@@ -176,14 +176,6 @@ When writing your own contents manually, you can always omit empty fields (*IDs 
             ]
         }
     ],
-    "hardwareNodes": [
-        {
-            "name": "Living Room Node",
-            "enabled": true,
-            "url": "http://example.com/1.png",
-            "token": "secret_t0ken"
-        }
-    ],
     "serverConfiguration": {
         "automationEnabled": true,
         "lockDownMode": false,

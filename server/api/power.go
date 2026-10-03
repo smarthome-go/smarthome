@@ -8,13 +8,6 @@ import (
 	"github.com/smarthome-go/smarthome/core/device/driver"
 )
 
-// TODO: replace with device interaction
-
-type PowerRequest struct {
-	Switch  string `json:"switch"`
-	PowerOn bool   `json:"powerOn"`
-}
-
 // Returns the power draw points from the last N hours.
 func GetPowerDrawFrom24Hours(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")

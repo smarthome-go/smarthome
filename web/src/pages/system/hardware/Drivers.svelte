@@ -16,7 +16,7 @@
     // Specifies whether the add driver dialog should be open or closed
     let createDriverOpen = false;
 
-    // Contains all hardware nodes
+    // Contains all drivers
     let driversLoaded = false;
     let drivers: FetchedDriver[] = []
     // $: if (drivers) console.log('updated drivers')
@@ -117,7 +117,7 @@
                 <Fab
                     color="primary"
                     mini
-                    title="Add Node"
+                    title="Add Driver"
                     on:click={() => (createDriverOpen = true)}
                 >
                     <Icon class="material-icons">add</Icon>

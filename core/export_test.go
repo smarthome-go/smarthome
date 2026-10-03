@@ -52,8 +52,6 @@ func TestExportGeneration(t *testing.T) {
 
 	assert.NoError(t, database.CreateNewDeviceDriver(testDriver))
 
-	// assert.NoError(t, database.CreateHardwareNode(testNode))
-
 	// Create a room with contents
 	assert.NoError(t, database.CreateRoom(database.RoomData{
 		ID:          "living_room",

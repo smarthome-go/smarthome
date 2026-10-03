@@ -429,24 +429,6 @@ func createRoomsInDatabase(rooms []SetupRoom) error {
 	return nil
 }
 
-// Takes the specified `hardwareNodes` and creates according database entries
-// func createHardwareNodesInDatabase(nodes []config.SetupHardwareNode) error {
-// 	for _, node := range nodes {
-// 		if err := database.CreateHardwareNode(
-// 			database.HardwareNode{
-// 				Name:    node.Name,
-// 				Url:     node.Url,
-// 				Token:   node.Token,
-// 				Enabled: node.Enabled,
-// 			},
-// 		); err != nil {
-// 			log.Error("Could not create hardware nodes from setup file: ", err.Error())
-// 			return err
-// 		}
-// 	}
-// 	return nil
-// }
-
 // Takes the specified `systemConfig` and modifies an according database entry
 func createSystemConfigInDatabase(systemConfig database.ServerConfig) error {
 	if systemConfig.Latitude < -90 || systemConfig.Latitude > 90 {

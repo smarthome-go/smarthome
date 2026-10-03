@@ -15,7 +15,6 @@
     import FormField from "@smui/form-field";
     import Switch from "@smui/switch";
     import ExportImport from "./ExportImport.svelte";
-    import Hardware from "./hardware/Hardware.svelte";
     import PurgeCache from "./dialogs/PurgeCache.svelte";
     import Drivers from "./hardware/Drivers.svelte";
 
@@ -508,10 +507,6 @@
             <ExportImport />
         </div>
         {:else if currentActivity == 'drivers'}
-            <!-- TODO: is being replaced by generic drivers -->
-            <!-- <div id="hardware-left" class="mdc-elevation--z1"> -->
-            <!--     <Hardware /> -->
-            <!-- </div> -->
             <div id="hardware-right" class="mdc-elevation--z1">
                 <Drivers />
             </div>
@@ -674,7 +669,7 @@
             }
         }
 
-        #hardware-left, #hardware-right {
+        #hardware-right {
             background-color: var(--clr-height-0-1);
             border-radius: 0.4rem;
             width: 100%;

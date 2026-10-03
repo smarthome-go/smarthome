@@ -76,18 +76,6 @@ func waitForHomescripts(ch *chan struct{}) {
 	}
 }
 
-func waitForPowerJobs(ch *chan struct{}) {
-	// Signal that the power wait task is finished
-	defer func() {
-		*ch <- struct{}{}
-	}()
-
-	// for hardware.GetPendingJobCount() > 0 {
-	// 	time.Sleep(time.Millisecond * 500)
-	// 	log.Trace(fmt.Sprintf("Waiting for %d power jobs to finish...", hardware.GetPendingJobCount()))
-	// }
-}
-
 func waitForJobsWithTimeout(tasks *[]shutdownJob, timeout time.Duration) error {
 	start := time.Now()
 
@@ -127,10 +115,13 @@ func RunBootAutomations(config database.ServerConfig) {
 			continue
 		}
 
-		go func(jobId uint) {
+		// Note: the whole `job` is passed as an argument, because under the
+		// Go version used by this project, capturing the loop variable inside
+		// the closure would race with the remaining iterations.
+		go func(job database.Automation) {
 			maxRuntime := BOOT_AUTOMATION_MAX_RUNTIME
 			automation.AutomationRunnerFunc(
-				jobId,
+				job.Id,
 				types.NewExecutionContextAutomation(
 					types.NewExecutionContextUser(
 						job.Data.HomescriptId,
@@ -143,7 +134,7 @@ func RunBootAutomations(config database.ServerConfig) {
 					},
 				),
 			)
-		}(job.Id)
+		}(job)
 	}
 }
 
@@ -172,9 +163,12 @@ func runShutdownAutomations(ch *chan struct{}, config database.ServerConfig) {
 
 		wg.Add(1)
 
-		go func(jobId uint) {
+		// Note: the whole `job` is passed as an argument, because under the
+		// Go version used by this project, capturing the loop variable inside
+		// the closure would race with the remaining iterations.
+		go func(job database.Automation) {
 			automation.AutomationRunnerFunc(
-				jobId,
+				job.Id,
 				types.NewExecutionContextAutomation(
 					types.NewExecutionContextUser(
 						job.Data.HomescriptId,
@@ -188,7 +182,7 @@ func runShutdownAutomations(ch *chan struct{}, config database.ServerConfig) {
 				),
 			)
 			wg.Done()
-		}(job.Id)
+		}(job)
 	}
 
 	wg.Wait()
@@ -269,14 +263,6 @@ func ShutdownWithConfig(config database.ServerConfig, terminateProcess bool) err
 		name:    "wait for Homescripts",
 	})
 	go waitForHomescripts(&hmsCh)
-
-	// Power jobs
-	pwrCh := make(chan struct{})
-	tasks = append(tasks, shutdownJob{
-		channel: pwrCh,
-		name:    "wait for power jobs",
-	})
-	go waitForPowerJobs(&pwrCh)
 
 	// Fait for all background jobs
 	if err := waitForJobsWithTimeout(&tasks, SHUTDOWN_TIMEOUT); err != nil {

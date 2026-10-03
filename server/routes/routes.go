@@ -70,12 +70,10 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/login/token", tokenLoginHandler).Methods("POST")
 
 	// Power
-	// TODO: implement this using the power API that is implemented later
 	// TODO: also implement a sensor / input API
-	// r.HandleFunc("/api/power/states", api.GetPowerStates).Methods("GET")
-	r.HandleFunc("/api/power/usage/day", api.GetPowerDrawFrom24Hours).Methods("GET")
+	r.HandleFunc("/api/power/usage/day", mdl.ApiAuth(api.GetPowerDrawFrom24Hours)).Methods("GET")
 	r.HandleFunc("/api/power/usage/all", mdl.ApiAuth(api.GetPowerDrawAll)).Methods("GET")
-	// r.HandleFunc("/api/power/set", mdl.ApiAuth(mdl.Perm(api.PowerPostHandler, database.PermissionPower))).Methods("POST")
+	r.HandleFunc("/api/power/cache", mdl.ApiAuth(mdl.Perm(api.PurgePowerRecords, database.PermissionSystemConfig))).Methods("DELETE")
 
 	// Rooms
 	r.HandleFunc("/api/room/list/all", mdl.ApiAuth(api.ListAllRoomsWithData)).Methods("GET")
@@ -85,10 +83,10 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/room/delete", mdl.ApiAuth(mdl.Perm(api.DeleteRoom, database.PermissionModifyRooms))).Methods("DELETE")
 
 	// Devices
-	r.HandleFunc("/api/devices/list/all", api.GetAllDevices).Methods("GET")
+	r.HandleFunc("/api/devices/list/all", mdl.ApiAuth(api.GetAllDevices)).Methods("GET")
 	r.HandleFunc("/api/devices/list/personal", mdl.ApiAuth(api.GetUserDevices)).Methods("GET")
 
-	r.HandleFunc("/api/devices/list/all/rich", api.GetAllDevicesRich).Methods("GET")
+	r.HandleFunc("/api/devices/list/all/rich", mdl.ApiAuth(api.GetAllDevicesRich)).Methods("GET")
 	r.HandleFunc("/api/devices/list/personal/rich", mdl.ApiAuth(api.GetUserDevicesRich)).Methods("GET")
 
 	r.HandleFunc("/api/devices/capabilities", mdl.ApiAuth(api.ListDriverDeviceCapabilities)).Methods("GET")
@@ -116,7 +114,7 @@ func NewRouter() *mux.Router {
 	// Normal Permissions
 	r.HandleFunc("/api/user/permissions/add", mdl.ApiAuth(mdl.Perm(api.AddUserPermission, database.PermissionManageUsers))).Methods("POST")
 	r.HandleFunc("/api/user/permissions/delete", mdl.ApiAuth(mdl.Perm(api.RemoveUserPermission, database.PermissionManageUsers))).Methods("DELETE")
-	r.HandleFunc("/api/permissions/list/all", api.ListPermissions).Methods("GET")
+	r.HandleFunc("/api/permissions/list/all", mdl.ApiAuth(api.ListPermissions)).Methods("GET")
 	r.HandleFunc("/api/user/permissions/list/personal", mdl.ApiAuth(api.GetCurrentUserPermissions)).Methods("GET")
 	r.HandleFunc("/api/user/permissions/list/user/{username}", mdl.ApiAuth(mdl.Perm(api.GetForeignUserPermissions, database.PermissionManageUsers))).Methods("GET")
 
@@ -225,8 +223,6 @@ func NewRouter() *mux.Router {
 
 	// Cache Purging
 	r.HandleFunc("/api/weather/cache", mdl.ApiAuth(mdl.Perm(api.PurgeWeatherCache, database.PermissionSystemConfig))).Methods("DELETE")
-	// TODO: what is up with cache purging?
-	// r.HandleFunc("/api/power/cache", mdl.ApiAuth(mdl.Perm(api.PurgePowerRecords, database.PermissionSystemConfig))).Methods("DELETE")
 
 	// System Configuration
 	r.HandleFunc("/api/automation/state/global", mdl.ApiAuth(mdl.Perm(api.ChangeActivationAutomation, database.PermissionSystemConfig))).Methods("PUT")
@@ -244,15 +240,6 @@ func NewRouter() *mux.Router {
 
 	r.HandleFunc("/api/system/mqtt/config", mdl.ApiAuth(mdl.Perm(api.UpdateMQTTConfig, database.PermissionSystemConfig))).Methods("PUT")
 	r.HandleFunc("/api/system/mqtt/status", mdl.ApiAuth(mdl.Perm(api.GetMQTTStatus, database.PermissionSystemConfig))).Methods("GET")
-
-	// Hardware node management
-	// r.HandleFunc("/api/system/hardware/node/list", mdl.ApiAuth(mdl.Perm(api.ListHardwareNodes, database.PermissionSystemConfig))).Methods("GET")
-	// r.HandleFunc("/api/system/hardware/node/list/nopriv", mdl.ApiAuth(mdl.Perm(api.ListHardwareNodesNoPriv, database.PermissionPower))).Methods("GET")
-	// r.HandleFunc("/api/system/hardware/node/check", mdl.ApiAuth(mdl.Perm(api.ListHardwareNodesWithCheck, database.PermissionSystemConfig))).Methods("GET")
-	// r.HandleFunc("/api/system/hardware/node/add", mdl.ApiAuth(mdl.Perm(api.CreateHardwareNode, database.PermissionSystemConfig))).Methods("POST")
-	// r.HandleFunc("/api/system/hardware/node/modify", mdl.ApiAuth(mdl.Perm(api.ModifyHardwareNode, database.PermissionSystemConfig))).Methods("PUT")
-	// r.HandleFunc("/api/system/hardware/node/delete", mdl.ApiAuth(mdl.Perm(api.DeleteHardwareNode, database.PermissionSystemConfig))).Methods("DELETE")
-	// TODO: what to do with hardware nodes?
 
 	// Hardware driver management
 	r.HandleFunc("/api/system/hardware/driver/list", mdl.ApiAuth(mdl.Perm(api.ListDeviceDrivers, database.PermissionSystemConfig))).Methods("GET")
