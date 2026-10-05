@@ -153,7 +153,9 @@ docker-prepare: web build
 	cp -r resources docker/container/cache/
 	cp -r web/dist docker/container/cache/web/
 
-	$(call build,linux,amd64, -ldflags '-s -w -extldflags "-fno-PIC -static"' -buildmode pie -tags 'osusergo netgo static_build')
+	# No `-buildmode pie`: without cgo, Go links PIE binaries against the glibc
+	# loader, which does not exist on the Alpine base image (the binary would not start)
+	$(call build,linux,amd64,)
 	cp smarthome docker/container/smarthome_amd64
 
 	$(call build,linux,arm,)
@@ -219,7 +221,7 @@ build/linux_386.tar.gz: $(sources)
 	$(call tar,linux,386)
 
 build/linux_amd64.tar.gz: $(sources)
-	$(call build,linux,amd64, -ldflags '-s -w -extldflags "-fno-PIC -static"' -buildmode pie -tags 'osusergo netgo static_build')
+	$(call build,linux,amd64,)
 	$(call tar,linux,amd64)
 
 build/linux_arm.tar.gz: $(sources)
